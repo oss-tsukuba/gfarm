@@ -19,6 +19,8 @@ static int socketfd;
 static int debug_level = 0;
 static bool is_server = false;
 static bool is_mutual_authentication = false;
+static bool is_verify_only = false;
+static bool is_once_loop = false;
 static char *portnum = "12345";
 static char *ipaddr = "127.0.0.1";
 
@@ -34,6 +36,7 @@ static struct tls_test_ctx_struct ttcs = {
 	NULL,
 	NULL,
 	NULL,
+	-INT_MAX,
 	-INT_MAX,
 	-INT_MAX
 };
@@ -130,6 +133,9 @@ usage()
 		"\t--tls_key_update\n"
 		"\t--network_receive_timeout\n"
 		"\t--mutual_authentication\n"
+		"\t--verify_only\n"
+		"\t--once\n"
+		"\t--build_chain\n"
 		"\t--debug_level\n");
 	return;
 }
@@ -186,26 +192,65 @@ string_to_int(const char *str, int *result, int base)
 static inline void
 ctx_dump()
 {
-	fprintf(stderr, "tls_cipher_suite: %s\n",
+	fprintf(stderr, "tls_cipher_suite: '%s'\n",
 			gfarm_ctxp->tls_cipher_suite);
-	fprintf(stderr, "tls_ca_certificate_path: %s\n",
+	fprintf(stderr, "tls_ca_certificate_path: '%s'\n",
 			gfarm_ctxp->tls_ca_certificate_path);
-	fprintf(stderr, "tls_ca_revocation_path: %s\n",
+	fprintf(stderr, "tls_ca_revocation_path: '%s'\n",
 			gfarm_ctxp->tls_ca_revocation_path);
-	fprintf(stderr, "tls_client_ca_certificate_path: %s\n",
+	fprintf(stderr, "tls_client_ca_certificate_path: '%s'\n",
 			gfarm_ctxp->tls_client_ca_certificate_path);
-	fprintf(stderr, "tls_client_ca_revocation_path: %s\n",
+	fprintf(stderr, "tls_client_ca_revocation_path: '%s'\n",
 			gfarm_ctxp->tls_client_ca_revocation_path);
-	fprintf(stderr, "tls_certificate_file: %s\n",
+	fprintf(stderr, "tls_certificate_file: '%s'\n",
 			gfarm_ctxp->tls_certificate_file);
-	fprintf(stderr, "tls_certificate_chain_file: %s\n",
+	fprintf(stderr, "tls_certificate_chain_file: '%s'\n",
 			gfarm_ctxp->tls_certificate_chain_file);
-	fprintf(stderr, "tls_key_file: %s\n",
+	fprintf(stderr, "tls_key_file: '%s'\n",
 			gfarm_ctxp->tls_key_file);
 	fprintf(stderr, "tls_key_update: %d\n",
 			gfarm_ctxp->tls_key_update);
+	fprintf(stderr, "tls_build_certificate_chain: %d\n",
+			gfarm_ctxp->tls_build_certificate_chain);
 	fprintf(stderr, "network_receive_timeout: %d\n",
 			gfarm_ctxp->network_receive_timeout);
+
+	return;
+}
+
+static inline void
+getopt_arg_dump()
+{
+	fprintf(stderr, "is_server: %d\n", is_server);
+	fprintf(stderr, "address: '%s'\n", ipaddr);
+	fprintf(stderr, "portnum: '%s'\n", portnum);
+	fprintf(stderr, "tls_cipher_suite: '%s'\n",
+			gfarm_ctxp->tls_cipher_suite);
+	fprintf(stderr, "tls_ca_certificate_path: '%s'\n",
+			gfarm_ctxp->tls_ca_certificate_path);
+	fprintf(stderr, "tls_ca_revocation_path: '%s'\n",
+			gfarm_ctxp->tls_ca_revocation_path);
+	fprintf(stderr, "tls_client_ca_certificate_path: '%s'\n",
+			gfarm_ctxp->tls_client_ca_certificate_path);
+	fprintf(stderr, "tls_client_ca_revocation_path: '%s'\n",
+			gfarm_ctxp->tls_client_ca_revocation_path);
+	fprintf(stderr, "tls_certificate_file: '%s'\n",
+			gfarm_ctxp->tls_certificate_file);
+	fprintf(stderr, "tls_certificate_chain_file: '%s'\n",
+			gfarm_ctxp->tls_certificate_chain_file);
+	fprintf(stderr, "tls_key_file: '%s'\n",
+			gfarm_ctxp->tls_key_file);
+	fprintf(stderr, "tls_key_update: %d\n",
+			gfarm_ctxp->tls_key_update);
+	fprintf(stderr, "tls_build_certificate_chain: %d\n",
+			gfarm_ctxp->tls_build_certificate_chain);
+	fprintf(stderr, "network_receive_timeout: %d\n",
+			gfarm_ctxp->network_receive_timeout);
+	fprintf(stderr, "mutual_authentication: %d\n",
+			is_mutual_authentication);
+	fprintf(stderr, "verify_only: %d\n", is_verify_only);
+	fprintf(stderr, "once: %d\n", is_once_loop);
+	fprintf(stderr, "debug_level: %d\n", debug_level);
 
 	return;
 }
@@ -217,40 +262,26 @@ prologue(int argc, char **argv)
 	uint16_t result;
 
 	struct option longopts[] = {
-		{"help",
-			no_argument,       NULL, 'h' },
-		{"server",
-			no_argument,       NULL, 's' },
-		{"adress",
-			required_argument, NULL, 'a' },
-		{"port",
-			required_argument, NULL, 'p' },
-		{"tls_cipher_suite",
-			required_argument, NULL,  0  },
-		{"tls_ca_certificate_path",
-			required_argument, NULL,  1  },
-		{"tls_ca_revocation_path",
-			required_argument, NULL,  2  },
-		{"tls_client_ca_certificate_path",
-			required_argument, NULL,  3  },
-		{"tls_client_ca_revocation_path",
-			required_argument, NULL,  4  },
-		{"tls_certificate_file",
-			required_argument, NULL,  5  },
-		{"tls_certificate_chain_file",
-			required_argument, NULL,  6  },
-		{"tls_key_file",
-			required_argument, NULL,  7  },
-		{"tls_key_update",
-			required_argument, NULL,  8  },
-		{"network_receive_timeout",
-			required_argument, NULL,  9  },
-		{"mutual_authentication",
-			no_argument,       NULL,  10 },
-		{"debug_level",
-			required_argument, NULL,  11 },
-		{0,
-			0,                 0,     0  }
+		{"help", no_argument, NULL, 'h'},
+		{"server", no_argument, NULL, 's'},
+		{"adress", required_argument, NULL, 'a'},
+		{"port", required_argument, NULL, 'p'},
+		{"tls_cipher_suite", required_argument, NULL, 0},
+		{"tls_ca_certificate_path", required_argument, NULL, 1},
+		{"tls_ca_revocation_path", required_argument, NULL, 2},
+		{"tls_client_ca_certificate_path", required_argument, NULL, 3},
+		{"tls_client_ca_revocation_path", required_argument, NULL, 4},
+		{"tls_certificate_file", required_argument, NULL, 5},
+		{"tls_certificate_chain_file", required_argument, NULL, 6},
+		{"tls_key_file", required_argument, NULL, 7},
+		{"tls_key_update", required_argument, NULL, 8},
+		{"network_receive_timeout", required_argument, NULL, 9},
+		{"mutual_authentication", no_argument, NULL, 10},
+		{"debug_level", required_argument, NULL, 11},
+		{"verify_only", no_argument, NULL, 12},
+		{"once", no_argument, NULL, 13},
+		{"build_chain", no_argument, NULL, 14},
+		{NULL, 0, NULL, 0}
 	};
 
 	while ((opt = getopt_long(argc, argv, "sa:p:h", longopts,
@@ -307,6 +338,15 @@ prologue(int argc, char **argv)
 				"fail to set debug_level.\n");
 			}
 			break;
+		case 12:
+			is_verify_only = true;
+			break;
+		case 13:
+			is_once_loop = true;
+			break;
+		case 14:
+			gfarm_ctxp->tls_build_certificate_chain = 1;
+			break;
 		case 's':
 			is_server = true;
 			break;
@@ -323,8 +363,10 @@ prologue(int argc, char **argv)
 		}
 	}
 
-	if (debug_level == 10) {
+	if (debug_level == 10000) {
 		ctx_dump();
+	} else if (debug_level == 10001) {
+		getopt_arg_dump();
 	}
 
 	memset(&hints, 0, sizeof(hints));
@@ -353,8 +395,12 @@ run_server_process()
 	int acceptfd, ret = 1;
 	struct addrinfo clientaddr;
 	clientaddr.ai_addrlen = sizeof(clientaddr.ai_addr);
+	bool is_loop = true;
 
-	while (true) {
+	while (is_loop) {
+		if (is_once_loop) {
+			is_loop = false;
+		}
 		errno = 0;
 		if ((acceptfd = accept(socketfd,
 					clientaddr.ai_addr,
@@ -373,16 +419,36 @@ run_server_process()
 					gfarm_error_string(gerr));
 				break;
 			}
-			fprintf(stderr, "TLS session established.\n");
-			
+			if (debug_level > 0) {
+				fprintf(stderr, "TLS session established.\n");
+			}
+
+			if (is_verify_only) {
+				gerr = tls_session_clear_ctx(tls_ctx);
+				if (gerr == GFARM_ERR_NO_ERROR) {
+					ret = 0;
+				} else {
+					gflog_tls_error(GFARM_MSG_UNFIXED,
+						"SSL reset failure: %s",
+						gfarm_error_string(gerr));
+				}
+				return ret;
+			}
+	
 			gerr = tls_session_read(tls_ctx, buf, sizeof(buf),
 					&r_size);
 			if (gerr == GFARM_ERR_NO_ERROR) {
 				if (r_size > 0) {
 					buf[r_size] = '\0';
-					fprintf(stderr, "got: '%s'\n", buf);
+					if (debug_level > 0) {
+						fprintf(stderr,
+							"got: '%s'\n", buf);
+					}
 				} else if (r_size == 0) {
-					fprintf(stderr, "got 0 byte.\n");
+					if (debug_level > 0) {
+						fprintf(stderr,
+							"got 0 byte.\n");
+					}
 					goto teardown;
 				}
 			} else {
@@ -477,8 +543,22 @@ run_client_process()
 				gfarm_error_string(gerr));
 		return (ret);
 	}
-	fprintf(stderr, "TLS session established.\n");
-	
+	if (debug_level > 0) {
+		fprintf(stderr, "TLS session established.\n");
+	}
+
+	if (is_verify_only) {
+		gerr = tls_session_clear_ctx(tls_ctx);
+		if (gerr == GFARM_ERR_NO_ERROR) {
+			ret = 0;
+		} else {
+			gflog_tls_error(GFARM_MSG_UNFIXED,
+				"SSL reset failure: %s",
+				gfarm_error_string(gerr));
+		}
+		return ret;
+	}
+
 	errno = 0;
 	if (fgets(buf, sizeof(buf) -1, stdin) != NULL) {
 		r_size = strlen(buf);
@@ -500,7 +580,7 @@ run_client_process()
 		gerr = tls_session_read(tls_ctx, buf, sizeof(buf), &r_size);
 		if (gerr == GFARM_ERR_NO_ERROR && r_size == w_size) {
 			buf[r_size] = '\0';
-			fprintf(stdout, "got reply: '%s'\n", buf);
+			fprintf(stdout, "%s\n", buf);
 			fflush(stdout);
 			ret = 0;
 			goto teardown;
@@ -516,7 +596,7 @@ run_client_process()
 					gfarm_error_string(gerr));
 			}
 		}
-	} else {
+	} else if (debug_level > 0) {
 		fprintf(stderr, "fgets: Can't read string.\n");
 	}
 
