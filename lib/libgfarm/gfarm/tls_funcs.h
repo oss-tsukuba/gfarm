@@ -615,7 +615,7 @@ tls_load_prvkey(const char *file, EVP_PKEY **keyptr)
  * Cert files collector for acceptable certs list.
  */
 static inline gfarm_error_t
-tls_get_x509_name_stack_from_dir(const char *dir,
+scan_dir_for_x509_name(const char *dir,
 	STACK_OF(X509_NAME) *stack, int *nptr)
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
@@ -627,7 +627,7 @@ tls_get_x509_name_stack_from_dir(const char *dir,
 	int nadd = 0;
 
 	errno = 0;
-	if (unlikely(dir == NULL || stack == NULL || nptr == NULL ||
+	if (unlikely(dir == NULL || nptr == NULL ||
 		   (d = opendir(dir)) == NULL || errno != 0)) {
 		if (errno != 0) {
 			ret = gfarm_errno_to_error(errno);
@@ -644,6 +644,15 @@ tls_get_x509_name_stack_from_dir(const char *dir,
 	do {
 		errno = 0;
 		if (likely((de = readdir(d)) != NULL)) {
+			if ((de->d_name[0] == '.' && de->d_name[1] == '\0') ||
+				(de->d_name[0] == '.' && de->d_name[1] == '.'
+				 && de->d_name[2] == '\0')) {
+				continue;
+			}
+			if (stack == NULL) {
+				nadd++;
+				continue;
+			}
 			(void)snprintf(cert_file, sizeof(cert_file),
 				"%s/%s", dir, de->d_name);
 			errno = 0;
@@ -713,6 +722,13 @@ done:
 	}
 
 	return (ret);
+}
+
+static inline gfarm_error_t
+tls_get_x509_name_stack_from_dir(const char *dir,
+	STACK_OF(X509_NAME) *stack, int *nptr)
+{
+	return scan_dir_for_x509_name(dir, stack, nptr);
 }
 
 static inline gfarm_error_t
@@ -939,9 +955,12 @@ tls_set_revoke_path(SSL_CTX *ssl_ctx, const char *revoke_path)
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 	X509_STORE *store = NULL;
+	int nent = -1;
 
 	tls_runtime_flush_error();
 	if (likely(ssl_ctx != NULL &&
+		(ret = scan_dir_for_x509_name(revoke_path, NULL, &nent)) ==
+		GFARM_ERR_NO_ERROR && nent > 0 &&
 		(store = SSL_CTX_get_cert_store(ssl_ctx)) != NULL &&
 		is_valid_string(revoke_path) == true)) {
 		int st;
@@ -966,7 +985,7 @@ tls_set_revoke_path(SSL_CTX *ssl_ctx, const char *revoke_path)
 				"Failed to set CRL path to an SSL_CTX.");
 			ret = GFARM_ERR_TLS_RUNTIME_ERROR;
 		}
-	} else {
+	} else if (ret != GFARM_ERR_NO_ERROR) {
 		if (tls_has_runtime_error() == true) {
 			gflog_tls_error(GFARM_MSG_UNFIXED,
 				"Failed to get current X509_STORE from "
