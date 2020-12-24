@@ -1168,6 +1168,9 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 	char *ciphersuites = NULL;
 	char *tmp = NULL;
 
+#ifdef HAVE_CTXP_BUILD_CHAIN
+	bool is_build_chain = false;
+#endif /* HAVE_CTXP_BUILD_CHAIN */
 	char *cert_to_use = NULL;
 	EVP_PKEY *prvkey = NULL;
 	SSL_CTX *ssl_ctx = NULL;
@@ -1466,7 +1469,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 	}
 	if (likely(ssl_ctx != NULL)) {
 		int osst;
-
+		
 		/*
 		 * Clear cert chain for our sanity.
 		 */
@@ -1569,7 +1572,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 				goto bailout;
 			}
 		}
-		
+
 		if (need_self_cert == true) {
 			/*
 			 * Load a cert into the SSL_CTX
@@ -1635,11 +1638,14 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 				goto bailout;
 			}
 
-#if defined(TLS_TEST) && defined(HAVE_CTXP_BUILD_CHAIN)
-			/*
-			 * OK, one more magic.
-			 */
-			if (gfarm_ctxp->tls_build_certificate_chain == 1) {
+#ifdef HAVE_CTXP_BUILD_CHAIN
+			is_build_chain =
+				(gfarm_ctxp->tls_build_certificate_chain == 1)
+				? true : false;
+			if (is_build_chain == true) {
+				/*
+				 * Build a complete cert chain locally.
+				 */
 				tls_runtime_flush_error();
 				osst = SSL_CTX_build_cert_chain(ssl_ctx, 0);
 				if (unlikely(osst != 1)) {
@@ -1650,7 +1656,33 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 					goto bailout;
 				}
 			}
-#endif /* TLS_TEST && HAVE_CTXP_BUILD_CHAIN */
+#endif /* HAVE_CTXP_BUILD_CHAIN */
+		}
+
+		if (true) {
+			/*
+			 * NOTE: 
+			 * Seems revoked certs in
+			 * tls_ca_certificate_path should be
+			 * rejected. openssl s_{client|server} does
+			 * following for this.
+			 */
+			X509_VERIFY_PARAM *vpm =
+				SSL_CTX_get0_param(ssl_ctx);
+			if (likely(vpm != NULL)) {
+				tls_runtime_flush_error();
+				osst = X509_VERIFY_PARAM_set_flags(vpm,
+					X509_V_FLAG_CRL_CHECK |
+					X509_V_FLAG_CRL_CHECK_ALL);
+				if (unlikely(osst != 1)) {
+					gflog_tls_error(GFARM_MSG_UNFIXED,
+						"Failed to set CRL check bits "
+						"to a X509_VERIFY_PARAM");
+					ret = GFARM_ERR_TLS_RUNTIME_ERROR;
+					X509_VERIFY_PARAM_free(vpm);
+					goto bailout;
+				}
+			}
 		}
 
 	} else {
@@ -1670,10 +1702,22 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 			sizeof(struct tls_session_ctx_struct));
 		ctxret->role_ = role;
 		ctxret->do_mutual_auth_ = do_mutual_auth;
-		ctxret->keyupd_thresh_ = gfarm_ctxp->tls_key_update;
+		if (gfarm_ctxp->tls_key_update > 0) {
+#ifndef TLS_TEST
+#define TLS_KEY_UPDATE_THRESH	512 * 1024 * 1024;
+			ctxret->keyupd_thresh_ = TLS_KEY_UPDATE_THRESH;
+#undef TLS_KEY_UPDATE_THRESH
+#else
+			ctxret->keyupd_thresh_ = gfarm_ctxp->tls_key_update;
+#endif /* ! TLS_TEST */
+		} else {
+			ctxret->keyupd_thresh_ = 0;
+		}
 		ctxret->prvkey_ = prvkey;
 		ctxret->ssl_ctx_ = ssl_ctx;
-
+#ifdef HAVE_CTXP_BUILD_CHAIN
+		ctxret->is_build_chain_ = is_build_chain;
+#endif /* HAVE_CTXP_BUILD_CHAIN */		
 		ctxret->cert_file_ = cert_file;
 		ctxret->cert_chain_file_ = cert_chain_file;
 		ctxret->prvkey_file_ = prvkey_file;
@@ -1999,6 +2043,10 @@ tls_session_verify(tls_session_ctx_t ctx, bool *is_verified)
 		v = (SSL_get_verify_result(ssl) == X509_V_OK) ?
 			true : false;
 		ctx->is_verified_ = v;
+		if (tls_has_runtime_error() == true) {
+			gflog_tls_warning(GFARM_MSG_UNFIXED,
+				"verfied but got an error");
+		}
 		if (is_verified != NULL) {
 			*is_verified = v;
 		}

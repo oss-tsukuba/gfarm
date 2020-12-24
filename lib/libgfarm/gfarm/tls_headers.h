@@ -2,6 +2,10 @@
 
 #if defined(HAVE_TLS_1_3) && defined(IN_TLS_CORE)
 
+#ifdef TLS_TEST
+#define HAVE_CTXP_BUILD_CHAIN
+#endif /* TLS_TEST */
+
 
 
 #include <inttypes.h>
@@ -194,6 +198,9 @@ struct tls_session_ctx_struct {
 	bool do_mutual_auth_;
 	int n_cert_chain_;
 	bool is_verified_;
+#ifdef HAVE_CTXP_BUILD_CHAIN
+	bool is_build_chain_;
+#endif /* HAVE_CTXP_BUILD_CHAIN */
 	size_t io_total_;	/* How many bytes transmitted */
 	size_t io_key_update_;	/* KeyUpdate water level (bytes) */
 	ssize_t keyupd_thresh_;	/* KeyUpdate threshold (bytes) */
