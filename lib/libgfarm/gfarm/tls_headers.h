@@ -198,6 +198,8 @@ struct tls_session_ctx_struct {
 	bool do_mutual_auth_;
 	int n_cert_chain_;
 	bool is_verified_;
+	int cert_verify_callback_error_;
+	int cert_verify_result_error_;
 #ifdef HAVE_CTXP_BUILD_CHAIN
 	bool is_build_chain_;
 #endif /* HAVE_CTXP_BUILD_CHAIN */
@@ -268,6 +270,12 @@ static pthread_mutex_t pwd_cb_lock = PTHREAD_MUTEX_INITIALIZER;
 
 static int
 tty_passwd_callback(char *buf, int maxlen, int rwflag, void *u);
+
+/*
+ * Verify callback
+ */
+static int
+tls_verify_callback(int ok, X509_STORE_CTX *sctx);
 
 #else
 

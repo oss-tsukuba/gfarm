@@ -533,6 +533,25 @@ static bool is_tls_runtime_initd = false;
 static void
 tls_runtime_init_once(void);
 
+static inline void
+tls_runtime_init_once_body(void)
+{
+	/*
+	 * XXX FIXME:
+	 *	Are option flags sufficient enough or too much?
+	 *	I'm not sure about it, hope it would be a OK.
+	 */
+	if (likely(OPENSSL_init_ssl(
+			OPENSSL_INIT_LOAD_SSL_STRINGS |
+			OPENSSL_INIT_LOAD_CRYPTO_STRINGS |
+			OPENSSL_INIT_NO_ADD_ALL_CIPHERS |
+			OPENSSL_INIT_NO_ADD_ALL_DIGESTS |
+			OPENSSL_INIT_ENGINE_ALL_BUILTIN,
+			NULL) == 1)) {
+		is_tls_runtime_initd = true;
+	}
+}
+
 static inline gfarm_error_t
 tls_session_runtime_initialize(void)
 {
@@ -560,6 +579,59 @@ tls_runtime_flush_error(void)
 /*
  * Private key loader
  */
+
+static inline int
+tty_passwd_callback_body(char *buf, int maxlen, int rwflag, void *u)
+{
+	int ret = 0;
+	tls_passwd_cb_arg_t arg = (tls_passwd_cb_arg_t)u;
+
+	(void)rwflag;
+
+	if (likely(arg != NULL)) {
+		char p[4096];
+		bool has_passwd_cache = is_valid_string(arg->pw_buf_);
+		bool do_passwd =
+			(has_passwd_cache == false &&
+			 arg->pw_buf_ != NULL &&
+			 arg->pw_buf_maxlen_ > 0) ?
+			true : false;
+
+		if (unlikely(do_passwd == true)) {
+			/*
+			 * Set a prompt
+			 */
+			if (is_valid_string(arg->filename_) == true) {
+				(void)snprintf(p, sizeof(p),
+					"Passphrase for \"%s\": ",
+					arg->filename_);
+			} else {
+				(void)snprintf(p, sizeof(p),
+					"Passphrase: ");
+			}
+		}
+		
+		tty_lock();
+		{
+			if (unlikely(do_passwd == true)) {
+				if (tty_get_passwd(arg->pw_buf_,
+					arg->pw_buf_maxlen_, p, &ret) ==
+					GFARM_ERR_NO_ERROR) {
+					goto copy_cache;
+				}
+			} else if (likely(has_passwd_cache == true)) {
+			copy_cache:
+				ret = snprintf(buf, maxlen, "%s",
+						arg->pw_buf_);
+			}
+		}
+		tty_unlock();
+	}
+
+	return (ret);
+
+}
+
 static inline gfarm_error_t
 tls_load_prvkey(const char *file, EVP_PKEY **keyptr)
 {
@@ -1094,6 +1166,20 @@ tls_session_setup_handle(tls_session_ctx_t ctx)
 			ret = GFARM_ERR_NO_ERROR;
 		}
 
+		if (ret == GFARM_ERR_NO_ERROR) {
+			/*
+			 * Set a verify callback user arg.
+			 */
+			tls_runtime_flush_error();
+			osst = SSL_set_app_data(ssl, ctx);
+			if (osst != 1) {
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"Failed to set an arg for the verify "
+					"callback");
+				ret = GFARM_ERR_TLS_RUNTIME_ERROR;
+			}
+		}
+
 #if 0
 		/*
 		 * XXX FIXME:
@@ -1144,6 +1230,30 @@ done:
 	}
 
 	return (ret);
+}
+
+/*
+ * Certificate verification callback
+ */
+
+static inline int
+tls_verify_callback_body(int ok, X509_STORE_CTX *sctx)
+{
+	int ret = ok;
+#if 0
+	SSL *ssl = X509_STORE_CTX_get_ex_data(sctx,
+			SSL_get_ex_data_X509_STORE_CTX_idx());
+	tls_session_ctx_t *ctx = (ssl != NULL) ?
+		(tls_session_ctx_t *)SSL_get_app_data(ssl) : NULL;
+#endif
+	int verr = X509_STORE_CTX_get_error(sctx);
+	int vdepth = X509_STORE_CTX_get_error_depth(sctx);
+	const char *verrstr = X509_verify_cert_error_string(verr);
+
+	gflog_tls_error(GFARM_MSG_UNFIXED, "depth %d: error %d: '%s'",
+		vdepth, verr, verrstr);
+	
+	return ret;
 }
 
 /*
@@ -1514,7 +1624,8 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 	(SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT | \
 	 SSL_VERIFY_CLIENT_ONCE)
 				SSL_CTX_set_verify(ssl_ctx,
-					SERVER_MUTUAL_VERIFY_FLAGS, NULL);
+					SERVER_MUTUAL_VERIFY_FLAGS,
+					tls_verify_callback);
 #undef SERVER_MUTUAL_VERIFY_FLAGS
 			} else {
 				SSL_CTX_set_verify(ssl_ctx,
@@ -1525,7 +1636,8 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 				VERIFY_DEPTH);
 #define CLIENT_VERIFY_FLAGS					\
 	(SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT)
-			SSL_CTX_set_verify(ssl_ctx, CLIENT_VERIFY_FLAGS, NULL);
+			SSL_CTX_set_verify(ssl_ctx, CLIENT_VERIFY_FLAGS,
+				tls_verify_callback);
 #undef CLIENT_VERIFY_FLAGS
 			if (do_mutual_auth == true) {
 				SSL_CTX_set_post_handshake_auth(ssl_ctx, 1);
@@ -1659,7 +1771,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 #endif /* HAVE_CTXP_BUILD_CHAIN */
 		}
 
-		if (true) {
+		if (false) {
 			/*
 			 * NOTE: 
 			 * Seems revoked certs in
@@ -1698,6 +1810,8 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 	ctxret = (tls_session_ctx_t)malloc(
 		sizeof(struct tls_session_ctx_struct));
 	if (likely(ctxret != NULL)) {
+		tls_runtime_flush_error();
+
 		(void)memset(ctxret, 0,
 			sizeof(struct tls_session_ctx_struct));
 		ctxret->role_ = role;
@@ -1725,7 +1839,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 		ctxret->ca_path_ = ca_path;
 		ctxret->acceptable_ca_path_ = acceptable_ca_path;
 		ctxret->revoke_path_ = revoke_path;
-
+		
 		/*
 		 * All done.
 		 */
@@ -1975,10 +2089,6 @@ tls_session_verify(tls_session_ctx_t ctx, bool *is_verified)
 	X509 *p = NULL;
 	X509_NAME *pn = NULL;
 
-	/*
-	(res = SSL_get_verify_result(ssl)) == X509_V_OK
-	*/
-
 	if (likely(ctx != NULL && (ssl = ctx->ssl_) != NULL)) {
 		/*
 		 * No matter verified or not, get a peer cert.
@@ -2038,15 +2148,22 @@ tls_session_verify(tls_session_ctx_t ctx, bool *is_verified)
 
 	if  (ssl != NULL) {
 		bool v;
+		int vres;
 
 		tls_runtime_flush_error();
-		v = (SSL_get_verify_result(ssl) == X509_V_OK) ?
-			true : false;
-		ctx->is_verified_ = v;
-		if (tls_has_runtime_error() == true) {
-			gflog_tls_warning(GFARM_MSG_UNFIXED,
-				"verfied but got an error");
+		vres = SSL_get_verify_result(ssl);
+		if (vres == X509_V_OK) {
+			v = true;
+		} else {
+			v = false;
+			gflog_tls_error(GFARM_MSG_UNFIXED,
+				"Certificate verification failed: %s",
+				X509_verify_cert_error_string(vres));
+			ret = ctx->last_gfarm_error_ = 
+				GFARM_ERRMSG_TLS_CERT_VERIFIY_FAILURE;
 		}
+		ctx->cert_verify_result_error_ = vres;
+		ctx->is_verified_ = v;
 		if (is_verified != NULL) {
 			*is_verified = v;
 		}
@@ -2079,7 +2196,7 @@ tls_session_establish(tls_session_ctx_t ctx, int fd)
 			goto bailout;
 		}
 		ssl = ctx->ssl_;
-
+		
 		tls_runtime_flush_error();
 		if (likely(SSL_set_fd(ssl, fd) == 1)) {
 			int st;
@@ -2092,9 +2209,8 @@ tls_session_establish(tls_session_ctx_t ctx, int fd)
 		retry:
 			errno = 0;
 			tls_runtime_flush_error();
-			(void)SSL_get_error(ssl, 1);
 			st = p(ssl);
-			ssl_err = SSL_get_error(ssl, 1);
+			ssl_err = SSL_get_error(ssl, st);
 			do_cont = tls_session_io_continuable(
 					ssl_err, ctx, false);
 			if (likely(st == 1 && ssl_err == SSL_ERROR_NONE)) {
@@ -2238,7 +2354,6 @@ tls_session_read(tls_session_ctx_t ctx, void *buf, int len,
 		*actual_io_bytes = 0;
 	retry:
 		errno = 0;
-		(void)SSL_get_error(ssl, 1);
 		n = SSL_read(ssl, buf, len);
 		/*
 		 * NOTE:
@@ -2246,19 +2361,14 @@ tls_session_read(tls_session_ctx_t ctx, void *buf, int len,
 		 *	TLS stream, check SSL_ERROR_ for the session
 		 *	continuity.
 		 */
-		ssl_err = SSL_get_error(ssl, 1);
+		ssl_err = SSL_get_error(ssl, n);
 		continuable = tls_session_io_continuable(ssl_err, ctx, false);
-		if (likely(n >= 0 && ssl_err == SSL_ERROR_NONE)) {
+		if (likely(n > 0 && ssl_err == SSL_ERROR_NONE)) {
 			ctx->last_gfarm_error_ = GFARM_ERR_NO_ERROR;
 			ctx->last_ssl_error_ = ssl_err;
 			*actual_io_bytes = n;
-			if (n > 0) {
-				ctx->io_total_ += n;
-				ret = tls_session_update_key(ctx, n);
-			} else {
-				ret = ctx->last_gfarm_error_ =
-					GFARM_ERR_NO_ERROR;
-			}
+			ctx->io_total_ += n;
+			ret = tls_session_update_key(ctx, n);
 		} else {
 			if (likely(continuable == true)) {
 				goto retry;
@@ -2300,7 +2410,6 @@ tls_session_write(tls_session_ctx_t ctx, const void *buf, int len,
 		*actual_io_bytes = 0;
 	retry:
 		errno = 0;
-		(void)SSL_get_error(ssl, 1);
 		n = SSL_write(ssl, buf, len);
 		/*
 		 * NOTE:
@@ -2308,19 +2417,14 @@ tls_session_write(tls_session_ctx_t ctx, const void *buf, int len,
 		 *	TLS stream, check SSL_ERROR_ for the session
 		 *	continuity.
 		 */
-		ssl_err = SSL_get_error(ssl, 1);
+		ssl_err = SSL_get_error(ssl, n);
 		continuable = tls_session_io_continuable(ssl_err, ctx, false);
-		if (likely(n >= 0 && ssl_err == SSL_ERROR_NONE)) {
+		if (likely(n > 0 && ssl_err == SSL_ERROR_NONE)) {
 			ctx->last_gfarm_error_ = GFARM_ERR_NO_ERROR;
 			ctx->last_ssl_error_ = ssl_err;
 			*actual_io_bytes = n;
-			if (n > 0) {
-				ctx->io_total_ += n;
-				ret = tls_session_update_key(ctx, n);
-			} else {
-				ret = ctx->last_gfarm_error_ =
-					GFARM_ERR_NO_ERROR;
-			}
+			ctx->io_total_ += n;
+			ret = tls_session_update_key(ctx, n);
 		} else {
 			if (likely(continuable == true)) {
 				goto retry;
@@ -2371,7 +2475,6 @@ tls_session_shutdown(tls_session_ctx_t ctx, int fd, bool do_close)
 		} else if (ctx->got_fatal_ssl_error_ == true) {
 			st = 1;
 		} else {
-			(void)SSL_get_error(ssl, 1);
 			st = SSL_shutdown(ssl);
 		}
 		if (st == 1) {
