@@ -1250,6 +1250,7 @@ tls_verify_callback_body(int ok, X509_STORE_CTX *sctx)
 	int vdepth = X509_STORE_CTX_get_error_depth(sctx);
 	const char *verrstr = NULL;
 
+#define COMPAT_APACHE_REVOCATION_CHECK
 #ifdef COMPAT_APACHE_REVOCATION_CHECK
 	if (ok != 1 && verr == X509_V_ERR_UNABLE_TO_GET_CRL) {
 		X509_STORE_CTX_set_error(sctx, X509_V_OK);
@@ -1776,7 +1777,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 			}
 		}
 
-		if (true) {
+		if (false) {
 			/*
 			 * NOTE: 
 			 * Seems revoked certs in

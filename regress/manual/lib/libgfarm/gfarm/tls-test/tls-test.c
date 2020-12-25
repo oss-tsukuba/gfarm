@@ -199,7 +199,8 @@ getopt_arg_dump()
 			is_mutual_authentication);
 	fprintf(stderr, "verify_only: %d\n", is_verify_only);
 	fprintf(stderr, "once: %d\n", is_once);
-	fprintf(stderr, "build_chain: %d\n", gfarm_ctxp->tls_build_certificate_chain);
+	fprintf(stderr, "build_chain: %d\n",
+		gfarm_ctxp->tls_build_chain_local);
 	fprintf(stderr, "interactive: %d\n", is_interactive);
 	fprintf(stderr, "buf_size: %d\n", buf_size);
 	fprintf(stderr, "debug_level: %d\n", debug_level);
