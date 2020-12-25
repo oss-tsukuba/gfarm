@@ -13,7 +13,8 @@
 #define MIN_PORT_NUMBER 1024
 #define LISTEN_BACKLOG 64
 #define DECIMAL_NUMBER 10
-#define MAX_BUF_SIZE 67108864
+//#define MAX_BUF_SIZE 67108864
+#define MAX_BUF_SIZE 1073741824
 
 static int debug_level = 0;
 static int buf_size = 65536;
@@ -21,7 +22,7 @@ static bool is_server = false;
 static bool is_mutual_authentication = false;
 static bool is_verify_only = false;
 static bool is_once = false;
-static bool is_interactive = true;
+static bool is_interactive = false;
 static char *portnum = "12345";
 static char *ipaddr = "127.0.0.1";
 
@@ -84,7 +85,7 @@ usage()
 		"\t--verify_only\n"
 		"\t--once\n"
 		"\t--build_chain\n"
-		"\t--not_interactive\n"
+		"\t--interactive\n"
 		"\t--buf_size\n"
 		"\t--debug_level\n");
 	return;
@@ -234,7 +235,7 @@ prologue(int argc, char **argv)
 		{"verify_only", 0, NULL, 12},
 		{"once", 0, NULL, 13},
 		{"build_chain", 0, NULL, 14},
-		{"not_interactive", 0, NULL, 15},
+		{"interactive", 0, NULL, 15},
 		{"buf_size", 1, NULL, 16},
 		{NULL, 0, NULL, 0}
 	};
@@ -304,7 +305,7 @@ prologue(int argc, char **argv)
 			gfarm_ctxp->tls_build_certificate_chain = 1;
 			break;
 		case 15:
-			is_interactive = false;
+			is_interactive = true;
 			break;
 		case 16:
 			if ((string_to_int(optarg,
@@ -366,21 +367,23 @@ do_write_read()
 {
 	int urandom_fd;
 	int ret = 1;
-
 	int r_size = -1;
 	int w_size = -1;
+	int r_size_from_urandom = 0;
 	int total_r_size = 0;
 	int total_w_size = 0;
+	const int max_w_size = 16384;
 	char buf[buf_size], another_buf[buf_size];
 	gfarm_error_t gerr = GFARM_ERR_UNKNOWN;
 
 	errno = 0;
 	if ((urandom_fd = open("/dev/urandom", O_RDONLY)) > -1) {
-		while(total_r_size < sizeof(buf)) {
+		while(r_size_from_urandom < sizeof(buf)) {
 			errno = 0;
-			r_size = read(urandom_fd, buf + total_r_size, sizeof(buf) - total_r_size);
+			r_size = read(urandom_fd, buf + r_size_from_urandom,
+					sizeof(buf) - r_size_from_urandom);
 			if (errno > -1) {
-				total_r_size += r_size;
+				r_size_from_urandom += r_size;
 			} else {
 				perror("read");
 				goto done;
@@ -389,102 +392,101 @@ do_write_read()
 
 		int debug_buf_in = 0;
 		if (debug_level > 10000) {
-			fprintf(stderr, "buf:%c, total_rsize:%d, sizeof(buf):%ld\n",
-					buf[debug_buf_in], total_r_size, sizeof(buf));
+			fprintf(stderr, "buf:%c, r_size_from_urandom:%d, "
+					"sizeof(buf):%ld\n",
+					buf[debug_buf_in], r_size_from_urandom,
+					sizeof(buf));
 		}
 
-		while (total_w_size < total_r_size) {
-			gerr = tls_session_write(tls_ctx, buf + total_w_size, total_r_size - total_w_size,
-				&w_size);
+		while (total_w_size < r_size_from_urandom ||
+				total_r_size < r_size_from_urandom) {
+			if (r_size_from_urandom - total_w_size > max_w_size) {
+				gerr = tls_session_write(tls_ctx,
+					buf + total_w_size,
+					max_w_size,
+					&w_size);
+			} else {
+				gerr = tls_session_write(tls_ctx,
+					buf + total_w_size,
+					r_size_from_urandom - total_w_size,
+					&w_size);
+			}
 
 			if (gerr == GFARM_ERR_NO_ERROR) {
 				total_w_size += w_size;
-				if (debug_level > 10000) {
-					fprintf(stderr, "wsize:%d, total_r_size:%d, total_w_size:%d\n",
-							w_size, total_r_size, total_w_size);
-				}
 			} else {
 				gflog_tls_error(GFARM_MSG_UNFIXED,
 					"SSL write failure: %s",
 						gfarm_error_string(gerr));
 				goto teardown;
 			}
-		}
 
-		if (debug_level > 10000) {
-			fprintf(stderr, "first write. buf:%c\n", buf[debug_buf_in]);
-		}
-
-		total_r_size = 0;
-		while (total_r_size < total_w_size) {
-			gerr = tls_session_read(tls_ctx, another_buf + total_r_size, sizeof(another_buf) - total_r_size,
+			gerr = tls_session_read(tls_ctx,
+					another_buf + total_r_size,
+					sizeof(another_buf) - total_r_size,
 					&r_size);
-			if (gerr == GFARM_ERR_NO_ERROR) {
+			if (gerr == GFARM_ERR_NO_ERROR && w_size == r_size) {
 				total_r_size += r_size;
-				if (debug_level > 10000) {
-					fprintf(stderr, "rsize:%d, total_w_size:%d, total_r_size:%d\n",
-							r_size, total_w_size, total_r_size);
-				}
 			} else {
 				gflog_tls_error(GFARM_MSG_UNFIXED,
 					"SSL read failure: %s",
 						gfarm_error_string(gerr));
 				goto teardown;
 			}
+			if (debug_level > 10000) {
+				fprintf(stderr, "w_size:%d, r_size:%d, "
+					"total_w_size:%d, total_r_size:%d\n",
+					w_size, r_size,
+					total_w_size, total_r_size);
+			}
 		}
 
 		if (debug_level > 10000) {
-			fprintf(stderr, "first read. buf:%c\n", buf[debug_buf_in]);
+			fprintf(stderr, "first write-read. buf:%c\n",
+					buf[debug_buf_in]);
 		}
 
 		total_w_size = 0;
-		while (total_w_size < total_r_size) {
-			gerr = tls_session_write(tls_ctx, another_buf + total_w_size, total_r_size - total_w_size,
-				&w_size);
+		total_r_size = 0;
+		while (total_w_size < r_size_from_urandom ||
+				total_r_size < r_size_from_urandom) {
+			if (r_size_from_urandom - total_w_size > max_w_size) {
+				gerr = tls_session_write(tls_ctx,
+						another_buf + total_w_size,
+						max_w_size,
+						&w_size);
+			} else {
+				gerr = tls_session_write(tls_ctx,
+					another_buf + total_w_size,
+					r_size_from_urandom - total_w_size,
+					&w_size);
+			}
+
 			if (gerr == GFARM_ERR_NO_ERROR) {
 				total_w_size += w_size;
-				if (debug_level > 10000) {
-					fprintf(stderr, "wsize:%d, total_r_size:%d, total_w_size:%d\n",
-							w_size, total_r_size, total_w_size);
-				}
 			} else {
 				gflog_tls_error(GFARM_MSG_UNFIXED,
 					"SSL write failure: %s",
 						gfarm_error_string(gerr));
 				goto teardown;
 			}
-		}
 
-		if (debug_level > 10000) {
-			fprintf(stderr, "second write. buf:%c\n", buf[debug_buf_in]);
-		}
-
-		total_r_size = 0;
-		int memcmp_result;
-		while (total_r_size < total_w_size) {
-			gerr = tls_session_read(tls_ctx, another_buf + total_r_size, sizeof(another_buf) - total_r_size,
+			gerr = tls_session_read(tls_ctx,
+					another_buf + total_r_size,
+					sizeof(another_buf) - total_r_size,
 					&r_size);
-			if (gerr == GFARM_ERR_NO_ERROR) {
+			if (gerr == GFARM_ERR_NO_ERROR && w_size == r_size) {
 				total_r_size += r_size;
-				if (total_r_size == total_w_size) {
-					if (debug_level > 10000) {
-						fprintf(stderr, "buf:%c\n", buf[debug_buf_in]);
-					}
-					if ((memcmp_result = memcmp(buf, another_buf, sizeof(buf))) == 0) {
+				if (total_r_size == r_size_from_urandom &&
+					total_w_size == r_size_from_urandom) {
+					if (memcmp(buf, another_buf,
+							sizeof(buf)) == 0) {
 						ret = 0;
-						if (debug_level > 10000) {
-							fprintf(stderr, "memcmp ok\n");
+						if (debug_level >= 10000) {
+							fprintf(stderr,
+								"memcmp ok\n");
 						}
 					}
-
-					if (debug_level > 10000) {
-						fprintf(stderr, "result:%d, buf:%c, ano:%c\n",
-							memcmp_result, buf[debug_buf_in], another_buf[debug_buf_in]);
-					}
-				}
-				if (debug_level > 10000) {
-					fprintf(stderr, "rsize:%d, total_w_size:%d, total_r_size:%d\n",
-									r_size, total_w_size, total_r_size);
 				}
 			} else {
 				gflog_tls_error(GFARM_MSG_UNFIXED,
@@ -492,6 +494,18 @@ do_write_read()
 						gfarm_error_string(gerr));
 				goto teardown;
 			}
+			if (debug_level > 10000) {
+				fprintf(stderr, "w_size:%d, r_size:%d, "
+						"total_w_size:%d, "
+						"total_r_size:%d\n",
+						w_size, r_size,
+						total_w_size, total_r_size);
+			}
+		}
+
+		if (debug_level > 10000) {
+			fprintf(stderr, "second write-read. buf:%c\n",
+					buf[debug_buf_in]);
 		}
 
 	teardown:
