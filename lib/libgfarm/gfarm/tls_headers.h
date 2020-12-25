@@ -2,10 +2,6 @@
 
 #if defined(HAVE_TLS_1_3) && defined(IN_TLS_CORE)
 
-#ifdef TLS_TEST
-#define HAVE_CTXP_BUILD_CHAIN
-#endif /* TLS_TEST */
-
 
 
 #include <inttypes.h>
@@ -107,9 +103,7 @@ struct tls_test_ctx_struct {
 	char *tls_certificate_chain_file;
 	char *tls_key_file;
 	int tls_key_update;
-#ifdef HAVE_CTXP_BUILD_CHAIN
-	int tls_build_certificate_chain;
-#endif /* HAVE_CTXP_BUILD_CHAIN */
+	int tls_build_chain_local;
 	int network_receive_timeout;
 };
 typedef struct tls_test_ctx_struct *tls_test_ctx_p;
@@ -200,9 +194,7 @@ struct tls_session_ctx_struct {
 	bool is_verified_;
 	int cert_verify_callback_error_;
 	int cert_verify_result_error_;
-#ifdef HAVE_CTXP_BUILD_CHAIN
 	bool is_build_chain_;
-#endif /* HAVE_CTXP_BUILD_CHAIN */
 	size_t io_total_;	/* How many bytes transmitted */
 	size_t io_key_update_;	/* KeyUpdate water level (bytes) */
 	ssize_t keyupd_thresh_;	/* KeyUpdate threshold (bytes) */

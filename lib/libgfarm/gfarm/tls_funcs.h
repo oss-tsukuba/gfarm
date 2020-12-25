@@ -1250,13 +1250,13 @@ tls_verify_callback_body(int ok, X509_STORE_CTX *sctx)
 	int vdepth = X509_STORE_CTX_get_error_depth(sctx);
 	const char *verrstr = NULL;
 
-#if 1
+#ifdef COMPAT_APACHE_REVOCATION_CHECK
 	if (ok != 1 && verr == X509_V_ERR_UNABLE_TO_GET_CRL) {
 		X509_STORE_CTX_set_error(sctx, X509_V_OK);
 		verr = X509_V_OK;
 		ok = ret = 1;
 	}
-#endif
+#endif /* COMPAT_APACHE_REVOCATION_CHECK */
 	verrstr = X509_verify_cert_error_string(verr);
 
 	gflog_tls_error(GFARM_MSG_UNFIXED, "depth %d: error %d: '%s'",
@@ -1287,9 +1287,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 	char *ciphersuites = NULL;
 	char *tmp = NULL;
 
-#ifdef HAVE_CTXP_BUILD_CHAIN
 	bool is_build_chain = false;
-#endif /* HAVE_CTXP_BUILD_CHAIN */
 	char *cert_to_use = NULL;
 	EVP_PKEY *prvkey = NULL;
 	SSL_CTX *ssl_ctx = NULL;
@@ -1759,9 +1757,8 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 				goto bailout;
 			}
 
-#ifdef HAVE_CTXP_BUILD_CHAIN
 			is_build_chain =
-				(gfarm_ctxp->tls_build_certificate_chain == 1)
+				(gfarm_ctxp->tls_build_chain_local == 1)
 				? true : false;
 			if (is_build_chain == true) {
 				/*
@@ -1777,7 +1774,6 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 					goto bailout;
 				}
 			}
-#endif /* HAVE_CTXP_BUILD_CHAIN */
 		}
 
 		if (true) {
@@ -1838,9 +1834,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 		}
 		ctxret->prvkey_ = prvkey;
 		ctxret->ssl_ctx_ = ssl_ctx;
-#ifdef HAVE_CTXP_BUILD_CHAIN
 		ctxret->is_build_chain_ = is_build_chain;
-#endif /* HAVE_CTXP_BUILD_CHAIN */		
 		ctxret->cert_file_ = cert_file;
 		ctxret->cert_chain_file_ = cert_chain_file;
 		ctxret->prvkey_file_ = prvkey_file;
