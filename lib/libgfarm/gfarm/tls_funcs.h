@@ -533,6 +533,25 @@ static bool is_tls_runtime_initd = false;
 static void
 tls_runtime_init_once(void);
 
+static inline void
+tls_runtime_init_once_body(void)
+{
+	/*
+	 * XXX FIXME:
+	 *	Are option flags sufficient enough or too much?
+	 *	I'm not sure about it, hope it would be a OK.
+	 */
+	if (likely(OPENSSL_init_ssl(
+			OPENSSL_INIT_LOAD_SSL_STRINGS |
+			OPENSSL_INIT_LOAD_CRYPTO_STRINGS |
+			OPENSSL_INIT_NO_ADD_ALL_CIPHERS |
+			OPENSSL_INIT_NO_ADD_ALL_DIGESTS |
+			OPENSSL_INIT_ENGINE_ALL_BUILTIN,
+			NULL) == 1)) {
+		is_tls_runtime_initd = true;
+	}
+}
+
 static inline gfarm_error_t
 tls_session_runtime_initialize(void)
 {
@@ -560,6 +579,59 @@ tls_runtime_flush_error(void)
 /*
  * Private key loader
  */
+
+static inline int
+tty_passwd_callback_body(char *buf, int maxlen, int rwflag, void *u)
+{
+	int ret = 0;
+	tls_passwd_cb_arg_t arg = (tls_passwd_cb_arg_t)u;
+
+	(void)rwflag;
+
+	if (likely(arg != NULL)) {
+		char p[4096];
+		bool has_passwd_cache = is_valid_string(arg->pw_buf_);
+		bool do_passwd =
+			(has_passwd_cache == false &&
+			 arg->pw_buf_ != NULL &&
+			 arg->pw_buf_maxlen_ > 0) ?
+			true : false;
+
+		if (unlikely(do_passwd == true)) {
+			/*
+			 * Set a prompt
+			 */
+			if (is_valid_string(arg->filename_) == true) {
+				(void)snprintf(p, sizeof(p),
+					"Passphrase for \"%s\": ",
+					arg->filename_);
+			} else {
+				(void)snprintf(p, sizeof(p),
+					"Passphrase: ");
+			}
+		}
+		
+		tty_lock();
+		{
+			if (unlikely(do_passwd == true)) {
+				if (tty_get_passwd(arg->pw_buf_,
+					arg->pw_buf_maxlen_, p, &ret) ==
+					GFARM_ERR_NO_ERROR) {
+					goto copy_cache;
+				}
+			} else if (likely(has_passwd_cache == true)) {
+			copy_cache:
+				ret = snprintf(buf, maxlen, "%s",
+						arg->pw_buf_);
+			}
+		}
+		tty_unlock();
+	}
+
+	return (ret);
+
+}
+
 static inline gfarm_error_t
 tls_load_prvkey(const char *file, EVP_PKEY **keyptr)
 {
@@ -615,7 +687,7 @@ tls_load_prvkey(const char *file, EVP_PKEY **keyptr)
  * Cert files collector for acceptable certs list.
  */
 static inline gfarm_error_t
-tls_get_x509_name_stack_from_dir(const char *dir,
+scan_dir_for_x509_name(const char *dir,
 	STACK_OF(X509_NAME) *stack, int *nptr)
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
@@ -627,7 +699,7 @@ tls_get_x509_name_stack_from_dir(const char *dir,
 	int nadd = 0;
 
 	errno = 0;
-	if (unlikely(dir == NULL || stack == NULL || nptr == NULL ||
+	if (unlikely(dir == NULL || nptr == NULL ||
 		   (d = opendir(dir)) == NULL || errno != 0)) {
 		if (errno != 0) {
 			ret = gfarm_errno_to_error(errno);
@@ -644,6 +716,15 @@ tls_get_x509_name_stack_from_dir(const char *dir,
 	do {
 		errno = 0;
 		if (likely((de = readdir(d)) != NULL)) {
+			if ((de->d_name[0] == '.' && de->d_name[1] == '\0') ||
+				(de->d_name[0] == '.' && de->d_name[1] == '.'
+				 && de->d_name[2] == '\0')) {
+				continue;
+			}
+			if (stack == NULL) {
+				nadd++;
+				continue;
+			}
 			(void)snprintf(cert_file, sizeof(cert_file),
 				"%s/%s", dir, de->d_name);
 			errno = 0;
@@ -716,8 +797,16 @@ done:
 }
 
 static inline gfarm_error_t
+tls_get_x509_name_stack_from_dir(const char *dir,
+	STACK_OF(X509_NAME) *stack, int *nptr)
+{
+	return scan_dir_for_x509_name(dir, stack, nptr);
+}
+
+static inline gfarm_error_t
 tls_set_ca_path(SSL_CTX *ssl_ctx, tls_role_t role,
-	const char *ca_path, const char* acceptable_ca_path)
+	const char *ca_path, const char* acceptable_ca_path,
+	STACK_OF(X509_NAME) **trust_ca_list)
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 
@@ -740,6 +829,40 @@ tls_set_ca_path(SSL_CTX *ssl_ctx, tls_role_t role,
 	 *	SSL_CTX_set_client_CA_list(ctx, ca_list);
 	 */
 
+	/*
+	 * NOTE: And the above won't works since the CA list that
+	 *	server sent is just an advisory.
+	 *
+	 *	What we do is:
+	 *
+	 *	Making the ca_list and compare the x509_NAME in
+	 *	ca_list with peer cert one by one in verify callback
+	 *	func, for both the client and the server.
+	 *
+	 *	And, in case we WON'T do this, it is going to be a
+	 *	massive security problem since:
+	 *
+	 *	1) Sendig the CA list from server to client is easily
+	 *	ignored by client side. E.g.) Apache 2.4 sends the CA
+	 *	list in TLSv1.3 session, OpenSSL 1.1.1 s_client
+	 *	ignores it and send a complet chained cert which
+	 *	includes any certs not in the CA list sent by the
+	 *	server, the server accepts it and returns "200 OK."
+	 *
+	 *	2) Futhere more, any clients can send a complete
+	 *	chained certificate and servers won't reject it if the
+	 *	server has the root CA cert of the given chain in CA
+	 *	cert path.
+	 *
+	 *	3) In Gfarm, clients' end entity CN are the key for
+	 *	authorization and the CN could be easily acquireable
+	 *	by social hacking. If a malcious one somehow creates
+	 *	an intermediate CA which root CA is in servers' CA
+	 *	cert path, a cert having the CN could be forgeable for
+	 *	impersonation.
+	 */
+
+#ifndef HAVE_OPENSSL_3_0
 	if (likely(ssl_ctx != NULL && is_valid_string(ca_path) == true)) {
 		tls_runtime_flush_error();
 		if (unlikely(SSL_CTX_load_verify_locations(ssl_ctx,
@@ -801,6 +924,98 @@ tls_set_ca_path(SSL_CTX *ssl_ctx, tls_role_t role,
 	}
 
 done:
+	
+#else
+	X509_STORE *ch = NULL;
+	X509_STORE *ve = NULL;
+	const char *ve_path = (is_valid_string(acceptable_ca_path) == true) ?
+		acceptable_ca_path : ca_path;
+
+	if (trust_ca_list != NULL) {
+		*trust_ca_list = NULL;
+	}
+
+	/* chain */
+	tls_runtime_flush_error();
+	if (likely(ssl_ctx != NULL && is_valid_string(ca_path) == true &&
+		(ch = X509_STORE_new()) != NULL)) {
+		tls_runtime_flush_error();
+		if (likely(X509_STORE_load_path(ch, ca_path) == 1)) {
+			tls_runtime_flush_error();
+			if (likely(SSL_CTX_set0_chain_cert_store(
+					ssl_ctx, ch) == 1)) {
+				ret = GFARM_ERR_NO_ERROR;
+			} else {
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"Failed to set a CA chain path to a "
+					"SSL_CTX");
+				ret = GFARM_ERR_TLS_RUNTIME_ERROR;
+				goto done;
+			}
+		} else {
+			gflog_tls_error(GFARM_MSG_UNFIXED,
+				"Failed to load a CA cnain path");
+			ret = GFARM_ERR_TLS_RUNTIME_ERROR;
+			goto done;
+		}
+	} else {
+		if (ch == NULL) {
+			ret = GFARM_ERR_NO_MEMORY;
+			gflog_tls_error(GFARM_MSG_UNFIXED,
+				"Can't allocate a X509_STORE: %s",
+				gfarm_error_string(ret));
+		} else {
+			ret = GFARM_ERR_INVALID_ARGUMENT;
+		}
+		goto done;
+	}
+		
+	/* verify */
+	tls_runtime_flush_error();
+	if (likely(ssl_ctx != NULL && is_valid_string(ca_path) == true &&
+		(ve = X509_STORE_new()) != NULL)) {
+		tls_runtime_flush_error();
+		if (likely(X509_STORE_load_path(ve, ve_path) == 1)) {
+			tls_runtime_flush_error();
+			if (likely(SSL_CTX_set0_verify_cert_store(
+					ssl_ctx, ve) == 1)) {
+				ret = GFARM_ERR_NO_ERROR;
+			} else {
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"Failed to set a CA verify path to a "
+					"SSL_CTX");
+				ret = GFARM_ERR_TLS_RUNTIME_ERROR;
+				goto done;
+			}
+		} else {
+			gflog_tls_error(GFARM_MSG_UNFIXED,
+				"Failed to load a CA verify path");
+			ret = GFARM_ERR_TLS_RUNTIME_ERROR;
+			goto done;
+		}
+	} else {
+		if (ch == NULL) {
+			ret = GFARM_ERR_NO_MEMORY;
+			gflog_tls_error(GFARM_MSG_UNFIXED,
+				"Can't allocate a X509_STORE: %s",
+				gfarm_error_string(ret));
+		} else {
+			ret = GFARM_ERR_INVALID_ARGUMENT;
+		}
+		goto done;
+	}
+
+done:
+	if (unlikely(ret != GFARM_ERR_NO_ERROR)) {
+		if (ch != NULL) {
+			X509_STORE_free(ch);
+		}
+		if (ve != NULL) {
+			X509_STORE_free(ve);
+		}
+	}
+#endif /* ! HAVE_OPENSSL_3_0 */
+	
 	return (ret);
 }
 
@@ -812,9 +1027,12 @@ tls_set_revoke_path(SSL_CTX *ssl_ctx, const char *revoke_path)
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 	X509_STORE *store = NULL;
+	int nent = -1;
 
 	tls_runtime_flush_error();
 	if (likely(ssl_ctx != NULL &&
+		(ret = scan_dir_for_x509_name(revoke_path, NULL, &nent)) ==
+		GFARM_ERR_NO_ERROR && nent > 0 &&
 		(store = SSL_CTX_get_cert_store(ssl_ctx)) != NULL &&
 		is_valid_string(revoke_path) == true)) {
 		int st;
@@ -839,7 +1057,7 @@ tls_set_revoke_path(SSL_CTX *ssl_ctx, const char *revoke_path)
 				"Failed to set CRL path to an SSL_CTX.");
 			ret = GFARM_ERR_TLS_RUNTIME_ERROR;
 		}
-	} else {
+	} else if (ret != GFARM_ERR_NO_ERROR) {
 		if (tls_has_runtime_error() == true) {
 			gflog_tls_error(GFARM_MSG_UNFIXED,
 				"Failed to get current X509_STORE from "
@@ -948,6 +1166,20 @@ tls_session_setup_handle(tls_session_ctx_t ctx)
 			ret = GFARM_ERR_NO_ERROR;
 		}
 
+		if (ret == GFARM_ERR_NO_ERROR) {
+			/*
+			 * Set a verify callback user arg.
+			 */
+			tls_runtime_flush_error();
+			osst = SSL_set_app_data(ssl, ctx);
+			if (osst != 1) {
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"Failed to set an arg for the verify "
+					"callback");
+				ret = GFARM_ERR_TLS_RUNTIME_ERROR;
+			}
+		}
+
 #if 0
 		/*
 		 * XXX FIXME:
@@ -1001,6 +1233,39 @@ done:
 }
 
 /*
+ * Certificate verification callback
+ */
+
+static inline int
+tls_verify_callback_body(int ok, X509_STORE_CTX *sctx)
+{
+	int ret = ok;
+#if 0
+	SSL *ssl = X509_STORE_CTX_get_ex_data(sctx,
+			SSL_get_ex_data_X509_STORE_CTX_idx());
+	tls_session_ctx_t *ctx = (ssl != NULL) ?
+		(tls_session_ctx_t *)SSL_get_app_data(ssl) : NULL;
+#endif
+	int verr = X509_STORE_CTX_get_error(sctx);
+	int vdepth = X509_STORE_CTX_get_error_depth(sctx);
+	const char *verrstr = NULL;
+
+#if 1
+	if (ok != 1 && verr == X509_V_ERR_UNABLE_TO_GET_CRL) {
+		X509_STORE_CTX_set_error(sctx, X509_V_OK);
+		verr = X509_V_OK;
+		ok = ret = 1;
+	}
+#endif
+	verrstr = X509_verify_cert_error_string(verr);
+
+	gflog_tls_error(GFARM_MSG_UNFIXED, "depth %d: error %d: '%s'",
+		vdepth, verr, verrstr);
+	
+	return ret;
+}
+
+/*
  * Constructor
  */
 static inline gfarm_error_t
@@ -1022,6 +1287,9 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 	char *ciphersuites = NULL;
 	char *tmp = NULL;
 
+#ifdef HAVE_CTXP_BUILD_CHAIN
+	bool is_build_chain = false;
+#endif /* HAVE_CTXP_BUILD_CHAIN */
 	char *cert_to_use = NULL;
 	EVP_PKEY *prvkey = NULL;
 	SSL_CTX *ssl_ctx = NULL;
@@ -1320,7 +1588,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 	}
 	if (likely(ssl_ctx != NULL)) {
 		int osst;
-
+		
 		/*
 		 * Clear cert chain for our sanity.
 		 */
@@ -1365,7 +1633,8 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 	(SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT | \
 	 SSL_VERIFY_CLIENT_ONCE)
 				SSL_CTX_set_verify(ssl_ctx,
-					SERVER_MUTUAL_VERIFY_FLAGS, NULL);
+					SERVER_MUTUAL_VERIFY_FLAGS,
+					tls_verify_callback);
 #undef SERVER_MUTUAL_VERIFY_FLAGS
 			} else {
 				SSL_CTX_set_verify(ssl_ctx,
@@ -1376,7 +1645,8 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 				VERIFY_DEPTH);
 #define CLIENT_VERIFY_FLAGS					\
 	(SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT)
-			SSL_CTX_set_verify(ssl_ctx, CLIENT_VERIFY_FLAGS, NULL);
+			SSL_CTX_set_verify(ssl_ctx, CLIENT_VERIFY_FLAGS,
+				tls_verify_callback);
 #undef CLIENT_VERIFY_FLAGS
 			if (do_mutual_auth == true) {
 				SSL_CTX_set_post_handshake_auth(ssl_ctx, 1);
@@ -1408,7 +1678,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 		 * Set CA path
 		 */
 		ret = tls_set_ca_path(ssl_ctx, role,
-			ca_path, acceptable_ca_path);
+			ca_path, acceptable_ca_path, NULL);
 		if (unlikely(ret != GFARM_ERR_NO_ERROR)) {
 			goto bailout;
 		}
@@ -1423,7 +1693,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 				goto bailout;
 			}
 		}
-		
+
 		if (need_self_cert == true) {
 			/*
 			 * Load a cert into the SSL_CTX
@@ -1489,11 +1759,14 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 				goto bailout;
 			}
 
-#if defined(TLS_TEST) && defined(HAVE_CTXP_BUILD_CHAIN)
-			/*
-			 * OK, one more magic.
-			 */
-			if (gfarm_ctxp->tls_build_certificate_chain == 1) {
+#ifdef HAVE_CTXP_BUILD_CHAIN
+			is_build_chain =
+				(gfarm_ctxp->tls_build_certificate_chain == 1)
+				? true : false;
+			if (is_build_chain == true) {
+				/*
+				 * Build a complete cert chain locally.
+				 */
 				tls_runtime_flush_error();
 				osst = SSL_CTX_build_cert_chain(ssl_ctx, 0);
 				if (unlikely(osst != 1)) {
@@ -1504,7 +1777,33 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 					goto bailout;
 				}
 			}
-#endif /* TLS_TEST && HAVE_CTXP_BUILD_CHAIN */
+#endif /* HAVE_CTXP_BUILD_CHAIN */
+		}
+
+		if (true) {
+			/*
+			 * NOTE: 
+			 * Seems revoked certs in
+			 * tls_ca_certificate_path should be
+			 * rejected. openssl s_{client|server} does
+			 * following for this.
+			 */
+			X509_VERIFY_PARAM *vpm =
+				SSL_CTX_get0_param(ssl_ctx);
+			if (likely(vpm != NULL)) {
+				tls_runtime_flush_error();
+				osst = X509_VERIFY_PARAM_set_flags(vpm,
+					X509_V_FLAG_CRL_CHECK |
+					X509_V_FLAG_CRL_CHECK_ALL);
+				if (unlikely(osst != 1)) {
+					gflog_tls_error(GFARM_MSG_UNFIXED,
+						"Failed to set CRL check bits "
+						"to a X509_VERIFY_PARAM");
+					ret = GFARM_ERR_TLS_RUNTIME_ERROR;
+					X509_VERIFY_PARAM_free(vpm);
+					goto bailout;
+				}
+			}
 		}
 
 	} else {
@@ -1520,14 +1819,28 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 	ctxret = (tls_session_ctx_t)malloc(
 		sizeof(struct tls_session_ctx_struct));
 	if (likely(ctxret != NULL)) {
+		tls_runtime_flush_error();
+
 		(void)memset(ctxret, 0,
 			sizeof(struct tls_session_ctx_struct));
 		ctxret->role_ = role;
 		ctxret->do_mutual_auth_ = do_mutual_auth;
-		ctxret->keyupd_thresh_ = gfarm_ctxp->tls_key_update;
+		if (gfarm_ctxp->tls_key_update > 0) {
+#ifndef TLS_TEST
+#define TLS_KEY_UPDATE_THRESH	512 * 1024 * 1024;
+			ctxret->keyupd_thresh_ = TLS_KEY_UPDATE_THRESH;
+#undef TLS_KEY_UPDATE_THRESH
+#else
+			ctxret->keyupd_thresh_ = gfarm_ctxp->tls_key_update;
+#endif /* ! TLS_TEST */
+		} else {
+			ctxret->keyupd_thresh_ = 0;
+		}
 		ctxret->prvkey_ = prvkey;
 		ctxret->ssl_ctx_ = ssl_ctx;
-
+#ifdef HAVE_CTXP_BUILD_CHAIN
+		ctxret->is_build_chain_ = is_build_chain;
+#endif /* HAVE_CTXP_BUILD_CHAIN */		
 		ctxret->cert_file_ = cert_file;
 		ctxret->cert_chain_file_ = cert_chain_file;
 		ctxret->prvkey_file_ = prvkey_file;
@@ -1535,7 +1848,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 		ctxret->ca_path_ = ca_path;
 		ctxret->acceptable_ca_path_ = acceptable_ca_path;
 		ctxret->revoke_path_ = revoke_path;
-
+		
 		/*
 		 * All done.
 		 */
@@ -1785,10 +2098,6 @@ tls_session_verify(tls_session_ctx_t ctx, bool *is_verified)
 	X509 *p = NULL;
 	X509_NAME *pn = NULL;
 
-	/*
-	(res = SSL_get_verify_result(ssl)) == X509_V_OK
-	*/
-
 	if (likely(ctx != NULL && (ssl = ctx->ssl_) != NULL)) {
 		/*
 		 * No matter verified or not, get a peer cert.
@@ -1848,10 +2157,21 @@ tls_session_verify(tls_session_ctx_t ctx, bool *is_verified)
 
 	if  (ssl != NULL) {
 		bool v;
+		int vres;
 
 		tls_runtime_flush_error();
-		v = (SSL_get_verify_result(ssl) == X509_V_OK) ?
-			true : false;
+		vres = SSL_get_verify_result(ssl);
+		if (vres == X509_V_OK) {
+			v = true;
+		} else {
+			v = false;
+			gflog_tls_error(GFARM_MSG_UNFIXED,
+				"Certificate verification failed: %s",
+				X509_verify_cert_error_string(vres));
+			ret = ctx->last_gfarm_error_ = 
+				GFARM_ERRMSG_TLS_CERT_VERIFIY_FAILURE;
+		}
+		ctx->cert_verify_result_error_ = vres;
 		ctx->is_verified_ = v;
 		if (is_verified != NULL) {
 			*is_verified = v;
@@ -1885,7 +2205,7 @@ tls_session_establish(tls_session_ctx_t ctx, int fd)
 			goto bailout;
 		}
 		ssl = ctx->ssl_;
-
+		
 		tls_runtime_flush_error();
 		if (likely(SSL_set_fd(ssl, fd) == 1)) {
 			int st;
@@ -1898,9 +2218,8 @@ tls_session_establish(tls_session_ctx_t ctx, int fd)
 		retry:
 			errno = 0;
 			tls_runtime_flush_error();
-			(void)SSL_get_error(ssl, 1);
 			st = p(ssl);
-			ssl_err = SSL_get_error(ssl, 1);
+			ssl_err = SSL_get_error(ssl, st);
 			do_cont = tls_session_io_continuable(
 					ssl_err, ctx, false);
 			if (likely(st == 1 && ssl_err == SSL_ERROR_NONE)) {
@@ -2044,7 +2363,6 @@ tls_session_read(tls_session_ctx_t ctx, void *buf, int len,
 		*actual_io_bytes = 0;
 	retry:
 		errno = 0;
-		(void)SSL_get_error(ssl, 1);
 		n = SSL_read(ssl, buf, len);
 		/*
 		 * NOTE:
@@ -2052,19 +2370,14 @@ tls_session_read(tls_session_ctx_t ctx, void *buf, int len,
 		 *	TLS stream, check SSL_ERROR_ for the session
 		 *	continuity.
 		 */
-		ssl_err = SSL_get_error(ssl, 1);
+		ssl_err = SSL_get_error(ssl, n);
 		continuable = tls_session_io_continuable(ssl_err, ctx, false);
-		if (likely(n >= 0 && ssl_err == SSL_ERROR_NONE)) {
+		if (likely(n > 0 && ssl_err == SSL_ERROR_NONE)) {
 			ctx->last_gfarm_error_ = GFARM_ERR_NO_ERROR;
 			ctx->last_ssl_error_ = ssl_err;
 			*actual_io_bytes = n;
-			if (n > 0) {
-				ctx->io_total_ += n;
-				ret = tls_session_update_key(ctx, n);
-			} else {
-				ret = ctx->last_gfarm_error_ =
-					GFARM_ERR_NO_ERROR;
-			}
+			ctx->io_total_ += n;
+			ret = tls_session_update_key(ctx, n);
 		} else {
 			if (likely(continuable == true)) {
 				goto retry;
@@ -2106,7 +2419,6 @@ tls_session_write(tls_session_ctx_t ctx, const void *buf, int len,
 		*actual_io_bytes = 0;
 	retry:
 		errno = 0;
-		(void)SSL_get_error(ssl, 1);
 		n = SSL_write(ssl, buf, len);
 		/*
 		 * NOTE:
@@ -2114,19 +2426,14 @@ tls_session_write(tls_session_ctx_t ctx, const void *buf, int len,
 		 *	TLS stream, check SSL_ERROR_ for the session
 		 *	continuity.
 		 */
-		ssl_err = SSL_get_error(ssl, 1);
+		ssl_err = SSL_get_error(ssl, n);
 		continuable = tls_session_io_continuable(ssl_err, ctx, false);
-		if (likely(n >= 0 && ssl_err == SSL_ERROR_NONE)) {
+		if (likely(n > 0 && ssl_err == SSL_ERROR_NONE)) {
 			ctx->last_gfarm_error_ = GFARM_ERR_NO_ERROR;
 			ctx->last_ssl_error_ = ssl_err;
 			*actual_io_bytes = n;
-			if (n > 0) {
-				ctx->io_total_ += n;
-				ret = tls_session_update_key(ctx, n);
-			} else {
-				ret = ctx->last_gfarm_error_ =
-					GFARM_ERR_NO_ERROR;
-			}
+			ctx->io_total_ += n;
+			ret = tls_session_update_key(ctx, n);
 		} else {
 			if (likely(continuable == true)) {
 				goto retry;
@@ -2177,7 +2484,6 @@ tls_session_shutdown(tls_session_ctx_t ctx, int fd, bool do_close)
 		} else if (ctx->got_fatal_ssl_error_ == true) {
 			st = 1;
 		} else {
-			(void)SSL_get_error(ssl, 1);
 			st = SSL_shutdown(ssl);
 		}
 		if (st == 1) {

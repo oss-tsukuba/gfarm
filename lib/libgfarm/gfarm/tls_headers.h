@@ -2,6 +2,10 @@
 
 #if defined(HAVE_TLS_1_3) && defined(IN_TLS_CORE)
 
+#ifdef TLS_TEST
+#define HAVE_CTXP_BUILD_CHAIN
+#endif /* TLS_TEST */
+
 
 
 #include <inttypes.h>
@@ -34,6 +38,7 @@
 #include <openssl/ssl.h>
 #include <openssl/rand.h>
 #include <openssl/err.h>
+#include <openssl/x509_vfy.h>
 
 #include <gfarm/gflog.h>
 #include <gfarm/error.h>
@@ -191,12 +196,20 @@ struct tls_session_ctx_struct {
 
 	tls_role_t role_;
 	bool do_mutual_auth_;
+	int n_cert_chain_;
 	bool is_verified_;
+	int cert_verify_callback_error_;
+	int cert_verify_result_error_;
+#ifdef HAVE_CTXP_BUILD_CHAIN
+	bool is_build_chain_;
+#endif /* HAVE_CTXP_BUILD_CHAIN */
 	size_t io_total_;	/* How many bytes transmitted */
 	size_t io_key_update_;	/* KeyUpdate water level (bytes) */
 	ssize_t keyupd_thresh_;	/* KeyUpdate threshold (bytes) */
-	
+
 	SSL_CTX *ssl_ctx_;	/* API alloc'd */
+	STACK_OF(X509_NAME) *trusted_certs_;
+				/* API alloc'd */
 	EVP_PKEY *prvkey_;	/* API alloc'd */
 	char *peer_dn_;		/* malloc'd */
 
@@ -257,6 +270,12 @@ static pthread_mutex_t pwd_cb_lock = PTHREAD_MUTEX_INITIALIZER;
 
 static int
 tty_passwd_callback(char *buf, int maxlen, int rwflag, void *u);
+
+/*
+ * Verify callback
+ */
+static int
+tls_verify_callback(int ok, X509_STORE_CTX *sctx);
 
 #else
 

@@ -15,71 +15,18 @@
 static void
 tls_runtime_init_once(void)
 {
-	/*
-	 * XXX FIXME:
-	 *	Are option flags sufficient enough or too much?
-	 *	I'm not sure about it, hope it would be a OK.
-	 */
-	if (likely(OPENSSL_init_ssl(
-			OPENSSL_INIT_LOAD_SSL_STRINGS |
-			OPENSSL_INIT_LOAD_CRYPTO_STRINGS |
-			OPENSSL_INIT_NO_ADD_ALL_CIPHERS |
-			OPENSSL_INIT_NO_ADD_ALL_DIGESTS |
-			OPENSSL_INIT_ENGINE_ALL_BUILTIN,
-			NULL) == 1)) {
-		is_tls_runtime_initd = true;
-	}
+	tls_runtime_init_once_body();
+}
+
+static int 
+tls_verify_callback(int ok, X509_STORE_CTX *sctx) {
+	return tls_verify_callback_body(ok, sctx);
 }
 
 static int
 tty_passwd_callback(char *buf, int maxlen, int rwflag, void *u)
 {
-	int ret = 0;
-	tls_passwd_cb_arg_t arg = (tls_passwd_cb_arg_t)u;
-
-	(void)rwflag;
-
-	if (likely(arg != NULL)) {
-		char p[4096];
-		bool has_passwd_cache = is_valid_string(arg->pw_buf_);
-		bool do_passwd =
-			(has_passwd_cache == false &&
-			 arg->pw_buf_ != NULL &&
-			 arg->pw_buf_maxlen_ > 0) ?
-			true : false;
-
-		if (unlikely(do_passwd == true)) {
-			/*
-			 * Set a prompt
-			 */
-			if (is_valid_string(arg->filename_) == true) {
-				(void)snprintf(p, sizeof(p),
-					"Passphrase for \"%s\": ",
-					arg->filename_);
-			} else {
-				(void)snprintf(p, sizeof(p),
-					"Passphrase: ");
-			}
-		}
-		
-		tty_lock();
-		{
-			if (unlikely(do_passwd == true)) {
-				if (tty_get_passwd(arg->pw_buf_,
-					arg->pw_buf_maxlen_, p, &ret) ==
-					GFARM_ERR_NO_ERROR) {
-					goto copy_cache;
-				}
-			} else if (likely(has_passwd_cache == true)) {
-			copy_cache:
-				ret = snprintf(buf, maxlen, "%s",
-						arg->pw_buf_);
-			}
-		}
-		tty_unlock();
-	}
-
-	return (ret);
+	return tty_passwd_callback_body(buf, maxlen, rwflag, u);
 }
 
 
@@ -277,6 +224,22 @@ gfp_xdr_tls_reset(struct gfp_xdr *conn)
 
 char *
 gfp_xdr_tls_initiator_dn(struct gfp_xdr *conn)
+{
+	tls_session_ctx_t ctx = gfp_xdr_cookie(conn);
+
+	return (ctx->peer_dn_);
+}
+
+char *
+gfp_xdr_tls_initiator_dn_oneline(struct gfp_xdr *conn)
+{
+	tls_session_ctx_t ctx = gfp_xdr_cookie(conn);
+
+	return (ctx->peer_dn_);
+}
+
+char *
+gfp_xdr_tls_initiator_dn_rfc2253(struct gfp_xdr *conn)
 {
 	tls_session_ctx_t ctx = gfp_xdr_cookie(conn);
 

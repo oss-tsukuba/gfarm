@@ -149,6 +149,8 @@ enum gfarm_errmsg {
 	GFARM_ERRMSG_TLS_PRIVATE_KEY_READ_FAILURE,
 	/* TLS invalid cipher. */
 	GFARM_ERRMSG_TLS_INVALID_CIPHER,
+	/* TLS certificate verification failure. */
+	GFARM_ERRMSG_TLS_CERT_VERIFIY_FAILURE,
 
 	GFARM_ERRMSG_END
 };

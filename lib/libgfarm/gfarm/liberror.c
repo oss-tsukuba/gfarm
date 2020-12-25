@@ -296,6 +296,8 @@ static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {
 	"TLS private key read failure.",
 	/* TLS invalid cipher. */
 	"TLS invalid cipher.",
+	/* TLS certificate verification failure. */
+	"TLS certificate verification failure.",
 };
 
 /*
