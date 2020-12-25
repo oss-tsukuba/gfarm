@@ -1248,7 +1248,16 @@ tls_verify_callback_body(int ok, X509_STORE_CTX *sctx)
 #endif
 	int verr = X509_STORE_CTX_get_error(sctx);
 	int vdepth = X509_STORE_CTX_get_error_depth(sctx);
-	const char *verrstr = X509_verify_cert_error_string(verr);
+	const char *verrstr = NULL;
+
+#if 1
+	if (ok != 1 && verr == X509_V_ERR_UNABLE_TO_GET_CRL) {
+		X509_STORE_CTX_set_error(sctx, X509_V_OK);
+		verr = X509_V_OK;
+		ok = ret = 1;
+	}
+#endif
+	verrstr = X509_verify_cert_error_string(verr);
 
 	gflog_tls_error(GFARM_MSG_UNFIXED, "depth %d: error %d: '%s'",
 		vdepth, verr, verrstr);
@@ -1771,7 +1780,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 #endif /* HAVE_CTXP_BUILD_CHAIN */
 		}
 
-		if (false) {
+		if (true) {
 			/*
 			 * NOTE: 
 			 * Seems revoked certs in
