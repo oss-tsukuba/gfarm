@@ -13,14 +13,15 @@
 #define MIN_PORT_NUMBER 1024
 #define LISTEN_BACKLOG 64
 #define DECIMAL_NUMBER 10
-#define BUF_SIZE 1024
+#define MAX_BUF_SIZE 67108864
 
-static int socketfd;
 static int debug_level = 0;
+static int buf_size = 65536;
 static bool is_server = false;
 static bool is_mutual_authentication = false;
 static bool is_verify_only = false;
 static bool is_once = false;
+static bool is_interactive = true;
 static char *portnum = "12345";
 static char *ipaddr = "127.0.0.1";
 
@@ -136,6 +137,8 @@ usage()
 		"\t--verify_only\n"
 		"\t--once\n"
 		"\t--build_chain\n"
+		"\t--not_interactive\n"
+		"\t--buf_size\n"
 		"\t--debug_level\n");
 	return;
 }
@@ -180,7 +183,7 @@ string_to_int(const char *str, int *result, int base)
 			*result = (int)retval_strtol;
 			ret = true;
 		} else {
-			fprintf(stderr, "out of integer range.\n");
+			fprintf(stderr, "out of int range.\n");
 		}
 	} else if (errno != 0) {
 		perror("strtol");
@@ -250,6 +253,9 @@ getopt_arg_dump()
 			is_mutual_authentication);
 	fprintf(stderr, "verify_only: %d\n", is_verify_only);
 	fprintf(stderr, "once: %d\n", is_once);
+	fprintf(stderr, "build_chain: %d\n", gfarm_ctxp->tls_build_certificate_chain);
+	fprintf(stderr, "interactive: %d\n", is_interactive);
+	fprintf(stderr, "buf_size: %d\n", buf_size);
 	fprintf(stderr, "debug_level: %d\n", debug_level);
 
 	return;
@@ -281,6 +287,8 @@ prologue(int argc, char **argv)
 		{"verify_only", 0, NULL, 12},
 		{"once", 0, NULL, 13},
 		{"build_chain", 0, NULL, 14},
+		{"not_interactive", 0, NULL, 15},
+		{"buf_size", 1, NULL, 16},
 		{NULL, 0, NULL, 0}
 	};
 
@@ -348,6 +356,22 @@ prologue(int argc, char **argv)
 		case 14:
 			gfarm_ctxp->tls_build_certificate_chain = 1;
 			break;
+		case 15:
+			is_interactive = false;
+			break;
+		case 16:
+			if ((string_to_int(optarg,
+					&buf_size,
+					DECIMAL_NUMBER))) {
+				if (buf_size <= 0 || buf_size > MAX_BUF_SIZE) {
+					fprintf(stderr, "out of buf size. set default.\n");
+					buf_size = 65536;
+				}
+			} else {
+				fprintf(stderr,
+				"fail to set buf_size.\n");
+			}
+			break;
 		case 's':
 			is_server = true;
 			break;
@@ -391,20 +415,167 @@ prologue(int argc, char **argv)
 }
 
 static inline int
-run_server_process()
+do_write_read()
 {
-	int acceptfd, ret = 1;
+	int urandom_fd;
+	int ret = 1;
+
+	int r_size = -1;
+	int w_size = -1;
+	int total_r_size = 0;
+	int total_w_size = 0;
+	char buf[buf_size], another_buf[buf_size];
+	gfarm_error_t gerr = GFARM_ERR_UNKNOWN;
+
+	errno = 0;
+	if ((urandom_fd = open("/dev/urandom", O_RDONLY)) > -1) {
+		while(total_r_size < sizeof(buf)) {
+			errno = 0;
+			r_size = read(urandom_fd, buf + total_r_size, sizeof(buf) - total_r_size);
+			if (errno > -1) {
+				total_r_size += r_size;
+			} else {
+				perror("read");
+				goto done;
+			}
+		}
+
+		int debug_buf_in = 0;
+		if (debug_level > 10000) {
+			fprintf(stderr, "buf:%c, total_rsize:%d, sizeof(buf):%ld\n",
+					buf[debug_buf_in], total_r_size, sizeof(buf));
+		}
+
+		while (total_w_size < total_r_size) {
+			gerr = tls_session_write(tls_ctx, buf + total_w_size, total_r_size - total_w_size,
+				&w_size);
+
+			if (gerr == GFARM_ERR_NO_ERROR) {
+				total_w_size += w_size;
+				if (debug_level > 10000) {
+					fprintf(stderr, "wsize:%d, total_r_size:%d, total_w_size:%d\n",
+							w_size, total_r_size, total_w_size);
+				}
+			} else {
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"SSL write failure: %s",
+						gfarm_error_string(gerr));
+				goto teardown;
+			}
+		}
+
+		if (debug_level > 10000) {
+			fprintf(stderr, "first write. buf:%c\n", buf[debug_buf_in]);
+		}
+
+		total_r_size = 0;
+		while (total_r_size < total_w_size) {
+			gerr = tls_session_read(tls_ctx, another_buf + total_r_size, sizeof(another_buf) - total_r_size,
+					&r_size);
+			if (gerr == GFARM_ERR_NO_ERROR) {
+				total_r_size += r_size;
+				if (debug_level > 10000) {
+					fprintf(stderr, "rsize:%d, total_w_size:%d, total_r_size:%d\n",
+							r_size, total_w_size, total_r_size);
+				}
+			} else {
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"SSL read failure: %s",
+						gfarm_error_string(gerr));
+				goto teardown;
+			}
+		}
+
+		if (debug_level > 10000) {
+			fprintf(stderr, "first read. buf:%c\n", buf[debug_buf_in]);
+		}
+
+		total_w_size = 0;
+		while (total_w_size < total_r_size) {
+			gerr = tls_session_write(tls_ctx, another_buf + total_w_size, total_r_size - total_w_size,
+				&w_size);
+			if (gerr == GFARM_ERR_NO_ERROR) {
+				total_w_size += w_size;
+				if (debug_level > 10000) {
+					fprintf(stderr, "wsize:%d, total_r_size:%d, total_w_size:%d\n",
+							w_size, total_r_size, total_w_size);
+				}
+			} else {
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"SSL write failure: %s",
+						gfarm_error_string(gerr));
+				goto teardown;
+			}
+		}
+
+		if (debug_level > 10000) {
+			fprintf(stderr, "second write. buf:%c\n", buf[debug_buf_in]);
+		}
+
+		total_r_size = 0;
+		int memcmp_result;
+		while (total_r_size < total_w_size) {
+			gerr = tls_session_read(tls_ctx, another_buf + total_r_size, sizeof(another_buf) - total_r_size,
+					&r_size);
+			if (gerr == GFARM_ERR_NO_ERROR) {
+				total_r_size += r_size;
+				if (total_r_size == total_w_size) {
+					if (debug_level > 10000) {
+						fprintf(stderr, "buf:%c\n", buf[debug_buf_in]);
+					}
+					if ((memcmp_result = memcmp(buf, another_buf, sizeof(buf))) == 0) {
+						ret = 0;
+						if (debug_level > 10000) {
+							fprintf(stderr, "memcmp ok\n");
+						}
+					}
+
+					if (debug_level > 10000) {
+						fprintf(stderr, "result:%d, buf:%c, ano:%c\n",
+							memcmp_result, buf[debug_buf_in], another_buf[debug_buf_in]);
+					}
+				}
+				if (debug_level > 10000) {
+					fprintf(stderr, "rsize:%d, total_w_size:%d, total_r_size:%d\n",
+									r_size, total_w_size, total_r_size);
+				}
+			} else {
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"SSL read failure: %s",
+						gfarm_error_string(gerr));
+				goto teardown;
+			}
+		}
+
+	teardown:
+		gerr = tls_session_clear_ctx(tls_ctx);
+		if (gerr != GFARM_ERR_NO_ERROR) {
+			gflog_tls_error(GFARM_MSG_UNFIXED,
+				"SSL reset failure: %s",
+				gfarm_error_string(gerr));
+		}
+	done:
+		close(urandom_fd);
+	} else {
+		perror("open");
+	}
+
+	return ret;
+}
+
+static inline int
+run_server_process(int socketfd)
+{
+	int acceptfd, ret;
 	struct addrinfo clientaddr;
 	clientaddr.ai_addrlen = sizeof(clientaddr.ai_addr);
 
 	while (true) {
+		ret = 1;
 		errno = 0;
 		if ((acceptfd = accept(socketfd,
 					clientaddr.ai_addr,
 					&clientaddr.ai_addrlen)) > -1) {
-			int r_size = -1;
-			int w_size = -1;
-			char buf[BUF_SIZE];
 			gfarm_error_t gerr = GFARM_ERR_UNKNOWN;
 
 			if ((gerr = tls_session_establish(tls_ctx,
@@ -419,71 +590,80 @@ run_server_process()
 			if (debug_level > 0) {
 				fprintf(stderr, "TLS session established.\n");
 			}
-
 			if (is_verify_only) {
 				ret = 0;
-				goto loop_end;
-			}
-	
-			gerr = tls_session_read(tls_ctx, buf, sizeof(buf),
-					&r_size);
-			if (gerr == GFARM_ERR_NO_ERROR) {
-				if (r_size > 0) {
-					buf[r_size] = '\0';
-					if (debug_level > 0) {
-						fprintf(stderr,
-							"got: '%s'\n", buf);
-					}
-				} else if (r_size == 0) {
-					if (debug_level > 0) {
-						fprintf(stderr,
-							"got 0 byte.\n");
-					}
-					goto teardown;
-				}
-			} else {
-				gflog_tls_error(GFARM_MSG_UNFIXED,
-					"SSL read failure: %s",
-					gfarm_error_string(gerr));
-			teardown:
-				gerr = tls_session_clear_ctx(tls_ctx);
-				if (gerr == GFARM_ERR_NO_ERROR || 
-					r_size == 0) {
-					goto loop_end;
-				} else {
-					gflog_tls_error(GFARM_MSG_UNFIXED,
-						"SSL reset failure: %s",
-						gfarm_error_string(gerr));
-					break;
-				}
+				goto loopend;
 			}
 
-			buf[r_size] = '\0';
-			gerr = tls_session_write(tls_ctx, buf, r_size,
-					 &w_size);
-			if (gerr == GFARM_ERR_NO_ERROR && w_size == r_size) {
-				goto teardown2;
+			if (!is_interactive) {
+				ret = do_write_read();
+				if (ret == 1) {
+					is_once = true;
+				}
 			} else {
-				gflog_tls_error(GFARM_MSG_UNFIXED,
-					"SSL write failure: %s",
-					gfarm_error_string(gerr));
-			teardown2:
-				gerr = tls_session_clear_ctx(tls_ctx);
+				int r_size = -1;
+				int w_size = -1;
+				char buf[buf_size];
+
+				gerr = tls_session_read(tls_ctx, buf, sizeof(buf),
+						&r_size);
 				if (gerr == GFARM_ERR_NO_ERROR) {
-					goto loop_end;
+					if (r_size > 0) {
+						buf[r_size] = '\0';
+						if (debug_level > 0) {
+							fprintf(stderr,
+								"got: '%s'\n", buf);
+						}
+					} else if (r_size == 0) {
+						if (debug_level > 0) {
+							fprintf(stderr,
+								"got 0 byte.\n");
+						}
+						goto teardown;
+					}
 				} else {
 					gflog_tls_error(GFARM_MSG_UNFIXED,
-						"SSL reset failure: %s",
+						"SSL read failure: %s",
 						gfarm_error_string(gerr));
-					break;
+				teardown:
+					gerr = tls_session_clear_ctx(tls_ctx);
+					if (gerr == GFARM_ERR_NO_ERROR || 
+						r_size == 0) {
+						goto loopend;
+					} else {
+						gflog_tls_error(GFARM_MSG_UNFIXED,
+							"SSL reset failure: %s",
+							gfarm_error_string(gerr));
+						break;
+					}
+				}
+
+				buf[r_size] = '\0';
+				gerr = tls_session_write(tls_ctx, buf, r_size,
+						&w_size);
+				if (gerr == GFARM_ERR_NO_ERROR && w_size == r_size) {
+					goto teardown2;
+				} else {
+					gflog_tls_error(GFARM_MSG_UNFIXED,
+						"SSL write failure: %s",
+						gfarm_error_string(gerr));
+				teardown2:
+					gerr = tls_session_clear_ctx(tls_ctx);
+					if (gerr == GFARM_ERR_NO_ERROR) {
+						goto loopend;
+					} else {
+						gflog_tls_error(GFARM_MSG_UNFIXED,
+							"SSL reset failure: %s",
+							gfarm_error_string(gerr));
+						break;
+					}
 				}
 			}
 		} else {
 			perror("accept");
-			break;
 		}
 
-	loop_end:
+	loopend:
 		if (is_once) {
 			break;
 		}
@@ -495,6 +675,7 @@ run_server_process()
 static inline int
 run_server()
 {
+	int socketfd;
 	int optval = 1, ret = 1;
 
 	if ((socketfd = socket(res->ai_family, res->ai_socktype, 0)) > -1) {
@@ -504,7 +685,7 @@ run_server()
 			if (bind(socketfd, res->ai_addr,
 					res->ai_addrlen) > -1) {
 				if (listen(socketfd, LISTEN_BACKLOG) > -1) {
-					ret = run_server_process();
+					ret = run_server_process(socketfd);
 				} else {
 					perror("listen");
 				}
@@ -522,13 +703,10 @@ run_server()
 }
 
 static inline int
-run_client_process()
+run_client_process(int socketfd)
 {
 	int ret = 1;
-	char buf[BUF_SIZE];
 	gfarm_error_t gerr = GFARM_ERR_UNKNOWN;
-	int r_size = -1;
-	int w_size = -1;
 
 	if ((gerr = tls_session_establish(tls_ctx, socketfd)) !=
 		GFARM_ERR_NO_ERROR) {
@@ -548,47 +726,54 @@ run_client_process()
 		goto done;
 	}
 
-	errno = 0;
-	if (fgets(buf, sizeof(buf) -1, stdin) != NULL) {
-		r_size = strlen(buf);
+	if (!is_interactive) {
+		ret = do_write_read();
+	} else {
+		char buf[buf_size];
+		int r_size = -1;
+		int w_size = -1;
+
 		errno = 0;
-		gerr = tls_session_write(tls_ctx, buf, r_size, &w_size);
-		if (gerr != GFARM_ERR_NO_ERROR || w_size != r_size) {
-			gflog_tls_error(GFARM_MSG_UNFIXED,
-				"SSL write failure: %s",
-				gfarm_error_string(gerr));
-			gerr = tls_session_clear_ctx(tls_ctx);
-			if (gerr != GFARM_ERR_NO_ERROR) {
+		if (fgets(buf, sizeof(buf) -1, stdin) != NULL) {
+			r_size = strlen(buf);
+			errno = 0;
+			gerr = tls_session_write(tls_ctx, buf, r_size, &w_size);
+			if (gerr != GFARM_ERR_NO_ERROR || w_size != r_size) {
 				gflog_tls_error(GFARM_MSG_UNFIXED,
-					"SSL reset failure: %s",
+					"SSL write failure: %s",
 					gfarm_error_string(gerr));
+				gerr = tls_session_clear_ctx(tls_ctx);
+				if (gerr != GFARM_ERR_NO_ERROR) {
+					gflog_tls_error(GFARM_MSG_UNFIXED,
+						"SSL reset failure: %s",
+						gfarm_error_string(gerr));
+				}
+				goto done;
 			}
-			goto done;
-		}
 
-		gerr = tls_session_read(tls_ctx, buf, sizeof(buf), &r_size);
-		if (gerr == GFARM_ERR_NO_ERROR && r_size == w_size) {
-			buf[r_size] = '\0';
-			fprintf(stdout, "%s\n", buf);
-			fflush(stdout);
-			ret = 0;
-			goto teardown;
-		} else {
-			gflog_tls_error(GFARM_MSG_UNFIXED,
-				"SSL read failure: %s",
-					gfarm_error_string(gerr));
-		teardown:
-			gerr = tls_session_clear_ctx(tls_ctx);
-			if (gerr != GFARM_ERR_NO_ERROR) {
+			gerr = tls_session_read(tls_ctx, buf, sizeof(buf), &r_size);
+			if (gerr == GFARM_ERR_NO_ERROR && r_size == w_size) {
+				buf[r_size] = '\0';
+				fprintf(stdout, "%s\n", buf);
+				fflush(stdout);
+				ret = 0;
+				goto teardown;
+			} else {
 				gflog_tls_error(GFARM_MSG_UNFIXED,
-					"SSL reset failure: %s",
-					gfarm_error_string(gerr));
+					"SSL read failure: %s",
+						gfarm_error_string(gerr));
+			teardown:
+				gerr = tls_session_clear_ctx(tls_ctx);
+				if (gerr != GFARM_ERR_NO_ERROR) {
+					gflog_tls_error(GFARM_MSG_UNFIXED,
+						"SSL reset failure: %s",
+						gfarm_error_string(gerr));
+				}
 			}
+		} else if (debug_level > 0) {
+			fprintf(stderr, "fgets: Can't read string.\n");
 		}
-	} else if (debug_level > 0) {
-		fprintf(stderr, "fgets: Can't read string.\n");
 	}
-
 done:
 	return ret;
 }
@@ -596,11 +781,11 @@ done:
 static inline int
 run_client()
 {
-	int ret = 1;
+	int socketfd, ret = 1;
 	if ((socketfd = socket(res->ai_family, res->ai_socktype, 0)) > -1) {
 		if (connect(socketfd, res->ai_addr,
 			res->ai_addrlen) > -1) {
-			ret = run_client_process();
+			ret = run_client_process(socketfd);
 		} else {
 			perror("connect");
 		}
