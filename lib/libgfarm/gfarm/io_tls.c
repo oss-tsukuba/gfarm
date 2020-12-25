@@ -276,14 +276,6 @@ gfp_xdr_tls_reset(struct gfp_xdr *conn)
 }
 
 char *
-gfp_xdr_tls_initiator_dn(struct gfp_xdr *conn)
-{
-	tls_session_ctx_t ctx = gfp_xdr_cookie(conn);
-
-	return (ctx->peer_dn_);
-}
-
-char *
 gfp_xdr_tls_initiator_dn_oneline(struct gfp_xdr *conn)
 {
 	tls_session_ctx_t ctx = gfp_xdr_cookie(conn);
