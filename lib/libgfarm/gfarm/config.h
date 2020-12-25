@@ -89,7 +89,8 @@ extern enum gfarm_db_access_type gfarm_db_access_type;
 	GFARM_TLS_KEY_PATH_DEFAULT "/gfmd.key"
 #define GFARM_TLS_KEY_FILE_DEFAULT_FOR_GFSD \
 	GFARM_TLS_KEY_PATH_DEFAULT "/gfsd.key"
-#define GFARM_TLS_KEY_UPDATE_DEFAULT	1	/* enable */
+#define GFARM_TLS_KEY_UPDATE_DEFAULT		1	/* enable */
+#define GFARM_TLS_BUILD_CHAIN_LOCAL_DEFAULT	0	/* disable */
 
 extern int gfarm_xattr_size_limit;
 extern int gfarm_xmlattr_size_limit;
