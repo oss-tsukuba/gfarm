@@ -225,17 +225,15 @@ gfp_xdr_tls_reset(struct gfp_xdr *conn)
 char *
 gfp_xdr_tls_initiator_dn_oneline(struct gfp_xdr *conn)
 {
-	tls_session_ctx_t ctx = gfp_xdr_cookie(conn);
-
-	return (ctx->peer_dn_);
+	return (tls_session_peer_subjectdn_oneline(
+			((tls_session_ctx_t)(gfp_xdr_cookie(conn)))));
 }
 
 char *
 gfp_xdr_tls_initiator_dn_rfc2253(struct gfp_xdr *conn)
 {
-	tls_session_ctx_t ctx = gfp_xdr_cookie(conn);
-
-	return (ctx->peer_dn_);
+	return (tls_session_peer_subjectdn_rfc2253(
+			((tls_session_ctx_t)(gfp_xdr_cookie(conn)))));
 }
 
 

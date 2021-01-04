@@ -205,7 +205,8 @@ struct tls_session_ctx_struct {
 	STACK_OF(X509_NAME) *trusted_certs_;
 				/* API alloc'd */
 	EVP_PKEY *prvkey_;	/* API alloc'd */
-	char *peer_dn_;		/* malloc'd */
+	char *peer_dn_oneline_;	/* malloc'd */
+	char *peer_dn_rfc2253_;	/* malloc'd */
 
 	/*
 	 * gfarm_ctxp contents backup

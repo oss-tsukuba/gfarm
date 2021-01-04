@@ -1097,8 +1097,10 @@ tls_session_clear_handle(tls_session_ctx_t ctx, bool do_free)
 			ctx->last_gfarm_error_ = GFARM_ERR_UNKNOWN;
 			ctx->io_total_ = 0;
 			ctx->io_key_update_ = 0;
-			free(ctx->peer_dn_);
-			ctx->peer_dn_ = NULL;
+			free(ctx->peer_dn_oneline_);
+			ctx->peer_dn_oneline_ = NULL;
+			free(ctx->peer_dn_rfc2253_);
+			ctx->peer_dn_rfc2253_ = NULL;
 		}
 	} else {
 		ret = GFARM_ERR_INVALID_ARGUMENT;
@@ -1216,8 +1218,10 @@ tls_session_setup_handle(tls_session_ctx_t ctx)
 			ctx->last_gfarm_error_ = GFARM_ERR_NO_ERROR;
 			ctx->io_total_ = 0;
 			ctx->io_key_update_ = 0;
-			free(ctx->peer_dn_);
-			ctx->peer_dn_ = NULL;
+			free(ctx->peer_dn_oneline_);
+			ctx->peer_dn_oneline_ = NULL;
+			free(ctx->peer_dn_rfc2253_);
+			ctx->peer_dn_rfc2253_ = NULL;
 		}
 	} else {
 		ret = GFARM_ERR_INVALID_ARGUMENT;
@@ -1899,7 +1903,8 @@ static inline void
 tls_session_destroy_ctx(tls_session_ctx_t x)
 {
 	if (x != NULL) {
-		free(x->peer_dn_);
+		free(x->peer_dn_oneline_);
+		free(x->peer_dn_rfc2253_);
 		if (x->prvkey_ != NULL) {
 			EVP_PKEY_free(x->prvkey_);
 		}
@@ -2098,6 +2103,55 @@ tls_session_wait_readable(tls_session_ctx_t ctx, int fd, int tous)
  */
 
 static inline gfarm_error_t
+get_peer_subjectdn(X509_NAME *pn, int mode, char **nameptr)
+{
+	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
+	BIO *bio = BIO_new(BIO_s_mem());
+
+	if (likely(pn != NULL && nameptr != NULL && bio != NULL)) {
+		int len = 0;
+		char *buf = NULL;
+
+		*nameptr = NULL;
+		(void)X509_NAME_print_ex(bio, pn, 0, mode);
+		len = BIO_pending(bio);
+		
+		if (likely(len > 0 && (buf = (char *)malloc(len + 1)) != 0)) {
+			(void)BIO_read(bio, buf, len);
+			buf[len] = '\0';
+			ret = GFARM_ERR_NO_ERROR;
+			*nameptr = buf;
+		} else {
+			if (buf == NULL && len > 0) {
+				ret = GFARM_ERR_NO_MEMORY;
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"Can't allocate a %d bytes buffer for "
+					"a peer SubjectDN.", len);
+			} else if (len <= 0) {
+				ret = GFARM_ERR_INTERNAL_ERROR;
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"Failed to acquire a length of peer "
+					"SubjectDN.");
+			}
+		}
+	} else {
+		if (bio == NULL) {
+			ret = GFARM_ERR_NO_MEMORY;
+			gflog_tls_error(GFARM_MSG_UNFIXED,
+				"Can't allocate a BIO.");
+		} else {
+			ret = GFARM_ERR_INVALID_ARGUMENT;
+		}
+	}
+
+	if (bio != NULL) {
+		BIO_free(bio);
+	}
+
+	return (ret);
+}
+
+static inline gfarm_error_t
 tls_session_verify(tls_session_ctx_t ctx, bool *is_verified)
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
@@ -2105,61 +2159,44 @@ tls_session_verify(tls_session_ctx_t ctx, bool *is_verified)
 	X509 *p = NULL;
 	X509_NAME *pn = NULL;
 
-	if (likely(ctx != NULL && (ssl = ctx->ssl_) != NULL)) {
+	if (likely(ctx != NULL && (ssl = ctx->ssl_) != NULL &&
+		(ctx->role_ == TLS_ROLE_CLIENT ||
+		ctx->do_mutual_auth_ == true))) {
 		/*
 		 * No matter verified or not, get a peer cert.
 		 */
-		ctx->peer_dn_ = NULL;
+		ctx->peer_dn_oneline_ = NULL;
+		ctx->peer_dn_rfc2253_ = NULL;
 		tls_runtime_flush_error();
 		if (likely(((p = SSL_get_peer_certificate(ssl)) != NULL) &&
 			((pn = X509_get_subject_name(p)) != NULL))) {
-			BIO *bio = BIO_new(BIO_s_mem());
-			if (likely(bio != NULL)) {
-				int len;
-#define DN_FORMAT \
-	(XN_FLAG_ONELINE | XN_FLAG_DN_REV | ASN1_STRFLGS_ESC_MSB)
-				(void)X509_NAME_print_ex(bio, pn,
-						0, DN_FORMAT);
-				len = BIO_pending(bio);
-				if (likely(len > 0)) {
-					char *buf = (char *)malloc(len + 1);
-					if (buf != NULL) {
-						(void)BIO_read(bio, buf, len);
-						buf[len] = '\0';
-						ctx->peer_dn_ = buf;
-						ret = ctx->last_gfarm_error_ =
-							GFARM_ERR_NO_ERROR;
-					} else {
-						ret = ctx->last_gfarm_error_ =
-							GFARM_ERR_NO_MEMORY;
-						gflog_tls_error(
-							GFARM_MSG_UNFIXED,
-							"Can't allcate a "
-							"buffer for a "
-							"SubjectDN, %d "
-							"bytes.", len);
-					}
-				}
-				BIO_free(bio);
+			char *dn_oneline = NULL;
+			char *dn_rfc2253 = NULL;
+
+#define DN_FORMAT_ONELINE	(XN_FLAG_ONELINE & ~ASN1_STRFLGS_ESC_MSB)
+#define DN_FORMAT_RFC2253	(XN_FLAG_RFC2253 & ~ASN1_STRFLGS_ESC_MSB)
+			if (likely((ret = get_peer_subjectdn(pn,
+						DN_FORMAT_ONELINE,
+						&dn_oneline)))) {
+				ctx->peer_dn_oneline_ = dn_oneline;
 			}
+			if (likely((ret = get_peer_subjectdn(pn,
+						DN_FORMAT_RFC2253,
+						&dn_rfc2253)))) {
+				ctx->peer_dn_rfc2253_ = dn_rfc2253;
+			}
+#undef DN_FORMAT_ONELINE
+#undef DN_FORMAT_RFC2253
 		} else {
-			if (ctx->role_ == TLS_ROLE_CLIENT ||
-				ctx->do_mutual_auth_ == true) {
-				ret = ctx->last_gfarm_error_ =
-					GFARM_ERR_INTERNAL_ERROR;
-				gflog_tls_error(GFARM_MSG_UNFIXED,
-					"Failed to acquire a peer "
-					"ceet but verification "
-					"succeeded: %s",
-					gfarm_error_string(ret));
-			} else {
-				ret = ctx->last_gfarm_error_ =
-					GFARM_ERR_NO_ERROR;
-			}
+			ret = GFARM_ERR_TLS_RUNTIME_ERROR;
+			gflog_tls_error(GFARM_MSG_UNFIXED,
+				"Failed to acquire peer certificate.");
 		}
 	} else {
-		ret = ctx->last_gfarm_error_ =
-			GFARM_ERR_INVALID_ARGUMENT;
+		if (ctx == NULL || ssl == NULL) {
+			ret = ctx->last_gfarm_error_ =
+				GFARM_ERR_INVALID_ARGUMENT;
+		}
 	}
 
 	if  (ssl != NULL) {
@@ -2287,10 +2324,10 @@ tls_session_establish(tls_session_ctx_t ctx, int fd)
 		if (is_verified == false) {
 			ret = ctx->last_gfarm_error_ =
 				GFARM_ERR_AUTHENTICATION;
-			if (is_valid_string(ctx->peer_dn_) == true) {
+			if (is_valid_string(ctx->peer_dn_oneline_) == true) {
 				gflog_tls_error(GFARM_MSG_UNFIXED,
 					"Authentication failed between peer: "
-					"'%s'", ctx->peer_dn_);
+					"'%s'", ctx->peer_dn_oneline_);
 			} else {
 				gflog_tls_error(GFARM_MSG_UNFIXED,
 					"Authentication failed "
@@ -2543,6 +2580,26 @@ done:
 	}
 
 	return (ret);
+}
+
+static inline char *
+tls_session_peer_subjectdn_oneline(tls_session_ctx_t ctx)
+{
+	if (likely(ctx != NULL)) {
+		return (ctx->peer_dn_oneline_);
+	} else {
+		return (NULL);
+	}
+}
+	
+static inline char *
+tls_session_peer_subjectdn_rfc2253(tls_session_ctx_t ctx)
+{
+	if (likely(ctx != NULL)) {
+		return (ctx->peer_dn_rfc2253_);
+	} else {
+		return (NULL);
+	}
 }
 
 
