@@ -4,7 +4,6 @@
 
 #define IN_TLS_CORE
 #define TLS_TEST
-#define HAVE_CTXP_BUILD_CHAIN
 
 #include "tls_headers.h"
 #include "tls_funcs.h"
@@ -161,7 +160,7 @@ ctx_dump()
 	fprintf(stderr, "tls_key_update: %d\n",
 			gfarm_ctxp->tls_key_update);
 	fprintf(stderr, "tls_build_certificate_chain: %d\n",
-			gfarm_ctxp->tls_build_certificate_chain);
+			gfarm_ctxp->tls_build_chain_local);
 	fprintf(stderr, "network_receive_timeout: %d\n",
 			gfarm_ctxp->network_receive_timeout);
 
@@ -192,15 +191,16 @@ getopt_arg_dump()
 			gfarm_ctxp->tls_key_file);
 	fprintf(stderr, "tls_key_update: %d\n",
 			gfarm_ctxp->tls_key_update);
-	fprintf(stderr, "tls_build_certificate_chain: %d\n",
-			gfarm_ctxp->tls_build_certificate_chain);
+	fprintf(stderr, "tls_build_chain_local: %d\n",
+			gfarm_ctxp->tls_build_chain_local);
 	fprintf(stderr, "network_receive_timeout: %d\n",
 			gfarm_ctxp->network_receive_timeout);
 	fprintf(stderr, "mutual_authentication: %d\n",
 			is_mutual_authentication);
 	fprintf(stderr, "verify_only: %d\n", is_verify_only);
 	fprintf(stderr, "once: %d\n", is_once);
-	fprintf(stderr, "build_chain: %d\n", gfarm_ctxp->tls_build_certificate_chain);
+	fprintf(stderr, "build_chain: %d\n",
+		gfarm_ctxp->tls_build_chain_local);
 	fprintf(stderr, "interactive: %d\n", is_interactive);
 	fprintf(stderr, "buf_size: %d\n", buf_size);
 	fprintf(stderr, "debug_level: %d\n", debug_level);
@@ -301,7 +301,7 @@ prologue(int argc, char **argv)
 			is_once = true;
 			break;
 		case 14:
-			gfarm_ctxp->tls_build_certificate_chain = 1;
+			gfarm_ctxp->tls_build_chain_local = 1;
 			break;
 		case 15:
 			is_interactive = true;
@@ -342,6 +342,10 @@ prologue(int argc, char **argv)
 		getopt_arg_dump();
 	}
 
+	if (is_valid_string(gfarm_ctxp->tls_ca_revocation_path) == false) {
+		gfarm_ctxp->tls_ca_revocation_path =
+			gfarm_ctxp->tls_ca_certificate_path;
+	}
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_family = AF_INET;

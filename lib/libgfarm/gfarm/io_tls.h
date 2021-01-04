@@ -14,6 +14,5 @@ gfarm_error_t gfp_xdr_tls_alloc(struct gfp_xdr *, int, int,
 	/* gfp_xdr_tls_alloc(conn, fd, flags, service, name */
 
 void gfp_xdr_tls_reset(struct gfp_xdr *);
-char *gfp_xdr_tls_initiator_dn(struct gfp_xdr *);
-char *gfp_xdr_tls_initiator_dn_online(struct gfp_xdr *);
+char *gfp_xdr_tls_initiator_dn_oneline(struct gfp_xdr *);
 char *gfp_xdr_tls_initiator_dn_rfc2253(struct gfp_xdr *);
