@@ -5,7 +5,7 @@
 
 
 #define IN_TLS_CORE
-#undef TLS_TEST
+#define TLS_TEST
 
 #include "tls_headers.h"
 #include "tls_funcs.h"

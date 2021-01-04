@@ -104,6 +104,7 @@ struct tls_test_ctx_struct {
 	char *tls_key_file;
 	int tls_key_update;
 	int tls_build_chain_local;
+	int tls_allow_crl_absence;
 	int network_receive_timeout;
 };
 typedef struct tls_test_ctx_struct *tls_test_ctx_p;
@@ -195,6 +196,7 @@ struct tls_session_ctx_struct {
 	int cert_verify_callback_error_;
 	int cert_verify_result_error_;
 	bool is_build_chain_;
+	bool is_allow_no_crls_;
 	size_t io_total_;	/* How many bytes transmitted */
 	size_t io_key_update_;	/* KeyUpdate water level (bytes) */
 	ssize_t keyupd_thresh_;	/* KeyUpdate threshold (bytes) */

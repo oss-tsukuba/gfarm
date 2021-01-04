@@ -1240,28 +1240,27 @@ static inline int
 tls_verify_callback_body(int ok, X509_STORE_CTX *sctx)
 {
 	int ret = ok;
-#if 0
 	SSL *ssl = X509_STORE_CTX_get_ex_data(sctx,
 			SSL_get_ex_data_X509_STORE_CTX_idx());
-	tls_session_ctx_t *ctx = (ssl != NULL) ?
-		(tls_session_ctx_t *)SSL_get_app_data(ssl) : NULL;
-#endif
+	tls_session_ctx_t ctx = (ssl != NULL) ?
+		(tls_session_ctx_t)SSL_get_app_data(ssl) : NULL;
 	int verr = X509_STORE_CTX_get_error(sctx);
 	int vdepth = X509_STORE_CTX_get_error_depth(sctx);
 	const char *verrstr = NULL;
 
-#define COMPAT_APACHE_REVOCATION_CHECK
-#ifdef COMPAT_APACHE_REVOCATION_CHECK
-	if (ok != 1 && verr == X509_V_ERR_UNABLE_TO_GET_CRL) {
+	if (ctx->is_allow_no_crls_ == true &&
+		ok != 1 && verr == X509_V_ERR_UNABLE_TO_GET_CRL) {
 		X509_STORE_CTX_set_error(sctx, X509_V_OK);
 		verr = X509_V_OK;
 		ok = ret = 1;
 	}
-#endif /* COMPAT_APACHE_REVOCATION_CHECK */
+
 	verrstr = X509_verify_cert_error_string(verr);
 
 	gflog_tls_error(GFARM_MSG_UNFIXED, "depth %d: error %d: '%s'",
 		vdepth, verr, verrstr);
+
+	ctx->cert_verify_callback_error_ = verr;
 	
 	return ret;
 }
@@ -1682,17 +1681,6 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 			goto bailout;
 		}
 
-		/*
-		 * Set revocation path
-		 */
-		if (is_valid_string(revoke_path) == true) {
-			ret = tls_set_revoke_path(ssl_ctx,
-				revoke_path);
-			if (unlikely(ret != GFARM_ERR_NO_ERROR)) {
-				goto bailout;
-			}
-		}
-
 		if (need_self_cert == true) {
 			/*
 			 * Load a cert into the SSL_CTX
@@ -1776,6 +1764,27 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 				}
 			}
 		}
+		
+		/*
+		 * Set revocation path
+		 */
+		/*
+		 * NOTE: XXX FIXME:
+		 *
+		 *	Setup the revoke thingies AFTER building cert
+		 *	chain since setting a revocation path not
+		 *	containing any CLRs (e.g. cert chain path)
+		 *	makes invalidates all the certs. It's too
+		 *	annoying to check all the CLRs under
+		 *	directories...
+		 */
+		if (is_valid_string(revoke_path) == true) {
+			ret = tls_set_revoke_path(ssl_ctx,
+				revoke_path);
+			if (unlikely(ret != GFARM_ERR_NO_ERROR)) {
+				goto bailout;
+			}
+		}
 
 		if (false) {
 			/*
@@ -1836,6 +1845,9 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 		ctxret->prvkey_ = prvkey;
 		ctxret->ssl_ctx_ = ssl_ctx;
 		ctxret->is_build_chain_ = is_build_chain;
+		ctxret->is_allow_no_crls_ =
+			(gfarm_ctxp->tls_allow_crl_absence == 1) ?
+			true : false;
 		ctxret->cert_file_ = cert_file;
 		ctxret->cert_chain_file_ = cert_chain_file;
 		ctxret->prvkey_file_ = prvkey_file;
@@ -1843,7 +1855,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 		ctxret->ca_path_ = ca_path;
 		ctxret->acceptable_ca_path_ = acceptable_ca_path;
 		ctxret->revoke_path_ = revoke_path;
-		
+
 		/*
 		 * All done.
 		 */
