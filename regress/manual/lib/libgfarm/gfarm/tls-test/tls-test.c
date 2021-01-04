@@ -38,6 +38,7 @@ static struct tls_test_ctx_struct ttcs = {
 	NULL,
 	-INT_MAX,
 	-INT_MAX,
+	-INT_MAX,
 	-INT_MAX
 };
 tls_test_ctx_p gfarm_ctxp = &ttcs;
@@ -85,6 +86,7 @@ usage()
 		"\t--build_chain\n"
 		"\t--interactive\n"
 		"\t--buf_size\n"
+		"\t--allow_no_crl\n"
 		"\t--debug_level\n");
 	return;
 }
@@ -159,8 +161,10 @@ ctx_dump()
 			gfarm_ctxp->tls_key_file);
 	fprintf(stderr, "tls_key_update: %d\n",
 			gfarm_ctxp->tls_key_update);
-	fprintf(stderr, "tls_build_certificate_chain: %d\n",
+	fprintf(stderr, "tls_build_chain_local: %d\n",
 			gfarm_ctxp->tls_build_chain_local);
+	fprintf(stderr, "tls_allow_crl_absence: %d\n",
+			gfarm_ctxp->tls_allow_crl_absence);
 	fprintf(stderr, "network_receive_timeout: %d\n",
 			gfarm_ctxp->network_receive_timeout);
 
@@ -193,6 +197,8 @@ getopt_arg_dump()
 			gfarm_ctxp->tls_key_update);
 	fprintf(stderr, "tls_build_chain_local: %d\n",
 			gfarm_ctxp->tls_build_chain_local);
+	fprintf(stderr, "tls_allow_crl_absence: %d\n",
+			gfarm_ctxp->tls_allow_crl_absence);
 	fprintf(stderr, "network_receive_timeout: %d\n",
 			gfarm_ctxp->network_receive_timeout);
 	fprintf(stderr, "mutual_authentication: %d\n",
@@ -236,6 +242,7 @@ prologue(int argc, char **argv)
 		{"build_chain", 0, NULL, 14},
 		{"interactive", 0, NULL, 15},
 		{"buf_size", 1, NULL, 16},
+		{"allow_no_crl", 0, NULL, 17},
 		{NULL, 0, NULL, 0}
 	};
 
@@ -319,6 +326,9 @@ prologue(int argc, char **argv)
 				fprintf(stderr,
 				"fail to set buf_size.\n");
 			}
+			break;
+		case 17:
+			gfarm_ctxp->tls_allow_crl_absence = 1;
 			break;
 		case 's':
 			is_server = true;
