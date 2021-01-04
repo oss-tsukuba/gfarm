@@ -13,8 +13,7 @@
 #define MIN_PORT_NUMBER 1024
 #define LISTEN_BACKLOG 64
 #define DECIMAL_NUMBER 10
-//#define MAX_BUF_SIZE 67108864
-#define MAX_BUF_SIZE 1073741824
+#define MAX_BUF_SIZE 536870912
 
 static int debug_level = 0;
 static int buf_size = 65536;
@@ -201,7 +200,8 @@ getopt_arg_dump()
 			is_mutual_authentication);
 	fprintf(stderr, "verify_only: %d\n", is_verify_only);
 	fprintf(stderr, "once: %d\n", is_once);
-	fprintf(stderr, "build_chain: %d\n", gfarm_ctxp->tls_build_certificate_chain);
+	fprintf(stderr, "build_chain: %d\n",
+			gfarm_ctxp->tls_build_certificate_chain);
 	fprintf(stderr, "interactive: %d\n", is_interactive);
 	fprintf(stderr, "buf_size: %d\n", buf_size);
 	fprintf(stderr, "debug_level: %d\n", debug_level);
@@ -312,7 +312,8 @@ prologue(int argc, char **argv)
 					&buf_size,
 					DECIMAL_NUMBER))) {
 				if (buf_size <= 0 || buf_size > MAX_BUF_SIZE) {
-					fprintf(stderr, "out of buf size. set default.\n");
+					fprintf(stderr,
+						"out of buf size.\n");
 					buf_size = 65536;
 				}
 			} else {
@@ -566,19 +567,20 @@ run_server_process(int socketfd)
 				int w_size = -1;
 				char buf[buf_size];
 
-				gerr = tls_session_read(tls_ctx, buf, sizeof(buf),
-						&r_size);
+				gerr = tls_session_read(tls_ctx, buf,
+							sizeof(buf), &r_size);
 				if (gerr == GFARM_ERR_NO_ERROR) {
 					if (r_size > 0) {
 						buf[r_size] = '\0';
 						if (debug_level > 0) {
 							fprintf(stderr,
-								"got: '%s'\n", buf);
+								"got: '%s'\n",
+									buf);
 						}
 					} else if (r_size == 0) {
 						if (debug_level > 0) {
 							fprintf(stderr,
-								"got 0 byte.\n");
+							"got 0 byte.\n");
 						}
 						goto teardown;
 					}
@@ -592,9 +594,10 @@ run_server_process(int socketfd)
 						r_size == 0) {
 						goto loopend;
 					} else {
-						gflog_tls_error(GFARM_MSG_UNFIXED,
-							"SSL reset failure: %s",
-							gfarm_error_string(gerr));
+						gflog_tls_error(
+						GFARM_MSG_UNFIXED,
+						"SSL reset failure: %s",
+						gfarm_error_string(gerr));
 						break;
 					}
 				}
@@ -602,7 +605,8 @@ run_server_process(int socketfd)
 				buf[r_size] = '\0';
 				gerr = tls_session_write(tls_ctx, buf, r_size,
 						&w_size);
-				if (gerr == GFARM_ERR_NO_ERROR && w_size == r_size) {
+				if (gerr == GFARM_ERR_NO_ERROR
+						&& w_size == r_size) {
 					goto teardown2;
 				} else {
 					gflog_tls_error(GFARM_MSG_UNFIXED,
@@ -613,9 +617,10 @@ run_server_process(int socketfd)
 					if (gerr == GFARM_ERR_NO_ERROR) {
 						goto loopend;
 					} else {
-						gflog_tls_error(GFARM_MSG_UNFIXED,
-							"SSL reset failure: %s",
-							gfarm_error_string(gerr));
+						gflog_tls_error(
+						GFARM_MSG_UNFIXED,
+						"SSL reset failure: %s",
+						gfarm_error_string(gerr));
 						break;
 					}
 				}
@@ -698,7 +703,8 @@ run_client_process(int socketfd)
 		if (fgets(buf, sizeof(buf) -1, stdin) != NULL) {
 			r_size = strlen(buf);
 			errno = 0;
-			gerr = tls_session_write(tls_ctx, buf, r_size, &w_size);
+			gerr = tls_session_write(tls_ctx, buf, r_size,
+								&w_size);
 			if (gerr != GFARM_ERR_NO_ERROR || w_size != r_size) {
 				gflog_tls_error(GFARM_MSG_UNFIXED,
 					"SSL write failure: %s",
@@ -712,7 +718,8 @@ run_client_process(int socketfd)
 				goto done;
 			}
 
-			gerr = tls_session_read(tls_ctx, buf, sizeof(buf), &r_size);
+			gerr = tls_session_read(tls_ctx, buf, sizeof(buf),
+								&r_size);
 			if (gerr == GFARM_ERR_NO_ERROR && r_size == w_size) {
 				buf[r_size] = '\0';
 				fprintf(stdout, "%s\n", buf);
