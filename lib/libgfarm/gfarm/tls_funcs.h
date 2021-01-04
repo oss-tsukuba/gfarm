@@ -2323,6 +2323,11 @@ tls_session_update_key(tls_session_ctx_t ctx, int delta)
 		if (likely(SSL_key_update(ssl,
 				SSL_KEY_UPDATE_REQUESTED) == 1)) {
 			ret = ctx->last_gfarm_error_ = GFARM_ERR_NO_ERROR;
+#ifdef TLS_TEST
+			gflog_tls_warning(GFARM_MSG_UNFIXED,
+				"TLS shared key updatted after after %zu "
+				"bytes I/O.", ctx->io_key_update_);
+#endif /* TLS_TEST */
 		} else {
 			/*
 			 * XXX FIXME:
