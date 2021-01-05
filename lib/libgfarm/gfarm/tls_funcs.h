@@ -131,20 +131,20 @@ tty_get_passwd(char *buf, size_t maxlen, const char *prompt, int *lenptr)
 				ret = GFARM_ERR_NO_ERROR;
 			} else {
 				if (s_errno != 0) {
-					gflog_error(GFARM_MSG_UNFIXED,
+					gflog_tls_error(GFARM_MSG_UNFIXED,
 						"Failed to get a password: %s",
 						strerror(s_errno));
 					ret = gfarm_errno_to_error(s_errno);
 				}
 			}
 		} else {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_tls_error(GFARM_MSG_UNFIXED,
 				"Failed to open a control terminal: %s",
 				strerror(s_errno));
 			ret = gfarm_errno_to_error(s_errno);
 		}
 	} else {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_tls_error(GFARM_MSG_UNFIXED,
 			"Invalid buffer and/or buffer length "
 			"for password input: %p, %zu", buf, maxlen);
 		ret = GFARM_ERR_INVALID_ARGUMENT;
@@ -263,7 +263,8 @@ is_user_in_group(uid_t uid, gid_t gid)
 					}
 				} else {
 					if (errno != 0) {
-						gflog_error(GFARM_MSG_UNFIXED,
+						gflog_tls_error(
+							GFARM_MSG_UNFIXED,
 							"Failed to acquire a "
 							"group entry for "
 							"gid %d: %s",
@@ -271,7 +272,8 @@ is_user_in_group(uid_t uid, gid_t gid)
 						ret = gfarm_errno_to_error(
 							errno);
 					} else {
-						gflog_error(GFARM_MSG_UNFIXED,
+						gflog_tls_error(
+							GFARM_MSG_UNFIXED,
 							"Can't find the group "
 							"%d.", gid);
 						ret = gfarm_errno_to_error(
@@ -281,14 +283,14 @@ is_user_in_group(uid_t uid, gid_t gid)
 			}
 		} else {
 			if (errno != 0) {
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_tls_error(GFARM_MSG_UNFIXED,
 					"Failed to acquire a passwd entry "
 					"for uid %d: %s",
 					uid, strerror(errno));
 				ret = gfarm_errno_to_error(errno);
 			} else {
-				gflog_error(GFARM_MSG_UNFIXED,
-					    "Can't find the user %d.", uid);
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"Can't find the user %d.", uid);
 				ret = GFARM_ERR_INVALID_ARGUMENT;
 			}
 		}
@@ -324,25 +326,25 @@ is_file_readable(int fd, const char *file)
 				ret = GFARM_ERR_NO_ERROR;
 			} else {
 				ret = GFARM_ERR_PERMISSION_DENIED;
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_tls_error(GFARM_MSG_UNFIXED,
 					"%s: %s", file,
 					gfarm_error_string(ret));
 
 			}
 		} else {
 			if (errno != 0) {
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_tls_error(GFARM_MSG_UNFIXED,
 					"Failed to stat(\"%s\"): %s",
 					file, strerror(errno));
 				ret = gfarm_errno_to_error(errno);
 			} else {
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_tls_error(GFARM_MSG_UNFIXED,
 					"%s is a directory.", file);
 				ret = GFARM_ERR_IS_A_DIRECTORY;
 			}
 		}
 	} else {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_tls_error(GFARM_MSG_UNFIXED,
 			"Specified filename is nul or "
 			"file invalid file descriptor.");
 		ret = GFARM_ERR_INVALID_ARGUMENT;
@@ -377,7 +379,7 @@ is_valid_prvkey_file_permission(int fd, const char *file)
 					  S_IRUSR) != 0))) {
 					ret = GFARM_ERR_NO_ERROR;
 				} else {
-					gflog_error(GFARM_MSG_UNFIXED,
+					gflog_tls_error(GFARM_MSG_UNFIXED,
 						"The file perrmssion of the "
 						"specified file \"%s\" is "
 						"open too widely. It would "
@@ -386,7 +388,7 @@ is_valid_prvkey_file_permission(int fd, const char *file)
 					ret = GFARM_ERRMSG_TLS_PRIVATE_KEY_FILE_PERMISSION_TOO_WIDELY_OPEN;
 				}
 			} else {
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_tls_error(GFARM_MSG_UNFIXED,
 					"This process is about to read other "
 					"uid(%d)'s private key file \"%s\", "
 					"which is strongly discouraged even "
@@ -397,18 +399,18 @@ is_valid_prvkey_file_permission(int fd, const char *file)
 
 		} else {
 			if (errno != 0) {
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_tls_error(GFARM_MSG_UNFIXED,
 					"Can't access %s: %s",
 					file, strerror(errno));
 				ret = gfarm_errno_to_error(errno);
 			} else {
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_tls_error(GFARM_MSG_UNFIXED,
 					"%s is a directory, not a file", file);
 				ret = GFARM_ERR_IS_A_DIRECTORY;
 			}
 		}
 	} else {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_tls_error(GFARM_MSG_UNFIXED,
 			"Specified filename is nul or "
 			"file invalid file descriptor.");
 		ret = GFARM_ERR_INVALID_ARGUMENT;			
@@ -439,24 +441,24 @@ is_valid_cert_store_dir(const char *dir)
 				ret = GFARM_ERR_NO_ERROR;
 			} else {
 				ret = GFARM_ERR_PERMISSION_DENIED;
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_tls_error(GFARM_MSG_UNFIXED,
 					"%s: %s", dir,
 					gfarm_error_string(ret));
 			}
 		} else {
 			if (errno != 0) {
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_tls_error(GFARM_MSG_UNFIXED,
 					"Can't access to %s: %s",
 					dir, strerror(errno));
 				ret = gfarm_errno_to_error(errno);
 			} else {
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_tls_error(GFARM_MSG_UNFIXED,
 					"%s is not a directory.", dir);
 				ret = GFARM_ERR_NOT_A_DIRECTORY;
 			}
 		}
 	} else {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_tls_error(GFARM_MSG_UNFIXED,
 			"Specified CA cert directory name is nul.");
 		ret = GFARM_ERR_INVALID_ARGUMENT;
 	}
@@ -484,6 +486,7 @@ tlslog_tls_message(int msg_no, int priority,
 #define BASIC_BUFSZ	PATH_MAX
 	char msgbuf[BASIC_BUFSZ];
 	va_list ap;
+	unsigned int err;
 
 	va_start(ap, format);
 	(void)vsnprintf(msgbuf, sizeof(msgbuf), format, ap);
@@ -494,7 +497,6 @@ tlslog_tls_message(int msg_no, int priority,
 		char tlsmsg[BASIC_BUFSZ];
 		const char *tls_file = NULL;
 		int tls_line = -1;
-		unsigned int err;
 
 		/*
 		 * NOTE:
@@ -514,8 +516,13 @@ tlslog_tls_message(int msg_no, int priority,
 		gflog_auth_message(msg_no, priority, file, line_no, func,
 			"%s", msgbuf2);
 	} else {
-		gflog_message(msg_no, priority, file, line_no, func,
-			"%s", msgbuf);
+		if ((err = ERR_get_error()) == 0) {
+			gflog_message(msg_no, priority, file, line_no, func,
+				"%s", msgbuf);
+		} else {
+			gflog_message(msg_no, priority, file, line_no, func,
+				"%s: [OpenSSL error %ud]", msgbuf, err);
+		}
 	}
 #undef BASIC_BUFSZ
 #ifdef BASIC_BUFSZ_ORG
@@ -1240,6 +1247,64 @@ done:
  * Certificate verification callback
  */
 
+static inline gfarm_error_t
+get_peer_subjectdn(X509_NAME *pn, int mode, char **nameptr, int maxlen)
+{
+	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
+	BIO *bio = BIO_new(BIO_s_mem());
+
+	if (likely(pn != NULL && nameptr != NULL && bio != NULL)) {
+		int len = 0;
+		char *buf = NULL;
+
+		(void)X509_NAME_print_ex(bio, pn, 0, mode);
+		len = BIO_pending(bio);
+
+		if (*nameptr != NULL && maxlen > 0) {
+			buf = *nameptr;
+			len = (maxlen > len) ? len : maxlen - 1;
+		} else {
+			*nameptr = NULL;
+			buf = (char *)malloc(len + 1);
+		}
+		if (likely(len > 0 && buf != NULL)) {
+			(void)BIO_read(bio, buf, len);
+			buf[len] = '\0';
+			ret = GFARM_ERR_NO_ERROR;
+			if (*nameptr != NULL) {
+				*nameptr = buf;
+			}
+			*nameptr = buf;
+		} else {
+			if (buf == NULL && len > 0) {
+				ret = GFARM_ERR_NO_MEMORY;
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"Can't allocate a %d bytes buffer for "
+					"a peer SubjectDN.", len);
+			} else if (len <= 0) {
+				ret = GFARM_ERR_INTERNAL_ERROR;
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"Failed to acquire a length of peer "
+					"SubjectDN.");
+			}
+		}
+	} else {
+		if (bio == NULL) {
+			ret = GFARM_ERR_NO_MEMORY;
+			gflog_tls_error(GFARM_MSG_UNFIXED,
+				"Can't allocate a BIO.");
+		} else {
+			ret = GFARM_ERR_INVALID_ARGUMENT;
+		}
+	}
+
+	if (bio != NULL) {
+		BIO_free(bio);
+	}
+
+	return (ret);
+}
+
 static inline int
 tls_verify_callback_body(int ok, X509_STORE_CTX *sctx)
 {
@@ -1261,8 +1326,25 @@ tls_verify_callback_body(int ok, X509_STORE_CTX *sctx)
 
 	verrstr = X509_verify_cert_error_string(verr);
 
-	gflog_tls_error(GFARM_MSG_UNFIXED, "depth %d: error %d: '%s'",
-		vdepth, verr, verrstr);
+	if (gflog_get_priority_level() >= LOG_DEBUG) {
+		char dnbuf[1024];
+		char *dn = dnbuf;
+		X509 *p = X509_STORE_CTX_get_current_cert(sctx);
+		X509_NAME *pn = (p != NULL) ? X509_get_subject_name(p) : NULL;
+
+		if (pn != NULL &&
+			get_peer_subjectdn(pn,
+				(XN_FLAG_ONELINE & ~ASN1_STRFLGS_ESC_MSB),
+				&dn, sizeof(dnbuf)) ==
+			GFARM_ERR_NO_ERROR) {
+			dn = dnbuf;
+		} else {
+			dn = NULL;
+		}
+		gflog_tls_debug(GFARM_MSG_UNFIXED, "depth %d: cert \"%s\" "
+			"error %d: '%s'",
+			vdepth, dn, verr, verrstr);
+	}
 
 	ctx->cert_verify_callback_error_ = verr;
 	
@@ -2103,55 +2185,6 @@ tls_session_wait_readable(tls_session_ctx_t ctx, int fd, int tous)
  */
 
 static inline gfarm_error_t
-get_peer_subjectdn(X509_NAME *pn, int mode, char **nameptr)
-{
-	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
-	BIO *bio = BIO_new(BIO_s_mem());
-
-	if (likely(pn != NULL && nameptr != NULL && bio != NULL)) {
-		int len = 0;
-		char *buf = NULL;
-
-		*nameptr = NULL;
-		(void)X509_NAME_print_ex(bio, pn, 0, mode);
-		len = BIO_pending(bio);
-		
-		if (likely(len > 0 && (buf = (char *)malloc(len + 1)) != 0)) {
-			(void)BIO_read(bio, buf, len);
-			buf[len] = '\0';
-			ret = GFARM_ERR_NO_ERROR;
-			*nameptr = buf;
-		} else {
-			if (buf == NULL && len > 0) {
-				ret = GFARM_ERR_NO_MEMORY;
-				gflog_tls_error(GFARM_MSG_UNFIXED,
-					"Can't allocate a %d bytes buffer for "
-					"a peer SubjectDN.", len);
-			} else if (len <= 0) {
-				ret = GFARM_ERR_INTERNAL_ERROR;
-				gflog_tls_error(GFARM_MSG_UNFIXED,
-					"Failed to acquire a length of peer "
-					"SubjectDN.");
-			}
-		}
-	} else {
-		if (bio == NULL) {
-			ret = GFARM_ERR_NO_MEMORY;
-			gflog_tls_error(GFARM_MSG_UNFIXED,
-				"Can't allocate a BIO.");
-		} else {
-			ret = GFARM_ERR_INVALID_ARGUMENT;
-		}
-	}
-
-	if (bio != NULL) {
-		BIO_free(bio);
-	}
-
-	return (ret);
-}
-
-static inline gfarm_error_t
 tls_session_verify(tls_session_ctx_t ctx, bool *is_verified)
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
@@ -2177,12 +2210,14 @@ tls_session_verify(tls_session_ctx_t ctx, bool *is_verified)
 #define DN_FORMAT_RFC2253	(XN_FLAG_RFC2253 & ~ASN1_STRFLGS_ESC_MSB)
 			if (likely((ret = get_peer_subjectdn(pn,
 						DN_FORMAT_ONELINE,
-						&dn_oneline)))) {
+						&dn_oneline, 0)) ==
+				GFARM_ERR_NO_ERROR)) {
 				ctx->peer_dn_oneline_ = dn_oneline;
 			}
 			if (likely((ret = get_peer_subjectdn(pn,
 						DN_FORMAT_RFC2253,
-						&dn_rfc2253)))) {
+						&dn_rfc2253, 0)) ==
+				GFARM_ERR_NO_ERROR)) {
 				ctx->peer_dn_rfc2253_ = dn_rfc2253;
 			}
 #undef DN_FORMAT_ONELINE
@@ -2334,6 +2369,17 @@ tls_session_establish(tls_session_ctx_t ctx, int fd)
 					"(no cert acquired.)");
 			}
 		}
+
+		if (is_valid_string(ctx->peer_dn_oneline_) == true) {
+			gflog_tls_notice(GFARM_MSG_UNFIXED,
+				"Authentication between \"%s\" %s and a "
+				"TLS session %s.",
+				ctx->peer_dn_oneline_,
+				(is_verified == true) ?
+					 "verified" : "not veridied",
+				(is_verified == true) ?
+					 "established" : "not established");
+		}
 	}
 
 bailout:
@@ -2360,11 +2406,9 @@ tls_session_update_key(tls_session_ctx_t ctx, int delta)
 		if (likely(SSL_key_update(ssl,
 				SSL_KEY_UPDATE_REQUESTED) == 1)) {
 			ret = ctx->last_gfarm_error_ = GFARM_ERR_NO_ERROR;
-#ifdef TLS_TEST
-			gflog_tls_warning(GFARM_MSG_UNFIXED,
+			gflog_tls_debug(GFARM_MSG_UNFIXED,
 				"TLS shared key updatted after after %zu "
 				"bytes I/O.", ctx->io_key_update_);
-#endif /* TLS_TEST */
 		} else {
 			/*
 			 * XXX FIXME:
