@@ -786,7 +786,17 @@ main(int argc, char **argv)
 		gfarm_error_t gerr = GFARM_ERR_UNKNOWN;
 	
 		gflog_initialize();
-		(void)gflog_auth_set_verbose(100);
+		if (debug_level > 0) {
+			gflog_set_priority_level(LOG_DEBUG);
+			(void)gflog_auth_set_verbose(100);
+			if (debug_level > 1) {
+				(void)gflog_set_message_verbose(
+					LOG_VERBOSE_LINENO_FUNC);
+			} else {
+				(void)gflog_set_message_verbose(
+					LOG_VERBOSE_LINENO_LINENO);
+			}
+		}
 
 		gerr = tls_session_create_ctx(&tls_ctx,
 				(is_server == true) ?

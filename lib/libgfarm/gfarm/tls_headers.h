@@ -126,6 +126,15 @@ extern tls_test_ctx_p gfarm_ctxp;
 #define gflog_tls_warning(msg_no, ...)	     \
 	tlslog_tls_message(msg_no, LOG_WARNING, \
 		__FILE__, __LINE__, __func__, __VA_ARGS__)
+#define gflog_tls_debug(msg_no, ...)	     \
+	tlslog_tls_message(msg_no, LOG_DEBUG, \
+		__FILE__, __LINE__, __func__, __VA_ARGS__)
+#define gflog_tls_info(msg_no, ...)	     \
+	tlslog_tls_message(msg_no, LOG_DEBUG, \
+		__FILE__, __LINE__, __func__, __VA_ARGS__)
+#define gflog_tls_notice(msg_no, ...)	     \
+	tlslog_tls_message(msg_no, LOG_NOTICE, \
+		__FILE__, __LINE__, __func__, __VA_ARGS__)
 /*
  * Declaration: TLS support version of gflog_message()
  */
