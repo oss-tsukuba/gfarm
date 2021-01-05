@@ -2376,7 +2376,7 @@ tls_session_establish(tls_session_ctx_t ctx, int fd)
 				"TLS session %s.",
 				ctx->peer_dn_oneline_,
 				(is_verified == true) ?
-					 "verified" : "not veridied",
+					 "verified" : "not verified",
 				(is_verified == true) ?
 					 "established" : "not established");
 		}

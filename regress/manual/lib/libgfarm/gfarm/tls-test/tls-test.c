@@ -804,7 +804,7 @@ main(int argc, char **argv)
 					LOG_VERBOSE_LINENO_FUNC);
 			} else {
 				(void)gflog_set_message_verbose(
-					LOG_VERBOSE_LINENO_LINENO);
+					LOG_VERBOSE_LINENO);
 			}
 		}
 
