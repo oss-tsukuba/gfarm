@@ -2369,6 +2369,17 @@ tls_session_establish(tls_session_ctx_t ctx, int fd)
 					"(no cert acquired.)");
 			}
 		}
+
+		if (is_valid_string(ctx->peer_dn_oneline_) == true) {
+			gflog_tls_notice(GFARM_MSG_UNFIXED,
+				"Authentication between \"%s\" %s and a "
+				"TLS session %s.",
+				ctx->peer_dn_oneline_,
+				(is_verified == true) ?
+					 "verified" : "not veridied",
+				(is_verified == true) ?
+					 "established" : "not established");
+		}
 	}
 
 bailout:
