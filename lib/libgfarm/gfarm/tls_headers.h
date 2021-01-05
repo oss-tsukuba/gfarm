@@ -93,6 +93,12 @@
 
 #ifdef TLS_TEST
 
+/* Copied from logutil.c */
+#define LOG_VERBOSE_COMPACT	0
+#define LOG_VERBOSE_LINENO	(1<<0)
+#define LOG_VERBOSE_FUNC	(1<<1)
+#define LOG_VERBOSE_LINENO_FUNC	(LOG_VERBOSE_LINENO|LOG_VERBOSE_FUNC)
+
 struct tls_test_ctx_struct {
 	char *tls_cipher_suite;
 	char *tls_ca_certificate_path;
