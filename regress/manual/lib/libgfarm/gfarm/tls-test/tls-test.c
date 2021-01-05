@@ -24,7 +24,7 @@ static bool is_interactive = false;
 static char *portnum = "12345";
 static char *ipaddr = "127.0.0.1";
 
-static struct addrinfo hints, *res;
+static struct addrinfo *res;
 static struct sockaddr_in *saddrin;
 
 static struct tls_test_ctx_struct ttcs = {
@@ -219,6 +219,7 @@ prologue(int argc, char **argv)
 {
 	int opt, longindex = 0, err, ret = 1;
 	uint16_t result;
+	struct addrinfo hints;
 
 	struct option longopts[] = {
 		{"help", 0, NULL, 'h'},
@@ -363,7 +364,7 @@ prologue(int argc, char **argv)
 	if ((err = getaddrinfo(ipaddr, portnum, &hints, &res)) == 0) {
 		saddrin = (struct sockaddr_in *)res->ai_addr;
 		result = ntohs(saddrin->sin_port);
-		if ( result >= MIN_PORT_NUMBER &&
+		if (result >= MIN_PORT_NUMBER &&
 			result <= MAX_PORT_NUMBER) {
 			ret = 0;
 		} else {
@@ -374,6 +375,15 @@ prologue(int argc, char **argv)
 		fprintf(stderr, "getaddrinfo err: %s\n", gai_strerror(err));
 	}
 	return ret;
+}
+
+static inline void
+epilogue()
+{
+	(void)tls_session_destroy_ctx(tls_ctx);
+	freeaddrinfo(res);
+
+	return;
 }
 
 static inline int
@@ -801,8 +811,7 @@ main(int argc, char **argv)
 				gfarm_error_string(gerr));
 		}
 
-		(void)tls_session_destroy_ctx(tls_ctx);
-		freeaddrinfo(res);
+		epilogue();
 	}
 
 	return (ret);
