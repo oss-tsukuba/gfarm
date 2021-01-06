@@ -40,8 +40,6 @@ static struct tls_test_ctx_struct ttcs = {
 };
 tls_test_ctx_p gfarm_ctxp = &ttcs;
 
-tls_session_ctx_t tls_ctx = NULL;
-
 static void
 tls_runtime_init_once(void)
 {
@@ -376,7 +374,7 @@ prologue(int argc, char **argv, struct addrinfo **a_info)
 }
 
 static inline void
-epilogue(struct addrinfo *a_info)
+epilogue(tls_session_ctx_t tls_ctx, struct addrinfo *a_info)
 {
 	(void)tls_session_destroy_ctx(tls_ctx);
 	freeaddrinfo(a_info);
@@ -385,7 +383,7 @@ epilogue(struct addrinfo *a_info)
 }
 
 static inline int
-do_write_read()
+do_write_read(tls_session_ctx_t tls_ctx)
 {
 	int urandom_fd;
 	int ret = 1;
@@ -547,7 +545,7 @@ do_write_read()
 }
 
 static inline int
-run_server_process(int socketfd)
+run_server_process(tls_session_ctx_t tls_ctx, int socketfd)
 {
 	int acceptfd, ret;
 	struct addrinfo clientaddr;
@@ -580,7 +578,7 @@ run_server_process(int socketfd)
 			}
 
 			if (!is_interactive) {
-				ret = do_write_read();
+				ret = do_write_read(tls_ctx);
 				if (ret == 1) {
 					is_once = true;
 				}
@@ -662,21 +660,23 @@ run_server_process(int socketfd)
 }
 
 static inline int
-run_server(struct addrinfo *a_info)
+run_server(tls_session_ctx_t tls_ctx, struct addrinfo *a_info)
 {
 	int socketfd;
 	int optval = 1, ret = 1;
 	struct sockaddr_in *saddrin;
 	saddrin = (struct sockaddr_in *)a_info->ai_addr;
 
-	if ((socketfd = socket(a_info->ai_family, a_info->ai_socktype, 0)) > -1) {
+	if ((socketfd = socket(a_info->ai_family,
+					a_info->ai_socktype, 0)) > -1) {
 		if (setsockopt(socketfd, SOL_SOCKET, SO_REUSEADDR, &optval,
 				sizeof(optval)) > -1) {
 			saddrin->sin_addr.s_addr = INADDR_ANY;
 			if (bind(socketfd, a_info->ai_addr,
 					a_info->ai_addrlen) > -1) {
 				if (listen(socketfd, LISTEN_BACKLOG) > -1) {
-					ret = run_server_process(socketfd);
+					ret = run_server_process(tls_ctx,
+								socketfd);
 				} else {
 					perror("listen");
 				}
@@ -694,7 +694,7 @@ run_server(struct addrinfo *a_info)
 }
 
 static inline int
-run_client_process(int socketfd)
+run_client_process(tls_session_ctx_t tls_ctx, int socketfd)
 {
 	int ret = 1;
 	gfarm_error_t gerr = GFARM_ERR_UNKNOWN;
@@ -718,7 +718,7 @@ run_client_process(int socketfd)
 	}
 
 	if (!is_interactive) {
-		ret = do_write_read();
+		ret = do_write_read(tls_ctx);
 	} else {
 		char buf[buf_size];
 		int r_size = -1;
@@ -772,13 +772,14 @@ done:
 }
 
 static inline int
-run_client(struct addrinfo *a_info)
+run_client(tls_session_ctx_t tls_ctx, struct addrinfo *a_info)
 {
 	int socketfd, ret = 1;
-	if ((socketfd = socket(a_info->ai_family, a_info->ai_socktype, 0)) > -1) {
+	if ((socketfd = socket(a_info->ai_family,
+				a_info->ai_socktype, 0)) > -1) {
 		if (connect(socketfd, a_info->ai_addr,
 			a_info->ai_addrlen) > -1) {
-			ret = run_client_process(socketfd);
+			ret = run_client_process(tls_ctx, socketfd);
 		} else {
 			perror("connect");
 		}
@@ -794,6 +795,7 @@ main(int argc, char **argv)
 {
 	int ret = 1;
 	struct addrinfo *a_info;
+	tls_session_ctx_t tls_ctx = NULL;
 
 	if ((ret = prologue(argc, argv, &a_info)) == 0) {
 		gfarm_error_t gerr = GFARM_ERR_UNKNOWN;
@@ -817,14 +819,15 @@ main(int argc, char **argv)
 				is_mutual_authentication);
 		if (gerr == GFARM_ERR_NO_ERROR) {
 			ret = (is_server == true) ?
-				run_server(a_info) : run_client(a_info);
+				run_server(tls_ctx, a_info)
+				: run_client(tls_ctx, a_info);
 		} else {
 			gflog_error(GFARM_MSG_UNFIXED,
 				"Can't create a tls session context: %s",
 				gfarm_error_string(gerr));
 		}
 
-		epilogue(a_info);
+		epilogue(tls_ctx, a_info);
 	}
 
 	return (ret);
