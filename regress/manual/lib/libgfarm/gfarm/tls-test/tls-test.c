@@ -24,9 +24,6 @@ static bool is_interactive = false;
 static char *portnum = "12345";
 static char *ipaddr = "127.0.0.1";
 
-static struct addrinfo *res;
-static struct sockaddr_in *saddrin;
-
 static struct tls_test_ctx_struct ttcs = {
 	NULL,
 	NULL,
@@ -215,11 +212,12 @@ getopt_arg_dump()
 }
 
 static inline int
-prologue(int argc, char **argv)
+prologue(int argc, char **argv, struct addrinfo **a_info)
 {
 	int opt, longindex = 0, err, ret = 1;
 	uint16_t result;
 	struct addrinfo hints;
+	struct sockaddr_in *saddrin;
 
 	struct option longopts[] = {
 		{"help", 0, NULL, 'h'},
@@ -361,8 +359,8 @@ prologue(int argc, char **argv)
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_family = AF_INET;
 	errno = 0;
-	if ((err = getaddrinfo(ipaddr, portnum, &hints, &res)) == 0) {
-		saddrin = (struct sockaddr_in *)res->ai_addr;
+	if ((err = getaddrinfo(ipaddr, portnum, &hints, a_info)) == 0) {
+		saddrin = (struct sockaddr_in *)(*a_info)->ai_addr;
 		result = ntohs(saddrin->sin_port);
 		if (result >= MIN_PORT_NUMBER &&
 			result <= MAX_PORT_NUMBER) {
@@ -378,10 +376,10 @@ prologue(int argc, char **argv)
 }
 
 static inline void
-epilogue()
+epilogue(struct addrinfo *a_info)
 {
 	(void)tls_session_destroy_ctx(tls_ctx);
-	freeaddrinfo(res);
+	freeaddrinfo(a_info);
 
 	return;
 }
@@ -554,6 +552,7 @@ run_server_process(int socketfd)
 	int acceptfd, ret;
 	struct addrinfo clientaddr;
 	clientaddr.ai_addrlen = sizeof(clientaddr.ai_addr);
+	clientaddr.ai_addr = malloc(sizeof(struct sockaddr));
 
 	while (true) {
 		ret = 1;
@@ -658,21 +657,24 @@ run_server_process(int socketfd)
 		}
 	}
 
+	free(clientaddr.ai_addr);
 	return (ret);
 }
 
 static inline int
-run_server()
+run_server(struct addrinfo *a_info)
 {
 	int socketfd;
 	int optval = 1, ret = 1;
+	struct sockaddr_in *saddrin;
+	saddrin = (struct sockaddr_in *)a_info->ai_addr;
 
-	if ((socketfd = socket(res->ai_family, res->ai_socktype, 0)) > -1) {
+	if ((socketfd = socket(a_info->ai_family, a_info->ai_socktype, 0)) > -1) {
 		if (setsockopt(socketfd, SOL_SOCKET, SO_REUSEADDR, &optval,
 				sizeof(optval)) > -1) {
 			saddrin->sin_addr.s_addr = INADDR_ANY;
-			if (bind(socketfd, res->ai_addr,
-					res->ai_addrlen) > -1) {
+			if (bind(socketfd, a_info->ai_addr,
+					a_info->ai_addrlen) > -1) {
 				if (listen(socketfd, LISTEN_BACKLOG) > -1) {
 					ret = run_server_process(socketfd);
 				} else {
@@ -770,12 +772,12 @@ done:
 }
 
 static inline int
-run_client()
+run_client(struct addrinfo *a_info)
 {
 	int socketfd, ret = 1;
-	if ((socketfd = socket(res->ai_family, res->ai_socktype, 0)) > -1) {
-		if (connect(socketfd, res->ai_addr,
-			res->ai_addrlen) > -1) {
+	if ((socketfd = socket(a_info->ai_family, a_info->ai_socktype, 0)) > -1) {
+		if (connect(socketfd, a_info->ai_addr,
+			a_info->ai_addrlen) > -1) {
 			ret = run_client_process(socketfd);
 		} else {
 			perror("connect");
@@ -791,8 +793,9 @@ int
 main(int argc, char **argv)
 {
 	int ret = 1;
+	struct addrinfo *a_info;
 
-	if ((ret = prologue(argc, argv)) == 0) {
+	if ((ret = prologue(argc, argv, &a_info)) == 0) {
 		gfarm_error_t gerr = GFARM_ERR_UNKNOWN;
 	
 		gflog_initialize();
@@ -814,14 +817,14 @@ main(int argc, char **argv)
 				is_mutual_authentication);
 		if (gerr == GFARM_ERR_NO_ERROR) {
 			ret = (is_server == true) ?
-				run_server() : run_client();
+				run_server(a_info) : run_client(a_info);
 		} else {
 			gflog_error(GFARM_MSG_UNFIXED,
 				"Can't create a tls session context: %s",
 				gfarm_error_string(gerr));
 		}
 
-		epilogue();
+		epilogue(a_info);
 	}
 
 	return (ret);
