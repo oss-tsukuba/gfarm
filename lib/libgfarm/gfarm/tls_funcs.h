@@ -1341,9 +1341,9 @@ tls_verify_callback_body(int ok, X509_STORE_CTX *sctx)
 		} else {
 			dn = NULL;
 		}
-		gflog_tls_debug(GFARM_MSG_UNFIXED, "depth %d: cert \"%s\" "
+		gflog_tls_debug(GFARM_MSG_UNFIXED, "depth %d: ok %d: cert \"%s\" "
 			"error %d: '%s'",
-			vdepth, dn, verr, verrstr);
+			vdepth, ok, dn, verr, verrstr);
 	}
 
 	ctx->cert_verify_callback_error_ = verr;
@@ -2192,6 +2192,10 @@ tls_session_verify(tls_session_ctx_t ctx, bool *is_verified)
 	X509 *p = NULL;
 	X509_NAME *pn = NULL;
 
+	if (is_verified != NULL) {
+		*is_verified = false;
+	}
+
 	if (likely(ctx != NULL && (ssl = ctx->ssl_) != NULL &&
 		(ctx->role_ == TLS_ROLE_CLIENT ||
 		ctx->do_mutual_auth_ == true))) {
@@ -2205,6 +2209,8 @@ tls_session_verify(tls_session_ctx_t ctx, bool *is_verified)
 			((pn = X509_get_subject_name(p)) != NULL))) {
 			char *dn_oneline = NULL;
 			char *dn_rfc2253 = NULL;
+			bool v = false;
+			int vres = -INT_MAX;
 
 #define DN_FORMAT_ONELINE	(XN_FLAG_ONELINE & ~ASN1_STRFLGS_ESC_MSB)
 #define DN_FORMAT_RFC2253	(XN_FLAG_RFC2253 & ~ASN1_STRFLGS_ESC_MSB)
@@ -2222,6 +2228,24 @@ tls_session_verify(tls_session_ctx_t ctx, bool *is_verified)
 			}
 #undef DN_FORMAT_ONELINE
 #undef DN_FORMAT_RFC2253
+			if (unlikely(ret != GFARM_ERR_NO_ERROR)) {
+				goto done;
+			}
+
+			tls_runtime_flush_error();
+			vres = SSL_get_verify_result(ssl);
+			if (vres == X509_V_OK) {
+				v = true;
+			} else {
+				v = false;
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"Certificate verification failed: %s",
+					X509_verify_cert_error_string(vres));
+				ret = ctx->last_gfarm_error_ = 
+					GFARM_ERRMSG_TLS_CERT_VERIFIY_FAILURE;
+			}
+			ctx->cert_verify_result_error_ = vres;
+			ctx->is_verified_ = v;
 		} else {
 			ret = GFARM_ERR_TLS_RUNTIME_ERROR;
 			gflog_tls_error(GFARM_MSG_UNFIXED,
@@ -2229,31 +2253,20 @@ tls_session_verify(tls_session_ctx_t ctx, bool *is_verified)
 		}
 	} else {
 		if (ctx == NULL || ssl == NULL) {
-			ret = ctx->last_gfarm_error_ =
-				GFARM_ERR_INVALID_ARGUMENT;
+			ret = GFARM_ERR_INVALID_ARGUMENT;
+		} else {
+			/* not mutual auth */
+			ctx->cert_verify_result_error_ = X509_V_OK;
+			ctx->is_verified_ = true;
+			ret = GFARM_ERR_NO_ERROR;
 		}
 	}
 
-	if  (ssl != NULL) {
-		bool v;
-		int vres;
-
-		tls_runtime_flush_error();
-		vres = SSL_get_verify_result(ssl);
-		if (vres == X509_V_OK) {
-			v = true;
-		} else {
-			v = false;
-			gflog_tls_error(GFARM_MSG_UNFIXED,
-				"Certificate verification failed: %s",
-				X509_verify_cert_error_string(vres));
-			ret = ctx->last_gfarm_error_ = 
-				GFARM_ERRMSG_TLS_CERT_VERIFIY_FAILURE;
-		}
-		ctx->cert_verify_result_error_ = vres;
-		ctx->is_verified_ = v;
+done:
+	if (ctx != NULL) {
+		ctx->last_gfarm_error_ = ret;
 		if (is_verified != NULL) {
-			*is_verified = v;
+			*is_verified = ctx->is_verified_;
 		}
 	}
 
