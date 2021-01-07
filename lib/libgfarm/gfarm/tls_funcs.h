@@ -1108,6 +1108,8 @@ tls_session_clear_handle(tls_session_ctx_t ctx, bool do_free)
 			ctx->peer_dn_oneline_ = NULL;
 			free(ctx->peer_dn_rfc2253_);
 			ctx->peer_dn_rfc2253_ = NULL;
+			free(ctx->peer_dn_gsi_);
+			ctx->peer_dn_gsi_ = NULL;
 		}
 	} else {
 		ret = GFARM_ERR_INVALID_ARGUMENT;
@@ -1229,6 +1231,8 @@ tls_session_setup_handle(tls_session_ctx_t ctx)
 			ctx->peer_dn_oneline_ = NULL;
 			free(ctx->peer_dn_rfc2253_);
 			ctx->peer_dn_rfc2253_ = NULL;
+			free(ctx->peer_dn_gsi_);
+			ctx->peer_dn_gsi_ = NULL;
 		}
 	} else {
 		ret = GFARM_ERR_INVALID_ARGUMENT;
@@ -1305,6 +1309,84 @@ get_peer_subjectdn(X509_NAME *pn, int mode, char **nameptr, int maxlen)
 	return (ret);
 }
 
+static inline gfarm_error_t
+get_peer_subjectdn_gsi_ish(X509_NAME *pn, char **nameptr, int maxlen)
+{
+	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
+
+	if (likely(pn != NULL && nameptr != NULL)) {
+		char buf[4096];
+		char *dn = buf;
+		char *cnp = NULL;
+
+		if (*nameptr == NULL) {
+			*nameptr = NULL;
+		}
+#define DN_FORMAT_GLOBUS						\
+		(XN_FLAG_RFC2253 & ~(ASN1_STRFLGS_ESC_MSB|XN_FLAG_DN_REV))
+		ret = get_peer_subjectdn(pn, DN_FORMAT_GLOBUS,
+				 &dn, sizeof(buf));
+#undef DN_FORMAT_GLOBUS			
+		cnp = (char *)memmem(buf, sizeof(buf), "CN=", 3);
+
+		if (likely(ret == GFARM_ERR_NO_ERROR &&
+				(cnp = (char *)memmem(buf, sizeof(buf),
+						"CN=", 3)) != NULL)) {
+			char result[4096];
+			char *r = result;
+			char *d = buf;
+
+			*r++ = '/';
+			do {
+				switch (*d) {
+				case '/':
+					if (likely(r < cnp)) {
+						*r++ = '\\';
+					}
+					*r++ = *d++;
+					break;
+				case ',':
+					*r++ = '/';
+					d++;
+					break;
+				default:
+					*r++ = *d++;
+					break;
+				}
+			} while (*d != '\0' &&
+				r < (&result[0] + sizeof(result)));
+			result[r - &result[0]] = '\0';
+
+			if (*nameptr != NULL && maxlen > 0) {
+				snprintf(*nameptr, maxlen, "%s", result);
+				ret = GFARM_ERR_NO_ERROR;
+			} else {
+				char *dn = strdup(result);
+
+				if (likely(dn != NULL)) {
+					ret = GFARM_ERR_NO_ERROR;
+					*nameptr = dn;
+				} else {
+					ret = GFARM_ERR_NO_MEMORY;
+					gflog_tls_error(GFARM_MSG_UNFIXED,
+						"Can't allocate a buffer for "
+						"a GSI-compat SubjectDN.");
+				}
+			}
+		} else {
+			if (unlikely(cnp == NULL)) {
+				ret = GFARM_ERR_INVALID_CREDENTIAL;
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"A SubjectDN \"%s\" has no CN.", buf);
+			}
+		}
+	} else {
+		ret = GFARM_ERR_INVALID_ARGUMENT;
+	}
+
+	return (ret);
+}
+	
 static inline int
 tls_verify_callback_body(int ok, X509_STORE_CTX *sctx)
 {
@@ -1327,22 +1409,20 @@ tls_verify_callback_body(int ok, X509_STORE_CTX *sctx)
 	verrstr = X509_verify_cert_error_string(verr);
 
 	if (gflog_get_priority_level() >= LOG_DEBUG) {
-		char dnbuf[1024];
+		char dnbuf[4096];
 		char *dn = dnbuf;
 		X509 *p = X509_STORE_CTX_get_current_cert(sctx);
 		X509_NAME *pn = (p != NULL) ? X509_get_subject_name(p) : NULL;
 
 		if (pn != NULL &&
-			get_peer_subjectdn(pn,
-				(XN_FLAG_ONELINE & ~ASN1_STRFLGS_ESC_MSB),
-				&dn, sizeof(dnbuf)) ==
+			get_peer_subjectdn_gsi_ish(pn, &dn, sizeof(dnbuf)) ==
 			GFARM_ERR_NO_ERROR) {
 			dn = dnbuf;
 		} else {
 			dn = NULL;
 		}
-		gflog_tls_debug(GFARM_MSG_UNFIXED, "depth %d: ok %d: cert \"%s\" "
-			"error %d: '%s'",
+		gflog_tls_debug(GFARM_MSG_UNFIXED, "depth %d: ok %d: cert "
+			"\"%s\": error %d: error string '%s'",
 			vdepth, ok, dn, verr, verrstr);
 	}
 
@@ -1987,6 +2067,7 @@ tls_session_destroy_ctx(tls_session_ctx_t x)
 	if (x != NULL) {
 		free(x->peer_dn_oneline_);
 		free(x->peer_dn_rfc2253_);
+		free(x->peer_dn_gsi_);
 		if (x->prvkey_ != NULL) {
 			EVP_PKEY_free(x->prvkey_);
 		}
@@ -2204,11 +2285,13 @@ tls_session_verify(tls_session_ctx_t ctx, bool *is_verified)
 		 */
 		ctx->peer_dn_oneline_ = NULL;
 		ctx->peer_dn_rfc2253_ = NULL;
+		ctx->peer_dn_gsi_ = NULL;
 		tls_runtime_flush_error();
 		if (likely(((p = SSL_get_peer_certificate(ssl)) != NULL) &&
 			((pn = X509_get_subject_name(p)) != NULL))) {
 			char *dn_oneline = NULL;
 			char *dn_rfc2253 = NULL;
+			char *dn_gsi = NULL;
 			bool v = false;
 			int vres = -INT_MAX;
 
@@ -2225,6 +2308,11 @@ tls_session_verify(tls_session_ctx_t ctx, bool *is_verified)
 						&dn_rfc2253, 0)) ==
 				GFARM_ERR_NO_ERROR)) {
 				ctx->peer_dn_rfc2253_ = dn_rfc2253;
+			}
+			if (likely((ret = get_peer_subjectdn_gsi_ish(pn,
+						&dn_gsi, 0)) ==
+				GFARM_ERR_NO_ERROR)) {
+				ctx->peer_dn_gsi_ = dn_gsi;
 			}
 #undef DN_FORMAT_ONELINE
 #undef DN_FORMAT_RFC2253
@@ -2256,6 +2344,9 @@ tls_session_verify(tls_session_ctx_t ctx, bool *is_verified)
 			ret = GFARM_ERR_INVALID_ARGUMENT;
 		} else {
 			/* not mutual auth */
+			ctx->peer_dn_oneline_ = NULL;
+			ctx->peer_dn_rfc2253_ = NULL;
+			ctx->peer_dn_gsi_ = NULL;
 			ctx->cert_verify_result_error_ = X509_V_OK;
 			ctx->is_verified_ = true;
 			ret = GFARM_ERR_NO_ERROR;
@@ -2387,7 +2478,7 @@ tls_session_establish(tls_session_ctx_t ctx, int fd)
 			gflog_tls_notice(GFARM_MSG_UNFIXED,
 				"Authentication between \"%s\" %s and a "
 				"TLS session %s.",
-				ctx->peer_dn_oneline_,
+				ctx->peer_dn_gsi_,
 				(is_verified == true) ?
 					 "verified" : "not verified",
 				(is_verified == true) ?
@@ -2654,6 +2745,16 @@ tls_session_peer_subjectdn_rfc2253(tls_session_ctx_t ctx)
 {
 	if (likely(ctx != NULL)) {
 		return (ctx->peer_dn_rfc2253_);
+	} else {
+		return (NULL);
+	}
+}
+
+static inline char *
+tls_session_peer_subjectdn_gsi(tls_session_ctx_t ctx)
+{
+	if (likely(ctx != NULL)) {
+		return (ctx->peer_dn_gsi_);
 	} else {
 		return (NULL);
 	}

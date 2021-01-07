@@ -236,6 +236,13 @@ gfp_xdr_tls_initiator_dn_rfc2253(struct gfp_xdr *conn)
 			((tls_session_ctx_t)(gfp_xdr_cookie(conn)))));
 }
 
+char *
+gfp_xdr_tls_initiator_dn_gsi(struct gfp_xdr *conn)
+{
+	return (tls_session_peer_subjectdn_gsi(
+			((tls_session_ctx_t)(gfp_xdr_cookie(conn)))));
+}
+
 
 
 #endif /* HAVE_TLS_1_3 */
