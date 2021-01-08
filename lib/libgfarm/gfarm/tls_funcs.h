@@ -1428,7 +1428,7 @@ tls_verify_callback_body(int ok, X509_STORE_CTX *sctx)
 
 	ctx->cert_verify_callback_error_ = verr;
 	
-	return ret;
+	return (ret);
 }
 
 /*
@@ -2364,6 +2364,9 @@ done:
 	return (ret);
 }
 
+static inline char *
+tls_session_peer_cn(tls_session_ctx_t ctx);
+
 static inline gfarm_error_t
 tls_session_establish(tls_session_ctx_t ctx, int fd)
 {
@@ -2483,6 +2486,8 @@ tls_session_establish(tls_session_ctx_t ctx, int fd)
 					 "verified" : "not verified",
 				(is_verified == true) ?
 					 "established" : "not established");
+			gflog_tls_debug(GFARM_MSG_UNFIXED,
+				"peer CN \"%s\"", tls_session_peer_cn(ctx));
 		}
 	}
 
@@ -2758,6 +2763,22 @@ tls_session_peer_subjectdn_gsi(tls_session_ctx_t ctx)
 	} else {
 		return (NULL);
 	}
+}
+
+static inline char *
+tls_session_peer_cn(tls_session_ctx_t ctx)
+{
+	char *ret = NULL;
+
+	if (likely(ctx != NULL &&
+		is_valid_string(ctx->peer_dn_gsi_) == true)) {
+		char *dn = ctx->peer_dn_gsi_;
+		if (likely(dn != NULL)) {
+			ret = (char *)memmem(dn, strlen(dn), "CN=", 3);
+		}
+	}
+
+	return (ret);
 }
 
 
