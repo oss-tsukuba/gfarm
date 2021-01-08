@@ -23,10 +23,7 @@ gfarm_auth_request_tls_sharedsecret(struct gfp_xdr *conn,
 	struct passwd *pwd)
 {
 	gfarm_error_t e;
-	char *serv_service = gfarm_auth_server_cred_service_get(service_tag);
-
-	e = gfp_xdr_tls_alloc(conn, gfp_xdr_fd(conn),
-	    GFP_XDR_TLS_INITIATE, serv_service, hostname);
+	e = gfp_xdr_tls_alloc(conn, gfp_xdr_fd(conn), GFP_XDR_TLS_INITIATE);
 	if (e != GFARM_ERR_NO_ERROR) {
 		/* is this case graceful? */
 		return (e);
@@ -57,7 +54,6 @@ gfarm_auth_request_tls_sharedsecret_multiplexed(struct gfarm_eventqueue *q,
 {
 	gfarm_error_t e;
 	struct gfarm_auth_request_tls_sharedsecret_state *state;
-	char *serv_service = gfarm_auth_server_cred_service_get(service_tag);
 
 	GFARM_MALLOC(state);
 	if (state == NULL) {
@@ -69,8 +65,7 @@ gfarm_auth_request_tls_sharedsecret_multiplexed(struct gfarm_eventqueue *q,
 	}
 	state->conn = conn;
 
-	e = gfp_xdr_tls_alloc(conn, gfp_xdr_fd(conn),
-	    GFP_XDR_TLS_INITIATE, serv_service, hostname);
+	e = gfp_xdr_tls_alloc(conn, gfp_xdr_fd(conn), GFP_XDR_TLS_INITIATE);
 	if (e != GFARM_ERR_NO_ERROR) {
 		/* is this case graceful? */
 		free(state);
@@ -118,12 +113,11 @@ gfarm_auth_request_tls_client_certificate(struct gfp_xdr *conn,
 	struct passwd *pwd)
 {
 	gfarm_error_t e;
-	char *serv_service = gfarm_auth_server_cred_service_get(service_tag);
 	int eof;
 	gfarm_int32_t result; /* enum gfarm_auth_error */
 
 	e = gfp_xdr_tls_alloc(conn, gfp_xdr_fd(conn),
-	    GFP_XDR_TLS_INITIATE|GFP_XDR_TLS_INITIATE, serv_service, hostname);
+	    GFP_XDR_TLS_INITIATE|GFP_XDR_TLS_CLIENT_AUTHENTICATION);
 	if (e != GFARM_ERR_NO_ERROR) {
 		/* is this case graceful? */
 		return (e);
@@ -222,7 +216,6 @@ gfarm_auth_request_tls_client_certificate_multiplexed(
 	void **statepp)
 {
 	gfarm_error_t e;
-	char *serv_service = gfarm_auth_server_cred_service_get(service_tag);
 	struct gfarm_auth_request_tls_client_certificate_state *state;
 	int rv;
 
@@ -252,7 +245,7 @@ gfarm_auth_request_tls_client_certificate_multiplexed(
 	}
 
 	e = gfp_xdr_tls_alloc(conn, gfp_xdr_fd(conn),
-	    GFP_XDR_TLS_INITIATE|GFP_XDR_TLS_INITIATE, serv_service, hostname);
+	    GFP_XDR_TLS_INITIATE|GFP_XDR_TLS_CLIENT_AUTHENTICATION);
 	if (e != GFARM_ERR_NO_ERROR) {
 		/* is this case graceful? */
 		free(state);

@@ -24,8 +24,7 @@ gfarm_authorize_tls_sharedsecret(struct gfp_xdr *conn, int switch_to,
 {
 	gfarm_error_t e;
 
-	e = gfp_xdr_tls_alloc(conn, gfp_xdr_fd(conn),
-	    GFP_XDR_TLS_ACCEPT, NULL, NULL);
+	e = gfp_xdr_tls_alloc(conn, gfp_xdr_fd(conn), GFP_XDR_TLS_ACCEPT);
 	if (e != GFARM_ERR_NO_ERROR) {
 		/* is this case graceful? */
 		return (e);
@@ -56,8 +55,7 @@ gfarm_error_t gfarm_authorize_tls_client_certificate(
 	gfarm_int32_t peer_type, result;
 	char *reserved, *global_username = NULL;
 
-	e = gfp_xdr_tls_alloc(conn, gfp_xdr_fd(conn),
-	    GFP_XDR_TLS_ACCEPT, NULL, NULL);
+	e = gfp_xdr_tls_alloc(conn, gfp_xdr_fd(conn), GFP_XDR_TLS_ACCEPT);
 	if (e != GFARM_ERR_NO_ERROR) {
 		/* is this case graceful? */
 		return (e);

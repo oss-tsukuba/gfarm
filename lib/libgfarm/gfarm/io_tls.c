@@ -180,14 +180,10 @@ static struct gfp_iobuffer_ops gfp_xdr_tls_iobuf_ops = {
  * An SSL_CTX/SSL constructor
  */
 gfarm_error_t
-gfp_xdr_tls_alloc(struct gfp_xdr *conn,	int fd,
-	int flags, const char *service, const char *name)
+gfp_xdr_tls_alloc(struct gfp_xdr *conn,	int fd, int flags)
 {
 	gfarm_error_t ret;
 
-	/* just for now */
-	(void)service;
-	(void)name;
 
 	tls_session_ctx_t ctx = NULL;
 	bool do_mutual_auth =
