@@ -358,13 +358,17 @@ prologue(int argc, char **argv, struct addrinfo **a_info)
 	hints.ai_family = AF_INET;
 	errno = 0;
 	if ((err = getaddrinfo(ipaddr, portnum, &hints, a_info)) == 0) {
-		saddrin = (struct sockaddr_in *)(*a_info)->ai_addr;
-		result = ntohs(saddrin->sin_port);
-		if (result >= MIN_PORT_NUMBER &&
-			result <= MAX_PORT_NUMBER) {
-			ret = 0;
+		if (is_server) {
+			saddrin = (struct sockaddr_in *)(*a_info)->ai_addr;
+			result = ntohs(saddrin->sin_port);
+			if (result >= MIN_PORT_NUMBER &&
+				result <= MAX_PORT_NUMBER) {
+				ret = 0;
+			} else {
+				fprintf(stderr, "out of port number range.\n");
+			}
 		} else {
-			fprintf(stderr, "out of port number range.\n");
+			ret = 0;
 		}
 	} else {
 		perror("getaddrinfo");
