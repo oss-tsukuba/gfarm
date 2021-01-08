@@ -79,7 +79,7 @@ gfarm_error_t gfarm_authorize_tls_client_certificate(
 	} else {
 		e = (*auth_uid_to_global_user)(closure,
 		    GFARM_AUTH_METHOD_TLS_CLIENT_CERTIFICATE, peer_type,
-		    gfp_xdr_tls_initiator_dn_oneline(conn), &global_username);
+		    gfp_xdr_tls_initiator_dn_gsi(conn), &global_username);
 		if (e == GFARM_ERR_NO_ERROR) {
 			switch (peer_type) {
 			case GFARM_AUTH_ID_TYPE_SPOOL_HOST:
@@ -130,7 +130,7 @@ gfarm_error_t gfarm_authorize_tls_client_certificate(
 		    peer_type == GFARM_AUTH_ID_TYPE_SPOOL_HOST ? "gfsd" :
 		    peer_type == GFARM_AUTH_ID_TYPE_METADATA_HOST ? "gfmd" :
 		    "unknown",
-		    gfp_xdr_tls_initiator_dn_oneline(conn));
+		    gfp_xdr_tls_initiator_dn_gsi(conn));
 
 		*peer_typep = peer_type;
 		*global_usernamep = global_username;
