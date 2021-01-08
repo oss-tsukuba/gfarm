@@ -3406,6 +3406,9 @@ parse_one_line(const char *s, char *p,
 
 	} else if (strcmp(s, o = "tls_build_chain_local") == 0) {
 		e = parse_set_misc_enabled(p, &gfarm_ctxp->tls_build_chain_local);
+	} else if (strcmp(s, o = "tls_allow_crl_absence") == 0) {
+		e = parse_set_misc_enabled(p,
+		    &gfarm_ctxp->tls_allow_crl_absence);
 
 	} else if (strcmp(s, o = "auth") == 0) {
 		e = parse_auth_arguments(p, position, &o);
@@ -3883,6 +3886,9 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_ctxp->tls_build_chain_local == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->tls_build_chain_local =
 		    GFARM_TLS_BUILD_CHAIN_LOCAL_DEFAULT;
+	if (gfarm_ctxp->tls_allow_crl_absence == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_ctxp->tls_allow_crl_absence =
+		    GFARM_TLS_ALLOW_CRL_ABSENCE_DEFAULT;
 
 	if (gfarm_ctxp->log_level == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->log_level = GFARM_DEFAULT_PRIORITY_LEVEL_TO_LOG;

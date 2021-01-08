@@ -94,6 +94,7 @@ struct gfarm_context {
 	char *tls_key_file;
 	int tls_key_update; /* boolean */
 	int tls_build_chain_local; /* boolean */
+	int tls_allow_crl_absence; /* boolean */
 };
 #ifndef __KERNEL__	/* gfarm_ctxp */
 extern struct gfarm_context *gfarm_ctxp;
