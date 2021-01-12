@@ -2,8 +2,26 @@
 
 TOP_DIR=`dirname $0`
 TOP_DIR=`cd ${TOP_DIR}; pwd`
-DIR="gfarm_environment"
-echo `pwd`
+
+usage() {
+    cat << EOS
+Generate test data for certs-chain file
+
+  OPTION:
+    -d CERT_DIR       Must specify cert_directory.
+    -h                Help.
+EOS
+    exit 0
+}
+
+while getopts d:h OPT; do
+    case ${OPT} in
+        d) CERT_DIR=${OPTARG};;
+        h) usage;;
+        *) usage;;
+    esac
+done
+shift `expr $OPTIND - 1`
 
 ## client cert chain ##
 make_client_chain() {
@@ -102,32 +120,32 @@ ca_rm() {
 ## A_B certs all ##
 make_ab() {
     ret=1
-    mkdir -p ${TOP_DIR}/${DIR}/A_B/cacerts_all
+    mkdir -p ${CERT_DIR}/A_B/cacerts_all
     if [ $? -ne 0 ]; then
         return $ret
     fi
 
     cp ${CACERTS_ALL_A_DIR}/root_ca.crt \
-    ${TOP_DIR}/${DIR}/A_B/cacerts_all/root_ca_A.crt \
+    ${CERT_DIR}/A_B/cacerts_all/root_ca_A.crt \
     && cp ${CACERTS_ALL_A_DIR}/inter_ca_1.crt \
-    ${TOP_DIR}/${DIR}/A_B/cacerts_all/inter_ca_A_1.crt \
+    ${CERT_DIR}/A_B/cacerts_all/inter_ca_A_1.crt \
     && cp ${CACERTS_ALL_A_DIR}/inter_ca_2.crt \
-    ${TOP_DIR}/${DIR}/A_B/cacerts_all/inter_ca_A_2.crt \
+    ${CERT_DIR}/A_B/cacerts_all/inter_ca_A_2.crt \
     && cp ${CACERTS_ALL_A_DIR}/inter_ca_3.crt \
-    ${TOP_DIR}/${DIR}/A_B/cacerts_all/inter_ca_A_3.crt \
+    ${CERT_DIR}/A_B/cacerts_all/inter_ca_A_3.crt \
     && cp ${CACERTS_ALL_B_DIR}/root_ca.crt \
-    ${TOP_DIR}/${DIR}/A_B/cacerts_all/root_ca_B.crt \
+    ${CERT_DIR}/A_B/cacerts_all/root_ca_B.crt \
     && cp ${CACERTS_ALL_B_DIR}/inter_ca_1.crt \
-    ${TOP_DIR}/${DIR}/A_B/cacerts_all/inter_ca_B_1.crt \
+    ${CERT_DIR}/A_B/cacerts_all/inter_ca_B_1.crt \
     && cp ${CACERTS_ALL_B_DIR}/inter_ca_2.crt \
-    ${TOP_DIR}/${DIR}/A_B/cacerts_all/inter_ca_B_2.crt \
+    ${CERT_DIR}/A_B/cacerts_all/inter_ca_B_2.crt \
     && cp ${CACERTS_ALL_B_DIR}/inter_ca_3.crt \
-    ${TOP_DIR}/${DIR}/A_B/cacerts_all/inter_ca_B_3.crt
+    ${CERT_DIR}/A_B/cacerts_all/inter_ca_B_3.crt
     if [ $? -ne 0 ]; then
         return $ret
     fi
 
-    ${TOP_DIR}/gen_hash_cert_files.sh ${TOP_DIR}/${DIR}/A_B/cacerts_all/
+    ${TOP_DIR}/gen_hash_cert_files.sh ${CERT_DIR}/A_B/cacerts_all/
     if [ $? -ne 0 ]; then
         return $ret
     fi
@@ -136,12 +154,12 @@ make_ab() {
 }
 
 ### main ###
-if [ ! -d "${TOP_DIR}/${DIR}/A" -a -d "${TOP_DIR}/${DIR}/B" ]; then
+if [ ! -d "${CERT_DIR}/A" -a -d "${CERT_DIR}/B" ]; then
     echo "A or B dir not exists" >&2
     exit 1
 fi
-CERT_A_DIR=${TOP_DIR}/${DIR}/A
-CERT_B_DIR=${TOP_DIR}/${DIR}/B
+CERT_A_DIR=${CERT_DIR}/A
+CERT_B_DIR=${CERT_DIR}/B
 
 if [ ! -d "${CERT_A_DIR}/cacerts_all" -a -d "${CERT_B_DIR}/cacerts_all" ]; then
     echo "cacerts_all dir not exists" >&2
