@@ -1,6 +1,9 @@
 #!/bin/sh
 
-# run_test
+puts_error() {
+    echo "ERR: $1" 1>&2
+}
+
 run_test() {
     _r=1
     test_id=$1
@@ -21,7 +24,7 @@ run_test() {
     $3 > /dev/null 2>&1
     result=$?
 
-    expected_result=`cat ${expected_result_csv} | grep ${test_id} | awk -F "," '{print $2}'`
+    expected_result=`cat ${expected_result_csv} | grep -E "^${test_id}" | awk -F "," '{print $2}'`
     if [ "${result}" = "${expected_result}" ]; then
         echo "${test_id}: OK"
         _r=0
