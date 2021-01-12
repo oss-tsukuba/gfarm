@@ -65,8 +65,20 @@ if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 4 ]; then
 fi
 
 # test 5
+if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 5 ]; then
+    ./test5.sh
+    if [ $? -ne 0 ]; then
+        fail_flag=1
+    fi
+fi
 
 # test 7
+if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 7 ]; then
+    ./test7.sh
+    if [ $? -ne 0 ]; then
+        fail_flag=1
+    fi
+fi
 
 # test 8
 
