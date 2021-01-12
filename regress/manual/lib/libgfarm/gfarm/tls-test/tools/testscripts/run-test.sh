@@ -53,6 +53,12 @@ if [ ${exec_test_num} -ne 0 \
 fi
 
 # test 1
+if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 1 ]; then
+    ./test1.sh
+    if [ $? -ne 0 ]; then
+        fail_flag=1
+    fi
+fi
 
 # test 2
 
@@ -83,8 +89,20 @@ fi
 # test 8
 
 # test 9
+if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 9 ]; then
+    ./test9.sh
+    if [ $? -ne 0 ]; then
+        fail_flag=1
+    fi
+fi
 
 # test 10
+if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 10 ]; then
+    ./test10.sh
+    if [ $? -ne 0 ]; then
+        fail_flag=1
+    fi
+fi
 
 if [ ${fail_flag} -eq 0 ]; then
     _ret=0
