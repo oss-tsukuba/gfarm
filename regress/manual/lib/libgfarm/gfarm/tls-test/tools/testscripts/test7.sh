@@ -1,15 +1,18 @@
 #!/bin/sh
 
-source ./lib/funcs.sh
+TOP_DIR=`dirname $0`
+TOP_DIR=`cd ${TOP_DIR}; pwd`
+TOP_DIR=`cd ${TOP_DIR}/../../; pwd`
+
+source ${TOP_DIR}/tools/testscripts/lib/funcs.sh
 
 _ret=1
-topdir="../.."
-envdir="../../gfarm_environment"
 test_id="7-1"
 result=""
 expected_result=""
-expected_result_csv="expected-test-result.csv"
+expected_result_csv="${TOP_DIR}/tools/testscripts/expected-test-result.csv"
 key_update_num=0
+ENV_DIR="${TOP_DIR}/gfarm_environment"
 
 ulimit -a | grep stack | grep unlimited > /dev/null
 if [ $? -ne 0 ]; then
@@ -17,11 +20,10 @@ if [ $? -ne 0 ]; then
 fi
 
 # 7-1
-
-${topdir}/tls-test -s --allow_no_crl --mutual_authentication \
-    --tls_certificate_file ${envdir}/A/server/server.crt \
-    --tls_key_file ${envdir}/A/server/server.key \
-    --tls_ca_certificate_path ${envdir}/A/cacerts_all \
+${TOP_DIR}/tls-test -s --allow_no_crl --mutual_authentication \
+    --tls_certificate_file ${ENV_DIR}/A/server/server.crt \
+    --tls_key_file ${ENV_DIR}/A/server/server.key \
+    --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
     --buf_size 68157440 --tls_key_update 16777216 --once > /dev/null 2>&1 &
 
 while :
@@ -32,10 +34,10 @@ do
     fi
 done
 
-key_update_num=`${topdir}/tls-test --allow_no_crl --mutual_authentication \
-    --tls_certificate_file ${envdir}/A/client/client.crt \
-    --tls_key_file ${envdir}/A/client/client.key \
-    --tls_ca_certificate_path ${envdir}/A/cacerts_all \
+key_update_num=`${TOP_DIR}/tls-test --allow_no_crl --mutual_authentication \
+    --tls_certificate_file ${ENV_DIR}/A/client/client.crt \
+    --tls_key_file ${ENV_DIR}/A/client/client.key \
+    --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
     --buf_size 68157440 --tls_key_update 16777216 --debug_level 1 2>&1 | grep "key updatted" | wc -l`
 result=$?
 

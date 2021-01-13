@@ -9,7 +9,7 @@ run_test() {
     test_id=$1
     result=""
     expected_result=""
-    expected_result_csv="expected-test-result.csv"
+    expected_result_csv="`dirname $0`/expected-test-result.csv"
 
     $2 > /dev/null 2>&1 &
 
