@@ -4,6 +4,8 @@ TOP_DIR=`dirname $0`
 TOP_DIR=`cd "${TOP_DIR}"; pwd`
 TOP_DIR=`cd "${TOP_DIR}/../../"; pwd`
 ENV_DIR="${TOP_DIR}/gfarm_environment"
+FAIL_FLAG=0
+
 
 ## function ##
 base_func_server() {
@@ -83,6 +85,7 @@ base_func_client() {
         echo "$7:OK"
     else
         echo "$7:NG"
+        FAIL_FLAG=1
     fi
     return 0
 }
@@ -401,4 +404,8 @@ base_func_client "/" "/" "/" \
                  "${ENV_DIR}/B/cacerts_all" 0 0 1-5-5
 
 
-exit 0
+if [ ${FAIL_FLAG} -eq 0 ]; then
+    exit 0
+else
+    exit 1
+fi

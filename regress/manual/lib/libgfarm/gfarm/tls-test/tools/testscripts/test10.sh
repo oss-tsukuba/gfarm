@@ -6,7 +6,7 @@ TOP_DIR=`cd ${TOP_DIR}/../../; pwd`
 source "${TOP_DIR}/tools/testscripts/lib/funcs.sh"
 ENV_DIR="${TOP_DIR}/gfarm_environment"
 
-
+FAIL_FLAG=0
 CERT_DIR="${ENV_DIR}/cert_store"
 
 
@@ -18,6 +18,7 @@ result_check_func() {
         echo "$1:OK"
     else
         echo "$1:NG"
+        FAIL_FLAG=1
     fi  
     return 0
 }
@@ -31,8 +32,22 @@ test_id="10-1"
 --tls_key_file "${CERT_DIR}/A/server/server.key" \
 --tls_ca_certificate_path "${CERT_DIR}/A/cacerts_all" --allow_no_crl &
 result=$?
+while :
+    do
+        netstat -an | grep :12345 | grep LISTEN > /dev/null 2>&1
+        if [ $? -eq 0 ]; then
+            break
+        fi
+    done
 result_check_func ${test_id} ${result}
 kill -9 $!
+while :
+do
+   kill -0 $!
+   if [ $? -ne 0 ]; then
+       break
+   fi  
+done
 
 
 ## 10-2 ##
@@ -45,7 +60,9 @@ run_test "10-2" \
 --tls_certificate_file ${CERT_DIR}/B/client/client.crt \
 --tls_key_file ${CERT_DIR}/B/client/client.key \
 --tls_ca_certificate_path ${CERT_DIR}/A/cacerts_all --allow_no_crl"
-
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
 ## 10-3 ##
 test_id="10-3"
@@ -56,8 +73,25 @@ test_id="10-3"
 --tls_ca_certificate_path "${CERT_DIR}/A/cacerts_all" \
 --tls_client_ca_certificate_path "${CERT_DIR}/B/cacerts_all" --allow_no_crl &
 result=$?
+while :
+    do
+        netstat -an | grep :12345 | grep LISTEN > /dev/null 2>&1
+        if [ $? -eq 0 ]; then
+            break
+        fi
+    done
 result_check_func ${test_id} ${result}
 kill -9 $!
+while :
+do
+   kill -0 $!
+   if [ $? -ne 0 ]; then
+       break
+   fi  
+done
 
-
-exit 0
+if [ ${FAIL_FLAG} -eq 0 ]; then
+    exit 0
+else
+    exit 1
+fi
