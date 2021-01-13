@@ -61,6 +61,12 @@ if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 1 ]; then
 fi
 
 # test 2
+if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 2 ]; then
+    ./test2.sh
+    if [ $? -ne 0 ]; then
+        fail_flag=1
+    fi
+fi
 
 # test 4
 if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 4 ]; then
