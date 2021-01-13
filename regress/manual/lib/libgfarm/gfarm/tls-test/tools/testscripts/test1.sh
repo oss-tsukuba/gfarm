@@ -2,7 +2,7 @@
 
 TOP_DIR=`dirname $0`
 TOP_DIR=`cd "${TOP_DIR}"; pwd`
-TOP_DIR=`cd ../../; pwd`
+TOP_DIR=`cd "${TOP_DIR}/../../"; pwd`
 ENV_DIR="${TOP_DIR}/gfarm_environment"
 
 ## function ##
@@ -77,7 +77,7 @@ base_func_client() {
         fi
     fi
     expected_result=`grep -w "$7" \
-                     "${TOP_DIR}/tools/testscripts/result.csv" \
+                     "${TOP_DIR}/tools/testscripts/expected-test-result.csv" \
                      | awk -F "," '{print $2}' | sed 's/\r$//'`
     if [ $real_result -eq $expected_result ]; then
         echo "$7:OK"
