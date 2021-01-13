@@ -11,6 +11,11 @@ expected_result=""
 expected_result_csv="expected-test-result.csv"
 key_update_num=0
 
+ulimit -a | grep stack | grep unlimited > /dev/null
+if [ $? -ne 0 ]; then
+    ulimit -s unlimited
+fi
+
 # 7-1
 
 ${topdir}/tls-test -s --allow_no_crl --mutual_authentication \
