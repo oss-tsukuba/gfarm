@@ -815,7 +815,7 @@ main(int argc, char **argv)
 	struct addrinfo *a_info;
 	tls_session_ctx_t tls_ctx = NULL;
 
-	if ((ret = prologue(argc, argv, &a_info)) == 0) {
+	if (prologue(argc, argv, &a_info) == 0) {
 		gfarm_error_t gerr = GFARM_ERR_UNKNOWN;
 
 		gerr = tls_session_create_ctx(&tls_ctx,

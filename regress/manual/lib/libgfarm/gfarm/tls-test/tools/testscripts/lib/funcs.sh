@@ -24,7 +24,7 @@ run_test() {
     $3 > /dev/null 2>&1
     result=$?
 
-    expected_result=`cat ${expected_result_csv} | grep -E "^${test_id}" | awk -F "," '{print $2}'`
+    expected_result=`cat ${expected_result_csv} | grep -E "^${test_id}" | awk -F "," '{print $2}' | sed 's:\r$::'`
     if [ "${result}" = "${expected_result}" ]; then
         echo "${test_id}: OK"
         _r=0

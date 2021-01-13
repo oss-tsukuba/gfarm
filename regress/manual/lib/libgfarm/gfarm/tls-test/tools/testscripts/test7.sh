@@ -39,7 +39,7 @@ key_update_num=`${topdir}/tls-test --allow_no_crl --mutual_authentication \
     --buf_size 68157440 --tls_key_update 16777216 --debug_level 1 2>&1 | grep "key updatted" | wc -l`
 result=$?
 
-expected_result=`cat ${expected_result_csv} | grep -E "^${test_id}" | awk -F "," '{print $2}'`
+expected_result=`cat ${expected_result_csv} | grep -E "^${test_id}" | awk -F "," '{print $2}' | sed 's:\r$::'`
 if [ "${result}" = "${expected_result}" -a ${key_update_num} -eq 16 ]; then
     echo "${test_id}: OK"
     _ret=0
