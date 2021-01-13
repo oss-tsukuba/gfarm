@@ -96,6 +96,12 @@ if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 7 ]; then
 fi
 
 # test 8
+if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 8 ]; then
+    ${TOP_DIR}/test8.sh
+    if [ $? -ne 0 ]; then
+        fail_flag=1
+    fi
+fi
 
 # test 9
 if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 9 ]; then
