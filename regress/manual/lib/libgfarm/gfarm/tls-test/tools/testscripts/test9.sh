@@ -14,8 +14,7 @@ CERT_DIR="${ENV_DIR}/permission_cert"
 ## result_check func ##
 
 result_check_func() {
-    expected_result=`grep -w "$1" "${TOP_DIR}/tools/testscripts/result.csv" | \
-                     awk -F "," '{print $2}' | sed 's:\r$::'`
+    expected_result=`grep -E "^$1" "${TOP_DIR}/tools/testscripts/expected-test-result.csv" | awk -F "," '{print $2}' | sed 's:\r$::'`
     if [ $2 -eq $expected_result ]; then
         echo "$1:OK"
     else
