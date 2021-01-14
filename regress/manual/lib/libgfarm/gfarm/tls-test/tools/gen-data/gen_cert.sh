@@ -284,6 +284,8 @@ fi
 gen_${CA_TYPE}
 RET=$?
 
+find ./ -name "*\.key" | xargs -I {} chmod 600 {}
+
 popd
 
 exit ${RET}

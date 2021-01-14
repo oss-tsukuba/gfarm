@@ -13,11 +13,11 @@ base_func_server() {
         if [ $5 -ne 0 ]; then
             "${TOP_DIR}"/tls-test -s --tls_certificate_file="$1" \
             --tls_key_file="$3" --tls_ca_certificate_path="$4" \
-            --mutual_authentication --allow_no_crl --once &
+            --mutual_authentication --allow_no_crl --once & > /dev/null 2>&1
         else
             "${TOP_DIR}"/tls-test -s --tls_certificate_file="$1" \
             --tls_key_file="$3" --tls_ca_certificate_path="$4" \
-            --allow_no_crl --once &
+            --allow_no_crl --once & > /dev/null 2>&1
         fi
 
     else
@@ -25,21 +25,21 @@ base_func_server() {
               if [ $6 -ne 0 ]; then
                   "${TOP_DIR}"/tls-test -s --tls_certificate_chain_file="$2" \
                   --tls_key_file="$3" --tls_ca_certificate_path="$4" \
-                  --mutual_authentication --build_chain --allow_no_crl --once &
+                  --mutual_authentication --build_chain --allow_no_crl --once & > /dev/null 2>&1
               else
                   "${TOP_DIR}"/tls-test -s --tls_certificate_chain_file="$2" \
                   --tls_key_file="$3" --tls_ca_certificate_path="$4" \
-                  --mutual_authentication --allow_no_crl --once &
+                  --mutual_authentication --allow_no_crl --once & > /dev/null 2>&1
               fi
          else
               if [ $6 -ne 0 ]; then
                   "${TOP_DIR}"/tls-test -s --tls_certificate_chain_file="$2" \
                   --tls_key_file="$3" --tls_ca_certificate_path="$4" \
-                  --build_chain --allow_no_crl --once &
+                  --build_chain --allow_no_crl --once & > /dev/null 2>&1
               else
                   "${TOP_DIR}"/tls-test -s --tls_certificate_chain_file="$2" \
                   --tls_key_file="$3" --tls_ca_certificate_path="$4" \
-                  --allow_no_crl --once &
+                  --allow_no_crl --once & > /dev/null 2>&1
               fi
          fi
     fi
@@ -57,24 +57,24 @@ base_func_client() {
     if [ "$1" != "/" ]; then
         "${TOP_DIR}"/tls-test --tls_certificate_file="$1" \
         --tls_key_file="$3" --tls_ca_certificate_path="$4" \
-        --mutual_authentication --allow_no_crl
+        --mutual_authentication --allow_no_crl > /dev/null 2>&1
          real_result=$?
     else
         if [ $5 -ne 0 ]; then
             if [ $6 -ne 0 ]; then
                 "${TOP_DIR}"/tls-test --tls_certificate_chain_file="$2" \
                 --tls_key_file="$3" --tls_ca_certificate_path="$4" \
-                --mutual_authentication --build_chain --allow_no_crl
+                --mutual_authentication --build_chain --allow_no_crl > /dev/null 2>&1
                  real_result=$?
             else
                 "${TOP_DIR}"/tls-test --tls_certificate_chain_file="$2" \
                 --tls_key_file="$3" --tls_ca_certificate_path="$4" \
-                --mutual_authentication --allow_no_crl
+                --mutual_authentication --allow_no_crl > /dev/null 2>&1
                  real_result=$?
             fi
         else
              "${TOP_DIR}"/tls-test --tls_ca_certificate_path="$4" \
-             --allow_no_crl
+             --allow_no_crl > /dev/null 2>&1
               real_result=$?
         fi
     fi
