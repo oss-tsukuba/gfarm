@@ -404,7 +404,7 @@ static inline int
 do_write_read(tls_session_ctx_t tls_ctx)
 {
 	int urandom_fd;
-	int ret = 1;
+	int ret = 4;
 	int r_size = -1;
 	int w_size = -1;
 	int r_size_from_urandom = 0;
@@ -571,7 +571,7 @@ run_server_process(tls_session_ctx_t tls_ctx, int socketfd)
 	clientaddr.ai_addr = malloc(sizeof(struct sockaddr));
 
 	while (true) {
-		ret = 1;
+		ret = 4;
 		errno = 0;
 		if ((acceptfd = accept(socketfd,
 					clientaddr.ai_addr,
@@ -597,7 +597,7 @@ run_server_process(tls_session_ctx_t tls_ctx, int socketfd)
 
 			if (!is_interactive) {
 				ret = do_write_read(tls_ctx);
-				if (ret == 1) {
+				if (ret != 0) {
 					is_once = true;
 				}
 			} else {
@@ -645,6 +645,7 @@ run_server_process(tls_session_ctx_t tls_ctx, int socketfd)
 						&w_size);
 				if (gerr == GFARM_ERR_NO_ERROR
 						&& w_size == r_size) {
+					ret = 0;
 					goto teardown2;
 				} else {
 					gflog_tls_error(GFARM_MSG_UNFIXED,
@@ -681,7 +682,7 @@ static inline int
 run_server(tls_session_ctx_t tls_ctx, struct addrinfo *a_info)
 {
 	int socketfd;
-	int optval = 1, ret = 1;
+	int optval = 1, ret = 3;
 	struct sockaddr_in *saddrin;
 	saddrin = (struct sockaddr_in *)a_info->ai_addr;
 
@@ -714,7 +715,7 @@ run_server(tls_session_ctx_t tls_ctx, struct addrinfo *a_info)
 static inline int
 run_client_process(tls_session_ctx_t tls_ctx, int socketfd)
 {
-	int ret = 1;
+	int ret = 4;
 	gfarm_error_t gerr = GFARM_ERR_UNKNOWN;
 
 	if ((gerr = tls_session_establish(tls_ctx, socketfd)) !=
@@ -792,7 +793,7 @@ done:
 static inline int
 run_client(tls_session_ctx_t tls_ctx, struct addrinfo *a_info)
 {
-	int socketfd, ret = 1;
+	int socketfd, ret = 3;
 	if ((socketfd = socket(a_info->ai_family,
 				a_info->ai_socktype, 0)) > -1) {
 		if (connect(socketfd, a_info->ai_addr,
@@ -830,6 +831,7 @@ main(int argc, char **argv)
 			gflog_error(GFARM_MSG_UNFIXED,
 				"Can't create a tls session context: %s",
 				gfarm_error_string(gerr));
+			ret = 2;
 		}
 
 		epilogue(tls_ctx, a_info);
