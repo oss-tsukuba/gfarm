@@ -1327,11 +1327,10 @@ get_peer_subjectdn_gsi_ish(X509_NAME *pn, char **nameptr, int maxlen)
 		ret = get_peer_subjectdn(pn, DN_FORMAT_GLOBUS,
 				 &dn, sizeof(buf));
 #undef DN_FORMAT_GLOBUS			
-		cnp = (char *)memmem(buf, sizeof(buf), "CN=", 3);
-
 		if (likely(ret == GFARM_ERR_NO_ERROR &&
 				(cnp = (char *)memmem(buf, sizeof(buf),
-						"CN=", 3)) != NULL)) {
+						"CN=", 3)) != NULL &&
+				*(cnp += 3) != '\0')) {
 			char result[4096];
 			char *r = result;
 			char *d = buf;
@@ -1374,7 +1373,8 @@ get_peer_subjectdn_gsi_ish(X509_NAME *pn, char **nameptr, int maxlen)
 				}
 			}
 		} else {
-			if (unlikely(cnp == NULL)) {
+			if (unlikely(ret == GFARM_ERR_NO_ERROR &&
+					cnp == NULL)) {
 				ret = GFARM_ERR_INVALID_CREDENTIAL;
 				gflog_tls_error(GFARM_MSG_UNFIXED,
 					"A SubjectDN \"%s\" has no CN.", buf);
@@ -2775,6 +2775,11 @@ tls_session_peer_cn(tls_session_ctx_t ctx)
 		char *dn = ctx->peer_dn_gsi_;
 		if (likely(dn != NULL)) {
 			ret = (char *)memmem(dn, strlen(dn), "CN=", 3);
+			if (likely(ret != NULL && *(ret + 3) != '\0')) {
+				ret += 3;
+			} else {
+				ret = NULL;
+			}
 		}
 	}
 
