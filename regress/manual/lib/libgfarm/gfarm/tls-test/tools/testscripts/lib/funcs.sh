@@ -53,7 +53,7 @@ run_test() {
         kill -9 $child_pid
         while :
         do
-            kill -0 $child_pid
+            netstat -an | grep LISTEN | grep :12345 > /dev/null 2>&1
             if [ $? -ne 0 ]; then
                 break
             fi
