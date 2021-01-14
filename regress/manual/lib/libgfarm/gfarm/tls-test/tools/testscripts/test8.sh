@@ -37,14 +37,6 @@ run_test "8-2" \
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
-kill -9 $! > /dev/null 2>&1
-while :
-do
-   kill -0 $!
-   if [ $? -ne 0 ]; then
-       break
-   fi
-done
 
 ## 8-3 ##
 run_test "8-3" \
@@ -59,14 +51,6 @@ run_test "8-3" \
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
-kill -9 $!
-while :
-do
-   kill -0 $!
-   if [ $? -ne 0 ]; then
-       break
-   fi  
-done
 
 # 8-4 ##
 run_test "8-4" \
@@ -81,14 +65,6 @@ run_test "8-4" \
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
-kill -9 $!
-while :
-do
-   kill -0 $!
-   if [ $? -ne 0 ]; then
-       break
-   fi  
-done
 
 if [ ${FAIL_FLAG} -eq 0 ]; then
     exit 0
