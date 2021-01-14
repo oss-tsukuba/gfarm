@@ -404,7 +404,7 @@ static inline int
 do_write_read(tls_session_ctx_t tls_ctx)
 {
 	int urandom_fd;
-	int ret = 4;
+	int ret = 5;
 	int r_size = -1;
 	int w_size = -1;
 	int r_size_from_urandom = 0;
@@ -595,6 +595,7 @@ run_server_process(tls_session_ctx_t tls_ctx, int socketfd)
 				goto loopend;
 			}
 
+			ret = 5;
 			if (!is_interactive) {
 				ret = do_write_read(tls_ctx);
 				if (ret != 0) {
@@ -736,6 +737,7 @@ run_client_process(tls_session_ctx_t tls_ctx, int socketfd)
 		goto done;
 	}
 
+	ret = 5;
 	if (!is_interactive) {
 		ret = do_write_read(tls_ctx);
 	} else {
