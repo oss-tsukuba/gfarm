@@ -225,7 +225,7 @@ else
     FAIL_FLAG=1 
 fi
 
-rm -f ${logfile}
+rm -f ${logfile} ${server_exitstatus_file}
 
 if [ ${FAIL_FLAG} -eq 0 ]; then
     exit 0
