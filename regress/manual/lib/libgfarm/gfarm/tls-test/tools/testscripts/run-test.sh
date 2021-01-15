@@ -50,7 +50,8 @@ if [ ${exec_test_num} -ne 0 \
     -a ${exec_test_num} -ne 7 \
     -a ${exec_test_num} -ne 8 \
     -a ${exec_test_num} -ne 9 \
-    -a ${exec_test_num} -ne 10 ]; then
+    -a ${exec_test_num} -ne 10 \
+    -a ${exec_test_num} -ne 11 ]; then
         puts_error "wrong argument."
         exit 1
 fi
@@ -114,6 +115,14 @@ fi
 # test 10
 if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 10 ]; then
     ${TOP_DIR}/test10.sh
+    if [ $? -ne 0 ]; then
+        fail_flag=1
+    fi
+fi
+
+# test 11
+if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 11 ]; then
+    ${TOP_DIR}/test11.sh
     if [ $? -ne 0 ]; then
         fail_flag=1
     fi

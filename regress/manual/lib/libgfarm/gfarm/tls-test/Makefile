@@ -28,6 +28,7 @@ env: $(toolsdir)
 	$(toolsdir)/gen_certs_chain.sh -d $(envname)
 	$(toolsdir)/test_data_revocation.sh -o $(envname)
 	sudo $(toolsdir)/test_data_permission_private_key.sh -o $(envname)
+	sudo $(toolsdir)/test_data_permission_crl_dir.sh -o $(envname)
 	$(toolsdir)/test_data_permission_cert.sh -o $(envname)
 	$(toolsdir)/test_data_permission_cert_store.sh -o $(envname)
 
