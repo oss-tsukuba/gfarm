@@ -2,93 +2,11 @@
 
 TOP_DIR=`dirname $0`
 TOP_DIR=`cd "${TOP_DIR}"; pwd`
+source "${TOP_DIR}/lib/funcs.sh"
 TOP_DIR=`cd "${TOP_DIR}/../../"; pwd`
 ENV_DIR="${TOP_DIR}/gfarm_environment"
 FAIL_FLAG=0
 
-
-## function ##
-base_func_server() {
-    if [ "$1" != "/" ]; then
-        if [ $5 -ne 0 ]; then
-            "${TOP_DIR}"/tls-test -s --tls_certificate_file="$1" \
-            --tls_key_file="$3" --tls_ca_certificate_path="$4" \
-            --mutual_authentication --allow_no_crl --once & > /dev/null 2>&1
-        else
-            "${TOP_DIR}"/tls-test -s --tls_certificate_file="$1" \
-            --tls_key_file="$3" --tls_ca_certificate_path="$4" \
-            --allow_no_crl --once & > /dev/null 2>&1
-        fi
-
-    else
-         if [ $5 -ne 0 ]; then
-              if [ $6 -ne 0 ]; then
-                  "${TOP_DIR}"/tls-test -s --tls_certificate_chain_file="$2" \
-                  --tls_key_file="$3" --tls_ca_certificate_path="$4" \
-                  --mutual_authentication --build_chain --allow_no_crl --once & > /dev/null 2>&1
-              else
-                  "${TOP_DIR}"/tls-test -s --tls_certificate_chain_file="$2" \
-                  --tls_key_file="$3" --tls_ca_certificate_path="$4" \
-                  --mutual_authentication --allow_no_crl --once & > /dev/null 2>&1
-              fi
-         else
-              if [ $6 -ne 0 ]; then
-                  "${TOP_DIR}"/tls-test -s --tls_certificate_chain_file="$2" \
-                  --tls_key_file="$3" --tls_ca_certificate_path="$4" \
-                  --build_chain --allow_no_crl --once & > /dev/null 2>&1
-              else
-                  "${TOP_DIR}"/tls-test -s --tls_certificate_chain_file="$2" \
-                  --tls_key_file="$3" --tls_ca_certificate_path="$4" \
-                  --allow_no_crl --once & > /dev/null 2>&1
-              fi
-         fi
-    fi
-    while :
-    do
-        netstat -an | grep :12345 | grep LISTEN > /dev/null 2>&1
-        if [ $? -eq 0 ]; then
-            break
-        fi
-    done 
-    return 0
-}
-
-base_func_client() {
-    if [ "$1" != "/" ]; then
-        "${TOP_DIR}"/tls-test --tls_certificate_file="$1" \
-        --tls_key_file="$3" --tls_ca_certificate_path="$4" \
-        --mutual_authentication --allow_no_crl > /dev/null 2>&1
-         real_result=$?
-    else
-        if [ $5 -ne 0 ]; then
-            if [ $6 -ne 0 ]; then
-                "${TOP_DIR}"/tls-test --tls_certificate_chain_file="$2" \
-                --tls_key_file="$3" --tls_ca_certificate_path="$4" \
-                --mutual_authentication --build_chain --allow_no_crl > /dev/null 2>&1
-                 real_result=$?
-            else
-                "${TOP_DIR}"/tls-test --tls_certificate_chain_file="$2" \
-                --tls_key_file="$3" --tls_ca_certificate_path="$4" \
-                --mutual_authentication --allow_no_crl > /dev/null 2>&1
-                 real_result=$?
-            fi
-        else
-             "${TOP_DIR}"/tls-test --tls_ca_certificate_path="$4" \
-             --allow_no_crl > /dev/null 2>&1
-              real_result=$?
-        fi
-    fi
-    expected_result=`grep -w "$7" \
-                     "${TOP_DIR}/tools/testscripts/expected-test-result.csv" \
-                     | awk -F "," '{print $2}' | sed 's/\r$//'`
-    if [ $real_result -eq $expected_result ]; then
-        echo "$7:OK"
-    else
-        echo "$7:NG"
-        FAIL_FLAG=1
-    fi
-    return 0
-}
 
 ### main ###
 SERVER_A_KEY="${ENV_DIR}/A/server/server.key"
@@ -99,309 +17,942 @@ A_B_ALL="${ENV_DIR}/A_B/cacerts_all"
 
 
 ## 1-1 ##
-base_func_server "${ENV_DIR}/A/server/server.crt" "/" \
-                 "${SERVER_A_KEY}" "${ENV_DIR}/A/cacerts_root" 1 0
-base_func_client "/" "${ENV_DIR}/A/client/client_cat_all.crt" \
-                 "${CLIENT_A_KEY}" "${ENV_DIR}/A/cacerts_all" 1 0 1-1-1
+run_test "1-1-1" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_file ${ENV_DIR}/A/server/server.crt \
+--tls_key_file ${SERVER_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_root \
+--mutual_authentication --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_chain_file ${ENV_DIR}/A/client/client_cat_all.crt \
+--tls_key_file ${CLIENT_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+--mutual_authentication --allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "${ENV_DIR}/A/server/server.crt" "/" \
-                  "${SERVER_A_KEY}" "${ENV_DIR}/A/cacerts_root" 1 0
-base_func_client "/" "${ENV_DIR}/A/client/client_cat_3_2_1.crt" \
-                 "${CLIENT_A_KEY}" "${ENV_DIR}/A/cacerts_all" 1 0 1-1-2
+run_test "1-1-2" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_file ${ENV_DIR}/A/server/server.crt \
+--tls_key_file ${SERVER_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_root \
+--mutual_authentication --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_chain_file ${ENV_DIR}/A/client/client_cat_3_2_1.crt \
+--tls_key_file ${CLIENT_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+--mutual_authentication \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "${ENV_DIR}/A/server/server.crt" "/" \
-                  "${SERVER_A_KEY}" "${ENV_DIR}/A/cacerts_root_1" 1 0
-base_func_client "/" "${ENV_DIR}/A/client/client_cat_3_2.crt" \
-                 "${CLIENT_A_KEY}" "${ENV_DIR}/A/cacerts_all" 1 0 1-1-3
+run_test "1-1-3" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_file ${ENV_DIR}/A/server/server.crt \
+--tls_key_file ${SERVER_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_root_1 \
+--mutual_authentication --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_chain_file ${ENV_DIR}/A/client/client_cat_3_2.crt \
+--tls_key_file ${CLIENT_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+--mutual_authentication \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "${ENV_DIR}/A/server/server.crt" "/" \
-                  "${SERVER_A_KEY}" "${ENV_DIR}/A/cacerts_all" 1 0
-base_func_client "/" "${ENV_DIR}/A/client/client.crt" \
-                 "${CLIENT_A_KEY}" "${ENV_DIR}/A/cacerts_all" 1 0 1-1-4
+run_test "1-1-4" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_file ${ENV_DIR}/A/server/server.crt \
+--tls_key_file ${SERVER_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+--mutual_authentication --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_chain_file ${ENV_DIR}/A/client/client.crt \
+--tls_key_file ${CLIENT_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+--mutual_authentication \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "${ENV_DIR}/A/server/server.crt" "/" \
-                  "${SERVER_A_KEY}" "${ENV_DIR}/A/cacerts_root" 1 0
-base_func_client "/" "${ENV_DIR}/A/client/client_cat_3_1.crt" \
-                 "${CLIENT_A_KEY}" "${ENV_DIR}/A/cacerts_all" 1 1 1-1-5
+run_test "1-1-5" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_file ${ENV_DIR}/A/server/server.crt \
+--tls_key_file ${SERVER_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_root \
+--mutual_authentication --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_chain_file ${ENV_DIR}/A/client/client_cat_3_1.crt \
+--tls_key_file ${CLIENT_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+--mutual_authentication \
+--build_chain --allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "/" "${ENV_DIR}/A/server/server_cat_all.crt" \
-                 "${SERVER_A_KEY}" "${ENV_DIR}/A/cacerts_all" 1 0
-base_func_client "${ENV_DIR}/A/client/client.crt" "/" \
-                 "${CLIENT_A_KEY}" "${ENV_DIR}/A/cacerts_root" 1 0 1-1-6
+run_test "1-1-6" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_chain_file ${ENV_DIR}/A/server/server_cat_all.crt \
+--tls_key_file ${SERVER_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+--mutual_authentication --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_file ${ENV_DIR}/A/client/client.crt \
+--tls_key_file ${CLIENT_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_root \
+--mutual_authentication \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "/" "${ENV_DIR}/A/server/server_cat_2_1.crt" \
-                  "${SERVER_A_KEY}" "${ENV_DIR}/A/cacerts_all" 1 0
-base_func_client "${ENV_DIR}/A/client/client.crt" "/" "${CLIENT_A_KEY}" \
-                 "${ENV_DIR}/A/cacerts_root" 1 0 1-1-7
+run_test "1-1-7" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_chain_file ${ENV_DIR}/A/server/server_cat_2_1.crt \
+--tls_key_file ${SERVER_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+--mutual_authentication --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_file ${ENV_DIR}/A/client/client.crt \
+--tls_key_file ${CLIENT_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_root \
+--mutual_authentication \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "/" "${ENV_DIR}/A/server/server_cat_2.crt" \
-                 "${SERVER_A_KEY}" "${ENV_DIR}/A/cacerts_all" 1 0
-base_func_client "${ENV_DIR}/A/client/client.crt" "/" "${CLIENT_A_KEY}" \
-                 "${ENV_DIR}/A/cacerts_root_1" 1 0 1-1-8
+run_test "1-1-8" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_chain_file ${ENV_DIR}/A/server/server_cat_2.crt \
+--tls_key_file ${SERVER_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+--mutual_authentication --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_file ${ENV_DIR}/A/client/client.crt \
+--tls_key_file ${CLIENT_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_root_1 \
+--mutual_authentication \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "/" "${ENV_DIR}/A/server/server.crt" \
-                  "${SERVER_A_KEY}" "${ENV_DIR}/A/cacerts_all" 1 0
-base_func_client "${ENV_DIR}/A/client/client.crt" "/" "${CLIENT_A_KEY}" \
-                 "${ENV_DIR}/A/cacerts_all" 1 0 1-1-9
+run_test "1-1-9" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_chain_file ${ENV_DIR}/A/server/server.crt \
+--tls_key_file ${SERVER_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+--mutual_authentication --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_file ${ENV_DIR}/A/client/client.crt \
+--tls_key_file ${CLIENT_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+--mutual_authentication \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "/" "${ENV_DIR}/A/server/server_cat_1.crt" \
-                  "${SERVER_A_KEY}" "${ENV_DIR}/A/cacerts_all" 1 1
-base_func_client "${ENV_DIR}/A/client/client.crt" "/" "${CLIENT_A_KEY}" \
-                 "${ENV_DIR}/A/cacerts_root" 1 0 1-1-10
+run_test "1-1-10" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_chain_file ${ENV_DIR}/A/server/server_cat_1.crt \
+--tls_key_file ${SERVER_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+--mutual_authentication --build_chain --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_file ${ENV_DIR}/A/client/client.crt \
+--tls_key_file ${CLIENT_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_root \
+--mutual_authentication \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
+
 
 ## 1-2 ##
-base_func_server "${ENV_DIR}/A/server/server.crt" "/" \
-                  "${SERVER_A_KEY}" "${ENV_DIR}/B/cacerts_all" 1 0
-base_func_client "/" "${ENV_DIR}/B/client/client_cat_all.crt" \
-                 "${CLIENT_B_KEY}" "${ENV_DIR}/A/cacerts_all" 1 0 1-2-1
+run_test "1-2-1" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_file ${ENV_DIR}/A/server/server.crt \
+--tls_key_file ${SERVER_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
+--mutual_authentication --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_chain_file ${ENV_DIR}/B/client/client_cat_all.crt \
+--tls_key_file ${CLIENT_B_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+--mutual_authentication \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "${ENV_DIR}/A/server/server.crt" "/" \
-                  "${SERVER_A_KEY}" "${ENV_DIR}/B/cacerts_all" 1 0
-base_func_client "/" "${ENV_DIR}/B/client/client_cat_3_2_1.crt" \
-                 "${CLIENT_B_KEY}" "${ENV_DIR}/A/cacerts_all" 1 0 1-2-2
+run_test "1-2-2" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_file ${ENV_DIR}/A/server/server.crt \
+--tls_key_file ${SERVER_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
+--mutual_authentication --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_chain_file ${ENV_DIR}/B/client/client_cat_3_2_1.crt \
+--tls_key_file ${CLIENT_B_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+--mutual_authentication \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "${ENV_DIR}/A/server/server.crt" "/" \
-                  "${SERVER_A_KEY}" "${ENV_DIR}/B/cacerts_all" 1 0
-base_func_client "/" "${ENV_DIR}/B/client/client_cat_3_2.crt" \
-                 "${CLIENT_B_KEY}" "${ENV_DIR}/A/cacerts_all" 1 0 1-2-3
+run_test "1-2-3" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_file ${ENV_DIR}/A/server/server.crt \
+--tls_key_file ${SERVER_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
+--mutual_authentication --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_chain_file ${ENV_DIR}/B/client/client_cat_3_2.crt \
+--tls_key_file ${CLIENT_B_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+--mutual_authentication \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "${ENV_DIR}/A/server/server.crt" "/" \
-                  "${SERVER_A_KEY}" "${ENV_DIR}/B/cacerts_all" 1 0
-base_func_client "/" "${ENV_DIR}/B/client/client.crt" "${CLIENT_B_KEY}" \
-                 "${ENV_DIR}/A/cacerts_all" 1 0 1-2-4
+run_test "1-2-4" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_file ${ENV_DIR}/A/server/server.crt \
+--tls_key_file ${SERVER_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
+--mutual_authentication --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_chain_file ${ENV_DIR}/B/client/client.crt \
+--tls_key_file ${CLIENT_B_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+--mutual_authentication \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "${ENV_DIR}/A/server/server.crt" "/" \
-                  "${SERVER_A_KEY}" "${ENV_DIR}/B/cacerts_all" 1 0
-base_func_client "/" "${ENV_DIR}/B/client/client_cat_3_1.crt" \
-                 "${CLIENT_B_KEY}" "${ENV_DIR}/A/cacerts_all" 1 0 1-2-5
+run_test "1-2-5" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_file ${ENV_DIR}/A/server/server.crt \
+--tls_key_file ${SERVER_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
+--mutual_authentication --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_chain_file ${ENV_DIR}/B/client/client_cat_3_1.crt \
+--tls_key_file ${CLIENT_B_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+--mutual_authentication \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "${ENV_DIR}/A/server/server.crt" "/" \
-                  "${SERVER_A_KEY}" "${ENV_DIR}/B/cacerts_root" 1 0
-base_func_client "/" "${ENV_DIR}/B/client/client_cat_all.crt" \
-                 "${CLIENT_B_KEY}" "${A_B_ALL}" 1 0 1-2-6
+run_test "1-2-6" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_file ${ENV_DIR}/A/server/server.crt \
+--tls_key_file ${SERVER_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_root \
+--mutual_authentication --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_chain_file ${ENV_DIR}/B/client/client_cat_all.crt \
+--tls_key_file ${CLIENT_B_KEY} \
+--tls_ca_certificate_path ${A_B_ALL} \
+--mutual_authentication \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "${ENV_DIR}/A/server/server.crt" "/" \
-                  "${SERVER_A_KEY}" "${ENV_DIR}/B/cacerts_root" 1 0
-base_func_client "/" "${ENV_DIR}/B/client/client_cat_3_2_1.crt" \
-                 "${CLIENT_B_KEY}" "${A_B_ALL}" 1 0 1-2-7
+run_test "1-2-7" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_file ${ENV_DIR}/A/server/server.crt \
+--tls_key_file ${SERVER_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_root \
+--mutual_authentication --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_chain_file ${ENV_DIR}/B/client/client_cat_3_2_1.crt \
+--tls_key_file ${CLIENT_B_KEY} \
+--tls_ca_certificate_path ${A_B_ALL} \
+--mutual_authentication \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "${ENV_DIR}/A/server/server.crt" "/" \
-                  "${SERVER_A_KEY}" "${ENV_DIR}/B/cacerts_root_1" 1 0
-base_func_client "/" "${ENV_DIR}/B/client/client_cat_3_2.crt" \
-                 "${CLIENT_B_KEY}" "${A_B_ALL}" 1 0 1-2-8
+run_test "1-2-8" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_file ${ENV_DIR}/A/server/server.crt \
+--tls_key_file ${SERVER_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_root_1 \
+--mutual_authentication --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_chain_file ${ENV_DIR}/B/client/client_cat_3_2.crt \
+--tls_key_file ${CLIENT_B_KEY} \
+--tls_ca_certificate_path ${A_B_ALL} \
+--mutual_authentication \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "${ENV_DIR}/A/server/server.crt" "/" \
-                  "${SERVER_A_KEY}" "${ENV_DIR}/B/cacerts_all" 1 0
-base_func_client "/" "${ENV_DIR}/B/client/client.crt" "${CLIENT_B_KEY}" \
-                 "${A_B_ALL}" 1 0 1-2-9
+run_test "1-2-9" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_file ${ENV_DIR}/A/server/server.crt \
+--tls_key_file ${SERVER_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
+--mutual_authentication --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_chain_file ${ENV_DIR}/B/client/client.crt \
+--tls_key_file ${CLIENT_B_KEY} \
+--tls_ca_certificate_path ${A_B_ALL} \
+--mutual_authentication \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "${ENV_DIR}/A/server/server.crt" "/" \
-                  "${SERVER_A_KEY}" "${ENV_DIR}/B/cacerts_root" 1 0
-base_func_client "/" "${ENV_DIR}/B/client/client_cat_3_1.crt" \
-                 "${CLIENT_B_KEY}" "${A_B_ALL}" 1 1 1-2-10
+run_test "1-2-10" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_file ${ENV_DIR}/A/server/server.crt \
+--tls_key_file ${SERVER_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_root \
+--mutual_authentication --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_chain_file ${ENV_DIR}/B/client/client_cat_3_1.crt \
+--tls_key_file ${CLIENT_B_KEY} \
+--tls_ca_certificate_path ${A_B_ALL} \
+--mutual_authentication --build_chain \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "/" "${ENV_DIR}/A/server/server_cat_all.crt" \
-                  "${SERVER_A_KEY}" "${ENV_DIR}/B/cacerts_all" 1 0
-base_func_client "${ENV_DIR}/B/client/client.crt" "/" "${CLIENT_B_KEY}" \
-                 "${ENV_DIR}/A/cacerts_all" 1 0 1-2-11
+run_test "1-2-11" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_chain_file ${ENV_DIR}/A/server/server_cat_all.crt \
+--tls_key_file ${SERVER_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
+--mutual_authentication --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_file ${ENV_DIR}/B/client/client.crt \
+--tls_key_file ${CLIENT_B_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+--mutual_authentication \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "/" "${ENV_DIR}/A/server/server_cat_2_1.crt" \
-                  "${SERVER_A_KEY}" "${ENV_DIR}/B/cacerts_all" 1 0
-base_func_client "${ENV_DIR}/B/client/client.crt" "/" "${CLIENT_B_KEY}" \
-                 "${ENV_DIR}/A/cacerts_all" 1 0 1-2-12
+run_test "1-2-12" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_chain_file ${ENV_DIR}/A/server/server_cat_2_1.crt \
+--tls_key_file ${SERVER_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
+--mutual_authentication --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_file ${ENV_DIR}/B/client/client.crt \
+--tls_key_file ${CLIENT_B_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+--mutual_authentication \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "/" "${ENV_DIR}/A/server/server_cat_2.crt" \
-                  "${SERVER_A_KEY}" "${ENV_DIR}/B/cacerts_all" 1 0
-base_func_client "${ENV_DIR}/B/client/client.crt" "/" "${CLIENT_B_KEY}" \
-                 "${ENV_DIR}/A/cacerts_all" 1 0 1-2-13
+run_test "1-2-13" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_chain_file ${ENV_DIR}/A/server/server_cat_2.crt \
+--tls_key_file ${SERVER_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
+--mutual_authentication --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_file ${ENV_DIR}/B/client/client.crt \
+--tls_key_file ${CLIENT_B_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+--mutual_authentication \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "/" "${ENV_DIR}/A/server/server.crt" \
-                  "${SERVER_A_KEY}" "${ENV_DIR}/B/cacerts_all" 1 0
-base_func_client "${ENV_DIR}/B/client/client.crt" "/" "${CLIENT_B_KEY}" \
-                 "${ENV_DIR}/A/cacerts_all" 1 0 1-2-14
+run_test "1-2-14" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_chain_file ${ENV_DIR}/A/server/server.crt \
+--tls_key_file ${SERVER_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
+--mutual_authentication --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_file ${ENV_DIR}/B/client/client.crt \
+--tls_key_file ${CLIENT_B_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+--mutual_authentication \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "/" "${ENV_DIR}/A/server/server_cat_1.crt" \
-                  "${SERVER_A_KEY}" "${ENV_DIR}/B/cacerts_all" 1 0
-base_func_client "${ENV_DIR}/B/client/client.crt" "/" "${CLIENT_B_KEY}" \
-                 "${ENV_DIR}/A/cacerts_all" 1 0 1-2-15
+run_test "1-2-15" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_chain_file ${ENV_DIR}/A/server/server_cat_1.crt \
+--tls_key_file ${SERVER_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
+--mutual_authentication --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_file ${ENV_DIR}/B/client/client.crt \
+--tls_key_file ${CLIENT_B_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+--mutual_authentication \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "/" "${ENV_DIR}/A/server/server_cat_all.crt" \
-                  "${SERVER_A_KEY}" "${A_B_ALL}" 1 0
-base_func_client "${ENV_DIR}/B/client/client.crt" "/" "${CLIENT_B_KEY}" \
-                 "${ENV_DIR}/A/cacerts_root" 1 0 1-2-16
+run_test "1-2-16" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_chain_file ${ENV_DIR}/A/server/server_cat_all.crt \
+--tls_key_file ${SERVER_A_KEY} \
+--tls_ca_certificate_path ${A_B_ALL} \
+--mutual_authentication --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_file ${ENV_DIR}/B/client/client.crt \
+--tls_key_file ${CLIENT_B_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_root \
+--mutual_authentication \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "/" "${ENV_DIR}/A/server/server_cat_2_1.crt" \
-                  "${SERVER_A_KEY}" "${A_B_ALL}" 1 0
-base_func_client "${ENV_DIR}/B/client/client.crt" "/" "${CLIENT_B_KEY}" \
-                 "${ENV_DIR}/A/cacerts_root" 1 0 1-2-17
+run_test "1-2-17" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_chain_file ${ENV_DIR}/A/server/server_cat_2_1.crt \
+--tls_key_file ${SERVER_A_KEY} \
+--tls_ca_certificate_path ${A_B_ALL} \
+--mutual_authentication --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_file ${ENV_DIR}/B/client/client.crt \
+--tls_key_file ${CLIENT_B_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_root \
+--mutual_authentication \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "/" "${ENV_DIR}/A/server/server_cat_2.crt" \
-                  "${SERVER_A_KEY}" "${A_B_ALL}" 1 0
-base_func_client "${ENV_DIR}/B/client/client.crt" "/" "${CLIENT_B_KEY}" \
-                 "${ENV_DIR}/A/cacerts_root_1" 1 0 1-2-18
+run_test "1-2-18" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_chain_file ${ENV_DIR}/A/server/server_cat_2.crt \
+--tls_key_file ${SERVER_A_KEY} \
+--tls_ca_certificate_path ${A_B_ALL} \
+--mutual_authentication --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_file ${ENV_DIR}/B/client/client.crt \
+--tls_key_file ${CLIENT_B_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_root_1 \
+--mutual_authentication \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "/" "${ENV_DIR}/A/server/server.crt" \
-                  "${SERVER_A_KEY}" "${A_B_ALL}" 1 0
-base_func_client "${ENV_DIR}/B/client/client.crt" "/" "${CLIENT_B_KEY}" \
-                 "${ENV_DIR}/A/cacerts_all" 1 0 1-2-19
+run_test "1-2-19" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_chain_file ${ENV_DIR}/A/server/server.crt \
+--tls_key_file ${SERVER_A_KEY} \
+--tls_ca_certificate_path ${A_B_ALL} \
+--mutual_authentication --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_file ${ENV_DIR}/B/client/client.crt \
+--tls_key_file ${CLIENT_B_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+--mutual_authentication \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "/" "${ENV_DIR}/A/server/server_cat_1.crt" \
-                  "${SERVER_A_KEY}" "${A_B_ALL}" 1 1
-base_func_client "${ENV_DIR}/B/client/client.crt" "/" "${CLIENT_B_KEY}" \
-                 "${ENV_DIR}/A/cacerts_root" 1 0 1-2-20
+run_test "1-2-20" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_chain_file ${ENV_DIR}/A/server/server_cat_1.crt \
+--tls_key_file ${SERVER_A_KEY} \
+--tls_ca_certificate_path ${A_B_ALL} \
+--mutual_authentication --build_chain --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_file ${ENV_DIR}/B/client/client.crt \
+--tls_key_file ${CLIENT_B_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_root \
+--mutual_authentication \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
+
 
 ## 1-3 ##
-base_func_server "${ENV_DIR}/B/server/server.crt" "/" \
-                  "${SERVER_B_KEY}" "${ENV_DIR}/A/cacerts_all" 1 0
-base_func_client "/" "${ENV_DIR}/A/client/client_cat_all.crt" \
-                 "${CLIENT_A_KEY}" "${ENV_DIR}/B/cacerts_all" 1 0 1-3-1
+run_test "1-3-1" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_file ${ENV_DIR}/B/server/server.crt \
+--tls_key_file ${SERVER_B_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+--mutual_authentication --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_chain_file ${ENV_DIR}/A/client/client_cat_all.crt \
+--tls_key_file ${CLIENT_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
+--mutual_authentication \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "${ENV_DIR}/B/server/server.crt" "/" \
-                  "${SERVER_B_KEY}" "${ENV_DIR}/A/cacerts_all" 1 0
-base_func_client "/" "${ENV_DIR}/A/client/client_cat_3_2_1.crt" \
-                 "${CLIENT_A_KEY}" "${ENV_DIR}/B/cacerts_all" 1 0 1-3-2
+run_test "1-3-2" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_file ${ENV_DIR}/B/server/server.crt \
+--tls_key_file ${SERVER_B_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+--mutual_authentication --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_chain_file ${ENV_DIR}/A/client/client_cat_3_2_1.crt \
+--tls_key_file ${CLIENT_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
+--mutual_authentication \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "${ENV_DIR}/B/server/server.crt" "/" \
-                  "${SERVER_B_KEY}" "${ENV_DIR}/A/cacerts_all" 1 0
-base_func_client "/" "${ENV_DIR}/A/client/client_cat_3_2.crt" \
-                 "${CLIENT_A_KEY}" "${ENV_DIR}/B/cacerts_all" 1 0 1-3-3
+run_test "1-3-3" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_file ${ENV_DIR}/B/server/server.crt \
+--tls_key_file ${SERVER_B_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+--mutual_authentication --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_chain_file ${ENV_DIR}/A/client/client_cat_3_2.crt \
+--tls_key_file ${CLIENT_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
+--mutual_authentication \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "${ENV_DIR}/B/server/server.crt" "/" \
-                  "${SERVER_B_KEY}" "${ENV_DIR}/A/cacerts_all" 1 0
-base_func_client "/" "${ENV_DIR}/A/client/client.crt" "${CLIENT_A_KEY}" \
-                 "${ENV_DIR}/B/cacerts_all" 1 0 1-3-4
+run_test "1-3-4" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_file ${ENV_DIR}/B/server/server.crt \
+--tls_key_file ${SERVER_B_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+--mutual_authentication --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_chain_file ${ENV_DIR}/A/client/client.crt \
+--tls_key_file ${CLIENT_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
+--mutual_authentication \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "${ENV_DIR}/B/server/server.crt" "/" \
-                  "${SERVER_B_KEY}" "${ENV_DIR}/A/cacerts_all" 1 0
-base_func_client "/" "${ENV_DIR}/A/client/client_cat_3_1.crt" \
-                 "${CLIENT_A_KEY}" "${ENV_DIR}/B/cacerts_all" 1 0 1-3-5
+run_test "1-3-5" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_file ${ENV_DIR}/B/server/server.crt \
+--tls_key_file ${SERVER_B_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+--mutual_authentication --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_chain_file ${ENV_DIR}/A/client/client_cat_3_1.crt \
+--tls_key_file ${CLIENT_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
+--mutual_authentication \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "${ENV_DIR}/B/server/server.crt" "/" \
-                  "${SERVER_B_KEY}" "${ENV_DIR}/A/cacerts_root" 1 0
-base_func_client "/" "${ENV_DIR}/A/client/client_cat_all.crt" \
-                 "${CLIENT_A_KEY}" "${A_B_ALL}" 1 0 1-3-6
+run_test "1-3-6" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_file ${ENV_DIR}/B/server/server.crt \
+--tls_key_file ${SERVER_B_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_root \
+--mutual_authentication --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_chain_file ${ENV_DIR}/A/client/client_cat_all.crt \
+--tls_key_file ${CLIENT_A_KEY} \
+--tls_ca_certificate_path ${A_B_ALL} \
+--mutual_authentication \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "${ENV_DIR}/B/server/server.crt" "/" \
-                  "${SERVER_B_KEY}" "${ENV_DIR}/A/cacerts_root" 1 0
-base_func_client "/" "${ENV_DIR}/A/client/client_cat_3_2_1.crt" \
-                 "${CLIENT_A_KEY}" "${A_B_ALL}" 1 0 1-3-7
+run_test "1-3-7" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_file ${ENV_DIR}/B/server/server.crt \
+--tls_key_file ${SERVER_B_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_root \
+--mutual_authentication --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_chain_file ${ENV_DIR}/A/client/client_cat_3_2_1.crt \
+--tls_key_file ${CLIENT_A_KEY} \
+--tls_ca_certificate_path ${A_B_ALL} \
+--mutual_authentication \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "${ENV_DIR}/B/server/server.crt" "/" \
-                  "${SERVER_B_KEY}" "${ENV_DIR}/A/cacerts_root_1" 1 0
-base_func_client "/" "${ENV_DIR}/A/client/client_cat_3_2.crt" \
-                 "${CLIENT_A_KEY}" "${A_B_ALL}" 1 0 1-3-8
+run_test "1-3-8" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_file ${ENV_DIR}/B/server/server.crt \
+--tls_key_file ${SERVER_B_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_root_1 \
+--mutual_authentication --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_chain_file ${ENV_DIR}/A/client/client_cat_3_2.crt \
+--tls_key_file ${CLIENT_A_KEY} \
+--tls_ca_certificate_path ${A_B_ALL} \
+--mutual_authentication \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "${ENV_DIR}/B/server/server.crt" "/" \
-                  "${SERVER_B_KEY}" "${ENV_DIR}/A/cacerts_all" 1 0
-base_func_client "/" "${ENV_DIR}/A/client/client.crt" "${CLIENT_A_KEY}" \
-                 "${A_B_ALL}" 1 0 1-3-9
+run_test "1-3-9" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_file ${ENV_DIR}/B/server/server.crt \
+--tls_key_file ${SERVER_B_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+--mutual_authentication --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_chain_file ${ENV_DIR}/A/client/client.crt \
+--tls_key_file ${CLIENT_A_KEY} \
+--tls_ca_certificate_path ${A_B_ALL} \
+--mutual_authentication \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "${ENV_DIR}/B/server/server.crt" "/" \
-                  "${SERVER_B_KEY}" "${ENV_DIR}/A/cacerts_root" 1 0
-base_func_client "/" "${ENV_DIR}/A/client/client_cat_3_1.crt" \
-                 "${CLIENT_A_KEY}" "${A_B_ALL}" 1 1 1-3-10
+run_test "1-3-10" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_file ${ENV_DIR}/B/server/server.crt \
+--tls_key_file ${SERVER_B_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_root \
+--mutual_authentication --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_chain_file ${ENV_DIR}/A/client/client_cat_3_1.crt \
+--tls_key_file ${CLIENT_A_KEY} \
+--tls_ca_certificate_path ${A_B_ALL} \
+--mutual_authentication --build_chain \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "/" "${ENV_DIR}/B/server/server_cat_all.crt" \
-                  "${SERVER_B_KEY}" "${ENV_DIR}/A/cacerts_all" 1 0
-base_func_client "${ENV_DIR}/A/client/client.crt" "/" "${CLIENT_A_KEY}" \
-                 "${ENV_DIR}/B/cacerts_all" 1 0 1-3-11
+run_test "1-3-11" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_chain_file ${ENV_DIR}/B/server/server_cat_all.crt \
+--tls_key_file ${SERVER_B_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+--mutual_authentication --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_file ${ENV_DIR}/A/client/client.crt \
+--tls_key_file ${CLIENT_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
+--mutual_authentication \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "/" "${ENV_DIR}/B/server/server_cat_2_1.crt" \
-                  "${SERVER_B_KEY}" "${ENV_DIR}/A/cacerts_all" 1 0
-base_func_client "${ENV_DIR}/A/client/client.crt" "/" "${CLIENT_A_KEY}" \
-                 "${ENV_DIR}/B/cacerts_all" 1 0 1-3-12
+run_test "1-3-12" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_chain_file ${ENV_DIR}/B/server/server_cat_2_1.crt \
+--tls_key_file ${SERVER_B_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+--mutual_authentication --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_file ${ENV_DIR}/A/client/client.crt \
+--tls_key_file ${CLIENT_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
+--mutual_authentication \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "/" "${ENV_DIR}/B/server/server_cat_2.crt" \
-                  "${SERVER_B_KEY}" "${ENV_DIR}/A/cacerts_all" 1 0
-base_func_client "${ENV_DIR}/A/client/client.crt" "/" "${CLIENT_A_KEY}" \
-                 "${ENV_DIR}/B/cacerts_all" 1 0 1-3-13
+run_test "1-3-13" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_chain_file ${ENV_DIR}/B/server/server_cat_2.crt \
+--tls_key_file ${SERVER_B_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+--mutual_authentication --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_file ${ENV_DIR}/A/client/client.crt \
+--tls_key_file ${CLIENT_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
+--mutual_authentication \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "/" "${ENV_DIR}/B/server/server.crt" \
-                  "${SERVER_B_KEY}" "${ENV_DIR}/A/cacerts_all" 1 0
-base_func_client "${ENV_DIR}/A/client/client.crt" "/" "${CLIENT_A_KEY}" \
-                 "${ENV_DIR}/B/cacerts_all" 1 0 1-3-14
+run_test "1-3-14" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_chain_file ${ENV_DIR}/B/server/server.crt \
+--tls_key_file ${SERVER_B_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+--mutual_authentication --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_file ${ENV_DIR}/A/client/client.crt \
+--tls_key_file ${CLIENT_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
+--mutual_authentication \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "/" "${ENV_DIR}/B/server/server_cat_1.crt" \
-                  "${SERVER_B_KEY}" "${ENV_DIR}/A/cacerts_all" 1 0
-base_func_client "${ENV_DIR}/A/client/client.crt" "/" "${CLIENT_A_KEY}" \
-                 "${ENV_DIR}/B/cacerts_all" 1 0 1-3-15
+run_test "1-3-15" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_chain_file ${ENV_DIR}/B/server/server_cat_1.crt \
+--tls_key_file ${SERVER_B_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+--mutual_authentication --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_file ${ENV_DIR}/A/client/client.crt \
+--tls_key_file ${CLIENT_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
+--mutual_authentication \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "/" "${ENV_DIR}/B/server/server_cat_all.crt" \
-                  "${SERVER_B_KEY}" "${A_B_ALL}" 1 0
-base_func_client "${ENV_DIR}/A/client/client.crt" "/" "${CLIENT_A_KEY}" \
-                 "${ENV_DIR}/B/cacerts_root" 1 0 1-3-16
+run_test "1-3-16" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_chain_file ${ENV_DIR}/B/server/server_cat_all.crt \
+--tls_key_file ${SERVER_B_KEY} \
+--tls_ca_certificate_path ${A_B_ALL} \
+--mutual_authentication --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_file ${ENV_DIR}/A/client/client.crt \
+--tls_key_file ${CLIENT_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_root \
+--mutual_authentication \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "/" "${ENV_DIR}/B/server/server_cat_2_1.crt" \
-                  "${SERVER_B_KEY}" "${A_B_ALL}" 1 0
-base_func_client "${ENV_DIR}/A/client/client.crt" "/" "${CLIENT_A_KEY}" \
-                 "${ENV_DIR}/B/cacerts_root" 1 0 1-3-17
+run_test "1-3-17" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_chain_file ${ENV_DIR}/B/server/server_cat_2_1.crt \
+--tls_key_file ${SERVER_B_KEY} \
+--tls_ca_certificate_path ${A_B_ALL} \
+--mutual_authentication --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_file ${ENV_DIR}/A/client/client.crt \
+--tls_key_file ${CLIENT_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_root \
+--mutual_authentication \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "/" "${ENV_DIR}/B/server/server_cat_2.crt" \
-                  "${SERVER_B_KEY}" "${A_B_ALL}" 1 0
-base_func_client "${ENV_DIR}/A/client/client.crt" "/" "${CLIENT_A_KEY}" \
-                 "${ENV_DIR}/B/cacerts_root_1" 1 0 1-3-18
+run_test "1-3-18" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_chain_file ${ENV_DIR}/B/server/server_cat_2.crt \
+--tls_key_file ${SERVER_B_KEY} \
+--tls_ca_certificate_path ${A_B_ALL} \
+--mutual_authentication --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_file ${ENV_DIR}/A/client/client.crt \
+--tls_key_file ${CLIENT_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_root_1 \
+--mutual_authentication \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "/" "${ENV_DIR}/B/server/server.crt" \
-                  "${SERVER_B_KEY}" "${A_B_ALL}" 1 0
-base_func_client "${ENV_DIR}/A/client/client.crt" "/" "${CLIENT_A_KEY}" \
-                 "${ENV_DIR}/B/cacerts_all" 1 0 1-3-19
+run_test "1-3-19" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_chain_file ${ENV_DIR}/B/server/server.crt \
+--tls_key_file ${SERVER_B_KEY} \
+--tls_ca_certificate_path ${A_B_ALL} \
+--mutual_authentication --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_file ${ENV_DIR}/A/client/client.crt \
+--tls_key_file ${CLIENT_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
+--mutual_authentication \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "/" "${ENV_DIR}/B/server/server_cat_1.crt" \
-                  "${SERVER_B_KEY}" "${A_B_ALL}" 1 1
-base_func_client "${ENV_DIR}/A/client/client.crt" "/" "${CLIENT_A_KEY}" \
-                 "${ENV_DIR}/B/cacerts_root" 1 0 1-3-20
+run_test "1-3-20" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_chain_file ${ENV_DIR}/B/server/server_cat_1.crt \
+--tls_key_file ${SERVER_B_KEY} \
+--tls_ca_certificate_path ${A_B_ALL} \
+--mutual_authentication --build_chain --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_certificate_file ${ENV_DIR}/A/client/client.crt \
+--tls_key_file ${CLIENT_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_root \
+--mutual_authentication \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
+
 
 ## 1-4 ##
-base_func_server "/" "${ENV_DIR}/A/server/server_cat_all.crt" \
-                  "${SERVER_A_KEY}" "${ENV_DIR}/A/cacerts_all" 0 0
-base_func_client "/" "/" "/" \
-                 "${ENV_DIR}/A/cacerts_root" 0 0 1-4-1
+run_test "1-4-1" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_chain_file ${ENV_DIR}/A/server/server_cat_all.crt \
+--tls_key_file ${SERVER_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+--allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_root \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "/" "${ENV_DIR}/A/server/server_cat_2_1.crt" \
-                  "${SERVER_A_KEY}" "${ENV_DIR}/A/cacerts_all" 0 0
-base_func_client "/" "/" "/" \
-                 "${ENV_DIR}/A/cacerts_root" 0 0 1-4-2
+run_test "1-4-2" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_chain_file ${ENV_DIR}/A/server/server_cat_2_1.crt \
+--tls_key_file ${SERVER_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+--allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_root \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "/" "${ENV_DIR}/A/server/server_cat_2.crt" \
-                  "${SERVER_A_KEY}" "${ENV_DIR}/A/cacerts_all" 0 0
-base_func_client "/" "/" "/" \
-                 "${ENV_DIR}/A/cacerts_root_1" 0 0 1-4-3
+run_test "1-4-3" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_chain_file ${ENV_DIR}/A/server/server_cat_2.crt \
+--tls_key_file ${SERVER_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+--allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_root_1 \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "/" "${ENV_DIR}/A/server/server.crt" \
-                  "${SERVER_A_KEY}" "${ENV_DIR}/A/cacerts_all" 0 0
-base_func_client "/" "/" "/" \
-                 "${ENV_DIR}/A/cacerts_all" 0 0 1-4-4
+run_test "1-4-4" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_chain_file ${ENV_DIR}/A/server/server.crt \
+--tls_key_file ${SERVER_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+--allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "/" "${ENV_DIR}/A/server/server_cat_1.crt" \
-                  "${SERVER_A_KEY}" "${ENV_DIR}/A/cacerts_all" 0 1
-base_func_client "/" "/" "/" \
-                 "${ENV_DIR}/A/cacerts_root" 0 0 1-4-5
+run_test "1-4-5" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_chain_file ${ENV_DIR}/A/server/server_cat_1.crt \
+--tls_key_file ${SERVER_A_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+--build_chain --allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_root \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
+
 
 ## 1-5 ##
-base_func_server "/" "${ENV_DIR}/B/server/server_cat_all.crt" \
-                  "${SERVER_B_KEY}" "${ENV_DIR}/B/cacerts_all" 0 0
-base_func_client "/" "/" "/" \
-                 "${ENV_DIR}/B/cacerts_all" 0 0 1-5-1
+run_test "1-5-1" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_chain_file ${ENV_DIR}/B/server/server_cat_all.crt \
+--tls_key_file ${SERVER_B_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
+--allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "/" "${ENV_DIR}/B/server/server_cat_2_1.crt" \
-                  "${SERVER_B_KEY}" "${ENV_DIR}/B/cacerts_all" 0 0
-base_func_client "/" "/" "/" \
-                 "${ENV_DIR}/B/cacerts_all" 0 0 1-5-2
+run_test "1-5-2" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_chain_file ${ENV_DIR}/B/server/server_cat_2_1.crt \
+--tls_key_file ${SERVER_B_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
+--allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "/" "${ENV_DIR}/B/server/server_cat_2.crt" \
-                  "${SERVER_B_KEY}" "${ENV_DIR}/B/cacerts_all" 0 0
-base_func_client "/" "/" "/" \
-                 "${ENV_DIR}/B/cacerts_all" 0 0 1-5-3
+run_test "1-5-3" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_chain_file ${ENV_DIR}/B/server/server_cat_2.crt \
+--tls_key_file ${SERVER_B_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
+--allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "/" "${ENV_DIR}/B/server/server.crt" \
-                  "${SERVER_B_KEY}" "${ENV_DIR}/B/cacerts_all" 0 0
-base_func_client "/" "/" "/" \
-                 "${ENV_DIR}/B/cacerts_all" 0 0 1-5-4
+run_test "1-5-4" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_chain_file ${ENV_DIR}/B/server/server.crt \
+--tls_key_file ${SERVER_B_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
+--allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
-base_func_server "/" "${ENV_DIR}/B/server/server_cat_1.crt" \
-                  "${SERVER_B_KEY}" "${ENV_DIR}/B/cacerts_all" 0 0
-base_func_client "/" "/" "/" \
-                 "${ENV_DIR}/B/cacerts_all" 0 0 1-5-5
+run_test "1-5-5" \
+"${TOP_DIR}/tls-test -s \
+--tls_certificate_chain_file ${ENV_DIR}/B/server/server_cat_1.crt \
+--tls_key_file ${SERVER_B_KEY} \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
+--allow_no_crl --once" \
+"${TOP_DIR}/tls-test \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
+--allow_no_crl"
+if [ $? -ne 0 ]; then
+    FAIL_FLAG=1
+fi
 
 
 if [ ${FAIL_FLAG} -eq 0 ]; then
