@@ -51,7 +51,8 @@ if [ ${exec_test_num} -ne 0 \
     -a ${exec_test_num} -ne 8 \
     -a ${exec_test_num} -ne 9 \
     -a ${exec_test_num} -ne 10 \
-    -a ${exec_test_num} -ne 11 ]; then
+    -a ${exec_test_num} -ne 11 \
+    -a ${exec_test_num} -ne 12 ]; then
         puts_error "wrong argument."
         exit 1
 fi
@@ -128,8 +129,19 @@ if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 11 ]; then
     fi
 fi
 
+# test 12
+if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 12 ]; then
+    ${TOP_DIR}/test12.sh
+    if [ $? -ne 0 ]; then
+        fail_flag=1
+    fi
+fi
+
 if [ ${fail_flag} -eq 0 ]; then
     _ret=0
+    if [ ${exec_test_num} -eq 0 ]; then
+        echo "All tests were successful."
+    fi
 fi
 
 exit ${_ret}
