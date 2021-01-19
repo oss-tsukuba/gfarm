@@ -106,7 +106,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-chown -R ${SUDO_UID}:${SUDO_GID} "${OUTPUT_DIR_TOP}"
+chown -R ${SUDO_UID}:${SUDO_GID} "${OUTPUT_DIR}"
 
 chown root:root "${OUTPUT_DIR}/A/crls/server/root_bad_permissions"
 if [ $? -ne 0 ]; then
