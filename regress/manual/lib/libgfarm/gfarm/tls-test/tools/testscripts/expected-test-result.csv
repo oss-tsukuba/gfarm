@@ -87,7 +87,7 @@ testID,server-expected-result,client-expected-result
 2-9-2,4,4
 2-9-3,4,4
 3-1,0,0
-3-2,4,4
+3-2,4,2
 3-3,0,0
 4-1,0,0
 4-2,4,4
