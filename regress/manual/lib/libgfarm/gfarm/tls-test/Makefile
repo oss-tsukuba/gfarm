@@ -23,14 +23,29 @@ $(OBJS): $(DEPGFARMINC)
 
 ###
 env: $(toolsdir)
-	$(toolsdir)/gen_certs_all.sh -o $(envname)/A
-	$(toolsdir)/gen_certs_all.sh -o $(envname)/B -X 2
-	$(toolsdir)/gen_certs_chain.sh -d $(envname)
-	$(toolsdir)/test_data_revocation.sh -o $(envname)
-	sudo $(toolsdir)/test_data_permission_private_key.sh -o $(envname)
-	sudo $(toolsdir)/test_data_permission_crl_dir.sh -o $(envname)
-	$(toolsdir)/test_data_permission_cert.sh -o $(envname)
+	@if test $${UID} -ne 0; then \
+		echo "Need to be a super user. Use sudo."; \
+		exit 1; \
+	fi
+	$(toolsdir)/gen_certs_all.sh -o $(envname)/A && \
+	$(toolsdir)/gen_certs_all.sh -o $(envname)/B -X 2 && \
+	$(toolsdir)/gen_certs_chain.sh -d $(envname) && \
+	$(toolsdir)/test_data_revocation.sh -o $(envname) && \
+	$(toolsdir)/test_data_permission_private_key.sh -o $(envname) && \
+	$(toolsdir)/test_data_permission_crl_dir.sh -o $(envname) && \
+	$(toolsdir)/test_data_permission_cert.sh -o $(envname) && \
 	$(toolsdir)/test_data_permission_cert_store.sh -o $(envname)
+	@echo
+	@echo
+	@echo "NOTE: In case following tests require a passphrase, " \
+	"use \"test\""
+	@echo
 
-envclean: 
-	sudo rm -rfv $(envname)
+envclean:
+	@if test $${UID} -ne 0; then \
+		echo "Need to be a super user. Use sudo."; \
+		exit 1; \
+	fi
+	@rm -rf $(envname) > /dev/null 2>&1
+
+
