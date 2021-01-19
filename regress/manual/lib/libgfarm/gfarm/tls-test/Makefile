@@ -27,14 +27,18 @@ env: $(toolsdir)
 		echo "Need to be a super user. Use sudo."; \
 		exit 1; \
 	fi
-	$(toolsdir)/gen_certs_all.sh -o $(envname)/A && \
-	$(toolsdir)/gen_certs_all.sh -o $(envname)/B -X 2 && \
-	$(toolsdir)/gen_certs_chain.sh -d $(envname) && \
-	$(toolsdir)/test_data_revocation.sh -o $(envname) && \
+	sudo -u $${SUDO_USER} $(toolsdir)/gen_certs_all.sh -o $(envname)/A && \
+	sudo -u $${SUDO_USER} $(toolsdir)/gen_certs_all.sh \
+		-o $(envname)/B -X 2 && \
+	sudo -u $${SUDO_USER} $(toolsdir)/gen_certs_chain.sh -d $(envname) && \
+	sudo -u $${SUDO_USER} $(toolsdir)/test_data_revocation.sh \
+		-o $(envname) && \
 	$(toolsdir)/test_data_permission_private_key.sh -o $(envname) && \
 	$(toolsdir)/test_data_permission_crl_dir.sh -o $(envname) && \
-	$(toolsdir)/test_data_permission_cert.sh -o $(envname) && \
-	$(toolsdir)/test_data_permission_cert_store.sh -o $(envname)
+	sudo -u $${SUDO_USER} $(toolsdir)/test_data_permission_cert.sh \
+		-o $(envname) && \
+	sudo -u $${SUDO_USER} $(toolsdir)/test_data_permission_cert_store.sh \
+		-o $(envname)
 	@echo
 	@echo
 	@echo "NOTE: In case following tests require a passphrase, " \
