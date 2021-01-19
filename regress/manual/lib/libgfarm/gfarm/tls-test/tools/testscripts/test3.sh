@@ -8,7 +8,7 @@ source ${TOP_DIR}/tools/testscripts/lib/funcs.sh
 
 _ret=1
 expected_result_csv="${TOP_DIR}/tools/testscripts/expected-test-result.csv"
-ENV_DIR="${TOP_DIR}/gfarm_environment/private_key"
+ENV_DIR="${TOP_DIR}/gfarm_environment"
 
 server_exitstatus_file="${TOP_DIR}/exitstatus.txt"
 server_fail_flag=0
