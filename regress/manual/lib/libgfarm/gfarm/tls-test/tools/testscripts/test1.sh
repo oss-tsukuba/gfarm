@@ -4,7 +4,7 @@ TOP_DIR=`dirname $0`
 TOP_DIR=`cd "${TOP_DIR}"; pwd`
 source "${TOP_DIR}/lib/funcs.sh"
 TOP_DIR=`cd "${TOP_DIR}/../../"; pwd`
-ENV_DIR="${TOP_DIR}/gfarm_environment"
+ENV_DIR="${TOP_DIR}/test_dir"
 FAIL_FLAG=0
 
 

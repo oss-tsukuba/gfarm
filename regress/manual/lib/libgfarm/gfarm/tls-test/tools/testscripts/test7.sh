@@ -10,7 +10,7 @@ _ret=1
 test_id="7-1"
 expected_result_csv="${TOP_DIR}/tools/testscripts/expected-test-result.csv"
 key_update_num=0
-ENV_DIR="${TOP_DIR}/gfarm_environment"
+ENV_DIR="${TOP_DIR}/test_dir"
 
 server_exitstatus_file="${TOP_DIR}/exitstatus.txt"
 server_fail_flag=0

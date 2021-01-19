@@ -8,7 +8,7 @@ source ${TOP_DIR}/tools/testscripts/lib/funcs.sh
 
 _ret=1
 fail_flag=0
-ENV_DIR="${TOP_DIR}/gfarm_environment"
+ENV_DIR="${TOP_DIR}/test_dir"
 
 # main
 # 5-1

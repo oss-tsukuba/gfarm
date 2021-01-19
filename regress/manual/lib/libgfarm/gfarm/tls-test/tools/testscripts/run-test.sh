@@ -20,7 +20,7 @@ _ret=1
 fail_flag=0
 expected_result_csv="expected-test-result.csv"
 exec_test_num=0
-ENV_DIR="${TOP_DIR}/../../gfarm_environment"
+ENV_DIR="${TOP_DIR}/../../test_dir"
 
 ## Opts. ##
 while getopts t:h OPT; do
@@ -38,7 +38,7 @@ if [ ! -f ${TOP_DIR}/${expected_result_csv} ]; then
 fi
 
 if [ ! -d ${ENV_DIR} ]; then
-    puts_error "not exist gfarm_environment."
+    puts_error "not exist test_dir."
     exit 1
 fi
 

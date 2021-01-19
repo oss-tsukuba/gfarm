@@ -4,7 +4,7 @@ TOP_DIR=`dirname $0`
 TOP_DIR=`cd ${TOP_DIR}; pwd`
 TOP_DIR=`cd ${TOP_DIR}/../../; pwd`
 source "${TOP_DIR}/tools/testscripts/lib/funcs.sh"
-ENV_DIR="${TOP_DIR}/gfarm_environment/permission_crl_dir"
+ENV_DIR="${TOP_DIR}/test_dir/permission_crl_dir"
 
 FAIL_FLAG=0
 server_fail_flag=0

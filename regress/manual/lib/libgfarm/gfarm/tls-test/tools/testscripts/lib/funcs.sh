@@ -7,7 +7,7 @@ puts_error() {
 run_test() {
     top_dir=`dirname $0`
     top_dir=`cd "${top_dir}/../../"; pwd`
-    env_dir="${top_dir}/gfarm_environment"
+    env_dir="${top_dir}/test_dir"
     _r=1
     test_id=$1
     expected_server_result=""

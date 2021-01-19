@@ -2,7 +2,7 @@ top_builddir = ../../../../../..
 top_srcdir = $(top_builddir)
 srcdir = .
 toolsdir = ./tools/gen-data
-envname = gfarm_environment
+envname = test_dir
 
 include $(top_srcdir)/makes/var.mk
 
