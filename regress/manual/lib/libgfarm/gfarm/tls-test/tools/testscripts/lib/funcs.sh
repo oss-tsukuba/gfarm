@@ -14,9 +14,10 @@ run_test() {
     expected_client_result=""
     expected_result_csv="`dirname $0`/expected-test-result.csv"
     result_server=0
+    s_exit_file="server_exit_status.txt"
 
-    sh -c "rm -f ./testfile.txt; $2 > /dev/null 2>&1; \
-           echo \$? > ./testfile.txt" &
+    sh -c "rm -f ./${s_exit_file}; $2 > /dev/null 2>&1; \
+           echo \$? > ./${s_exit_file}" &
     child_pid=$!
     while :
     do
@@ -31,7 +32,7 @@ run_test() {
         sleep 1
         kill -0 ${child_pid}
         if [ $? -ne 0 ]; then
-            result_server=`cat ./testfile.txt`
+            result_server=`cat ./${s_exit_file}`
             break
         fi
         netstat -an | grep LISTEN | grep :12345 > /dev/null 2>&1
@@ -41,6 +42,7 @@ run_test() {
     done
 
     if [ ${result_server} -ne 0 ]; then
+        rm -f ./${s_exit_file}
         echo "$1 server fail"
         case ${result_server} in
             2) echo "tls_context error";;
@@ -56,7 +58,14 @@ run_test() {
         --tls_ca_certificate_path ${env_dir}/A_B/cacerts_all \
         --allow_no_crl > /dev/null 2>&1
     fi
-    server_exitstatus=`cat ./testfile.txt`
+    while :
+    do
+        kill -0 ${child_pid} > /dev/null 2>&1
+        if [ $? -ne 0 ]; then
+            server_exitstatus=`cat ./${s_exit_file}`
+            break
+        fi
+    done
     echo "server:$server_exitstatus"
     echo "client:$client_exitstatus"
 
@@ -73,6 +82,7 @@ run_test() {
     else
         echo "${test_id}: NG"
     fi
+    rm -f ./${s_exit_file}
 
 
     return ${_r}

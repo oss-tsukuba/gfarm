@@ -63,7 +63,14 @@ if [ ${server_fail_flag} -ne 1 ]; then
         expected_client_result=`cat ${expected_result_csv} | \
                                 grep -E "^${test_id}," | \
                                 awk -F "," '{print $3}' | sed 's:\r$::'`
-        server_exitstatus=`cat ${server_exitstatus_file}`
+        while :
+        do
+            kill -0 ${server_pid} > /dev/null 2>&1
+            if [ $? -ne 0 ]; then
+                server_exitstatus=`cat ${server_exitstatus_file}`
+                break
+            fi
+        done
         cat ${logfile} | grep "warning" > /dev/null 2>&1
         output_warning=$?
         if [ ${output_warning} -ne 0 \
@@ -131,7 +138,14 @@ if [ ${server_fail_flag} -ne 1 ]; then
         expected_client_result=`cat ${expected_result_csv} | \
                                 grep -E "^${test_id}," | \
                                 awk -F "," '{print $3}' | sed 's:\r$::'`
-        server_exitstatus=`cat ${server_exitstatus_file}`
+        while :
+        do
+            kill -0 ${server_pid} > /dev/null 2>&1
+            if [ $? -ne 0 ]; then
+                server_exitstatus=`cat ${server_exitstatus_file}`
+                break
+            fi
+        done
         cat ${logfile} | grep "warning" > /dev/null 2>&1
         output_warning=$?
         if [ ${output_warning} -eq 0 \
@@ -193,7 +207,14 @@ if [ ${server_fail_flag} -ne 1 ]; then
         echo "${test_id}: NG"
         FAIL_FLAG=1
     else
-        server_exitstatus=`cat ${server_exitstatus_file}`
+        while :
+        do
+            kill -0 ${server_pid} > /dev/null 2>&1
+            if [ $? -ne 0 ]; then
+                server_exitstatus=`cat ${server_exitstatus_file}`
+                break
+            fi
+        done
         expected_server_result=`cat ${expected_result_csv} | grep -E "^${test_id}" | awk -F "," '{print $2}' | sed 's:\r$::'`
         expected_client_result=`cat ${expected_result_csv} | grep -E "^${test_id}" | awk -F "," '{print $3}' | sed 's:\r$::'`
         cat ${logfile} | grep "warning" > /dev/null 2>&1
@@ -257,7 +278,14 @@ if [ ${server_fail_flag} -ne 1 ]; then
         echo "${test_id}: NG"
         FAIL_FLAG=1
     else
-        server_exitstatus=`cat ${server_exitstatus_file}`
+        while :
+        do
+            kill -0 ${server_pid} > /dev/null 2>&1
+            if [ $? -ne 0 ]; then
+                server_exitstatus=`cat ${server_exitstatus_file}`
+                break
+            fi
+        done
         expected_server_result=`cat ${expected_result_csv} | grep -E "^${test_id}" | awk -F "," '{print $2}' | sed 's:\r$::'`
         expected_client_result=`cat ${expected_result_csv} | grep -E "^${test_id}" | awk -F "," '{print $3}' | sed 's:\r$::'`
         cat ${logfile} | grep "warning" > /dev/null 2>&1

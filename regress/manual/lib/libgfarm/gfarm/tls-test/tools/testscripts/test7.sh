@@ -62,7 +62,14 @@ if [ ${server_fail_flag} -ne 1 ]; then
         done
         echo "${test_id}: NG"
     else
-        server_exitstatus=`cat ${server_exitstatus_file}`
+        while :
+        do
+            kill -0 ${child_pid} > /dev/null 2>&1
+            if [ $? -ne 0 ]; then
+                server_exitstatus=`cat ${server_exitstatus_file}`
+                break
+            fi
+        done
         expected_server_result=`cat ${expected_result_csv} | grep -E "^${test_id}" | awk -F "," '{print $2}' | sed 's:\r$::'`
         expected_client_result=`cat ${expected_result_csv} | grep -E "^${test_id}" | awk -F "," '{print $3}' | sed 's:\r$::'`
         if [ ${key_update_num} -eq 16 \
