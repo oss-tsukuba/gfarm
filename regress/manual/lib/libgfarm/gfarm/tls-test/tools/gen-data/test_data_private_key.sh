@@ -39,4 +39,10 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+echo ""
+echo ""
+echo "**************************************************************"
+echo "** NOTE: For private key testing, use 'test' as password !! **"
+echo "**************************************************************"
+
 exit 0
