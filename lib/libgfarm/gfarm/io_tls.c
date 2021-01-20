@@ -42,17 +42,17 @@ static gfarm_error_t
 tls_iobufop_close(void *cookie, int fd)
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
+	int st = -1;
 	tls_session_ctx_t ctx = (tls_session_ctx_t)cookie;
 
-	if (likely(ctx != NULL)) { 
-		ret = tls_session_shutdown(ctx, fd, true);
-		if (likely(ret == GFARM_ERR_NO_ERROR)) {
-			tls_session_destroy_ctx(ctx);
-		}
-	} else {
-		ret = GFARM_ERR_INVALID_ARGUMENT;
+	ret = tls_session_shutdown(ctx);
+	tls_session_destroy_ctx(ctx);
+	errno = 0;
+	st = close(fd);
+	if (st != 0) {
+		ret = gfarm_errno_to_error(errno);
 	}
-
+	
 	return (ret);
 }
 
@@ -63,12 +63,14 @@ static gfarm_error_t
 tls_iobufop_shutdown(void *cookie, int fd)
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
+	int st = -1;
 	tls_session_ctx_t ctx = (tls_session_ctx_t)cookie;
 
-	if (likely(ctx != NULL)) { 
-		ret = tls_session_shutdown(ctx, fd, false);
-	} else {
-		ret = GFARM_ERR_INVALID_ARGUMENT;
+	ret = tls_session_shutdown(ctx);
+	errno = 0;
+	st = shutdown(fd, SHUT_RDWR);
+	if (st != 0) {
+		ret = gfarm_errno_to_error(errno);
 	}
 
 	return (ret);
@@ -215,7 +217,10 @@ gfp_xdr_tls_reset(struct gfp_xdr *conn)
 {
 	tls_session_ctx_t ctx = gfp_xdr_cookie(conn);
 
+	(void)tls_session_shutdown(ctx);
 	tls_session_destroy_ctx(ctx);
+
+	gfp_xdr_set(conn, &gfp_xdr_tls_iobuf_ops, NULL, -1);
 }
 
 char *
