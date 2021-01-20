@@ -6,7 +6,28 @@ source "${TOP_DIR}/lib/funcs.sh"
 TOP_DIR=`cd "${TOP_DIR}/../../"; pwd`
 ENV_DIR="${TOP_DIR}/test_dir"
 FAIL_FLAG=0
+debug_flag=0
 
+usage(){
+    cat << EOS >&2
+Usage:
+
+    OPTION:
+        -d              Debug flag
+        -h              Help
+EOS
+exit 0
+}
+
+## Opts. ##
+while getopts d OPT; do
+    case ${OPT} in
+        d) debug_flag=1;;
+        h) usage;;
+        *) usage;;
+    esac
+done
+shift `expr $OPTIND - 1`
 
 ### main ###
 SERVER_A_KEY="${ENV_DIR}/A/server/server.key"
@@ -27,7 +48,7 @@ run_test "1-1-1" \
 --tls_certificate_chain_file ${ENV_DIR}/A/client/client_cat_all.crt \
 --tls_key_file ${CLIENT_A_KEY} \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
---mutual_authentication --allow_no_crl"
+--mutual_authentication --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -43,7 +64,7 @@ run_test "1-1-2" \
 --tls_key_file ${CLIENT_A_KEY} \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
 --mutual_authentication \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -59,7 +80,7 @@ run_test "1-1-3" \
 --tls_key_file ${CLIENT_A_KEY} \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
 --mutual_authentication \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -75,7 +96,7 @@ run_test "1-1-4" \
 --tls_key_file ${CLIENT_A_KEY} \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
 --mutual_authentication \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -91,7 +112,7 @@ run_test "1-1-5" \
 --tls_key_file ${CLIENT_A_KEY} \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
 --mutual_authentication \
---build_chain --allow_no_crl"
+--build_chain --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -107,7 +128,7 @@ run_test "1-1-6" \
 --tls_key_file ${CLIENT_A_KEY} \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_root \
 --mutual_authentication \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -123,7 +144,7 @@ run_test "1-1-7" \
 --tls_key_file ${CLIENT_A_KEY} \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_root \
 --mutual_authentication \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -139,7 +160,7 @@ run_test "1-1-8" \
 --tls_key_file ${CLIENT_A_KEY} \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_root_1 \
 --mutual_authentication \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -155,7 +176,7 @@ run_test "1-1-9" \
 --tls_key_file ${CLIENT_A_KEY} \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
 --mutual_authentication \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -171,7 +192,7 @@ run_test "1-1-10" \
 --tls_key_file ${CLIENT_A_KEY} \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_root \
 --mutual_authentication \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -189,7 +210,7 @@ run_test "1-2-1" \
 --tls_key_file ${CLIENT_B_KEY} \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
 --mutual_authentication \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -205,7 +226,7 @@ run_test "1-2-2" \
 --tls_key_file ${CLIENT_B_KEY} \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
 --mutual_authentication \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -221,7 +242,7 @@ run_test "1-2-3" \
 --tls_key_file ${CLIENT_B_KEY} \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
 --mutual_authentication \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -237,7 +258,7 @@ run_test "1-2-4" \
 --tls_key_file ${CLIENT_B_KEY} \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
 --mutual_authentication \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -253,7 +274,7 @@ run_test "1-2-5" \
 --tls_key_file ${CLIENT_B_KEY} \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
 --mutual_authentication \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -269,7 +290,7 @@ run_test "1-2-6" \
 --tls_key_file ${CLIENT_B_KEY} \
 --tls_ca_certificate_path ${A_B_ALL} \
 --mutual_authentication \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -285,7 +306,7 @@ run_test "1-2-7" \
 --tls_key_file ${CLIENT_B_KEY} \
 --tls_ca_certificate_path ${A_B_ALL} \
 --mutual_authentication \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -301,7 +322,7 @@ run_test "1-2-8" \
 --tls_key_file ${CLIENT_B_KEY} \
 --tls_ca_certificate_path ${A_B_ALL} \
 --mutual_authentication \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -317,7 +338,7 @@ run_test "1-2-9" \
 --tls_key_file ${CLIENT_B_KEY} \
 --tls_ca_certificate_path ${A_B_ALL} \
 --mutual_authentication \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -333,7 +354,7 @@ run_test "1-2-10" \
 --tls_key_file ${CLIENT_B_KEY} \
 --tls_ca_certificate_path ${A_B_ALL} \
 --mutual_authentication --build_chain \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -349,7 +370,7 @@ run_test "1-2-11" \
 --tls_key_file ${CLIENT_B_KEY} \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
 --mutual_authentication \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -365,7 +386,7 @@ run_test "1-2-12" \
 --tls_key_file ${CLIENT_B_KEY} \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
 --mutual_authentication \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -381,7 +402,7 @@ run_test "1-2-13" \
 --tls_key_file ${CLIENT_B_KEY} \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
 --mutual_authentication \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -397,7 +418,7 @@ run_test "1-2-14" \
 --tls_key_file ${CLIENT_B_KEY} \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
 --mutual_authentication \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -413,7 +434,7 @@ run_test "1-2-15" \
 --tls_key_file ${CLIENT_B_KEY} \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
 --mutual_authentication \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -429,7 +450,7 @@ run_test "1-2-16" \
 --tls_key_file ${CLIENT_B_KEY} \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_root \
 --mutual_authentication \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -445,7 +466,7 @@ run_test "1-2-17" \
 --tls_key_file ${CLIENT_B_KEY} \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_root \
 --mutual_authentication \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -461,7 +482,7 @@ run_test "1-2-18" \
 --tls_key_file ${CLIENT_B_KEY} \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_root_1 \
 --mutual_authentication \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -477,7 +498,7 @@ run_test "1-2-19" \
 --tls_key_file ${CLIENT_B_KEY} \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
 --mutual_authentication \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -493,7 +514,7 @@ run_test "1-2-20" \
 --tls_key_file ${CLIENT_B_KEY} \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_root \
 --mutual_authentication \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -511,7 +532,7 @@ run_test "1-3-1" \
 --tls_key_file ${CLIENT_A_KEY} \
 --tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
 --mutual_authentication \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -527,7 +548,7 @@ run_test "1-3-2" \
 --tls_key_file ${CLIENT_A_KEY} \
 --tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
 --mutual_authentication \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -543,7 +564,7 @@ run_test "1-3-3" \
 --tls_key_file ${CLIENT_A_KEY} \
 --tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
 --mutual_authentication \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -559,7 +580,7 @@ run_test "1-3-4" \
 --tls_key_file ${CLIENT_A_KEY} \
 --tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
 --mutual_authentication \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -575,7 +596,7 @@ run_test "1-3-5" \
 --tls_key_file ${CLIENT_A_KEY} \
 --tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
 --mutual_authentication \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -591,7 +612,7 @@ run_test "1-3-6" \
 --tls_key_file ${CLIENT_A_KEY} \
 --tls_ca_certificate_path ${A_B_ALL} \
 --mutual_authentication \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -607,7 +628,7 @@ run_test "1-3-7" \
 --tls_key_file ${CLIENT_A_KEY} \
 --tls_ca_certificate_path ${A_B_ALL} \
 --mutual_authentication \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -623,7 +644,7 @@ run_test "1-3-8" \
 --tls_key_file ${CLIENT_A_KEY} \
 --tls_ca_certificate_path ${A_B_ALL} \
 --mutual_authentication \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -639,7 +660,7 @@ run_test "1-3-9" \
 --tls_key_file ${CLIENT_A_KEY} \
 --tls_ca_certificate_path ${A_B_ALL} \
 --mutual_authentication \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -655,7 +676,7 @@ run_test "1-3-10" \
 --tls_key_file ${CLIENT_A_KEY} \
 --tls_ca_certificate_path ${A_B_ALL} \
 --mutual_authentication --build_chain \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -671,7 +692,7 @@ run_test "1-3-11" \
 --tls_key_file ${CLIENT_A_KEY} \
 --tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
 --mutual_authentication \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -687,7 +708,7 @@ run_test "1-3-12" \
 --tls_key_file ${CLIENT_A_KEY} \
 --tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
 --mutual_authentication \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -703,7 +724,7 @@ run_test "1-3-13" \
 --tls_key_file ${CLIENT_A_KEY} \
 --tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
 --mutual_authentication \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -719,7 +740,7 @@ run_test "1-3-14" \
 --tls_key_file ${CLIENT_A_KEY} \
 --tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
 --mutual_authentication \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -735,7 +756,7 @@ run_test "1-3-15" \
 --tls_key_file ${CLIENT_A_KEY} \
 --tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
 --mutual_authentication \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -751,7 +772,7 @@ run_test "1-3-16" \
 --tls_key_file ${CLIENT_A_KEY} \
 --tls_ca_certificate_path ${ENV_DIR}/B/cacerts_root \
 --mutual_authentication \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -767,7 +788,7 @@ run_test "1-3-17" \
 --tls_key_file ${CLIENT_A_KEY} \
 --tls_ca_certificate_path ${ENV_DIR}/B/cacerts_root \
 --mutual_authentication \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -783,7 +804,7 @@ run_test "1-3-18" \
 --tls_key_file ${CLIENT_A_KEY} \
 --tls_ca_certificate_path ${ENV_DIR}/B/cacerts_root_1 \
 --mutual_authentication \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -799,7 +820,7 @@ run_test "1-3-19" \
 --tls_key_file ${CLIENT_A_KEY} \
 --tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
 --mutual_authentication \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -815,7 +836,7 @@ run_test "1-3-20" \
 --tls_key_file ${CLIENT_A_KEY} \
 --tls_ca_certificate_path ${ENV_DIR}/B/cacerts_root \
 --mutual_authentication \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -830,7 +851,7 @@ run_test "1-4-1" \
 --allow_no_crl --once" \
 "${TOP_DIR}/tls-test \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_root \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -843,7 +864,7 @@ run_test "1-4-2" \
 --allow_no_crl --once" \
 "${TOP_DIR}/tls-test \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_root \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -856,7 +877,7 @@ run_test "1-4-3" \
 --allow_no_crl --once" \
 "${TOP_DIR}/tls-test \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_root_1 \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -869,7 +890,7 @@ run_test "1-4-4" \
 --allow_no_crl --once" \
 "${TOP_DIR}/tls-test \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -882,7 +903,7 @@ run_test "1-4-5" \
 --build_chain --allow_no_crl --once" \
 "${TOP_DIR}/tls-test \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_root \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -897,7 +918,7 @@ run_test "1-5-1" \
 --allow_no_crl --once" \
 "${TOP_DIR}/tls-test \
 --tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -910,7 +931,7 @@ run_test "1-5-2" \
 --allow_no_crl --once" \
 "${TOP_DIR}/tls-test \
 --tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -923,7 +944,7 @@ run_test "1-5-3" \
 --allow_no_crl --once" \
 "${TOP_DIR}/tls-test \
 --tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -936,7 +957,7 @@ run_test "1-5-4" \
 --allow_no_crl --once" \
 "${TOP_DIR}/tls-test \
 --tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -949,7 +970,7 @@ run_test "1-5-5" \
 --allow_no_crl --once" \
 "${TOP_DIR}/tls-test \
 --tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
---allow_no_crl"
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi

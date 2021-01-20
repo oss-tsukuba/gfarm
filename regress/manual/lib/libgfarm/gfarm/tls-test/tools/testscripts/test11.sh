@@ -12,6 +12,29 @@ server_fail_flag=0
 server_exitstatus_file="${TOP_DIR}/exitstatus.txt"
 logfile="${TOP_DIR}/testfile.log"
 expected_result_csv="`dirname $0`/expected-test-result.csv"
+debug_flag=0
+
+usage(){
+    cat << EOS >&2
+Usage:
+
+    OPTION:
+        -d              Debug flag
+        -h              Help
+EOS
+exit 0
+}
+
+## Opts. ##
+while getopts d OPT; do
+    case ${OPT} in
+        d) debug_flag=1;;
+        h) usage;;
+        *) usage;;
+    esac
+done
+shift `expr $OPTIND - 1`
+
 
 ## 11-1 ##
 test_id="11-1"
@@ -75,6 +98,10 @@ if [ ${server_fail_flag} -ne 1 ]; then
                 break
             fi
         done
+        if [ ${debug_flag} -eq 1 ]; then
+            echo "server:${server_exitstatus}"
+            echo "client:${client_exitstatus}"
+        fi 
         cat ${logfile} | grep "warning" > /dev/null 2>&1
         output_warning=$?
         if [ ${output_warning} -ne 0 \
@@ -154,6 +181,10 @@ if [ ${server_fail_flag} -ne 1 ]; then
                 break
             fi
         done
+        if [ ${debug_flag} -eq 1 ]; then
+            echo "server:${server_exitstatus}"
+            echo "client:${client_exitstatus}"
+        fi 
         cat ${logfile} | grep "warning" > /dev/null 2>&1
         output_warning=$?
         if [ ${output_warning} -eq 0 \
@@ -227,6 +258,10 @@ if [ ${server_fail_flag} -ne 1 ]; then
                 break
             fi
         done
+        if [ ${debug_flag} -eq 1 ]; then
+            echo "server:${server_exitstatus}"
+            echo "client:${client_exitstatus}"
+        fi 
         expected_server_result=`cat ${expected_result_csv} | grep -E "^${test_id}" | awk -F "," '{print $2}' | sed 's:\r$::'`
         expected_client_result=`cat ${expected_result_csv} | grep -E "^${test_id}" | awk -F "," '{print $3}' | sed 's:\r$::'`
         cat ${logfile} | grep "warning" > /dev/null 2>&1
@@ -302,6 +337,10 @@ if [ ${server_fail_flag} -ne 1 ]; then
                 break
             fi
         done
+        if [ ${debug_flag} -eq 1 ]; then
+            echo "server:${server_exitstatus}"
+            echo "client:${client_exitstatus}"
+        fi 
         expected_server_result=`cat ${expected_result_csv} | grep -E "^${test_id}" | awk -F "," '{print $2}' | sed 's:\r$::'`
         expected_client_result=`cat ${expected_result_csv} | grep -E "^${test_id}" | awk -F "," '{print $3}' | sed 's:\r$::'`
         cat ${logfile} | grep "warning" > /dev/null 2>&1

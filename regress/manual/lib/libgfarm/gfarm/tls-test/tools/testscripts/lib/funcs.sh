@@ -70,8 +70,10 @@ run_test() {
             break
         fi
     done
-    echo "server:$server_exitstatus"
-    echo "client:$client_exitstatus"
+    if [ $4 -eq 1 ]; then
+        echo "server:$server_exitstatus"
+        echo "client:$client_exitstatus"
+    fi
 
     expected_server_result=`cat ${expected_result_csv} | \
                             grep -E "^${test_id}," | \

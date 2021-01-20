@@ -8,6 +8,28 @@ ENV_DIR="${TOP_DIR}/test_dir"
 
 FAIL_FLAG=0
 CERT_DIR="${ENV_DIR}/permission_cert"
+debug_flag=0
+
+usage(){
+    cat << EOS >&2
+Usage:
+
+    OPTION:
+        -d              Debug flag
+        -h              Help
+EOS
+exit 0
+}
+
+## Opts. ##
+while getopts d OPT; do
+    case ${OPT} in
+        d) debug_flag=1;;
+        h) usage;;
+        *) usage;;
+    esac
+done
+shift `expr $OPTIND - 1`
 
 
 ## 9-1 ##
@@ -19,7 +41,8 @@ run_test "9-1" \
 "${TOP_DIR}/tls-test --mutual_authentication \
 --tls_certificate_file ${CERT_DIR}/A/client/client.crt \
 --tls_key_file ${CERT_DIR}/A/client/client.key \
---tls_ca_certificate_path ${CERT_DIR}/A/cacerts_all --allow_no_crl"
+--tls_ca_certificate_path ${CERT_DIR}/A/cacerts_all \
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi
@@ -34,7 +57,8 @@ run_test "9-2" \
 "${TOP_DIR}/tls-test --mutual_authentication \
 --tls_certificate_file ${CERT_DIR}/A/client/client.crt \
 --tls_key_file ${CERT_DIR}/A/client/client.key \
---tls_ca_certificate_path ${CERT_DIR}/A/cacerts_all --allow_no_crl"
+--tls_ca_certificate_path ${CERT_DIR}/A/cacerts_all \
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
     FAIL_FLAG=1
 fi

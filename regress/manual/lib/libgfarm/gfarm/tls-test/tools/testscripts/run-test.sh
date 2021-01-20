@@ -11,6 +11,7 @@ Usage:
 
     OPTION:
         -t TEST_NUMBER	Execute only TEST_NUMBER test
+        -d              Debug flag
         -h		Help
 EOS
 exit 0
@@ -20,12 +21,14 @@ _ret=1
 fail_flag=0
 expected_result_csv="expected-test-result.csv"
 exec_test_num=0
+debug_flag=0
 ENV_DIR="${TOP_DIR}/../../test_dir"
 
 ## Opts. ##
-while getopts t:h OPT; do
+while getopts t:hd OPT; do
     case ${OPT} in
         t) exec_test_num=${OPTARG};;
+        d) debug_flag=1;;
         h) usage;;
         *) usage;;
     esac
@@ -59,81 +62,151 @@ fi
 
 # test 1
 if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 1 ]; then
-    ${TOP_DIR}/test1.sh
-    if [ $? -ne 0 ]; then
-        fail_flag=1
+    if [ ${debug_flag} -eq 1 ]; then
+        ${TOP_DIR}/test1.sh -d
+        if [ $? -ne 0 ]; then
+            fail_flag=1
+        fi
+    else
+        ${TOP_DIR}/test1.sh
+        if [ $? -ne 0 ]; then
+            fail_flag=1
+        fi
     fi
 fi
 
 # test 2
 if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 2 ]; then
-    ${TOP_DIR}/test2.sh
-    if [ $? -ne 0 ]; then
-        fail_flag=1
+    if [ ${debug_flag} -eq 1 ]; then
+        ${TOP_DIR}/test2.sh -d
+        if [ $? -ne 0 ]; then
+            fail_flag=1
+        fi
+    else
+        ${TOP_DIR}/test2.sh
+        if [ $? -ne 0 ]; then
+            fail_flag=1
+        fi
     fi
 fi
 
 # test 4
 if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 4 ]; then
-    ${TOP_DIR}/test4.sh
-    if [ $? -ne 0 ]; then
-        fail_flag=1
+    if [ ${debug_flag} -eq 1 ]; then
+        ${TOP_DIR}/test4.sh -d
+        if [ $? -ne 0 ]; then
+            fail_flag=1
+        fi
+    else
+        ${TOP_DIR}/test4.sh
+        if [ $? -ne 0 ]; then
+            fail_flag=1
+        fi
     fi
 fi
 
 # test 5
 if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 5 ]; then
-    ${TOP_DIR}/test5.sh
-    if [ $? -ne 0 ]; then
-        fail_flag=1
+    if [ ${debug_flag} -eq 1 ]; then
+        ${TOP_DIR}/test5.sh -d
+        if [ $? -ne 0 ]; then
+            fail_flag=1
+        fi
+    else
+        ${TOP_DIR}/test5.sh
+        if [ $? -ne 0 ]; then
+            fail_flag=1
+        fi
     fi
 fi
 
 # test 7
 if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 7 ]; then
-    ${TOP_DIR}/test7.sh
-    if [ $? -ne 0 ]; then
-        fail_flag=1
+    if [ ${debug_flag} -eq 1 ]; then
+        ${TOP_DIR}/test7.sh -d
+        if [ $? -ne 0 ]; then
+            fail_flag=1
+        fi
+    else
+        ${TOP_DIR}/test7.sh
+        if [ $? -ne 0 ]; then
+            fail_flag=1
+        fi
     fi
 fi
 
 # test 8
 if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 8 ]; then
-    ${TOP_DIR}/test8.sh
-    if [ $? -ne 0 ]; then
-        fail_flag=1
+    if [ ${debug_flag} -eq 1 ]; then
+        ${TOP_DIR}/test8.sh -d
+        if [ $? -ne 0 ]; then
+            fail_flag=1
+        fi
+    else
+        ${TOP_DIR}/test8.sh
+        if [ $? -ne 0 ]; then
+            fail_flag=1
+        fi
     fi
 fi
 
 # test 9
 if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 9 ]; then
-    ${TOP_DIR}/test9.sh
-    if [ $? -ne 0 ]; then
-        fail_flag=1
+    if [ ${debug_flag} -eq 1 ]; then
+        ${TOP_DIR}/test9.sh -d
+        if [ $? -ne 0 ]; then
+            fail_flag=1
+        fi
+    else
+        ${TOP_DIR}/test9.sh
+        if [ $? -ne 0 ]; then
+            fail_flag=1
+        fi
     fi
 fi
 
 # test 10
 if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 10 ]; then
-    ${TOP_DIR}/test10.sh
-    if [ $? -ne 0 ]; then
-        fail_flag=1
+    if [ ${debug_flag} -eq 1 ]; then
+        ${TOP_DIR}/test10.sh -d
+        if [ $? -ne 0 ]; then
+            fail_flag=1
+        fi
+    else
+        ${TOP_DIR}/test10.sh
+        if [ $? -ne 0 ]; then
+            fail_flag=1
+        fi
     fi
 fi
 
 # test 11
 if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 11 ]; then
-    ${TOP_DIR}/test11.sh
-    if [ $? -ne 0 ]; then
-        fail_flag=1
+    if [ ${debug_flag} -eq 1 ]; then
+        ${TOP_DIR}/test11.sh -d
+        if [ $? -ne 0 ]; then
+            fail_flag=1
+        fi
+    else
+        ${TOP_DIR}/test11.sh
+        if [ $? -ne 0 ]; then
+            fail_flag=1
+        fi
     fi
 fi
 
 # test 12
 if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 12 ]; then
-    ${TOP_DIR}/test12.sh
-    if [ $? -ne 0 ]; then
-        fail_flag=1
+    if [ ${debug_flag} -eq 1 ]; then
+        ${TOP_DIR}/test12.sh -d
+        if [ $? -ne 0 ]; then
+            fail_flag=1
+        fi
+    else
+        ${TOP_DIR}/test12.sh
+        if [ $? -ne 0 ]; then
+            fail_flag=1
+        fi
     fi
 fi
 

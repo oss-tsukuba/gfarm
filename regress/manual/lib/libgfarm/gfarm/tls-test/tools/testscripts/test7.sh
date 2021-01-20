@@ -14,6 +14,28 @@ ENV_DIR="${TOP_DIR}/test_dir"
 
 server_exitstatus_file="${TOP_DIR}/exitstatus.txt"
 server_fail_flag=0
+debug_flag=0
+
+usage(){
+    cat << EOS >&2
+Usage:
+
+    OPTION:
+        -d              Debug flag
+        -h              Help
+EOS
+exit 0
+}
+
+## Opts. ##
+while getopts d OPT; do
+    case ${OPT} in
+        d) debug_flag=1;;
+        h) usage;;
+        *) usage;;
+    esac
+done
+shift `expr $OPTIND - 1`
 
 ulimit -a | grep stack | grep unlimited > /dev/null
 if [ $? -ne 0 ]; then
@@ -74,6 +96,10 @@ if [ ${server_fail_flag} -ne 1 ]; then
                 break
             fi
         done
+        if [ ${debug_flag} -eq 1 ]; then
+            echo "server:${server_exitstatus}"
+            echo "client:${client_exitstatus}"
+        fi
         expected_server_result=`cat ${expected_result_csv} | grep -E "^${test_id}" | awk -F "," '{print $2}' | sed 's:\r$::'`
         expected_client_result=`cat ${expected_result_csv} | grep -E "^${test_id}" | awk -F "," '{print $3}' | sed 's:\r$::'`
         if [ ${key_update_num} -eq 16 \
