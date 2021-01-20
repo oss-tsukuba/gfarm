@@ -60,8 +60,12 @@ run_test() {
     fi
     while :
     do
+        sync
         kill -0 ${child_pid} > /dev/null 2>&1
-        if [ $? -ne 0 ]; then
+        kill_status=$?
+        test -s ./${s_exit_file}
+        file_status=$?
+        if [ ${kill_status} -ne 0 -a ${file_status} -eq 0 ]; then
             server_exitstatus=`cat ./${s_exit_file}`
             break
         fi

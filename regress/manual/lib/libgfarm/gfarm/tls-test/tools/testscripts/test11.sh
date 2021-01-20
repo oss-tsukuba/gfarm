@@ -65,8 +65,12 @@ if [ ${server_fail_flag} -ne 1 ]; then
                                 awk -F "," '{print $3}' | sed 's:\r$::'`
         while :
         do
+            sync
             kill -0 ${server_pid} > /dev/null 2>&1
-            if [ $? -ne 0 ]; then
+            kill_status=$?
+            test -s ${server_exitstatus_file}
+            file_status=$?
+            if [ ${kill_status} -ne 0 -a ${file_status} -eq 0 ]; then
                 server_exitstatus=`cat ${server_exitstatus_file}`
                 break
             fi
@@ -140,8 +144,12 @@ if [ ${server_fail_flag} -ne 1 ]; then
                                 awk -F "," '{print $3}' | sed 's:\r$::'`
         while :
         do
+            sync
             kill -0 ${server_pid} > /dev/null 2>&1
-            if [ $? -ne 0 ]; then
+            kill_status=$?
+            test -s ${server_exitstatus_file}
+            file_status=$?
+            if [ ${kill_status} -ne 0 -a ${file_status} -eq 0 ]; then
                 server_exitstatus=`cat ${server_exitstatus_file}`
                 break
             fi
@@ -209,8 +217,12 @@ if [ ${server_fail_flag} -ne 1 ]; then
     else
         while :
         do
+           sync
             kill -0 ${server_pid} > /dev/null 2>&1
-            if [ $? -ne 0 ]; then
+            kill_status=$?
+            test -s ${server_exitstatus_file}
+            file_status=$?
+            if [ ${kill_status} -ne 0 -a ${file_status} -eq 0 ]; then
                 server_exitstatus=`cat ${server_exitstatus_file}`
                 break
             fi
@@ -280,8 +292,12 @@ if [ ${server_fail_flag} -ne 1 ]; then
     else
         while :
         do
+            sync
             kill -0 ${server_pid} > /dev/null 2>&1
-            if [ $? -ne 0 ]; then
+            kill_status=$?
+            test -s ${server_exitstatus_file}
+            file_status=$?
+            if [ ${kill_status} -ne 0 -a ${file_status} -eq 0 ]; then
                 server_exitstatus=`cat ${server_exitstatus_file}`
                 break
             fi
