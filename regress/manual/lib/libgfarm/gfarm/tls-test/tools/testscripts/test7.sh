@@ -65,7 +65,7 @@ if [ ${server_fail_flag} -ne 1 ]; then
         while :
         do
             sync
-            kill -0 ${child_pid} > /dev/null 2>&1
+            kill -0 ${server_pid} > /dev/null 2>&1
             kill_status=$?
             test -s ${server_exitstatus_file}
             file_status=$?

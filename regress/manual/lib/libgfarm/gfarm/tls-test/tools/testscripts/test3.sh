@@ -38,6 +38,7 @@ do
 done
 
 if [ ${server_fail_flag} -ne 1 ]; then
+    echo "Input correct passphrase."
     ${TOP_DIR}/tls-test --allow_no_crl --mutual_authentication \
     --tls_certificate_file ${ENV_DIR}/A/client/client.crt \
     --tls_key_file ${ENV_DIR}/A/client/client_encrypted.key \
@@ -59,7 +60,18 @@ if [ ${server_fail_flag} -ne 1 ]; then
         echo "${test_id}: NG"
         fail_flag=1
     else
-        server_exitstatus=`cat ${server_exitstatus_file}`
+        while :
+        do
+            sync
+            kill -0 ${server_pid} > /dev/null 2>&1
+            kill_status=$?
+            test -s ${server_exitstatus_file}
+            file_status=$?
+            if [ ${kill_status} -ne 0 -a ${file_status} -eq 0 ]; then
+                server_exitstatus=`cat ${server_exitstatus_file}`
+                break
+            fi
+        done
         expected_server_result=`cat ${expected_result_csv} | grep -E "^${test_id}," | awk -F "," '{print $2}' | sed 's:\r$::'`
         expected_client_result=`cat ${expected_result_csv} | grep -E "^${test_id}," | awk -F "," '{print $3}' | sed 's:\r$::'`
         if [ "${server_exitstatus}" = "${expected_server_result}" \
@@ -100,6 +112,7 @@ do
 done
 
 if [ ${server_fail_flag} -ne 1 ]; then
+    echo "Input bad passphrase."
     ${TOP_DIR}/tls-test --allow_no_crl --mutual_authentication \
     --tls_certificate_file ${ENV_DIR}/A/client/client.crt \
     --tls_key_file ${ENV_DIR}/A/client/client_encrypted.key \
