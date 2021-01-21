@@ -64,14 +64,11 @@ fi
 if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 1 ]; then
 	if [ ${debug_flag} -eq 1 ]; then
 		${TOP_DIR}/test1.sh -d
-		if [ $? -ne 0 ]; then
-			fail_flag=1
-		fi
 	else
 		${TOP_DIR}/test1.sh
-		if [ $? -ne 0 ]; then
-			fail_flag=1
-		fi
+	fi
+	if [ $? -ne 0 ]; then
+		fail_flag=1
 	fi
 fi
 
@@ -79,14 +76,11 @@ fi
 if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 2 ]; then
 	if [ ${debug_flag} -eq 1 ]; then
 		${TOP_DIR}/test2.sh -d
-		if [ $? -ne 0 ]; then
-			fail_flag=1
-		fi
 	else
 		${TOP_DIR}/test2.sh
-		if [ $? -ne 0 ]; then
-			fail_flag=1
-		fi
+	fi
+	if [ $? -ne 0 ]; then
+		fail_flag=1
 	fi
 fi
 
@@ -94,14 +88,11 @@ fi
 if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 4 ]; then
 	if [ ${debug_flag} -eq 1 ]; then
 		${TOP_DIR}/test4.sh -d
-		if [ $? -ne 0 ]; then
-			fail_flag=1
-		fi
 	else
 		${TOP_DIR}/test4.sh
-		if [ $? -ne 0 ]; then
-			fail_flag=1
-		fi
+	fi
+	if [ $? -ne 0 ]; then
+		fail_flag=1
 	fi
 fi
 
@@ -109,14 +100,11 @@ fi
 if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 5 ]; then
 	if [ ${debug_flag} -eq 1 ]; then
 		${TOP_DIR}/test5.sh -d
-		if [ $? -ne 0 ]; then
-			fail_flag=1
-		fi
 	else
 		${TOP_DIR}/test5.sh
-		if [ $? -ne 0 ]; then
-			fail_flag=1
-		fi
+	fi
+	if [ $? -ne 0 ]; then
+		fail_flag=1
 	fi
 fi
 
@@ -124,14 +112,11 @@ fi
 if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 7 ]; then
 	if [ ${debug_flag} -eq 1 ]; then
 		${TOP_DIR}/test7.sh -d
-		if [ $? -ne 0 ]; then
-			fail_flag=1
-		fi
 	else
 		${TOP_DIR}/test7.sh
-		if [ $? -ne 0 ]; then
-			fail_flag=1
-		fi
+	fi
+	if [ $? -ne 0 ]; then
+		fail_flag=1
 	fi
 fi
 
@@ -139,14 +124,11 @@ fi
 if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 8 ]; then
 	if [ ${debug_flag} -eq 1 ]; then
 		${TOP_DIR}/test8.sh -d
-		if [ $? -ne 0 ]; then
-			fail_flag=1
-		fi
 	else
 		${TOP_DIR}/test8.sh
-		if [ $? -ne 0 ]; then
-			fail_flag=1
-		fi
+	fi
+	if [ $? -ne 0 ]; then
+		fail_flag=1
 	fi
 fi
 
@@ -154,14 +136,11 @@ fi
 if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 9 ]; then
 	if [ ${debug_flag} -eq 1 ]; then
 		${TOP_DIR}/test9.sh -d
-		if [ $? -ne 0 ]; then
-			fail_flag=1
-		fi
 	else
 		${TOP_DIR}/test9.sh
-		if [ $? -ne 0 ]; then
-			fail_flag=1
-		fi
+	fi
+	if [ $? -ne 0 ]; then
+		fail_flag=1
 	fi
 fi
 
@@ -169,14 +148,11 @@ fi
 if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 10 ]; then
 	if [ ${debug_flag} -eq 1 ]; then
 		${TOP_DIR}/test10.sh -d
-		if [ $? -ne 0 ]; then
-			fail_flag=1
-		fi
 	else
 		${TOP_DIR}/test10.sh
-		if [ $? -ne 0 ]; then
-			fail_flag=1
-		fi
+	fi
+	if [ $? -ne 0 ]; then
+		fail_flag=1
 	fi
 fi
 
@@ -184,14 +160,11 @@ fi
 if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 11 ]; then
 	if [ ${debug_flag} -eq 1 ]; then
 		${TOP_DIR}/test11.sh -d
-		if [ $? -ne 0 ]; then
-			fail_flag=1
-		fi
 	else
 		${TOP_DIR}/test11.sh
-		if [ $? -ne 0 ]; then
-			fail_flag=1
-		fi
+	fi
+	if [ $? -ne 0 ]; then
+		fail_flag=1
 	fi
 fi
 
@@ -199,14 +172,11 @@ fi
 if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 12 ]; then
 	if [ ${debug_flag} -eq 1 ]; then
 		${TOP_DIR}/test12.sh -d
-		if [ $? -ne 0 ]; then
-			fail_flag=1
-		fi
 	else
 		${TOP_DIR}/test12.sh
-		if [ $? -ne 0 ]; then
-			fail_flag=1
-		fi
+	fi
+	if [ $? -ne 0 ]; then
+		fail_flag=1
 	fi
 fi
 
