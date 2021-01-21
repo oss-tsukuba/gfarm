@@ -9,7 +9,7 @@ FAIL_FLAG=0
 debug_flag=0
 
 usage(){
-    cat << EOS >&2
+	cat << EOS >&2
 Usage:
 
     OPTION:
@@ -21,11 +21,11 @@ exit 0
 
 ## Opts. ##
 while getopts d OPT; do
-    case ${OPT} in
-        d) debug_flag=1;;
-        h) usage;;
-        *) usage;;
-    esac
+	case ${OPT} in
+		d) debug_flag=1;;
+		h) usage;;
+		*) usage;;
+	esac
 done
 shift `expr $OPTIND - 1`
 
@@ -50,7 +50,7 @@ run_test "1-1-1" \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
 --mutual_authentication --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-1-2" \
@@ -66,7 +66,7 @@ run_test "1-1-2" \
 --mutual_authentication \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-1-3" \
@@ -82,7 +82,7 @@ run_test "1-1-3" \
 --mutual_authentication \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-1-4" \
@@ -98,7 +98,7 @@ run_test "1-1-4" \
 --mutual_authentication \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-1-5" \
@@ -114,7 +114,7 @@ run_test "1-1-5" \
 --mutual_authentication \
 --build_chain --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-1-6" \
@@ -130,7 +130,7 @@ run_test "1-1-6" \
 --mutual_authentication \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-1-7" \
@@ -146,7 +146,7 @@ run_test "1-1-7" \
 --mutual_authentication \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-1-8" \
@@ -162,7 +162,7 @@ run_test "1-1-8" \
 --mutual_authentication \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-1-9" \
@@ -178,7 +178,7 @@ run_test "1-1-9" \
 --mutual_authentication \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-1-10" \
@@ -194,7 +194,7 @@ run_test "1-1-10" \
 --mutual_authentication \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 
@@ -212,7 +212,7 @@ run_test "1-2-1" \
 --mutual_authentication \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-2-2" \
@@ -228,7 +228,7 @@ run_test "1-2-2" \
 --mutual_authentication \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-2-3" \
@@ -244,7 +244,7 @@ run_test "1-2-3" \
 --mutual_authentication \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-2-4" \
@@ -260,7 +260,7 @@ run_test "1-2-4" \
 --mutual_authentication \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-2-5" \
@@ -276,7 +276,7 @@ run_test "1-2-5" \
 --mutual_authentication \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-2-6" \
@@ -292,7 +292,7 @@ run_test "1-2-6" \
 --mutual_authentication \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-2-7" \
@@ -308,7 +308,7 @@ run_test "1-2-7" \
 --mutual_authentication \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-2-8" \
@@ -324,7 +324,7 @@ run_test "1-2-8" \
 --mutual_authentication \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-2-9" \
@@ -340,7 +340,7 @@ run_test "1-2-9" \
 --mutual_authentication \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-2-10" \
@@ -356,7 +356,7 @@ run_test "1-2-10" \
 --mutual_authentication --build_chain \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-2-11" \
@@ -372,7 +372,7 @@ run_test "1-2-11" \
 --mutual_authentication \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-2-12" \
@@ -388,7 +388,7 @@ run_test "1-2-12" \
 --mutual_authentication \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-2-13" \
@@ -404,7 +404,7 @@ run_test "1-2-13" \
 --mutual_authentication \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-2-14" \
@@ -420,7 +420,7 @@ run_test "1-2-14" \
 --mutual_authentication \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-2-15" \
@@ -436,7 +436,7 @@ run_test "1-2-15" \
 --mutual_authentication \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-2-16" \
@@ -452,7 +452,7 @@ run_test "1-2-16" \
 --mutual_authentication \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-2-17" \
@@ -468,7 +468,7 @@ run_test "1-2-17" \
 --mutual_authentication \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-2-18" \
@@ -484,7 +484,7 @@ run_test "1-2-18" \
 --mutual_authentication \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-2-19" \
@@ -500,7 +500,7 @@ run_test "1-2-19" \
 --mutual_authentication \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-2-20" \
@@ -516,7 +516,7 @@ run_test "1-2-20" \
 --mutual_authentication \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 
@@ -534,7 +534,7 @@ run_test "1-3-1" \
 --mutual_authentication \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-3-2" \
@@ -550,7 +550,7 @@ run_test "1-3-2" \
 --mutual_authentication \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-3-3" \
@@ -566,7 +566,7 @@ run_test "1-3-3" \
 --mutual_authentication \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-3-4" \
@@ -582,7 +582,7 @@ run_test "1-3-4" \
 --mutual_authentication \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-3-5" \
@@ -598,7 +598,7 @@ run_test "1-3-5" \
 --mutual_authentication \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-3-6" \
@@ -614,7 +614,7 @@ run_test "1-3-6" \
 --mutual_authentication \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-3-7" \
@@ -630,7 +630,7 @@ run_test "1-3-7" \
 --mutual_authentication \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-3-8" \
@@ -646,7 +646,7 @@ run_test "1-3-8" \
 --mutual_authentication \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-3-9" \
@@ -662,7 +662,7 @@ run_test "1-3-9" \
 --mutual_authentication \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-3-10" \
@@ -678,7 +678,7 @@ run_test "1-3-10" \
 --mutual_authentication --build_chain \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-3-11" \
@@ -694,7 +694,7 @@ run_test "1-3-11" \
 --mutual_authentication \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-3-12" \
@@ -710,7 +710,7 @@ run_test "1-3-12" \
 --mutual_authentication \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-3-13" \
@@ -726,7 +726,7 @@ run_test "1-3-13" \
 --mutual_authentication \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-3-14" \
@@ -742,7 +742,7 @@ run_test "1-3-14" \
 --mutual_authentication \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-3-15" \
@@ -758,7 +758,7 @@ run_test "1-3-15" \
 --mutual_authentication \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-3-16" \
@@ -774,7 +774,7 @@ run_test "1-3-16" \
 --mutual_authentication \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-3-17" \
@@ -790,7 +790,7 @@ run_test "1-3-17" \
 --mutual_authentication \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-3-18" \
@@ -806,7 +806,7 @@ run_test "1-3-18" \
 --mutual_authentication \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-3-19" \
@@ -822,7 +822,7 @@ run_test "1-3-19" \
 --mutual_authentication \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-3-20" \
@@ -838,7 +838,7 @@ run_test "1-3-20" \
 --mutual_authentication \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 
@@ -853,7 +853,7 @@ run_test "1-4-1" \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_root \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-4-2" \
@@ -866,7 +866,7 @@ run_test "1-4-2" \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_root \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-4-3" \
@@ -879,7 +879,7 @@ run_test "1-4-3" \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_root_1 \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-4-4" \
@@ -892,7 +892,7 @@ run_test "1-4-4" \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-4-5" \
@@ -905,7 +905,7 @@ run_test "1-4-5" \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_root \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 
@@ -920,7 +920,7 @@ run_test "1-5-1" \
 --tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-5-2" \
@@ -933,7 +933,7 @@ run_test "1-5-2" \
 --tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-5-3" \
@@ -946,7 +946,7 @@ run_test "1-5-3" \
 --tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-5-4" \
@@ -959,7 +959,7 @@ run_test "1-5-4" \
 --tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 run_test "1-5-5" \
@@ -972,12 +972,12 @@ run_test "1-5-5" \
 --tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 
 if [ ${FAIL_FLAG} -eq 0 ]; then
-    exit 0
+	exit 0
 else
-    exit 1
+	exit 1
 fi
