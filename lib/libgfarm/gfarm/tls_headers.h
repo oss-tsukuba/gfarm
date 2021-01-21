@@ -207,6 +207,7 @@ struct tls_session_ctx_struct {
 	tls_role_t role_;
 	bool do_mutual_auth_;
 	int n_cert_chain_;
+	bool is_handshake_tried_;
 	bool is_verified_;
 	int cert_verify_callback_error_;
 	int cert_verify_result_error_;
