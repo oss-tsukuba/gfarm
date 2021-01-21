@@ -2759,7 +2759,7 @@ tls_session_shutdown(tls_session_ctx_t ctx)
 			 * (SSL_read returns >0)
 			 */
 			uint8_t buf[65536];
-			int s_n;
+			int s_n = -1;
 
 			ret = tls_session_read(ctx, buf, sizeof(buf), &s_n);
 
