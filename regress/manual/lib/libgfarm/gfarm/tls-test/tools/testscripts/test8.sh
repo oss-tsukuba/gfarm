@@ -8,7 +8,28 @@ ENV_DIR="${TOP_DIR}/test_dir"
 
 FAIL_FLAG=0
 CERT_DIR="${ENV_DIR}/permission_private_key"
+debug_flag=0
 
+usage(){
+	cat << EOS >&2
+Usage:
+
+    OPTION:
+        -d              Debug flag
+        -h              Help
+EOS
+exit 0
+}
+
+## Opts. ##
+while getopts d OPT; do
+	case ${OPT} in
+		d) debug_flag=1;;
+		h) usage;;
+		*) usage;;
+	esac
+done
+shift `expr $OPTIND - 1`
 
 ## 8-1 ##
 run_test "8-1" \
@@ -19,9 +40,10 @@ run_test "8-1" \
 "${TOP_DIR}/tls-test --mutual_authentication \
 --tls_certificate_file ${CERT_DIR}/A/client/client.crt \
 --tls_key_file ${CERT_DIR}/A/client/client.key \
---tls_ca_certificate_path ${CERT_DIR}/A/cacerts_all --allow_no_crl"
+--tls_ca_certificate_path ${CERT_DIR}/A/cacerts_all \
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 ## 8-2 ##
@@ -33,9 +55,10 @@ run_test "8-2" \
 "${TOP_DIR}/tls-test --mutual_authentication \
 --tls_certificate_file ${CERT_DIR}/A/client/client.crt \
 --tls_key_file ${CERT_DIR}/A/client/client_bad_permissions.key \
---tls_ca_certificate_path ${CERT_DIR}/A/cacerts_all --allow_no_crl"
+--tls_ca_certificate_path ${CERT_DIR}/A/cacerts_all \
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 ## 8-3 ##
@@ -47,9 +70,10 @@ run_test "8-3" \
 "${TOP_DIR}/tls-test --mutual_authentication \
 --tls_certificate_file ${CERT_DIR}/A/client/client.crt \
 --tls_key_file ${CERT_DIR}/A/client/client_bad_permissions_bad_user.key \
---tls_ca_certificate_path ${CERT_DIR}/A/cacerts_all --allow_no_crl"
+--tls_ca_certificate_path ${CERT_DIR}/A/cacerts_all \
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 # 8-4 ##
@@ -61,13 +85,14 @@ run_test "8-4" \
 "${TOP_DIR}/tls-test --mutual_authentication \
 --tls_certificate_file ${CERT_DIR}/A/client/client.crt \
 --tls_key_file ${CERT_DIR}/A/client/client_bad_permissions_bad_user2.key \
---tls_ca_certificate_path ${CERT_DIR}/A/cacerts_all --allow_no_crl"
+--tls_ca_certificate_path ${CERT_DIR}/A/cacerts_all \
+--allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-    FAIL_FLAG=1
+	FAIL_FLAG=1
 fi
 
 if [ ${FAIL_FLAG} -eq 0 ]; then
-    exit 0
+	exit 0
 else
-    exit 1
+	exit 1
 fi

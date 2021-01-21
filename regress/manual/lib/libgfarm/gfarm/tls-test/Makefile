@@ -2,6 +2,7 @@ top_builddir = ../../../../../..
 top_srcdir = $(top_builddir)
 srcdir = .
 toolsdir = ./tools/gen-data
+testsdir = ./tools/testscripts
 envname = test_dir
 
 include $(top_srcdir)/makes/var.mk
@@ -44,6 +45,12 @@ env: $(toolsdir)
 	@echo "NOTE: In case following tests require a passphrase, " \
 	"use \"test\""
 	@echo
+
+run-test: $(testsdir)
+	$(testsdir)/run-test.sh
+
+run-test-interactive: $(testsdir)
+	$(testsdir)/test3.sh
 
 envclean:
 	@if test $${UID} -ne 0; then \

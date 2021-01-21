@@ -13,6 +13,28 @@ ENV_DIR="${TOP_DIR}/test_dir"
 server_exitstatus_file="${TOP_DIR}/exitstatus.txt"
 server_fail_flag=0
 fail_flag=0
+debug_flag=0
+
+usage(){
+	cat << EOS >&2
+Usage:
+
+	OPTION:
+		-d			Debug flag
+		-h			Help
+EOS
+exit 0
+}
+
+## Opts. ##
+while getopts d OPT; do
+	case ${OPT} in
+		d) debug_flag=1;;
+		h) usage;;
+		*) usage;;
+	esac
+done
+shift `expr $OPTIND - 1`
 
 # 3-1
 test_id="3-1"
@@ -26,54 +48,78 @@ echo \$? > ${server_exitstatus_file}" &
 server_pid=$!
 while :
 do
-    sh -c "kill -0 ${server_pid}" > /dev/null 2>&1
-    if [ $? -ne 0 ]; then
-        server_fail_flag=1
-        break
-    fi
-    netstat -an | grep :12345 | grep LISTEN > /dev/null 2>&1
-    if [ $? -eq 0 ]; then
-        break
-    fi
+	sh -c "kill -0 ${server_pid}" > /dev/null 2>&1
+	if [ $? -ne 0 ]; then
+		server_fail_flag=1
+		break
+	fi
+	netstat -an | grep :12345 | grep LISTEN > /dev/null 2>&1
+	if [ $? -eq 0 ]; then
+		break
+	fi
 done
 
 if [ ${server_fail_flag} -ne 1 ]; then
-    ${TOP_DIR}/tls-test --allow_no_crl --mutual_authentication \
-    --tls_certificate_file ${ENV_DIR}/A/client/client.crt \
-    --tls_key_file ${ENV_DIR}/A/client/client_encrypted.key \
-    --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all > /dev/null 2>&1
-    client_exitstatus=$?
+	echo "Input correct passphrase."
+	${TOP_DIR}/tls-test --allow_no_crl --mutual_authentication \
+	--tls_certificate_file ${ENV_DIR}/A/client/client.crt \
+	--tls_key_file ${ENV_DIR}/A/client/client_encrypted.key \
+	--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all > /dev/null 2>&1
+	client_exitstatus=$?
 
-    if [ ${client_exitstatus} -eq 2 -o ${client_exitstatus} -eq 3 ]; then
-        ${TOP_DIR}/tls-test --allow_no_crl --mutual_authentication \
-        --tls_certificate_file ${ENV_DIR}/A/client/client.crt \
-        --tls_key_file ${ENV_DIR}/A/client/client.key \
-        --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all > /dev/null 2>&1
-        while :
-        do
-            netstat -an | grep LISTEN | grep :12345 > /dev/null 2>&1
-            if [ $? -ne 0 ]; then
-                break
-            fi
-        done
-        echo "${test_id}: NG"
-        fail_flag=1
-    else
-        server_exitstatus=`cat ${server_exitstatus_file}`
-        expected_server_result=`cat ${expected_result_csv} | grep -E "^${test_id}," | awk -F "," '{print $2}' | sed 's:\r$::'`
-        expected_client_result=`cat ${expected_result_csv} | grep -E "^${test_id}," | awk -F "," '{print $3}' | sed 's:\r$::'`
-        if [ "${server_exitstatus}" = "${expected_server_result}" \
-                -a "${client_exitstatus}" = "${expected_client_result}" ]; then
-            echo "${test_id}: OK"
-        else
-            echo "${test_id}: NG"
-            fail_flag=1
-        fi
-    fi
+	if [ ${client_exitstatus} -eq 2 -o ${client_exitstatus} -eq 3 ]; then
+		${TOP_DIR}/tls-test --allow_no_crl --mutual_authentication \
+		--tls_certificate_file ${ENV_DIR}/A/client/client.crt \
+		--tls_key_file ${ENV_DIR}/A/client/client.key \
+		--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+			> /dev/null 2>&1
+		while :
+		do
+			netstat -an | grep LISTEN | grep :12345 \
+				> /dev/null 2>&1
+			if [ $? -ne 0 ]; then
+				break
+			fi
+		done
+		echo "${test_id}: FAIL"
+		fail_flag=1
+	else
+		while :
+		do
+			sync
+			kill -0 ${server_pid} > /dev/null 2>&1
+			kill_status=$?
+			test -s ${server_exitstatus_file}
+			file_status=$?
+			if [ ${kill_status} -ne 0 \
+				-a ${file_status} -eq 0 ]; then
+				server_exitstatus=`cat \
+						${server_exitstatus_file}`
+				break
+			fi
+		done
+		if [ ${debug_flag} -eq 1 ]; then
+			echo "server:${server_exitstatus}"
+			echo "client:${client_exitstatus}"
+		fi
+		expected_server_result=`cat ${expected_result_csv} | \
+				grep -E "^${test_id}," | \
+				awk -F "," '{print $2}' | sed 's:\r$::'`
+		expected_client_result=`cat ${expected_result_csv} | \
+				grep -E "^${test_id}," | \
+				awk -F "," '{print $3}' | sed 's:\r$::'`
+		if [ "${server_exitstatus}" = "${expected_server_result}" -a \
+		"${client_exitstatus}" = "${expected_client_result}" ]; then
+			echo "${test_id}: PASS"
+		else
+			echo "${test_id}: FAIL"
+			fail_flag=1
+		fi
+	fi
 else
-    puts_error "fail to run server."
-    echo "${test_id}: NG"
-    fail_flag=1
+	puts_error "fail to run server."
+	echo "${test_id}: FAIL"
+	fail_flag=1
 fi
 
 # 3-2
@@ -88,73 +134,84 @@ echo \$? > ${server_exitstatus_file}" &
 server_pid=$!
 while :
 do
-    sh -c "kill -0 ${server_pid}" > /dev/null 2>&1
-    if [ $? -ne 0 ]; then
-        server_fail_flag=1
-        break
-    fi
-    netstat -an | grep :12345 | grep LISTEN > /dev/null 2>&1
-    if [ $? -eq 0 ]; then
-        break
-    fi
+	sh -c "kill -0 ${server_pid}" > /dev/null 2>&1
+	if [ $? -ne 0 ]; then
+		server_fail_flag=1
+		break
+	fi
+	netstat -an | grep :12345 | grep LISTEN > /dev/null 2>&1
+	if [ $? -eq 0 ]; then
+		break
+	fi
 done
 
 if [ ${server_fail_flag} -ne 1 ]; then
-    ${TOP_DIR}/tls-test --allow_no_crl --mutual_authentication \
-    --tls_certificate_file ${ENV_DIR}/A/client/client.crt \
-    --tls_key_file ${ENV_DIR}/A/client/client_encrypted.key \
-    --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all > /dev/null 2>&1
-    client_exitstatus=$?
+	echo "Input bad passphrase."
+	${TOP_DIR}/tls-test --allow_no_crl --mutual_authentication \
+	--tls_certificate_file ${ENV_DIR}/A/client/client.crt \
+	--tls_key_file ${ENV_DIR}/A/client/client_encrypted.key \
+	--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all > /dev/null 2>&1
+	client_exitstatus=$?
 
-    if [ ${client_exitstatus} -eq 2 -o ${client_exitstatus} -eq 3 ]; then
-        ${TOP_DIR}/tls-test --allow_no_crl --mutual_authentication \
-        --tls_certificate_file ${ENV_DIR}/A/client/client.crt \
-        --tls_key_file ${ENV_DIR}/A/client/client.key \
-        --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all > /dev/null 2>&1
-        while :
-        do
-            netstat -an | grep LISTEN | grep :12345 > /dev/null 2>&1
-            if [ $? -ne 0 ]; then
-                break
-            fi
-        done
-        server_exitstatus=4
-        expected_server_result=`cat ${expected_result_csv} | grep -E "^${test_id}," | awk -F "," '{print $2}' | sed 's:\r$::'`
-        expected_client_result=`cat ${expected_result_csv} | grep -E "^${test_id}," | awk -F "," '{print $3}' | sed 's:\r$::'`
-        if [ "${server_exitstatus}" = "${expected_server_result}" \
-                -a "${client_exitstatus}" = "${expected_client_result}" ]; then
-            echo "${test_id}: OK"
-        else
-            echo "${test_id}: NG"
-            fail_flag=1
-        fi
-    else
-        echo "${test_id}: NG"
-        fail_flag=1
-    fi
+	if [ ${client_exitstatus} -eq 2 -o ${client_exitstatus} -eq 3 ]; then
+		${TOP_DIR}/tls-test --allow_no_crl --mutual_authentication \
+		--tls_certificate_file ${ENV_DIR}/A/client/client.crt \
+		--tls_key_file ${ENV_DIR}/A/client/client.key \
+		--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+			> /dev/null 2>&1
+		while :
+		do
+			netstat -an | grep LISTEN | grep :12345 \
+				> /dev/null 2>&1
+			if [ $? -ne 0 ]; then
+				break
+			fi
+		done
+		server_exitstatus=4
+		if [ ${debug_flag} -eq 1 ]; then
+			echo "server:${server_exitstatus}"
+			echo "client:${client_exitstatus}"
+		fi
+		expected_server_result=`cat ${expected_result_csv} | \
+				grep -E "^${test_id}," | \
+				awk -F "," '{print $2}' | sed 's:\r$::'`
+		expected_client_result=`cat ${expected_result_csv} | \
+				grep -E "^${test_id}," | \
+				awk -F "," '{print $3}' | sed 's:\r$::'`
+		if [ "${server_exitstatus}" = "${expected_server_result}" -a \
+		"${client_exitstatus}" = "${expected_client_result}" ]; then
+			echo "${test_id}: PASS"
+		else
+			echo "${test_id}: FAIL"
+			fail_flag=1
+		fi
+	else
+		echo "${test_id}: FAIL"
+		fail_flag=1
+	fi
 else
-    puts_error "fail to run server."
-    echo "${test_id}: NG"
-    fail_flag=1
+	puts_error "fail to run server."
+	echo "${test_id}: FAIL"
+	fail_flag=1
 fi
 
 # 3-3
 run_test "3-3" \
-    "${TOP_DIR}/tls-test -s --allow_no_crl --mutual_authentication \
-    --tls_certificate_file ${ENV_DIR}/A/server/server.crt \
-    --tls_key_file ${ENV_DIR}/A/server/server.key \
-    --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all --once" \
-    "${TOP_DIR}/tls-test --allow_no_crl --mutual_authentication \
-    --tls_certificate_file ${ENV_DIR}/A/client/client.crt \
-    --tls_key_file ${ENV_DIR}/A/client/client.key \
-    --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all"
+	"${TOP_DIR}/tls-test -s --allow_no_crl --mutual_authentication \
+	--tls_certificate_file ${ENV_DIR}/A/server/server.crt \
+	--tls_key_file ${ENV_DIR}/A/server/server.key \
+	--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all --once" \
+	"${TOP_DIR}/tls-test --allow_no_crl --mutual_authentication \
+	--tls_certificate_file ${ENV_DIR}/A/client/client.crt \
+	--tls_key_file ${ENV_DIR}/A/client/client.key \
+	--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all" ${debug_flag}
 
 if [ $? -ne 0 ]; then 
-    fail_flag=1
+	fail_flag=1
 fi
 
 if [ ${fail_flag} -eq 0 ]; then 
-    _ret=0  
+	_ret=0  
 fi
 
 rm -f ${server_exitstatus_file}
