@@ -1082,7 +1082,7 @@ tls_set_revoke_path(SSL_CTX *ssl_ctx, const char *revoke_path)
  * Internal TLS context constructor/destructor
  */
 static inline gfarm_error_t
-tls_session_shutdown(tls_session_ctx_t ctx, int fd, bool do_close);
+tls_session_shutdown(tls_session_ctx_t ctx);
 
 static inline gfarm_error_t
 tls_session_clear_handle(tls_session_ctx_t ctx, bool do_free)
@@ -1091,7 +1091,7 @@ tls_session_clear_handle(tls_session_ctx_t ctx, bool do_free)
 	SSL *ssl = NULL;
 
 	if (likely((ssl = ctx->ssl_) != NULL)) {
-		ret = tls_session_shutdown(ctx, -1, false);
+		ret = tls_session_shutdown(ctx);
 		if (likely(ret == GFARM_ERR_NO_ERROR)) {
 			(void)SSL_clear(ssl);
 			if (do_free == true) {
@@ -1099,6 +1099,7 @@ tls_session_clear_handle(tls_session_ctx_t ctx, bool do_free)
 				ctx->ssl_ = NULL;
 			}
 			ctx->is_verified_ = false;
+			ctx->is_handshake_tried_ = false;
 			ctx->got_fatal_ssl_error_ = false;
 			ctx->last_ssl_error_ = SSL_ERROR_SSL;
 			ctx->last_gfarm_error_ = GFARM_ERR_UNKNOWN;
@@ -1223,6 +1224,7 @@ tls_session_setup_handle(tls_session_ctx_t ctx)
 		if (ret == GFARM_ERR_NO_ERROR) {
 			ctx->ssl_ = ssl;
 			ctx->is_verified_ = false;
+			ctx->is_handshake_tried_ = false;
 			ctx->last_ssl_error_ = SSL_ERROR_NONE;
 			ctx->last_gfarm_error_ = GFARM_ERR_NO_ERROR;
 			ctx->io_total_ = 0;
@@ -2068,15 +2070,15 @@ tls_session_destroy_ctx(tls_session_ctx_t x)
 		free(x->peer_dn_oneline_);
 		free(x->peer_dn_rfc2253_);
 		free(x->peer_dn_gsi_);
+		if (x->ssl_ != NULL) {
+			SSL_free(x->ssl_);
+		}
 		if (x->prvkey_ != NULL) {
 			EVP_PKEY_free(x->prvkey_);
 		}
 		if (x->ssl_ctx_ != NULL) {
 			(void)SSL_CTX_clear_chain_certs(x->ssl_ctx_);
 			SSL_CTX_free(x->ssl_ctx_);
-		}
-		if (x->ssl_ != NULL) {
-			SSL_free(x->ssl_);
 		}
 		free(x->cert_file_);
 		free(x->cert_chain_file_);
@@ -2210,7 +2212,9 @@ tls_session_wait_readable(tls_session_ctx_t ctx, int fd, int tous)
 	struct pollfd fds[1];
 	int tos_save = (tous >= 0) ? tous / 1000 : -1;
 	int tos;
-	
+
+	gflog_tls_debug(GFARM_MSG_UNFIXED, "%s(): wait enter.", __func__);
+
 	while (loop == true) {
 		fds[0].fd = fd;
 		fds[0].events = POLLIN;
@@ -2225,7 +2229,9 @@ tls_session_wait_readable(tls_session_ctx_t ctx, int fd, int tous)
 		tv_save.tv_usec = tous % (1000 * 1000);
 		tv_save.tv_sec = tous / (1000 * 1000);
 	}
-	
+
+	gflog_tls_debug(GFARM_MSG_UNFIXED, "%s(): wait start.", __func__);
+
 	while (loop == true) {
 		FD_ZERO(&fds);
 		FD_SET(fd, &fds);
@@ -2257,6 +2263,8 @@ tls_session_wait_readable(tls_session_ctx_t ctx, int fd, int tous)
 			break;
 		}
 	}
+
+	gflog_tls_debug(GFARM_MSG_UNFIXED, "%s(): wait end.", __func__);
 
 	return (ret);
 }
@@ -2398,6 +2406,7 @@ tls_session_establish(tls_session_ctx_t ctx, int fd)
 			int ssl_err;
 			bool do_cont = false;
 
+			ctx->is_handshake_tried_ = true;
 			p = (ctx->role_ == TLS_ROLE_SERVER) ?
 				SSL_accept : SSL_connect;
 
@@ -2553,9 +2562,13 @@ tls_session_read(tls_session_ctx_t ctx, void *buf, int len,
 			len > 0 && actual_io_bytes != NULL &&
 			ctx->is_verified_ == true &&
 			ctx->got_fatal_ssl_error_ == false)) {
-		int n;
+		int n = 0;
 		int ssl_err;
 		bool continuable;
+
+		gflog_tls_debug(GFARM_MSG_UNFIXED,
+			"%s(%s): about to read %d", __func__,
+			ctx->peer_dn_gsi_, len);
 
 		if (unlikely(len == 0)) {
 			ret = ctx->last_gfarm_error_ = GFARM_ERR_NO_ERROR;
@@ -2563,7 +2576,12 @@ tls_session_read(tls_session_ctx_t ctx, void *buf, int len,
 		}
 
 		*actual_io_bytes = 0;
+
 	retry:
+		gflog_tls_debug(GFARM_MSG_UNFIXED,
+			"%s(%s): read %d/%d", __func__,
+			ctx->peer_dn_gsi_, n, len);
+
 		errno = 0;
 		n = SSL_read(ssl, buf, len);
 		/*
@@ -2587,6 +2605,11 @@ tls_session_read(tls_session_ctx_t ctx, void *buf, int len,
 				ret = ctx->last_gfarm_error_;
 			}
 		}
+
+		gflog_tls_debug(GFARM_MSG_UNFIXED,
+			"%s(%s): read done %d : %s", __func__,
+			ctx->peer_dn_gsi_, n, gfarm_error_string(ret));
+
 	} else {
 		ret = ctx->last_gfarm_error_ = GFARM_ERR_INVALID_ARGUMENT;
 	}
@@ -2609,9 +2632,13 @@ tls_session_write(tls_session_ctx_t ctx, const void *buf, int len,
 			len > 0 && actual_io_bytes != NULL &&
 			ctx->is_verified_ == true &&
 			ctx->got_fatal_ssl_error_ == false)) {
-		int n;
+		int n = 0;
 		int ssl_err;
 		bool continuable;
+
+		gflog_tls_debug(GFARM_MSG_UNFIXED,
+			"%s(%s): about to write %d", __func__,
+			ctx->peer_dn_gsi_, len);
 
 		if (unlikely(len == 0)) {
 			ret = ctx->last_gfarm_error_ = GFARM_ERR_NO_ERROR;
@@ -2620,6 +2647,10 @@ tls_session_write(tls_session_ctx_t ctx, const void *buf, int len,
 
 		*actual_io_bytes = 0;
 	retry:
+		gflog_tls_debug(GFARM_MSG_UNFIXED,
+			"%s(%s): write %d/%d", __func__,
+			ctx->peer_dn_gsi_, n, len);
+
 		errno = 0;
 		n = SSL_write(ssl, buf, len);
 		/*
@@ -2643,6 +2674,11 @@ tls_session_write(tls_session_ctx_t ctx, const void *buf, int len,
 				ret = ctx->last_gfarm_error_;
 			}
 		}
+
+		gflog_tls_debug(GFARM_MSG_UNFIXED,
+			"%s(%s): write done %d : %s", __func__,
+			ctx->peer_dn_gsi_, n, gfarm_error_string(ret));
+
 	} else {
 		ret = ctx->last_gfarm_error_ = GFARM_ERR_INVALID_ARGUMENT;
 	}
@@ -2672,39 +2708,39 @@ tls_session_timeout_read(tls_session_ctx_t ctx, int fd, void *buf, int len,
  * TLS session shutdown
  */
 static inline gfarm_error_t
-tls_session_shutdown(tls_session_ctx_t ctx, int fd, bool do_close)
+tls_session_shutdown(tls_session_ctx_t ctx)
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 	SSL *ssl;
+	bool is_shutdown = false;
 
 	if (likely((ctx != NULL) && ((ssl = ctx->ssl_) != NULL))) {
 		int st = -1;
 
-		if (ctx->is_verified_ == false) {
-			ret = GFARM_ERR_NO_ERROR;			
+		gflog_tls_debug(GFARM_MSG_UNFIXED,
+			"%s(%s): about to shutdown SSL.",
+			__func__, ctx->peer_dn_gsi_);
+
+		if (ctx->is_handshake_tried_ == false) {
+			ret = GFARM_ERR_NO_ERROR;
 			goto done;
 		} else if (ctx->got_fatal_ssl_error_ == true) {
 			st = 1;
 		} else {
 			st = SSL_shutdown(ssl);
+
+			gflog_tls_debug(GFARM_MSG_UNFIXED,
+				"%s(%s): shutdown SSL issued : %s",
+				__func__, ctx->peer_dn_gsi_,
+				(st == 1) ? "OK" : "NG");
+
+			is_shutdown = true;
 		}
 		if (st == 1) {
-		do_close:
-			if (fd >= 0) {
-				errno = 0;
-				if (do_close == true) {
-					st = close(fd);
-				} else {
-					st = shutdown(fd, SHUT_RDWR);
-				}
-				if (likely(close(fd) == 0)) {
-					ret = GFARM_ERR_NO_ERROR;
-				} else {
-					ret = gfarm_errno_to_error(errno);
-				}
-			} else {
-				ret = GFARM_ERR_NO_ERROR;
-			}
+		shutdown_ok:
+			ctx->last_ssl_error_ = SSL_ERROR_SSL;
+			ctx->got_fatal_ssl_error_ = true;
+			ret = GFARM_ERR_NO_ERROR;
 		} else if (st == 0) {
 			/*
 			 * SSL Bi-diectional shutdown, by calling
@@ -2716,20 +2752,32 @@ tls_session_shutdown(tls_session_ctx_t ctx, int fd, bool do_close)
 			int s_n;
 
 			ret = tls_session_read(ctx, buf, sizeof(buf), &s_n);
+
+			gflog_tls_debug(GFARM_MSG_UNFIXED,
+				"%s(%s): shutdown SSL replies read %d : %s",
+				__func__, ctx->peer_dn_gsi_,
+				s_n, gfarm_error_string(ret));
+			
 			if ((ret == GFARM_ERR_NO_ERROR && s_n > 0) ||
 				(ret == GFARM_ERR_PROTOCOL)) {
-				goto do_close;
+				goto shutdown_ok;
 			}
 		}
-	}
+	done:
+		ctx->last_gfarm_error_ = ret;
+		if (is_shutdown == true) {
+			ctx->got_fatal_ssl_error_ = true;
+			ctx->is_verified_ = false;
+			ctx->io_key_update_ = 0;
+			ctx->io_total_ = 0;
+		}
 
-done:
-	ctx->last_gfarm_error_ = ret;
-	if (likely(ret == GFARM_ERR_NO_ERROR)) {
-		ctx->got_fatal_ssl_error_ = true;
-		ctx->is_verified_ = false;
-		ctx->io_key_update_ = 0;
-		ctx->io_total_ = 0;
+		gflog_tls_debug(GFARM_MSG_UNFIXED,
+			"%s(%s): shutdown SSL done : %s",
+			__func__, ctx->peer_dn_gsi_, gfarm_error_string(ret));
+
+	} else if (ctx == NULL) {
+		ret = GFARM_ERR_NO_ERROR;
 	}
 
 	return (ret);
