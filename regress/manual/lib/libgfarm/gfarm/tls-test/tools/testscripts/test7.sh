@@ -66,11 +66,13 @@ do
 done
 
 if [ ${server_fail_flag} -ne 1 ]; then
-    key_update_num=`${TOP_DIR}/tls-test --allow_no_crl --mutual_authentication \
+    key_update_num=`${TOP_DIR}/tls-test \
+    --allow_no_crl --mutual_authentication \
     --tls_certificate_file ${ENV_DIR}/A/client/client.crt \
     --tls_key_file ${ENV_DIR}/A/client/client.key \
     --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
-    --buf_size 68157440 --tls_key_update 16777216 --debug_level 1 2>&1 | grep "key updatted" | wc -l`
+    --buf_size 68157440 --tls_key_update 16777216 \
+    --debug_level 1 2>&1 | grep "key updatted" | wc -l`
     client_exitstatus=$?
 
     if [ ${client_exitstatus} -eq 2 -o ${client_exitstatus} -eq 3 ]; then
@@ -100,11 +102,15 @@ if [ ${server_fail_flag} -ne 1 ]; then
             echo "server:${server_exitstatus}"
             echo "client:${client_exitstatus}"
         fi
-        expected_server_result=`cat ${expected_result_csv} | grep -E "^${test_id}" | awk -F "," '{print $2}' | sed 's:\r$::'`
-        expected_client_result=`cat ${expected_result_csv} | grep -E "^${test_id}" | awk -F "," '{print $3}' | sed 's:\r$::'`
+        expected_server_result=`cat ${expected_result_csv} | \
+                                grep -E "^${test_id}" | \
+                                awk -F "," '{print $2}' | sed 's:\r$::'`
+        expected_client_result=`cat ${expected_result_csv} | \
+                                grep -E "^${test_id}" | \
+                                awk -F "," '{print $3}' | sed 's:\r$::'`
         if [ ${key_update_num} -eq 16 \
-                -a "${server_exitstatus}" = "${expected_server_result}" \
-                -a "${client_exitstatus}" = "${expected_client_result}" ]; then
+             -a "${server_exitstatus}" = "${expected_server_result}" \
+             -a "${client_exitstatus}" = "${expected_client_result}" ]; then
             echo "${test_id}: OK"
             _ret=0
         else

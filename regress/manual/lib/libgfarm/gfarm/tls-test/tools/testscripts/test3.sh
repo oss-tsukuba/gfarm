@@ -98,10 +98,14 @@ if [ ${server_fail_flag} -ne 1 ]; then
             echo "server:${server_exitstatus}"
             echo "client:${client_exitstatus}"
         fi
-        expected_server_result=`cat ${expected_result_csv} | grep -E "^${test_id}," | awk -F "," '{print $2}' | sed 's:\r$::'`
-        expected_client_result=`cat ${expected_result_csv} | grep -E "^${test_id}," | awk -F "," '{print $3}' | sed 's:\r$::'`
-        if [ "${server_exitstatus}" = "${expected_server_result}" \
-                -a "${client_exitstatus}" = "${expected_client_result}" ]; then
+        expected_server_result=`cat ${expected_result_csv} | \
+                                grep -E "^${test_id}," | \
+                                awk -F "," '{print $2}' | sed 's:\r$::'`
+        expected_client_result=`cat ${expected_result_csv} | \
+                                grep -E "^${test_id}," | \
+                                awk -F "," '{print $3}' | sed 's:\r$::'`
+        if [ "${server_exitstatus}" = "${expected_server_result}" -a \
+             "${client_exitstatus}" = "${expected_client_result}" ]; then
             echo "${test_id}: OK"
         else
             echo "${test_id}: NG"
@@ -162,10 +166,14 @@ if [ ${server_fail_flag} -ne 1 ]; then
             echo "server:${server_exitstatus}"
             echo "client:${client_exitstatus}"
         fi
-        expected_server_result=`cat ${expected_result_csv} | grep -E "^${test_id}," | awk -F "," '{print $2}' | sed 's:\r$::'`
-        expected_client_result=`cat ${expected_result_csv} | grep -E "^${test_id}," | awk -F "," '{print $3}' | sed 's:\r$::'`
-        if [ "${server_exitstatus}" = "${expected_server_result}" \
-                -a "${client_exitstatus}" = "${expected_client_result}" ]; then
+        expected_server_result=`cat ${expected_result_csv} | \
+                                grep -E "^${test_id}," | \
+                                awk -F "," '{print $2}' | sed 's:\r$::'`
+        expected_client_result=`cat ${expected_result_csv} | \
+                                grep -E "^${test_id}," | \
+                                awk -F "," '{print $3}' | sed 's:\r$::'`
+        if [ "${server_exitstatus}" = "${expected_server_result}" -a \
+             "${client_exitstatus}" = "${expected_client_result}" ]; then
             echo "${test_id}: OK"
         else
             echo "${test_id}: NG"
