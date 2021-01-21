@@ -17,29 +17,29 @@ server_fail_flag=0
 debug_flag=0
 
 usage(){
-    cat << EOS >&2
+	cat << EOS >&2
 Usage:
 
-    OPTION:
-        -d              Debug flag
-        -h              Help
+	OPTION:
+		-d			Debug flag
+		-h			Help
 EOS
 exit 0
 }
 
 ## Opts. ##
 while getopts d OPT; do
-    case ${OPT} in
-        d) debug_flag=1;;
-        h) usage;;
-        *) usage;;
-    esac
+	case ${OPT} in
+		d) debug_flag=1;;
+		h) usage;;
+		*) usage;;
+	esac
 done
 shift `expr $OPTIND - 1`
 
 ulimit -a | grep stack | grep unlimited > /dev/null
 if [ $? -ne 0 ]; then
-    ulimit -s unlimited
+	ulimit -s unlimited
 fi
 
 # 7-1
@@ -54,72 +54,75 @@ echo \$? > ${server_exitstatus_file}" &
 server_pid=$!
 while :
 do
-    kill -0 ${server_pid}
-    if [ $? -ne 0 ]; then
-        server_fail_flag=1
-        break
-    fi
-    netstat -an | grep :12345 | grep LISTEN > /dev/null 2>&1
-    if [ $? -eq 0 ]; then
-        break
-    fi
+	kill -0 ${server_pid}
+	if [ $? -ne 0 ]; then
+		server_fail_flag=1
+		break
+	fi
+	netstat -an | grep :12345 | grep LISTEN > /dev/null 2>&1
+	if [ $? -eq 0 ]; then
+		break
+	fi
 done
 
 if [ ${server_fail_flag} -ne 1 ]; then
-    key_update_num=`${TOP_DIR}/tls-test \
-    --allow_no_crl --mutual_authentication \
-    --tls_certificate_file ${ENV_DIR}/A/client/client.crt \
-    --tls_key_file ${ENV_DIR}/A/client/client.key \
-    --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
-    --buf_size 68157440 --tls_key_update 16777216 \
-    --debug_level 1 2>&1 | grep "key updatted" | wc -l`
-    client_exitstatus=$?
+	key_update_num=`${TOP_DIR}/tls-test \
+	--allow_no_crl --mutual_authentication \
+	--tls_certificate_file ${ENV_DIR}/A/client/client.crt \
+	--tls_key_file ${ENV_DIR}/A/client/client.key \
+	--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+	--buf_size 68157440 --tls_key_update 16777216 \
+	--debug_level 1 2>&1 | grep "key updatted" | wc -l`
+	client_exitstatus=$?
 
-    if [ ${client_exitstatus} -eq 2 -o ${client_exitstatus} -eq 3 ]; then
-        kill -9 ${server_pid}
-        while :
-        do
-            netstat -an | grep LISTEN | grep :12345 > /dev/null 2>&1
-            if [ $? -ne 0 ]; then
-                break
-            fi
-        done
-        echo "${test_id}: NG"
-    else
-        while :
-        do
-            sync
-            kill -0 ${server_pid} > /dev/null 2>&1
-            kill_status=$?
-            test -s ${server_exitstatus_file}
-            file_status=$?
-            if [ ${kill_status} -ne 0 -a ${file_status} -eq 0 ]; then
-                server_exitstatus=`cat ${server_exitstatus_file}`
-                break
-            fi
-        done
-        if [ ${debug_flag} -eq 1 ]; then
-            echo "server:${server_exitstatus}"
-            echo "client:${client_exitstatus}"
-        fi
-        expected_server_result=`cat ${expected_result_csv} | \
-                                grep -E "^${test_id}" | \
-                                awk -F "," '{print $2}' | sed 's:\r$::'`
-        expected_client_result=`cat ${expected_result_csv} | \
-                                grep -E "^${test_id}" | \
-                                awk -F "," '{print $3}' | sed 's:\r$::'`
-        if [ ${key_update_num} -eq 16 \
-             -a "${server_exitstatus}" = "${expected_server_result}" \
-             -a "${client_exitstatus}" = "${expected_client_result}" ]; then
-            echo "${test_id}: OK"
-            _ret=0
-        else
-            echo "${test_id}: NG"
-        fi
-    fi
+	if [ ${client_exitstatus} -eq 2 -o ${client_exitstatus} -eq 3 ]; then
+		kill -9 ${server_pid}
+		while :
+		do
+			netstat -an | grep LISTEN | grep :12345 \
+				> /dev/null 2>&1
+			if [ $? -ne 0 ]; then
+				break
+			fi
+		done
+		echo "${test_id}: FAIL"
+	else
+		while :
+		do
+			sync
+			kill -0 ${server_pid} > /dev/null 2>&1
+			kill_status=$?
+			test -s ${server_exitstatus_file}
+			file_status=$?
+			if [ ${kill_status} -ne 0 \
+					-a ${file_status} -eq 0 ]; then
+				server_exitstatus=`cat \
+						${server_exitstatus_file}`
+				break
+			fi
+		done
+		if [ ${debug_flag} -eq 1 ]; then
+			echo "server:${server_exitstatus}"
+			echo "client:${client_exitstatus}"
+		fi
+		expected_server_result=`cat ${expected_result_csv} | \
+				grep -E "^${test_id}" | \
+				awk -F "," '{print $2}' | sed 's:\r$::'`
+		expected_client_result=`cat ${expected_result_csv} | \
+				grep -E "^${test_id}" | \
+				awk -F "," '{print $3}' | sed 's:\r$::'`
+		if [ ${key_update_num} -eq 16 \
+		-a "${server_exitstatus}" = "${expected_server_result}" \
+		-a "${client_exitstatus}" = "${expected_client_result}" ]; then
+			echo "${test_id}: PASS"
+			_ret=0
+		else
+			echo "${test_id}: FAIL"
+		fi
+	fi
 else
-    puts_error "fail to run server."
-    echo "${test_id}: NG"
+	puts_error "fail to run server."
+	echo "${test_id}: FAIL"
 fi
 
 rm -f ${server_exitstatus_file}
