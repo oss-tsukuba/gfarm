@@ -2205,66 +2205,76 @@ static inline gfarm_error_t
 tls_session_wait_readable(tls_session_ctx_t ctx, int fd, int tous)
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
-	int st;
-	bool loop = true;
+	char *method = NULL;
+	
+	gflog_tls_debug(GFARM_MSG_UNFIXED, "%s(): wait enter.",
+		__func__);
+
+	if (SSL_has_pending(ctx->ssl_) == 1) {
+		method = "SSL_has_pending";
+		ret = GFARM_ERR_NO_ERROR;
+	} else {
+		int st;
+		bool loop = true;
 
 #ifdef HAVE_POLL
-	struct pollfd fds[1];
-	int tos_save = (tous >= 0) ? tous / 1000 : -1;
-	int tos;
+		struct pollfd fds[1];
+		int tos_save = (tous >= 0) ? tous / 1000 : -1;
+		int tos;
 
-	gflog_tls_debug(GFARM_MSG_UNFIXED, "%s(): wait enter.", __func__);
+		method = "poll";
 
-	while (loop == true) {
-		fds[0].fd = fd;
-		fds[0].events = POLLIN;
-		tos = tos_save;
+		while (loop == true) {
+			fds[0].fd = fd;
+			fds[0].events = POLLIN;
+			tos = tos_save;
 
-		st = poll(fds, 1, tos);
+			st = poll(fds, 1, tos);
 #else
-	fd_set fds;
-	struct timeval tv_save;
-	struct timeval *tvp = MULL;
-	if (tous >= 0) {
-		tv_save.tv_usec = tous % (1000 * 1000);
-		tv_save.tv_sec = tous / (1000 * 1000);
-	}
+		fd_set fds;
+		struct timeval tv_save;
+		struct timeval *tvp = MULL;
+		if (tous >= 0) {
+			tv_save.tv_usec = tous % (1000 * 1000);
+			tv_save.tv_sec = tous / (1000 * 1000);
+		}
 
-	gflog_tls_debug(GFARM_MSG_UNFIXED, "%s(): wait start.", __func__);
+		method = "select";
 
-	while (loop == true) {
-		FD_ZERO(&fds);
-		FD_SET(fd, &fds);
-		tv = rv_save;
-		tvp = &tv;
+		while (loop == true) {
+			FD_ZERO(&fds);
+			FD_SET(fd, &fds);
+			tv = rv_save;
+			tvp = &tv;
 
-		st = select(fd + 1, &fds, NULL, NULL, tvp);
+			st = select(fd + 1, &fds, NULL, NULL, tvp);
 #endif /* HAVE_POLL */
 
-		switch (st) {
-		case 0:
-			ret = ctx->last_gfarm_error_ =
-				GFARM_ERR_OPERATION_TIMED_OUT;
-			loop = false;
-			break;
-
-		case -1:
-			if (errno != EINTR) {
-				ret = ctx->last_gfarm_error_ =
-					gfarm_errno_to_error(errno);
+			switch (st) {
+			case 0:
+				ret = GFARM_ERR_OPERATION_TIMED_OUT;
 				loop = false;
-			}
-			break;
+				break;
+
+			case -1:
+				if (errno != EINTR) {
+					ret = gfarm_errno_to_error(errno);
+					loop = false;
+				}
+				break;
 			
-		default:
-			ret = ctx->last_gfarm_error_ =
-				GFARM_ERR_NO_ERROR;
-			loop = false;
-			break;
+			default:
+				ret = GFARM_ERR_NO_ERROR;
+				loop = false;
+				break;
+			}
 		}
 	}
 
-	gflog_tls_debug(GFARM_MSG_UNFIXED, "%s(): wait end.", __func__);
+	ctx->last_gfarm_error_ = ret;
+
+	gflog_tls_debug(GFARM_MSG_UNFIXED, "%s(): wait (%s) end : %s",
+		__func__, method, gfarm_error_string(ret));
 
 	return (ret);
 }
@@ -2749,7 +2759,7 @@ tls_session_shutdown(tls_session_ctx_t ctx)
 			 * (SSL_read returns >0)
 			 */
 			uint8_t buf[65536];
-			int s_n;
+			int s_n = -1;
 
 			ret = tls_session_read(ctx, buf, sizeof(buf), &s_n);
 
