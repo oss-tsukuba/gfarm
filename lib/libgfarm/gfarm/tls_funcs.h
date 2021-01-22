@@ -96,34 +96,37 @@ tty_get_passwd(char *buf, size_t maxlen, const char *prompt, int *lenptr)
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 
 	if (likely(buf != NULL && maxlen > 1 && lenptr != NULL)) {
+		int s_errno = -1;
 		int ttyfd = -1;
-		FILE *fd = NULL;
-		int s_errno;
+		int is_tty = 0;
 
 		*lenptr = 0;
-		errno = 0;
-		ttyfd = open("/dev/tty", O_RDWR);
-		s_errno = errno;
-		if (ttyfd >= 0 && (fd = fdopen(ttyfd, "rw")) != NULL) {
-			int s_errno;
-			char *rst = NULL;
-			FILE *fd = fdopen(ttyfd, "rw");
 
-			(void)fprintf(fd, "%s", prompt);
+		errno = 0;
+		ttyfd = fileno(stdin);
+		s_errno = errno;
+		if (unlikely(s_errno != 0)) {
+			goto ttyerr;
+		}
+
+		errno = 0;
+		is_tty = isatty(ttyfd);
+		s_errno = errno;
+		if (likely(is_tty == 1)) {
+			char *rst = NULL;
+
+			(void)fprintf(stdout, "%s", prompt);
 
 			tty_echo_off(ttyfd);
 
 			(void)memset(buf, 0, maxlen);
 			errno = 0;
-			rst = fgets(buf, maxlen, fd);
+			rst = fgets(buf, maxlen, stdin);
 			s_errno = errno;
 
 			tty_reset(ttyfd);
-			(void)fprintf(fd, "\n");
-			(void)fflush(fd);
-
-			(void)fclose(fd);
-			(void)close(ttyfd);
+			(void)fprintf(stdout, "\n");
+			(void)fflush(stdout);
 			
 			if (likely(rst != NULL)) {
 				trim_string_tail(buf);
@@ -138,10 +141,11 @@ tty_get_passwd(char *buf, size_t maxlen, const char *prompt, int *lenptr)
 				}
 			}
 		} else {
-			gflog_tls_error(GFARM_MSG_UNFIXED,
-				"Failed to open a control terminal: %s",
-				strerror(s_errno));
+		ttyerr:
 			ret = gfarm_errno_to_error(s_errno);
+			gflog_tls_error(GFARM_MSG_UNFIXED,
+				"stdin is not a terminal: %s",
+				gfarm_error_string(ret));
 		}
 	} else {
 		gflog_tls_error(GFARM_MSG_UNFIXED,
@@ -668,9 +672,17 @@ tls_load_prvkey(const char *file, EVP_PKEY **keyptr)
 				ret = GFARM_ERR_NO_ERROR;
 				*keyptr = pkey;
 			} else {
-				gflog_tls_error(GFARM_MSG_UNFIXED,
-					"Can't read a PEM format private key "
-					"from %s.", file);
+				int rsn = ERR_GET_REASON(ERR_peek_error());
+				if (rsn == PEM_R_BAD_DECRYPT ||
+					rsn == EVP_R_BAD_DECRYPT) {
+					gflog_tls_error(GFARM_MSG_UNFIXED,
+						"Wrong passphrase for "
+						"private key file %s.", file);
+				} else {
+					gflog_tls_error(GFARM_MSG_UNFIXED,
+						"Can't read a PEM format "
+						"private key from %s.", file);
+				}
 				ret = GFARM_ERRMSG_TLS_PRIVATE_KEY_READ_FAILURE;
 			}
 		} else {
