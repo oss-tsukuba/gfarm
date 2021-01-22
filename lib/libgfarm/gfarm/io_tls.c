@@ -76,6 +76,15 @@ tls_iobufop_shutdown(void *cookie, int fd)
 	return (ret);
 }
 
+static int
+tls_iobufop_recv_is_ready(void *cookie)
+{
+	int ret = -1;
+
+	return (tls_session_get_pending_read_bytes_n(cookie, &ret) ==
+	    GFARM_ERR_NO_ERROR && ret > 0);
+}
+
 /*
  * read(2) with timeout
  */
@@ -167,6 +176,7 @@ static struct gfp_iobuffer_ops gfp_xdr_tls_iobuf_ops = {
 	NULL,
 	NULL,
 	NULL,
+	tls_iobufop_recv_is_ready,
 	tls_iobufop_timeout_read,
 	tls_iobufop_full_blocking_read,
 	tls_iobufop_write
@@ -249,16 +259,6 @@ gfp_xdr_tls_initiator_dn_common_name(struct gfp_xdr *conn)
 {
 	return (tls_session_peer_cn(
 			((tls_session_ctx_t)(gfp_xdr_cookie(conn)))));
-}
-
-int
-gfp_xdr_tls_is_readable(struct gfp_xdr *conn)
-{
-	int ret = -1;
-	gfarm_error_t gst =
-		tls_session_get_pending_read_bytes_n(
-			((tls_session_ctx_t)(gfp_xdr_cookie(conn))), &ret);
-	return ((gst == GFARM_ERR_NO_ERROR && ret > 0) ? 1 : 0);
 }
 
 

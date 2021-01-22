@@ -1352,7 +1352,7 @@ gfarmGssInitiateSecurityContextRequest(struct gfarm_eventqueue *q, int fd,
     state->minStat = GFSL_DEFAULT_MINOR_ERROR;
 
     state->writable =
-	gfarm_fd_event_alloc(GFARM_EVENT_WRITE, fd,
+	gfarm_fd_event_alloc(GFARM_EVENT_WRITE, fd, NULL, NULL,
 			     gfarmGssInitiateSecurityContextSendToken,
 			     state);
     if (state->writable == NULL) {
@@ -1367,10 +1367,9 @@ gfarmGssInitiateSecurityContextRequest(struct gfarm_eventqueue *q, int fd,
      * GFARM_EVENT_READ flag and a timer_event) here, because
      * it's possible that both event handlers are called at once.
      */
-    state->readable =
-	gfarm_fd_event_alloc(GFARM_EVENT_READ|GFARM_EVENT_TIMEOUT, fd,
-			     gfarmGssInitiateSecurityContextReceiveToken,
-			     state);
+    state->readable = gfarm_fd_event_alloc(
+	GFARM_EVENT_READ|GFARM_EVENT_TIMEOUT, fd, NULL, NULL,
+	gfarmGssInitiateSecurityContextReceiveToken, state);
     if (state->readable == NULL) {
 	gflog_auth_error(GFARM_MSG_1000628,
 	    "gfarmGssInitiateSecurityContextRequest(): "
