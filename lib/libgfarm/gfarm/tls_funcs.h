@@ -2278,7 +2278,26 @@ tls_session_wait_readable(tls_session_ctx_t ctx, int fd, int tous)
 
 	return (ret);
 }
+
+static inline gfarm_error_t
+tls_session_get_pending_read_bytes_n(tls_session_ctx_t ctx, int *nptr)
+{
+	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
+	SSL *ssl = NULL;
 	
+	if (likely(ctx != NULL && (ssl = ctx->ssl_) != NULL && nptr != NULL)) {
+		*nptr = SSL_pending(ssl);
+		ret = GFARM_ERR_NO_ERROR;
+	} else {
+		if (nptr != NULL) {
+			*nptr = 0;
+		}
+		ret = GFARM_ERR_INVALID_ARGUMENT;
+	}
+
+	return (ret);
+}
+
 /*
  * Session establish
  */

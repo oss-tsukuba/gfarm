@@ -17,3 +17,5 @@ char *gfp_xdr_tls_initiator_dn_rfc2253(struct gfp_xdr *);
 char *gfp_xdr_tls_initiator_dn_gsi(struct gfp_xdr *);
 
 char *gfp_xdr_tls_initiator_dn_common_name(struct gfp_xdr *);
+
+int gfp_xdr_tls_is_readable(struct gfp_xdr *);
