@@ -6,7 +6,7 @@ TOP_DIR=`cd ${TOP_DIR}/../../; pwd`
 source "${TOP_DIR}/tools/testscripts/lib/funcs.sh"
 ENV_DIR="${TOP_DIR}/test_dir/permission_crl_dir"
 
-FAIL_FLAG=0
+fail_num=0
 server_fail_flag=0
 
 server_exitstatus_file="${TOP_DIR}/exitstatus.txt"
@@ -80,8 +80,8 @@ if [ ${server_fail_flag} -ne 1 ]; then
 				break
 			fi
 		done
-		echo "${test_id}: FAIL"
-		FAIL_FLAG=1
+		echo "${test_id}:	FAIL"
+		fail_num=`expr ${fail_num} + 1`
 	else
 		expected_server_result=`cat ${expected_result_csv} | \
 				grep -E "^${test_id}," | \
@@ -112,16 +112,16 @@ if [ ${server_fail_flag} -ne 1 ]; then
 		if [ ${output_warning} -ne 0 \
 		-a "${server_exitstatus}" = "${expected_server_result}" \
 		-a "${client_exitstatus}" = "${expected_client_result}" ]; then
-			echo "${test_id}: PASS"
+			echo "${test_id}:	PASS"
 		else
-			echo "${test_id}: FAIL"
-			FAIL_FLAG=1
+			echo "${test_id}:	FAIL"
+			fail_num=`expr ${fail_num} + 1`
 		fi
 	fi
 else
 	puts_error "fail to run server."
-	echo "${test_id}: FAIL"
-	FAIL_FLAG=1 
+	echo "${test_id}:	FAIL"
+	fail_num=`expr ${fail_num} + 1`
 fi
 
 ## 11-2 ##
@@ -168,8 +168,8 @@ if [ ${server_fail_flag} -ne 1 ]; then
 				break
 			fi
 		done
-		echo "${test_id}: FAIL"
-		FAIL_FLAG=1
+		echo "${test_id}:	FAIL"
+		fail_num=`expr ${fail_num} + 1`
 	else
 		expected_server_result=`cat ${expected_result_csv} | \
 				grep -E "^${test_id}," | \
@@ -200,16 +200,16 @@ if [ ${server_fail_flag} -ne 1 ]; then
 		if [ ${output_warning} -eq 0 \
 		-a "${server_exitstatus}" = "${expected_server_result}" \
 		-a "${client_exitstatus}" = "${expected_client_result}" ]; then
-			echo "${test_id}: PASS"
+			echo "${test_id}:	PASS"
 		else
-			echo "${test_id}: FAIL"
-			FAIL_FLAG=1
+			echo "${test_id}:	FAIL"
+			fail_num=`expr ${fail_num} + 1`
 		fi
 	fi
 else
 	puts_error "fail to run server."
-	echo "${test_id}: FAIL"
-	FAIL_FLAG=1 
+	echo "${test_id}:	FAIL"
+	fail_num=`expr ${fail_num} + 1`
 fi
 
 ## 11-3 ##
@@ -255,8 +255,8 @@ if [ ${server_fail_flag} -ne 1 ]; then
 				break
 			fi
 		done
-		echo "${test_id}: FAIL"
-		FAIL_FLAG=1
+		echo "${test_id}:	FAIL"
+		fail_num=`expr ${fail_num} + 1`
 	else
 		while :
 		do
@@ -287,16 +287,16 @@ if [ ${server_fail_flag} -ne 1 ]; then
 		if [ ${output_warning} -ne 0 \
 		-a "${server_exitstatus}" = "${expected_server_result}" \
 		-a "${client_exitstatus}" = "${expected_client_result}" ]; then
-			echo "${test_id}: PASS"
+			echo "${test_id}:	PASS"
 		else
-			echo "${test_id}: FAIL"
-			FAIL_FLAG=1
+			echo "${test_id}:	FAIL"
+			fail_num=`expr ${fail_num} + 1`
 		fi
 	fi
 else
 	puts_error "fail to run server."
-	echo "${test_id}: FAIL"
-	FAIL_FLAG=1 
+	echo "${test_id}:	FAIL"
+	fail_num=`expr ${fail_num} + 1`
 fi
 
 ## 11-4 ##
@@ -343,8 +343,8 @@ if [ ${server_fail_flag} -ne 1 ]; then
 				break
 			fi
 		done
-		echo "${test_id}: FAIL"
-		FAIL_FLAG=1
+		echo "${test_id}:	FAIL"
+		fail_num=`expr ${fail_num} + 1`
 	else
 		while :
 		do
@@ -375,22 +375,19 @@ if [ ${server_fail_flag} -ne 1 ]; then
 		if [ ${output_warning} -eq 0 \
 		-a "${server_exitstatus}" = "${expected_server_result}" \
 		-a "${client_exitstatus}" = "${expected_client_result}" ]; then
-			echo "${test_id}: PASS"
+			echo "${test_id}:	PASS"
 		else
-			echo "${test_id}: FAIL"
-			FAIL_FLAG=1
+			echo "${test_id}:	FAIL"
+			fail_num=`expr ${fail_num} + 1`
 		fi
 	fi
 else
 	puts_error "fail to run server."
-	echo "${test_id}: FAIL"
-	FAIL_FLAG=1 
+	echo "${test_id}:	FAIL"
+	fail_num=`expr ${fail_num} + 1`
 fi
 
 rm -f ${logfile} ${server_exitstatus_file}
 
-if [ ${FAIL_FLAG} -eq 0 ]; then
-	exit 0
-else
-	exit 1
-fi
+
+exit ${fail_num}

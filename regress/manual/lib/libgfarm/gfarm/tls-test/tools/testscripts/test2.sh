@@ -6,10 +6,9 @@ TOP_DIR=`cd ${TOP_DIR}/../../; pwd`
 
 source ${TOP_DIR}/tools/testscripts/lib/funcs.sh
 
-_ret=1
-fail_flag=0
 ENV_DIR="${TOP_DIR}/test_dir/revocation/"
 debug_flag=0
+fail_num=0
 
 usage(){
 	cat << EOS >&2
@@ -46,7 +45,7 @@ run_test "2-1-1" \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all" ${debug_flag}
 
 if [ $? -ne 0 ]; then
-	fail_flag=1
+	fail_num=`expr ${fail_num} + 1`
 fi
 
 # 2-1-2
@@ -62,7 +61,7 @@ run_test "2-1-2" \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all" ${debug_flag}
 
 if [ $? -ne 0 ]; then
-	fail_flag=1
+	fail_num=`expr ${fail_num} + 1`
 fi
 
 # 2-1-3
@@ -78,7 +77,7 @@ run_test "2-1-3" \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all" ${debug_flag}
 
 if [ $? -ne 0 ]; then
-	fail_flag=1
+	fail_num=`expr ${fail_num} + 1`
 fi
 
 # 2-2-1
@@ -94,7 +93,7 @@ run_test "2-2-1" \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all" ${debug_flag}
 
 if [ $? -ne 0 ]; then
-	fail_flag=1
+	fail_num=`expr ${fail_num} + 1`
 fi
 
 # 2-2-2
@@ -110,7 +109,7 @@ run_test "2-2-2" \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all" ${debug_flag}
 
 if [ $? -ne 0 ]; then
-	fail_flag=1
+	fail_num=`expr ${fail_num} + 1`
 fi
 
 # 2-2-3
@@ -126,7 +125,7 @@ run_test "2-2-3" \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all" ${debug_flag}
 
 if [ $? -ne 0 ]; then
-	fail_flag=1
+	fail_num=`expr ${fail_num} + 1`
 fi
 
 # 2-3-1
@@ -142,7 +141,7 @@ run_test "2-3-1" \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all" ${debug_flag}
 
 if [ $? -ne 0 ]; then
-	fail_flag=1
+	fail_num=`expr ${fail_num} + 1`
 fi
 
 # 2-3-2
@@ -158,7 +157,7 @@ run_test "2-3-2" \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all" ${debug_flag}
 
 if [ $? -ne 0 ]; then
-	fail_flag=1
+	fail_num=`expr ${fail_num} + 1`
 fi
 
 # 2-3-3
@@ -174,7 +173,7 @@ run_test "2-3-3" \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all" ${debug_flag}
 
 if [ $? -ne 0 ]; then
-	fail_flag=1
+	fail_num=`expr ${fail_num} + 1`
 fi
 
 # 2-4-1
@@ -190,7 +189,7 @@ run_test "2-4-1" \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all" ${debug_flag}
 
 if [ $? -ne 0 ]; then
-	fail_flag=1
+	fail_num=`expr ${fail_num} + 1`
 fi
 
 # 2-4-2
@@ -206,7 +205,7 @@ run_test "2-4-2" \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all" ${debug_flag}
 
 if [ $? -ne 0 ]; then
-	fail_flag=1
+	fail_num=`expr ${fail_num} + 1`
 fi
 
 # 2-4-3
@@ -222,7 +221,7 @@ run_test "2-4-3" \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all" ${debug_flag}
 
 if [ $? -ne 0 ]; then
-	fail_flag=1
+	fail_num=`expr ${fail_num} + 1`
 fi
 
 # 2-5-1
@@ -238,7 +237,7 @@ run_test "2-5-1" \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all" ${debug_flag}
 
 if [ $? -ne 0 ]; then
-	fail_flag=1
+	fail_num=`expr ${fail_num} + 1`
 fi
 
 # 2-5-2
@@ -254,7 +253,7 @@ run_test "2-5-2" \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all" ${debug_flag}
 
 if [ $? -ne 0 ]; then
-	fail_flag=1
+	fail_num=`expr ${fail_num} + 1`
 fi
 
 # 2-5-3
@@ -270,7 +269,7 @@ run_test "2-5-3" \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all" ${debug_flag}
 
 if [ $? -ne 0 ]; then
-	fail_flag=1
+	fail_num=`expr ${fail_num} + 1`
 fi
 
 # 2-6-1
@@ -286,7 +285,7 @@ run_test "2-6-1" \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all" ${debug_flag}
 
 if [ $? -ne 0 ]; then
-	fail_flag=1
+	fail_num=`expr ${fail_num} + 1`
 fi
 
 # 2-6-2
@@ -302,7 +301,7 @@ run_test "2-6-2" \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all" ${debug_flag}
 
 if [ $? -ne 0 ]; then
-	fail_flag=1
+	fail_num=`expr ${fail_num} + 1`
 fi
 
 # 2-6-3
@@ -318,7 +317,7 @@ run_test "2-6-3" \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all" ${debug_flag}
 
 if [ $? -ne 0 ]; then
-	fail_flag=1
+	fail_num=`expr ${fail_num} + 1`
 fi
 
 # 2-7-1
@@ -334,7 +333,7 @@ run_test "2-7-1" \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all" ${debug_flag}
 
 if [ $? -ne 0 ]; then
-	fail_flag=1
+	fail_num=`expr ${fail_num} + 1`
 fi
 
 # 2-7-2
@@ -350,7 +349,7 @@ run_test "2-7-2" \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all" ${debug_flag}
 
 if [ $? -ne 0 ]; then
-	fail_flag=1
+	fail_num=`expr ${fail_num} + 1`
 fi
 
 # 2-7-3
@@ -366,7 +365,7 @@ run_test "2-7-3" \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all" ${debug_flag}
 
 if [ $? -ne 0 ]; then
-	fail_flag=1
+	fail_num=`expr ${fail_num} + 1`
 fi
 
 # 2-8-1
@@ -382,7 +381,7 @@ run_test "2-8-1" \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all" ${debug_flag}
 
 if [ $? -ne 0 ]; then
-	fail_flag=1
+	fail_num=`expr ${fail_num} + 1`
 fi
 
 # 2-8-2
@@ -398,7 +397,7 @@ run_test "2-8-2" \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all" ${debug_flag}
 
 if [ $? -ne 0 ]; then
-	fail_flag=1
+	fail_num=`expr ${fail_num} + 1`
 fi
 
 # 2-8-3
@@ -414,7 +413,7 @@ run_test "2-8-3" \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all" ${debug_flag}
 
 if [ $? -ne 0 ]; then
-	fail_flag=1
+	fail_num=`expr ${fail_num} + 1`
 fi
 
 # 2-9-1
@@ -430,7 +429,7 @@ run_test "2-9-1" \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all" ${debug_flag}
 
 if [ $? -ne 0 ]; then
-	fail_flag=1
+	fail_num=`expr ${fail_num} + 1`
 fi
 
 # 2-9-2
@@ -446,7 +445,7 @@ run_test "2-9-2" \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all" ${debug_flag}
 
 if [ $? -ne 0 ]; then
-	fail_flag=1
+	fail_num=`expr ${fail_num} + 1`
 fi
 
 # 2-9-3
@@ -462,11 +461,8 @@ run_test "2-9-3" \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all" ${debug_flag}
 
 if [ $? -ne 0 ]; then
-	fail_flag=1
+	fail_num=`expr ${fail_num} + 1`
 fi
 
-if [ ${fail_flag} -eq 0 ]; then
-	_ret=0
-fi
 
-exit ${_ret}
+exit ${fail_num}

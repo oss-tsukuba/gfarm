@@ -2,8 +2,11 @@
 
 TOP_DIR=`dirname $0`
 TOP_DIR=`cd ${TOP_DIR}; pwd`
+total_tests_num=`cat ${TOP_DIR}/expected-test-result.csv | grep -v -E "^3|^[a-zA-Z]" | wc -l`
+total_fail_num=0
 
 source ${TOP_DIR}/lib/funcs.sh
+
 
 usage(){
 	cat << EOS >&2
@@ -64,11 +67,14 @@ fi
 if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 1 ]; then
 	if [ ${debug_flag} -eq 1 ]; then
 		${TOP_DIR}/test1.sh -d
+		test1_fail_num=$?
 	else
 		${TOP_DIR}/test1.sh
+		test1_fail_num=$?
 	fi
-	if [ $? -ne 0 ]; then
+	if [ ${test1_fail_num} -ne 0 ]; then
 		fail_flag=1
+		total_fail_num=`expr ${total_fail_num} + ${test1_fail_num}`
 	fi
 fi
 
@@ -76,11 +82,14 @@ fi
 if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 2 ]; then
 	if [ ${debug_flag} -eq 1 ]; then
 		${TOP_DIR}/test2.sh -d
+		test2_fail_num=$?
 	else
 		${TOP_DIR}/test2.sh
+		test2_fail_num=$?
 	fi
-	if [ $? -ne 0 ]; then
+	if [ ${test2_fail_num} -ne 0 ]; then
 		fail_flag=1
+		total_fail_num=`expr ${total_fail_num} + ${test2_fail_num}`
 	fi
 fi
 
@@ -88,11 +97,14 @@ fi
 if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 4 ]; then
 	if [ ${debug_flag} -eq 1 ]; then
 		${TOP_DIR}/test4.sh -d
+		test4_fail_num=$?
 	else
 		${TOP_DIR}/test4.sh
+		test4_fail_num=$?
 	fi
-	if [ $? -ne 0 ]; then
+	if [ ${test4_fail_num} -ne 0 ]; then
 		fail_flag=1
+		total_fail_num=`expr ${total_fail_num} + ${test4_fail_num}`
 	fi
 fi
 
@@ -100,11 +112,14 @@ fi
 if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 5 ]; then
 	if [ ${debug_flag} -eq 1 ]; then
 		${TOP_DIR}/test5.sh -d
+		test5_fail_num=$?
 	else
 		${TOP_DIR}/test5.sh
+		test5_fail_num=$?
 	fi
-	if [ $? -ne 0 ]; then
+	if [ ${test5_fail_num} -ne 0 ]; then
 		fail_flag=1
+		total_fail_num=`expr ${total_fail_num} + ${test5_fail_num}`
 	fi
 fi
 
@@ -112,11 +127,14 @@ fi
 if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 7 ]; then
 	if [ ${debug_flag} -eq 1 ]; then
 		${TOP_DIR}/test7.sh -d
+		test7_fail_num=$?
 	else
 		${TOP_DIR}/test7.sh
+		test7_fail_num=$?
 	fi
-	if [ $? -ne 0 ]; then
+	if [ ${test7_fail_num} -ne 0 ]; then
 		fail_flag=1
+		total_fail_num=`expr ${total_fail_num} + ${test7_fail_num}`
 	fi
 fi
 
@@ -124,11 +142,14 @@ fi
 if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 8 ]; then
 	if [ ${debug_flag} -eq 1 ]; then
 		${TOP_DIR}/test8.sh -d
+		test8_fail_num=$?
 	else
 		${TOP_DIR}/test8.sh
+		test8_fail_num=$?
 	fi
-	if [ $? -ne 0 ]; then
+	if [ ${test8_fail_num} -ne 0 ]; then
 		fail_flag=1
+		total_fail_num=`expr ${total_fail_num} + ${test8_fail_num}`
 	fi
 fi
 
@@ -136,11 +157,14 @@ fi
 if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 9 ]; then
 	if [ ${debug_flag} -eq 1 ]; then
 		${TOP_DIR}/test9.sh -d
+		test9_fail_num=$?
 	else
 		${TOP_DIR}/test9.sh
+		test9_fail_num=$?
 	fi
-	if [ $? -ne 0 ]; then
+	if [ ${test9_fail_num} -ne 0 ]; then
 		fail_flag=1
+		total_fail_num=`expr ${total_fail_num} + ${test9_fail_num}`
 	fi
 fi
 
@@ -148,11 +172,14 @@ fi
 if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 10 ]; then
 	if [ ${debug_flag} -eq 1 ]; then
 		${TOP_DIR}/test10.sh -d
+		test10_fail_num=$?
 	else
 		${TOP_DIR}/test10.sh
+		test10_fail_num=$?
 	fi
-	if [ $? -ne 0 ]; then
+	if [ ${test10_fail_num} -ne 0 ]; then
 		fail_flag=1
+		total_fail_num=`expr ${total_fail_num} + ${test10_fail_num}`
 	fi
 fi
 
@@ -160,11 +187,14 @@ fi
 if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 11 ]; then
 	if [ ${debug_flag} -eq 1 ]; then
 		${TOP_DIR}/test11.sh -d
+		test11_fail_num=$?
 	else
 		${TOP_DIR}/test11.sh
+		test11_fail_num=$?
 	fi
-	if [ $? -ne 0 ]; then
+	if [ ${test11_fail_num} -ne 0 ]; then
 		fail_flag=1
+		total_fail_num=`expr ${total_fail_num} + ${test11_fail_num}`
 	fi
 fi
 
@@ -172,19 +202,31 @@ fi
 if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 12 ]; then
 	if [ ${debug_flag} -eq 1 ]; then
 		${TOP_DIR}/test12.sh -d
+		test12_fail_num=$?
 	else
 		${TOP_DIR}/test12.sh
+		test12_fail_num=$?
 	fi
-	if [ $? -ne 0 ]; then
+	if [ ${test12_fail_num} -ne 0 ]; then
 		fail_flag=1
+		total_fail_num=`expr ${total_fail_num} + ${test12_fail_num}`
 	fi
 fi
 
 if [ ${fail_flag} -eq 0 ]; then
 	_ret=0
 	if [ ${exec_test_num} -eq 0 ]; then
+		total_pass_num=`expr ${total_tests_num} - ${total_fail_num}`
+		echo ""
+		echo "PASS:	${total_pass_num}/${total_tests_num}"
+		echo "FAIL:	${total_fail_num}/${total_tests_num}"
 		echo "All the tests succeeded."
 	fi
+elif [ ${exec_test_num} -eq 0 ]; then
+	total_pass_num=`expr ${total_tests_num} - ${total_fail_num}`
+	echo ""
+	echo "PASS:	${total_pass_num}/${total_tests_num}"
+	echo "FAIL:	${total_fail_num}/${total_tests_num}"	
 fi
 
 exit ${_ret}

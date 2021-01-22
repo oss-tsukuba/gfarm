@@ -6,8 +6,7 @@ TOP_DIR=`cd ${TOP_DIR}/../../; pwd`
 
 source ${TOP_DIR}/tools/testscripts/lib/funcs.sh
 
-_ret=1
-fail_flag=0
+fail_num=0
 ENV_DIR="${TOP_DIR}/test_dir"
 debug_flag=0
 
@@ -53,7 +52,7 @@ TLS_AES_128_GCM_SHA256:TLS_CHACHA20_POLY1305_SHA256:\
 TLS_AES_128_CCM_SHA256:TLS_AES_128_CCM_8_SHA256" ${debug_flag}
 
 if [ $? -ne 0 ]; then
-	fail_flag=1
+	fail_num=`expr ${fail_num} + 1`
 fi
 
 # 12-2
@@ -73,11 +72,8 @@ TLS_AES_128_CCM_SHA256:TLS_AES_128_CCM_8_SHA256 \
 --tls_cipher_suite TLS_AES_256_GCM_SHA384" ${debug_flag}
 
 if [ $? -ne 0 ]; then
-	fail_flag=1
+	fail_num=`expr ${fail_num} + 1`
 fi
 
-if [ ${fail_flag} -eq 0 ]; then
-	_ret=0
-fi
 
-exit ${_ret}
+exit ${fail_num}

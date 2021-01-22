@@ -81,7 +81,7 @@ if [ ${server_fail_flag} -ne 1 ]; then
 				break
 			fi
 		done
-		echo "${test_id}: FAIL"
+		echo "${test_id}:	FAIL"
 		fail_flag=1
 	else
 		while :
@@ -110,15 +110,15 @@ if [ ${server_fail_flag} -ne 1 ]; then
 				awk -F "," '{print $3}' | sed 's:\r$::'`
 		if [ "${server_exitstatus}" = "${expected_server_result}" -a \
 		"${client_exitstatus}" = "${expected_client_result}" ]; then
-			echo "${test_id}: PASS"
+			echo "${test_id}:	PASS"
 		else
-			echo "${test_id}: FAIL"
+			echo "${test_id}:	FAIL"
 			fail_flag=1
 		fi
 	fi
 else
 	puts_error "fail to run server."
-	echo "${test_id}: FAIL"
+	echo "${test_id}:	FAIL"
 	fail_flag=1
 fi
 
@@ -180,18 +180,18 @@ if [ ${server_fail_flag} -ne 1 ]; then
 				awk -F "," '{print $3}' | sed 's:\r$::'`
 		if [ "${server_exitstatus}" = "${expected_server_result}" -a \
 		"${client_exitstatus}" = "${expected_client_result}" ]; then
-			echo "${test_id}: PASS"
+			echo "${test_id}:	PASS"
 		else
-			echo "${test_id}: FAIL"
+			echo "${test_id}:	FAIL"
 			fail_flag=1
 		fi
 	else
-		echo "${test_id}: FAIL"
+		echo "${test_id}:	FAIL"
 		fail_flag=1
 	fi
 else
 	puts_error "fail to run server."
-	echo "${test_id}: FAIL"
+	echo "${test_id}:	FAIL"
 	fail_flag=1
 fi
 

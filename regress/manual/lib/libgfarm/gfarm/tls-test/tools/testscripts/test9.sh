@@ -6,7 +6,7 @@ TOP_DIR=`cd "${TOP_DIR}/../../"; pwd`
 source "${TOP_DIR}/tools/testscripts/lib/funcs.sh"
 ENV_DIR="${TOP_DIR}/test_dir"
 
-FAIL_FLAG=0
+fail_num=0
 CERT_DIR="${ENV_DIR}/permission_cert"
 debug_flag=0
 
@@ -44,7 +44,7 @@ run_test "9-1" \
 --tls_ca_certificate_path ${CERT_DIR}/A/cacerts_all \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-	FAIL_FLAG=1
+	fail_num=`expr ${fail_num} + 1`
 fi
 
 
@@ -60,11 +60,8 @@ run_test "9-2" \
 --tls_ca_certificate_path ${CERT_DIR}/A/cacerts_all \
 --allow_no_crl" ${debug_flag}
 if [ $? -ne 0 ]; then
-	FAIL_FLAG=1
+	fail_num=`expr ${fail_num} + 1`
 fi
 
-if [ ${FAIL_FLAG} -eq 0 ]; then
-	exit 0
-else
-	exit 1
-fi
+
+exit ${fail_num}

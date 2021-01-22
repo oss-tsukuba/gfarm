@@ -6,8 +6,7 @@ TOP_DIR=`cd ${TOP_DIR}/../../; pwd`
 
 source ${TOP_DIR}/tools/testscripts/lib/funcs.sh
 
-_ret=1
-fail_flag=0
+fail_num=0
 ENV_DIR="${TOP_DIR}/test_dir"
 debug_flag=0
 
@@ -43,7 +42,7 @@ run_test "4-1" \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all" ${debug_flag}
 
 if [ $? -ne 0 ]; then
-	fail_flag=1
+	fail_num=`expr ${fail_num} + 1`
 fi
 
 # 4-2
@@ -56,7 +55,7 @@ run_test "4-2" \
 --tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all" ${debug_flag}
 
 if [ $? -ne 0 ]; then
-	fail_flag=1
+	fail_num=`expr ${fail_num} + 1`
 fi
 
 # 4-3
@@ -69,7 +68,7 @@ run_test "4-3" \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all" ${debug_flag}
 
 if [ $? -ne 0 ]; then
-	fail_flag=1
+	fail_num=`expr ${fail_num} + 1`
 fi
 
 # 4-4
@@ -82,11 +81,8 @@ run_test "4-4" \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_root" ${debug_flag}
 
 if [ $? -ne 0 ]; then
-	fail_flag=1
+	fail_num=`expr ${fail_num} + 1`
 fi
 
-if [ ${fail_flag} -eq 0 ]; then
-	_ret=0
-fi
 
-exit ${_ret}
+exit ${fail_num}

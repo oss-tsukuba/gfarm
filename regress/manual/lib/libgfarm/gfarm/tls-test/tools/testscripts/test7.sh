@@ -6,7 +6,6 @@ TOP_DIR=`cd ${TOP_DIR}/../../; pwd`
 
 source ${TOP_DIR}/tools/testscripts/lib/funcs.sh
 
-_ret=1
 test_id="7-1"
 expected_result_csv="${TOP_DIR}/tools/testscripts/expected-test-result.csv"
 key_update_num=0
@@ -15,6 +14,7 @@ ENV_DIR="${TOP_DIR}/test_dir"
 server_exitstatus_file="${TOP_DIR}/exitstatus.txt"
 server_fail_flag=0
 debug_flag=0
+fail_num=0
 
 usage(){
 	cat << EOS >&2
@@ -85,7 +85,8 @@ if [ ${server_fail_flag} -ne 1 ]; then
 				break
 			fi
 		done
-		echo "${test_id}: FAIL"
+		echo "${test_id}:	FAIL"
+		fail_num=`expr ${fail_num} + 1`
 	else
 		while :
 		do
@@ -114,17 +115,18 @@ if [ ${server_fail_flag} -ne 1 ]; then
 		if [ ${key_update_num} -eq 16 \
 		-a "${server_exitstatus}" = "${expected_server_result}" \
 		-a "${client_exitstatus}" = "${expected_client_result}" ]; then
-			echo "${test_id}: PASS"
-			_ret=0
+			echo "${test_id}:	PASS"
 		else
-			echo "${test_id}: FAIL"
+			echo "${test_id}:	FAIL"
+			fail_num=`expr ${fail_num} + 1`
 		fi
 	fi
 else
 	puts_error "fail to run server."
-	echo "${test_id}: FAIL"
+	echo "${test_id}:	FAIL"
+	fail_num=`expr ${fail_num} + 1`
 fi
 
 rm -f ${server_exitstatus_file}
 
-exit ${_ret}
+exit ${fail_num}

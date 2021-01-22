@@ -43,11 +43,12 @@ run_test() {
 
 	if [ ${result_server} -ne 0 ]; then
 		rm -f ./${s_exit_file}
-		echo "$1 server fatal fail"
+		echo "server fatal fail"
 		case ${result_server} in
 			2) echo "tls_context error";;
 			3) echo "bind error";;
 		esac
+		echo "${test_id}:	FAIL"
 		return ${_r}
 	fi
 
@@ -84,10 +85,10 @@ run_test() {
 
 	if [ "${server_exitstatus}" = "${expected_server_result}" \
 	     -a "${client_exitstatus}" = "${expected_client_result}" ]; then
-		echo "${test_id}: PASS"
+		echo "${test_id}:	PASS"
 		_r=0
 	else
-		echo "${test_id}: FAIL"
+		echo "${test_id}:	FAIL"
 	fi
 	rm -f ./${s_exit_file}
 
