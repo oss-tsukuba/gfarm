@@ -183,7 +183,7 @@ fi
 if [ ${fail_flag} -eq 0 ]; then
 	_ret=0
 	if [ ${exec_test_num} -eq 0 ]; then
-		echo "All tests were successful."
+		echo "All the tests succeeded."
 	fi
 fi
 
