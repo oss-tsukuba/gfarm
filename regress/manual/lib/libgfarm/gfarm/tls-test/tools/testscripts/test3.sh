@@ -64,7 +64,7 @@ if [ ${server_fail_flag} -ne 1 ]; then
 	${TOP_DIR}/tls-test --allow_no_crl --mutual_authentication \
 	--tls_certificate_file ${ENV_DIR}/A/client/client.crt \
 	--tls_key_file ${ENV_DIR}/A/client/client_encrypted.key \
-	--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all > /dev/null 2>&1
+	--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all 2>/dev/null
 	client_exitstatus=$?
 
 	if [ ${client_exitstatus} -eq 2 -o ${client_exitstatus} -eq 3 ]; then
@@ -150,7 +150,7 @@ if [ ${server_fail_flag} -ne 1 ]; then
 	${TOP_DIR}/tls-test --allow_no_crl --mutual_authentication \
 	--tls_certificate_file ${ENV_DIR}/A/client/client.crt \
 	--tls_key_file ${ENV_DIR}/A/client/client_encrypted.key \
-	--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all > /dev/null 2>&1
+	--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all 2>/dev/null
 	client_exitstatus=$?
 
 	if [ ${client_exitstatus} -eq 2 -o ${client_exitstatus} -eq 3 ]; then
