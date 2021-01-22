@@ -2577,8 +2577,8 @@ tls_session_read(tls_session_ctx_t ctx, void *buf, int len,
 		bool continuable;
 
 		gflog_tls_debug(GFARM_MSG_UNFIXED,
-			"%s(%s): about to read %d", __func__,
-			ctx->peer_dn_gsi_, len);
+			"%s(%s): about to read %d (remains %d)", __func__,
+			ctx->peer_dn_gsi_, len, SSL_pending(ssl));
 
 		if (unlikely(len == 0)) {
 			ret = ctx->last_gfarm_error_ = GFARM_ERR_NO_ERROR;
@@ -2617,8 +2617,9 @@ tls_session_read(tls_session_ctx_t ctx, void *buf, int len,
 		}
 
 		gflog_tls_debug(GFARM_MSG_UNFIXED,
-			"%s(%s): read done %d : %s", __func__,
-			ctx->peer_dn_gsi_, n, gfarm_error_string(ret));
+			"%s(%s): read done %d (remains %d) : %s", __func__,
+			ctx->peer_dn_gsi_, n, SSL_pending(ssl),
+			gfarm_error_string(ret));
 
 	} else {
 		ret = ctx->last_gfarm_error_ = GFARM_ERR_INVALID_ARGUMENT;
