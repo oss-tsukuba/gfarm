@@ -1068,6 +1068,7 @@ peer_free(struct peer *peer)
 
 	peer->watcher = NULL;
 	watcher_event_free(peer->readable_event);
+	peer->readable_event = NULL;
 	if (peer->conn) {
 		gfp_xdr_free(peer->conn);
 		peer->conn = NULL;
