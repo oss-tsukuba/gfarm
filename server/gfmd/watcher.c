@@ -2,6 +2,7 @@
 #include <errno.h>
 #include <assert.h>
 #include <string.h>
+#include <stdarg.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -14,6 +15,8 @@
 #include "gfutil.h"
 #include "gfevent.h"
 #include "thrsubr.h"
+
+#include "gfp_xdr.h"
 
 #include "subr.h"
 #include "thrpool.h"
@@ -87,7 +90,9 @@ watcher_event_init(struct watcher_event *wev,
 }
 
 static gfarm_error_t
-watcher_fd_event_alloc(int filter, int fd, struct watcher_event **wevp)
+watcher_fd_event_alloc(int filter, int fd,
+	int (*happened)(void *), void *happened_closure,
+	struct watcher_event **wevp)
 {
 	struct watcher_event *wev;
 	struct gfarm_event *gev;
@@ -95,7 +100,8 @@ watcher_fd_event_alloc(int filter, int fd, struct watcher_event **wevp)
 	GFARM_MALLOC(wev);
 	if (wev == NULL)
 		return (GFARM_ERR_NO_MEMORY);
-	gev = gfarm_fd_event_alloc(filter, fd, watcher_event_callback, wev);
+	gev = gfarm_fd_event_alloc(filter, fd, happened, happened_closure,
+	    watcher_event_callback, wev);
 	if (gev == NULL) {
 		free(wev);
 		return (GFARM_ERR_NO_MEMORY);
@@ -106,22 +112,27 @@ watcher_fd_event_alloc(int filter, int fd, struct watcher_event **wevp)
 }
 
 gfarm_error_t
-watcher_fd_readable_event_alloc(int fd, struct watcher_event **wevp)
+watcher_gfp_xdr_readable_event_alloc(struct gfp_xdr *conn,
+	struct watcher_event **wevp)
 {
-	return (watcher_fd_event_alloc(GFARM_EVENT_READ, fd, wevp));
+	return (watcher_fd_event_alloc(GFARM_EVENT_READ,
+	    gfp_xdr_fd(conn), gfp_xdr_recv_is_ready_call, conn, wevp));
 }
 
 gfarm_error_t
-watcher_fd_writable_event_alloc(int fd, struct watcher_event **wevp)
+watcher_gfp_xdr_writable_event_alloc(struct gfp_xdr *conn,
+	struct watcher_event **wevp)
 {
-	return (watcher_fd_event_alloc(GFARM_EVENT_WRITE, fd, wevp));
+	return (watcher_fd_event_alloc(GFARM_EVENT_WRITE,
+	    gfp_xdr_fd(conn), NULL, NULL, wevp));
 }
 
 gfarm_error_t
-watcher_fd_readable_or_timeout_event_alloc(int fd, struct watcher_event **wevp)
+watcher_socket_readable_or_timeout_event_alloc(int fd,
+	struct watcher_event **wevp)
 {
 	return (watcher_fd_event_alloc(GFARM_EVENT_READ|GFARM_EVENT_TIMEOUT,
-	    fd, wevp));
+	    fd, NULL, NULL, wevp));
 }
 
 void
@@ -370,7 +381,7 @@ watcher_alloc(int size, struct watcher **wp)
 				w->control_gev = gfarm_fd_event_alloc(
 				    GFARM_EVENT_READ,
 				    watcher_request_queue_get_fd(&w->wrq),
-				    watcher_control_callback, w);
+				    NULL, NULL, watcher_control_callback, w);
 				if (w->control_gev == NULL) {
 					gflog_error(GFARM_MSG_1002748,
 					    "gfarm_fd_event_alloc: no memory");

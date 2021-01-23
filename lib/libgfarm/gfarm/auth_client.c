@@ -763,7 +763,7 @@ gfarm_auth_request_sharedsecret_multiplexed(struct gfarm_eventqueue *q,
 	}
 
 	state->writable = gfarm_fd_event_alloc(
-	    GFARM_EVENT_WRITE, sock,
+	    GFARM_EVENT_WRITE, sock, NULL, NULL,
 	    gfarm_auth_request_sharedsecret_send_keytype, state);
 	if (state->writable == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
@@ -779,6 +779,7 @@ gfarm_auth_request_sharedsecret_multiplexed(struct gfarm_eventqueue *q,
 	 */
 	state->readable = gfarm_fd_event_alloc(
 	    GFARM_EVENT_READ|GFARM_EVENT_TIMEOUT, sock,
+	    gfp_xdr_recv_is_ready_call, conn,
 	    gfarm_auth_request_sharedsecret_receive_keytype, state);
 	if (state->readable == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
@@ -1071,7 +1072,7 @@ gfarm_auth_request_multiplexed(struct gfarm_eventqueue *q,
 	}
 
 	state->writable = gfarm_fd_event_alloc(
-	    GFARM_EVENT_WRITE, sock,
+	    GFARM_EVENT_WRITE, sock, NULL, NULL,
 	    gfarm_auth_request_loop_ask_method, state);
 	if (state->writable == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
@@ -1087,6 +1088,7 @@ gfarm_auth_request_multiplexed(struct gfarm_eventqueue *q,
 	 */
 	state->readable = gfarm_fd_event_alloc(
 	    GFARM_EVENT_READ|GFARM_EVENT_TIMEOUT, sock,
+	    gfp_xdr_recv_is_ready_call, conn,
 	    gfarm_auth_request_receive_server_methods, state);
 	if (state->readable == NULL) {
 		e = GFARM_ERR_NO_MEMORY;

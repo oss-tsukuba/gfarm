@@ -793,19 +793,17 @@ peer_alloc0(int fd, struct peer **peerp, struct gfp_xdr *conn)
 	peer->conn = conn;
 	peer->async = NULL; /* synchronous protocol by default */
 	peer->watcher = NULL;
-	if (peer->readable_event == NULL) {
-		e = watcher_fd_readable_event_alloc(fd,
-		    &peer->readable_event);
-		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_warning(GFARM_MSG_1002767,
-			    "peer watching %d: %s", fd, gfarm_error_string(e));
-			if (conn_alloced)
-				gfp_xdr_free(peer->conn);
-			peer->conn = NULL;
-			gfarm_mutex_unlock(&peer_table_mutex, diag,
-			    peer_table_diag);
-			return (e);
-		}
+	e = watcher_gfp_xdr_readable_event_alloc(conn,
+	    &peer->readable_event);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_warning(GFARM_MSG_1002767,
+		    "peer watching %d: %s", fd, gfarm_error_string(e));
+		if (conn_alloced)
+			gfp_xdr_free(peer->conn);
+		peer->conn = NULL;
+		gfarm_mutex_unlock(&peer_table_mutex, diag,
+		    peer_table_diag);
+		return (e);
 	}
 
 	peer->username = NULL;
@@ -1069,7 +1067,8 @@ peer_free(struct peer *peer)
 	}
 
 	peer->watcher = NULL;
-	/* We don't free peer->readable_event. */
+	watcher_event_free(peer->readable_event);
+	peer->readable_event = NULL;
 	if (peer->conn) {
 		gfp_xdr_free(peer->conn);
 		peer->conn = NULL;

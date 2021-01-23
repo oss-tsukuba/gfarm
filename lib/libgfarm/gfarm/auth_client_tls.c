@@ -259,6 +259,7 @@ gfarm_auth_request_tls_client_certificate_multiplexed(
 	 */
 	state->readable = gfarm_fd_event_alloc(
 	    GFARM_EVENT_READ|GFARM_EVENT_TIMEOUT, gfp_xdr_fd(conn),
+	    gfp_xdr_recv_is_ready_call, conn,
 	    gfarm_auth_request_tls_client_certificate_receive_result, state);
 	if (state->readable == NULL) {
 		/* XXX this is NOT graceful */

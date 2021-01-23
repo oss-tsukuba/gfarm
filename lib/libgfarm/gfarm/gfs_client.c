@@ -1262,7 +1262,7 @@ gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
 #ifndef __KERNEL__
 	if (connection_in_progress) {
 		state->writable = gfarm_fd_event_alloc(GFARM_EVENT_WRITE,
-		    gfp_xdr_fd(gfs_server->conn),
+		    gfp_xdr_fd(gfs_server->conn), NULL, NULL,
 		    gfs_client_connect_start_auth, state);
 		if (state->writable == NULL) {
 			e = GFARM_ERR_NO_MEMORY;
@@ -2039,7 +2039,7 @@ gfs_client_statfs_request_multiplexed(struct gfarm_eventqueue *q,
 	state->statfs_timeout = statfs_timeout;
 	state->error = GFARM_ERR_NO_ERROR;
 	state->writable = gfarm_fd_event_alloc(GFARM_EVENT_WRITE,
-	    gfs_client_connection_fd(gfs_server),
+	    gfs_client_connection_fd(gfs_server), NULL, NULL,
 	    gfs_client_statfs_send_request, state);
 	if (state->writable == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
@@ -2056,6 +2056,7 @@ gfs_client_statfs_request_multiplexed(struct gfarm_eventqueue *q,
 	state->readable = gfarm_fd_event_alloc(
 	    GFARM_EVENT_READ|GFARM_EVENT_TIMEOUT,
 	    gfs_client_connection_fd(gfs_server),
+	    gfp_xdr_recv_is_ready_call, gfs_server->conn,
 	    gfs_client_statfs_recv_result, state);
 	if (state->readable == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
@@ -2305,7 +2306,7 @@ gfs_ib_rdma_request_multiplexed(struct gfarm_eventqueue *q,
 	state->error = GFARM_ERR_NO_ERROR;
 	state->state = RDMA_EXCH_INFO;
 	state->writable = gfarm_fd_event_alloc(GFARM_EVENT_WRITE,
-	    gfs_client_connection_fd(gfs_server),
+	    gfs_client_connection_fd(gfs_server), NULL, NULL,
 	    gfs_ib_rdma_send_request, state);
 	if (state->writable == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
@@ -2322,6 +2323,7 @@ gfs_ib_rdma_request_multiplexed(struct gfarm_eventqueue *q,
 	state->readable = gfarm_fd_event_alloc(
 	    GFARM_EVENT_READ|GFARM_EVENT_TIMEOUT,
 	    gfs_client_connection_fd(gfs_server),
+	    gfp_xdr_recv_is_ready_call, gfs_server->conn,
 	    gfs_ib_rdma_recv_result, state);
 	if (state->readable == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
@@ -2983,7 +2985,7 @@ gfs_client_get_load_request_multiplexed(struct gfarm_eventqueue *q,
 	}
 
 	state->writable = gfarm_fd_event_alloc(
-	    GFARM_EVENT_WRITE, sock,
+	    GFARM_EVENT_WRITE, sock, NULL, NULL,
 	    gfs_client_get_load_send, state);
 	if (state->writable == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
@@ -2999,7 +3001,7 @@ gfs_client_get_load_request_multiplexed(struct gfarm_eventqueue *q,
 	 * it's possible that both event handlers are called at once.
 	 */
 	state->readable = gfarm_fd_event_alloc(
-	    GFARM_EVENT_READ|GFARM_EVENT_TIMEOUT, sock,
+	    GFARM_EVENT_READ|GFARM_EVENT_TIMEOUT, sock, NULL, NULL,
 	    gfs_client_get_load_receive, state);
 	if (state->readable == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
