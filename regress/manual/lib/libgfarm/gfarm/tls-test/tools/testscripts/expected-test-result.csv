@@ -101,7 +101,7 @@ testID,server-expected-result,client-expected-result
 5-6,0,0
 5-7,4,4
 7-1,0,0
-8-1,0,0
+8-1,0,3
 8-2,4,2
 8-3,4,2
 8-4,4,2

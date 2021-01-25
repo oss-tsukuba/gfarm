@@ -10,6 +10,7 @@ run_test() {
 	env_dir="${top_dir}/test_dir"
 	_r=1
 	test_id=$1
+	server_exitstatus=""
 	expected_server_result=""
 	expected_client_result=""
 	expected_result_csv="`dirname $0`/expected-test-result.csv"
@@ -17,7 +18,7 @@ run_test() {
 	s_exit_file="server_exit_status.txt"
 
 	sh -c "rm -f ./${s_exit_file}; $2 > /dev/null 2>&1; \
-           echo \$? > ./${s_exit_file}" &
+		echo \$? > ./${s_exit_file} && sync" &
 	child_pid=$!
 	while :
 	do
@@ -54,23 +55,21 @@ run_test() {
 
 	sh -c "$3 > /dev/null 2>&1"
 	client_exitstatus=$?
-	if [ ${client_exitstatus} -eq 2 -o ${client_exitstatus} -eq 3 ]; then
-		${top_dir}/tls-test \
-		--tls_ca_certificate_path ${env_dir}/A_B/cacerts_all \
-		--allow_no_crl > /dev/null 2>&1
+
+	if [ ${client_exitstatus} -ne 2 -a ${client_exitstatus} -ne 3 ]; then
+		while :
+		do
+			writeback=`cat /proc/meminfo | \
+					grep "Writeback:" | awk '{print $2}'`
+			if [ ${writeback} -eq 0 ]; then
+				break
+			fi
+		done
 	fi
-	while :
-	do
-		sync
-		kill -0 ${child_pid} > /dev/null 2>&1
-		kill_status=$?
-		test -s ./${s_exit_file}
-		file_status=$?
-		if [ ${kill_status} -ne 0 -a ${file_status} -eq 0 ]; then
-			server_exitstatus=`cat ./${s_exit_file}`
-			break
-		fi
-	done
+	if [ -s ./${s_exit_file} ]; then
+		server_exitstatus=`cat ./${s_exit_file}`
+	fi
+
 	if [ $4 -eq 1 ]; then
 		echo "server:$server_exitstatus"
 		echo "client:$client_exitstatus"
@@ -90,7 +89,24 @@ run_test() {
 	else
 		echo "${test_id}:	FAIL"
 	fi
+
+	if [ ${client_exitstatus} -eq 2 -o ${client_exitstatus} -eq 3 ]; then
+		shutdown_server ${child_pid}
+	fi
+
 	rm -f ./${s_exit_file}
 
 	return ${_r}
+}
+
+shutdown_server(){
+        kill -9 $1
+        while :
+        do
+                netstat -an | grep LISTEN | grep :12345 \
+                        > /dev/null 2>&1
+                if [ $? -ne 0 ]; then 
+                        break
+                fi
+        done
 }
