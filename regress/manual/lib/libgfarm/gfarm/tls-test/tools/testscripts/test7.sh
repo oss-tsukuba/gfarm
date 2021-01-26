@@ -45,13 +45,13 @@ fi
 
 # 7-1
 
-sh -c "rm -f ${s_exit_file}; \
+sh -c "rm -f ${s_exit_file}; sync; \
 ${TOP_DIR}/tls-test -s --allow_no_crl --mutual_authentication \
 --tls_certificate_file ${ENV_DIR}/A/server/server.crt \
 --tls_key_file ${ENV_DIR}/A/server/server.key \
 --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
 --buf_size 68157440 --tls_key_update 16777216 --once > /dev/null 2>&1; \
-echo \$? > ${s_exit_file} && sync" &
+echo \$? > ${s_exit_file}; sync" &
 server_pid=$!
 while :
 do
@@ -79,14 +79,7 @@ if [ ${server_fail_flag} -ne 1 ]; then
 	if [ ${client_exitstatus} -ne 2 -a ${client_exitstatus} -ne 3 ]; then
 		key_update_num=`echo "${client_log}" | \
 				grep "key updatted" | wc -l`
-		while :
-		do
-			writeback=`cat /proc/meminfo | \
-					grep "Writeback:" | awk '{print $2}'`
-                        if [ ${writeback} -eq 0 ]; then
-                                break
-                        fi
-		done
+		wait_server ${server_pid}
 	fi
 	if [ -s ${s_exit_file} ]; then
                 server_exitstatus=`cat ${s_exit_file}`

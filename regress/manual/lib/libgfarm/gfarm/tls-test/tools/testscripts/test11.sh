@@ -40,14 +40,14 @@ shift `expr $OPTIND - 1`
 test_id="11-1"
 
 rm -f ${logfile}
-sh -c "rm -f ${s_exit_file}; \
+sh -c "rm -f ${s_exit_file}; sync; \
 ${TOP_DIR}/tls-test -s --allow_no_crl --mutual_authentication \
 --tls_certificate_file ${ENV_DIR}/A/server/server.crt \
 --tls_key_file ${ENV_DIR}/A/server/server.key \
 --tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
 --tls_ca_revocation_path ${ENV_DIR}/B/crls/client/root/ \
 --once > ${logfile} 2>&1; \
-echo \$? > ${s_exit_file} && sync" &
+echo \$? > ${s_exit_file}; sync" &
 server_pid=$!
 while :
 	do
@@ -71,14 +71,7 @@ if [ ${server_fail_flag} -ne 1 ]; then
 	client_exitstatus=$?
 	
 	if [ ${client_exitstatus} -ne 2 -a ${client_exitstatus} -ne 3 ]; then
-		while :
-		do
-			writeback=`cat /proc/meminfo | \
-                                        grep "Writeback:" | awk '{print $2}'`
-                        if [ ${writeback} -eq 0 ]; then
-                                break
-                        fi
-		done
+		wait_server ${server_pid}
 	fi
 	if [ -s ${s_exit_file} ]; then
                 server_exitstatus=`cat ${s_exit_file}`
@@ -119,14 +112,14 @@ fi
 test_id="11-2"
 
 rm -f ${logfile}
-sh -c "rm -f ${s_exit_file}; \
+sh -c "rm -f ${s_exit_file}; sync; \
 ${TOP_DIR}/tls-test -s --allow_no_crl --mutual_authentication \
 --tls_certificate_file ${ENV_DIR}/A/server/server.crt \
 --tls_key_file ${ENV_DIR}/A/server/server.key \
 --tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
 --tls_ca_revocation_path ${ENV_DIR}/B/crls/client/root_bad_permissions \
 --once > ${logfile} 2>&1; \
-echo \$? > ${s_exit_file} && sync" &
+echo \$? > ${s_exit_file}; sync" &
 server_pid=$!
 while :
 	do
@@ -150,14 +143,7 @@ if [ ${server_fail_flag} -ne 1 ]; then
 	client_exitstatus=$?
 	
 	if [ ${client_exitstatus} -ne 2 -a ${client_exitstatus} -ne 3 ]; then
-		while :
-		do
-			writeback=`cat /proc/meminfo | \
-                                        grep "Writeback:" | awk '{print $2}'`
-                        if [ ${writeback} -eq 0 ]; then
-                                break
-                        fi
-		done
+		wait_server ${server_pid}
 	fi
 	if [ -s ${s_exit_file} ]; then
                 server_exitstatus=`cat ${s_exit_file}`
@@ -197,12 +183,12 @@ fi
 ## 11-3 ##
 test_id="11-3"
 
-sh -c "rm -f ${s_exit_file}; \
+sh -c "rm -f ${s_exit_file}; sync; \
 ${TOP_DIR}/tls-test -s --allow_no_crl --mutual_authentication \
 --tls_certificate_file ${ENV_DIR}/B/server/server.crt \
 --tls_key_file ${ENV_DIR}/B/server/server.key \
 --tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all --once > /dev/null 2>&1; \
-echo \$? > ${s_exit_file} && sync" &
+echo \$? > ${s_exit_file}; sync" &
 server_pid=$!
 while :
 do
@@ -228,14 +214,7 @@ if [ ${server_fail_flag} -ne 1 ]; then
 	client_exitstatus=$?
 
 	if [ ${client_exitstatus} -ne 2 -a ${client_exitstatus} -ne 3 ]; then
-		while :
-		do
-			writeback=`cat /proc/meminfo | \
-                                        grep "Writeback:" | awk '{print $2}'`
-                        if [ ${writeback} -eq 0 ]; then
-                                break
-                        fi
-		done
+		wait_server ${server_pid}
 	fi
 	if [ -s ${s_exit_file} ]; then
                 server_exitstatus=`cat ${s_exit_file}`
@@ -275,12 +254,12 @@ fi
 ## 11-4 ##
 test_id="11-4"
 
-sh -c "rm -f ${s_exit_file}; \
+sh -c "rm -f ${s_exit_file}; sync; \
 ${TOP_DIR}/tls-test -s --allow_no_crl --mutual_authentication \
 --tls_certificate_file ${ENV_DIR}/B/server/server.crt \
 --tls_key_file ${ENV_DIR}/B/server/server.key \
 --tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all --once > /dev/null 2>&1; \
-echo \$? > ${s_exit_file} && sync" &
+echo \$? > ${s_exit_file}; sync" &
 server_pid=$!
 while :
 	do
@@ -307,14 +286,7 @@ if [ ${server_fail_flag} -ne 1 ]; then
 	client_exitstatus=$?
 
 	if [ ${client_exitstatus} -ne 2 -a ${client_exitstatus} -ne 3 ]; then
-		while :
-		do
-			writeback=`cat /proc/meminfo | \
-                                        grep "Writeback:" | awk '{print $2}'`
-                        if [ ${writeback} -eq 0 ]; then
-                                break
-                        fi
-		done
+		wait_server ${server_pid}
 	fi
 	if [ -s ${s_exit_file} ]; then
                 server_exitstatus=`cat ${s_exit_file}`

@@ -17,8 +17,8 @@ run_test() {
 	result_server=0
 	s_exit_file="server_exit_status.txt"
 
-	sh -c "rm -f ./${s_exit_file}; $2 > /dev/null 2>&1; \
-		echo \$? > ./${s_exit_file} && sync" &
+	sh -c "rm -f ./${s_exit_file}; sync; $2 > /dev/null 2>&1; \
+		echo \$? > ./${s_exit_file}; sync" &
 	child_pid=$!
 	while :
 	do
@@ -57,14 +57,7 @@ run_test() {
 	client_exitstatus=$?
 
 	if [ ${client_exitstatus} -ne 2 -a ${client_exitstatus} -ne 3 ]; then
-		while :
-		do
-			writeback=`cat /proc/meminfo | \
-					grep "Writeback:" | awk '{print $2}'`
-			if [ ${writeback} -eq 0 ]; then
-				break
-			fi
-		done
+		wait_server ${child_pid}
 	fi
 	if [ -s ./${s_exit_file} ]; then
 		server_exitstatus=`cat ./${s_exit_file}`
@@ -97,6 +90,16 @@ run_test() {
 	rm -f ./${s_exit_file}
 
 	return ${_r}
+}
+
+wait_server(){
+	while :
+	do
+		kill -0 $1 > /dev/null 2>&1
+		if [ $? -ne 0 ]; then
+			break
+		fi
+	done
 }
 
 shutdown_server(){
