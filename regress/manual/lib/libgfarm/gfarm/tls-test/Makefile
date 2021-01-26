@@ -46,10 +46,10 @@ env: $(toolsdir)
 	"use \"test\""
 	@echo
 
-run-test: $(testsdir)
+run-test: $(testsdir) $(PROGRAM)
 	$(testsdir)/run-test.sh
 
-run-test-interactive: $(testsdir)
+run-test-interactive: $(testsdir) $(PROGRAM)
 	$(testsdir)/test3.sh
 
 envclean:

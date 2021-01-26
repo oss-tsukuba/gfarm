@@ -51,7 +51,7 @@ echo \$? > ${s_exit_file}; sync" &
 server_pid=$!
 while :
 	do
-		kill -0 ${server_pid}
+		kill -0 ${server_pid} > /dev/null 2>&1
 		if [ $? -ne 0 ]; then
 			server_fail_flag=1
 			break
@@ -123,7 +123,7 @@ echo \$? > ${s_exit_file}; sync" &
 server_pid=$!
 while :
 	do
-		kill -0 ${server_pid}
+		kill -0 ${server_pid} > /dev/null 2>&1
 		if [ $? -ne 0 ]; then
 			server_fail_flag=1
 			break
@@ -191,17 +191,17 @@ ${TOP_DIR}/tls-test -s --allow_no_crl --mutual_authentication \
 echo \$? > ${s_exit_file}; sync" &
 server_pid=$!
 while :
-do
-	kill -0 ${server_pid}
-	if [ $? -ne 0 ]; then
-		server_fail_flag=1
-		break
-	fi
-	netstat -an | grep :12345 | grep LISTEN > /dev/null 2>&1
-	if [ $? -eq 0 ]; then
-		break
-	fi
-done
+	do
+		kill -0 ${server_pid} > /dev/null 2>&1
+		if [ $? -ne 0 ]; then
+			server_fail_flag=1
+			break
+		fi
+		netstat -an | grep :12345 | grep LISTEN > /dev/null 2>&1
+		if [ $? -eq 0 ]; then
+			break
+		fi
+	done
 
 if [ ${server_fail_flag} -ne 1 ]; then
 	rm -f ${logfile}
@@ -263,7 +263,7 @@ echo \$? > ${s_exit_file}; sync" &
 server_pid=$!
 while :
 	do
-		kill -0 ${server_pid}
+		kill -0 ${server_pid} > /dev/null 2>&1
 		if [ $? -ne 0 ]; then
 			server_fail_flag=1
 			break

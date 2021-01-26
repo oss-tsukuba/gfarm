@@ -55,7 +55,7 @@ echo \$? > ${s_exit_file}; sync" &
 server_pid=$!
 while :
 do
-	kill -0 ${server_pid}
+	kill -0 ${server_pid} > /dev/null 2>&1
 	if [ $? -ne 0 ]; then
 		server_fail_flag=1
 		break

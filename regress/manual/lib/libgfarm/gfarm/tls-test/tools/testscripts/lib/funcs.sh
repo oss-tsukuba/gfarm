@@ -22,7 +22,7 @@ run_test() {
 	child_pid=$!
 	while :
 	do
-		kill -0 ${child_pid}
+		kill -0 ${child_pid} > /dev/null 2>&1
 		if [ $? -eq 0 ]; then
 			break
 		fi
@@ -31,7 +31,7 @@ run_test() {
 	while :
 	do
 		sleep 1
-		kill -0 ${child_pid}
+		kill -0 ${child_pid} > /dev/null 2>&1
 		if [ $? -ne 0 ]; then
 			result_server=`cat ./${s_exit_file}`
 			break
