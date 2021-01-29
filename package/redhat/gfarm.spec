@@ -1272,6 +1272,7 @@ fi
 %{share_prefix}/config/linux/redhat/gfsd.in
 %{share_prefix}/config/linux/suse/gfsd.in
 %{share_prefix}/config/linux/systemd/gfsd.service.in
+%{share_prefix}/config/unconfig-gfsd.sh.in
 
 %files ganglia
 %defattr(-,root,root)
@@ -1327,7 +1328,6 @@ fi
 %{share_prefix}/config/slapd.conf-2.0.in
 %{share_prefix}/config/slapd.conf-2.1.in
 %{share_prefix}/config/unconfig-gfarm.sh.in
-%{share_prefix}/config/unconfig-gfsd.sh.in
 %{share_prefix}/ruby/gfcrc32.rb
 %{share_prefix}/ruby/gfjournalfile.rb
 
