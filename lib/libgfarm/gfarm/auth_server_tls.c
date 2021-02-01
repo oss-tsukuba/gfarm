@@ -55,7 +55,8 @@ gfarm_error_t gfarm_authorize_tls_client_certificate(
 	gfarm_int32_t peer_type, result;
 	char *reserved, *global_username = NULL;
 
-	e = gfp_xdr_tls_alloc(conn, gfp_xdr_fd(conn), GFP_XDR_TLS_ACCEPT);
+	e = gfp_xdr_tls_alloc(conn, gfp_xdr_fd(conn), GFP_XDR_TLS_ACCEPT|
+	    GFP_XDR_TLS_CLIENT_AUTHENTICATION);
 	if (e != GFARM_ERR_NO_ERROR) {
 		/* is this case graceful? */
 		return (e);
