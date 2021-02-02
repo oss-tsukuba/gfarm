@@ -224,6 +224,7 @@ struct tls_session_ctx_struct {
 	char *peer_dn_oneline_;	/* malloc'd */
 	char *peer_dn_rfc2253_;	/* malloc'd */
 	char *peer_dn_gsi_;	/* malloc'd */
+	char *peer_cn_;		/* malloc'd */
 
 	/*
 	 * gfarm_ctxp contents backup

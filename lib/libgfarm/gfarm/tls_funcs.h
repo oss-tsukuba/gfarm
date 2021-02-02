@@ -1123,6 +1123,8 @@ tls_session_clear_handle(tls_session_ctx_t ctx, bool do_free)
 			ctx->peer_dn_rfc2253_ = NULL;
 			free(ctx->peer_dn_gsi_);
 			ctx->peer_dn_gsi_ = NULL;
+			free(ctx->peer_cn_);
+			ctx->peer_cn_ = NULL;
 		}
 	} else {
 		ret = GFARM_ERR_INVALID_ARGUMENT;
@@ -1246,6 +1248,7 @@ tls_session_setup_handle(tls_session_ctx_t ctx)
 			free(ctx->peer_dn_rfc2253_);
 			ctx->peer_dn_rfc2253_ = NULL;
 			free(ctx->peer_dn_gsi_);
+			free(ctx->peer_cn_);
 			ctx->peer_dn_gsi_ = NULL;
 		}
 	} else {
@@ -1400,7 +1403,80 @@ get_peer_subjectdn_gsi_ish(X509_NAME *pn, char **nameptr, int maxlen)
 
 	return (ret);
 }
-	
+
+static inline gfarm_error_t
+get_peer_cn(X509_NAME *pn, char **nameptr, int maxlen)
+{
+	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
+
+	if (likely(pn != NULL && nameptr != NULL)) {
+		char buf[4096];
+		char *dn = buf;
+		char *cnp = NULL;
+
+		if (*nameptr == NULL) {
+			*nameptr = NULL;
+		}
+#define DN_FORMAT_GLOBUS						\
+		(XN_FLAG_RFC2253 & ~(ASN1_STRFLGS_ESC_MSB|XN_FLAG_DN_REV))
+		ret = get_peer_subjectdn(pn, DN_FORMAT_GLOBUS,
+				 &dn, sizeof(buf));
+#undef DN_FORMAT_GLOBUS			
+		if (likely(ret == GFARM_ERR_NO_ERROR &&
+				(cnp = (char *)memmem(buf, sizeof(buf),
+						"CN=", 3)) != NULL &&
+				*(cnp += 3) != '\0')) {
+			char result[4096];
+			char *r = result;
+			char *d = cnp;
+			bool prev_is_esc = false;
+
+			do {
+				if (*d == '\\') {
+					prev_is_esc = true;
+				} else if (*d == ',') {
+					if (prev_is_esc != true) {
+						break;
+					}
+				} else {
+					prev_is_esc = false;
+				}
+				*r++ = *d++;
+			} while (*d != '\0' &&
+				r < (&result[0] + sizeof(result)));
+			result[r - &result[0]] = '\0';
+
+			if (*nameptr != NULL && maxlen > 0) {
+				snprintf(*nameptr, maxlen, "%s", result);
+				ret = GFARM_ERR_NO_ERROR;
+			} else {
+				char *dn = strdup(result);
+
+				if (likely(dn != NULL)) {
+					ret = GFARM_ERR_NO_ERROR;
+					*nameptr = dn;
+				} else {
+					ret = GFARM_ERR_NO_MEMORY;
+					gflog_tls_error(GFARM_MSG_UNFIXED,
+						"Can't allocate a buffer for "
+						"a GSI-compat SubjectDN.");
+				}
+			}
+		} else {
+			if (unlikely(ret == GFARM_ERR_NO_ERROR &&
+					cnp == NULL)) {
+				ret = GFARM_ERR_INVALID_CREDENTIAL;
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"A SubjectDN \"%s\" has no CN.", buf);
+			}
+		}
+	} else {
+		ret = GFARM_ERR_INVALID_ARGUMENT;
+	}
+
+	return (ret);
+}
+
 static inline int
 tls_verify_callback_body(int ok, X509_STORE_CTX *sctx)
 {
@@ -2082,6 +2158,7 @@ tls_session_destroy_ctx(tls_session_ctx_t x)
 		free(x->peer_dn_oneline_);
 		free(x->peer_dn_rfc2253_);
 		free(x->peer_dn_gsi_);
+		free(x->peer_cn_);
 		if (x->ssl_ != NULL) {
 			SSL_free(x->ssl_);
 		}
@@ -2335,12 +2412,14 @@ tls_session_verify(tls_session_ctx_t ctx, bool *is_verified)
 		ctx->peer_dn_oneline_ = NULL;
 		ctx->peer_dn_rfc2253_ = NULL;
 		ctx->peer_dn_gsi_ = NULL;
+		ctx->peer_cn_ = NULL;
 		tls_runtime_flush_error();
 		if (likely(((p = SSL_get_peer_certificate(ssl)) != NULL) &&
 			((pn = X509_get_subject_name(p)) != NULL))) {
 			char *dn_oneline = NULL;
 			char *dn_rfc2253 = NULL;
 			char *dn_gsi = NULL;
+			char *cn = NULL;
 			bool v = false;
 			int vres = -INT_MAX;
 
@@ -2362,6 +2441,10 @@ tls_session_verify(tls_session_ctx_t ctx, bool *is_verified)
 						&dn_gsi, 0)) ==
 				GFARM_ERR_NO_ERROR)) {
 				ctx->peer_dn_gsi_ = dn_gsi;
+			}
+			if (likely((ret = get_peer_cn(pn, &cn, 0)) ==
+				GFARM_ERR_NO_ERROR)) {
+				ctx->peer_cn_ = cn;
 			}
 #undef DN_FORMAT_ONELINE
 #undef DN_FORMAT_RFC2253
@@ -2396,6 +2479,7 @@ tls_session_verify(tls_session_ctx_t ctx, bool *is_verified)
 			ctx->peer_dn_oneline_ = NULL;
 			ctx->peer_dn_rfc2253_ = NULL;
 			ctx->peer_dn_gsi_ = NULL;
+			ctx->peer_cn_ = NULL;
 			ctx->cert_verify_result_error_ = X509_V_OK;
 			ctx->is_verified_ = true;
 			ret = GFARM_ERR_NO_ERROR;
@@ -2519,7 +2603,7 @@ tls_session_establish(tls_session_ctx_t ctx, int fd)
 			if (is_valid_string(ctx->peer_dn_oneline_) == true) {
 				gflog_tls_error(GFARM_MSG_UNFIXED,
 					"Authentication failed between peer: "
-					"'%s'", ctx->peer_dn_oneline_);
+					"'%s'", ctx->peer_cn_);
 			} else {
 				gflog_tls_error(GFARM_MSG_UNFIXED,
 					"Authentication failed "
@@ -2609,7 +2693,7 @@ tls_session_read(tls_session_ctx_t ctx, void *buf, int len,
 
 		gflog_tls_debug(GFARM_MSG_UNFIXED,
 			"%s(%s): about to read %d (remains %d)", __func__,
-			ctx->peer_dn_gsi_, len, SSL_pending(ssl));
+			ctx->peer_cn_, len, SSL_pending(ssl));
 
 		if (unlikely(len == 0)) {
 			ret = ctx->last_gfarm_error_ = GFARM_ERR_NO_ERROR;
@@ -2621,7 +2705,7 @@ tls_session_read(tls_session_ctx_t ctx, void *buf, int len,
 	retry:
 		gflog_tls_debug(GFARM_MSG_UNFIXED,
 			"%s(%s): read %d/%d", __func__,
-			ctx->peer_dn_gsi_, n, len);
+			ctx->peer_cn_, n, len);
 
 		errno = 0;
 		n = SSL_read(ssl, buf, len);
@@ -2649,7 +2733,7 @@ tls_session_read(tls_session_ctx_t ctx, void *buf, int len,
 
 		gflog_tls_debug(GFARM_MSG_UNFIXED,
 			"%s(%s): read done %d (remains %d) : %s", __func__,
-			ctx->peer_dn_gsi_, n, SSL_pending(ssl),
+			ctx->peer_cn_, n, SSL_pending(ssl),
 			gfarm_error_string(ret));
 
 	} else {
@@ -2680,7 +2764,7 @@ tls_session_write(tls_session_ctx_t ctx, const void *buf, int len,
 
 		gflog_tls_debug(GFARM_MSG_UNFIXED,
 			"%s(%s): about to write %d", __func__,
-			ctx->peer_dn_gsi_, len);
+			ctx->peer_cn_, len);
 
 		if (unlikely(len == 0)) {
 			ret = ctx->last_gfarm_error_ = GFARM_ERR_NO_ERROR;
@@ -2691,7 +2775,7 @@ tls_session_write(tls_session_ctx_t ctx, const void *buf, int len,
 	retry:
 		gflog_tls_debug(GFARM_MSG_UNFIXED,
 			"%s(%s): write %d/%d", __func__,
-			ctx->peer_dn_gsi_, n, len);
+			ctx->peer_cn_, n, len);
 
 		errno = 0;
 		n = SSL_write(ssl, buf, len);
@@ -2719,7 +2803,7 @@ tls_session_write(tls_session_ctx_t ctx, const void *buf, int len,
 
 		gflog_tls_debug(GFARM_MSG_UNFIXED,
 			"%s(%s): write done %d : %s", __func__,
-			ctx->peer_dn_gsi_, n, gfarm_error_string(ret));
+			ctx->peer_cn_, n, gfarm_error_string(ret));
 
 	} else {
 		ret = ctx->last_gfarm_error_ = GFARM_ERR_INVALID_ARGUMENT;
@@ -2761,7 +2845,7 @@ tls_session_shutdown(tls_session_ctx_t ctx)
 
 		gflog_tls_debug(GFARM_MSG_UNFIXED,
 			"%s(%s): about to shutdown SSL.",
-			__func__, ctx->peer_dn_gsi_);
+			__func__, ctx->peer_cn_);
 
 		if (ctx->is_handshake_tried_ == false) {
 			ret = GFARM_ERR_NO_ERROR;
@@ -2773,7 +2857,7 @@ tls_session_shutdown(tls_session_ctx_t ctx)
 
 			gflog_tls_debug(GFARM_MSG_UNFIXED,
 				"%s(%s): shutdown SSL issued : %s",
-				__func__, ctx->peer_dn_gsi_,
+				__func__, ctx->peer_cn_,
 				(st == 1) ? "OK" : "NG");
 
 			is_shutdown = true;
@@ -2797,7 +2881,7 @@ tls_session_shutdown(tls_session_ctx_t ctx)
 
 			gflog_tls_debug(GFARM_MSG_UNFIXED,
 				"%s(%s): shutdown SSL replies read %d : %s",
-				__func__, ctx->peer_dn_gsi_,
+				__func__, ctx->peer_cn_,
 				s_n, gfarm_error_string(ret));
 			
 			if ((ret == GFARM_ERR_NO_ERROR && s_n > 0) ||
@@ -2816,7 +2900,7 @@ tls_session_shutdown(tls_session_ctx_t ctx)
 
 		gflog_tls_debug(GFARM_MSG_UNFIXED,
 			"%s(%s): shutdown SSL done : %s",
-			__func__, ctx->peer_dn_gsi_, gfarm_error_string(ret));
+			__func__, ctx->peer_cn_, gfarm_error_string(ret));
 
 	} else if (ctx == NULL) {
 		ret = GFARM_ERR_NO_ERROR;
@@ -2858,22 +2942,11 @@ tls_session_peer_subjectdn_gsi(tls_session_ctx_t ctx)
 static inline char *
 tls_session_peer_cn(tls_session_ctx_t ctx)
 {
-	char *ret = NULL;
-
-	if (likely(ctx != NULL &&
-		is_valid_string(ctx->peer_dn_gsi_) == true)) {
-		char *dn = ctx->peer_dn_gsi_;
-		if (likely(dn != NULL)) {
-			ret = (char *)memmem(dn, strlen(dn), "CN=", 3);
-			if (likely(ret != NULL && *(ret + 3) != '\0')) {
-				ret += 3;
-			} else {
-				ret = NULL;
-			}
-		}
+	if (likely(ctx != NULL)) {
+		return (ctx->peer_cn_);
+	} else {
+		return (NULL);
 	}
-
-	return (ret);
 }
 
 
