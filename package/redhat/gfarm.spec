@@ -7,7 +7,7 @@
 %define rel	1
 %endif
 
-# a hook to make RPM version number different from %{ver}
+# a hook to make RPM version number different from ver
 %define pkgver	%{ver}
 
 %define prefix		%{_prefix}
