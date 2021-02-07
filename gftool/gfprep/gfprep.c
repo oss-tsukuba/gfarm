@@ -1172,18 +1172,9 @@ gfprep_count_ng_file(gfarm_off_t filesize)
 static int
 copied_size_is_over(gfarm_int64_t limit, gfarm_int64_t total_requested)
 {
-	static const char diag[] = "copied_size_is_over";
-	int over = 0;
-
-	if (limit < 0)
+	if (limit < 0)  /* no limit */
 		return (0);
-
-	gfarm_mutex_lock(&cb_mutex, diag, CB_MUTEX_DIAG);
-	if (total_requested - total_ng_filesize >= limit)
-		over = 1;
-	gfarm_mutex_unlock(&cb_mutex, diag, CB_MUTEX_DIAG);
-
-	return (over);
+	return (total_requested >= limit);
 }
 
 static void
