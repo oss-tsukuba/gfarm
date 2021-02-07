@@ -3788,16 +3788,43 @@ main(int argc, char *argv[])
 			}
 			n_desire = 1;
 		} else if (opt_migrate) { /* gfprep -m */
+			int n_remove_src;
+
 			assert(n_src_select > 0);
-			if (n_dst_select < n_src_select) {
+			if (n_src_select > n_dst_exist) {
+				n_desire = n_src_select - n_dst_exist;
+				n_remove_src = n_dst_exist;
+			} else {  /* remove all source replicas */
+				n_desire = 0;
+				n_remove_src = n_src_select;
+			}
+
+			/* n_dst_select: writable target hosts */
+			if (n_desire > n_dst_select) {
 				gfmsg_error(
 				    "insufficient number of destination nodes"
-				    " to migrate (n_src=%d, n_dst=%d): %s",
-				    n_src_select, n_dst_select, src_url);
+				    " to migrate (n_desire=%d, n_dst=%d): %s",
+				    n_desire, n_dst_select, src_url);
 				gfprep_count_ng_file(entry->src_size);
 				goto next_entry;
-			} else
-				n_desire = n_src_select;
+			}
+			/* remove sufficient source replcas */
+			assert(n_src_select >= n_remove_src);
+			for (i = 0; i < n_remove_src; i++) {
+				/* select from last */
+				struct gfprep_host_info *hi =
+				    src_select_array[n_src_select - 1 - i];
+
+				gfprep_do_remove_replica(
+				    pfunc_handle, NULL,
+				    entry->src_size, src_url, hi);
+			}
+			if (n_desire <= 0) {
+				gfmsg_debug("no migration required");
+				goto next_entry;
+			}
+			/* n_src_select: replicas to migrate */
+			n_src_select -= n_remove_src;
 		} else { /* gfprep -N */
 			assert(n_src_select > 0);
 			n_desire = opt_n_desire - n_dst_exist;
