@@ -81,16 +81,16 @@ static const char CB_MUTEX_DIAG[] = "cb_mutex";
 static const char CB_COND_DIAG[] = "cb_cond";
 
 /* locked by cb_mutex */
-static gfarm_uint64_t total_ok_filesize = 0;
-static gfarm_uint64_t total_ok_filenum = 0;
-static gfarm_uint64_t total_skip_filesize = 0;
-static gfarm_uint64_t total_skip_filenum = 0;
-static gfarm_uint64_t total_ng_filesize = 0;
-static gfarm_uint64_t total_ng_filenum = 0;
-static gfarm_uint64_t removed_replica_ok_num = 0;
-static gfarm_uint64_t removed_replica_ng_num = 0;
-static gfarm_uint64_t removed_replica_ok_filesize = 0;
-static gfarm_uint64_t removed_replica_ng_filesize = 0;
+static gfarm_int64_t total_ok_filesize = 0;
+static gfarm_int64_t total_ok_filenum = 0;
+static gfarm_int64_t total_skip_filesize = 0;
+static gfarm_int64_t total_skip_filenum = 0;
+static gfarm_int64_t total_ng_filesize = 0;
+static gfarm_int64_t total_ng_filenum = 0;
+static gfarm_int64_t removed_replica_ok_num = 0;
+static gfarm_int64_t removed_replica_ng_num = 0;
+static gfarm_int64_t removed_replica_ok_filesize = 0;
+static gfarm_int64_t removed_replica_ng_filesize = 0;
 
 /* -------------------------------------------------------------- */
 
@@ -165,7 +165,7 @@ struct gfprep_host_info {
 	int ncpu;
 	int max_rw;
 	long long count_write;
-	gfarm_uint64_t disk_avail;
+	gfarm_int64_t disk_avail;
 	gfarm_int32_t loadavg; /* loadavg_1min * GFM_PROTO_LOADAVG_FSCALE */
 	int is_readonly;
 
@@ -1435,7 +1435,7 @@ struct gfprep_rep_info {
 };
 
 struct gfprep_connection {
-	gfarm_uint64_t cost; /* expected time */
+	gfarm_int64_t cost; /* expected time */
 	int nodes_next;
 	gfarm_list nodes_base;
 	int n_nodes_base;
@@ -2730,7 +2730,7 @@ main(int argc, char *argv[])
 	enum way way = WAY_NOPLAN;
 	gfarm_list list_to_schedule;
 	struct timeval time_start, time_end;
-	static gfarm_uint64_t total_requested_filesize = 0;
+	static gfarm_int64_t total_requested_filesize = 0;
 	enum gfmsg_level msglevel;
 	/* options */
 	const char *opt_src_hostfile = NULL; /* -h */
@@ -2738,7 +2738,7 @@ main(int argc, char *argv[])
 	const char *opt_src_domain = NULL;   /* -S */
 	char *opt_dst_domain = NULL;   /* -D */
 	const char *opt_way = NULL; /* -w */
-	gfarm_uint64_t opt_sched_threshold_size
+	gfarm_int64_t opt_sched_threshold_size
 		= 50 * 1024 * 1024; /* -W, default=50MiB */
 	int opt_n_para = -1; /* -j */
 	gfarm_int64_t opt_simulate_KBs = -1; /* -s and -n */
@@ -2844,7 +2844,7 @@ main(int argc, char *argv[])
 		case 'l': /* hidden option: for debug */
 			opt_list_only = 1;
 			break;
-		case 'C': /* hidden option: for -w noplan */
+		case 'C': /* hidden option: for -w greedy */
 			opt.openfile_cost = strtol(optarg, NULL, 0);
 			if (opt.openfile_cost < 0)
 				opt.openfile_cost = 0;
