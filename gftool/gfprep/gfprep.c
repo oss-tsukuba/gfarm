@@ -720,6 +720,19 @@ gfprep_is_existing(GFURL url, int *modep, gfarm_error_t *ep)
 	return (0);
 }
 
+static void
+replica_remove(const char *url, const char *hostname)
+{
+	gfarm_error_t e;
+
+	e = gfs_replica_remove_by_file(url, hostname);
+	if (e != GFARM_ERR_NO_ERROR)
+		gfmsg_error("cannot remove a replica: %s (%s): %s",
+		    url, hostname, gfarm_error_string(e));
+	else
+		gfmsg_info("remove a replica: %s (%s)", url, hostname);
+}
+
 struct remove_replica_deferred {
 	GFARM_HCIRCLEQ_ENTRY(remove_replica_deferred) list;
 	char *url; /* Gfarm URL */
@@ -761,22 +774,12 @@ gfprep_remove_replica_deferred_add(const char *url, const char *hostname)
 static void
 gfprep_remove_replica_deferred_final(void)
 {
-	gfarm_error_t e;
 	struct remove_replica_deferred *rrd;
 
 	while (!GFARM_HCIRCLEQ_EMPTY(remove_replica_deferred_head, list)) {
 		rrd = GFARM_HCIRCLEQ_FIRST(remove_replica_deferred_head, list);
 		GFARM_HCIRCLEQ_REMOVE(rrd, list);
-
-		e = gfs_replica_remove_by_file(rrd->url, rrd->hostname);
-		if (e != GFARM_ERR_NO_ERROR)
-			gfmsg_error(
-			    "cannot remove a replica: %s (%s): %s",
-			    rrd->url, rrd->hostname, gfarm_error_string(e));
-		else
-			gfmsg_info("remove a replica: %s (%s)",
-			    rrd->url, rrd->hostname);
-
+		replica_remove(rrd->url, rrd->hostname);
 		free(rrd->url);
 		free(rrd->hostname);
 		free(rrd);
@@ -1910,6 +1913,7 @@ gfprep_do_replicate(
 	dst_hi->count_write += GFPREP_COUNT_WRITE_STEP;
 }
 
+/* Do not call this with gfprep_do_replicate at the same time */
 static void
 gfprep_do_remove_replica(
 	gfarm_pfunc_t *pfunc_handle, char *done_p, gfarm_off_t size,
@@ -3823,9 +3827,7 @@ main(int argc, char *argv[])
 				struct gfprep_host_info *hi =
 				    src_select_array[n_src_select - 1 - i];
 
-				gfprep_do_remove_replica(
-				    pfunc_handle, NULL,
-				    entry->src_size, src_url, hi);
+				replica_remove(src_url, hi->hostname);
 			}
 			if (n_desire <= 0) {
 				gfmsg_debug("no migration required");
