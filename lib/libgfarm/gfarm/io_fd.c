@@ -41,10 +41,11 @@ gfarm_iobuffer_blocking_read_timeout_fd_op(struct gfarm_iobuffer *b,
 	void *cookie, int fd, void *data, int length)
 {
 	ssize_t rv;
-	int save_errno, avail, timeout = gfarm_ctxp->network_receive_timeout;
-	char hostbuf[NI_MAXHOST], *hostaddr_prefix, *hostaddr;
-	struct sockaddr_in sin;
-	socklen_t slen = sizeof(sin);
+	int gai_error, avail, timeout = gfarm_ctxp->network_receive_timeout;
+	const char *hostaddr_prefix, *hostaddr;
+	char hostbuf[NI_MAXHOST];
+	struct sockaddr_storage sa;
+	socklen_t sa_len = sizeof(sa);
 
 	for (;;) {
 #ifdef HAVE_POLL
@@ -66,15 +67,15 @@ gfarm_iobuffer_blocking_read_timeout_fd_op(struct gfarm_iobuffer *b,
 		if (avail == 0) {
 			gfarm_iobuffer_set_error(b,
 			    GFARM_ERR_OPERATION_TIMED_OUT);
-			if (getpeername(fd, (struct sockaddr *)&sin, &slen)
+			if (getpeername(fd, (struct sockaddr *)&sa, &sa_len)
 			    == -1) {
 				hostaddr = strerror(errno);
 				hostaddr_prefix = "cannot get peer address: ";
-			} else if ((save_errno = gfarm_getnameinfo(
-			    (struct sockaddr *)&sin, slen,
+			} else if ((gai_error = gfarm_getnameinfo(
+			    (struct sockaddr *)&sa, sa_len,
 			    hostbuf, sizeof(hostbuf), NULL, 0,
-			    NI_NUMERICHOST | NI_NUMERICSERV) != 0)) {
-				hostaddr = strerror(save_errno);
+			    NI_NUMERICHOST | NI_NUMERICSERV)) != 0) {
+				hostaddr = gai_strerror(gai_error);
 				hostaddr_prefix =
 				    "cannot convert peer address to string: ";
 			} else {
