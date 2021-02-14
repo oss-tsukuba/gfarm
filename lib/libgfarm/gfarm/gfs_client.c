@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <sys/wait.h>
 #include <sys/uio.h>
 #include <sys/un.h>
@@ -37,6 +38,7 @@
 
 #include "gfutil.h"
 #include "gfevent.h"
+#include "gfnetdb.h"
 #include "hash.h"
 #include "lru_cache.h"
 #include "thrsubr.h"
@@ -2363,6 +2365,40 @@ gfs_ib_rdma_result_multiplexed(struct gfs_ib_rdma_state *state)
 	return (e);
 }
 /*---------------------------------------------*/
+
+static void
+drop_connection(struct gfp_xdr *conn,
+	double speed, double max_speed, int ratio, const char *msg)
+{
+	int gai_error, fd = gfp_xdr_fd(conn);
+	const char *hostaddr_prefix, *hostaddr;
+	char hostbuf[NI_MAXHOST];
+	struct sockaddr_storage sa;
+	socklen_t sa_len = sizeof(sa);
+
+	if (getpeername(fd, (struct sockaddr *)&sa, &sa_len) == -1) {
+		hostaddr = strerror(errno);
+		hostaddr_prefix = "cannot get peer address: ";
+	} else if ((gai_error = gfarm_getnameinfo(
+	    (struct sockaddr *)&sa, sa_len,
+	    hostbuf, sizeof(hostbuf), NULL, 0,
+	    NI_NUMERICHOST | NI_NUMERICSERV)) != 0) {
+		hostaddr = gai_strerror(gai_error);
+		hostaddr_prefix = "cannot convert peer address to string: ";
+	} else {
+		hostaddr = hostbuf;
+		hostaddr_prefix = "";
+	}
+
+	gfp_xdr_shutdown(conn); /* to avoid a protocol error */
+
+	gflog_error(GFARM_MSG_UNFIXED,
+	    "%s: too slow connection is dropped: "
+	    "current speed (%g byte/sec) is more than %d times slower than "
+	    "max speed (%g bytes/sec) against host %s%s",
+	    msg, speed, ratio, max_speed, hostaddr_prefix, hostaddr);
+}
+
 #ifndef __KERNEL__
 #define GFS_STACK_BUFSIZE  GFS_PROTO_MAX_IOSIZE
 #else /* __KERNEL__  */
@@ -2393,6 +2429,14 @@ gfs_sendfile_common(struct gfp_xdr *conn, gfarm_int32_t *src_errp,
 	off_t sent = 0;
 	int mode_unknown = 1, mode_thread_safe = 1, until_eof = len < 0;
 	char buffer[GFS_STACK_BUFSIZE];
+
+	int do_measure = 0,
+	    ratio = gfarm_ctxp->network_send_bandwidth_drop_ratio,
+	    duration = gfarm_ctxp->network_send_bandwidth_measurement_duration;
+	off_t measured_size;
+	struct timeval measured_time, target_time, now, dt;
+	double speed, max_speed;
+
 #if 0 /* not yet in gfarm v2 */
 	struct gfs_client_rep_rate_info *rinfo = NULL;
 
@@ -2402,6 +2446,15 @@ gfs_sendfile_common(struct gfp_xdr *conn, gfarm_int32_t *src_errp,
 			fatal("%s: rate_info_alloc: no_memory", diag);
 	}
 #endif
+	if (ratio > 0) {
+		do_measure = 1;
+		max_speed = 0.0;
+		measured_size = 0;
+		gettimeofday(&measured_time, NULL);
+		target_time = measured_time;
+		target_time.tv_sec += duration;
+	}
+
 	if (until_eof || len > 0) {
 		for (;;) {
 			to_read = until_eof ? GFS_STACK_BUFSIZE :
@@ -2448,6 +2501,37 @@ gfs_sendfile_common(struct gfp_xdr *conn, gfarm_int32_t *src_errp,
 			if (md_ctx != NULL)
 				EVP_DigestUpdate(md_ctx, buffer, rv);
 
+			if (do_measure) {
+				measured_size += rv;
+				gettimeofday(&now, NULL);
+				if (gfarm_timeval_cmp(&now, &target_time)
+				    >= 0) {
+					dt = now;
+					gfarm_timeval_sub(&dt, &measured_time);
+					/* avoid division-by-0 */
+					if (dt.tv_sec > 0 || dt.tv_usec > 0) {
+						speed = measured_size /
+						    (dt.tv_sec +
+						     (double)dt.tv_sec /
+						     GFARM_SECOND_BY_MICROSEC);
+						if (speed < max_speed/ratio) {
+							e = GFARM_ERR_TOO_SLOW_CONNECTION_IS_DROPPED;
+							e_conn = e;
+							drop_connection(conn,
+							    speed, max_speed,
+							    ratio, "sendfile");
+							break;
+						}
+						if (max_speed < speed)
+							max_speed = speed;
+						measured_size = 0;
+						measured_time = now;
+					}
+					target_time = now;
+					target_time.tv_sec += duration;
+				}
+			}
+
 #if 0 /* not yet in gfarm v2 */
 			if (rate_limit != 0)
 				gfs_client_rep_rate_control(rinfo, rv);
@@ -2459,8 +2543,10 @@ gfs_sendfile_common(struct gfp_xdr *conn, gfarm_int32_t *src_errp,
 		gfs_client_rep_rate_info_free(rinfo);
 #endif
 
-	/* send EOF mark */
-	e = gfp_xdr_send(conn, "b", 0, buffer);
+	if (e_conn != GFARM_ERR_TOO_SLOW_CONNECTION_IS_DROPPED) {
+		/* send EOF mark */
+		e = gfp_xdr_send(conn, "b", 0, buffer);
+	}
 	if (e_conn == GFARM_ERR_NO_ERROR)
 		e_conn = e;
 	if (src_errp != NULL)
@@ -2489,6 +2575,23 @@ gfs_recvfile_common(struct gfp_xdr *conn, gfarm_int32_t *dst_errp,
 	gfarm_off_t written = 0, written_offset;
 	int md_aborted = 0;
 	int mode_unknown = 1, mode_thread_safe = 1;
+
+	int do_measure = 0,
+	    ratio = gfarm_ctxp->network_receive_bandwidth_drop_ratio,
+	    duration =
+	    gfarm_ctxp->network_receive_bandwidth_measurement_duration;
+	off_t measured_size;
+	struct timeval measured_time, target_time, now, dt;
+	double speed, max_speed;
+
+	if (ratio > 0) {
+		do_measure = 1;
+		max_speed = 0.0;
+		measured_size = 0;
+		gettimeofday(&measured_time, NULL);
+		target_time = measured_time;
+		target_time.tv_sec += duration;
+	}
 
 	if (append_mode) {
 		mode_unknown = 0;
@@ -2523,6 +2626,37 @@ gfs_recvfile_common(struct gfp_xdr *conn, gfarm_int32_t *dst_errp,
 				break;
 			}
 			size -= partial;
+
+			if (do_measure) {
+				measured_size += partial;
+				gettimeofday(&now, NULL);
+				if (gfarm_timeval_cmp(&now, &target_time)
+				    >= 0) {
+					dt = now;
+					gfarm_timeval_sub(&dt, &measured_time);
+					/* avoid division-by-0 */
+					if (dt.tv_sec > 0 || dt.tv_usec > 0) {
+						speed = measured_size /
+						    (dt.tv_sec +
+						     (double)dt.tv_sec /
+						     GFARM_SECOND_BY_MICROSEC);
+						if (speed < max_speed/ratio) {
+							e = GFARM_ERR_TOO_SLOW_CONNECTION_IS_DROPPED;
+							drop_connection(conn,
+							    speed, max_speed,
+							    ratio, "recvfile");
+							break;
+						}
+						if (max_speed < speed)
+							max_speed = speed;
+						measured_size = 0;
+						measured_time = now;
+					}
+					target_time = now;
+					target_time.tv_sec += duration;
+				}
+			}
+
 			if (e_write != GFARM_ERR_NO_ERROR) {
 				/*
 				 * write(2) returned an error.
@@ -2588,6 +2722,7 @@ gfs_recvfile_common(struct gfp_xdr *conn, gfarm_int32_t *dst_errp,
 			if (md_ctx != NULL && !md_aborted)
 				EVP_DigestUpdate(
 				    md_ctx, buffer, partial);
+
 		} while (size > 0);
 		if (e != GFARM_ERR_NO_ERROR)
 			break;
