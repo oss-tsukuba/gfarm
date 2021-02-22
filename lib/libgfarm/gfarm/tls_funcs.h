@@ -7,6 +7,40 @@
 /*
  * misc. utils.
  */
+static inline int
+escape_slash(const char *in, char **outptr, int outlen)
+{
+	int ret = 0;
+
+	if (outptr == NULL) {
+		*outptr = NULL;
+	}
+
+	if (likely(is_valid_string(in) == true)) {
+		char *d;
+		const char *s = in;
+		int maxlen;
+		int len;
+		if (outptr != NULL) {
+			d = *outptr;
+			maxlen = outlen - 1;
+		} else {
+			maxlen = strlen(in) * 2 - 1;
+			d = (char *)malloc(maxlen);
+		}
+		do {
+			if (*s == '/') {
+				*d++ = '\\';
+			}
+			*d++ = *s++;
+			len++;
+		} while (*s != '\0' && (s - in) < outlen);
+		*d = '\0';
+		ret = len;
+	}
+
+	return (ret);
+}
 
 static inline void
 trim_string_tail(char *buf)
@@ -1336,9 +1370,6 @@ get_peer_subjectdn_gsi_ish(X509_NAME *pn, char **nameptr, int maxlen)
 		char *dn = buf;
 		char *cnp = NULL;
 
-		if (*nameptr == NULL) {
-			*nameptr = NULL;
-		}
 #define DN_FORMAT_GLOBUS						\
 		(XN_FLAG_RFC2253 & ~(ASN1_STRFLGS_ESC_MSB|XN_FLAG_DN_REV))
 		ret = get_peer_subjectdn(pn, DN_FORMAT_GLOBUS,
@@ -1410,65 +1441,54 @@ get_peer_cn(X509_NAME *pn, char **nameptr, int maxlen)
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 
 	if (likely(pn != NULL && nameptr != NULL)) {
-		char buf[4096];
-		char *dn = buf;
-		char *cnp = NULL;
+		int pos = -1;
+		int pos2 = -1;
+		X509_NAME_ENTRY *ne = NULL;
+		ASN1_STRING *as = NULL;
 
-		if (*nameptr == NULL) {
-			*nameptr = NULL;
-		}
-#define DN_FORMAT_GLOBUS						\
-		(XN_FLAG_RFC2253 & ~(ASN1_STRFLGS_ESC_MSB|XN_FLAG_DN_REV))
-		ret = get_peer_subjectdn(pn, DN_FORMAT_GLOBUS,
-				 &dn, sizeof(buf));
-#undef DN_FORMAT_GLOBUS			
-		if (likely(ret == GFARM_ERR_NO_ERROR &&
-				(cnp = (char *)memmem(buf, sizeof(buf),
-						"CN=", 3)) != NULL &&
-				*(cnp += 3) != '\0')) {
-			char result[4096];
-			char *r = result;
-			char *d = cnp;
-			bool prev_is_esc = false;
+		/*
+		 * Assumption: pn has only one CN.
+		 */
+		pos = X509_NAME_get_index_by_NID(pn, NID_commonName, pos);
+		pos2 = X509_NAME_get_index_by_NID(pn, NID_commonName, pos);
+		if (likely((pos != -1 && pos != -2) &&
+			(pos2 == -1 || pos2 == -2) &&
+			(ne = X509_NAME_get_entry(pn, pos)) != NULL &&
+			(as = X509_NAME_ENTRY_get_data(ne)) != NULL)) {
+			unsigned char *u8 = NULL;
+			int u8len = ASN1_STRING_to_UTF8(&u8, as);
+			char *cn = NULL;
 
-			do {
-				if (*d == '\\') {
-					prev_is_esc = true;
-				} else if (*d == ',') {
-					if (prev_is_esc != true) {
-						break;
-					}
-				} else {
-					prev_is_esc = false;
-				}
-				*r++ = *d++;
-			} while (*d != '\0' &&
-				r < (&result[0] + sizeof(result)));
-			result[r - &result[0]] = '\0';
-
-			if (*nameptr != NULL && maxlen > 0) {
-				snprintf(*nameptr, maxlen, "%s", result);
-				ret = GFARM_ERR_NO_ERROR;
-			} else {
-				char *dn = strdup(result);
-
-				if (likely(dn != NULL)) {
+			if (likely(u8len > 0)) {
+				if (*nameptr != NULL && maxlen > 0) {
+					snprintf(*nameptr, maxlen, "%s", u8);
 					ret = GFARM_ERR_NO_ERROR;
-					*nameptr = dn;
 				} else {
-					ret = GFARM_ERR_NO_MEMORY;
-					gflog_tls_error(GFARM_MSG_UNFIXED,
-						"Can't allocate a buffer for "
-						"a GSI-compat SubjectDN.");
+					cn = strdup((char *)u8);
+					if (likely(cn != NULL)) {
+						ret = GFARM_ERR_NO_ERROR;
+						*nameptr = cn;
+					} else {
+						ret = GFARM_ERR_NO_MEMORY;
+						gflog_tls_error(
+							GFARM_MSG_UNFIXED,
+							"Can't allocate a "
+							"buffer for a CN.");
+						*nameptr = NULL;
+					}
 				}
 			}
-		} else {
-			if (unlikely(ret == GFARM_ERR_NO_ERROR &&
-					cnp == NULL)) {
-				ret = GFARM_ERR_INVALID_CREDENTIAL;
-				gflog_tls_error(GFARM_MSG_UNFIXED,
-					"A SubjectDN \"%s\" has no CN.", buf);
+			if (u8 != NULL) {
+				OPENSSL_free(u8);
 			}
+		} else if (pos >= 0 && pos2 >= 0) {
+			ret = GFARM_ERR_INVALID_CREDENTIAL;
+			gflog_tls_error(GFARM_MSG_UNFIXED,
+				"More than one CNs are included.");
+		} else if (pos == -1 || pos == -2) {
+			ret = GFARM_ERR_INVALID_CREDENTIAL;
+			gflog_tls_error(GFARM_MSG_UNFIXED,
+				"No CN is included.");
 		}
 	} else {
 		ret = GFARM_ERR_INVALID_ARGUMENT;
