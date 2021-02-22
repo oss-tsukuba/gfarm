@@ -76,6 +76,13 @@ CONTSHELL_FLAGS = \
 		--env GFDOCKER_HOSTNAME_PREFIX_GFMD='$(GFDOCKER_HOSTNAME_PREFIX_GFMD)' \
 		--env GFDOCKER_HOSTNAME_PREFIX_GFSD='$(GFDOCKER_HOSTNAME_PREFIX_GFSD)' \
 		--env GFDOCKER_HOSTNAME_PREFIX_CLIENT='$(GFDOCKER_HOSTNAME_PREFIX_CLIENT)'
+
+ifdef GFDOCKER_ENABLE_PROXY
+CONTSHELL_FLAGS += \
+		--env http_proxy='$(PROXY_URL)' \
+		--env https_proxy='$(PROXY_URL)'
+endif
+
 CONTSHELL = $(COMPOSE) exec $(CONTSHELL_FLAGS) -u '$(GFDOCKER_PRIMARY_USER)' \
 		'$(PRIMARY_CLIENT_CONTAINER)' bash
 # overridable
@@ -179,7 +186,7 @@ TOP='$(TOP)' \
 endef
 
 define up
-$(COMPOSE) up -d \
+$(COMPOSE) up -d --force-recreate\
   && $(CONTSHELL) -c '. ~/gfarm/docker/dev/common/up.rc'
 endef
 
