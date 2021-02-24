@@ -106,6 +106,41 @@ gfarm_auth_result_tls_sharedsecret_multiplexed(void *sp)
  * auth_client_tls_client_certificate
  */
 
+static gfarm_error_t
+server_cert_is_ok(struct gfp_xdr *conn, const char *service_tag,
+	const char *hostname)
+{
+	gfarm_error_t e;
+	char *peer_dn, *peer_hostname = NULL;
+
+	if ((peer_dn = gfp_xdr_tls_peer_dn_common_name(conn)) == NULL) {
+		/* this shouldn't happen, raise alert */
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "%s: missing peer dn common name", hostname);
+		return (GFARM_ERR_NO_MESSAGE_OF_DESIRED_TYPE);
+	} else if ((e = gfarm_x509_cn_get_service_hostname(
+	    service_tag, peer_dn, &peer_hostname)) != GFARM_ERR_NO_ERROR) {
+		/* server cert is invalid? raise alert */
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "%s: no expected %s service in certificate <%s>",
+		    hostname, service_tag, peer_dn);
+		return (GFARM_ERR_UNKNOWN_HOST);
+	}
+
+	if (strcasecmp(peer_hostname, hostname) != 0) {
+		/* server cert is invalid? raise alert */
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "%s: %s service - invalid server certificate <%s>",
+		    hostname, service_tag, peer_dn);
+		e = GFARM_ERR_UNKNOWN_HOST;
+	} else {
+		e = GFARM_ERR_NO_ERROR;
+	}
+	free(peer_hostname);
+
+	return (e);
+}
+
 gfarm_error_t
 gfarm_auth_request_tls_client_certificate(struct gfp_xdr *conn,
 	const char *service_tag, const char *hostname,
@@ -114,6 +149,8 @@ gfarm_auth_request_tls_client_certificate(struct gfp_xdr *conn,
 {
 	gfarm_error_t e;
 	int eof;
+	gfarm_int32_t req; /* enum gfarm_auth_tls_client_certificate_request */
+	gfarm_int32_t arg; /* gfarm_error_t or enum gfarm_auth_id_type */
 	gfarm_int32_t result; /* enum gfarm_auth_error */
 
 	e = gfp_xdr_tls_alloc(conn, gfp_xdr_fd(conn),
@@ -123,18 +160,30 @@ gfarm_auth_request_tls_client_certificate(struct gfp_xdr *conn,
 		return (e);
 	}
 
-	/*
-	 * 2nd parameter is reserved for future use
-	 * (e.g. Server Name Indication)
-	 */
-	e = gfp_xdr_send(conn, "is", self_type, "");
+	e = server_cert_is_ok(conn, service_tag, hostname);
+	if (e == GFARM_ERR_NO_ERROR) {
+		req = GFARM_AUTH_TLS_CLIENT_CERTIFICATE_CLIENT_TYPE;
+		arg = self_type;
+	} else {
+		req = GFARM_AUTH_TLS_CLIENT_CERTIFICATE_GIVEUP;
+		arg = e;
+	}
+
+	e = gfp_xdr_send(conn, "ii", req, arg);
 	if (e == GFARM_ERR_NO_ERROR)
 		e = gfp_xdr_flush(conn);
 	if (e != GFARM_ERR_NO_ERROR) {
 		/* this is not gfarceful, but OK because of a network error */
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "sending self_type failed: %s", gfarm_error_string(e));
-	} else if ((e = gfp_xdr_recv(conn, 1, &eof, "i", &result))
+	}
+	if (req != GFARM_AUTH_TLS_CLIENT_CERTIFICATE_CLIENT_TYPE) {
+		/* giveup, due to server cert problem */
+		gfp_xdr_tls_reset(conn); /* is this case graceful? */
+		return (GFARM_ERR_AUTHENTICATION); 
+	}
+	
+	if ((e = gfp_xdr_recv(conn, 1, &eof, "i", &result))
 	    != GFARM_ERR_NO_ERROR || eof) {
 		if (e == GFARM_ERR_NO_ERROR) /* i.e. eof */
 			e = GFARM_ERR_UNEXPECTED_EOF;
@@ -150,8 +199,7 @@ gfarm_auth_request_tls_client_certificate(struct gfp_xdr *conn,
 	}
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		/* is this case graceful? */
-		gfp_xdr_tls_reset(conn);
+		gfp_xdr_tls_reset(conn); /* is this case graceful? */
 		return (e);
 	}
 	return (e);
@@ -216,24 +264,10 @@ gfarm_auth_request_tls_client_certificate_multiplexed(
 	void **statepp)
 {
 	gfarm_error_t e;
+	gfarm_int32_t req; /* enum gfarm_auth_tls_client_certificate_request */
+	gfarm_int32_t arg; /* gfarm_error_t or enum gfarm_auth_id_type */
 	struct gfarm_auth_request_tls_client_certificate_state *state;
 	int rv;
-
-	/* XXX It's better to check writable event here */
-
-	/*
-	 * 2nd parameter is reserved for future use
-	 * (e.g. Server Name Indication)
-	 */
-	e = gfp_xdr_send(conn, "is", self_type, "");
-	if (e == GFARM_ERR_NO_ERROR)
-		e = gfp_xdr_flush(conn);
-	if (e != GFARM_ERR_NO_ERROR) {
-		/* this is not gfarceful, but OK because of a network error */
-		gflog_debug(GFARM_MSG_UNFIXED,
-		    "sending self_type failed: %s", gfarm_error_string(e));
-		return (e);
-	}
 
 	GFARM_MALLOC(state);
 	if (state == NULL) {
@@ -250,6 +284,33 @@ gfarm_auth_request_tls_client_certificate_multiplexed(
 		/* is this case graceful? */
 		free(state);
 		return (e);
+	}
+
+	e = server_cert_is_ok(conn, service_tag, hostname);
+	if (e == GFARM_ERR_NO_ERROR) {
+		req = GFARM_AUTH_TLS_CLIENT_CERTIFICATE_CLIENT_TYPE;
+		arg = self_type;
+	} else {
+		req = GFARM_AUTH_TLS_CLIENT_CERTIFICATE_GIVEUP;
+		arg = e;
+	}
+
+	e = gfp_xdr_send(conn, "ii", req, arg);
+	if (e == GFARM_ERR_NO_ERROR)
+		e = gfp_xdr_flush(conn);
+	if (e != GFARM_ERR_NO_ERROR) {
+		/* this is not gfarceful, but OK because of a network error */
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "sending self_type failed: %s", gfarm_error_string(e));
+		gfp_xdr_tls_reset(conn); /* is this case graceful? */
+		free(state);
+		return (e);
+	}
+	if (req != GFARM_AUTH_TLS_CLIENT_CERTIFICATE_CLIENT_TYPE) {
+		/* giveup, due to server cert problem */
+		free(state);
+		gfp_xdr_tls_reset(conn); /* is this case graceful? */
+		return (GFARM_ERR_AUTHENTICATION); 
 	}
 
 	/*

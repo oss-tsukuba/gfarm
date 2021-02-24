@@ -234,28 +234,21 @@ gfp_xdr_tls_reset(struct gfp_xdr *conn)
 }
 
 char *
-gfp_xdr_tls_initiator_dn_oneline(struct gfp_xdr *conn)
-{
-	return (tls_session_peer_subjectdn_oneline(
-			((tls_session_ctx_t)(gfp_xdr_cookie(conn)))));
-}
-
-char *
-gfp_xdr_tls_initiator_dn_rfc2253(struct gfp_xdr *conn)
+gfp_xdr_tls_peer_dn_rfc2253(struct gfp_xdr *conn)
 {
 	return (tls_session_peer_subjectdn_rfc2253(
 			((tls_session_ctx_t)(gfp_xdr_cookie(conn)))));
 }
 
 char *
-gfp_xdr_tls_initiator_dn_gsi(struct gfp_xdr *conn)
+gfp_xdr_tls_peer_dn_gsi(struct gfp_xdr *conn)
 {
 	return (tls_session_peer_subjectdn_gsi(
 			((tls_session_ctx_t)(gfp_xdr_cookie(conn)))));
 }
 
 char *
-gfp_xdr_tls_initiator_dn_common_name(struct gfp_xdr *conn)
+gfp_xdr_tls_peer_dn_common_name(struct gfp_xdr *conn)
 {
 	return (tls_session_peer_cn(
 			((tls_session_ctx_t)(gfp_xdr_cookie(conn)))));

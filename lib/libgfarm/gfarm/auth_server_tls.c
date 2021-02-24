@@ -26,6 +26,8 @@ gfarm_authorize_tls_sharedsecret(struct gfp_xdr *conn, int switch_to,
 
 	e = gfp_xdr_tls_alloc(conn, gfp_xdr_fd(conn), GFP_XDR_TLS_ACCEPT);
 	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_notice(GFARM_MSG_UNFIXED,
+		    "failed to establish SSL connection");
 		/* is this case graceful? */
 		return (e);
 	}
@@ -33,8 +35,7 @@ gfarm_authorize_tls_sharedsecret(struct gfp_xdr *conn, int switch_to,
 	    conn, switch_to, service_tag, hostname, auth_uid_to_global_user,
 	    closure, "tls_sharedsecret", peer_typep, global_usernamep);
 	if (e != GFARM_ERR_NO_ERROR) {
-		/* is this case graceful? */
-		gfp_xdr_tls_reset(conn);
+		gfp_xdr_tls_reset(conn); /* is this case graceful? */
 	}
 	return (e);
 }
@@ -52,27 +53,44 @@ gfarm_error_t gfarm_authorize_tls_client_certificate(
 {
 	gfarm_error_t e, e2;
 	int eof;
-	gfarm_int32_t peer_type, result;
-	char *reserved, *global_username = NULL;
+	gfarm_int32_t req, arg, peer_type, result;
+	char *global_username = NULL;
 
 	e = gfp_xdr_tls_alloc(conn, gfp_xdr_fd(conn), GFP_XDR_TLS_ACCEPT|
 	    GFP_XDR_TLS_CLIENT_AUTHENTICATION);
 	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_notice(GFARM_MSG_UNFIXED,
+		    "failed to establish SSL connection");
 		/* is this case graceful? */
 		return (e);
 	}
 
-	/*
-	 * 2nd parameter is reserved for future use
-	 * (e.g. Server Name Indication)
-	 */
-	e = gfp_xdr_recv(conn, 1, &eof, "is", &peer_type, &reserved);
+	e = gfp_xdr_recv(conn, 1, &eof, "ii", &req, &arg);
 	if (e != GFARM_ERR_NO_ERROR || eof) {
 		/* this is not gfarceful, but OK because of a network error */
 		if (e == GFARM_ERR_NO_ERROR) /* i.e. eof */
 			e = GFARM_ERR_UNEXPECTED_EOF;
 		return (e);
 	}
+	if (req == GFARM_AUTH_TLS_CLIENT_CERTIFICATE_GIVEUP) {
+		/* server cert is invalid? raise alert */
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "my certificate is not accepted: %s",
+		    gfarm_error_string(arg));
+		gfp_xdr_tls_reset(conn); /* is this case graceful? */
+		return (GFARM_ERR_AUTHENTICATION);
+	} else if (req == GFARM_AUTH_TLS_CLIENT_CERTIFICATE_CLIENT_TYPE) {
+		peer_type = arg;
+	} else {
+		/* unknown protocol */
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "unknown authentication request: 0x%x (0x%x)",
+		(int)req, (int)arg);
+		gfp_xdr_tls_reset(conn); /* is this case graceful? */
+		return (GFARM_ERR_PROTOCOL);
+	}
+		
+
 	if (peer_type != GFARM_AUTH_ID_TYPE_USER &&
 	    peer_type != GFARM_AUTH_ID_TYPE_SPOOL_HOST &&
 	    peer_type != GFARM_AUTH_ID_TYPE_METADATA_HOST) {
@@ -80,7 +98,10 @@ gfarm_error_t gfarm_authorize_tls_client_certificate(
 	} else {
 		e = (*auth_uid_to_global_user)(closure,
 		    GFARM_AUTH_METHOD_TLS_CLIENT_CERTIFICATE, peer_type,
-		    gfp_xdr_tls_initiator_dn_gsi(conn), &global_username);
+		    peer_type == GFARM_AUTH_ID_TYPE_USER ?
+		    gfp_xdr_tls_peer_dn_gsi(conn) :
+		    gfp_xdr_tls_peer_dn_common_name(conn),
+		    &global_username);
 		if (e == GFARM_ERR_NO_ERROR) {
 			switch (peer_type) {
 			case GFARM_AUTH_ID_TYPE_SPOOL_HOST:
@@ -131,13 +152,12 @@ gfarm_error_t gfarm_authorize_tls_client_certificate(
 		    peer_type == GFARM_AUTH_ID_TYPE_SPOOL_HOST ? "gfsd" :
 		    peer_type == GFARM_AUTH_ID_TYPE_METADATA_HOST ? "gfmd" :
 		    "unknown",
-		    gfp_xdr_tls_initiator_dn_gsi(conn));
+		    gfp_xdr_tls_peer_dn_gsi(conn));
 
 		*peer_typep = peer_type;
 		*global_usernamep = global_username;
 	} else {
-		/* is this case graceful? */
-		gfp_xdr_tls_reset(conn);
+		gfp_xdr_tls_reset(conn); /* is this case graceful? */
 		free(global_username);
 	}
 

@@ -126,13 +126,48 @@ gfarm_auth_uid_to_global_username_gsi(void *closure,
 #endif /* HAVE_GSI */
 
 gfarm_error_t
-gfarm_x509_dn_get_hostname(
-	enum gfarm_auth_id_type auth_id_type, const char *dn,
-	char **hostnamep)
+gfarm_x509_cn_get_service_hostname(
+	const char *service_tag, const char *cn, char **hostnamep)
 {
-	const char *common_name, *service_tag, *serv_service;
+	const char *serv_service;
 	char *hostname, *s;
 	size_t serv_service_len;
+
+	serv_service = gfarm_auth_server_cred_service_get(service_tag);
+	if (serv_service == NULL)
+		serv_service = "host"; /* default configuration */
+	serv_service_len = strlen(serv_service);
+	if (strncmp(cn, serv_service, serv_service_len) == 0 &&
+	    cn[serv_service_len] == '/') {
+		/* has service in CN. e.g. "CN=gfsd/gfsd1.example.org" */
+		hostname = strdup(cn + serv_service_len + 1);
+	} else if (strcmp(serv_service, "host") == 0) {
+		/* "host/" prefix in CN can be omitted */
+		hostname = strdup(cn);
+	} else {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "service:%s, cn=\"%s\": service not match",
+		    serv_service, cn);
+		return (GFARM_ERR_NO_SUCH_OBJECT);
+	}
+	if (hostname == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "service:%s, cn=\"%s\": no memory", serv_service, cn);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	if ((s = strchr(hostname, '/')) != NULL)
+		*s = '\0';
+
+	*hostnamep = hostname;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfarm_x509_cn_get_hostname(
+	enum gfarm_auth_id_type auth_id_type, const char *cn,
+	char **hostnamep)
+{
+	const char *service_tag;
 
 	switch (auth_id_type) {
 	case GFARM_AUTH_ID_TYPE_USER:
@@ -147,41 +182,8 @@ gfarm_x509_dn_get_hostname(
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
 
-	common_name = strstr(dn, "/CN=");
-	if (common_name == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
-		    "id_type:%d, dn=\"%s\": no common name",
-		    (int)auth_id_type, dn);
-		return (GFARM_ERR_NO_SUCH_OBJECT);
-	}
-	common_name += 4; /* skip strlen("/CN=") */
-
-	serv_service = gfarm_auth_server_cred_service_get(service_tag);
-	serv_service_len = strlen(serv_service);
-	if (strncmp(common_name, serv_service, serv_service_len) == 0 &&
-	    common_name[serv_service_len] == '/') {
-		/* has service in CN. e.g. "CN=gfsd/gfsd1.example.org" */
-		hostname = strdup(common_name + serv_service_len + 1);
-	} else if (strcmp(serv_service, "host") == 0) {
-		/* "host/" prefix in CN can be omitted */
-		hostname = strdup(common_name);
-	} else {
-		gflog_debug(GFARM_MSG_UNFIXED,
-		    "id_type:%d, service:%s, dn=\"%s\": service not match",
-		    (int)auth_id_type, serv_service, dn);
-		return (GFARM_ERR_NO_SUCH_OBJECT);
-	}
-	if (hostname == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
-		    "id_type:%d, dn=\"%s\": no memory",
-		    (int)auth_id_type, dn);
-		return (GFARM_ERR_NO_MEMORY);
-	}
-	if ((s = strchr(hostname, '/')) != NULL)
-		*s = '\0';
-
-	*hostnamep = hostname;
-	return (GFARM_ERR_NO_ERROR);
+	return (gfarm_x509_cn_get_service_hostname(
+	    service_tag, cn, hostnamep));
 }
 
 #ifdef HAVE_TLS_1_3
@@ -203,7 +205,7 @@ gfarm_auth_uid_to_global_username_tls_client_certificate(void *closure,
 		return (gfarm_auth_uid_to_global_username_by_dn(
 		    closure, auth_user_id, global_usernamep));
 	case GFARM_AUTH_ID_TYPE_SPOOL_HOST:
-		e = gfarm_x509_dn_get_hostname(auth_user_id_type, auth_user_id,
+		e = gfarm_x509_cn_get_hostname(auth_user_id_type, auth_user_id,
 		    &hostname);
 		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
@@ -216,7 +218,7 @@ gfarm_auth_uid_to_global_username_tls_client_certificate(void *closure,
 			gfarm_host_info_free(&host);
 		break;
 	case GFARM_AUTH_ID_TYPE_METADATA_HOST:
-		e = gfarm_x509_dn_get_hostname(auth_user_id_type, auth_user_id,
+		e = gfarm_x509_cn_get_hostname(auth_user_id_type, auth_user_id,
 		    &hostname);
 		if (e != GFARM_ERR_NO_ERROR)
 			return (e);

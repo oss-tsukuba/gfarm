@@ -1396,6 +1396,10 @@ get_peer_subjectdn_gsi_ish(X509_NAME *pn, char **nameptr, int maxlen)
 					*r++ = '/';
 					d++;
 					break;
+				case '\\':
+					if (d[1] == ',')
+						d++;
+					/*FALLTHROUGH*/
 				default:
 					*r++ = *d++;
 					break;

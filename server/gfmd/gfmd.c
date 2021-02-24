@@ -959,7 +959,7 @@ auth_uid_to_global_username(void *closure,
 		case GFARM_AUTH_ID_TYPE_USER:
 			break;
 		case GFARM_AUTH_ID_TYPE_SPOOL_HOST:
-			e = gfarm_x509_dn_get_hostname(auth_user_id_type,
+			e = gfarm_x509_cn_get_hostname(auth_user_id_type,
 			    auth_user_id, &hostname);
 			if (e != GFARM_ERR_NO_ERROR)
 				return (GFARM_ERR_AUTHENTICATION);
@@ -967,6 +967,8 @@ auth_uid_to_global_username(void *closure,
 			h = host_lookup(hostname);
 			giant_unlock();
 			if (h == NULL) {
+				gflog_info(GFARM_MSG_UNFIXED,
+				    "unknown gfsd <%s>", hostname);
 				free(hostname);
 				return (GFARM_ERR_AUTHENTICATION);
 			}
@@ -976,7 +978,7 @@ auth_uid_to_global_username(void *closure,
 				*global_usernamep = hostname;
 			return (GFARM_ERR_NO_ERROR);
 		case GFARM_AUTH_ID_TYPE_METADATA_HOST:
-			e = gfarm_x509_dn_get_hostname(auth_user_id_type,
+			e = gfarm_x509_cn_get_hostname(auth_user_id_type,
 			    auth_user_id, &hostname);
 			if (e != GFARM_ERR_NO_ERROR)
 				return (GFARM_ERR_AUTHENTICATION);
@@ -984,6 +986,8 @@ auth_uid_to_global_username(void *closure,
 			m = mdhost_lookup(hostname);
 			giant_unlock();
 			if (m == NULL) {
+				gflog_info(GFARM_MSG_UNFIXED,
+				    "unknown gfmd <%s>", hostname);
 				free(hostname);
 				return (GFARM_ERR_AUTHENTICATION);
 			}
@@ -1019,8 +1023,8 @@ auth_uid_to_global_username(void *closure,
 		 * do not return GFARM_ERR_NO_SUCH_USER
 		 * to prevent information leak
 		 */
-		gflog_debug(GFARM_MSG_1001483,
-			"lookup for user failed");
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "unknown user id <%s>", auth_user_id);
 		return (GFARM_ERR_AUTHENTICATION);
 	}
 	if (global_usernamep == NULL)

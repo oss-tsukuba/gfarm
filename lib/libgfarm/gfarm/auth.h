@@ -81,6 +81,16 @@ void gfarm_gsi_client_finalize(void);
 #define GFARM_IS_AUTH_TLS_CLIENT_CERTIFICATE(auth) \
 	((auth) == GFARM_AUTH_METHOD_TLS_CLIENT_CERTIFICATE)
 
+/*
+ * GFARM_AUTH_METHOD_TLS_CLIENT_CERTIFICATE dependent constants.
+ */
+/* request */
+enum gfarm_auth_tls_client_certificate_request {
+	GFARM_AUTH_TLS_CLIENT_CERTIFICATE_GIVEUP,
+	GFARM_AUTH_TLS_CLIENT_CERTIFICATE_CLIENT_TYPE
+};
+
+
 /* auth_client */
 
 struct gfp_xdr;
@@ -112,8 +122,10 @@ gfarm_error_t gfarm_auth_uid_to_global_username(void *,
 	char **);
 
 /* helper for auth_uid_to_global_username for host-based authentication case */
-gfarm_error_t gfarm_x509_dn_get_hostname(
+gfarm_error_t gfarm_x509_cn_get_hostname(
 	enum gfarm_auth_id_type, const char *, char **);
+gfarm_error_t gfarm_x509_cn_get_service_hostname(
+	const char *, const char *, char **);
 
 /* client side configuration */
 gfarm_error_t gfarm_set_auth_id_type(enum gfarm_auth_id_type);
