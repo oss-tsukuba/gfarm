@@ -128,7 +128,7 @@ if [ "X$PRUN_PARALLEL" != Xyes -a "X$PRUN_VERBOSE" = Xyes ]; then
 fi
 
 p=0
-for host in `sed -e 's/#.*//' -e '/^[ 	]*$/d' $hostfile`; do
+for host in `sed -e 's/#.*//' -e '/^[ 	]*$/d' $hostfile | awk '{ print $1 }'`; do
     [ "X$PRUN_ALL_INCLUDE_MYSELF" != Xyes ] &&
 	echo $PRUN_HOSTNAME | grep $host > /dev/null && continue
     $MESSAGE $host

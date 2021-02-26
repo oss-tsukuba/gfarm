@@ -174,6 +174,14 @@ struct gfprep_host_info {
 	gfarm_int64_t failed_size; /* for dst */
 };
 
+static gfarm_uint64_t
+subtract_uint64(gfarm_uint64_t a, gfarm_uint64_t b)
+{
+	if (a > b)
+		return (a - b);
+	return (0);
+}
+
 static void
 gfprep_update_n_using(struct gfprep_host_info *info, int add_using)
 {
@@ -712,6 +720,19 @@ gfprep_is_existing(GFURL url, int *modep, gfarm_error_t *ep)
 	return (0);
 }
 
+static void
+replica_remove(const char *url, const char *hostname)
+{
+	gfarm_error_t e;
+
+	e = gfs_replica_remove_by_file(url, hostname);
+	if (e != GFARM_ERR_NO_ERROR)
+		gfmsg_error("cannot remove a replica: %s (%s): %s",
+		    url, hostname, gfarm_error_string(e));
+	else
+		gfmsg_info("remove a replica: %s (%s)", url, hostname);
+}
+
 struct remove_replica_deferred {
 	GFARM_HCIRCLEQ_ENTRY(remove_replica_deferred) list;
 	char *url; /* Gfarm URL */
@@ -753,22 +774,12 @@ gfprep_remove_replica_deferred_add(const char *url, const char *hostname)
 static void
 gfprep_remove_replica_deferred_final(void)
 {
-	gfarm_error_t e;
 	struct remove_replica_deferred *rrd;
 
 	while (!GFARM_HCIRCLEQ_EMPTY(remove_replica_deferred_head, list)) {
 		rrd = GFARM_HCIRCLEQ_FIRST(remove_replica_deferred_head, list);
 		GFARM_HCIRCLEQ_REMOVE(rrd, list);
-
-		e = gfs_replica_remove_by_file(rrd->url, rrd->hostname);
-		if (e != GFARM_ERR_NO_ERROR)
-			gfmsg_error(
-			    "cannot remove a replica: %s (%s): %s",
-			    rrd->url, rrd->hostname, gfarm_error_string(e));
-		else
-			gfmsg_info("remove a replica: %s (%s)",
-			    rrd->url, rrd->hostname);
-
+		replica_remove(rrd->url, rrd->hostname);
 		free(rrd->url);
 		free(rrd->hostname);
 		free(rrd);
@@ -1172,18 +1183,9 @@ gfprep_count_ng_file(gfarm_off_t filesize)
 static int
 copied_size_is_over(gfarm_int64_t limit, gfarm_int64_t total_requested)
 {
-	static const char diag[] = "copied_size_is_over";
-	int over = 0;
-
-	if (limit < 0)
+	if (limit < 0)  /* no limit */
 		return (0);
-
-	gfarm_mutex_lock(&cb_mutex, diag, CB_MUTEX_DIAG);
-	if (total_requested - total_ng_filesize >= limit)
-		over = 1;
-	gfarm_mutex_unlock(&cb_mutex, diag, CB_MUTEX_DIAG);
-
-	return (over);
+	return (total_requested >= limit);
 }
 
 static void
@@ -1675,10 +1677,14 @@ retry:
 			}
 			gfarm_list_free(&max_node->flist);
 			max_node->flist = newlist;
-			max_node->cost -= found_ent->src_size;
-			max_node->cost -= opt.openfile_cost;
-			max_conn->cost -= found_ent->src_size;
-			max_conn->cost -= opt.openfile_cost;
+			max_node->cost = subtract_uint64(
+			    max_node->cost, found_ent->src_size);
+			max_node->cost = subtract_uint64(
+			    max_node->cost, opt.openfile_cost);
+			max_conn->cost = subtract_uint64(
+			    max_conn->cost, found_ent->src_size);
+			max_conn->cost = subtract_uint64(
+			    max_conn->cost, opt.openfile_cost);
 			found_node->cost += found_ent->src_size;
 			found_node->cost += opt.openfile_cost;
 			found_conn->cost += found_ent->src_size;
@@ -1735,7 +1741,11 @@ gfprep_check_disk_avail(struct gfprep_host_info *hi, gfarm_off_t src_size,
 
 	if (use_failed_size) {
 		gfprep_get_and_reset_failed_size(hi, &failed_size);
-		hi->disk_avail += failed_size;
+		if (failed_size >= 0)
+			hi->disk_avail += failed_size;
+		else
+			hi->disk_avail = subtract_uint64(
+			   hi->disk_avail, failed_size);
 	}
 
 	/* to reduce no space risk, keep minimum disk space */
@@ -1862,7 +1872,8 @@ gfprep_do_copy(
 		dst_port = dst_hi->port;
 
 		/* update disk_avail for next scheduling */
-		dst_hi->disk_avail -= size;
+		dst_hi->disk_avail = subtract_uint64(
+		    dst_hi->disk_avail, size);
 		dst_hi->count_write += GFPREP_COUNT_WRITE_STEP;
 	}
 	e = gfarm_pfunc_copy(
@@ -1898,10 +1909,11 @@ gfprep_do_replicate(
 	    cbd, opt_migrate, opt.check_disk_avail);
 	gfmsg_fatal_e(e, "gfarm_pfunc_replicate_from_to");
 	/* update disk_avail for next scheduling */
-	dst_hi->disk_avail -= size;
+	dst_hi->disk_avail = subtract_uint64(dst_hi->disk_avail, size);
 	dst_hi->count_write += GFPREP_COUNT_WRITE_STEP;
 }
 
+/* Do not call this with gfprep_do_replicate at the same time */
 static void
 gfprep_do_remove_replica(
 	gfarm_pfunc_t *pfunc_handle, char *done_p, gfarm_off_t size,
@@ -2844,7 +2856,7 @@ main(int argc, char *argv[])
 		case 'l': /* hidden option: for debug */
 			opt_list_only = 1;
 			break;
-		case 'C': /* hidden option: for -w noplan */
+		case 'C': /* hidden option: for -w greedy */
 			opt.openfile_cost = strtol(optarg, NULL, 0);
 			if (opt.openfile_cost < 0)
 				opt.openfile_cost = 0;
@@ -3788,16 +3800,41 @@ main(int argc, char *argv[])
 			}
 			n_desire = 1;
 		} else if (opt_migrate) { /* gfprep -m */
+			int n_remove_src;
+
 			assert(n_src_select > 0);
-			if (n_dst_select < n_src_select) {
+			if (n_src_select > n_dst_exist) {
+				n_desire = n_src_select - n_dst_exist;
+				n_remove_src = n_dst_exist;
+			} else {  /* remove all source replicas */
+				n_desire = 0;
+				n_remove_src = n_src_select;
+			}
+
+			/* n_dst_select: writable target hosts */
+			if (n_desire > n_dst_select) {
 				gfmsg_error(
 				    "insufficient number of destination nodes"
-				    " to migrate (n_src=%d, n_dst=%d): %s",
-				    n_src_select, n_dst_select, src_url);
+				    " to migrate (n_desire=%d, n_dst=%d): %s",
+				    n_desire, n_dst_select, src_url);
 				gfprep_count_ng_file(entry->src_size);
 				goto next_entry;
-			} else
-				n_desire = n_src_select;
+			}
+			/* remove sufficient source replcas */
+			assert(n_src_select >= n_remove_src);
+			for (i = 0; i < n_remove_src; i++) {
+				/* select from last */
+				struct gfprep_host_info *hi =
+				    src_select_array[n_src_select - 1 - i];
+
+				replica_remove(src_url, hi->hostname);
+			}
+			if (n_desire <= 0) {
+				gfmsg_debug("no migration required");
+				goto next_entry;
+			}
+			/* n_src_select: replicas to migrate */
+			n_src_select -= n_remove_src;
 		} else { /* gfprep -N */
 			assert(n_src_select > 0);
 			n_desire = opt_n_desire - n_dst_exist;
