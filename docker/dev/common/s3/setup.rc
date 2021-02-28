@@ -1,6 +1,6 @@
 set -xeu
 
-UPDATE_ONLY=${UPDATE_ONLY:-0}
+GFDOCKER_GFARMS3_UPDATE_ONLY=${GFDOCKER_GFARMS3_UPDATE_ONLY:-0}
 
 # user1 executes this script.
 SUDO="sudo -E"
