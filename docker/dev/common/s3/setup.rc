@@ -12,10 +12,10 @@ case $GFDOCKER_PRJ_NAME in
 	*) exit 1;;
 esac
 
-GFARM_SE_MINIO_WEB_SRC=/mnt/work/gfarm-s3-minio-web
-GFARM_SE_MINIO_SRC=/mnt/work/gfarm-s3-minio
+GFARM_S3_MINIO_WEB_SRC=/mnt/work/gfarm-s3-minio-web
+GFARM_S3_MINIO_SRC=/mnt/work/gfarm-s3-minio
 
-if [ ! -d $GFARM_SE_MINIO_WEB_SRC ]; then
+if [ ! -d $GFARM_S3_MINIO_WEB_SRC ]; then
 	exit 1
 fi
 
@@ -34,18 +34,20 @@ USERS=$GFDOCKER_GFARMS3_USERS
 ## create working directory
 export WORK=$HOME/tmp/work
 mkdir -p $WORK
-export MINIO_BUILDDIR=$HOME/tmp/work
-mkdir -p $MINIO_BUILDDIR
-mkdir -p $MINIO_BUILDDIR/minio/work/build
+
+# MINIO_BUILDDIR is used by "make install-go"
+export MINIO_BUILDDIR=/mnt/user1/tmp/work
+${SUDO} mkdir -p ${MINIO_BUILDDIR}/minio/work/build
+${SUDO} chown -R user1 ${MINIO_BUILDDIR}
 
 ## obtain or update source code
-rsync -a $GFARM_SE_MINIO_WEB_SRC/ $WORK/gfarm-s3-minio-web/
-if [ -e $GFARM_SE_MINIO_SRC ]; then
-	rsync -a $GFARM_SE_MINIO_SRC/ $MINIO_BUILDDIR/minio/work/build/gfarm-s3-minio/
+rsync -a $GFARM_S3_MINIO_WEB_SRC/ $WORK/gfarm-s3-minio-web/
+if [ -e $GFARM_S3_MINIO_SRC ]; then
+	rsync -a $GFARM_S3_MINIO_SRC/ $MINIO_BUILDDIR/minio/work/build/gfarm-s3-minio/
 fi
 
 ## update only
-if [ $UPDATE_ONLY -eq 1 ]; then
+if [ $GFDOCKER_GFARMS3_UPDATE_ONLY -eq 1 ]; then
 	cd $WORK/gfarm-s3-minio-web/web
 	make
 	${SUDO} make install
@@ -138,7 +140,8 @@ id $WSGI_USER || ${SUDO} useradd $WSGI_USER -g $WSGI_GROUP -d $WSGI_HOMEDIR
 	--with-gfarm-shared-dir=$SHARED_DIR \
 	--with-minio-builddir=$MINIO_BUILDDIR)
 
-(cd $WORK/gfarm-s3-minio-web/minio && make install-go)
+#(cd $WORK/gfarm-s3-minio-web/minio && make install-go)
+## include install-go
 (cd $WORK/gfarm-s3-minio-web && make)
 (cd $WORK/gfarm-s3-minio-web && ${SUDO} make install)
 
@@ -191,6 +194,21 @@ ${SUDO} systemctl enable --now gunicorn.service
 ## cleanup
 #(cd $WORK/gfarm-s3-minio-web && ${SUDO} make clean)
 #(cd $WORK/gfarm-s3-minio-web && ${SUDO} make distclean)
+
+update_secret() {
+	user="${1}"
+	secret="${2}"
+	gfarm_s3_dir="/home/${user}/.gfarm-s3"
+	if [ -n "${secret}" ]; then
+		${SUDO} mkdir -p "${gfarm_s3_dir}"
+		echo "${secret}" | ${SUDO} dd of="${gfarm_s3_dir}/secret_key"
+		${SUDO} chown -R "${user}" "${gfarm_s3_dir}"
+	fi
+}
+
+update_secret user1 "${GFDOCKER_GFARMS3_SECRET_USER1}"
+update_secret user2 "${GFDOCKER_GFARMS3_SECRET_USER2}"
+
 
 ## show sharedsecret password
 echo "WebUI password for user1:"
