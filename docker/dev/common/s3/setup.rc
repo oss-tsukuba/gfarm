@@ -191,6 +191,25 @@ ${SUDO} apachectl start
 ## start gunicorn service
 ${SUDO} systemctl enable --now gunicorn.service
 
+## install awscli
+sudo yum install -y awscli
+
+## install goofys
+### use source package
+# GOPATH=${HOME}/work
+# export GOPATH
+# GO=${MINIO_BUILDDIR}/minio/work/go/bin/go
+# GOOFYS_URL=github.com/kahing/goofys
+# ${GO} get ${GOOFYS_URL}
+# ${GO} install ${GOOFYS_URL}
+
+### use binary
+GOOFYS_BIN_URL=https://github.com/kahing/goofys/releases/latest/download/goofys
+GOOFYS_BIN=/usr/local/bin/goofys
+${SUDO} yum install -y wget
+${SUDO} wget -O ${GOOFYS_BIN} ${GOOFYS_BIN_URL}
+${SUDO} chmod +x ${GOOFYS_BIN}
+
 ## cleanup
 #(cd $WORK/gfarm-s3-minio-web && ${SUDO} make clean)
 #(cd $WORK/gfarm-s3-minio-web && ${SUDO} make distclean)
