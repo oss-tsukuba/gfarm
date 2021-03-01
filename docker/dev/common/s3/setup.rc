@@ -196,6 +196,10 @@ ${SUDO} systemctl enable --now gunicorn.service
 ## install awscli
 sudo yum install -y awscli
 
+# XXX TODO define in Dockerfile
+## install s3cmd
+sudo yum install -y s3cmd
+
 ## install goofys
 ### use source package
 # GOPATH=${HOME}/work
