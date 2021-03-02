@@ -703,11 +703,11 @@ gfm_client_connection0(struct gfp_cached_connection *cache_entry,
 #endif
 #endif /* __KERNEL__ */
 	gfm_server->cache_entry = cache_entry;
-	gfp_cached_connection_set_data(cache_entry, gfm_server);
 	gfm_server->pid = 0;
 	gfm_server->real_server = ms != NULL ? ms :
 		gfarm_filesystem_get_metadb_server_first(fs);
 	gfm_server->failover_count = gfarm_filesystem_failover_count(fs);
+	gfp_cached_connection_set_data(cache_entry, gfm_server);
 	*gfm_serverp = gfm_server;
 end:
 	if (res)
@@ -733,9 +733,6 @@ gfm_client_connection_acquire0(const char *hostname, int port,
 	unsigned int sleep_max_interval = 512;	/* about 8.5 min */
 	struct timeval expiration_time;
 
-#ifdef __KERNEL__
-retry:
-#endif /* __KERNEL__ */
 	e = gfp_cached_connection_acquire(&staticp->server_cache,
 	    hostname, port, user, &cache_entry, &created);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -746,17 +743,6 @@ retry:
 	}
 	if (!created) {
 		*gfm_serverp = gfp_cached_connection_get_data(cache_entry);
-#ifdef __KERNEL__	/* workaround for race condition in MT */
-		if (!*gfm_serverp) {
-			gflog_warning(GFARM_MSG_1003880,
-				"gfm_client_connection_acquire:"
-				"gfm_client_connection_acquire NULL");
-			gfp_cached_or_uncached_connection_free(
-				&staticp->server_cache, cache_entry);
-			gfarm_nanosleep(10 * 1000 * 1000);
-			goto retry;
-		}
-#endif /* __KERNEL__ */
 		return (GFARM_ERR_NO_ERROR);
 	}
 	e = gfm_client_connection0(cache_entry, gfm_serverp, NULL, NULL,
@@ -775,14 +761,18 @@ retry:
 		if (sleep_interval < sleep_max_interval)
 			sleep_interval *= 2;
 	}
-	if (e != GFARM_ERR_NO_ERROR) {
+	if (e == GFARM_ERR_NO_ERROR) {
+		gfp_cached_connection_initialization_succeeded(
+		    &staticp->server_cache, cache_entry);
+	} else {
 		gflog_error(GFARM_MSG_1000059,
 		    "cannot connect to gfmd at %s %s:%d, give up: %s",
 			user ? user : "",
 		    hostname, port, gfarm_error_string(e));
-		gfp_cached_connection_purge_from_cache(&staticp->server_cache,
+		gfp_cached_connection_initialization_aborted(
+		    &staticp->server_cache, cache_entry);
+		gfp_cached_or_uncached_connection_free(&staticp->server_cache,
 		    cache_entry);
-		gfp_uncached_connection_dispose(cache_entry);
 	}
 	return (e);
 }
@@ -939,11 +929,14 @@ gfm_client_connect_with_seteuid(const char *hostname, int port,
 	e = gfm_client_connection0(cache_entry, gfm_serverp, source_ip, pwd,
 	    multicast ?
 	    gfm_client_connect_multiple : gfm_client_connect_single);
-	if (e != GFARM_ERR_NO_ERROR) {
+	if (e == GFARM_ERR_NO_ERROR) {
+		gfp_uncached_connection_initialization_succeeded(cache_entry);
+	} else {
 		gflog_debug(GFARM_MSG_1001103,
 			"gfm_client_connection0(%s)(%d) failed: %s",
 			hostname, port,
 			gfarm_error_string(e));
+		gfp_uncached_connection_initialization_aborted(cache_entry);
 		gfp_uncached_connection_dispose(cache_entry);
 	}
 	return (e);

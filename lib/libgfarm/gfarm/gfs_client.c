@@ -731,9 +731,6 @@ gfs_client_connection_acquire(const char *canonical_hostname, const char *user,
 
 	GFS_CLIENT_MUTEX_LOCK(staticp);
 
-#ifdef __KERNEL__
-retry:
-#endif
 	e = gfp_cached_connection_acquire(&staticp->server_cache,
 	    canonical_hostname,
 	    ntohs(((struct sockaddr_in *)peer_addr)->sin_port),
@@ -748,26 +745,19 @@ retry:
 	}
 	if (!created) {
 		*gfs_serverp = gfp_cached_connection_get_data(cache_entry);
-#ifdef __KERNEL__	/* workaround for race condition in MT */
-		if (!*gfs_serverp) {
-			gflog_warning(GFARM_MSG_1003895,
-				"gfs_client_connection_acquire:"
-				"%s not connected", canonical_hostname);
-			gfp_cached_or_uncached_connection_free(
-				&staticp->server_cache, cache_entry);
-			gfarm_nanosleep(10 * 1000 * 1000);
-			goto retry;
-		}
-#endif /* __KERNEL__ */
 		GFS_CLIENT_MUTEX_UNLOCK(staticp);
 		return (GFARM_ERR_NO_ERROR);
 	}
 	e = gfs_client_connection_alloc_and_auth(canonical_hostname, user,
 	    peer_addr, cache_entry, gfs_serverp, NULL, 0);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gfp_cached_connection_purge_from_cache(&staticp->server_cache,
-		    cache_entry);
-		gfp_uncached_connection_dispose(cache_entry);
+	if (e == GFARM_ERR_NO_ERROR) {
+		gfp_cached_connection_initialization_succeeded(
+		    &staticp->server_cache, cache_entry);
+	} else {
+		gfp_cached_connection_initialization_aborted(
+		    &staticp->server_cache, cache_entry);
+		gfp_cached_or_uncached_connection_free(
+		    &staticp->server_cache, cache_entry);
 		gflog_debug(GFARM_MSG_1001185,
 			"allocation or authentication failed: %s",
 			gfarm_error_string(e));
@@ -790,9 +780,6 @@ gfs_client_connection_acquire_by_host(struct gfm_connection *gfm_server,
 
 	GFS_CLIENT_MUTEX_LOCK(staticp);
 
-#ifdef __KERNEL__
-retry:
-#endif /* __KERNEL__ */
 	/*
 	 * lookup gfs_server_cache first,
 	 * to eliminate hostname -> IP-address conversion in a cached case.
@@ -809,17 +796,6 @@ retry:
 	}
 	if (!created) {
 		*gfs_serverp = gfp_cached_connection_get_data(cache_entry);
-#ifdef __KERNEL__	/* workaround for race condition in MT */
-		if (!*gfs_serverp) {
-			gflog_warning(GFARM_MSG_1003896,
-				"gfs_client_connection_acquire_by_host:"
-				"%s not connected", canonical_hostname);
-			gfp_cached_or_uncached_connection_free(
-				&staticp->server_cache, cache_entry);
-			gfarm_nanosleep(10 * 1000 * 1000);
-			goto retry;
-		}
-#endif /* __KERNEL__ */
 		GFS_CLIENT_MUTEX_UNLOCK(staticp);
 		return (GFARM_ERR_NO_ERROR);
 	}
@@ -830,10 +806,14 @@ retry:
 		    user, &peer_addr, cache_entry, gfs_serverp, source_ip,
 		    gfarm_filesystem_failover_count(
 			gfarm_filesystem_get_by_connection(gfm_server)));
-	if (e != GFARM_ERR_NO_ERROR) {
-		gfp_cached_connection_purge_from_cache(&staticp->server_cache,
-		    cache_entry);
-		gfp_uncached_connection_dispose(cache_entry);
+	if (e == GFARM_ERR_NO_ERROR) {
+		gfp_cached_connection_initialization_succeeded(
+		    &staticp->server_cache, cache_entry);
+	} else {
+		gfp_cached_connection_initialization_aborted(
+		    &staticp->server_cache, cache_entry);
+		gfp_cached_or_uncached_connection_free(
+		    &staticp->server_cache, cache_entry);
 		gflog_debug(GFARM_MSG_1001187,
 			"client authentication failed: %s",
 			gfarm_error_string(e));
@@ -1026,7 +1006,10 @@ gfs_client_connect(const char *canonical_hostname, int port, const char *user,
 	}
 	e = gfs_client_connection_alloc_and_auth(canonical_hostname, user,
 	    peer_addr, cache_entry, gfs_serverp, NULL, 0);
-	if (e != GFARM_ERR_NO_ERROR) {
+	if (e == GFARM_ERR_NO_ERROR) {
+		gfp_uncached_connection_initialization_succeeded(cache_entry);
+	} else {
+		gfp_uncached_connection_initialization_aborted(cache_entry);
 		gfp_uncached_connection_dispose(cache_entry);
 		gflog_debug(GFARM_MSG_1001189,
 			"client authentication failed: %s",
@@ -1243,6 +1226,7 @@ gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
 	    gfarm_filesystem_failover_count(fs));
 #endif /* __KERNEL__ */
 	if (e != GFARM_ERR_NO_ERROR) {
+		gfp_uncached_connection_initialization_aborted(cache_entry);
 		gfp_uncached_connection_dispose(cache_entry);
 		free(state);
 		gflog_debug(GFARM_MSG_1001193,
@@ -1328,7 +1312,12 @@ gfs_client_connect_result_multiplexed(
 	if (state->writable != NULL)
 		gfarm_event_free(state->writable);
 	free(state);
-	if (e != GFARM_ERR_NO_ERROR) {
+	if (e == GFARM_ERR_NO_ERROR) {
+		gfp_uncached_connection_initialization_succeeded(
+		    gfs_server->cache_entry);
+	} else {
+		gfp_uncached_connection_initialization_aborted(
+		    gfs_server->cache_entry);
 		gfs_client_connection_dispose(gfs_server);
 		gflog_debug(GFARM_MSG_1001195,
 			"error in result of multiplexed client connect: %s",

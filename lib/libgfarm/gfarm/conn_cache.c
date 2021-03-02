@@ -15,38 +15,54 @@
 #include "conn_hash.h"
 #include "conn_cache.h"
 
+/* XXX FIXME: Is recusive mutex really necessary ? */
+
 #ifndef __KERNEL__	/* GFSP_CONN_MUTEX :: conn_lock */
-#define	GFSP_CONN_MUTEX		pthread_mutex_t conn_lock;
+#define	GFSP_CONN_MUTEX_T	pthread_mutex_t
 #define	GFSP_CONN_INIT(conn)	do { \
 	gfarm_mutex_recursive_init(&(conn)->conn_lock, __func__, "conn"); \
-} while (/*CONSTCOND*/0);
+} while (/*CONSTCOND*/0)
 #define	GFSP_CONN_LOCK(conn)	do { \
 	gfarm_mutex_lock(&(conn)->conn_lock, __func__, "conn"); \
-} while (/*CONSTCOND*/0);
+} while (/*CONSTCOND*/0)
 #define	GFSP_CONN_UNLOCK(conn)	do { \
 	gfarm_mutex_unlock(&(conn)->conn_lock, __func__, "conn"); \
-} while (/*CONSTCOND*/0);
+} while (/*CONSTCOND*/0)
+#define	GFSP_CONN_DESTROY(conn)	do { \
+	gfarm_mutex_destroy(&(conn)->conn_lock, __func__, "conn"); \
+} while (/*CONSTCOND*/0)
 #else /* __KERNEL__ */
 /*
  * In kernel mode, processes of the same user use the same connection.
  * Lock the connection from sending-request to receiving-reply,
  * a compound request as well.
  */
-#define	GFSP_CONN_MUTEX		struct gfarm_rmutex conn_lock;
-#define	GFSP_CONN_INIT(conn)	gfarm_rmutex_init(&(conn)->conn_lock, "conn");
-#define	GFSP_CONN_LOCK(conn)	gfarm_rmutex_lock(&(conn)->conn_lock);
-#define	GFSP_CONN_UNLOCK(conn)	gfarm_rmutex_unlock(&(conn)->conn_lock);
+#define	GFSP_CONN_MUTEX_T	struct gfarm_rmutex
+#define	GFSP_CONN_INIT(conn)	gfarm_rmutex_init(&(conn)->conn_lock, "conn")
+#define	GFSP_CONN_LOCK(conn)	gfarm_rmutex_lock(&(conn)->conn_lock)
+#define	GFSP_CONN_UNLOCK(conn)	gfarm_rmutex_unlock(&(conn)->conn_lock)
+#define	GFSP_CONN_DESTROY(conn)	gfarm_rmutex_destroy(&(conn)->conn_lock)
 #endif /* __KERNEL__ */
 
 #define CONNECTION_CACHE_LIMIT	0x7fff /* XXX must be configurable */
 
 struct gfp_cached_connection {
 	/*
-	 * must be the first member of struct gfp_cached_connection.
+	 * lru_entry must be the first member of struct gfp_cached_connection.
 	 * Because gfp_cached_connection_gc_entry() does DOWNCAST
 	 * from "lru_entry" to "struct gfp_cached_connection".
 	 */
 	struct gfarm_lru_entry lru_entry;
+
+	enum gfp_conn_initialization_state {
+		GFP_CONN_INITIALIZING,
+		GFP_CONN_INITIALIZATION_ABORTED,
+		GFP_CONN_INITIALIZED } initialization_state;
+	/*
+	 * NOTE:
+	 * lru_entry and initialization_state are protecetd by cache->mutex
+	 * instead of struct gfp_cached_connection::conn_lock
+	 */
 
 	struct gfarm_hash_entry *hash_entry;
 
@@ -55,7 +71,9 @@ struct gfp_cached_connection {
 	void *connection_data;
 
 	void (*dispose_connection_data)(void *);
-	GFSP_CONN_MUTEX
+
+	GFSP_CONN_MUTEX_T conn_lock;
+	pthread_cond_t initialized;
 };
 
 void
@@ -115,6 +133,60 @@ gfp_cached_connection_set_dispose_data(struct gfp_cached_connection *connection,
 	connection->dispose_connection_data = dispose_connection_data;
 }
 
+void
+gfp_uncached_connection_initialization_succeeded(
+	struct gfp_cached_connection *connection)
+{
+	connection->initialization_state = GFP_CONN_INITIALIZED;
+}
+
+void
+gfp_cached_connection_initialization_succeeded(
+	struct gfp_conn_cache *cache,
+	struct gfp_cached_connection *connection)
+{
+	static const char diag[] =
+	    "gfp_cached_connection_initialization_succeeded";
+
+	gfarm_mutex_lock(&cache->mutex, diag, diag_what);
+
+	connection->initialization_state = GFP_CONN_INITIALIZED;
+	gfarm_cond_broadcast(&connection->initialized,
+	    "gfp_cached_connection_initialized", "initialized");
+
+	gfarm_mutex_unlock(&cache->mutex, diag, diag_what);
+}
+
+void
+gfp_uncached_connection_initialization_aborted(
+	struct gfp_cached_connection *connection)
+{
+	/*
+	 * setting initialization_state here is just for consistency,
+	 * because it's not strictly necessary to do so for now.
+	 */
+	connection->initialization_state = GFP_CONN_INITIALIZATION_ABORTED;
+}
+
+void
+gfp_cached_connection_initialization_aborted(
+	struct gfp_conn_cache *cache,
+	struct gfp_cached_connection *connection)
+{
+	static const char diag[] =
+	    "gfp_cached_connection_initialization_aborted";
+
+	gfp_cached_connection_purge_from_cache(cache, connection);
+
+	gfarm_mutex_lock(&cache->mutex, diag, diag_what);
+
+	connection->initialization_state = GFP_CONN_INITIALIZATION_ABORTED;
+	gfarm_cond_broadcast(&connection->initialized,
+	    "gfp_cached_connection_initialized", "initialized");
+
+	gfarm_mutex_unlock(&cache->mutex, diag, diag_what);
+}
+
 const char *
 gfp_cached_connection_hostname(struct gfp_cached_connection *connection)
 {
@@ -153,11 +225,13 @@ gfp_cached_connection_set_username(struct gfp_cached_connection *connection,
 	free(olduser);
 	return (GFARM_ERR_NO_ERROR);
 }
+
 void
 gfp_connection_lock(struct gfp_cached_connection *connection)
 {
 	GFSP_CONN_LOCK(connection);
 }
+
 void
 gfp_connection_unlock(struct gfp_cached_connection *connection)
 {
@@ -195,7 +269,7 @@ gfp_uncached_connection_new(const char *hostname, int port,
 	idp->username = strdup(username);
 	if (idp->hostname == NULL || idp->username == NULL) {
 		gflog_debug(GFARM_MSG_1002565,
-		    "gfp_cached_connection_acquire (%s)(%d)"
+		    "gfp_uncached_connection_new (%s)(%d)"
 		    " failed: %s",
 		    hostname, port,
 		    gfarm_error_string(GFARM_ERR_NO_MEMORY));
@@ -207,10 +281,13 @@ gfp_uncached_connection_new(const char *hostname, int port,
 	idp->port = port;
 
 	gfarm_lru_init_uncached_entry(&connection->lru_entry);
+	connection->initialization_state = GFP_CONN_INITIALIZING;
 
 	connection->connection_data = NULL;
 	connection->dispose_connection_data = NULL;
-	GFSP_CONN_INIT(connection)
+	GFSP_CONN_INIT(connection);
+	gfarm_cond_init(&connection->initialized,
+	    "gfp_uncached_connection_new", "initialized");
 	*connectionp = connection;
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -226,6 +303,11 @@ gfp_uncached_connection_dispose(struct gfp_cached_connection *connection)
 	if (connection->dispose_connection_data && connection->connection_data)
 		connection->dispose_connection_data(
 		    connection->connection_data);
+
+	gfarm_cond_destroy(&connection->initialized,
+	    "gfp_uncached_connection_dispose", diag_what);
+	GFSP_CONN_DESTROY(connection);
+	
 	free(connection);
 }
 
@@ -390,70 +472,116 @@ gfp_cached_connection_acquire(struct gfp_conn_cache *cache,
 	struct gfarm_hash_entry *entry;
 	struct gfp_cached_connection *connection;
 	struct gfp_conn_hash_id *idp, *kidp;
+	int created;
 	static const char diag[] = "gfp_cached_connection_acquire";
 
 	gfarm_mutex_lock(&cache->mutex, diag, diag_what);
-	e = gfp_conn_hash_enter_noalloc(&cache->hashtab, cache->table_size,
-	    sizeof(connection), canonical_hostname, port, user,
-	    &entry, createdp);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gfarm_mutex_unlock(&cache->mutex, diag, diag_what);
-		gflog_debug(GFARM_MSG_1001090,
-			"insertion to connection hash (%s)(%d) failed: %s",
-			canonical_hostname, port,
-			gfarm_error_string(e));
-		return (e);
-	}
-	if (!*createdp) {
-		connection = *(struct gfp_cached_connection **)
-		    gfarm_hash_entry_data(entry);
-		gfarm_lru_cache_addref_entry(&cache->lru_list,
-		    &connection->lru_entry);
-	} else {
-		GFARM_MALLOC(connection);
-		if (connection == NULL) {
-			gfp_conn_hash_purge(cache->hashtab, entry);
-			gfarm_mutex_unlock(&cache->mutex, diag, diag_what);
-			gflog_debug(GFARM_MSG_1001091,
-				"allocation of 'connection' failed: %s",
-				gfarm_error_string(GFARM_ERR_NO_MEMORY));
-			return (GFARM_ERR_NO_MEMORY);
-		}
 
-		idp = &connection->id;
-		idp->hostname = strdup(canonical_hostname);
-		idp->port = port;
-		idp->username = strdup(user);
-		if (idp->hostname == NULL || idp->username == NULL) {
-			e = GFARM_ERR_NO_MEMORY;
-			gflog_debug(GFARM_MSG_1002566,
-			    "gfp_cached_connection_acquire (%s)(%d)"
-			    " failed: %s",
-			    canonical_hostname, port,
-			    gfarm_error_string(e));
-			free(idp->hostname);
-			free(idp->username);
-			free(connection);
-			gfp_conn_hash_purge(cache->hashtab, entry);
+	for (;;) {
+		enum gfp_conn_initialization_state state;
+
+		e = gfp_conn_hash_enter_noalloc(
+		    &cache->hashtab, cache->table_size,
+		    sizeof(connection), canonical_hostname, port, user,
+		    &entry, &created);
+		if (e != GFARM_ERR_NO_ERROR) {
 			gfarm_mutex_unlock(&cache->mutex, diag, diag_what);
+			gflog_debug(GFARM_MSG_1001090,
+			    "insertion to connection hash (%s)(%d) failed: %s",
+			    canonical_hostname, port, gfarm_error_string(e));
 			return (e);
 		}
-		kidp = (struct gfp_conn_hash_id *)gfarm_hash_entry_key(entry);
-		kidp->hostname = idp->hostname;
-		kidp->username = idp->username;
+		if (created)
+			break;
 
-		gfarm_lru_cache_add_entry(&cache->lru_list,
+		connection = *(struct gfp_cached_connection **)
+		    gfarm_hash_entry_data(entry);
+		assert(connection != NULL);
+
+		/*
+		 * calling gfarm_cond_wait() unlocks cache->mutex.
+		 * Thus, we must increment the reference count before the call.
+		 */
+		gfarm_lru_cache_addref_entry(&cache->lru_list,
 		    &connection->lru_entry);
 
-		*(struct gfp_cached_connection **)gfarm_hash_entry_data(entry)
-		    = connection;
-		connection->hash_entry = entry;
-		connection->connection_data = NULL;
-		connection->dispose_connection_data = NULL;
-		GFSP_CONN_INIT(connection)
+		while (connection->initialization_state ==
+		       GFP_CONN_INITIALIZING) {
+			gfarm_cond_wait(&connection->initialized,
+			    &connection->conn_lock,
+			    diag, "initialized");
+		}
+		state = connection->initialization_state;
+		gfarm_mutex_unlock(&cache->mutex, diag, diag_what);
+
+		if (state == GFP_CONN_INITIALIZED) {
+			/* addref_entry() was already called above */
+			*connectionp = connection;
+			*createdp = 0;
+			return (GFARM_ERR_NO_ERROR);
+		}
+
+		assert(state == GFP_CONN_INITIALIZATION_ABORTED);
+
+		/*
+		 * gfp_cached_connection_purge_from_cache() must be called
+		 * when aborted
+		 */
+		assert(!GFP_IS_CACHED_CONNECTION(connection));
+
+		/* decrement the reference count, and free if possible */
+		gfp_cached_or_uncached_connection_free(cache, connection);
+
+		gfarm_mutex_lock(&cache->mutex, diag, diag_what);
 	}
+
+	GFARM_MALLOC(connection);
+	if (connection == NULL) {
+		gfp_conn_hash_purge(cache->hashtab, entry);
+		gfarm_mutex_unlock(&cache->mutex, diag, diag_what);
+		gflog_debug(GFARM_MSG_1001091,
+			"allocation of 'connection' failed: %s",
+			gfarm_error_string(GFARM_ERR_NO_MEMORY));
+		return (GFARM_ERR_NO_MEMORY);
+	}
+
+	idp = &connection->id;
+	idp->hostname = strdup(canonical_hostname);
+	idp->port = port;
+	idp->username = strdup(user);
+	if (idp->hostname == NULL || idp->username == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		gflog_debug(GFARM_MSG_1002566,
+		    "gfp_cached_connection_acquire (%s)(%d)"
+		    " failed: %s",
+		    canonical_hostname, port,
+		    gfarm_error_string(e));
+		free(idp->hostname);
+		free(idp->username);
+		free(connection);
+		gfp_conn_hash_purge(cache->hashtab, entry);
+		gfarm_mutex_unlock(&cache->mutex, diag, diag_what);
+		return (e);
+	}
+	kidp = (struct gfp_conn_hash_id *)gfarm_hash_entry_key(entry);
+	kidp->hostname = idp->hostname;
+	kidp->username = idp->username;
+
+	gfarm_lru_cache_add_entry(&cache->lru_list,
+	    &connection->lru_entry);
+	connection->initialization_state = GFP_CONN_INITIALIZING;
+
+	*(struct gfp_cached_connection **)gfarm_hash_entry_data(entry)
+	    = connection;
+	connection->hash_entry = entry;
+	connection->connection_data = NULL;
+	connection->dispose_connection_data = NULL;
+	GFSP_CONN_INIT(connection);
+	gfarm_cond_init(&connection->initialized, diag, "initialized");
+
 	gfarm_mutex_unlock(&cache->mutex, diag, diag_what);
 	*connectionp = connection;
+	*createdp = 1;
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -462,20 +590,24 @@ gfp_cached_or_uncached_connection_free(struct gfp_conn_cache *cache,
 	struct gfp_cached_connection *connection)
 {
 	int removable;
+	enum gfp_conn_initialization_state state;
 	static const char diag[] = "gfp_cached_or_uncached_connection_free";
 
 	gfarm_mutex_lock(&cache->mutex, diag, diag_what);
 	removable = gfarm_lru_cache_delref_entry(&cache->lru_list,
 	    &connection->lru_entry);
+	state = connection->initialization_state;
 	gfarm_mutex_unlock(&cache->mutex, diag, diag_what);
 
 	if (!removable)
 		return; /* shouln't be disposed */
 
-	if (!GFP_IS_CACHED_CONNECTION(connection)) /* already purged */
-		(*cache->dispose_connection)(connection->connection_data);
-	else
+	if (GFP_IS_CACHED_CONNECTION(connection))
 		gfp_cached_connection_gc_internal(cache, *cache->num_cachep);
+	else if (state == GFP_CONN_INITIALIZED)
+		(*cache->dispose_connection)(connection->connection_data);
+	else /* GFP_CONN_INITIALIZING or GFP_CONN_INITIALIZATION_ABORTED */
+		gfp_uncached_connection_dispose(connection);
 }
 
 void
