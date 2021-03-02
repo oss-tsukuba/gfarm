@@ -54,6 +54,7 @@ if [ $GFDOCKER_GFARMS3_UPDATE_ONLY -eq 1 ]; then
 	exit 0
 fi
 
+# XXX TODO define in Dockerfile
 ### install prerequisites
 ${SUDO} yum update -y
 ${SUDO} yum install -y \
@@ -191,8 +192,13 @@ ${SUDO} apachectl start
 ## start gunicorn service
 ${SUDO} systemctl enable --now gunicorn.service
 
+# XXX TODO define in Dockerfile
 ## install awscli
 sudo yum install -y awscli
+
+# XXX TODO define in Dockerfile
+## install s3cmd
+sudo yum install -y s3cmd
 
 ## install goofys
 ### use source package
@@ -206,9 +212,24 @@ sudo yum install -y awscli
 ### use binary
 GOOFYS_BIN_URL=https://github.com/kahing/goofys/releases/latest/download/goofys
 GOOFYS_BIN=/usr/local/bin/goofys
-${SUDO} yum install -y wget
-${SUDO} wget -O ${GOOFYS_BIN} ${GOOFYS_BIN_URL}
-${SUDO} chmod +x ${GOOFYS_BIN}
+if [ ! -f ${GOOFYS_BIN} ]; then
+	${SUDO} yum install -y wget
+	${SUDO} wget -O ${GOOFYS_BIN} ${GOOFYS_BIN_URL}
+	${SUDO} chmod +x ${GOOFYS_BIN}
+fi
+
+## install s3fs
+S3FS_URL=https://github.com/s3fs-fuse/s3fs-fuse.git
+
+# XXX TODO define in Dockerfile
+sudo yum install -y automake gcc-c++ fuse-devel openssl-devel libcurl-devel libxml2-devel
+
+[ -d $WORK/s3fs-fuse ] || (cd $WORK && git clone ${S3FS_URL})
+(cd $WORK/s3fs-fuse && \
+./autogen.sh && \
+./configure --prefix=/usr && \
+make -j && \
+${SUDO} make install)
 
 ## cleanup
 #(cd $WORK/gfarm-s3-minio-web && ${SUDO} make clean)
