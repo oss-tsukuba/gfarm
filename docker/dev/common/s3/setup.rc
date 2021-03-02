@@ -41,10 +41,11 @@ ${SUDO} mkdir -p ${MINIO_BUILDDIR}/minio/work/build
 ${SUDO} chown -R user1 ${MINIO_BUILDDIR}
 
 ## obtain or update source code
-rsync -a $GFARM_S3_MINIO_WEB_SRC/ $WORK/gfarm-s3-minio-web/
+${SUDO} rsync -rlptD $GFARM_S3_MINIO_WEB_SRC/ $WORK/gfarm-s3-minio-web/
 if [ -e $GFARM_S3_MINIO_SRC ]; then
-	rsync -a $GFARM_S3_MINIO_SRC/ $MINIO_BUILDDIR/minio/work/build/gfarm-s3-minio/
+	${SUDO} rsync -rlptD $GFARM_S3_MINIO_SRC/ $MINIO_BUILDDIR/minio/work/build/gfarm-s3-minio/
 fi
+${SUDO} chown -R user1 $WORK/gfarm-s3-minio-web/
 
 ## update only
 if [ $GFDOCKER_GFARMS3_UPDATE_ONLY -eq 1 ]; then
