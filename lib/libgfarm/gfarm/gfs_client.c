@@ -706,11 +706,13 @@ gfs_client_terminate(void)
 	gfp_cached_connection_terminate(&staticp->server_cache);
 	GFS_CLIENT_MUTEX_UNLOCK(staticp);
 }
+
 void
 gfs_client_connection_unlock(struct gfs_connection *gfs_server)
 {
 	gfp_connection_unlock(gfs_server->cache_entry);
 }
+
 void
 gfs_client_connection_lock(struct gfs_connection *gfs_server)
 {
@@ -1555,6 +1557,19 @@ gfs_client_vrpc(struct gfs_connection *gfs_server, int just, int do_timeout,
 	return (GFARM_ERR_NO_ERROR);
 }
 
+static gfarm_error_t
+gfs_client_rpc_wo_lock(struct gfs_connection *gfs_server, int just,
+	int command, const char *format, ...)
+{
+	gfarm_error_t e;
+	va_list ap;
+
+	va_start(ap, format);
+	e = gfs_client_vrpc(gfs_server, just, 1, command, format, &ap);
+	va_end(ap);
+	return (e);
+}
+
 gfarm_error_t
 gfs_client_rpc(struct gfs_connection *gfs_server, int just,
 	int command, const char *format, ...)
@@ -1592,8 +1607,8 @@ gfs_client_process_set(struct gfs_connection *gfs_server,
 	gfarm_error_t e;
 
 	gfs_client_connection_lock(gfs_server);
-	e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_PROCESS_SET, "ibl/",
-	    type, size, key, pid);
+	e = gfs_client_rpc_wo_lock(gfs_server, 0,
+	    GFS_PROTO_PROCESS_SET, "ibl/", type, size, key, pid);
 	if (e == GFARM_ERR_NO_ERROR)
 		gfs_server->pid = pid;
 	else
@@ -1611,7 +1626,7 @@ gfs_client_process_reset(struct gfs_connection *gfs_server,
 	gfarm_error_t e;
 
 	gfs_client_connection_lock(gfs_server);
-	e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_PROCESS_RESET,
+	e = gfs_client_rpc_wo_lock(gfs_server, 0, GFS_PROTO_PROCESS_RESET,
 		"ibli/", type, size, key, pid, gfs_server->failover_count);
 	if (e == GFARM_ERR_NO_ERROR)
 		gfs_server->pid = pid;
@@ -1631,7 +1646,7 @@ gfs_client_open(struct gfs_connection *gfs_server, gfarm_int32_t fd)
 	gfarm_error_t e;
 
 	gfs_client_connection_lock(gfs_server);
-	e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_OPEN, "i/", fd);
+	e = gfs_client_rpc_wo_lock(gfs_server, 0, GFS_PROTO_OPEN, "i/", fd);
 	if (e == GFARM_ERR_NO_ERROR)
 		++gfs_server->opened;
 	else
@@ -1659,7 +1674,8 @@ gfs_client_open_local(struct gfs_connection *gfs_server, gfarm_int32_t fd,
 
 	/* we have to set `just' flag here */
 	gfs_client_connection_lock(gfs_server);
-	e = gfs_client_rpc(gfs_server, 1, GFS_PROTO_OPEN_LOCAL, "i/", fd);
+	e = gfs_client_rpc_wo_lock(
+	    gfs_server, 1, GFS_PROTO_OPEN_LOCAL, "i/", fd);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfs_client_connection_unlock(gfs_server);
 		gflog_debug(GFARM_MSG_1001205,
@@ -1708,7 +1724,7 @@ gfs_client_close(struct gfs_connection *gfs_server, gfarm_int32_t fd)
 
 	/* locked */
 	gfs_client_connection_lock(gfs_server);
-	e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_CLOSE, "i/", fd);
+	e = gfs_client_rpc_wo_lock(gfs_server, 0, GFS_PROTO_CLOSE, "i/", fd);
 	if (e == GFARM_ERR_NO_ERROR)
 		--gfs_server->opened;
 	else
@@ -1727,7 +1743,7 @@ gfs_client_close_write(struct gfs_connection *gfs_server,
 
 	/* locked */
 	gfs_client_connection_lock(gfs_server);
-	e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_CLOSE_WRITE, "ii/",
+	e = gfs_client_rpc_wo_lock(gfs_server, 0, GFS_PROTO_CLOSE_WRITE, "ii/",
 	    fd, flags);
 	if (e == GFARM_ERR_NO_ERROR)
 		--gfs_server->opened;

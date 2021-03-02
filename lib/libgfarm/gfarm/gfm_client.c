@@ -1006,11 +1006,13 @@ gfm_client_terminate(void)
 {
 	gfp_cached_connection_terminate(&staticp->server_cache);
 }
+
 void
 gfm_client_connection_unlock(struct gfm_connection *gfm_server)
 {
 	gfp_connection_unlock(gfm_server->cache_entry);
 }
+
 void
 gfm_client_connection_lock(struct gfm_connection *gfm_server)
 {
@@ -1187,6 +1189,20 @@ gfm_client_vrpc(struct gfm_connection *gfm_server, int just, int do_timeout,
 	return (GFARM_ERR_NO_ERROR);
 }
 
+static gfarm_error_t
+gfm_client_rpc_wo_lock(struct gfm_connection *gfm_server, int just,
+	int command, const char *format, ...)
+{
+	gfarm_error_t e;
+	va_list ap;
+
+	va_start(ap, format);
+	e = gfm_client_vrpc(gfm_server, just, 1, command, format, &ap);
+	va_end(ap);
+
+	return (e);
+}
+
 gfarm_error_t
 gfm_client_rpc(struct gfm_connection *gfm_server, int just,
 	int command, const char *format, ...)
@@ -1304,7 +1320,8 @@ gfm_client_host_info_get_all(struct gfm_connection *gfm_server,
 	static const char diag[] = "gfm_client_host_info_get_all";
 
 	gfm_client_connection_lock(gfm_server);
-	if ((e = gfm_client_rpc(gfm_server, 0, GFM_PROTO_HOST_INFO_GET_ALL,
+	if ((e = gfm_client_rpc_wo_lock(
+	    gfm_server, 0, GFM_PROTO_HOST_INFO_GET_ALL,
 	    "/i", &nhosts)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001112,
 			"gfm_client_rpc() failed: %s",
@@ -1326,7 +1343,7 @@ gfm_client_host_info_get_by_architecture(struct gfm_connection *gfm_server,
 	static const char diag[] = "gfm_client_host_info_get_by_architecture";
 
 	gfm_client_connection_lock(gfm_server);
-	if ((e = gfm_client_rpc(gfm_server, 0,
+	if ((e = gfm_client_rpc_wo_lock(gfm_server, 0,
 	    GFM_PROTO_HOST_INFO_GET_BY_ARCHITECTURE, "s/i", architecture,
 	    &nhosts)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001115,
@@ -4499,7 +4516,8 @@ gfm_client_process_set(struct gfm_connection *gfm_server,
 	}
 
 	gfm_client_connection_lock(gfm_server);
-	e = gfm_client_rpc(gfm_server, 0, GFM_PROTO_PROCESS_SET, "ibl/",
+	e = gfm_client_rpc_wo_lock(
+	    gfm_server, 0, GFM_PROTO_PROCESS_SET, "ibl/",
 	    keytype, sharedkey_size, sharedkey, pid);
 	if (e == GFARM_ERR_NO_ERROR) {
 		memcpy(gfm_server->pid_key, sharedkey, sharedkey_size);
@@ -4539,7 +4557,8 @@ gfm_client_process_fd_info(struct gfm_connection *gfm_server,
 	struct gfarm_process_fd_info *fd_info, fdi;
 
 	gfm_client_connection_lock(gfm_server);
-	if ((e = gfm_client_rpc(gfm_server, 0, GFM_PROTO_PROCESS_FD_INFO,
+	if ((e = gfm_client_rpc_wo_lock(
+	    gfm_server, 0, GFM_PROTO_PROCESS_FD_INFO,
 	    "sssl/i", gfsd_domain, user_host_domain, user, flags, &nfds))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1004508,
