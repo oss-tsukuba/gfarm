@@ -507,8 +507,8 @@ gfp_cached_connection_acquire(struct gfp_conn_cache *cache,
 
 		while (connection->initialization_state ==
 		       GFP_CONN_INITIALIZING) {
-			gfarm_cond_wait(&cache->mutex,
-			    &connection->conn_lock,
+			gfarm_cond_wait(&connection->initialized,
+			    &cache->mutex,
 			    diag, "initialized");
 		}
 		state = connection->initialization_state;
