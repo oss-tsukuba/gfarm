@@ -147,7 +147,6 @@ static const char *errcode_string[GFARM_ERR_NUMBER] = {
 	"invalid credential",
 	"no filesystem node",
 	"directory quota exists",
-	"too slow connection is dropped",
 };
 
 static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {
