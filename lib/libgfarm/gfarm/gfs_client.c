@@ -2573,8 +2573,10 @@ gfs_client_sendfile(struct gfs_connection *gfs_server,
 	gfarm_int32_t src_err = GFARM_ERR_NO_ERROR;
 	gfarm_off_t written = 0;
 
-	if ((e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_BULKWRITE, "il/",
-	    remote_w_fd, w_off)) != GFARM_ERR_NO_ERROR) {
+	gfs_client_connection_lock(gfs_server);
+	if ((e = gfs_client_rpc_wo_lock(gfs_server, 0,
+	    GFS_PROTO_BULKWRITE, "il/", remote_w_fd, w_off))
+	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1003908,
 		    "gfs_client_sendfile: GFS_PROTO_BULKWRITE(%d, %lld): %s",
 		    remote_w_fd, (long long)w_off, gfarm_error_string(e));
@@ -2592,6 +2594,7 @@ gfs_client_sendfile(struct gfs_connection *gfs_server,
 				e = e2;
 		}
 	}
+	gfs_client_connection_unlock(gfs_server);
 	if (sentp != NULL)
 		*sentp = written;
 	return (e != GFARM_ERR_NO_ERROR ? e : src_err);
@@ -2610,8 +2613,10 @@ gfs_client_recvfile(struct gfs_connection *gfs_server,
 	gfarm_off_t written = 0;
 	int eof;
 
-	if ((e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_BULKREAD, "ill/",
-	    remote_r_fd, len, r_off)) != GFARM_ERR_NO_ERROR) {
+	gfs_client_connection_lock(gfs_server);
+	if ((e = gfs_client_rpc_wo_lock(gfs_server, 0,
+	    GFS_PROTO_BULKREAD, "ill/", remote_r_fd, len, r_off))
+	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1003909,
 		    "gfs_client_recvfile: "
 		    "GFS_PROTO_BULKREAD(%d, %lld, %lld): %s",
@@ -2641,6 +2646,7 @@ gfs_client_recvfile(struct gfs_connection *gfs_server,
 			e = e2 != GFARM_ERR_NO_ERROR ? e2 :
 			    src_err != GFARM_ERR_NO_ERROR ? src_err : dst_err;
 	}
+	gfs_client_connection_unlock(gfs_server);
 	if (recvp != NULL)
 		*recvp = written;
 	return (e);
@@ -2664,6 +2670,7 @@ gfs_client_replica_recv_common(struct gfs_connection *gfs_server,
 {
 	gfarm_error_t e, e_rpc;
 
+	gfs_client_connection_lock(gfs_server);
 
 	if (cksum_protocol) {
 		e = gfs_client_rpc_request(gfs_server,
@@ -2683,6 +2690,7 @@ gfs_client_replica_recv_common(struct gfs_connection *gfs_server,
 		gflog_debug(GFARM_MSG_1001218,
 			"gfs_request_client_rpc() failed: %s",
 			gfarm_error_string(e));
+		gfs_client_connection_unlock(gfs_server);
 		return (e);
 	}
 
@@ -2704,6 +2712,8 @@ gfs_client_replica_recv_common(struct gfs_connection *gfs_server,
 		if (e == GFARM_ERR_NO_ERROR)
 			e = e_rpc;
 	}
+	gfs_client_connection_unlock(gfs_server);
+
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001219,
 		    "receiving client replica failed: %s",
