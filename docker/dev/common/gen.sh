@@ -64,6 +64,9 @@ EOF
   done
 }
 
+COMPOSE_YAML="${TOP}/docker/dev/docker-compose.yml"
+
 gen_gfservicerc > "${TOP}/docker/dev/common/rc.gfservice"
 "${TOP}/docker/dev/common/gen_docker_compose_conf.py" \
-  > "${TOP}/docker/dev/docker-compose.yml"
+  > "${COMPOSE_YAML}.tmp"
+mv "${COMPOSE_YAML}.tmp" "${COMPOSE_YAML}"
