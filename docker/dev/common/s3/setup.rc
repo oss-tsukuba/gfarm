@@ -211,8 +211,21 @@ ${SUDO} apachectl start
 ${SUDO} systemctl enable --now gunicorn.service
 
 # XXX TODO define in Dockerfile
-## install awscli
-sudo yum install -y awscli
+## install AWS CLI v1
+#sudo yum install -y awscli
+
+# install AWS CLI v2
+AWSCLI_URL="https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
+AWSCLI_ZIP=${WORK}/awscliv2.zip
+
+if [ ! -f ${AWSCLI_ZIP} ]; then
+    curl ${AWSCLI_URL} -o ${AWSCLI_ZIP}
+    cd ${WORK}
+    # overwrite existing files
+    unzip -o ${AWSCLI_ZIP}
+    ${SUDO} ./aws/install --update
+fi
+/usr/local/bin/aws --version
 
 # XXX TODO define in Dockerfile
 ## install s3cmd
