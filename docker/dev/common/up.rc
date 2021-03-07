@@ -10,7 +10,7 @@ set -eux
 : $GFDOCKER_HOSTNAME_PREFIX_GFSD
 : $GFDOCKER_HOSTNAME_PREFIX_CLIENT
 
-SUDO_USER2="sudo sudo -u user2"
+SUDO_USER2="sudo sudo -i -u user2"
 
 gfmds=
 gfsds=
