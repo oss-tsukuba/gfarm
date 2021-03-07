@@ -162,14 +162,17 @@ down:
 	$(down)
 
 define prune
-$(DOCKER) system prune -f --volumes
+$(DOCKER) system prune -f
 endef
 
 prune:
 	$(prune)
 
 REMOVE_ALL_IMAGES:
-	$(DOCKER) system prune -a -f --volumes
+	$(DOCKER) system prune -a
+
+REMOVE_ALL_VOLUMES:
+	$(DOCKER) system prune --volumes
 
 define gen
 TOP='$(TOP)' \
