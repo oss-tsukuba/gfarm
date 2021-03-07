@@ -37,18 +37,41 @@ for i in $(seq 1 $GFDOCKER_NUM_USERS); do
   users="${users} ${GFDOCKER_USERNAME_PREFIX}${i}"
 done
 
+# keep and distribute shared keys
+
+## create directories to keep keys
+for user in $users; do
+  sudo mkdir -p /mnt/${user}
+  sudo chown ${user} /mnt/${user}
+done
+
 GFDOCKER_COPY_SHARED_KEY=/usr/local/bin/gfdocker_copy_shared_key
 
+## generate script
 cat << EOS | sudo dd of="${GFDOCKER_COPY_SHARED_KEY}"
 #!/bin/sh
 
+set -eux
+
 ALLHOSTS="${allhosts}"
 
-gfkey -f -p 315360000
+BACKUP_KEY_DIR=/mnt/\$(whoami)
+BACKUP_KEY=\${BACKUP_KEY_DIR}/gfarm_shared_key
+KEY=~/.gfarm_shared_key
+PERIOD=315360000
+
+if [ -f \${BACKUP_KEY} ]; then
+  cp \${BACKUP_KEY} \${KEY}
+fi
+if ! gfkey -e; then
+  gfkey -f -p \${PERIOD}
+fi
+cp \${KEY} \${BACKUP_KEY}
+chmod 600 \${BACKUP_KEY}
 
 for h in \${ALLHOSTS}; do
    [ \${h} = "${GFDOCKER_HOSTNAME_PREFIX_CLIENT}1" ] && continue
-   scp ~/.gfarm_shared_key \${h}:
+   scp \${KEY} \${h}:
 done
 EOS
 
@@ -142,6 +165,10 @@ for host in $clients; do
 done
 wait
 
+# for user1
+${GFDOCKER_COPY_SHARED_KEY}
+
+# for user2
 gfuser -c user2 user2 / /O=Grid/OU=GlobusTest/OU=GlobusSimpleCA/CN=user2
 ${SUDO_USER2} ${GFDOCKER_COPY_SHARED_KEY}
 
