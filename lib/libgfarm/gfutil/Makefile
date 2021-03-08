@@ -22,6 +22,7 @@ SRCS =	alloc.c \
 	limit.c \
 	logutil.c \
 	lru_cache.c \
+	msgdigest.c \
 	nanosec.c \
 	privlock.c \
 	random.c \
