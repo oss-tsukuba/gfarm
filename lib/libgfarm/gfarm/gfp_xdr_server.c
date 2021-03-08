@@ -142,7 +142,8 @@ gfp_xdr_send_async_request_header(struct gfp_xdr *server,
 
 	xid_and_type = (xid | XID_TYPE_REQUEST);
 #define ASYNC_REQUEST_HEADER_SIZE	(4+4)	/* size of "ii" */
-	e = gfp_xdr_send(server, "ii", xid_and_type, (gfarm_int32_t)size);
+	e = gfp_xdr_send_notimeout(server, "ii",
+	    xid_and_type, (gfarm_int32_t)size);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfp_xdr_send_async_request_error(async_server, xid, diag);
 		return (e);
@@ -151,9 +152,9 @@ gfp_xdr_send_async_request_header(struct gfp_xdr *server,
 	return (GFARM_ERR_NO_ERROR);
 }
 
-/* this does gfp_xdr_flush() too, for freeing xid in an error case */
+/* this does gfp_xdr_flush_notimeout() too, for freeing xid in an error case */
 static gfarm_error_t
-gfp_xdr_vsend_async_request_internal(struct gfp_xdr *server,
+gfp_xdr_vsend_async_request_notimeout_internal(struct gfp_xdr *server,
 	gfp_xdr_async_peer_t async_server,
 	result_callback_t result_callback,
 	disconnect_callback_t disconnect_callback,
@@ -186,7 +187,7 @@ gfp_xdr_vsend_async_request_internal(struct gfp_xdr *server,
 	    result_callback, disconnect_callback, closure, &xid);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	e = gfp_xdr_vrpc_request(server, command, &format, app);
+	e = gfp_xdr_vrpc_request_notimeout(server, command, &format, app);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfp_xdr_send_async_request_error(async_server, xid,
 		    "gfp_xdr_vrpc_request");
@@ -196,7 +197,7 @@ gfp_xdr_vsend_async_request_internal(struct gfp_xdr *server,
 		gflog_fatal(GFARM_MSG_1001016, "gfp_xdr_vsend_async_request: "
 		    "invalid format character: %c(%x)", *format, *format);
 
-	e = gfp_xdr_flush(server);
+	e = gfp_xdr_flush_notimeout(server);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfp_xdr_send_async_request_error(async_server, xid,
 		    "gfp_xdr_flush");
@@ -207,27 +208,27 @@ gfp_xdr_vsend_async_request_internal(struct gfp_xdr *server,
 }
 
 gfarm_error_t
-gfp_xdr_vsend_async_nonblocking_request(struct gfp_xdr *server,
+gfp_xdr_vsend_async_nonblocking_request_notimeout(struct gfp_xdr *server,
 	gfp_xdr_async_peer_t async_server,
 	result_callback_t result_callback,
 	disconnect_callback_t disconnect_callback,
 	void *closure,
 	gfarm_int32_t command, const char *format, va_list *app)
 {
-	return (gfp_xdr_vsend_async_request_internal(server,
+	return (gfp_xdr_vsend_async_request_notimeout_internal(server,
 	    async_server, result_callback, disconnect_callback, closure, 1,
 	    command, format, app));
 }
 
 gfarm_error_t
-gfp_xdr_vsend_async_request(struct gfp_xdr *server,
+gfp_xdr_vsend_async_request_notimeout(struct gfp_xdr *server,
 	gfp_xdr_async_peer_t async_server,
 	result_callback_t result_callback,
 	disconnect_callback_t disconnect_callback,
 	void *closure,
 	gfarm_int32_t command, const char *format, va_list *app)
 {
-	return (gfp_xdr_vsend_async_request_internal(server,
+	return (gfp_xdr_vsend_async_request_notimeout_internal(server,
 	    async_server, result_callback, disconnect_callback, closure, 0,
 	    command, format, app));
 }
@@ -262,11 +263,11 @@ gfp_xdr_recv_async_header(struct gfp_xdr *conn, int just,
  */
 
 static gfarm_error_t
-gfp_xdr_send_async_result_header(struct gfp_xdr *server,
+gfp_xdr_send_async_result_header_notimeout(struct gfp_xdr *server,
 	gfarm_int32_t xid, size_t size)
 {
 	xid = (xid | XID_TYPE_RESULT);
-	return (gfp_xdr_send(server, "ii", xid, (gfarm_int32_t)size));
+	return (gfp_xdr_send_notimeout(server, "ii", xid, (gfarm_int32_t)size));
 }
 
 /*
@@ -327,18 +328,19 @@ gfp_xdr_vrecv_request_parameters(struct gfp_xdr *client, int just,
 	return (GFARM_ERR_NO_ERROR);
 }
 
-/* the caller should call gfp_xdr_flush() after this function */
+/* the caller should call gfp_xdr_flush{,_notimeout}() after this function */
 gfarm_error_t
-gfp_xdr_vsend_result(struct gfp_xdr *client,
+gfp_xdr_vsend_result(struct gfp_xdr *client, int do_timeout,
 	gfarm_int32_t ecode, const char *format, va_list *app)
 {
 	gfarm_error_t e;
 
-	e = gfp_xdr_send(client, "i", ecode);
+	e = (*(do_timeout ? gfp_xdr_send : gfp_xdr_send_notimeout))(
+	    client, "i", ecode);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (ecode == GFARM_ERR_NO_ERROR) {
-		e = gfp_xdr_vsend(client, &format, app);
+		e = gfp_xdr_vsend(client, do_timeout, &format, app);
 		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
 		if (*format != '\0') {
@@ -353,7 +355,7 @@ gfp_xdr_vsend_result(struct gfp_xdr *client,
 
 /* used by asynchronous protocol */
 gfarm_error_t
-gfp_xdr_vsend_async_result(struct gfp_xdr *client, gfp_xdr_xid_t xid,
+gfp_xdr_vsend_async_result_notimeout(struct gfp_xdr *client, gfp_xdr_xid_t xid,
 	gfarm_int32_t ecode, const char *format, va_list *app)
 {
 	gfarm_error_t e;
@@ -373,8 +375,9 @@ gfp_xdr_vsend_async_result(struct gfp_xdr *client, gfp_xdr_xid_t xid,
 		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
 	}
-	e = gfp_xdr_send_async_result_header(client, xid, size);
+	e = gfp_xdr_send_async_result_header_notimeout(client, xid, size);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	return (gfp_xdr_vsend_result(client, ecode, format, app));
+	return (gfp_xdr_vsend_result(client, 0, ecode, format, app));
+		/* notimeout */
 }

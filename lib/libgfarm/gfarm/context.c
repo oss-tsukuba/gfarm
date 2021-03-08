@@ -156,6 +156,7 @@ gfarm_context_init(void)
 	ctxp->client_parallel_copy = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->client_parallel_max = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->network_receive_timeout = GFARM_CONFIG_MISC_DEFAULT;
+	ctxp->network_send_timeout = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->file_trace = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->ib_rdma = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->rdma_min_size = GFARM_CONFIG_MISC_DEFAULT;

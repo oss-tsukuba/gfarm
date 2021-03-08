@@ -85,12 +85,13 @@ void gfm_server_channel_already_disconnected_message(struct abstract_host *,
 	const char *, const char *, const char *);
 gfarm_error_t gfm_server_channel_vget_request(struct peer *, size_t,
 	const char *, const char *, va_list *);
-gfarm_error_t gfm_server_channel_vput_reply(struct abstract_host *,
+gfarm_error_t gfm_server_channel_vput_reply_notimeout(struct abstract_host *,
 	struct peer *, gfp_xdr_xid_t, const char *, gfarm_error_t,
 	char *, va_list *);
 
 #define GFM_CLIENT_CHANNEL_TIMEOUT_INFINITY	-1
-gfarm_error_t gfm_client_channel_vsend_request(struct abstract_host *,
+gfarm_error_t gfm_client_channel_vsend_request_notimeout(
+	struct abstract_host *,
 	struct peer *, const char *, result_callback_t, disconnect_callback_t,
 	void *,
 #ifdef COMPAT_GFARM_2_3

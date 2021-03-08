@@ -77,7 +77,7 @@ gfm_server_put_reply(struct peer *peer, const char *diag,
 		return (e);
 	}
 	if (ecode == GFARM_ERR_NO_ERROR) {
-		e = gfp_xdr_vsend(client, &format, &ap);
+		e = gfp_xdr_vsend(client, 1, &format, &ap); /* do timeout */
 		if (e != GFARM_ERR_NO_ERROR) {
 			va_end(ap);
 			gflog_notice(GFARM_MSG_1000231,

@@ -41,11 +41,9 @@ gfarm_iobuffer_blocking_read_timeout_fd_op(struct gfarm_iobuffer *b,
 	void *cookie, int fd, void *data, int length)
 {
 	ssize_t rv;
-	int gai_error, avail, timeout = gfarm_ctxp->network_receive_timeout;
+	int avail, timeout = gfarm_ctxp->network_receive_timeout;
 	const char *hostaddr_prefix, *hostaddr;
 	char hostbuf[NI_MAXHOST];
-	struct sockaddr_storage sa;
-	socklen_t sa_len = sizeof(sa);
 
 	for (;;) {
 #ifdef HAVE_POLL
@@ -67,21 +65,9 @@ gfarm_iobuffer_blocking_read_timeout_fd_op(struct gfarm_iobuffer *b,
 		if (avail == 0) {
 			gfarm_iobuffer_set_error(b,
 			    GFARM_ERR_OPERATION_TIMED_OUT);
-			if (getpeername(fd, (struct sockaddr *)&sa, &sa_len)
-			    == -1) {
-				hostaddr = strerror(errno);
-				hostaddr_prefix = "cannot get peer address: ";
-			} else if ((gai_error = gfarm_getnameinfo(
-			    (struct sockaddr *)&sa, sa_len,
-			    hostbuf, sizeof(hostbuf), NULL, 0,
-			    NI_NUMERICHOST | NI_NUMERICSERV)) != 0) {
-				hostaddr = gai_strerror(gai_error);
-				hostaddr_prefix =
-				    "cannot convert peer address to string: ";
-			} else {
-				hostaddr = hostbuf;
-				hostaddr_prefix = "";
-			}
+			gfarm_peer_name_string(fd, hostbuf, sizeof(hostbuf),
+			    NI_NUMERICHOST | NI_NUMERICSERV,
+			    &hostaddr_prefix, &hostaddr);
 			gflog_error(GFARM_MSG_1003449,
 			    "closing network connection due to "
 			    "no response within %d seconds "
@@ -150,7 +136,7 @@ gfarm_iobuffer_blocking_read_notimeout_fd_op(struct gfarm_iobuffer *b,
 }
 
 int
-gfarm_iobuffer_blocking_write_socket_op(struct gfarm_iobuffer *b,
+gfarm_iobuffer_blocking_write_notimeout_socket_op(struct gfarm_iobuffer *b,
 	void *cookie, int fd, void *data, int length)
 {
 	ssize_t rv;
@@ -177,6 +163,68 @@ gfarm_iobuffer_blocking_write_socket_op(struct gfarm_iobuffer *b,
 #endif
 				continue;
 			}
+			gfarm_iobuffer_set_error(b,
+			    gfarm_errno_to_error(errno));
+		}
+		return (rv);
+	}
+}
+
+int
+gfarm_iobuffer_blocking_write_timeout_socket_op(struct gfarm_iobuffer *b,
+	void *cookie, int fd, void *data, int length)
+{
+	ssize_t rv;
+	int avail, timeout = gfarm_ctxp->network_send_timeout;
+	const char *hostaddr_prefix, *hostaddr;
+	char hostbuf[NI_MAXHOST];
+
+	if (timeout == 0) {
+		return (gfarm_iobuffer_blocking_write_notimeout_socket_op(
+		    b, cookie, fd, data, length));
+	}
+
+	for (;;) {
+#ifdef HAVE_POLL
+		struct pollfd fds[1];
+
+		fds[0].fd = fd;
+		fds[0].events = POLLOUT;
+		avail = poll(fds, 1, timeout * 1000);
+#else
+		fd_set writable;
+		struct timeval tv;
+
+		FD_ZERO(&writable);
+		FD_SET(fd, &writable);
+		tv.tv_sec = timeout;
+		tv.tv_usec = 0;
+		avail = select(fd + 1, NULL, &writable, NULL, &tv);
+#endif
+		if (avail == 0) {
+			gfarm_iobuffer_set_error(b,
+			    GFARM_ERR_OPERATION_TIMED_OUT);
+			gfarm_peer_name_string(fd, hostbuf, sizeof(hostbuf),
+			    NI_NUMERICHOST | NI_NUMERICSERV,
+			    &hostaddr_prefix, &hostaddr);
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "closing network connection due to "
+			    "send blocking more than %d seconds "
+			    "(network_send_timeout) to %s%s",
+			    timeout, hostaddr_prefix, hostaddr);
+			return (-1);
+		} else if (avail == -1) {
+			if (errno == EINTR)
+				continue;
+			gfarm_iobuffer_set_error(b,
+			    gfarm_errno_to_error(errno));
+			return (-1);
+		}
+
+		rv = gfarm_send_no_sigpipe(fd, data, length);
+		if (rv == -1) {
+			if (errno == EINTR || errno == EAGAIN)
+				continue;
 			gfarm_iobuffer_set_error(b,
 			    gfarm_errno_to_error(errno));
 		}
@@ -244,7 +292,8 @@ struct gfp_iobuffer_ops gfp_xdr_socket_iobuffer_ops = {
 	gfp_iobuffer_env_for_credential_fd_op,
 	gfarm_iobuffer_blocking_read_timeout_fd_op,
 	gfarm_iobuffer_blocking_read_notimeout_fd_op,
-	gfarm_iobuffer_blocking_write_socket_op
+	gfarm_iobuffer_blocking_write_timeout_socket_op,
+	gfarm_iobuffer_blocking_write_notimeout_socket_op
 };
 
 gfarm_error_t

@@ -20,7 +20,10 @@ struct gfarm_iobuffer {
 	void *read_cookie;
 	int read_fd; /* for file descriptor i/o */
 
-	int (*write_func)(struct gfarm_iobuffer *, void *, int, void *, int);
+	int (*write_timeout_func)(struct gfarm_iobuffer *,
+				  void *, int, void *, int);
+	int (*write_notimeout_func)(struct gfarm_iobuffer *,
+				  void *, int, void *, int);
 	void *write_cookie;
 	int write_fd; /* for file descriptor i/o */
 
@@ -67,7 +70,8 @@ gfarm_iobuffer_alloc(int bufsize)
 	b->read_cookie = NULL;
 	b->read_fd = -1;
 
-	b->write_func = NULL;
+	b->write_timeout_func = NULL;
+	b->write_notimeout_func = NULL;
 	b->write_cookie = NULL;
 	b->write_fd = -1;
 
@@ -180,11 +184,21 @@ gfarm_iobuffer_set_write_close(struct gfarm_iobuffer *b,
 }
 
 void
-gfarm_iobuffer_set_write(struct gfarm_iobuffer *b,
+gfarm_iobuffer_set_write_timeout(struct gfarm_iobuffer *b,
 	int (*wf)(struct gfarm_iobuffer *, void *, int, void *, int),
 	void *cookie, int fd)
 {
-	b->write_func = wf;
+	b->write_timeout_func = wf;
+	b->write_cookie = cookie;
+	b->write_fd = fd;
+}
+
+void
+gfarm_iobuffer_set_write_notimeout(struct gfarm_iobuffer *b,
+	int (*wf)(struct gfarm_iobuffer *, void *, int, void *, int),
+	void *cookie, int fd)
+{
+	b->write_notimeout_func = wf;
 	b->write_cookie = cookie;
 	b->write_fd = fd;
 }
@@ -303,7 +317,7 @@ gfarm_iobuffer_end_pindown(struct gfarm_iobuffer *b)
 
 /* enqueue */
 static void
-gfarm_iobuffer_read(struct gfarm_iobuffer *b, int *residualp, int do_timeout)
+gfarm_iobuffer_read(struct gfarm_iobuffer *b, int do_timeout, int *residualp)
 {
 	int space, rv;
 	int (*func)(struct gfarm_iobuffer *, void *, int, void *, int);
@@ -376,9 +390,10 @@ gfarm_iobuffer_write_close(struct gfarm_iobuffer *b)
 
 /* dequeue */
 static void
-gfarm_iobuffer_write(struct gfarm_iobuffer *b, int *residualp)
+gfarm_iobuffer_write(struct gfarm_iobuffer *b, int do_timeout, int *residualp)
 {
 	int avail, rv;
+	int (*func)(struct gfarm_iobuffer *, void *, int, void *, int);
 
 	if (IOBUFFER_IS_EMPTY(b)) {
 		if (b->read_eof)
@@ -392,9 +407,9 @@ gfarm_iobuffer_write(struct gfarm_iobuffer *b, int *residualp)
 	if (*residualp <= 0)
 		return;
 
-	rv = (*b->write_func)(b, b->write_cookie, b->write_fd,
-			      b->buffer + b->head,
-			      *residualp < avail ? *residualp : avail);
+	func = do_timeout ? b->write_timeout_func : b->write_notimeout_func;
+	rv = (*func)(b, b->write_cookie, b->write_fd, b->buffer + b->head,
+	    *residualp < avail ? *residualp : avail);
 	if (rv > 0) {
 		b->head += rv;
 		*residualp -= rv;
@@ -493,41 +508,46 @@ gfarm_iobuffer_get(struct gfarm_iobuffer *b, void *data, int len)
 }
 
 void
-gfarm_iobuffer_flush_write(struct gfarm_iobuffer *b)
+gfarm_iobuffer_flush_write(struct gfarm_iobuffer *b, int do_timeout)
 {
 	while (!IOBUFFER_IS_EMPTY(b) && b->error == 0)
-		gfarm_iobuffer_write(b, NULL);
+		gfarm_iobuffer_write(b, do_timeout, NULL);
 }
 
 static int
-gfarm_iobuffer_write_direct(struct gfarm_iobuffer *b, void *data, int len)
+gfarm_iobuffer_write_direct(struct gfarm_iobuffer *b, void *data, int len,
+	int do_timeout)
 {
-	return ((*b->write_func)(b, b->write_cookie, b->write_fd, data, len));
+	int (*func)(struct gfarm_iobuffer *, void *, int, void *, int);
+
+	func = do_timeout ? b->write_timeout_func : b->write_notimeout_func;
+	return ((*func)(b, b->write_cookie, b->write_fd, data, len));
 }
 
 int
-gfarm_iobuffer_put_write(struct gfarm_iobuffer *b, const void *data, int len)
+gfarm_iobuffer_put_write(struct gfarm_iobuffer *b, const void *data, int len,
+	int do_timeout)
 {
 	const char *p;
 	int rv, residual;
 	void *d = (void *)data;
 
 	if (!b->pindown && len > gfarm_iobuffer_get_size(b)) {
-		gfarm_iobuffer_flush_write(b);
+		gfarm_iobuffer_flush_write(b, do_timeout);
 		if (gfarm_iobuffer_get_error(b))
 			return (0);
-		rv = gfarm_iobuffer_write_direct(b, d, len);
+		rv = gfarm_iobuffer_write_direct(b, d, len, do_timeout);
 		return (rv < 0 ? 0 : rv);
 	}
 	for (p = data, residual = len; residual > 0; residual -= rv, p += rv) {
 		if (!b->pindown && IOBUFFER_IS_FULL(b))
-			gfarm_iobuffer_write(b, NULL);
+			gfarm_iobuffer_write(b, do_timeout, NULL);
 		rv = gfarm_iobuffer_put(b, p, residual);
 		if (rv == 0) /* error */
 			break;
 	}
 	if (!b->pindown && IOBUFFER_IS_FULL(b))
-		gfarm_iobuffer_write(b, NULL);
+		gfarm_iobuffer_write(b, do_timeout, NULL);
 	return (len - residual);
 }
 
@@ -540,7 +560,7 @@ gfarm_iobuffer_purge_read_x(struct gfarm_iobuffer *b, int len, int just,
 	for (residual = len; residual > 0; ) {
 		if (IOBUFFER_IS_EMPTY(b)) {
 			tmp = residual;
-			gfarm_iobuffer_read(b, justp, do_timeout);
+			gfarm_iobuffer_read(b, do_timeout, justp);
 		}
 		rv = gfarm_iobuffer_purge(b, &residual);
 		if (rv == 0) /* EOF or error */
@@ -559,7 +579,7 @@ gfarm_iobuffer_get_read_x(struct gfarm_iobuffer *b, void *data,
 	for (p = data, residual = len; residual > 0; residual -= rv, p += rv) {
 		if (IOBUFFER_IS_EMPTY(b)) {
 			tmp = residual;
-			gfarm_iobuffer_read(b, justp, do_timeout);
+			gfarm_iobuffer_read(b, do_timeout, justp);
 		}
 		rv = gfarm_iobuffer_get(b, p, residual);
 		if (rv == 0) /* EOF or error */
@@ -582,7 +602,7 @@ gfarm_iobuffer_get_read_partial_x(struct gfarm_iobuffer *b, void *data,
 	if (IOBUFFER_IS_EMPTY(b)) {
 		int tmp = len;
 
-		gfarm_iobuffer_read(b, just ? &tmp : NULL, do_timeout);
+		gfarm_iobuffer_read(b, do_timeout, just ? &tmp : NULL);
 	}
 	return (gfarm_iobuffer_get(b, data, len));
 }
@@ -639,6 +659,6 @@ gfarm_iobuffer_read_ahead(struct gfarm_iobuffer *b, int len)
 		return (alen);
 	rlen = len - alen;
 	while (rlen > 0 && gfarm_iobuffer_is_readable(b) && b->error == 0)
-		gfarm_iobuffer_read(b, &rlen, 0);
+		gfarm_iobuffer_read(b, 0, &rlen);
 	return (len - rlen);
 }

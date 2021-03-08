@@ -204,10 +204,9 @@ gfarmGetNameOfSocket(int sock, int *portPtr)
 int
 gfarmWaitReadable(int fd, int timeoutMsec)
 {
-    int sel, err, save_errno;
-    char hostbuf[NI_MAXHOST], *hostaddr_prefix, *hostaddr;
-    struct sockaddr_in sin;
-    socklen_t slen = sizeof(sin);
+    int sel, save_errno;
+    char hostbuf[NI_MAXHOST];
+    const char *hostaddr_prefix, *hostaddr;
 
     for (;;) {
 #ifdef HAVE_POLL
@@ -235,20 +234,9 @@ gfarmWaitReadable(int fd, int timeoutMsec)
 	sel = select(fd + 1, &rFd, NULL, NULL, tvPtr);
 #endif /* ! HAVE_POLL */
 	if (sel == 0) {
-	    if (getpeername(fd, (struct sockaddr *)&sin, &slen) == -1) {
-		hostaddr = strerror(errno);
-		hostaddr_prefix = "cannot get peer address: ";
-	    } else if ((err = gfarm_getnameinfo((struct sockaddr *)&sin, slen,
-						hostbuf, sizeof(hostbuf),
-						NULL, 0,
-						NI_NUMERICHOST|NI_NUMERICSERV)
-			!= 0)) {
-		hostaddr = strerror(err);
-		hostaddr_prefix = "cannot convert peer address to string: ";
-	    } else {
-		hostaddr = hostbuf;
-		hostaddr_prefix= "";
-	    }
+	    gfarm_peer_name_string(fd, hostbuf, sizeof(hostbuf),
+				   NI_NUMERICHOST | NI_NUMERICSERV,
+				   &hostaddr_prefix, &hostaddr);
 	    gflog_error(GFARM_MSG_1003439,
 			"closing network connection due to "
 			"no response within %d milliseconds from %s%s",
@@ -337,13 +325,71 @@ gfarmReadInt32(int fd, gfarm_int32_t *buf, int len, int timeoutMsec)
 
 
 int
-gfarmWriteInt8(int fd, gfarm_int8_t *buf, int len)
+gfarmWaitWritable(int fd, int timeoutMsec)
+{
+    int sel, save_errno;
+    char hostbuf[NI_MAXHOST];
+    const char *hostaddr_prefix, *hostaddr;
+
+    for (;;) {
+#ifdef HAVE_POLL
+	struct pollfd fds[1];
+
+	fds[0].fd = fd;
+	fds[0].events = POLLOUT;
+	errno = 0;
+	sel = poll(fds, 1, timeoutMsec);
+#else /* ! HAVE_POLL */
+	fd_set wFd;
+	struct timeval tv, *tvPtr;
+
+	FD_ZERO(&rFd);
+	FD_SET(fd, &rFd);
+	if (timeoutMsec == GFARM_GSS_TIMEOUT_INFINITE)
+	    tvPtr = NULL;
+	else {
+	    tv.tv_sec = timeoutMsec / 1000;
+	    tv.tv_usec = timeoutMsec % 1000 * 1000;
+	    tvPtr = &tv;
+	}
+
+	errno = 0;
+	sel = select(fd + 1, NULL, &wFd, NULL, tvPtr);
+#endif /* ! HAVE_POLL */
+	if (sel == 0) {
+	    gfarm_peer_name_string(fd, hostbuf, sizeof(hostbuf),
+				   NI_NUMERICHOST | NI_NUMERICSERV,
+				   &hostaddr_prefix, &hostaddr);
+	    gflog_error(GFARM_MSG_UNFIXED,
+			"closing network connection due to "
+			"send blocking more than %d milliseconds from %s%s",
+			timeoutMsec, hostaddr_prefix, hostaddr);
+	} else if (sel < 0) {
+	    if (errno == EINTR || errno == EAGAIN)
+		continue;
+	    save_errno = errno;
+	    gflog_error(GFARM_MSG_1000639, "select: %s", strerror(errno));
+	    errno = save_errno;
+	}
+	return sel;
+    }
+}
+
+
+int
+gfarmWriteInt8(int fd, gfarm_int8_t *buf, int len, int timeoutMsec)
 {
     int sum = 0;
     int cur = 0;
-    int save_errno;
+    int sel, save_errno;
 
     do {
+	sel = gfarmWaitWritable(fd, timeoutMsec);
+	if (sel <= 0) {
+	    if (sel == 0)
+		errno = ETIMEDOUT;
+	    return sum;
+	}
 	cur = gfarm_send_no_sigpipe(fd, buf + sum, len - sum);
 	if (cur < 0) {
 	    save_errno = errno;
@@ -358,7 +404,7 @@ gfarmWriteInt8(int fd, gfarm_int8_t *buf, int len)
 
 
 int
-gfarmWriteInt16(int fd, gfarm_int16_t *buf, int len)
+gfarmWriteInt16(int fd, gfarm_int16_t *buf, int len, int timeoutMsec)
 {
     int i;
     int n;
@@ -366,7 +412,8 @@ gfarmWriteInt16(int fd, gfarm_int16_t *buf, int len)
 
     for (i = 0; i < len; i++) {
 	s = htons(buf[i]);
-	n = gfarmWriteInt8(fd, (gfarm_int8_t *)&s, GFARM_OCTETS_PER_16BIT);
+	n = gfarmWriteInt8(fd, (gfarm_int8_t *)&s, GFARM_OCTETS_PER_16BIT,
+			   timeoutMsec);
 	if (n != GFARM_OCTETS_PER_16BIT) {
 	    return i;
 	}
@@ -376,7 +423,7 @@ gfarmWriteInt16(int fd, gfarm_int16_t *buf, int len)
 
 
 int
-gfarmWriteInt32(int fd, gfarm_int32_t *buf, int len)
+gfarmWriteInt32(int fd, gfarm_int32_t *buf, int len, int timeoutMsec)
 {
     int i;
     int n;
@@ -384,7 +431,8 @@ gfarmWriteInt32(int fd, gfarm_int32_t *buf, int len)
 
     for (i = 0; i < len; i++) {
 	l = htonl(buf[i]);
-	n = gfarmWriteInt8(fd, (gfarm_int8_t *)&l, GFARM_OCTETS_PER_32BIT);
+	n = gfarmWriteInt8(fd, (gfarm_int8_t *)&l, GFARM_OCTETS_PER_32BIT,
+			   timeoutMsec);
 	if (n != GFARM_OCTETS_PER_32BIT) {
 	    return i;
 	}

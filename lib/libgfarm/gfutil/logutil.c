@@ -8,6 +8,10 @@
 #include <time.h>
 #include <pthread.h>
 
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h> /* gai_strerror() */
+
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
 
@@ -17,6 +21,8 @@
 #include "thrsubr.h"
 #include "gfutil.h"
 #include "gflog_reduced.h"
+
+#include "gfnetdb.h"
 
 #define LOG_LENGTH_MAX	2048
 
@@ -638,4 +644,30 @@ gflog_reduced_message(int msg_no, int priority, const char *file, int line_no,
 		state->stat_count = 0;
 		state->stat_start = current_time;
 	}
+}
+
+/* utilit for logging */
+void
+gfarm_peer_name_string(int sock, char *hostbuf, size_t hostlen, int flags,
+	const char **prefixp, const char **addrp)
+{
+	int gai_error;
+	struct sockaddr_storage sa;
+	socklen_t sa_len = sizeof(sa);
+	const char *prefix, *addr;
+
+	if (getpeername(sock, (struct sockaddr *)&sa, &sa_len) == -1) {
+		prefix = "cannot get peer address: ";
+		addr = strerror(errno);
+	} else if ((gai_error = gfarm_getnameinfo(
+	    (struct sockaddr *)&sa, sa_len, hostbuf, hostlen, NULL, 0, flags))
+	    != 0) {
+		prefix = "cannot convert peer address to string: ";
+		addr = gai_strerror(gai_error);
+	} else {
+		prefix = "";
+		addr = hostbuf;
+	}
+	*prefixp = prefix;
+	*addrp = addr;
 }

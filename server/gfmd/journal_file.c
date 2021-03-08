@@ -1292,7 +1292,8 @@ static struct gfp_iobuffer_ops journal_iobuffer_ops = {
 	journal_env_for_credential_fd_op,
 	journal_blocking_read_op,
 	journal_blocking_read_op,
-	journal_blocking_write_op
+	journal_blocking_write_op,
+	journal_blocking_write_op,
 };
 
 static gfarm_error_t
