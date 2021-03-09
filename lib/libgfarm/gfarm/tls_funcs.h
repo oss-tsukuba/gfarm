@@ -612,7 +612,7 @@ tls_session_runtime_initialize(void)
 static inline bool
 tls_has_runtime_error(void)
 {
-	return ((ERR_peek_error() == 0) ? false : true);
+	return (ERR_peek_error() != 0);
 }
 
 static inline void
@@ -639,8 +639,7 @@ tty_passwd_callback_body(char *buf, int maxlen, int rwflag, void *u)
 		bool do_passwd =
 			(has_passwd_cache == false &&
 			 arg->pw_buf_ != NULL &&
-			 arg->pw_buf_maxlen_ > 0) ?
-			true : false;
+			 arg->pw_buf_maxlen_ > 0);
 
 		if (unlikely(do_passwd == true)) {
 			/*
@@ -2029,8 +2028,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 			}
 
 			is_build_chain =
-				(gfarm_ctxp->tls_build_chain_local == 1)
-				? true : false;
+				gfarm_ctxp->tls_build_chain_local;
 			if (is_build_chain == true) {
 				/*
 				 * Build a complete cert chain locally.
@@ -2128,8 +2126,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 		ctxret->ssl_ctx_ = ssl_ctx;
 		ctxret->is_build_chain_ = is_build_chain;
 		ctxret->is_allow_no_crls_ =
-			(gfarm_ctxp->tls_allow_crl_absence == 1) ?
-			true : false;
+			gfarm_ctxp->tls_allow_no_crl;
 		ctxret->cert_file_ = cert_file;
 		ctxret->cert_chain_file_ = cert_chain_file;
 		ctxret->prvkey_file_ = prvkey_file;

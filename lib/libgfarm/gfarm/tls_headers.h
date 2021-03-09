@@ -112,7 +112,7 @@ struct tls_test_ctx_struct {
 	char *tls_key_file;
 	int tls_key_update;
 	int tls_build_chain_local;
-	int tls_allow_crl_absence;
+	int tls_allow_no_crl;
 	int network_receive_timeout;
 };
 typedef struct tls_test_ctx_struct *tls_test_ctx_p;

@@ -177,7 +177,7 @@ gfarm_context_init(void)
 	ctxp->tls_key_file = NULL;
 	ctxp->tls_key_update = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->tls_build_chain_local = GFARM_CONFIG_MISC_DEFAULT;
-	ctxp->tls_allow_crl_absence = GFARM_CONFIG_MISC_DEFAULT;
+	ctxp->tls_allow_no_crl = GFARM_CONFIG_MISC_DEFAULT;
 
 	ctxp->on_demand_replication = 0;
 	ctxp->call_rpc_instead_syscall = 0;
