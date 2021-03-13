@@ -4,8 +4,15 @@
 
 GFPREP=$regress/bin/gfprep_for_test
 
+REPCHECK_STATUS=""
+ENABLE="enable"
+DISABLE="disable"
+
 cleanup() {
     gfrm -rf $gftmp
+    if [ ${REPCHECK_STATUS} = ${ENABLE} ]; then
+        gfrepcheck ${ENABLE}
+    fi
 }
 
 trap 'cleanup; exit $exit_trap' $trap_sigs
@@ -17,8 +24,14 @@ error() {
 }
 
 setup() {
+    # "gfrepcheck disable" is required
+    $regress/bin/am_I_gfarmadm || exit $exit_unsupported
+
+    REPCHECK_STATUS=`gfrepcheck status | cut -d ' ' -f 1` || exit $exit_fail
+    if [ ${REPCHECK_STATUS} = ${ENABLE} ]; then
+        gfrepcheck ${DISABLE}
+    fi
     gfmkdir $gftmp || error "gfmkdir"
-    gfncopy -s 1 $gftmp > /dev/null 2>&1 # ignore
 
     FILE=$gftmp/file
     GF_URL=gfarm://${FILE}
