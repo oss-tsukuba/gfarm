@@ -2,7 +2,8 @@
 
 test_for_gfarmroot=true
 base="$(dirname "$0")"
-. "${base}/effective_perm.common.sh"
+
+. ./regress.conf
 
 if $regress/bin/am_I_gfarmadm; then :; else
     exit $exit_unsupported
@@ -10,6 +11,8 @@ fi
 if $regress/bin/am_I_gfarmroot; then :; else
     exit $exit_unsupported
 fi
+
+. "${base}/effective_perm.common.sh"
 
 ### group
 gfroot_enable
