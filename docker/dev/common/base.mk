@@ -358,3 +358,6 @@ ubuntu1804:
 
 ubuntu2004:
 	$(DOCKER) run -it --rm 'ubuntu:20.04' bash
+
+debian10:
+	$(DOCKER) run -it --rm 'debian:buster' bash
