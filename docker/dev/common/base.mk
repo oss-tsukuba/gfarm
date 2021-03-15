@@ -92,6 +92,8 @@ CONTSHELL = $(COMPOSE) exec $(CONTSHELL_FLAGS) -u '$(GFDOCKER_PRIMARY_USER)' \
 # overridable
 CONTSHELL_ARGS :=  -c 'cd ~ && bash'
 
+DOCKER_RUN = $(DOCKER) run $(CONTSHELL_FLAGS)
+
 help:
 	@echo 'Usage:'
 	@echo '  make help'
@@ -349,6 +351,9 @@ centos7:
 
 centos8:
 	$(DOCKER) run -it --rm 'centos:8' bash
+
+fedora33:
+	$(DOCKER) run -it --rm 'fedora:33' bash
 
 opensuse:
 	$(DOCKER) run -it --rm 'opensuse/leap' bash
