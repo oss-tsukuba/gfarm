@@ -61,6 +61,14 @@ README.MT-safe
 - locks and locking order
 
   Locks below are implemented or expanded. They are not related each other.
+                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                                              FIXME
+  FIXME:
+	  The above description is not right.
+	  For example, the following locking order does exist (and maybe more):
+	     gfs_pio_mutex_lock -> gfm_conneciton lock
+	     gfs_pio_mutex_lock -> gfs_client_connection_lock
+		 -> struct gfp_conn_cache::mutex
 
   - gfarm/
     - conn_cache.c: GFSP_CONN_MUTEX (included in staticp)
