@@ -613,10 +613,6 @@ search_idle_host_state_init(struct gfm_connection *gfm_server)
 		gflog_notice(GFARM_MSG_1004312, "%s: network_list_init: %s",
 		    diag, gfarm_error_string(e));
 
-	/* when a connection error happens, make the host unavailable. */
-	gfs_client_add_hook_for_connection_error(
-		gfarm_schedule_host_cache_purge);
-
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -2390,6 +2386,13 @@ gfarm_schedule_cache_dump(void)
 	gfarm_schedule_host_cache_dump();
 }
 
+void
+gfarm_schedule_init(void)
+{
+	/* when a connection error happens, make the host unavailable. */
+	gfs_client_add_hook_for_connection_error(
+		gfarm_schedule_host_cache_purge);
+}
 
 #if 0 /* not yet in gfarm v2 */
 

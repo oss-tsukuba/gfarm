@@ -31,6 +31,8 @@ void gfarm_schedule_host_unused(const char *, int, const char *,
 
 int gfm_host_is_in_local_net(struct gfm_connection *, const char *);
 
+void gfarm_schedule_init(void);
+
 #if 0 /* not yet in gfarm v2 */
 
 int gfarm_is_active_fsnode(void);
