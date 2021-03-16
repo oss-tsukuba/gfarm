@@ -113,16 +113,19 @@ sync_protocol_get_thrpool(void)
 gfarm_error_t
 gfm_server_protocol_extension_default(struct peer *peer,
 	int from_client, int skip, int level, gfarm_int32_t request,
+	gfarm_int32_t last_request,
 	gfarm_int32_t *requestp, gfarm_error_t *on_errorp)
 {
 	gflog_warning(GFARM_MSG_1000181, "unknown request: %d", request);
+	gflog_info(GFARM_MSG_UNFIXED, "last request: %d", last_request);
 	peer_record_protocol_error(peer);
 	return (GFARM_ERR_PROTOCOL);
 }
 
 /* this interface is made as a hook for a private extension */
 gfarm_error_t (*gfm_server_protocol_extension)(struct peer *,
-	int, int, int, gfarm_int32_t, gfarm_int32_t *, gfarm_error_t *) =
+	int, int, int, gfarm_int32_t, gfarm_int32_t,
+	gfarm_int32_t *, gfarm_error_t *) =
 		gfm_server_protocol_extension_default;
 
 gfarm_error_t
@@ -130,6 +133,7 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 	gfarm_int32_t *requestp, gfarm_error_t *on_errorp, int *suspendedp)
 {
 	gfarm_error_t e, e2;
+	gfarm_int32_t last_request = *requestp;
 	gfarm_int32_t request;
 
 	e = gfp_xdr_recv_request_command(peer_get_conn(peer), 0, NULL,
@@ -639,7 +643,8 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 		break;
 	default:
 		e = gfm_server_protocol_extension(peer,
-		    from_client, skip, level, request, requestp, on_errorp);
+		    from_client, skip, level, request, last_request,
+		    requestp, on_errorp);
 		break;
 	}
 
@@ -675,6 +680,7 @@ void
 protocol_state_init(struct protocol_state *ps)
 {
 	ps->nesting_level = 0;
+	ps->last_request = -1;
 }
 
 /*
@@ -696,7 +702,7 @@ protocol_service(struct peer *peer)
 	struct protocol_state *ps = peer_get_protocol_state(peer);
 	struct compound_state *cs = &ps->cs;
 	gfarm_error_t e, dummy;
-	gfarm_int32_t request;
+	gfarm_int32_t request = ps->last_request;
 	int from_client;
 	int suspended = 0;
 	static const char diag[] = "protocol_service";
@@ -705,6 +711,7 @@ protocol_service(struct peer *peer)
 	if (ps->nesting_level == 0) { /* top level */
 		e = protocol_switch(peer, from_client, 0, 0,
 		    &request, &dummy, &suspended);
+		ps->last_request = request;
 		if (suspended)
 			return (1); /* finish */
 		giant_lock();
@@ -728,6 +735,7 @@ protocol_service(struct peer *peer)
 	} else { /* inside of a COMPOUND block */
 		e = protocol_switch(peer, from_client, cs->skip, 1,
 		    &request, &cs->current_part, &suspended);
+		ps->last_request = request;
 		if (suspended)
 			return (1); /* finish */
 		if (peer_had_protocol_error(peer)) {

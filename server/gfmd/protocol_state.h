@@ -38,4 +38,6 @@ struct protocol_state {
 	 * thus, only one state is enough.
 	 */
 	struct compound_state cs;
+
+	gfarm_int32_t last_request; /* just for error reporting */
 };

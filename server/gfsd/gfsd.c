@@ -5612,7 +5612,7 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 	gfarm_error_t e;
 	struct gfp_xdr *client;
 	int eof;
-	gfarm_int32_t request;
+	gfarm_int32_t request, last_request = -1;
 	char *aux, addr_string[GFARM_SOCKADDR_STRLEN];
 	enum gfarm_auth_id_type peer_type;
 	enum gfarm_auth_method auth_method;
@@ -5751,6 +5751,8 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 		default:
 			gflog_warning(GFARM_MSG_1000558, "unknown request %d",
 			    (int)request);
+			gflog_info(GFARM_MSG_UNFIXED, "last request: %d",
+			    (int)last_request);
 			cleanup(0);
 			exit(1);
 		}
@@ -5767,6 +5769,7 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 			    != GFARM_ERR_NO_ERROR)
 				fatal(GFARM_MSG_1003362, "die");
 		}
+		last_request = request;
 	}
 }
 
@@ -6484,7 +6487,7 @@ back_channel_server(void)
 	enum gfp_xdr_msg_type type;
 	gfp_xdr_xid_t xid;
 	size_t size;
-	gfarm_int32_t gfmd_knows_me, rv, request;
+	gfarm_int32_t gfmd_knows_me, rv, request, last_request = -1;
 
 	static int hack_to_make_cookie_not_work = 0; /* XXX FIXME */
 
@@ -6628,6 +6631,8 @@ back_channel_server(void)
 				    "(back channel) unknown request %d "
 				    "(xid:%d size:%d), skip",
 				    (int)request, (int)xid, (int)size);
+				gflog_info(GFARM_MSG_UNFIXED,
+				    "last request: %d", (int)last_request);
 				e = gfp_xdr_purge(bc_conn, 0, size);
 				if (e != GFARM_ERR_NO_ERROR) {
 					gflog_error(GFARM_MSG_1002200,
@@ -6643,6 +6648,7 @@ back_channel_server(void)
 				    gfarm_error_string(e));
 				break;
 			}
+			last_request = request;
 		}
 
 		kill_pending_replications();

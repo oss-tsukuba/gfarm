@@ -29,6 +29,8 @@
 #include "user.h"
 #include "peer.h"
 #include "abstract_host.h"
+#include "protocol_state.h"
+
 
 static const char ABSTRACT_HOST_MUTEX_DIAG[]	= "abstract_host_mutex";
 
@@ -584,6 +586,7 @@ async_channel_protocol_switch(struct abstract_host *host, struct peer *peer,
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	gfarm_int32_t request;
 	int unknown_request = 0;
+	struct protocol_state *ps = peer_get_protocol_state(peer);
 
 	e = gfp_xdr_recv_request_command(client, 0, &size, &request);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -595,8 +598,11 @@ async_channel_protocol_switch(struct abstract_host *host, struct peer *peer,
 		    "(%s) unknown request %d (xid:%d size:%d), reset",
 		    back_channel_type_name(peer),
 		    (int)request, (int)xid, (int)size);
+		gflog_info(GFARM_MSG_UNFIXED, "last request: %d",
+		    (int)ps->last_request);
 		e = gfp_xdr_purge(client, 0, size);
 	}
+	ps->last_request = request;
 	return (e);
 }
 
