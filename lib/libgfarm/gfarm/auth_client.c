@@ -95,10 +95,10 @@ static const struct gfarm_auth_client_method {
 };
 
 gfarm_error_t
-gfarm_auth_request_sharedsecret(struct gfp_xdr *conn,
+gfarm_auth_request_sharedsecret_common(struct gfp_xdr *conn,
 	const char *service_tag, const char *hostname,
 	enum gfarm_auth_id_type self_type, const char *user,
-	struct passwd *pwd)
+	struct passwd *pwd, int server_is_ok)
 {
 	/*
 	 * too weak authentication.
@@ -120,7 +120,8 @@ gfarm_auth_request_sharedsecret(struct gfp_xdr *conn,
 	if (user == NULL || home == NULL)
 		return (GFARM_ERRMSG_AUTH_REQUEST_SHAREDSECRET_IMPLEMENTATION_ERROR);
 
-	e = gfp_xdr_send(conn, "s", user);
+	/* pass <dummy-user> to avoid MITM attack if !server_is_ok */
+	e = gfp_xdr_send(conn, "s", server_is_ok ? user : "<dummy-user>");
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001025,
 			"sending user (%s) failed"
@@ -130,6 +131,9 @@ gfarm_auth_request_sharedsecret(struct gfp_xdr *conn,
 	}
 
 	do {
+		if (!server_is_ok)
+			break; /* just send GFARM_AUTH_SHAREDSECRET_GIVEUP */
+
 		e = gfarm_auth_shared_key_get(&expire, shared_key, home, pwd,
 		    key_create, 0);
 		key_create = GFARM_AUTH_SHARED_KEY_CREATE_FORCE;
@@ -274,6 +278,16 @@ gfarm_auth_request_sharedsecret(struct gfp_xdr *conn,
 		    "Authentication failed: %d", (int)error);
 		return (GFARM_ERR_AUTHENTICATION);
 	}
+}
+
+gfarm_error_t
+gfarm_auth_request_sharedsecret(struct gfp_xdr *conn,
+	const char *service_tag, const char *hostname,
+	enum gfarm_auth_id_type self_type, const char *user,
+	struct passwd *pwd)
+{
+	return (gfarm_auth_request_sharedsecret_common(
+	    conn, service_tag, hostname, self_type, user, pwd, 1));
 }
 
 gfarm_error_t

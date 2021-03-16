@@ -13,6 +13,41 @@
 #include "io_tls.h"
 #include "auth.h"
 
+static gfarm_error_t
+server_cert_is_ok(struct gfp_xdr *conn, const char *service_tag,
+	const char *hostname)
+{
+	gfarm_error_t e;
+	char *peer_dn, *peer_hostname = NULL;
+
+	if ((peer_dn = gfp_xdr_tls_peer_dn_common_name(conn)) == NULL) {
+		/* this shouldn't happen, raise alert */
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "%s: missing peer dn common name", hostname);
+		return (GFARM_ERR_NO_MESSAGE_OF_DESIRED_TYPE);
+	} else if ((e = gfarm_x509_cn_get_service_hostname(
+	    service_tag, peer_dn, &peer_hostname)) != GFARM_ERR_NO_ERROR) {
+		/* server cert is invalid? raise alert */
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "%s: no expected %s service in certificate <%s>",
+		    hostname, service_tag, peer_dn);
+		return (GFARM_ERR_UNKNOWN_HOST);
+	}
+
+	if (strcasecmp(peer_hostname, hostname) != 0) {
+		/* server cert is invalid? raise alert */
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "%s: %s service - invalid server certificate <%s>",
+		    hostname, service_tag, peer_dn);
+		e = GFARM_ERR_UNKNOWN_HOST;
+	} else {
+		e = GFARM_ERR_NO_ERROR;
+	}
+	free(peer_hostname);
+
+	return (e);
+}
+
 /*
  * auth_client_tls_sharedsecret
  */
@@ -28,8 +63,13 @@ gfarm_auth_request_tls_sharedsecret(struct gfp_xdr *conn,
 		/* is this case graceful? */
 		return (e);
 	}
-	e = gfarm_auth_request_sharedsecret(
-	    conn, service_tag, hostname, self_type, user, pwd);
+
+	e = server_cert_is_ok(conn, service_tag, hostname);
+
+	e = gfarm_auth_request_sharedsecret_common(
+	    conn, service_tag, hostname, self_type, user, pwd,
+	    e == GFARM_ERR_NO_ERROR);
+
 	if (e != GFARM_ERR_NO_ERROR) {
 		/* is this case graceful? */
 		gfp_xdr_tls_reset(conn);
@@ -105,41 +145,6 @@ gfarm_auth_result_tls_sharedsecret_multiplexed(void *sp)
 /*
  * auth_client_tls_client_certificate
  */
-
-static gfarm_error_t
-server_cert_is_ok(struct gfp_xdr *conn, const char *service_tag,
-	const char *hostname)
-{
-	gfarm_error_t e;
-	char *peer_dn, *peer_hostname = NULL;
-
-	if ((peer_dn = gfp_xdr_tls_peer_dn_common_name(conn)) == NULL) {
-		/* this shouldn't happen, raise alert */
-		gflog_warning(GFARM_MSG_UNFIXED,
-		    "%s: missing peer dn common name", hostname);
-		return (GFARM_ERR_NO_MESSAGE_OF_DESIRED_TYPE);
-	} else if ((e = gfarm_x509_cn_get_service_hostname(
-	    service_tag, peer_dn, &peer_hostname)) != GFARM_ERR_NO_ERROR) {
-		/* server cert is invalid? raise alert */
-		gflog_warning(GFARM_MSG_UNFIXED,
-		    "%s: no expected %s service in certificate <%s>",
-		    hostname, service_tag, peer_dn);
-		return (GFARM_ERR_UNKNOWN_HOST);
-	}
-
-	if (strcasecmp(peer_hostname, hostname) != 0) {
-		/* server cert is invalid? raise alert */
-		gflog_warning(GFARM_MSG_UNFIXED,
-		    "%s: %s service - invalid server certificate <%s>",
-		    hostname, service_tag, peer_dn);
-		e = GFARM_ERR_UNKNOWN_HOST;
-	} else {
-		e = GFARM_ERR_NO_ERROR;
-	}
-	free(peer_hostname);
-
-	return (e);
-}
 
 gfarm_error_t
 gfarm_auth_request_tls_client_certificate(struct gfp_xdr *conn,

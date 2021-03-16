@@ -168,6 +168,9 @@ gfarm_error_t gfarm_auth_server_cred_name_set(char *, char *);
 char *gfarm_auth_config_string_dup(void);
 
 /* auth_client_sharedsecret */
+gfarm_error_t gfarm_auth_request_sharedsecret_common(struct gfp_xdr *,
+	const char *, const char *, enum gfarm_auth_id_type, const char *,
+	struct passwd *, int);
 gfarm_error_t gfarm_auth_request_sharedsecret(struct gfp_xdr *,
 	const char *, const char *, enum gfarm_auth_id_type, const char *,
 	struct passwd *);
