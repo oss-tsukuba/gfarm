@@ -589,7 +589,7 @@ void
 gfp_cached_or_uncached_connection_free(struct gfp_conn_cache *cache,
 	struct gfp_cached_connection *connection)
 {
-	int removable;
+	int removable, cached;
 	enum gfp_conn_initialization_state state;
 	static const char diag[] = "gfp_cached_or_uncached_connection_free";
 
@@ -602,7 +602,16 @@ gfp_cached_or_uncached_connection_free(struct gfp_conn_cache *cache,
 	if (!removable)
 		return; /* shouln't be disposed */
 
-	if (GFP_IS_CACHED_CONNECTION(connection))
+	/*
+	 * in this case, only this thread is refering this connection,
+	 * thus, this connection lock may not be strictly necessary,
+	 * but to be sure.
+	 */
+	gfp_connection_lock(connection);
+	cached = GFP_IS_CACHED_CONNECTION(connection);
+	gfp_connection_unlock(connection);
+
+	if (cached)
 		gfp_cached_connection_gc_internal(cache, *cache->num_cachep);
 	else if (state == GFP_CONN_INITIALIZED)
 		(*cache->dispose_connection)(connection->connection_data);
