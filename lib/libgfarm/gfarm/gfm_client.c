@@ -1043,7 +1043,7 @@ gfm_client_xdr_send(struct gfm_connection *gfm_server, const char *format, ...)
 	gfarm_error_t e;
 
 	va_start(ap, format);
-	e = gfp_xdr_vsend(gfm_server->conn, &format, &ap);
+	e = gfp_xdr_vsend(gfm_server->conn, 1, &format, &ap); /* do timeout */
 	va_end(ap);
 
 	check_connection_or_purge(gfm_server, e);

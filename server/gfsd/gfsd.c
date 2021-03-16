@@ -1123,7 +1123,7 @@ gfs_server_put_reply_common(struct gfp_xdr *client, const char *diag,
 		gflog_debug(GFARM_MSG_1000458, "reply: %s: %d (%s)",
 		    diag, (int)ecode, gfarm_error_string(ecode));
 
-	e = gfp_xdr_vsend_result(client, ecode, format, app);
+	e = gfp_xdr_vsend_result(client, 1, ecode, format, app); /*do timeout*/
 	if (e == GFARM_ERR_NO_ERROR)
 		e = gfp_xdr_flush(client);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -1195,10 +1195,11 @@ gfs_async_server_put_reply_common(struct gfp_xdr *client, gfp_xdr_xid_t xid,
 		gflog_debug(GFARM_MSG_1002381, "async_reply: %s: %d (%s)",
 		    diag, (int)ecode, gfarm_error_string(ecode));
 
-	e = gfp_xdr_vsend_async_result(client, xid, ecode, format, app);
+	e = gfp_xdr_vsend_async_result_notimeout(
+	    client, xid, ecode, format, app);
 
 	if (e == GFARM_ERR_NO_ERROR)
-		e = gfp_xdr_flush(client);
+		e = gfp_xdr_flush_notimeout(client);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1002382, "%s put reply: %s",
 		    diag, gfarm_error_string(e));
@@ -1249,7 +1250,7 @@ gfm_async_client_send_request(struct gfp_xdr *bc_conn,
 	va_list ap;
 
 	va_start(ap, format);
-	e = gfp_xdr_vsend_async_request(bc_conn, async,
+	e = gfp_xdr_vsend_async_request_notimeout(bc_conn, async,
 	    result_callback, disconnect_callback, closure,
 	    command, format, &ap);
 	va_end(ap);

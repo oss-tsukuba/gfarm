@@ -109,7 +109,8 @@ doServer(int fd, char *hostname, int port, gss_cred_id_t myCred,
 	goto Done;
     }
 
-    if (gfarmSecSessionSendInt8(initialSession, rBuf, rSz) != rSz) {
+    if (gfarmSecSessionSendInt8(initialSession, rBuf, rSz,
+				GFARM_GSS_TIMEOUT_INFINITE) != rSz) {
 	fprintf(stderr, "test buffer send failed because of:\n");
 	gfarmSecSessionPrintStatus(initialSession);
 	goto Done;
@@ -198,14 +199,16 @@ doClient(char *hostname, int port, gss_name_t acceptorName,
     }
     randomizeIt(sBuf, testBufSize);
 
-    if (gfarmSecSessionSendInt32(ss, &testBufSize, 1) != 1) {
+    if (gfarmSecSessionSendInt32(ss, &testBufSize, 1,
+				 GFARM_GSS_TIMEOUT_INFINITE) != 1) {
 	fprintf(stderr, "can't send test buffer size because of:\n");
 	gfarmSecSessionPrintStatus(ss);
 	goto Done;
     }
     fprintf(stderr, "Send buffer size: %ld\n", (long)testBufSize);
 
-    if (gfarmSecSessionSendInt8(ss, sBuf, testBufSize) != testBufSize) {
+    if (gfarmSecSessionSendInt8(ss, sBuf, testBufSize,
+				GFARM_GSS_TIMEOUT_INFINITE) != testBufSize) {
 	fprintf(stderr, "test buffer send failed because of:\n");
 	gfarmSecSessionPrintStatus(ss);
 	goto Done;
@@ -234,7 +237,8 @@ doClient(char *hostname, int port, gss_name_t acceptorName,
 	fprintf(stderr, "test buffer check OK.\n");
     }
 
-    if (gfarmSecSessionSendInt32(ss, &deleCheck, 1) != 1) {
+    if (gfarmSecSessionSendInt32(ss, &deleCheck, 1,
+				 GFARM_GSS_TIMEOUT_INFINITE) != 1) {
 	fprintf(stderr, "can't send delegation check flag.\n");
 	goto Done;
     }

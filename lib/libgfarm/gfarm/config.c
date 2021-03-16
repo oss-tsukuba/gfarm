@@ -1056,7 +1056,8 @@ int gfarm_iostat_max_client = GFARM_CONFIG_MISC_DEFAULT;
 #define GFARM_METADB_SERVER_NFS_ROOT_SQUASH_SUPPORT_DEFAULT	1 /* enable */
 #define GFARM_METADB_SERVER_LONG_TERM_LOCK_TYPE_DEFAULT	\
 	GFARM_LOCK_TYPE_TICKETLOCK
-#define GFARM_NETWORK_RECEIVE_TIMEOUT_DEFAULT  60 /* 60 seconds */
+#define GFARM_NETWORK_RECEIVE_TIMEOUT_DEFAULT	60 /* 60 seconds */
+#define GFARM_NETWORK_SEND_TIMEOUT_DEFAULT	0 /* seconds (disabled) */
 #define GFARM_FILE_TRACE_DEFAULT 0 /* disable */
 #define GFARM_FATAL_ACTION_DEFAULT GFLOG_FATAL_ACTION_ABORT_BACKTRACE
 #ifdef HAVE_INFINIBAND
@@ -3625,6 +3626,8 @@ parse_one_line(const char *s, char *p,
 		e = parse_set_misc_enabled(p, &metadb_server_force_slave);
 	} else if (strcmp(s, o = "network_receive_timeout") == 0) {
 		e = parse_set_misc_int(p, &gfarm_ctxp->network_receive_timeout);
+	} else if (strcmp(s, o = "network_send_timeout") == 0) {
+		e = parse_set_misc_int(p, &gfarm_ctxp->network_send_timeout);
 	} else if (strcmp(s, o = "file_trace") == 0) {
 		e = parse_set_misc_enabled(p, &gfarm_ctxp->file_trace);
 	} else if (strcmp(s, o = "debug_command") == 0) {
@@ -4034,6 +4037,9 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_ctxp->network_receive_timeout == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->network_receive_timeout =
 		    GFARM_NETWORK_RECEIVE_TIMEOUT_DEFAULT;
+	if (gfarm_ctxp->network_send_timeout == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_ctxp->network_send_timeout =
+		    GFARM_NETWORK_SEND_TIMEOUT_DEFAULT;
 	if (gfarm_ctxp->file_trace == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->file_trace = GFARM_FILE_TRACE_DEFAULT;
 	if (gfarm_ctxp->fatal_action == GFARM_CONFIG_MISC_DEFAULT)

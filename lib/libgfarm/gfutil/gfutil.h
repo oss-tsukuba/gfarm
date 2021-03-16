@@ -34,6 +34,9 @@ enum gflog_fatal_actions {
 void gflog_set_fatal_action(int);
 int gflog_fatal_action_name_to_number(const char *);
 
+void gfarm_peer_name_string(int, char *, size_t, int,
+	const char **, const char **);
+
 /* privlock */
 
 void gfarm_privilege_lock_disable(void);

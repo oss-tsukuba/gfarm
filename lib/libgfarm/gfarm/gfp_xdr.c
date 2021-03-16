@@ -64,9 +64,12 @@ gfp_xdr_set(struct gfp_xdr *conn,
 		gfarm_iobuffer_set_read_notimeout(conn->recvbuffer,
 		    ops->blocking_read_notimeout, cookie, fd);
 	}
-	if (conn->sendbuffer)
-		gfarm_iobuffer_set_write(conn->sendbuffer, ops->blocking_write,
-		    cookie, fd);
+	if (conn->sendbuffer) {
+		gfarm_iobuffer_set_write_timeout(conn->sendbuffer,
+		    ops->blocking_write_timeout, cookie, fd);
+		gfarm_iobuffer_set_write_notimeout(conn->sendbuffer,
+		    ops->blocking_write_notimeout, cookie, fd);
+	}
 }
 
 #define GFP_XDR_NEW_RECV	1
@@ -210,7 +213,16 @@ gfp_xdr_flush(struct gfp_xdr *conn)
 {
 	if (conn->sendbuffer == NULL)
 		return (GFARM_ERR_NO_ERROR);
-	gfarm_iobuffer_flush_write(conn->sendbuffer);
+	gfarm_iobuffer_flush_write(conn->sendbuffer, 1);
+	return (gfarm_iobuffer_get_error(conn->sendbuffer));
+}
+
+gfarm_error_t
+gfp_xdr_flush_notimeout(struct gfp_xdr *conn)
+{
+	if (conn->sendbuffer == NULL)
+		return (GFARM_ERR_NO_ERROR);
+	gfarm_iobuffer_flush_write(conn->sendbuffer, 0);
 	return (gfarm_iobuffer_get_error(conn->sendbuffer));
 }
 
@@ -357,7 +369,7 @@ gfp_xdr_vsend_size_add(size_t *sizep, const char **formatp, va_list *app)
 }
 
 gfarm_error_t
-gfp_xdr_vsend(struct gfp_xdr *conn,
+gfp_xdr_vsend(struct gfp_xdr *conn, int do_timeout,
 	const char **formatp, va_list *app)
 {
 	const char *format = *formatp;
@@ -384,19 +396,19 @@ gfp_xdr_vsend(struct gfp_xdr *conn,
 		case 'c':
 			c = va_arg(*app, int);
 			gfarm_iobuffer_put_write(conn->sendbuffer,
-			    &c, sizeof(c));
+			    &c, sizeof(c), do_timeout);
 			continue;
 		case 'h':
 			h = va_arg(*app, int);
 			h = htons(h);
 			gfarm_iobuffer_put_write(conn->sendbuffer,
-			    &h, sizeof(h));
+			    &h, sizeof(h), do_timeout);
 			continue;
 		case 'i':
 			i = va_arg(*app, gfarm_int32_t);
 			i = htonl(i);
 			gfarm_iobuffer_put_write(conn->sendbuffer,
-			    &i, sizeof(i));
+			    &i, sizeof(i), do_timeout);
 			continue;
 		case 'l':
 			/*
@@ -424,25 +436,25 @@ gfp_xdr_vsend(struct gfp_xdr *conn,
 			lv[0] = htonl(lv[0]);
 			lv[1] = htonl(lv[1]);
 			gfarm_iobuffer_put_write(conn->sendbuffer,
-			    lv, sizeof(lv));
+			    lv, sizeof(lv), do_timeout);
 			continue;
 		case 's':
 			s = va_arg(*app, const char *);
 			n = strlen(s);
 			i = htonl(n);
 			gfarm_iobuffer_put_write(conn->sendbuffer,
-			    &i, sizeof(i));
+			    &i, sizeof(i), do_timeout);
 			gfarm_iobuffer_put_write(conn->sendbuffer,
-			    s, n);
+			    s, n, do_timeout);
 			continue;
 		case 'S':
 			s = va_arg(*app, const char *);
 			n = va_arg(*app, size_t);
 			i = htonl(n);
 			gfarm_iobuffer_put_write(conn->sendbuffer,
-			    &i, sizeof(i));
+			    &i, sizeof(i), do_timeout);
 			gfarm_iobuffer_put_write(conn->sendbuffer,
-			    s, n);
+			    s, n, do_timeout);
 			continue;
 		case 'b':
 			/*
@@ -454,15 +466,15 @@ gfp_xdr_vsend(struct gfp_xdr *conn,
 			i = htonl(n);
 			s = va_arg(*app, const char *);
 			gfarm_iobuffer_put_write(conn->sendbuffer,
-			    &i, sizeof(i));
+			    &i, sizeof(i), do_timeout);
 			gfarm_iobuffer_put_write(conn->sendbuffer,
-			    s, n);
+			    s, n, do_timeout);
 			continue;
 		case 'r':
 			n = va_arg(*app, size_t);
 			s = va_arg(*app, const char *);
 			gfarm_iobuffer_put_write(conn->sendbuffer,
-			    s, n);
+			    s, n, do_timeout);
 			continue;
 		case 'f':
 #ifndef __KERNEL__	/* double */
@@ -472,7 +484,7 @@ gfp_xdr_vsend(struct gfp_xdr *conn,
 			swab(&d, &nd, sizeof(nd));
 #endif
 			gfarm_iobuffer_put_write(conn->sendbuffer,
-			    &nd, sizeof(nd));
+			    &nd, sizeof(nd), do_timeout);
 			continue;
 #else /* __KERNEL__ */
 			gflog_fatal(GFARM_MSG_1003868,
@@ -902,7 +914,7 @@ gfp_xdr_send(struct gfp_xdr *conn, const char *format, ...)
 	gfarm_error_t e;
 
 	va_start(ap, format);
-	e = gfp_xdr_vsend(conn, &format, &ap);
+	e = gfp_xdr_vsend(conn, 1, &format, &ap); /* do timeout */
 	va_end(ap);
 
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -913,6 +925,30 @@ gfp_xdr_send(struct gfp_xdr *conn, const char *format, ...)
 	}
 	if (*format != '\0') {
 		gflog_debug(GFARM_MSG_1001005, "gfp_xdr_send_size: "
+		    "invalid format character: %c(%x)", *format, *format);
+		return (GFARM_ERRMSG_GFP_XDR_SEND_INVALID_FORMAT_CHARACTER);
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfp_xdr_send_notimeout(struct gfp_xdr *conn, const char *format, ...)
+{
+	va_list ap;
+	gfarm_error_t e;
+
+	va_start(ap, format);
+	e = gfp_xdr_vsend(conn, 0, &format, &ap); /* notimeout */
+	va_end(ap);
+
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfp_xdr_vsend_notimeout() failed: %s",
+			gfarm_error_string(e));
+		return (e);
+	}
+	if (*format != '\0') {
+		gflog_debug(GFARM_MSG_UNFIXED, "gfp_xdr_send_size: "
 		    "invalid format character: %c(%x)", *format, *format);
 		return (GFARM_ERRMSG_GFP_XDR_SEND_INVALID_FORMAT_CHARACTER);
 	}
@@ -1042,7 +1078,7 @@ gfp_xdr_vrpc_request(struct gfp_xdr *conn, gfarm_int32_t command,
 	/*
 	 * send request
 	 */
-	e = gfp_xdr_send(conn, "i", command);
+	e = gfp_xdr_send(conn, "i", command); /* do timeout */
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001009,
 			"sending command (%d) failed: %s",
@@ -1050,7 +1086,27 @@ gfp_xdr_vrpc_request(struct gfp_xdr *conn, gfarm_int32_t command,
 			gfarm_error_string(e));
 		return (e);
 	}
-	return (gfp_xdr_vsend(conn, formatp, app));
+	return (gfp_xdr_vsend(conn, 1, formatp, app)); /* do timeout */
+}
+
+gfarm_error_t
+gfp_xdr_vrpc_request_notimeout(struct gfp_xdr *conn, gfarm_int32_t command,
+	const char **formatp, va_list *app)
+{
+	gfarm_error_t e;
+
+	/*
+	 * send request
+	 */
+	e = gfp_xdr_send_notimeout(conn, "i", command);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"sending command (%d) failed: %s",
+			command,
+			gfarm_error_string(e));
+		return (e);
+	}
+	return (gfp_xdr_vsend(conn, 0, formatp, app)); /* notimeout */
 }
 
 /*
