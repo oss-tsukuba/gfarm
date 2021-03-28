@@ -125,6 +125,8 @@ extern tls_test_ctx_p gfarm_ctxp;
  * Logger
  */
 
+#define TLS_LOG_MSG_LEN	2048
+
 /*
  * gflog with TLS runtime message
  */

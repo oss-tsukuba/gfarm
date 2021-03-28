@@ -52,6 +52,7 @@ gfarm_openssl_initialize()
 
 	if (initialized)
 		return;
+	SSL_load_error_strings();
 	SSL_library_init();
 
 #ifdef HAVE_CRYPTO_SET_LOCKING_CALLBACK

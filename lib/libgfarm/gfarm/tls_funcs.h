@@ -518,11 +518,7 @@ tlslog_tls_message(int msg_no, int priority,
 	const char *file, int line_no, const char *func,
 	const char *format, ...)
 {
-#ifdef BASIC_BUFSZ
-#define BASIC_BUFSZ_ORG	BASIC_BUFSZ	
-#endif /* BASIC_BUFSZ */
-#define BASIC_BUFSZ	PATH_MAX
-	char msgbuf[BASIC_BUFSZ];
+	char msgbuf[TLS_LOG_MSG_LEN];
 	va_list ap;
 	unsigned int err;
 
@@ -530,9 +526,12 @@ tlslog_tls_message(int msg_no, int priority,
 	(void)vsnprintf(msgbuf, sizeof(msgbuf), format, ap);
 	va_end(ap);
 
-	if (ERR_peek_error() != 0 && gflog_auth_get_verbose() != 0) {
-		char msgbuf2[BASIC_BUFSZ * 3];
-		char tlsmsg[BASIC_BUFSZ];
+	if (ERR_peek_error() == 0) {
+		gflog_message(msg_no, priority, file, line_no, func,
+			"%s", msgbuf);
+	} else {
+		char msgbuf2[TLS_LOG_MSG_LEN * 3];
+		char tlsmsg[TLS_LOG_MSG_LEN];
 		const char *tls_file = NULL;
 		int tls_line = -1;
 
@@ -553,20 +552,7 @@ tlslog_tls_message(int msg_no, int priority,
 
 		gflog_auth_message(msg_no, priority, file, line_no, func,
 			"%s", msgbuf2);
-	} else {
-		if ((err = ERR_get_error()) == 0) {
-			gflog_message(msg_no, priority, file, line_no, func,
-				"%s", msgbuf);
-		} else {
-			gflog_message(msg_no, priority, file, line_no, func,
-				"%s: [OpenSSL error %ud]", msgbuf, err);
-		}
 	}
-#undef BASIC_BUFSZ
-#ifdef BASIC_BUFSZ_ORG
-#define BASIC_BUFSZ BASIC_BUFSZ_ORG
-#undef BASIC_BUFSZ_ORG
-#endif /* BASIC_BUFSZ_ORG */
 }
 
 /*
@@ -1534,7 +1520,7 @@ tls_verify_callback_body(int ok, X509_STORE_CTX *sctx)
 		} else {
 			dn = NULL;
 		}
-		if (gflog_auth_get_verbose() != 0) {
+		if (gflog_auth_get_verbose()) {
 			gflog_tls_debug(GFARM_MSG_UNFIXED, "depth %d: ok %d: "
 				" cert \"%s\": error %d: error string '%s'",
 				vdepth, ok, dn, verr, verrstr);
@@ -2221,7 +2207,7 @@ tls_session_clear_ctx(tls_session_ctx_t x)
  */
 static inline bool
 tls_session_io_continuable(int sslerr, tls_session_ctx_t ctx,
-	bool in_handshake)
+	bool in_handshake, const char *diag)
 {
 	bool ret = false;
 
@@ -2270,6 +2256,8 @@ tls_session_io_continuable(int sslerr, tls_session_ctx_t ctx,
 		 */
 		ctx->last_gfarm_error_ = GFARM_ERR_TLS_RUNTIME_ERROR;
 		ctx->got_fatal_ssl_error_ = true;
+		gflog_tls_notice(GFARM_MSG_UNFIXED,
+		    "TLS error during %s", diag);
 		break;
 
 	case SSL_ERROR_ZERO_RETURN:
@@ -2319,7 +2307,7 @@ tls_session_wait_readable(tls_session_ctx_t ctx, int fd, int tous)
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 	char *method = NULL;
 
-	if (gflog_auth_get_verbose() != 0) {
+	if (gflog_auth_get_verbose()) {
 		gflog_tls_debug(GFARM_MSG_UNFIXED, "%s(): wait enter.",
 			__func__);
 	}
@@ -2387,7 +2375,7 @@ tls_session_wait_readable(tls_session_ctx_t ctx, int fd, int tous)
 
 	ctx->last_gfarm_error_ = ret;
 
-	if (gflog_auth_get_verbose() != 0) {
+	if (gflog_auth_get_verbose()) {
 		gflog_tls_debug(GFARM_MSG_UNFIXED, "%s(): wait (%s) end : %s",
 			__func__, method, gfarm_error_string(ret));
 	}
@@ -2568,7 +2556,7 @@ tls_session_establish(tls_session_ctx_t ctx, int fd)
 			st = p(ssl);
 			ssl_err = SSL_get_error(ssl, st);
 			do_cont = tls_session_io_continuable(
-					ssl_err, ctx, false);
+					ssl_err, ctx, false, "SSL handshake");
 			if (likely(st == 1 && ssl_err == SSL_ERROR_NONE)) {
 				ret = ctx->last_gfarm_error_ =
 					GFARM_ERR_NO_ERROR;
@@ -2639,7 +2627,7 @@ tls_session_establish(tls_session_ctx_t ctx, int fd)
 		}
 
 		if (is_valid_string(ctx->peer_dn_oneline_) == true &&
-			gflog_auth_get_verbose() != 0) {
+			gflog_auth_get_verbose()) {
 			gflog_tls_debug(GFARM_MSG_UNFIXED,
 				"Authentication between \"%s\" %s and a "
 				"TLS session %s.",
@@ -2677,7 +2665,7 @@ tls_session_update_key(tls_session_ctx_t ctx, int delta)
 		if (likely(SSL_key_update(ssl,
 				SSL_KEY_UPDATE_REQUESTED) == 1)) {
 			ret = ctx->last_gfarm_error_ = GFARM_ERR_NO_ERROR;
-			if (gflog_auth_get_verbose() != 0) {
+			if (gflog_auth_get_verbose()) {
 				gflog_tls_debug(GFARM_MSG_UNFIXED,
 					"TLS shared key updatted after after "
 					" %zu bytes I/O.",
@@ -2722,7 +2710,7 @@ tls_session_read(tls_session_ctx_t ctx, void *buf, int len,
 		int ssl_err;
 		bool continuable;
 
-		if (gflog_auth_get_verbose() != 0) {
+		if (gflog_auth_get_verbose()) {
 			gflog_tls_debug(GFARM_MSG_UNFIXED,
 				"%s(%s): about to read %d (remains %d)",
 				__func__, ctx->peer_cn_, len,
@@ -2737,7 +2725,7 @@ tls_session_read(tls_session_ctx_t ctx, void *buf, int len,
 		*actual_io_bytes = 0;
 
 	retry:
-		if (gflog_auth_get_verbose() != 0) {
+		if (gflog_auth_get_verbose()) {
 			gflog_tls_debug(GFARM_MSG_UNFIXED,
 				"%s(%s): read %d/%d", __func__,
 				ctx->peer_cn_, n, len);
@@ -2752,7 +2740,8 @@ tls_session_read(tls_session_ctx_t ctx, void *buf, int len,
 		 *	continuity.
 		 */
 		ssl_err = SSL_get_error(ssl, n);
-		continuable = tls_session_io_continuable(ssl_err, ctx, false);
+		continuable = tls_session_io_continuable(
+			ssl_err, ctx, false, "SSL_read");
 		if (likely(n > 0 && ssl_err == SSL_ERROR_NONE)) {
 			ctx->last_gfarm_error_ = GFARM_ERR_NO_ERROR;
 			ctx->last_ssl_error_ = ssl_err;
@@ -2767,7 +2756,7 @@ tls_session_read(tls_session_ctx_t ctx, void *buf, int len,
 			}
 		}
 
-		if (gflog_auth_get_verbose() != 0) {
+		if (gflog_auth_get_verbose()) {
 			gflog_tls_debug(GFARM_MSG_UNFIXED,
 				"%s(%s): read done %d (remains %d) : %s",
 				__func__, ctx->peer_cn_, n, SSL_pending(ssl),
@@ -2800,7 +2789,7 @@ tls_session_write(tls_session_ctx_t ctx, const void *buf, int len,
 		int ssl_err;
 		bool continuable;
 
-		if (gflog_auth_get_verbose() != 0) {
+		if (gflog_auth_get_verbose()) {
 			gflog_tls_debug(GFARM_MSG_UNFIXED,
 				"%s(%s): about to write %d", __func__,
 				ctx->peer_cn_, len);
@@ -2813,7 +2802,7 @@ tls_session_write(tls_session_ctx_t ctx, const void *buf, int len,
 
 		*actual_io_bytes = 0;
 	retry:
-		if (gflog_auth_get_verbose() != 0) {
+		if (gflog_auth_get_verbose()) {
 			gflog_tls_debug(GFARM_MSG_UNFIXED,
 				"%s(%s): write %d/%d", __func__,
 				ctx->peer_cn_, n, len);
@@ -2828,7 +2817,8 @@ tls_session_write(tls_session_ctx_t ctx, const void *buf, int len,
 		 *	continuity.
 		 */
 		ssl_err = SSL_get_error(ssl, n);
-		continuable = tls_session_io_continuable(ssl_err, ctx, false);
+		continuable = tls_session_io_continuable(
+			ssl_err, ctx, false, "SSL_write");
 		if (likely(n > 0 && ssl_err == SSL_ERROR_NONE)) {
 			ctx->last_gfarm_error_ = GFARM_ERR_NO_ERROR;
 			ctx->last_ssl_error_ = ssl_err;
@@ -2843,7 +2833,7 @@ tls_session_write(tls_session_ctx_t ctx, const void *buf, int len,
 			}
 		}
 
-		if (gflog_auth_get_verbose() != 0) {
+		if (gflog_auth_get_verbose()) {
 			gflog_tls_debug(GFARM_MSG_UNFIXED,
 				"%s(%s): write done %d : %s", __func__,
 				ctx->peer_cn_, n, gfarm_error_string(ret));
@@ -2887,7 +2877,7 @@ tls_session_shutdown(tls_session_ctx_t ctx)
 	if (likely((ctx != NULL) && ((ssl = ctx->ssl_) != NULL))) {
 		int st = -1;
 
-		if (gflog_auth_get_verbose() != 0) {
+		if (gflog_auth_get_verbose()) {
 			gflog_tls_debug(GFARM_MSG_UNFIXED,
 				"%s(%s): about to shutdown SSL.",
 				__func__, ctx->peer_cn_);
@@ -2901,7 +2891,7 @@ tls_session_shutdown(tls_session_ctx_t ctx)
 		} else {
 			st = SSL_shutdown(ssl);
 
-			if (gflog_auth_get_verbose() != 0) {
+			if (gflog_auth_get_verbose()) {
 				gflog_tls_debug(GFARM_MSG_UNFIXED,
 					"%s(%s): shutdown SSL issued : %s",
 					__func__, ctx->peer_cn_,
@@ -2927,7 +2917,7 @@ tls_session_shutdown(tls_session_ctx_t ctx)
 
 			ret = tls_session_read(ctx, buf, sizeof(buf), &s_n);
 
-			if (gflog_auth_get_verbose() != 0) {
+			if (gflog_auth_get_verbose()) {
 				gflog_tls_debug(GFARM_MSG_UNFIXED,
 					"%s(%s): shutdown SSL replies read "
 					"%d : %s", __func__, ctx->peer_cn_,
@@ -2948,7 +2938,7 @@ tls_session_shutdown(tls_session_ctx_t ctx)
 			ctx->io_total_ = 0;
 		}
 
-		if (gflog_auth_get_verbose() != 0) {
+		if (gflog_auth_get_verbose()) {
 			gflog_tls_debug(GFARM_MSG_UNFIXED,
 				"%s(%s): shutdown SSL done : %s",
 				__func__, ctx->peer_cn_,
