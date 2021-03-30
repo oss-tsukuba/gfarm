@@ -1472,11 +1472,11 @@ get_peer_cn(X509_NAME *pn, char **nameptr, int maxlen)
 			}
 		} else if (pos >= 0 && pos2 >= 0) {
 			ret = GFARM_ERR_INVALID_CREDENTIAL;
-			gflog_tls_error(GFARM_MSG_UNFIXED,
+			gflog_tls_notice(GFARM_MSG_UNFIXED,
 				"More than one CNs are included.");
 		} else if (pos == -1 || pos == -2) {
 			ret = GFARM_ERR_INVALID_CREDENTIAL;
-			gflog_tls_error(GFARM_MSG_UNFIXED,
+			gflog_tls_notice(GFARM_MSG_UNFIXED,
 				"No CN is included.");
 		}
 	} else {
@@ -2473,7 +2473,7 @@ tls_session_verify(tls_session_ctx_t ctx, bool *is_verified)
 				v = true;
 			} else {
 				v = false;
-				gflog_tls_error(GFARM_MSG_UNFIXED,
+				gflog_tls_notice(GFARM_MSG_UNFIXED,
 					"Certificate verification failed: %s",
 					X509_verify_cert_error_string(vres));
 				ret = ctx->last_gfarm_error_ = 
@@ -2483,7 +2483,7 @@ tls_session_verify(tls_session_ctx_t ctx, bool *is_verified)
 			ctx->is_verified_ = v;
 		} else {
 			ret = GFARM_ERR_TLS_RUNTIME_ERROR;
-			gflog_tls_error(GFARM_MSG_UNFIXED,
+			gflog_tls_notice(GFARM_MSG_UNFIXED,
 				"Failed to acquire peer certificate.");
 		}
 	} else {
@@ -2573,7 +2573,7 @@ tls_session_establish(tls_session_ctx_t ctx, int fd)
 				} else {
 					ret = ctx->last_gfarm_error_;
 				}
-				gflog_tls_error(GFARM_MSG_UNFIXED,
+				gflog_tls_notice(GFARM_MSG_UNFIXED,
 					"SSL handshake failed: %s",
 					gfarm_error_string(ret));
 			}
@@ -2587,7 +2587,7 @@ tls_session_establish(tls_session_ctx_t ctx, int fd)
 		if (pst != 0 && errno != 0) {
 			ret = gfarm_errno_to_error(errno);
 			if (errno == ENOTCONN) {
-				gflog_tls_error(GFARM_MSG_UNFIXED,
+				gflog_tls_notice(GFARM_MSG_UNFIXED,
 					"The file descriptor %d is not yet "
 					"connected: %s",
 					fd, gfarm_error_string(ret));
@@ -2597,7 +2597,7 @@ tls_session_establish(tls_session_ctx_t ctx, int fd)
 					"socket: %s",
 					fd, gfarm_error_string(ret));
 			} else {
-				gflog_tls_error(GFARM_MSG_UNFIXED,
+				gflog_tls_notice(GFARM_MSG_UNFIXED,
 					"Failed to check connection status of "
 					"the file descriptor %d: %s",
 					fd, gfarm_error_string(ret));
@@ -2616,11 +2616,11 @@ tls_session_establish(tls_session_ctx_t ctx, int fd)
 			ret = ctx->last_gfarm_error_ =
 				GFARM_ERR_AUTHENTICATION;
 			if (is_valid_string(ctx->peer_dn_oneline_) == true) {
-				gflog_tls_error(GFARM_MSG_UNFIXED,
+				gflog_tls_notice(GFARM_MSG_UNFIXED,
 					"Authentication failed between peer: "
 					"'%s'", ctx->peer_cn_);
 			} else {
-				gflog_tls_error(GFARM_MSG_UNFIXED,
+				gflog_tls_notice(GFARM_MSG_UNFIXED,
 					"Authentication failed "
 					"(no cert acquired.)");
 			}
@@ -2667,7 +2667,7 @@ tls_session_update_key(tls_session_ctx_t ctx, int delta)
 			ret = ctx->last_gfarm_error_ = GFARM_ERR_NO_ERROR;
 			if (gflog_auth_get_verbose()) {
 				gflog_tls_debug(GFARM_MSG_UNFIXED,
-					"TLS shared key updatted after after "
+					"TLS shared key updated after after "
 					" %zu bytes I/O.",
 					ctx->io_key_update_);
 			}
