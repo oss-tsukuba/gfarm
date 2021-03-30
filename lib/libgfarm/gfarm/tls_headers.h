@@ -140,7 +140,7 @@ extern tls_test_ctx_p gfarm_ctxp;
 	tlslog_tls_message(msg_no, LOG_DEBUG, \
 		__FILE__, __LINE__, __func__, __VA_ARGS__)
 #define gflog_tls_info(msg_no, ...)	     \
-	tlslog_tls_message(msg_no, LOG_DEBUG, \
+	tlslog_tls_message(msg_no, LOG_INFO, \
 		__FILE__, __LINE__, __func__, __VA_ARGS__)
 #define gflog_tls_notice(msg_no, ...)	     \
 	tlslog_tls_message(msg_no, LOG_NOTICE, \
