@@ -28,6 +28,7 @@
 #include "lookup.h"
 #include "filesystem.h"
 #include "metadb_server.h"
+#include "schedule.h"
 
 #include "gfs_rdma.h"
 
@@ -222,6 +223,7 @@ gfarm_initialize(int *argcp, char ***argvp)
 #ifdef HAVE_INFINIBAND
 	gfs_ib_rdma_initialize(0);
 #endif
+	gfarm_schedule_init();
 
 	return (GFARM_ERR_NO_ERROR);
 }

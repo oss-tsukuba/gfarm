@@ -15,6 +15,9 @@ extern int	gfarmReadInt16(int fd, gfarm_int16_t *buf, int len,
 			      int timtoueMsec);
 extern int	gfarmReadInt32(int fd, gfarm_int32_t *buf, int len,
 			      int timtoueMsec);
-extern int	gfarmWriteInt8(int fd, gfarm_int8_t *buf, int len);
-extern int	gfarmWriteInt16(int fd, gfarm_int16_t *buf, int len);
-extern int	gfarmWriteInt32(int fd, gfarm_int32_t *buf, int len);
+extern int	gfarmWriteInt8(int fd, gfarm_int8_t *buf, int len,
+				int timeoutMsec);
+extern int	gfarmWriteInt16(int fd, gfarm_int16_t *buf, int len,
+				int timeoutMsec);
+extern int	gfarmWriteInt32(int fd, gfarm_int32_t *buf, int len,
+				int timeoutMsec);

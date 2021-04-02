@@ -28,18 +28,27 @@ RUN apt-get update \
     fuse \
     libacl1-dev \
     ruby \
+    git \
     globus-simple-ca \
     globus-gsi-cert-utils-progs \
     globus-proxy-utils \
     && globus-version
 
 # for debug
-RUN apt-get -y install \
+RUN apt-get update \
+    && apt-get -y install \
     ncat ldnsutils iproute2 net-tools bind9-dnsutils telnet tcpdump \
     manpages manpages-ja man-db \
     gdb valgrind strace inotify-tools \
     vim nano emacs-nox less
 
+RUN apt-get update \
+    && apt-key adv --keyserver keyserver.ubuntu.com --recv-key C8CAB6595FDFF622 \
+    && apt-get -y install software-properties-common \
+    && add-apt-repository http://ddebs.ubuntu.com \
+    && apt-get -y install \
+    libfuse2-dbgsym \
+    valgrind-dbg
 
 # System independent (see setup-univ.sh)
 

@@ -1224,11 +1224,15 @@ gfm_name2_op0(const char *src, const char *dst, int flags,
 		}
 		if (sconn == NULL || (slookup && gfarm_is_url(spath))) {
 			if (sconn) {
-				gfm_client_connection_unlock(sconn);
+				if (sconn_locked) {
+					gfm_client_connection_unlock(sconn);
+					sconn_locked = 0;
+					if (same_mds)
+						dconn_locked = 0;
+				}
 				gfm_client_connection_free(sconn);
 				sconn = NULL;
 			}
-			sconn_locked = 0;
 			if ((e = gfarm_url_parse_metadb(&spath, &sconn))
 			    != GFARM_ERR_NO_ERROR) {
 				gflog_debug(GFARM_MSG_1002623,
@@ -1241,11 +1245,15 @@ gfm_name2_op0(const char *src, const char *dst, int flags,
 		}
 		if (dconn == NULL || (dlookup && gfarm_is_url(dpath))) {
 			if (dconn) {
-				gfm_client_connection_unlock(dconn);
+				if (dconn_locked) {
+					gfm_client_connection_unlock(dconn);
+					dconn_locked = 0;
+					if (same_mds)
+						sconn_locked = 0;
+				}
 				gfm_client_connection_free(dconn);
 				dconn = NULL;
 			}
-			dconn_locked = 0;
 			if ((e = gfarm_url_parse_metadb(&dpath, &dconn))
 			    != GFARM_ERR_NO_ERROR) {
 				gflog_debug(GFARM_MSG_1002624,
@@ -1265,16 +1273,32 @@ gfm_name2_op0(const char *src, const char *dst, int flags,
 			break;
 		}
 
-		if ((long) sconn < (long) dconn) {
-			gfm_client_connection_lock(sconn);
-			gfm_client_connection_lock(dconn);
+		same_mds = sconn == dconn;
+		if (same_mds) {
+			if (!sconn_locked && !dconn_locked)
+				gfm_client_connection_lock(sconn);
+		} else if ((long) sconn < (long) dconn) { /* locking order? */
+			if (!sconn_locked && dconn_locked) {
+				/* to keep locking order */
+				gfm_client_connection_unlock(dconn);
+				dconn_locked = 0;
+			}
+			if (!sconn_locked)
+				gfm_client_connection_lock(sconn);
+			if (!dconn_locked)
+				gfm_client_connection_lock(dconn);
 		} else {
-			gfm_client_connection_lock(dconn);
-			gfm_client_connection_lock(sconn);
+			if (!dconn_locked && sconn_locked) {
+				/* to keep locking order */
+				gfm_client_connection_unlock(sconn);
+				sconn_locked = 0;
+			}
+			if (!dconn_locked)
+				gfm_client_connection_lock(dconn);
+			if (!sconn_locked)
+				gfm_client_connection_lock(sconn);
 		}
 		sconn_locked = dconn_locked = 1;
-
-		same_mds = sconn == dconn;
 
 		if ((slookup || same_mds) &&
 		    (e = gfm_client_compound_begin_request(sconn))
@@ -1593,10 +1617,16 @@ on_error_result:
 	free(dnextpath);
 	if (sconn && sconn_locked) {
 		gfm_client_connection_unlock(sconn);
+		sconn_locked = 0;
+		if (same_mds)
+			dconn_locked = 0;
 		*sconnp = sconn;
 	}
 	if (dconn && dconn_locked) {
 		gfm_client_connection_unlock(dconn);
+		dconn_locked = 0;
+		if (same_mds)
+			sconn_locked = 0;
 	}
 	if (dconn && !same_mds)
 		*dconnp = dconn;

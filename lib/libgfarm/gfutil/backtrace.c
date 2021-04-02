@@ -12,7 +12,7 @@
 void
 gfarm_log_backtrace_symbols(void)
 {
-#ifdef HAVE_BACKTRACE_SYMBOLS
+#ifdef HAVE_BACKTRACE
 	void *addresses[MAX_BACKTRACE_ADDRESSES];
 	char **symbols;
 	int n;

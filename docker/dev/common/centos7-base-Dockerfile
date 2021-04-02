@@ -7,7 +7,8 @@ ENV TZ=Asia/Tokyo
 RUN sed -i -e '/override_install_langs/s/$/,ja_JP.utf8/g' /etc/yum.conf
 RUN sed -i -e '/tsflags=nodocs/s/^/#/' /etc/yum.conf
 
-RUN yum -y reinstall glibc-common
+RUN yum -y update \
+    && yum -y reinstall glibc-common
 
 RUN yum -y update \
     && yum -y install \
@@ -45,6 +46,10 @@ RUN yum -y update \
     gdb valgrind strace inotify-tools \
     man man-pages man-pages-ja man-db which \
     nano emacs-nox less
+
+RUN yum -y update \
+    && debuginfo-install -y \
+    fuse-libs
 
 RUN sed -i 's@^Defaults    secure_path = /sbin:/bin:/usr/sbin:/usr/bin$@Defaults    secure_path = /usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin@' /etc/sudoers
 

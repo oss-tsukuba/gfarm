@@ -1,0 +1,18 @@
+set -o xtrace
+#set -o nounset
+
+if [ ! -d /mnt/work/gfarm-s3-minio-web ]; then
+	exit 1
+fi
+
+export WORK=$HOME/tmp/work
+mkdir -p $WORK
+
+[ -n "$USER" ] || export USER=user1
+
+if [ ! -e $WORK/gfarm-s3-minio-web ]; then
+(cd $WORK && git clone https://github.com/oss-tsukuba/gfarm-s3-minio-web.git)
+(cd $WORK/gfarm-s3-minio-web && git checkout develop)
+fi
+
+(cd $WORK/gfarm-s3-minio-web/test && python3 test_s3.py)

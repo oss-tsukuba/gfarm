@@ -39,11 +39,16 @@ RUN zypper addrepo \
     && globus-version
 
 # for debug
+RUN zypper mr -e repo-debug
+
 RUN zypper install -y \
     telnet ncat ldns iproute2 net-tools bind-utils tcpdump \
     gdb valgrind strace inotify-tools \
     man man-pages man-pages-ja \
     nano emacs-nox vim less which
+
+RUN zypper install -y \
+    libfuse2-debuginfo
 
 RUN sed -i 's@^Defaults secure_path="/usr/sbin:@Defaults secure_path="/usr/local/bin:/usr/sbin:@' /etc/sudoers
 

@@ -224,7 +224,7 @@ auth_server_uid.lo: $(GFUTIL_SRCDIR)/gfutil.h auth.h gfs_proto.h gfm_proto.h gfm
 config.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/hash.h $(GFUTIL_SRCDIR)/lru_cache.h context.h liberror.h patmatch.h hostspec.h param.h sockopt.h host.h auth.h gfpath.h config.h gfm_proto.h gfs_proto.h gfs_profile.h gfm_client.h lookup.h metadb_server.h filesystem.h conn_hash.h conn_cache.h humanize_number.h $(top_builddir)/makes/config.mk # $(GFARM_CONFIG) -> $(sysconfdir)
 auth_server_tls.lo: context.h gfp_xdr.h io_tls.h auth.h gfm_proto.h gfs_proto.h
 config_openssl.lo: config_openssl.h
-config_client.lo: $(GFUTIL_SRCDIR)/timer.h $(GFUTIL_SRCDIR)/gfutil.h context.h liberror.h gfs_profile.h host.h auth.h gfpath.h config.h config_openssl.h gfm_client.h gfs_proto.h gfs_client.h lookup.h filesystem.h metadb_server.h
+config_client.lo: $(GFUTIL_SRCDIR)/timer.h $(GFUTIL_SRCDIR)/gfutil.h context.h liberror.h gfs_profile.h host.h auth.h gfpath.h config.h config_openssl.h gfm_client.h gfs_proto.h gfs_client.h lookup.h filesystem.h metadb_server.h schedule.h gfs_rdma.h
 config_server.lo: $(GFUTIL_SRCDIR)/gfutil.h context.h liberror.h auth.h gfpath.h config.h config_openssl.h
 conn_cache.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/hash.h $(GFUTIL_SRCDIR)/lru_cache.h $(GFUTIL_SRCDIR)/thrsubr.h conn_hash.h conn_cache.h
 conn_hash.lo: $(GFUTIL_SRCDIR)/hash.h conn_hash.h

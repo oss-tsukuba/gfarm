@@ -1123,7 +1123,7 @@ gfs_server_put_reply_common(struct gfp_xdr *client, const char *diag,
 		gflog_debug(GFARM_MSG_1000458, "reply: %s: %d (%s)",
 		    diag, (int)ecode, gfarm_error_string(ecode));
 
-	e = gfp_xdr_vsend_result(client, ecode, format, app);
+	e = gfp_xdr_vsend_result(client, 1, ecode, format, app); /*do timeout*/
 	if (e == GFARM_ERR_NO_ERROR)
 		e = gfp_xdr_flush(client);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -1195,10 +1195,11 @@ gfs_async_server_put_reply_common(struct gfp_xdr *client, gfp_xdr_xid_t xid,
 		gflog_debug(GFARM_MSG_1002381, "async_reply: %s: %d (%s)",
 		    diag, (int)ecode, gfarm_error_string(ecode));
 
-	e = gfp_xdr_vsend_async_result(client, xid, ecode, format, app);
+	e = gfp_xdr_vsend_async_result_notimeout(
+	    client, xid, ecode, format, app);
 
 	if (e == GFARM_ERR_NO_ERROR)
-		e = gfp_xdr_flush(client);
+		e = gfp_xdr_flush_notimeout(client);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1002382, "%s put reply: %s",
 		    diag, gfarm_error_string(e));
@@ -1249,7 +1250,7 @@ gfm_async_client_send_request(struct gfp_xdr *bc_conn,
 	va_list ap;
 
 	va_start(ap, format);
-	e = gfp_xdr_vsend_async_request(bc_conn, async,
+	e = gfp_xdr_vsend_async_request_notimeout(bc_conn, async,
 	    result_callback, disconnect_callback, closure,
 	    command, format, &ap);
 	va_end(ap);
@@ -5612,7 +5613,7 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 	gfarm_error_t e;
 	struct gfp_xdr *client;
 	int eof;
-	gfarm_int32_t request;
+	gfarm_int32_t request, last_request = -1;
 	char *aux, addr_string[GFARM_SOCKADDR_STRLEN];
 	enum gfarm_auth_id_type peer_type;
 	enum gfarm_auth_method auth_method;
@@ -5751,6 +5752,8 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 		default:
 			gflog_warning(GFARM_MSG_1000558, "unknown request %d",
 			    (int)request);
+			gflog_info(GFARM_MSG_UNFIXED, "last request: %d",
+			    (int)last_request);
 			cleanup(0);
 			exit(1);
 		}
@@ -5767,6 +5770,7 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 			    != GFARM_ERR_NO_ERROR)
 				fatal(GFARM_MSG_1003362, "die");
 		}
+		last_request = request;
 	}
 }
 
@@ -6484,7 +6488,7 @@ back_channel_server(void)
 	enum gfp_xdr_msg_type type;
 	gfp_xdr_xid_t xid;
 	size_t size;
-	gfarm_int32_t gfmd_knows_me, rv, request;
+	gfarm_int32_t gfmd_knows_me, rv, request, last_request = -1;
 
 	static int hack_to_make_cookie_not_work = 0; /* XXX FIXME */
 
@@ -6628,6 +6632,8 @@ back_channel_server(void)
 				    "(back channel) unknown request %d "
 				    "(xid:%d size:%d), skip",
 				    (int)request, (int)xid, (int)size);
+				gflog_info(GFARM_MSG_UNFIXED,
+				    "last request: %d", (int)last_request);
 				e = gfp_xdr_purge(bc_conn, 0, size);
 				if (e != GFARM_ERR_NO_ERROR) {
 					gflog_error(GFARM_MSG_1002200,
@@ -6643,6 +6649,7 @@ back_channel_server(void)
 				    gfarm_error_string(e));
 				break;
 			}
+			last_request = request;
 		}
 
 		kill_pending_replications();

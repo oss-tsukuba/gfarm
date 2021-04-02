@@ -103,7 +103,7 @@ gfm_async_server_put_reply(struct host *host,
 	va_list ap;
 
 	va_start(ap, format);
-	e = gfm_server_channel_vput_reply(
+	e = gfm_server_channel_vput_reply_notimeout(
 	    host_to_abstract_host(host), peer, xid, diag,
 	    errcode, format, &ap);
 	va_end(ap);
@@ -199,7 +199,7 @@ gfs_client_status_free(void *p, void *arg)
 }
 
 static gfarm_error_t
-gfs_client_send_request(struct host *host,
+gfs_client_send_request_notimeout(struct host *host,
 	struct peer *peer0, const char *diag,
 	gfarm_int32_t (*result_callback)(void *, void *, size_t),
 	void (*disconnect_callback)(void *, void *),
@@ -210,7 +210,7 @@ gfs_client_send_request(struct host *host,
 	va_list ap;
 
 	va_start(ap, format);
-	e = gfm_client_channel_vsend_request(
+	e = gfm_client_channel_vsend_request_notimeout(
 	    host_to_abstract_host(host), peer0, diag,
 	    result_callback, disconnect_callback, closure,
 #ifdef COMPAT_GFARM_2_3
@@ -253,7 +253,7 @@ gfs_client_status_request(void *arg)
 
 	/*
 	 * schedule here instead of the end of gfs_client_status_result(),
-	 * because gfs_client_send_request() may block, and we should
+	 * because gfs_client_send_request_notimeout() may block, and we should
 	 * detect it at next call of gfs_client_status_request().
 	 */
 	callout_schedule(host_status_callout(host),
@@ -268,12 +268,12 @@ gfs_client_status_request(void *arg)
 		flags = host_flags(host);
 		giant_unlock();
 
-		e = gfs_client_send_request(host, NULL, diag,
+		e = gfs_client_send_request_notimeout(host, NULL, diag,
 		    result_callback, gfs_client_status_free, host,
 		    GFM_CLIENT_CHANNEL_TIMEOUT_INFINITY, GFS_PROTO_STATUS2,
 		    "i", flags);
 	} else
-		e = gfs_client_send_request(host, NULL, diag,
+		e = gfs_client_send_request_notimeout(host, NULL, diag,
 		    result_callback, gfs_client_status_free, host,
 		    GFM_CLIENT_CHANNEL_TIMEOUT_INFINITY, GFS_PROTO_STATUS, "");
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -336,7 +336,7 @@ gfs_client_fhremove_request(void *closure)
 	gfarm_error_t e;
 	static const char diag[] = "GFS_PROTO_FHREMOVE";
 
-	e = gfs_client_send_request(host, NULL, diag,
+	e = gfs_client_send_request_notimeout(host, NULL, diag,
 	    gfs_client_fhremove_result, gfs_client_fhremove_free, dfc,
 	    GFS_PROTO_FHREMOVE_TIMEOUT, GFS_PROTO_FHREMOVE, "ll", ino, gen);
 	if (e == GFARM_ERR_NO_ERROR) {
@@ -535,7 +535,7 @@ gfs_client_replication_request_request(void *closure)
 	    "GFS_PROTO_REPLICATION_REQUEST request";
 
 	if (cksum_protocol) {
-		e = gfs_client_send_request(arg->dst, peer, diag,
+		e = gfs_client_send_request_notimeout(arg->dst, peer, diag,
 		    gfs_client_replication_cksum_request_result,
 		    gfs_client_replication_request_free, arg->fr,
 		    GFS_PROTO_REPLICATION_REQUEST_TIMEOUT,
@@ -547,7 +547,7 @@ gfs_client_replication_request_request(void *closure)
 		free(arg->cksum_type);
 		free(arg->cksum);
 	} else {
-		e = gfs_client_send_request(arg->dst, peer, diag,
+		e = gfs_client_send_request_notimeout(arg->dst, peer, diag,
 		    gfs_client_replication_request_result,
 		    gfs_client_replication_request_free, arg->fr,
 		    GFS_PROTO_REPLICATION_REQUEST_TIMEOUT,
@@ -820,8 +820,8 @@ gfm_server_switch_back_channel_common(struct peer *peer, int from_client,
 		return (e2);
 
 	if (debug_mode)
-		gflog_debug(GFARM_MSG_1000404, "gfp_xdr_flush");
-	e2 = gfp_xdr_flush(peer_get_conn(peer));
+		gflog_debug(GFARM_MSG_1000404, "gfp_xdr_flush_notimeout");
+	e2 = gfp_xdr_flush_notimeout(peer_get_conn(peer));
 	if (e2 != GFARM_ERR_NO_ERROR)
 		gflog_warning(GFARM_MSG_1000405,
 		    "%s: protocol flush: %s",

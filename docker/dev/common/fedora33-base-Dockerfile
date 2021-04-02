@@ -1,0 +1,68 @@
+FROM fedora:33
+
+# System dependent
+
+ENV TZ=Asia/Tokyo
+
+#RUN echo fastestmirror=True >> /etc/dnf/dnf.conf
+
+RUN dnf -y update \
+    && dnf -y install \
+    sudo \
+    openssh-server \
+    rsync \
+    langpacks-ja \
+    && dnf -y groupinstall "Development Tools"
+RUN dnf -y update \
+    && dnf -y install \
+    openssl-devel \
+    postgresql-devel \
+    postgresql \
+    postgresql-server \
+    fuse \
+    fuse-devel \
+    libacl-devel \
+    ruby \
+    hostname \
+    perl-bignum
+
+RUN dnf clean all
+RUN dnf -y --enablerepo=updates-testing update \
+    && dnf -y --enablerepo=updates-testing install \
+    globus-gssapi-gsi-devel \
+    globus-simple-ca \
+    globus-gsi-cert-utils-progs \
+    globus-proxy-utils \
+    && globus-version
+
+## for debug
+RUN dnf -y update \
+    && dnf -y install \
+    nc ldns iproute net-tools bind-utils telnet tcpdump \
+    gdb strace valgrind inotify-tools libtsan \
+    man man-pages man-db which \
+    nano emacs-nox less
+
+RUN dnf install 'dnf-command(debuginfo-install)' \
+    && dnf debuginfo-install -y \
+    fuse-libs
+
+RUN dnf clean all
+
+RUN sed -i 's@^Defaults    secure_path = /sbin:/bin:/usr/sbin:/usr/bin$@Defaults    secure_path = /usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin@' /etc/sudoers
+
+
+# System independent (see setup-univ.sh)
+
+ARG GFDOCKER_USERNAME_PREFIX
+ARG GFDOCKER_PRIMARY_USER
+ARG GFDOCKER_NUM_GFMDS
+ARG GFDOCKER_NUM_GFSDS
+ARG GFDOCKER_NUM_USERS
+ARG GFDOCKER_HOSTNAME_PREFIX_GFMD
+ARG GFDOCKER_HOSTNAME_PREFIX_GFSD
+COPY . /tmp/gfarm
+COPY gfarm2fs /tmp/gfarm2fs
+RUN "/tmp/gfarm/docker/dev/common/setup-univ.sh"
+
+CMD ["/sbin/init"]

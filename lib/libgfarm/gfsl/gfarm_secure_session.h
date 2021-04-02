@@ -196,7 +196,8 @@ extern int			gfarmSecSessionDedicate(gfarmSecSession *ssPtr);
 
 extern int			gfarmSecSessionSendInt32(gfarmSecSession *ssPtr,
 							 gfarm_int32_t *buf,
-							 int n);
+							 int n,
+							 int timeoutMsec);
 extern int			gfarmSecSessionReceiveInt32(gfarmSecSession *ssPtr,
 							    gfarm_int32_t **bufPtr,
 							    int *lenPtr,
@@ -204,7 +205,8 @@ extern int			gfarmSecSessionReceiveInt32(gfarmSecSession *ssPtr,
 
 extern int			gfarmSecSessionSendInt16(gfarmSecSession *ssPtr,
 							 gfarm_int16_t *buf,
-							  int n);
+							 int n,
+							 int timeoutMsec);
 extern int			gfarmSecSessionReceiveInt16(gfarmSecSession *ssPtr,
 							    gfarm_int16_t **bufPtr,
 							    int *lenPtr,
@@ -212,7 +214,8 @@ extern int			gfarmSecSessionReceiveInt16(gfarmSecSession *ssPtr,
 
 extern int			gfarmSecSessionSendInt8(gfarmSecSession *ssPtr,
 							gfarm_int8_t *buf,
-							int n);
+							int n,
+							int timeoutMsec);
 extern int			gfarmSecSessionReceiveInt8(gfarmSecSession *ssPtr,
 							   gfarm_int8_t **bufPtr,
 							   int *lenPtr,

@@ -13,7 +13,7 @@ extern void	gfarmGssFreeCrackedStatus(char **strPtr);
 extern void	gfarmGssPrintMajorStatus(OM_uint32 majStat);
 extern void	gfarmGssPrintMinorStatus(OM_uint32 minStat);
 
-extern int	gfarmGssSendToken(int fd, gss_buffer_t gsBuf);
+extern int	gfarmGssSendToken(int fd, gss_buffer_t gsBuf, int timeoutMsec);
 extern int	gfarmGssReceiveToken(int fd, gss_buffer_t gsBuf,
 				     int timeoutMsec);
 
@@ -85,10 +85,11 @@ extern int	gfarmGssSend(int fd, gss_ctx_id_t sCtx,
 			     int doEncrypt,
 			     gss_qop_t qopReq,
 			     gfarm_int8_t *buf, int n, int chunkSz,
+			     int timeoutMsec,
 			     OM_uint32 *statPtr);
-extern int	gfarmGssReceive(int fd, gss_ctx_id_t sCtx,
+extern int	gfarmGssReceive(int fd, gss_ctx_id_t sCtx, int timeoutMsec,
 				gfarm_int8_t **bufPtr, int *lenPtr,
-				OM_uint32 *statPtr, int timeoutMsec);
+				OM_uint32 *statPtr);
 
 /* multiplexed version */
 

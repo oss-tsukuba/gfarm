@@ -1,7 +1,5 @@
 #!/bin/sh
 
-. ./regress.conf
-
 testdir=${gftmp}_dir
 testfile=${gftmp}_file
 tmpuser1=tmpusr1-$(hostname)-$$

@@ -466,7 +466,9 @@ negotiateConfigParam(int fd, gss_ctx_id_t sCtx, int which,
 
 	    param[NEGO_PARAM_OTHER_CONFIG] = retConf;
 
-	    if (gfarmWriteInt32(fd, param, NUM_NEGO_PARAM) != NUM_NEGO_PARAM) {
+	    if (gfarmWriteInt32(fd, param, NUM_NEGO_PARAM,
+				GFARM_GSS_AUTH_TIMEOUT_MSEC)
+		!= NUM_NEGO_PARAM) {
 		gsiErrNo = errno;
 		gflog_auth_info(GFARM_MSG_1003850,
 		    "gfarmSecSession:negotiateConfigParam(): "
@@ -486,7 +488,9 @@ negotiateConfigParam(int fd, gss_ctx_id_t sCtx, int which,
 	    param[NEGO_PARAM_OTHER_CONFIG] = canPtr->configReq;
 	    param[NEGO_PARAM_OTHER_CONFIG_FORCE] = canPtr->configForce;
 
-	    if (gfarmWriteInt32(fd, param, NUM_NEGO_PARAM) != NUM_NEGO_PARAM) {
+	    if (gfarmWriteInt32(fd, param, NUM_NEGO_PARAM,
+				GFARM_GSS_AUTH_TIMEOUT_MSEC)
+		!= NUM_NEGO_PARAM) {
 		gsiErrNo = errno;
 		gflog_auth_error(GFARM_MSG_1003851,
 		    "gfarmSecSession:negotiateConfigParam(): "
@@ -1015,13 +1019,15 @@ gfarmSecSessionAccept(int fd, gss_cred_id_t cred,
 	if (type == GFARM_AUTH_USER) {
 	    /* Send ACK. */
 	    acknack = GFARM_SS_AUTH_ACK;
-	    (void)gfarmWriteInt32(fd, &acknack, 1);
+	    (void)gfarmWriteInt32(fd, &acknack, 1,
+				  GFARM_GSS_AUTH_TIMEOUT_MSEC);
 	} else if (type == GFARM_AUTH_HOST) {
 	    /* check peer name is actually allowed */
 	    if (strcmp(peerName, gfarmAuthGetFQDN(entry)) == 0) {
 		/* Send ACK. */
 		acknack = GFARM_SS_AUTH_ACK;
-		(void)gfarmWriteInt32(fd, &acknack, 1);
+		(void)gfarmWriteInt32(fd, &acknack, 1,
+				      GFARM_GSS_AUTH_TIMEOUT_MSEC);
 	    } else {
 		gflog_auth_error(GFARM_MSG_1000673,
 		    "%s: hostname doesn't match: "
@@ -1073,7 +1079,7 @@ gfarmSecSessionAccept(int fd, gss_cred_id_t cred,
 SendNack:
     /* Send NACK. */
     acknack = GFARM_SS_AUTH_NACK;
-    gfarmWriteInt32(fd, &acknack, 1);
+    gfarmWriteInt32(fd, &acknack, 1, GFARM_GSS_AUTH_TIMEOUT_MSEC);
 Fail:
     if (ret != NULL) {
 	destroySecSession(ret);
@@ -1397,7 +1403,8 @@ gfarmSecSessionDedicate(gfarmSecSession *ssPtr)
 }
 
 int
-gfarmSecSessionSendInt8(gfarmSecSession *ssPtr, gfarm_int8_t *buf, int n)
+gfarmSecSessionSendInt8(gfarmSecSession *ssPtr, gfarm_int8_t *buf, int n,
+	int timeoutMsec)
 {
     int doEncrypt = GFARM_GSS_ENCRYPTION_ENABLED &
     		    (isBitSet(ssPtr->config,
@@ -1409,9 +1416,9 @@ gfarmSecSessionSendInt8(gfarmSecSession *ssPtr, gfarm_int8_t *buf, int n)
 			buf,
 			n,
 			ssPtr->maxTransSize,
+			timeoutMsec,
 			&(ssPtr->gssLastStat));
 }
-
 
 int
 gfarmSecSessionReceiveInt8(gfarmSecSession *ssPtr, gfarm_int8_t **bufPtr,
@@ -1419,15 +1426,16 @@ gfarmSecSessionReceiveInt8(gfarmSecSession *ssPtr, gfarm_int8_t **bufPtr,
 {
     return gfarmGssReceive(ssPtr->fd,
 			   ssPtr->sCtx,
+			   timeoutMsec,
 			   bufPtr,
 			   lenPtr,
-			   &(ssPtr->gssLastStat),
-			   timeoutMsec);
+			   &(ssPtr->gssLastStat));
 }
 
 
 int
-gfarmSecSessionSendInt32(gfarmSecSession *ssPtr, gfarm_int32_t *buf, int n)
+gfarmSecSessionSendInt32(gfarmSecSession *ssPtr, gfarm_int32_t *buf, int n,
+	int timeoutMsec)
 {
     gfarm_int32_t *lBuf;
     int i;
@@ -1444,7 +1452,7 @@ gfarmSecSessionSendInt32(gfarmSecSession *ssPtr, gfarm_int32_t *buf, int n)
     }
 
     ret = gfarmSecSessionSendInt8(ssPtr, (gfarm_int8_t *)lBuf,
-				  n * GFARM_OCTETS_PER_32BIT);
+				  n * GFARM_OCTETS_PER_32BIT, timeoutMsec);
     (void)free(lBuf);
     if (ret > 0) {
 	ret /= GFARM_OCTETS_PER_32BIT;
@@ -1504,7 +1512,8 @@ gfarmSecSessionReceiveInt32(gfarmSecSession *ssPtr, gfarm_int32_t **bufPtr,
 
 
 int
-gfarmSecSessionSendInt16(gfarmSecSession *ssPtr, gfarm_int16_t *buf, int n)
+gfarmSecSessionSendInt16(gfarmSecSession *ssPtr, gfarm_int16_t *buf, int n,
+	int timeoutMsec)
 {
     gfarm_int16_t *lBuf;
     int i;
@@ -1521,7 +1530,7 @@ gfarmSecSessionSendInt16(gfarmSecSession *ssPtr, gfarm_int16_t *buf, int n)
     }
 
     ret = gfarmSecSessionSendInt8(ssPtr, (gfarm_int8_t *)lBuf,
-				   n * GFARM_OCTETS_PER_16BIT);
+				  n * GFARM_OCTETS_PER_16BIT, timeoutMsec);
     (void)free(lBuf);
     if (ret > 0) {
 	ret /= GFARM_OCTETS_PER_16BIT;
@@ -1725,7 +1734,8 @@ negotiateConfigParamInitiatorSend(int events, int fd, void *closure,
     param[NEGO_PARAM_OTHER_CONFIG] = canPtr->configReq;
     param[NEGO_PARAM_OTHER_CONFIG_FORCE] = canPtr->configForce;
 
-    if (gfarmWriteInt32(fd, param, NUM_NEGO_PARAM) != NUM_NEGO_PARAM) {
+    if (gfarmWriteInt32(fd, param, NUM_NEGO_PARAM,
+			GFARM_GSS_AUTH_TIMEOUT_MSEC) != NUM_NEGO_PARAM) {
 	gflog_auth_error(GFARM_MSG_1000681,
 	    "gfarmSecSession:negotiateConfigParamInitiatorSend(): "
 	    "acceptor disappered");

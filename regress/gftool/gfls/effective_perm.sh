@@ -2,11 +2,14 @@
 
 test_for_gfarmroot=false
 base="$(dirname "$0")"
-. "${base}/effective_perm.common.sh"
+
+. ./regress.conf
 
 if $regress/bin/am_I_gfarmroot; then
     exit $exit_unsupported
 fi
+
+. "${base}/effective_perm.common.sh"
 
 ## owner
 test_ep "000" "---"

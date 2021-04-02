@@ -498,18 +498,18 @@ gfarmGssDeleteCredential(gss_cred_id_t *credPtr, OM_uint32 *majStatPtr,
 
 
 int
-gfarmGssSendToken(int fd, gss_buffer_t gsBuf)
+gfarmGssSendToken(int fd, gss_buffer_t gsBuf, int timeoutMsec)
 {
     gfarm_int32_t iLen = gsBuf->length;
     int save_errno;
 
-    if (gfarmWriteInt32(fd, &iLen, 1) != 1) {
+    if (gfarmWriteInt32(fd, &iLen, 1, timeoutMsec) != 1) {
 	save_errno = errno;
 	gflog_debug(GFARM_MSG_1000792, "gfarmWriteInt32() failed");
 	errno = save_errno;
 	return -1;
     }
-    if (gfarmWriteInt8(fd, gsBuf->value, iLen) != iLen) {
+    if (gfarmWriteInt8(fd, gsBuf->value, iLen, timeoutMsec) != iLen) {
 	save_errno = errno;
 	gflog_debug(GFARM_MSG_1000793, "gfarmWriteInt8() failed");
 	errno = save_errno;
@@ -619,7 +619,8 @@ gfarmGssAcceptSecurityContext(int fd, gss_cred_id_t cred, gss_ctx_id_t *scPtr,
 	    gss_release_buffer(&minStat2, itPtr);
 
 	if (otPtr->length > 0) {
-	    tknStat = gfarmGssSendToken(fd, otPtr);
+	    tknStat = gfarmGssSendToken(fd, otPtr,
+					GFARM_GSS_AUTH_TIMEOUT_MSEC);
 	    gsiErrNo = errno;
 	    gss_release_buffer(&minStat2, otPtr);
 	    if (tknStat > 0) {
@@ -732,7 +733,8 @@ gfarmGssInitiateSecurityContext(int fd, const gss_name_t acceptorName,
 	    gss_release_buffer(&minStat2, itPtr);
 
 	if (otPtr->length > 0) {
-	    tknStat = gfarmGssSendToken(fd, otPtr);
+	    tknStat = gfarmGssSendToken(fd, otPtr,
+					GFARM_GSS_AUTH_TIMEOUT_MSEC);
 	    gsiErrNo = errno;
 	    gss_release_buffer(&minStat2, otPtr);
 	    if (tknStat > 0) {
@@ -846,7 +848,7 @@ gfarmGssConfigureMessageSize(gss_ctx_id_t sCtx, int doEncrypt,
 
 int
 gfarmGssSend(int fd, gss_ctx_id_t sCtx, int doEncrypt, gss_qop_t qopReq,
-    gfarm_int8_t *buf, int n, int chunkSz, OM_uint32 *statPtr)
+    gfarm_int8_t *buf, int n, int chunkSz, int timeoutMsec, OM_uint32 *statPtr)
 {
     int ret = -1;
     OM_uint32 majStat;
@@ -876,7 +878,7 @@ gfarmGssSend(int fd, gss_ctx_id_t sCtx, int doEncrypt, gss_qop_t qopReq,
 	goto Done;
     }
 
-    if (gfarmWriteInt32(fd, &n_buf, 1) != 1) {
+    if (gfarmWriteInt32(fd, &n_buf, 1, timeoutMsec) != 1) {
 	gflog_info(GFARM_MSG_1004283, "%s: %s", diag, strerror(errno));
 	majStat = GSS_S_CALL_INACCESSIBLE_WRITE;
 	goto Done;
@@ -892,7 +894,7 @@ gfarmGssSend(int fd, gss_ctx_id_t sCtx, int doEncrypt, gss_qop_t qopReq,
 			   otPtr);
 	if (majStat == GSS_S_COMPLETE) {
 	    if (otPtr->length > 0) {
-		tknStat = gfarmGssSendToken(fd, otPtr);
+		tknStat = gfarmGssSendToken(fd, otPtr, timeoutMsec);
 		save_errno = errno;
 		gss_release_buffer(&minStat, otPtr);
 		if (tknStat <= 0) {
@@ -935,8 +937,8 @@ gfarmGssSend(int fd, gss_ctx_id_t sCtx, int doEncrypt, gss_qop_t qopReq,
 
 
 int
-gfarmGssReceive(int fd, gss_ctx_id_t sCtx, gfarm_int8_t **bufPtr,
-    int *lenPtr, OM_uint32 *statPtr, int timeoutMsec)
+gfarmGssReceive(int fd, gss_ctx_id_t sCtx, int timeoutMsec,
+    gfarm_int8_t **bufPtr, int *lenPtr, OM_uint32 *statPtr)
 {
     int ret = -1;
     OM_uint32 majStat;
@@ -1266,7 +1268,7 @@ gfarmGssInitiateSecurityContextSendToken(int events, int fd, void *closure,
     int tknStat;
     OM_uint32 minStat2;
 
-    tknStat = gfarmGssSendToken(fd, state->otPtr);
+    tknStat = gfarmGssSendToken(fd, state->otPtr, GFARM_GSS_AUTH_TIMEOUT_MSEC);
     gss_release_buffer(&minStat2, state->otPtr);
     if (tknStat <= 0) {
 	gflog_auth_error(GFARM_MSG_1000623,

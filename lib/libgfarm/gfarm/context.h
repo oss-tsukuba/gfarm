@@ -39,6 +39,7 @@ struct gfarm_context {
 	int on_demand_replication;
 	int call_rpc_instead_syscall;
 	int network_receive_timeout;
+	int network_send_timeout;
 	int file_trace;
 	int fatal_action;
 	int ib_rdma;

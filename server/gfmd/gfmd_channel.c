@@ -392,7 +392,7 @@ gfmdc_server_get_request(struct peer *peer, size_t size,
 }
 
 static gfarm_error_t
-gfmdc_server_put_reply(struct mdhost *mh,
+gfmdc_server_put_reply_notimeout(struct mdhost *mh,
 	struct peer *peer, gfp_xdr_xid_t xid,
 	const char *diag, gfarm_error_t errcode, char *format, ...)
 {
@@ -400,7 +400,7 @@ gfmdc_server_put_reply(struct mdhost *mh,
 	va_list ap;
 
 	va_start(ap, format);
-	e = gfm_server_channel_vput_reply(
+	e = gfm_server_channel_vput_reply_notimeout(
 	    mdhost_to_abstract_host(mh), peer, xid, diag,
 	    errcode, format, &ap);
 	va_end(ap);
@@ -443,7 +443,7 @@ gfmdc_client_send_request(struct mdhost *mh,
 
 	va_start(ap, format);
 	/* XXX FIXME gfm_client_channel_vsend_request must be async-request */
-	e = gfm_client_channel_vsend_request(
+	e = gfm_client_channel_vsend_request_notimeout(
 	    mdhost_to_abstract_host(mh), peer0, diag,
 	    result_callback, disconnect_callback, closure,
 #ifdef COMPAT_GFARM_2_3
@@ -653,7 +653,7 @@ gfmdc_server_journal_send(struct mdhost *mh, struct peer *peer,
 #endif
 	}
 
-	e = gfmdc_server_put_reply(mh, peer, xid, diag, er, "");
+	e = gfmdc_server_put_reply_notimeout(mh, peer, xid, diag, er, "");
 	return (e);
 }
 
@@ -724,7 +724,7 @@ gfmdc_server_journal_ready_to_recv(struct mdhost *mh, struct peer *peer,
 		if (inited)
 			gfmdc_peer_set_journal_file_reader(gfmdc_peer, reader);
 	}
-	e_rpc = gfmdc_server_put_reply(mh, peer, xid, diag, e, "");
+	e_rpc = gfmdc_server_put_reply_notimeout(mh, peer, xid, diag, e, "");
 	if (e == GFARM_ERR_NO_ERROR)
 		e = e_rpc;
 	if (e == GFARM_ERR_NO_ERROR && mdhost_is_sync_replication(mh)) {

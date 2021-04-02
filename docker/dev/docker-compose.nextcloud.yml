@@ -1,0 +1,13 @@
+version: '2'
+
+volumes:
+  nextcloud:
+
+services:
+  app:
+    image: nextcloud
+    #restart: always
+    ports:
+      - 28080:80
+    volumes:
+      - nextcloud:/var/www/html

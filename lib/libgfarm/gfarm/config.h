@@ -260,7 +260,6 @@ gfarm_error_t gfm_client_config_get_vars_result(struct gfm_connection *,
 	int, void **);
 
 /* miscellaneous */
-extern int gfarm_network_receive_timeout;
 extern int gfarm_file_trace;
 
 void gfarm_config_set_filename(char *);

@@ -14,6 +14,9 @@ hostname_prefix_gfmd = environ['GFDOCKER_HOSTNAME_PREFIX_GFMD']
 hostname_prefix_gfsd = environ['GFDOCKER_HOSTNAME_PREFIX_GFSD']
 hostname_prefix_client = environ['GFDOCKER_HOSTNAME_PREFIX_CLIENT']
 
+hostport_s3_http = environ['GFDOCKER_HOSTPORT_S3_HTTP']
+hostport_s3_https = environ['GFDOCKER_HOSTPORT_S3_HTTPS']
+
 if ip_version == '4':
     nw = IPv4Network(subnet)
 elif ip_version == '6':
@@ -84,15 +87,26 @@ print('''\
 services:
 ''', end='')
 
+if hostport_s3_http and hostport_s3_https:
+    client1_ports = '''    ports:
+      - {}:80
+      - {}:443'''.format(int(hostport_s3_http), int(hostport_s3_https))
+else:
+    client1_ports = ''
+
 for h in hosts:
+    ports = '';
+    if h.hostname == 'client1':
+        ports = client1_ports
     print('''\
   {}:
     hostname: {}
+{}
     networks:
       default:
         ipv{}_address: {}
     <<: *common
-'''.format(h.hostname, h.hostname, ip_version, str(h.ipaddr)), end='')
+'''.format(h.hostname, h.hostname, ports, ip_version, str(h.ipaddr)), end='')
 
 print('''\
 

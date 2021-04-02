@@ -5,10 +5,12 @@ centos7/src
 centos7/pkg
 centos8/src
 centos8/pkg
+fedora33/src
 opensuse/src
 opensuse/pkg
 ubuntu1804/src
 ubuntu2004/src
+debian10/src
 "
 
 BASEDIR=dist

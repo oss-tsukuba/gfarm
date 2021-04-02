@@ -8,6 +8,6 @@ include $(top_srcdir)/makes/var.mk
 
 datadir = $(default_libdir)/pkgconfig
 
-DATA = $(srcdir)/gfarm.pc
+DATA = gfarm.pc
 
 include $(top_srcdir)/makes/data.mk

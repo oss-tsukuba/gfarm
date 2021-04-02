@@ -110,18 +110,24 @@ gfarm_iobuffer_read_notimeout_secsession_op(struct gfarm_iobuffer *b,
 	return (gfarm_iobuffer_read_session_x(b, cookie, fd, data, length, 0));
 }
 
-int
-gfarm_iobuffer_write_secsession_op(struct gfarm_iobuffer *b,
-	void *cookie, int fd, void *data, int length)
+static int
+gfarm_iobuffer_write_secsession_x(struct gfarm_iobuffer *b,
+	void *cookie, int fd, void *data, int length, int do_timeout)
 {
 	struct io_gfsl *io = cookie;
 	int rv, flag = fcntl(fd, F_GETFL, NULL);
+	int msec;
+
+	if (do_timeout && gfarm_ctxp->network_send_timeout != 0)
+		msec = gfarm_ctxp->network_send_timeout * 1000;
+	else
+		msec = GFARM_GSS_TIMEOUT_INFINITE;
 
 	/* temporary drop O_NONBLOCK flag to prevent EAGAIN */
 	if (flag & O_NONBLOCK)
 		fcntl(fd, F_SETFL, flag & ~O_NONBLOCK);
 
-	rv = gfarmSecSessionSendInt8(io->session, data, length);
+	rv = gfarmSecSessionSendInt8(io->session, data, length, msec);
 
 	if (flag & O_NONBLOCK)
 		fcntl(fd, F_SETFL, flag);
@@ -133,6 +139,22 @@ gfarm_iobuffer_write_secsession_op(struct gfarm_iobuffer *b,
 	}
 
 	return (rv);
+}
+
+int
+gfarm_iobuffer_write_timeout_secsession_op(struct gfarm_iobuffer *b,
+	void *cookie, int fd, void *data, int length)
+{
+	return (gfarm_iobuffer_write_secsession_x(
+	    b, cookie, fd, data, length, 1));
+}
+
+int
+gfarm_iobuffer_write_notimeout_secsession_op(struct gfarm_iobuffer *b,
+	void *cookie, int fd, void *data, int length)
+{
+	return (gfarm_iobuffer_write_secsession_x(
+	    b, cookie, fd, data, length, 0));
 }
 
 static void
@@ -239,7 +261,8 @@ struct gfp_iobuffer_ops gfp_xdr_secsession_iobuffer_ops = {
 	gfp_iobuffer_recv_is_ready_secssion_op,
 	gfarm_iobuffer_read_timeout_secsession_op,
 	gfarm_iobuffer_read_notimeout_secsession_op,
-	gfarm_iobuffer_write_secsession_op
+	gfarm_iobuffer_write_timeout_secsession_op,
+	gfarm_iobuffer_write_notimeout_secsession_op,
 };
 
 gfarm_error_t
@@ -317,7 +340,8 @@ static struct gfp_iobuffer_ops gfp_xdr_insecure_gsi_session_iobuffer_ops = {
 	/* NOTE: the following assumes that these functions don't use cookie */
 	gfarm_iobuffer_blocking_read_timeout_fd_op,
 	gfarm_iobuffer_blocking_read_notimeout_fd_op,
-	gfarm_iobuffer_blocking_write_socket_op
+	gfarm_iobuffer_blocking_write_timeout_socket_op,
+	gfarm_iobuffer_blocking_write_notimeout_socket_op,
 };
 
 /*

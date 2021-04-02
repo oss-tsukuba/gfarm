@@ -133,9 +133,11 @@ main(int argc, char *argv[])
 	    len--;
 	}
 	if (z % 2 == 0) {
-	    (void)gfarmSecSessionSendInt8(ss0, buf, len);
+	    (void)gfarmSecSessionSendInt8(ss0, buf, len,
+					  GFARM_GSS_TIMEOUT_INFINITE);
 	} else {
-	    (void)gfarmSecSessionSendInt8(ss1, buf, len);
+	    (void)gfarmSecSessionSendInt8(ss1, buf, len,
+					  GFARM_GSS_TIMEOUT_INFINITE);
 	}
 	z++;
     }

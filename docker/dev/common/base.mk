@@ -54,6 +54,8 @@ ifdef GFDOCKER_ENABLE_PROXY
 DOCKER_BUILD_FLAGS += \
 		--build-arg http_proxy='$(PROXY_URL)' \
 		--build-arg https_proxy='$(PROXY_URL)' \
+		--build-arg HTTP_PROXY='$(PROXY_URL)' \
+		--build-arg HTTPS_PROXY='$(PROXY_URL)' \
 		--build-arg GFDOCKER_PROXY_HOST='$(GFDOCKER_PROXY_HOST)' \
 		--build-arg GFDOCKER_PROXY_PORT='$(GFDOCKER_PROXY_PORT)' \
 		--build-arg GFDOCKER_ENABLE_PROXY='$(GFDOCKER_ENABLE_PROXY)'
@@ -65,6 +67,8 @@ DOCKER = $(SUDO) docker
 COMPOSE = $(SUDO) COMPOSE_PROJECT_NAME=gfarm-$(GFDOCKER_PRJ_NAME) \
 	GFDOCKER_PRJ_NAME=$(GFDOCKER_PRJ_NAME) docker-compose
 CONTSHELL_FLAGS = \
+		--env GFDOCKER_SUBNET='$(GFDOCKER_SUBNET)' \
+		--env GFDOCKER_START_HOST_ADDR='$(GFDOCKER_START_HOST_ADDR)' \
 		--env GFDOCKER_USERNAME_PREFIX='$(GFDOCKER_USERNAME_PREFIX)' \
 		--env GFDOCKER_PRIMARY_USER='$(GFDOCKER_PRIMARY_USER)' \
 		--env GFDOCKER_NUM_GFMDS='$(GFDOCKER_NUM_GFMDS)' \
@@ -74,10 +78,21 @@ CONTSHELL_FLAGS = \
 		--env GFDOCKER_HOSTNAME_PREFIX_GFMD='$(GFDOCKER_HOSTNAME_PREFIX_GFMD)' \
 		--env GFDOCKER_HOSTNAME_PREFIX_GFSD='$(GFDOCKER_HOSTNAME_PREFIX_GFSD)' \
 		--env GFDOCKER_HOSTNAME_PREFIX_CLIENT='$(GFDOCKER_HOSTNAME_PREFIX_CLIENT)'
+
+ifdef GFDOCKER_ENABLE_PROXY
+CONTSHELL_FLAGS += \
+		--env http_proxy='$(PROXY_URL)' \
+		--env https_proxy='$(PROXY_URL)' \
+		--env HTTP_PROXY='$(PROXY_URL)' \
+		--env HTTPS_PROXY='$(PROXY_URL)'
+endif
+
 CONTSHELL = $(COMPOSE) exec $(CONTSHELL_FLAGS) -u '$(GFDOCKER_PRIMARY_USER)' \
 		'$(PRIMARY_CLIENT_CONTAINER)' bash
 # overridable
 CONTSHELL_ARGS :=  -c 'cd ~ && bash'
+
+DOCKER_RUN = $(DOCKER) run $(CONTSHELL_FLAGS)
 
 help:
 	@echo 'Usage:'
@@ -149,14 +164,17 @@ down:
 	$(down)
 
 define prune
-$(DOCKER) system prune -f --volumes
+$(DOCKER) system prune -f
 endef
 
 prune:
 	$(prune)
 
 REMOVE_ALL_IMAGES:
-	$(DOCKER) system prune -a -f --volumes
+	$(DOCKER) system prune -a
+
+REMOVE_ALL_VOLUMES:
+	$(DOCKER) system prune --volumes
 
 define gen
 TOP='$(TOP)' \
@@ -170,6 +188,8 @@ TOP='$(TOP)' \
 	GFDOCKER_HOSTNAME_PREFIX_GFMD='$(GFDOCKER_HOSTNAME_PREFIX_GFMD)' \
 	GFDOCKER_HOSTNAME_PREFIX_GFSD='$(GFDOCKER_HOSTNAME_PREFIX_GFSD)' \
 	GFDOCKER_HOSTNAME_PREFIX_CLIENT='$(GFDOCKER_HOSTNAME_PREFIX_CLIENT)' \
+	GFDOCKER_HOSTPORT_S3_HTTP='$(GFDOCKER_HOSTPORT_S3_HTTP)' \
+	GFDOCKER_HOSTPORT_S3_HTTPS='$(GFDOCKER_HOSTPORT_S3_HTTPS)' \
 	GFDOCKER_AUTH_TYPE='$(GFDOCKER_AUTH_TYPE)' \
 	GFDOCKER_PRJ_NAME='$(GFDOCKER_PRJ_NAME)' \
 	'$(TOP)/docker/dev/common/gen.sh'
@@ -177,7 +197,7 @@ TOP='$(TOP)' \
 endef
 
 define up
-$(COMPOSE) up -d \
+$(COMPOSE) up -d --force-recreate\
   && $(CONTSHELL) -c '. ~/gfarm/docker/dev/common/up.rc'
 endef
 
@@ -223,6 +243,73 @@ regress:
 	$(check_config)
 	$(regress)
 
+GFDOCKER_GFARMS3_COMMON_ENV = \
+	--env GFDOCKER_PRJ_NAME='$(GFDOCKER_PRJ_NAME)' \
+	--env GFDOCKER_GFARMS3_CACHE_BASEDIR='$(GFDOCKER_GFARMS3_CACHE_BASEDIR_COMMON)' \
+	--env GFDOCKER_GFARMS3_CACHE_SIZE='$(GFDOCKER_GFARMS3_CACHE_SIZE_COMMON)' \
+	--env GFDOCKER_GFARMS3_WSGI_HOMEDIR='$(GFDOCKER_GFARMS3_WSGI_HOMEDIR_COMMON)' \
+	--env GFDOCKER_GFARMS3_WSGI_USER='$(GFDOCKER_GFARMS3_WSGI_USER_COMMON)' \
+	--env GFDOCKER_GFARMS3_WSGI_GROUP='$(GFDOCKER_GFARMS3_WSGI_GROUP_COMMON)' \
+	--env GFDOCKER_GFARMS3_WSGI_PORT='$(GFDOCKER_GFARMS3_WSGI_PORT_COMMON)' \
+	--env GFDOCKER_GFARMS3_USERS='$(GFDOCKER_GFARMS3_USERS)' \
+	--env GFDOCKER_GFARMS3_MYPROXY_SERVER='$(GFDOCKER_GFARMS3_MYPROXY_SERVER)' \
+	--env GFDOCKER_GFARMS3_SHARED_DIR='$(GFDOCKER_GFARMS3_SHARED_DIR)' \
+	--env GFDOCKER_GFARMS3_SECRET_USER1='$(GFDOCKER_GFARMS3_SECRET_USER1)' \
+	--env GFDOCKER_GFARMS3_SECRET_USER2='$(GFDOCKER_GFARMS3_SECRET_USER2)'
+
+
+define hpcisetup
+$(CONTSHELL) -c '. ~/gfarm/docker/dev/common/s3/hpci.rc'
+endef
+
+hpci-setup:
+	$(hpcisetup)
+
+define s3setup
+$(CONTSHELL) -c '. ~/gfarm/docker/dev/common/s3/setup.rc'
+endef
+
+s3setup:
+	$(s3setup)
+s3setup: CONTSHELL_FLAGS += $(GFDOCKER_GFARMS3_COMMON_ENV)
+
+s3update:
+	$(s3setup)
+s3update: CONTSHELL_FLAGS += --env GFDOCKER_GFARMS3_UPDATE_ONLY=1
+s3update: CONTSHELL_FLAGS += $(GFDOCKER_GFARMS3_COMMON_ENV)
+
+
+define s3setuphpci
+$(CONTSHELL) -c '. ~/gfarm/docker/dev/common/s3/setup.rc'
+endef
+
+ifeq ($(MAKECMDGOALS),s3setup-for-hpci)
+
+ifndef GFDOCKER_GFARMS3_USERS
+$(error GFDOCKER_GFARMS3_USERS is not defined)
+endif
+
+ifndef GFDOCKER_GFARMS3_MYPROXY_SERVER
+$(error GFDOCKER_GFARMS3_MYPROXY_SERVER is not defined)
+endif
+
+ifndef GFDOCKER_GFARMS3_SHARED_DIR
+$(error GFDOCKER_GFARMS3_SHARED_DIR is not defined)
+endif
+
+endif
+
+s3setup-for-hpci:
+	$(s3setup)
+s3setup-for-hpci: CONTSHELL_FLAGS += $(GFDOCKER_GFARMS3_COMMON_ENV)
+
+define s3test
+$(CONTSHELL) -c '. ~/gfarm/docker/dev/common/s3/test.rc'
+endef
+
+s3test:
+	$(s3test)
+
 define test_fo
 $(CONTSHELL) -c '. ~/gfarm/docker/dev/common/test-fo.rc'
 endef
@@ -265,6 +352,9 @@ centos7:
 centos8:
 	$(DOCKER) run -it --rm 'centos:8' bash
 
+fedora33:
+	$(DOCKER) run -it --rm 'fedora:33' bash
+
 opensuse:
 	$(DOCKER) run -it --rm 'opensuse/leap' bash
 
@@ -273,3 +363,6 @@ ubuntu1804:
 
 ubuntu2004:
 	$(DOCKER) run -it --rm 'ubuntu:20.04' bash
+
+debian10:
+	$(DOCKER) run -it --rm 'debian:buster' bash

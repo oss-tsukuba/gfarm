@@ -42,6 +42,10 @@ void *gfp_cached_connection_get_data(struct gfp_cached_connection *);
 void gfp_cached_connection_set_data(struct gfp_cached_connection *, void *);
 void gfp_cached_connection_set_dispose_data(struct gfp_cached_connection *,
 	void (*)(void *));
+void gfp_cached_connection_initialization_succeeded(
+	struct gfp_conn_cache *, struct gfp_cached_connection *);
+void gfp_cached_connection_initialization_aborted(
+	struct gfp_conn_cache *, struct gfp_cached_connection *);
 const char *gfp_cached_connection_hostname(struct gfp_cached_connection *);
 const char *gfp_cached_connection_username(struct gfp_cached_connection *);
 int gfp_cached_connection_port(struct gfp_cached_connection *);
@@ -54,6 +58,10 @@ void gfp_connection_unlock(struct gfp_cached_connection *);
 gfarm_error_t gfp_uncached_connection_new(const char *, int, const char *,
 	struct gfp_cached_connection **);
 void gfp_uncached_connection_dispose(struct gfp_cached_connection *);
+void gfp_uncached_connection_initialization_succeeded(
+	struct gfp_cached_connection *);
+void gfp_uncached_connection_initialization_aborted(
+	struct gfp_cached_connection *);
 void gfp_cached_connection_purge_from_cache(struct gfp_conn_cache *,
 	struct gfp_cached_connection *);
 gfarm_error_t gfp_uncached_connection_enter_cache(struct gfp_conn_cache *,
