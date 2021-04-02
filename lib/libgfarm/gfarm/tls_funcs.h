@@ -2299,10 +2299,10 @@ tls_session_io_continuable(int sslerr, tls_session_ctx_t ctx,
 }
 
 /*
- * TLS session read timeout checker
+ * TLS session read/write timeout checker
  */
 static inline gfarm_error_t
-tls_session_wait_readable(tls_session_ctx_t ctx, int fd, int tous)
+tls_session_wait_io(tls_session_ctx_t ctx, int fd, int tous, bool to_read)
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 	char *method = NULL;
@@ -2312,7 +2312,7 @@ tls_session_wait_readable(tls_session_ctx_t ctx, int fd, int tous)
 			__func__);
 	}
 
-	if (SSL_has_pending(ctx->ssl_) == 1) {
+	if (to_read && SSL_has_pending(ctx->ssl_)) {
 		method = "SSL_has_pending";
 		ret = GFARM_ERR_NO_ERROR;
 	} else {
@@ -2328,7 +2328,7 @@ tls_session_wait_readable(tls_session_ctx_t ctx, int fd, int tous)
 
 		while (loop == true) {
 			fds[0].fd = fd;
-			fds[0].events = POLLIN;
+			fds[0].events = to_read ? POLLIN : POLLOUT;
 			tos = tos_save;
 
 			st = poll(fds, 1, tos);
@@ -2349,7 +2349,10 @@ tls_session_wait_readable(tls_session_ctx_t ctx, int fd, int tous)
 			tv = rv_save;
 			tvp = &tv;
 
-			st = select(fd + 1, &fds, NULL, NULL, tvp);
+			if (to_read)
+				st = select(fd + 1, &fds, NULL, NULL, tvp);
+			else
+				st = select(fd + 1, NULL, &fds, NULL, tvp);
 #endif /* HAVE_POLL */
 
 			switch (st) {
@@ -2381,6 +2384,19 @@ tls_session_wait_readable(tls_session_ctx_t ctx, int fd, int tous)
 	}
 
 	return (ret);
+}
+
+static inline gfarm_error_t
+tls_session_wait_readable(tls_session_ctx_t ctx, int fd, int tous)
+{
+	return (tls_session_wait_io(ctx, fd, tous, true));
+}
+
+static inline gfarm_error_t
+tls_session_wait_writable(tls_session_ctx_t ctx, int fd, int tous)
+
+{
+	return (tls_session_wait_io(ctx, fd, tous, false));
 }
 
 static inline gfarm_error_t
@@ -2848,7 +2864,7 @@ done:
 }
 
 /*
- * tls session read with timeout (includes "forever")
+ * tls session io with timeout (includes "forever")
  */
 static inline gfarm_error_t
 tls_session_timeout_read(tls_session_ctx_t ctx, int fd, void *buf, int len,
@@ -2859,6 +2875,20 @@ tls_session_timeout_read(tls_session_ctx_t ctx, int fd, void *buf, int len,
 	ret = tls_session_wait_readable(ctx, fd, timeout);
 	if (likely(ret == GFARM_ERR_NO_ERROR)) {
 		ret = tls_session_read(ctx, buf, len, actual_read);
+	}
+
+	return (ret);
+}
+
+static inline gfarm_error_t
+tls_session_timeout_write(tls_session_ctx_t ctx, int fd, const void *buf,
+	int len, int timeout, int *actual_io_bytes)
+{
+	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
+
+	ret = tls_session_wait_writable(ctx, fd, timeout);
+	if (likely(ret == GFARM_ERR_NO_ERROR)) {
+		ret = tls_session_write(ctx, buf, len, actual_io_bytes);
 	}
 
 	return (ret);

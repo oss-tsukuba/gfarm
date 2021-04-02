@@ -95,7 +95,7 @@ tls_iobufop_timeout_read(struct gfarm_iobuffer *b,
 	int ret = -1;
 	tls_session_ctx_t ctx = (tls_session_ctx_t)cookie;
 
-	if (likely(ctx != NULL && b != NULL && gfarm_ctxp != NULL)) {
+	if (likely(ctx != NULL && b != NULL)) {
 		gfarm_error_t gfe = tls_session_timeout_read(ctx, fd, buf, len,
 					gfarm_ctxp->network_receive_timeout *
 						1000 * 1000,
@@ -142,17 +142,21 @@ tls_iobufop_full_blocking_read(struct gfarm_iobuffer *b,
 }
 
 /*
- * write(2)
+ * write(2) with timeout
  */
 static int
-tls_iobufop_write(struct gfarm_iobuffer *b,
+tls_iobufop_timeout_write(struct gfarm_iobuffer *b,
 	void *cookie, int fd, void *buf, int len)
 {
 	int ret = -1;
 	tls_session_ctx_t ctx = (tls_session_ctx_t)cookie;
 
 	if (likely(ctx != NULL && b != NULL)) {
-		gfarm_error_t gfe = tls_session_write(ctx, buf, len, &ret);
+		gfarm_error_t gfe = tls_session_timeout_write(
+					ctx, fd, buf, len,
+					gfarm_ctxp->network_send_timeout *
+						1000 * 1000,
+					&ret);
 		if (unlikely(gfe != GFARM_ERR_NO_ERROR)) {
 			gfarm_iobuffer_set_error(b, gfe);
 		}
@@ -168,6 +172,34 @@ tls_iobufop_write(struct gfarm_iobuffer *b,
 }
 
 /*
+ * full-blocking write(2)
+ */
+static int
+tls_iobufop_full_blocking_write(struct gfarm_iobuffer *b,
+	void *cookie, int fd, void *buf, int len)
+{
+	int ret = -1;
+	tls_session_ctx_t ctx = (tls_session_ctx_t)cookie;
+
+	if (likely(ctx != NULL && b != NULL)) {
+		gfarm_error_t gfe = tls_session_timeout_write(
+					ctx, fd, buf, len, -1, &ret);
+		if (unlikely(gfe != GFARM_ERR_NO_ERROR)) {
+			gfarm_iobuffer_set_error(b, gfe);
+		}
+	} else {
+		ret = -1;
+		if (b != NULL) {
+			gfarm_iobuffer_set_error(b,
+				GFARM_ERR_INVALID_ARGUMENT);
+		}
+	}
+
+	return (ret);
+}
+
+
+/*
  * iobuffer ops table
  */
 static struct gfp_iobuffer_ops gfp_xdr_tls_iobuf_ops = {
@@ -179,7 +211,8 @@ static struct gfp_iobuffer_ops gfp_xdr_tls_iobuf_ops = {
 	tls_iobufop_recv_is_ready,
 	tls_iobufop_timeout_read,
 	tls_iobufop_full_blocking_read,
-	tls_iobufop_write
+	tls_iobufop_timeout_write,
+	tls_iobufop_full_blocking_write,
 };
 
 
