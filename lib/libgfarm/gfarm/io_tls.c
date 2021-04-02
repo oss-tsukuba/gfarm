@@ -100,7 +100,7 @@ tls_iobufop_timeout_read(struct gfarm_iobuffer *b,
 					gfarm_ctxp->network_receive_timeout *
 						1000 * 1000,
 					&ret);
-		if (likely(gfe == GFARM_ERR_NO_ERROR)) {
+		if (unlikely(gfe != GFARM_ERR_NO_ERROR)) {
 			gfarm_iobuffer_set_error(b, gfe);
 		}
 	} else {
@@ -127,7 +127,7 @@ tls_iobufop_full_blocking_read(struct gfarm_iobuffer *b,
 	if (likely(ctx != NULL && b != NULL)) {
 		gfarm_error_t gfe = tls_session_timeout_read(ctx, fd, buf, len,
 					-1, &ret);
-		if (likely(gfe == GFARM_ERR_NO_ERROR)) {
+		if (unlikely(gfe != GFARM_ERR_NO_ERROR)) {
 			gfarm_iobuffer_set_error(b, gfe);
 		}
 	} else {
@@ -153,7 +153,7 @@ tls_iobufop_write(struct gfarm_iobuffer *b,
 
 	if (likely(ctx != NULL && b != NULL)) {
 		gfarm_error_t gfe = tls_session_write(ctx, buf, len, &ret);
-		if (likely(gfe == GFARM_ERR_NO_ERROR)) {
+		if (unlikely(gfe != GFARM_ERR_NO_ERROR)) {
 			gfarm_iobuffer_set_error(b, gfe);
 		}
 	} else {
