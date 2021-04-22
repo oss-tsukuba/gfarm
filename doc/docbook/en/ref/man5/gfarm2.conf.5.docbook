@@ -1440,6 +1440,20 @@ the gfsd server and gfmd considers the gfsd server is down.</para>
 </varlistentry>
 
 <varlistentry>
+<term><token>network_send_timeout</token> <parameter moreinfo="none">seconds</parameter></term>
+<listitem>
+<para>The <token>network_send_timeout</token> directive specifies
+the time, in seconds, to wait until data is ready to send via network.
+The default value is 0 seconds that means no timeout.
+This directive is effective in both gfarm2.conf and gfmd.conf.
+</para>
+<para>When data cannot be sent for more than the send timeout, the
+  network connection is disconnected, and tried to be
+  re-connected.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>admin_user</token> <parameter moreinfo="none">user</parameter></term>
 <listitem>
 <para>
@@ -3091,6 +3105,7 @@ The default size is 16 MiB.
 <!--	&lt;option_statement&gt; | -->
 	&lt;known_network_statement&gt; |
 	&lt;network_receive_timeout_statement&gt; |
+	&lt;network_send_timeout_statement&gt; |
 	&lt;admin_user_statement&gt; |
 	&lt;admin_user_gsi_dn_statement&gt; |
 	&lt;local_user_map_statement&gt; |
@@ -3516,6 +3531,11 @@ The default size is 16 MiB.
 <varlistentry>
 <term>&lt;network_receive_timeout_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"network_receive_timeout" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;network_send_timeout_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"network_send_timeout" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
