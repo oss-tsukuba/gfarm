@@ -1,3 +1,27 @@
+Release note for Gfarm 2.7.18
+=============================
+
+[2021.4.23]
+
+New configuration directive
+* network_send_timeout - timeout to send data.  Default is 0 that
+  means no timeout
+* failover_notify_delay - delay time to notify gfsds to connect to a
+  new gfmd.  Default is 5 seconds.
+
+Updated feature
+* gfprep - -m option works even when the destination already stores
+  the file replica [#1111]
+* gfsetfacl and gfgetfacl - -R option to recursively change ACLs
+  [#1107]
+* gfmd - improves startup time
+
+Bug fix
+* gfarm2fs fails due to race condition to connect gfmd, introduced by
+  the version 2.7.17
+* gfprep - -M option may exit before the limit [#1112]
+* gfmd may crash when a parent directory has default ACL [#1108]
+
 Release note for Gfarm 2.7.17
 =============================
 
