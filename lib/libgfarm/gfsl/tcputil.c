@@ -360,7 +360,7 @@ gfarmWaitWritable(int fd, int timeoutMsec)
 	    gfarm_peer_name_string(fd, hostbuf, sizeof(hostbuf),
 				   NI_NUMERICHOST | NI_NUMERICSERV,
 				   &hostaddr_prefix, &hostaddr);
-	    gflog_error(GFARM_MSG_UNFIXED,
+	    gflog_error(GFARM_MSG_1005113,
 			"closing network connection due to "
 			"send blocking more than %d milliseconds from %s%s",
 			timeoutMsec, hostaddr_prefix, hostaddr);

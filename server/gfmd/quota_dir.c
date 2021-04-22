@@ -499,7 +499,7 @@ gfm_server_quota_dir_set(struct peer *peer, int from_client, int skip)
 	    != GFARM_ERR_NO_ERROR) {
 		;
 	} else if (gfarm_read_only_mode()) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for "
+		gflog_debug(GFARM_MSG_1005162, "%s (%s@%s) for "
 		    "inode %llu:%llu user %s dirset %s during read_only",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    (long long)inode_get_number(inode),

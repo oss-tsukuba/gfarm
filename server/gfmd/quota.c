@@ -223,7 +223,7 @@ usage_to_quota(struct gfarm_quota_subject_info *src_usage, struct quota *dst,
 	    dst->num != src_usage->num ||
 	    dst->phy_space != src_usage->phy_space ||
 	    dst->phy_num != src_usage->phy_num) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1005160,
 		    "%s %s: unexpected quota update: "
 		    "space:%llu->%llu, num:%llu->%llu, "
 		    "phy_space:%llu->%llu, phy_num:%llu->%llu",
@@ -1851,7 +1851,7 @@ quota_set_common(struct peer *peer, int from_client, int skip, int is_group)
 		goto end;
 	} else if (gfarm_read_only_mode()) {
 		e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for "
+		gflog_debug(GFARM_MSG_1005161, "%s (%s@%s) for "
 		    "name %s during read_only",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    qi.name);

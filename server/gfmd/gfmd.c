@@ -117,7 +117,7 @@ gfm_server_protocol_extension_default(struct peer *peer,
 	gfarm_int32_t *requestp, gfarm_error_t *on_errorp)
 {
 	gflog_warning(GFARM_MSG_1000181, "unknown request: %d", request);
-	gflog_info(GFARM_MSG_UNFIXED, "last request: %d", last_request);
+	gflog_info(GFARM_MSG_1005215, "last request: %d", last_request);
 	peer_record_protocol_error(peer);
 	return (GFARM_ERR_PROTOCOL);
 }
@@ -1251,26 +1251,26 @@ dynamic_config_include_file(char *rest_of_line, const char *file, int lineno)
 	p = rest_of_line;
 	e = gfarm_config_strtoken(&p, &s);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005216,
 		    "file %s, line %d: parsing token (%s) failed: %s",
 		    file, lineno, p, gfarm_error_string(e));
 		return;
 	}
 	if (s == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005217,
 		    "file %s, line %d: missing include filename",
 		    file, lineno);
 		return;
 	}
 	e = gfarm_config_strtoken(&p, &tmp);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005218,
 		    "file %s, line %d: parsing token (%s) failed: %s",
 		    file, lineno, p, gfarm_error_string(e));
 		return;
 	}
 	if (tmp != NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005219,
 		    "file %s, line %d: too many arguments for include",
 		    file, lineno);
 		return;
@@ -1278,7 +1278,7 @@ dynamic_config_include_file(char *rest_of_line, const char *file, int lineno)
 
 	++gfarm_ctxp->include_nesting_level;
 	if (gfarm_ctxp->include_nesting_level > nesting_limit) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005220,
 		    "file %s, line %d: include nesting level %d "
 		    "exceeds include_nesting_limit %d",
 		    file, lineno,
@@ -1290,7 +1290,7 @@ dynamic_config_include_file(char *rest_of_line, const char *file, int lineno)
 	if (s[0] != '/')  {
 		malloced_filename = gfarm_config_dirname_add(s, file);
 		if (malloced_filename == NULL) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1005221,
 			    "file %s, line %d: no memory to include %s",
 			    file, lineno, s);
 		}
@@ -1298,7 +1298,7 @@ dynamic_config_include_file(char *rest_of_line, const char *file, int lineno)
 	}
 	config = fopen(s, "r");
 	if (config == NULL) {
-		gflog_notice(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_1005222,
 		    "file %s, line %d: %s: cannot open include file",
 		    file, lineno, s);
 		free(malloced_filename);
@@ -1327,7 +1327,7 @@ dynamic_config_read(FILE *config, const char *file)
 
 		e = gfarm_config_strtoken(&p, &s);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1005223,
 			    "%s, line %d: invalid token: %s",
 			    file, lineno, gfarm_error_string(e));
 			/* don't stop, just ignore this line line */
@@ -1354,7 +1354,7 @@ dynamic_config_read_file(const char *file)
 	FILE *config = fopen(file, "r");
 
 	if (config == NULL) {
-		gflog_notice(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_1005224,
 		    "%s: cannot open config file", file);
 		return;
 	}

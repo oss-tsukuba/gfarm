@@ -108,7 +108,7 @@ db_enter(dbq_entry_func_t func, void *data, int with_seqnum)
 	int transaction = 0;
 
 	if (gfarm_read_only_mode())
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1005141,
 		    "metadata modified during read_only mode");
 
 	if (gfarm_is_db_access_type_none()) {

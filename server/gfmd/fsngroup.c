@@ -475,7 +475,7 @@ gfm_server_fsngroup_modify(
 				"host does not exists");
 			e = GFARM_ERR_NO_SUCH_OBJECT;
 		} else if (gfarm_read_only_mode()) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1005157,
 			    "%s (%s@%s) during read_only",
 			    diag,
 			    peer_get_username(peer),

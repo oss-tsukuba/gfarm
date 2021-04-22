@@ -3179,7 +3179,7 @@ parse_include(char *p, const char **op, const char *file, int lineno)
 
 	e = get_one_argument(p, &s);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005118,
 			"get_one_argument failed "
 			"when parsing misc enabled (%s): %s",
 			p, gfarm_error_string(e));
@@ -3188,7 +3188,7 @@ parse_include(char *p, const char **op, const char *file, int lineno)
 
 	++gfarm_ctxp->include_nesting_level;
 	if (gfarm_ctxp->include_nesting_level > nesting_limit) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005119,
 		    "file %s, line %d: include nesting level %d "
 		    "exceeds include_nesting_limit %d",
 		    file, lineno,
@@ -3200,7 +3200,7 @@ parse_include(char *p, const char **op, const char *file, int lineno)
 	if (s[0] != '/' && file != NULL)  {
 		malloced_filename = gfarm_config_dirname_add(s, file);
 		if (malloced_filename == NULL) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1005120,
 			    "file %s, line %d: no memory to include %s",
 			    file, lineno, s);
 		}
@@ -3209,7 +3209,7 @@ parse_include(char *p, const char **op, const char *file, int lineno)
 	config = fopen(s, "r");
 	if (config == NULL) {
 		*op = s;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005121,
 		    "%s: cannot open include file", s);
 		free(malloced_filename);
 		--gfarm_ctxp->include_nesting_level;
@@ -3219,7 +3219,7 @@ parse_include(char *p, const char **op, const char *file, int lineno)
 	if (e != GFARM_ERR_NO_ERROR) {
 		*op = s;
 		/* caller will show this error */
-		gflog_debug(GFARM_MSG_UNFIXED, "%s: line %d: %s",
+		gflog_debug(GFARM_MSG_1005122, "%s: line %d: %s",
 		    s, lineno, gfarm_error_string(e));
 	}
 	/* fclose(config) is done by gfarm_config_read_file() */
@@ -4311,11 +4311,11 @@ gfarm_config_client_side_parse_default(
 	    NULL, 0, &o);
 	if (e != GFARM_ERR_NO_ERROR) {
 		if (o != NULL) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1005123,
 			    "%s %s: %s: %s", type->name, args, o,
 			    gfarm_error_string(e));
 		} else {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1005124,
 			    "%s %s: %s", type->name, args,
 			    gfarm_error_string(e));
 		}
@@ -4766,9 +4766,9 @@ gfarm_config_log_change(const struct gfarm_config_type *type,
 	static const char diag[] = "gfarm_config_log_change";
 
 	if (buffer == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED, "%s: no memory for %zd bytes",
+		gflog_error(GFARM_MSG_1005125, "%s: no memory for %zd bytes",
 		    diag, bufsize);
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1005126,
 		    "config changed by (%s@%s): %s: no memory",
 		    user, host, type->name);
 		return;
@@ -4784,7 +4784,7 @@ gfarm_config_log_change(const struct gfarm_config_type *type,
 	 */
 	len = (*type->printer)(storage, buffer, bufsize);
 	if (len == -1) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005127,
 		    "config changed by (%s@%s) %s: cannot log: %s",
 		    user, host, type->name, strerror(errno));
 		return;
@@ -4793,14 +4793,14 @@ gfarm_config_log_change(const struct gfarm_config_type *type,
 		char *b = realloc(buffer, len + 1);
 
 		if (b == NULL) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1005128,
 			    "%s: no memory for %d bytes", diag, len + 1);
 		} else {
 			buffer = b;
 
 			len = (*type->printer)(storage, buffer, len + 1);
 			if (len == -1) {
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1005129,
 				    "config changed by (%s@%s) %s: "
 				    "cannot log: %s",
 				    user, host, type->name, strerror(errno));
@@ -4808,7 +4808,7 @@ gfarm_config_log_change(const struct gfarm_config_type *type,
 			}
 		}
 	}
-	gflog_info(GFARM_MSG_UNFIXED, "config changed by (%s@%s): %s %s",
+	gflog_info(GFARM_MSG_1005130, "config changed by (%s@%s): %s %s",
 	    user, host, type->name, buffer);
 	free(buffer);
 }
@@ -4838,11 +4838,11 @@ gfarm_config_apply_to_metadb(char *directive, char *rest_of_line,
 	e = gfarm_config_type_by_name_for_metadb(directive, &type);
 	if (e != GFARM_ERR_NO_ERROR) {
 		if (e == GFARM_ERR_OPERATION_NOT_PERMITTED) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1005131,
 			    "%s, line %d: %s: not available in gfmd",
 			    file, lineno, directive);
 		} else {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1005132,
 			    "%s, line %d: %s: %s",
 			    file, lineno, directive, gfarm_error_string(e));
 		}
@@ -4860,10 +4860,10 @@ gfarm_config_apply_to_metadb(char *directive, char *rest_of_line,
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		if (o == NULL) {
-			gflog_error(GFARM_MSG_UNFIXED, "%s, line %d: %s",
+			gflog_error(GFARM_MSG_1005133, "%s, line %d: %s",
 			    file, lineno, gfarm_error_string(e));
 		} else {
-			gflog_error(GFARM_MSG_UNFIXED, "%s, line %d: %s: %s",
+			gflog_error(GFARM_MSG_1005134, "%s, line %d: %s: %s",
 			    file, lineno, o, gfarm_error_string(e));
 		}
 	} else if (log_changes) {
@@ -4876,7 +4876,7 @@ gfarm_config_apply_to_metadb(char *directive, char *rest_of_line,
 		 * but currently no such secret thing in config_types[],
 		 * we just log them.
 		 */
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1005135,
 		    "%s, line %d: config set: %s %s",
 		    file, lineno, directive,
 		    rest_of_line_save != NULL ? rest_of_line_save :
@@ -4969,7 +4969,7 @@ gfm_client_config_set_by_string(
 		e = (*type->client_side_parse)(type, p, &storage);
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005136,
 		    "%s %s: %s", s, p, gfarm_error_string(e));
 	} else {
 		e = gfm_client_config_set(gfm_server,

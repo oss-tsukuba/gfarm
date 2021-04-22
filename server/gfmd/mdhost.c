@@ -1353,7 +1353,7 @@ mdhost_set_self_as_default_master(void)
 
 	if (gfarm_read_only_mode()) {
 		master_transformation_has_to_be_propagated = 1;
-		gflog_notice(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_1005149,
 		    "propagating master transformation is postponed "
 		    "due to read_only");
 		return;
@@ -1374,7 +1374,7 @@ mdhost_read_only_disabled(void)
 	if (master_transformation_has_to_be_propagated) {
 		master_transformation_has_to_be_propagated = 0;
 		mdhost_set_self_as_default_master();
-		gflog_notice(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_1005150,
 		    "master transformation is propagated");
 	}
 }
@@ -1430,7 +1430,7 @@ gfm_server_metadb_server_set(struct peer *peer, int from_client, int skip)
 	    != GFARM_ERR_NO_ERROR) {
 		/* nothing to do */
 	} else if (gfarm_read_only_mode()) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for "
+		gflog_debug(GFARM_MSG_1005151, "%s (%s@%s) for "
 		    "name %s port %d flags 0x%x during read_only",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    ms.name, (int)ms.port, (int)ms.flags);
@@ -1527,7 +1527,7 @@ gfm_server_metadb_server_modify(struct peer *peer, int from_client, int skip)
 		   != GFARM_ERR_NO_ERROR) {
 		/* nothing to do */
 	} else if (gfarm_read_only_mode()) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for "
+		gflog_debug(GFARM_MSG_1005152, "%s (%s@%s) for "
 		    "name %s port %d flags 0x%x during read_only",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    ms.name, (int)ms.port, (int)ms.flags);
@@ -1591,7 +1591,7 @@ gfm_server_metadb_server_remove(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1002967,
 		    "%s: cannot remove self host", diag);
 	} else if (gfarm_read_only_mode()) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for "
+		gflog_debug(GFARM_MSG_1005153, "%s (%s@%s) for "
 		    "name %s during read_only",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    name);

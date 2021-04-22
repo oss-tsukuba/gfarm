@@ -513,7 +513,7 @@ gfm_server_dirset_info_set(struct peer *peer, int from_client, int skip)
 		 */
 		e = GFARM_ERR_INVALID_ARGUMENT;
 	} else if (gfarm_read_only_mode()) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for "
+		gflog_debug(GFARM_MSG_1005175, "%s (%s@%s) for "
 		    "user %s dirset %s during read_only",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    username, dirsetname);
@@ -565,7 +565,7 @@ gfm_server_dirset_info_remove(struct peer *peer, int from_client, int skip)
 		e = user_is_invalid(u) ?
 		    GFARM_ERR_NO_SUCH_USER : GFARM_ERR_PERMISSION_DENIED;
 	} else if (gfarm_read_only_mode()) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for "
+		gflog_debug(GFARM_MSG_1005176, "%s (%s@%s) for "
 		    "user %s dirset %s during read_only",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    username, dirsetname);
@@ -837,7 +837,7 @@ gfm_server_quota_dirset_set(struct peer *peer, int from_client, int skip)
 	} else if ((ds = user_lookup_dirset(u, dirsetname)) == NULL) {
 		e = GFARM_ERR_NO_SUCH_OBJECT;
 	} else if (gfarm_read_only_mode()) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for "
+		gflog_debug(GFARM_MSG_1005177, "%s (%s@%s) for "
 		    "user %s dirset %s during read_only",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    username, dirsetname);

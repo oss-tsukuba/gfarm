@@ -1514,7 +1514,7 @@ inode_remove(struct inode *inode, struct dirset *tdirset)
 	int dfc_needs_free = 0;
 
 	if (gfarm_read_only_mode()) {
-		gflog_warning(GFARM_MSG_UNFIXED, "inode %llu:%llu: "
+		gflog_warning(GFARM_MSG_1005163, "inode %llu:%llu: "
 		    "cannot remove unreferenced inode due to read_only",
 		    (long long)inode_get_number(inode),
 		    (long long)inode_get_gen(inode));
@@ -2134,7 +2134,7 @@ inode_set_mode_in_cache(struct inode *inode, gfarm_mode_t mode)
 
 	if (inode->i_mode != INODE_MODE_FREE &&
 	    (mode & GFARM_S_IFMT) != (inode->i_mode & GFARM_S_IFMT)) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1005164,
 		    "inode %llu:%llu: unexpected inode type change: 0%o->0%o",
 		    (long long)inode_get_number(inode),
 		    (long long)inode_get_gen(inode),
@@ -2731,7 +2731,7 @@ inode_new_generation_by_cookie_finish(
 
 	if (size != inode_get_size(inode)) {
 		if (gfarm_read_only_mode()) {
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1005165,
 			    "GFM_PROTO_GENERATION_UPDATED_BY_COOKIE: "
 			    "inode %llu:%llu conflict detected, "
 			    "but reverting size %llu to %llu skipped "
@@ -3882,7 +3882,7 @@ inode_create_file_in_lost_found(
 	}
 	e = db_inode_nlink_modify(inode_get_number(n), n->i_nlink);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005166,
 		    "db_inode_nlink_modify(%llu:%llu): %s",
 		    (unsigned long long)inode_get_number(n),
 		    (unsigned long long)inode_get_gen(n),
@@ -3900,7 +3900,7 @@ inode_link_to_lost_found_and_report(struct inode *inode)
 {
 	gfarm_error_t e;
 
-	gflog_warning(GFARM_MSG_UNFIXED,
+	gflog_warning(GFARM_MSG_1005167,
 	    "inode %llu:%llu is not referenced, moving to /%s",
 	    (unsigned long long)inode_get_number(inode),
 	    (unsigned long long)inode_get_gen(inode),
@@ -3908,7 +3908,7 @@ inode_link_to_lost_found_and_report(struct inode *inode)
 	/* move to the /lost+found directory */
 	e = inode_link_to_lost_found(inode);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005168,
 		    "failed to link inode %llu:%llu in /%s: %s",
 		    (unsigned long long)inode_get_number(inode),
 		    (unsigned long long)inode_get_gen(inode),
@@ -4911,7 +4911,7 @@ inode_close_read(struct file_opening *fo, struct gfarm_timespec *atime,
 		 * see SF.net #472 and #441.
 		 */
 		if (read_only) {
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1005169,
 			    "inode %llu:%llu: GFARM_FILE_TRUNC is "
 				      "not performed due to read_only",
 			    (long long)inode_get_number(inode),
@@ -6422,7 +6422,7 @@ inode_remove_replica_internal(struct inode *inode, struct host *spool_host,
 				    host_name(spool_host));
 				e = GFARM_ERR_FILE_BUSY;
 			} else if (gfarm_read_only_mode()) {
-				gflog_warning(GFARM_MSG_UNFIXED,
+				gflog_warning(GFARM_MSG_1005170,
 				    "inode %llu:%llu @ %s: replica "
 				    "entity must be removed, "
 				    "but currently read_only",
@@ -6449,7 +6449,7 @@ inode_remove_replica_internal(struct inode *inode, struct host *spool_host,
 		} else {
 			if (FILE_COPY_IS_VALID(copy)) {
 				if (gfarm_read_only_mode()) {
-					gflog_warning(GFARM_MSG_UNFIXED,
+					gflog_warning(GFARM_MSG_1005171,
 					    "inode %llu:%llu @ %s: replica "
 					    "metadata must be removed, "
 					    "but currently read_only",
@@ -6495,7 +6495,7 @@ inode_remove_replica_internal(struct inode *inode, struct host *spool_host,
 		}
 	} else if (!metadata_only) {
 		if (gfarm_read_only_mode()) {
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1005172,
 			    "inode %llu:%llu @ %s: obsolete replica "
 			    "entity must be removed, but currently read_only",
 			    (unsigned long long)inode->i_number,
@@ -7734,7 +7734,7 @@ inode_check_and_repair_nlink(void *closure, struct inode *inode)
 
 	if (inode_get_nlink(inode) != inode_get_nlink_ini(inode)) {
 		if (!inode_is_dir(inode) || !dir_reported) {
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1005173,
 			    "inode %llu:%llu nlink %llu should be %llu: fixed",
 			    (unsigned long long)inode_get_number(inode),
 			    (unsigned long long)inode_get_gen(inode),
@@ -7800,7 +7800,7 @@ inode_check_and_repair(void)
 			e = db_inode_nlink_modify(inode_get_number(lost_found),
 			    lost_found->i_nlink);
 			if (e != GFARM_ERR_NO_ERROR)
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1005174,
 				    "db_inode_nlink_modify(%llu:%llu): %s",
 				    (unsigned long long)
 				    inode_get_number(lost_found),

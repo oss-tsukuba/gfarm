@@ -457,7 +457,7 @@ failover_notify(void)
 
 	e = create_detached_thread(failover_notify_thread, NULL);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1005214,
 		    "create_detached_thread(failover_notify): %s",
 		    gfarm_error_string(e));
 }

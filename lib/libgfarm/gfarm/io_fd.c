@@ -207,7 +207,7 @@ gfarm_iobuffer_blocking_write_timeout_socket_op(struct gfarm_iobuffer *b,
 			gfarm_peer_name_string(fd, hostbuf, sizeof(hostbuf),
 			    NI_NUMERICHOST | NI_NUMERICSERV,
 			    &hostaddr_prefix, &hostaddr);
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1005140,
 			    "closing network connection due to "
 			    "send blocking more than %d seconds "
 			    "(network_send_timeout) to %s%s",

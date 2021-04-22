@@ -294,7 +294,7 @@ gfm_server_open_common(const char *diag, struct peer *peer, int from_client,
 	}
 	op = accmode_to_op(flag);
 	if ((op & GFS_W_OK) != 0 && read_only) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) parent %llu:%llu"
+		gflog_debug(GFARM_MSG_1005181, "%s (%s@%s) parent %llu:%llu"
 		    "name %s flag 0x%x during read_only",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    (long long)inode_get_number(base),
@@ -1379,7 +1379,7 @@ gfm_server_futimes(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1001826, "permission denied");
 		e = GFARM_ERR_PERMISSION_DENIED;
 	} else if (gfarm_read_only_mode()) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for inode %llu:%llu"
+		gflog_debug(GFARM_MSG_1005182, "%s (%s@%s) for inode %llu:%llu"
 		    " during read_only",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    (long long)inode_get_number(inode),
@@ -1452,7 +1452,7 @@ gfm_server_fchmod(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1001834,
 			"operation is not permitted for user");
 	} else if (gfarm_read_only_mode()) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for inode %llu:%llu"
+		gflog_debug(GFARM_MSG_1005183, "%s (%s@%s) for inode %llu:%llu"
 		    " during read_only",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    (long long)inode_get_number(inode),
@@ -1548,7 +1548,7 @@ gfm_server_fchown(struct peer *peer, int from_client, int skip)
 			"operation is not permitted for group");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if (gfarm_read_only_mode()) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for inode %llu:%llu"
+		gflog_debug(GFARM_MSG_1005184, "%s (%s@%s) for inode %llu:%llu"
 		    " during read_only",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    (long long)inode_get_number(inode),
@@ -1682,7 +1682,7 @@ gfm_server_cksum_set(struct peer *peer, int from_client, int skip)
 		    diag, cksum_type, (int)cksum_len);
 		e = GFARM_ERR_INVALID_ARGUMENT;
 	} else if (gfarm_read_only_mode()) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for inode %llu:%llu"
+		gflog_debug(GFARM_MSG_1005185, "%s (%s@%s) for inode %llu:%llu"
 		    " during read_only",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    (long long)inode_get_number(inode),
@@ -1843,7 +1843,7 @@ gfm_server_remove(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1001868, "process_get_file_inode() "
 			"failed: %s", gfarm_error_string(e));
 	} else if (gfarm_read_only_mode()) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for "
+		gflog_debug(GFARM_MSG_1005186, "%s (%s@%s) for "
 		    "parent %llu:%llu name %s during read_only",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    (long long)inode_get_number(base),
@@ -1955,7 +1955,7 @@ gfm_server_rename(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1001876, "process_get_file_inode() "
 			"failed: %s", gfarm_error_string(e));
 	} else if (gfarm_read_only_mode()) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) from "
+		gflog_debug(GFARM_MSG_1005187, "%s (%s@%s) from "
 		    "parent %llu:%llu name %s to "
 		    "parent %llu:%llu name %s during read_only",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
@@ -2101,7 +2101,7 @@ gfm_server_flink(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1001886, "process_get_file_inode() "
 			"failed: %s", gfarm_error_string(e));
 	} else if (gfarm_read_only_mode()) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for inode %llu:%llu"
+		gflog_debug(GFARM_MSG_1005188, "%s (%s@%s) for inode %llu:%llu"
 		    " parent %llu:%llu name %s during read_only",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    (long long)inode_get_number(src),
@@ -2200,7 +2200,7 @@ gfm_server_mkdir(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1001893, "argument 'mode' is invalid");
 		e = GFARM_ERR_INVALID_ARGUMENT;
 	} else if (gfarm_read_only_mode()) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for "
+		gflog_debug(GFARM_MSG_1005189, "%s (%s@%s) for "
 		    "parent %llu:%llu name %s during read_only",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    (long long)inode_get_number(base),
@@ -2270,7 +2270,7 @@ gfm_server_symlink(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1001900, "process_get_file_inode() "
 			"failed: %s", gfarm_error_string(e));
 	} else if (gfarm_read_only_mode()) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for %s to "
+		gflog_debug(GFARM_MSG_1005190, "%s (%s@%s) for %s to "
 		    "parent %llu:%llu name %s during read_only",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    source_path,
@@ -2999,7 +2999,7 @@ reopen_resume(struct peer *peer, void *closure, int *suspendedp)
 	} else if (gfarm_read_only_mode() &&
 	    process_fd_is_for_modification(
 	    process, peer, arg->fd, &inum, &gen, &flags, diag)) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for inode %llu:%llu"
+		gflog_debug(GFARM_MSG_1005191, "%s (%s@%s) for inode %llu:%llu"
 		    "flags 0x%x during read_only",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    (long long)inum, (long long)gen, flags);
@@ -3087,7 +3087,7 @@ gfm_server_reopen(struct peer *peer, int from_client, int skip,
 	} else if (read_only &&
 	    process_fd_is_for_modification(
 	    process, peer, fd, &inum, &gen, &flags, diag)) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for inode %llu:%llu"
+		gflog_debug(GFARM_MSG_1005192, "%s (%s@%s) for inode %llu:%llu"
 		    "flags 0x%x during read_only",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    (long long)inum, (long long)gen, flags);
@@ -3231,12 +3231,12 @@ close_write_v2_4_resume(struct peer *peer, void *closure, int *suspendedp)
 		e_rpc = process_get_file_opening(process, peer, arg->fd,
 		    &fo, diag);
 		if (e_rpc != GFARM_ERR_NO_ERROR) {
-			gflog_info(GFARM_MSG_UNFIXED,
+			gflog_info(GFARM_MSG_1005193,
 			    "%s (%s@%s) bad descriptor %d: %s", diag,
 			    peer_get_username(peer), peer_get_hostname(peer),
 			    arg->fd, gfarm_error_string(e_rpc));
 		} else {
-			gflog_notice(GFARM_MSG_UNFIXED,
+			gflog_notice(GFARM_MSG_1005194,
 			    "%s (%s@%s) for inode %llu:%llu flag 0x%x "
 			    "during read_only",
 			    diag,
@@ -3333,12 +3333,12 @@ gfm_server_close_write_common(const char *diag,
 
 		e = process_get_file_opening(process, peer, fd, &fo, diag);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_info(GFARM_MSG_UNFIXED,
+			gflog_info(GFARM_MSG_1005195,
 			    "%s (%s@%s) bad descriptor %d: %s", diag,
 			    peer_get_username(peer), peer_get_hostname(peer),
 			    fd, gfarm_error_string(e));
 		} else {
-			gflog_notice(GFARM_MSG_UNFIXED,
+			gflog_notice(GFARM_MSG_1005196,
 			    "%s (%s@%s) for inode %llu:%llu flag 0x%x "
 			    "during read_only",
 			    diag,
@@ -3529,7 +3529,7 @@ fhclose_write(struct peer *peer, struct host *spool_host, struct inode *inode,
 	gfarm_uint64_t cookie;
 
 	if (gfarm_read_only_mode()) {
-		gflog_notice(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_1005197,
 		    "%s (%s@%s) for inode %llu:%llu size %llu mtime:%llu.%09u "
 		    "during read_only",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
@@ -3874,7 +3874,7 @@ gfm_server_generation_updated_by_cookie(struct peer *peer, int from_client,
 		    peer_get_pending_new_generation_by_cookie(peer, cookie);
 
 		if (inode == NULL) {
-			gflog_info(GFARM_MSG_UNFIXED, "%s (%s@%s) "
+			gflog_info(GFARM_MSG_1005198, "%s (%s@%s) "
 			    "cookie %llu for inode %llu:%llu during read_only:"
 			    " obsolete cookie",
 			    diag,
@@ -3884,7 +3884,7 @@ gfm_server_generation_updated_by_cookie(struct peer *peer, int from_client,
 			    (long long)cookie);
 			e = GFARM_ERR_BAD_COOKIE;
 		} else {
-			gflog_notice(GFARM_MSG_UNFIXED, "%s (%s@%s) "
+			gflog_notice(GFARM_MSG_1005199, "%s (%s@%s) "
 			    "cookie %llu for inode %llu:%llu during read_only",
 			    diag,
 			    peer_get_username(peer), peer_get_hostname(peer),
@@ -4302,7 +4302,7 @@ gfm_server_config_set(struct peer *peer, int from_client, int skip)
 		gfarm_config_log_change(type, &storage_save,
 		    peer_get_username(peer), peer_get_hostname(peer));
 	else if (e_copyin != GFARM_ERR_NO_ERROR)
-		gflog_notice(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_1005200,
 		    "config change by (%s@%s) failed: %s: %s",
 		    peer_get_username(peer), peer_get_hostname(peer),
 		    name, gfarm_error_string(e_copyin));
@@ -4484,7 +4484,7 @@ gfm_server_replica_remove_by_file(struct peer *peer, int from_client, int skip)
 			"process_get_file_opening() failed: %s",
 			gfarm_error_string(e));
 	} else if (gfarm_read_only_mode()) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for "
+		gflog_debug(GFARM_MSG_1005201, "%s (%s@%s) for "
 		    "inode %llu:%llu during read_only",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    (long long)inode_get_number(inode),
@@ -4602,12 +4602,12 @@ gfm_server_replicate_file_from_to(struct peer *peer, int from_client, int skip)
 
 		e = process_get_file_opening(process, peer, cfd, &fo, diag);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_info(GFARM_MSG_UNFIXED,
+			gflog_info(GFARM_MSG_1005202,
 			    "%s (%s@%s) bad descriptor %d: %s", diag,
 			    peer_get_username(peer), peer_get_hostname(peer),
 			    cfd, gfarm_error_string(e));
 		} else {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1005203,
 			    "%s (%s@%s) for inode %llu:%llu "
 			    "from %s to %s flag 0x%x during read_only",
 			    diag,
@@ -4675,12 +4675,12 @@ replica_adding_resume(struct peer *peer, void *closure, int *suspendedp)
 		e = process_get_file_opening(process, peer, arg->fd,
 		    &fo, diag);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_info(GFARM_MSG_UNFIXED,
+			gflog_info(GFARM_MSG_1005204,
 			    "%s (%s@%s) bad descriptor %d: %s", diag,
 			    peer_get_username(peer), peer_get_hostname(peer),
 			    arg->fd, gfarm_error_string(e));
 		} else {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1005205,
 			    "%s (%s@%s) for inode %llu:%llu to %s "
 			    "during read_only",
 			    diag,
@@ -4785,12 +4785,12 @@ gfm_server_replica_adding_common(struct peer *peer, int from_client, int skip,
 
 		e = process_get_file_opening(process, peer, fd, &fo, diag);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_info(GFARM_MSG_UNFIXED,
+			gflog_info(GFARM_MSG_1005206,
 			    "%s (%s@%s) bad descriptor %d: %s", diag,
 			    peer_get_username(peer), peer_get_hostname(peer),
 			    fd, gfarm_error_string(e));
 		} else {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1005207,
 			    "%s (%s@%s) for inode %llu:%llu to %s "
 			    "during read_only",
 			    diag,
@@ -4906,12 +4906,12 @@ gfm_server_replica_added_common(const char *diag,
 
 		e = process_get_file_opening(process, peer, fd, &fo, diag);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_info(GFARM_MSG_UNFIXED,
+			gflog_info(GFARM_MSG_1005208,
 			    "%s (%s@%s) bad descriptor %d: %s", diag,
 			    peer_get_username(peer), peer_get_hostname(peer),
 			    fd, gfarm_error_string(e));
 		} else {
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1005209,
 			    "%s (%s@%s) for inode %llu:%llu during read_only",
 			    diag,
 			    peer_get_username(peer), peer_get_hostname(peer),
@@ -5076,7 +5076,7 @@ gfm_server_replica_lost(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1003554, "%s: writing", diag);
 		e = GFARM_ERR_FILE_BUSY;
 	} else if (gfarm_read_only_mode()) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for "
+		gflog_debug(GFARM_MSG_1005210, "%s (%s@%s) for "
 		    "inode %llu:%llu during read_only",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    (long long)inum, (long long)gen);
@@ -5197,7 +5197,7 @@ gfm_server_replica_add(struct peer *peer, int from_client, int skip)
 		    (long long)inum, (long long)gen, host_name(spool_host));
 		e = GFARM_ERR_INVALID_FILE_REPLICA; /* invalid file */
 	} else if (gfarm_read_only_mode()) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for "
+		gflog_debug(GFARM_MSG_1005211, "%s (%s@%s) for "
 		    "inode %llu:%llu size %llu during read_only",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    (long long)inum, (long long)gen, (long long)size);
@@ -5386,7 +5386,7 @@ gfm_server_replica_create_file_in_lost_found(struct peer *peer,
 		    "not permitted: peer_get_host() failed");
 		e_rpc = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if (gfarm_read_only_mode()) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for "
+		gflog_debug(GFARM_MSG_1005212, "%s (%s@%s) for "
 		    "inode %llu:%llu size %llu mtime %llu.%09u "
 		    "during read_only",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
@@ -5575,7 +5575,7 @@ gfm_server_fhset_cksum(struct peer *peer, int from_client, int skip)
 		    diag, (long long)inum, (long long)igen);
 		e = GFARM_ERR_NO_SUCH_OBJECT;
 	} else if (gfarm_read_only_mode()) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for "
+		gflog_debug(GFARM_MSG_1005213, "%s (%s@%s) for "
 		    "inode %llu:%llu flags 0x%x during read_only",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    (long long)inum, (long long)igen, (int)flags);

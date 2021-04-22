@@ -783,13 +783,13 @@ process_fd_is_for_modification(struct process *process,
 	int no_replica, is_creating_file_replica;
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005178,
 		    "process_get_file_opening() failed: %s",
 		    gfarm_error_string(e));
 		return (0);
 	}
 	if (!inode_is_file(fo->inode)) { /* i.e. is a directory */
-		gflog_debug(GFARM_MSG_UNFIXED, "inode is not file");
+		gflog_debug(GFARM_MSG_1005179, "inode is not file");
 		return (0);
 	}
 

@@ -561,7 +561,7 @@ gfarm_auth_config_elem_string(
 	    gfarm_auth_method_name(acp->method));
 	if (len < 0) {
 		save_errno = errno;
-		gflog_debug_errno(GFARM_MSG_UNFIXED, "snprintf");
+		gflog_debug_errno(GFARM_MSG_1005114, "snprintf");
 		errno = save_errno;
 		return (-1);
 	}
@@ -570,7 +570,7 @@ gfarm_auth_config_elem_string(
 	len2 = gfarm_hostspec_to_string(acp->hostspec, string, size);
 	if (len2 < 0) {
 		save_errno = errno;
-		gflog_debug_errno(GFARM_MSG_UNFIXED, "snprintf");
+		gflog_debug_errno(GFARM_MSG_1005115, "snprintf");
 		errno = save_errno;
 		return (-1);
 	}
@@ -592,7 +592,7 @@ gfarm_auth_config_string(char *string, size_t size)
 		len = gfarm_auth_config_elem_string(acp, string, size);
 		if (len < 0) {
 			save_errno = errno;
-			gflog_debug_errno(GFARM_MSG_UNFIXED, "snprintf");
+			gflog_debug_errno(GFARM_MSG_1005116, "snprintf");
 			errno = save_errno;
 			return (-1);
 		}
@@ -602,7 +602,7 @@ gfarm_auth_config_string(char *string, size_t size)
 		len = snprintf(string, size, "%c", '\n');
 		if (len < 0) {
 			save_errno = errno;
-			gflog_debug_errno(GFARM_MSG_UNFIXED, "snprintf");
+			gflog_debug_errno(GFARM_MSG_1005117, "snprintf");
 			errno = save_errno;
 			return (-1);
 		}

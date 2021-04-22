@@ -3205,7 +3205,7 @@ close_fd_somehow(struct gfp_xdr *client,
 		if (fd_usable_to_gfmd) {
 			while ((e = close_fd(client, fd, fe, diag)) ==
 			    GFARM_ERR_READ_ONLY_FILE_SYSTEM) {
-				gflog_info(GFARM_MSG_UNFIXED,
+				gflog_info(GFARM_MSG_1005225,
 				    "close_write: inode %llu:%llu waiting "
 				    "for %d seconds until read_only disabled",
 				    (long long)fe->ino, (long long)fe->gen,
@@ -3230,7 +3230,7 @@ close_fd_somehow(struct gfp_xdr *client,
 		if (!fd_usable_to_gfmd) {
 			while ((e = fhclose_fd(client, fe, diag)) ==
 			    GFARM_ERR_READ_ONLY_FILE_SYSTEM) {
-				gflog_info(GFARM_MSG_UNFIXED,
+				gflog_info(GFARM_MSG_1005226,
 				    "fhclose_write: inode %llu:%llu waiting "
 				    "for %d seconds until read_only disabled",
 				    (long long)fe->ino, (long long)fe->gen,
@@ -5752,7 +5752,7 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 		default:
 			gflog_warning(GFARM_MSG_1000558, "unknown request %d",
 			    (int)request);
-			gflog_info(GFARM_MSG_UNFIXED, "last request: %d",
+			gflog_info(GFARM_MSG_1005227, "last request: %d",
 			    (int)last_request);
 			cleanup(0);
 			exit(1);
@@ -6632,7 +6632,7 @@ back_channel_server(void)
 				    "(back channel) unknown request %d "
 				    "(xid:%d size:%d), skip",
 				    (int)request, (int)xid, (int)size);
-				gflog_info(GFARM_MSG_UNFIXED,
+				gflog_info(GFARM_MSG_1005228,
 				    "last request: %d", (int)last_request);
 				e = gfp_xdr_purge(bc_conn, 0, size);
 				if (e != GFARM_ERR_NO_ERROR) {

@@ -598,7 +598,7 @@ async_channel_protocol_switch(struct abstract_host *host, struct peer *peer,
 		    "(%s) unknown request %d (xid:%d size:%d), reset",
 		    back_channel_type_name(peer),
 		    (int)request, (int)xid, (int)size);
-		gflog_info(GFARM_MSG_UNFIXED, "last request: %d",
+		gflog_info(GFARM_MSG_1005148, "last request: %d",
 		    (int)ps->last_request);
 		e = gfp_xdr_purge(client, 0, size);
 	}

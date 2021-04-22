@@ -812,7 +812,7 @@ gfm_server_group_info_set(struct peer *peer, int from_client, int skip)
 			"group_user_check() failed: %s",
 			gfarm_error_string(e));
 	} else if (gfarm_read_only_mode()) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) during read_only",
+		gflog_debug(GFARM_MSG_1005145, "%s (%s@%s) during read_only",
 		    diag, peer_get_username(peer), peer_get_hostname(peer));
 		e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
 	/*
@@ -905,7 +905,7 @@ gfm_server_group_info_modify(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1001542, "group_user_check() failed: %s",
 		    gfarm_error_string(e));
 	} else if (gfarm_read_only_mode()) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) during read_only",
+		gflog_debug(GFARM_MSG_1005146, "%s (%s@%s) during read_only",
 		    diag, peer_get_username(peer), peer_get_hostname(peer));
 		e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
 	} else {
@@ -973,7 +973,7 @@ gfm_server_group_info_remove(struct peer *peer, int from_client, int skip)
 		    diag, groupname);
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if (gfarm_read_only_mode()) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) during read_only",
+		gflog_debug(GFARM_MSG_1005147, "%s (%s@%s) during read_only",
 		    diag, peer_get_username(peer), peer_get_hostname(peer));
 		e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
 	} else

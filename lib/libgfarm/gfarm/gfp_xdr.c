@@ -942,13 +942,13 @@ gfp_xdr_send_notimeout(struct gfp_xdr *conn, const char *format, ...)
 	va_end(ap);
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005137,
 			"gfp_xdr_vsend_notimeout() failed: %s",
 			gfarm_error_string(e));
 		return (e);
 	}
 	if (*format != '\0') {
-		gflog_debug(GFARM_MSG_UNFIXED, "gfp_xdr_send_size: "
+		gflog_debug(GFARM_MSG_1005138, "gfp_xdr_send_size: "
 		    "invalid format character: %c(%x)", *format, *format);
 		return (GFARM_ERRMSG_GFP_XDR_SEND_INVALID_FORMAT_CHARACTER);
 	}
@@ -1100,7 +1100,7 @@ gfp_xdr_vrpc_request_notimeout(struct gfp_xdr *conn, gfarm_int32_t command,
 	 */
 	e = gfp_xdr_send_notimeout(conn, "i", command);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005139,
 			"sending command (%d) failed: %s",
 			command,
 			gfarm_error_string(e));
