@@ -1093,6 +1093,17 @@ to continue the operation.</p>
 server during the timeout period, it aborts the communication with
 the gfsd server and gfmd considers the gfsd server is down.</p>
 </dd>
+<dt><span class="term"><span class="token">network_send_timeout</span> <em class="parameter"><code>seconds</code></em></span></dt>
+<dd>
+<p>The <span class="token">network_send_timeout</span> directive specifies
+the time, in seconds, to wait until data is ready to send via network.
+The default value is 0 seconds that means no timeout.
+This directive is effective in both gfarm2.conf and gfmd.conf.
+</p>
+<p>When data cannot be sent for more than the send timeout, the
+  network connection is disconnected, and tried to be
+  re-connected.</p>
+</dd>
 <dt><span class="term"><span class="token">admin_user</span> <em class="parameter"><code>user</code></em></span></dt>
 <dd><p>
 This directive specifies an administrator user name, which is
@@ -2436,6 +2447,7 @@ The default size is 16 MiB.
 <br>
 	&lt;known_network_statement&gt; |<br>
 	&lt;network_receive_timeout_statement&gt; |<br>
+	&lt;network_send_timeout_statement&gt; |<br>
 	&lt;admin_user_statement&gt; |<br>
 	&lt;admin_user_gsi_dn_statement&gt; |<br>
 	&lt;local_user_map_statement&gt; |<br>
@@ -2637,6 +2649,8 @@ The default size is 16 MiB.
 <dd><div class="literallayout"><p>"known_network" &lt;hostspec&gt;</p></div></dd>
 <dt><span class="term">&lt;network_receive_timeout_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"network_receive_timeout" &lt;number&gt;</p></div></dd>
+<dt><span class="term">&lt;network_send_timeout_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"network_send_timeout" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;admin_user_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"admin_user" &lt;string&gt;</p></div></dd>
 <dt><span class="term">&lt;admin_user_gsi_dn_statement&gt; ::=</span></dt>

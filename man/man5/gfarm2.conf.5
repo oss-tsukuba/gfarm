@@ -1359,6 +1359,15 @@ When a Gfarm application program receives no data from a gfsd filesystem server 
 When a gfmd metadata server receives no data from a gfsd filesystem server during the timeout period, it aborts the communication with the gfsd server and gfmd considers the gfsd server is down\&.
 .RE
 .PP
+network_send_timeout \fIseconds\fR
+.RS 4
+The
+network_send_timeout
+directive specifies the time, in seconds, to wait until data is ready to send via network\&. The default value is 0 seconds that means no timeout\&. This directive is effective in both gfarm2\&.conf and gfmd\&.conf\&.
+.sp
+When data cannot be sent for more than the send timeout, the network connection is disconnected, and tried to be re\-connected\&.
+.RE
+.PP
 admin_user \fIuser\fR
 .RS 4
 This directive specifies an administrator user name, which is specified in gfmd\&.conf\&.
@@ -3018,6 +3027,7 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 
 	<known_network_statement> |
 	<network_receive_timeout_statement> |
+	<network_send_timeout_statement> |
 	<admin_user_statement> |
 	<admin_user_gsi_dn_statement> |
 	<local_user_map_statement> |
@@ -3939,6 +3949,20 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 .\}
 .nf
 "network_receive_timeout" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<network_send_timeout_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"network_send_timeout" <number>
 .fi
 .if n \{\
 .RE

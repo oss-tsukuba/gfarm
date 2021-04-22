@@ -1209,6 +1209,13 @@ Gfarmクライアントプログラムが指定した時間待ったもの、gfs
 gfmd が指定した時間待ったもの、gfsd からデータがまったく 届かなかった場合、その gfsd との通信を中止して、その gfsd はダウンした ものとみなします。
 .RE
 .PP
+network_send_timeout \fI秒数\fR
+.RS 4
+ネットワークを介したデータ送信のタイムアウト時間を秒単位で指定 します。 デフォルト値は0秒、つまりタイムアウトはありません。 この文は gfarm2\&.conf および gfmd\&.conf のいずれにおいても有効です。
+.sp
+データが指定した時間以上送信できない場合、その通信を中止し、再接 続を試みます。
+.RE
+.PP
 admin_user \fIユーザ名\fR
 .RS 4
 gfmd\&.conf内のこの文で指定されたユーザが、 デフォルトの特権ユーザとなります。
@@ -2862,6 +2869,7 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 
 	<known_network_statement> |
 	<network_receive_timeout_statement> |
+	<network_send_timeout_statement> |
 	<admin_user_statement> |
 	<admin_user_gsi_dn_statement> |
 	<local_user_map_statement> |
@@ -3783,6 +3791,20 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .nf
 "network_receive_timeout" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<network_send_timeout_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"network_send_timeout" <number>
 .fi
 .if n \{\
 .RE

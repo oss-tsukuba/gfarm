@@ -1041,6 +1041,17 @@ IPv4のクラスCネットワークが仮定されます。</p>
 ものとみなします。
 </p>
 </dd>
+<dt><span class="term"><span class="token">network_send_timeout</span> <em class="parameter"><code>秒数</code></em></span></dt>
+<dd>
+<p>ネットワークを介したデータ送信のタイムアウト時間を秒単位で指定
+します。
+デフォルト値は0秒、つまりタイムアウトはありません。
+この文は gfarm2.conf および gfmd.conf のいずれにおいても有効です。
+</p>
+<p>データが指定した時間以上送信できない場合、その通信を中止し、再接
+続を試みます。
+</p>
+</dd>
 <dt><span class="term"><span class="token">admin_user</span> <em class="parameter"><code>ユーザ名</code></em></span></dt>
 <dd><p>
 gfmd.conf内のこの文で指定されたユーザが、
@@ -2421,6 +2432,7 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 <br>
 	&lt;known_network_statement&gt; |<br>
 	&lt;network_receive_timeout_statement&gt; |<br>
+	&lt;network_send_timeout_statement&gt; |<br>
 	&lt;admin_user_statement&gt; |<br>
 	&lt;admin_user_gsi_dn_statement&gt; |<br>
 	&lt;local_user_map_statement&gt; |<br>
@@ -2622,6 +2634,8 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 <dd><div class="literallayout"><p>"known_network" &lt;hostspec&gt;</p></div></dd>
 <dt><span class="term">&lt;network_receive_timeout_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"network_receive_timeout" &lt;number&gt;</p></div></dd>
+<dt><span class="term">&lt;network_send_timeout_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"network_send_timeout" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;admin_user_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"admin_user" &lt;string&gt;</p></div></dd>
 <dt><span class="term">&lt;admin_user_gsi_dn_statement&gt; ::=</span></dt>
