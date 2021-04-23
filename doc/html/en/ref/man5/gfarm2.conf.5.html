@@ -642,19 +642,15 @@ has to be specified in both gfarm2.conf and gfmd.conf.
 <p>
 This directive specifies the delay (in seconds) that
 new master gfmd notifies its start to gfsd processes on each
-filesystem node.
-If this delay is 0 seconds, it's highly possible that some gfsd process
-detects a stop of previous master gfmd and connects to the new master gfmd
-just before the notification, and in that case, the gfsd process will
-disconnect and retry connecting to the new gfmd again.
-To avoid such inefficiency, the default of this delay is 5 seconds.
+filesystem node.  The default of this delay is 5 seconds in
+gfarm-2.7.17, and 0 second in the newer version.
 </p>
 <p>
 This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 </p>
 <p>For example,</p>
 <div class="literallayout"><p><br>
-	failover_notify_delay 10<br>
+	failover_notify_delay 5<br>
 </p></div>
 </dd>
 <dt><span class="term"><span class="token">metadb_server_dbq_size</span> <em class="parameter"><code>size</code></em></span></dt>

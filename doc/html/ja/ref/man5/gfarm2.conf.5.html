@@ -621,19 +621,17 @@ gfarm2.confとgfmd.confの両方で指定する必要があります。
 </dd>
 <dt><span class="term"><span class="token">failover_notify_delay</span> <em class="parameter"><code>秒数</code></em></span></dt>
 <dd>
-<p>新マスターgfmdが各ファイルシステムサーバのgfsdプロセスに起動を通知する
-処理を行なうまでの遅延時間を秒数で指定します。
-もしこの時間間隔が0秒だと、それまで動作していたマスターの停止を検知したgfsdの
-再接続処理と入れ違いとなる可能性が高く、その場合gfsdがいったん接続を切り
-もう一度再接続を試みることになり非効率です。
-これを避けるためデフォルト値は5秒となっています。
+<p>新マスターgfmdが各ファイルシステムサーバのgfsdプロセスに起動を
+通知する処理を行なうまでの遅延時間を秒数で指定します。
+デフォルト値はGfarm-2.7.17では5秒ですが、それ以降のバージョン
+では0です。
 </p>
 <p>
 この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
 </p>
 <p>例:</p>
 <div class="literallayout"><p><br>
-	failover_notify_delay 10<br>
+	failover_notify_delay 5<br>
 </p></div>
 </dd>
 <dt><span class="term"><span class="token">metadb_server_dbq_size</span> <em class="parameter"><code>キュー長</code></em></span></dt>
