@@ -6,8 +6,6 @@ Release note for Gfarm 2.7.18
 New configuration directive
 * network_send_timeout - timeout to send data.  Default is 0 that
   means no timeout
-* failover_notify_delay - delay time to notify gfsds to connect to a
-  new gfmd.  Default is 5 seconds.
 
 Updated feature
 * gfprep - -m option works even when the destination already stores
