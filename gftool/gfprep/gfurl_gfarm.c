@@ -95,6 +95,16 @@ gfurl_gfarm_rmdir(const char *path)
 }
 
 static gfarm_error_t
+gfurl_gfarm_unlink(const char *path)
+{
+	gfarm_error_t e;
+
+	e = gfs_unlink(path);
+	gfmsg_debug_e(e, "gfs_unlink(%s)", path);
+	return (e);
+}
+
+static gfarm_error_t
 gfurl_gfarm_readlink(const char *path, char **targetp)
 {
 	gfarm_error_t e;
@@ -129,6 +139,7 @@ const struct gfurl_functions gfurl_func_gfarm = {
 	.chmod = gfurl_gfarm_chmod,
 	.mkdir = gfurl_gfarm_mkdir,
 	.rmdir = gfurl_gfarm_rmdir,
+	.unlink = gfurl_gfarm_unlink,
 	.readlink = gfurl_gfarm_readlink,
 	.symlink = gfurl_gfarm_symlink,
 };
