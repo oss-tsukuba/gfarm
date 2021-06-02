@@ -33,9 +33,8 @@ This document describes how to configure the Gfarm file system.
 For users who would like to configure a Gfarm file system by a non
 privileged user, refer to SETUP.private.en.
 
-Please install the Gfarm software before using this manual,
-By using either INSTALL.en, for installation from the source code,
-or INSTALL.RPM.en, for installation from the RPM binary packages.
+This document assumes the Gfarm software has been installed.
+For the installation, refer to INSTALL.en or INSTALL.RPM.en.
 
 If problems occur, please refer to the Trouble Shooting section
 in Gfarm-FAQ.en.
