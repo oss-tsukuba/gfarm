@@ -1,0 +1,79 @@
+#!/bin/bash
+
+set -eu
+
+WORKDIR=~/
+FTPURL=gsiftp://gfmd1
+TESTDIR_PATH=tmp/test-gridftp-server
+TESTDIR_FTP=${FTPURL}/${TESTDIR_PATH}
+TESTDIR_GFARM=gfarm:/${TESTDIR_PATH}
+
+init() {
+    grid-proxy-init
+    gfmkdir -p ${TESTDIR_GFARM}
+    gfchmod 1777 /tmp
+}
+
+cleanup() {
+    gfrm -rf ${TESTDIR_GFARM}
+}
+
+randstr() {
+    cat /dev/urandom | tr -dc '[:alpha:]' | head -c $1
+}
+
+msg_checking() {
+    echo -n "${FUNCNAME[1]} ... "
+}
+
+PASS() {
+    echo "PASS"
+}
+
+expect_mode() {
+    FILENAME=$1
+    EXPECTED=$2
+
+    MODE=$(gfls -ld $FILENAME | awk '{print $1}')
+    [ "$MODE" = "$EXPECTED" ]
+}
+
+test_mkdir_rmdir() {
+    msg_checking
+    NAME=$(randstr 10)
+
+    uberftp -mkdir ${TESTDIR_FTP}/${NAME}
+    gftest -d ${TESTDIR_GFARM}/${NAME}
+    uberftp -rmdir ${TESTDIR_FTP}/${NAME}
+    PASS
+}
+
+test_rename() {
+    msg_checking
+    NAME=$(randstr 10)
+    uberftp -mkdir ${TESTDIR_FTP}/${NAME}
+    uberftp -rename ${TESTDIR_FTP}/${NAME} /${TESTDIR_PATH}/${NAME}_2
+    gftest -d ${TESTDIR_GFARM}/${NAME}_2
+    uberftp -rmdir ${TESTDIR_FTP}/${NAME}_2
+    PASS
+}
+
+test_chmod() {
+    msg_checking
+    NAME=$(randstr 10)
+    uberftp -mkdir ${TESTDIR_FTP}/${NAME}
+    uberftp -chmod 400 ${TESTDIR_FTP}/${NAME}
+    expect_mode ${TESTDIR_GFARM}/${NAME} 'dr--------'
+    uberftp -chmod 555 ${TESTDIR_FTP}/${NAME}
+    expect_mode ${TESTDIR_GFARM}/${NAME} 'dr-xr-xr-x'
+    uberftp -rmdir ${TESTDIR_FTP}/${NAME}
+    PASS
+}
+
+trap cleanup EXIT
+
+cd $WORKDIR
+init
+test_mkdir_rmdir
+test_rename
+test_chmod

@@ -67,6 +67,7 @@ DOCKER = $(SUDO) docker
 COMPOSE = $(SUDO) COMPOSE_PROJECT_NAME=gfarm-$(GFDOCKER_PRJ_NAME) \
 	GFDOCKER_PRJ_NAME=$(GFDOCKER_PRJ_NAME) docker-compose
 CONTSHELL_FLAGS = \
+		--env GFDOCKER_PRJ_NAME='$(GFDOCKER_PRJ_NAME)' \
 		--env GFDOCKER_SUBNET='$(GFDOCKER_SUBNET)' \
 		--env GFDOCKER_START_HOST_ADDR='$(GFDOCKER_START_HOST_ADDR)' \
 		--env GFDOCKER_USERNAME_PREFIX='$(GFDOCKER_USERNAME_PREFIX)' \
@@ -87,8 +88,11 @@ CONTSHELL_FLAGS += \
 		--env HTTPS_PROXY='$(PROXY_URL)'
 endif
 
-CONTSHELL = $(COMPOSE) exec $(CONTSHELL_FLAGS) -u '$(GFDOCKER_PRIMARY_USER)' \
-		'$(PRIMARY_CLIENT_CONTAINER)' bash
+CONTSHELL_COMMON = $(COMPOSE) exec $(CONTSHELL_FLAGS) \
+	-u '$(GFDOCKER_PRIMARY_USER)'
+CONTSHELL = $(CONTSHELL_COMMON) '$(PRIMARY_CLIENT_CONTAINER)' bash
+CONTSHELL_GFMD1 = $(CONTSHELL_COMMON) gfmd1 bash
+
 # overridable
 CONTSHELL_ARGS :=  -c 'cd ~ && bash'
 
@@ -244,7 +248,6 @@ regress:
 	$(regress)
 
 GFDOCKER_GFARMS3_COMMON_ENV = \
-	--env GFDOCKER_PRJ_NAME='$(GFDOCKER_PRJ_NAME)' \
 	--env GFDOCKER_GFARMS3_CACHE_BASEDIR='$(GFDOCKER_GFARMS3_CACHE_BASEDIR_COMMON)' \
 	--env GFDOCKER_GFARMS3_CACHE_SIZE='$(GFDOCKER_GFARMS3_CACHE_SIZE_COMMON)' \
 	--env GFDOCKER_GFARMS3_WSGI_HOMEDIR='$(GFDOCKER_GFARMS3_WSGI_HOMEDIR_COMMON)' \
@@ -309,6 +312,13 @@ endef
 
 s3test:
 	$(s3test)
+
+gridftp-setup:
+	$(CONTSHELL_GFMD1) -c '. ~/gfarm/docker/dev/common/gridftp-setup-server.rc'
+	$(CONTSHELL) -c '. ~/gfarm/docker/dev/common/gridftp-setup-client.rc'
+
+gridftp-test:
+	$(CONTSHELL) -c '. ~/gfarm/docker/dev/common/gridftp-test.rc'
 
 define test_fo
 $(CONTSHELL) -c '. ~/gfarm/docker/dev/common/test-fo.rc'

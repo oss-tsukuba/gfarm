@@ -1,0 +1,32 @@
+#!/bin/bash
+
+set -eux
+
+WORKDIR=~/
+
+cd $WORKDIR
+
+install_uberftp() {
+    [ -d UberFTP ] || git clone https://github.com/gridcf/UberFTP.git
+    cd UberFTP
+    ./bootstrap
+    ./configure
+    make
+    sudo make install
+}
+
+install_globus_url_copy_for_centos() {
+    sudo yum install -y globus-gass-copy-progs
+}
+
+install_for_centos() {
+    install_uberftp
+    install_globus_url_copy_for_centos
+}
+
+case $GFDOCKER_PRJ_NAME in
+    centos*)
+        install_for_centos
+        ;;
+    *) exit 1;;
+esac

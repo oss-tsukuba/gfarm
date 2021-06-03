@@ -1,0 +1,77 @@
+#!/bin/bash
+
+set -eux
+
+NAME=gfarm-gridftp-dsi
+
+# from git@github.com:oss-tsukuba/gfarm-gridftp-dsi.git
+WORKDIR=/mnt/work/${NAME}
+
+setup_for_centos() {
+    sudo yum install -y globus-gridftp-server-devel globus-gridftp-server-progs
+}
+
+create_pkg() {
+    ./configure
+    make dist
+}
+
+get_pkg_name() {
+    ls gfarm-gridftp-dsi-*.tar.gz | sort | tail -1  # print newest
+}
+
+install_from_source() {
+    # for gfarm.pc
+    PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
+    export PKG_CONFIG_PATH
+
+    create_pkg
+    PKG=$(get_pkg_name)
+    SRCDIR=${PKG%.tar.gz}
+    [ -d "./${SRCDIR}" ] && rm -rf "./${SRCDIR}"
+    tar xvf $PKG
+    cd "$SRCDIR"
+    ./configure --prefix=/usr   #TODO ???
+    make
+    sudo make install
+}
+
+install_from_rpm() {
+    spec=${WORKDIR}/${NAME}.spec
+
+    create_pkg
+    PKG=$(get_pkg_name)
+    NAME_VER=${PKG%.tar.gz}
+
+    mkdir -p ~/rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPEC,SPECS,SRPMS}
+    mv $PKG ~/rpmbuild/SOURCES/
+    cd ~
+    rpmbuild -bs "${spec}"
+    rpmbuild --rebuild rpmbuild/SRPMS/${NAME_VER}-*.src.rpm
+
+    sudo rpm -ivh rpmbuild/RPMS/x86_64/${NAME_VER}-*.rpm
+}
+
+enable_for_centos() {
+    CONF=/etc/gridftp.conf
+    sudo sed -i -e '/load_dsi_module \.\*/d' $CONF
+    echo "load_dsi_module gfarm" | sudo tee -a $CONF > /dev/null
+    sudo /sbin/chkconfig globus-gridftp-server --level=5 on
+    sudo systemctl restart globus-gridftp-server
+}
+
+cd $WORKDIR
+
+case $GFDOCKER_PRJ_NAME in
+    centos*-src)
+        setup_for_centos
+        install_from_source
+        enable_for_centos
+        ;;
+    centos*-pkg)
+        setup_for_centos
+        install_from_rpm
+        enable_for_centos
+        ;;
+    *) exit 1;;
+esac

@@ -110,13 +110,12 @@ Gfarm-S3-MinIO
 2. to install gfarm-s3 into running container
 
   $ cd (docker/dev dir)
-  $ cd dist/centos7/src  # when using source package on CentOS 7
+  $ cd dist/centos7/src
   $ make s3setup
 
 3. to run s3 unit test
 
-  $ cd (docker/dev dir)
-  $ cd dist/centos7/src  # when using source package on CentOS 7
+  $ cd docker/dev/dist/centos7/src
   $ make s3setup
   $ make s3test
 
@@ -131,6 +130,28 @@ Gfarm-S3-MinIO
 
   $ cd docker/dev/mnt/work/
   ### edit gfarm-s3-minio or gfarm-s3-minio-web
-  $ cd (docker/dev dir)
-  $ cd /dist/centos7/src
+  $ cd docker/dev/dist/centos7/src
   $ make s3update
+
+
+Gfarm GridFTP DSI
+=================
+
+1. preparation: clone gfarm-gridftp-dsi
+
+  $ mkdir -p docker/dev/mnt/work
+  $ cd docker/dev/mnt/work
+  $ git clone git@github.com:oss-tsukuba/gfarm-gridftp-dsi.git
+  $ cd gfarm-gridftp-dsi
+  $ git checkout <<branch name>>
+  ### edit gfarm-gridftp-dsi
+
+2. to install gfarm-gridftp-dsi into running container
+
+  $ cd docker/dev/dist/centos7/src
+  $ make gridftp-setup
+
+3. to run unit test
+
+  $ cd docker/dev/dist/centos7/src
+  $ make gridftp-test
