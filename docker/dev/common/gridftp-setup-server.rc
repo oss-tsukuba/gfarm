@@ -7,8 +7,22 @@ NAME=gfarm-gridftp-dsi
 # from git@github.com:oss-tsukuba/gfarm-gridftp-dsi.git
 WORKDIR=/mnt/work/${NAME}
 
+PACKAGES="globus-gridftp-server-devel globus-gridftp-server-progs"
+
 setup_for_centos() {
-    sudo yum install -y globus-gridftp-server-devel globus-gridftp-server-progs
+    sudo yum -y update
+    sudo yum -y install $PACKAGES
+}
+
+setup_for_opensuse() {
+    sudo zypper --non-interactive --no-gpg-checks refresh
+    sudo zypper --no-refresh install -y $PACKAGES
+}
+
+setup_for_ubuntu() {
+    sudo apt-get update
+    PACKAGES="libglobus-gridftp-server-dev globus-gridftp-server-progs"
+    sudo apt-get -y install $PACKAGES
 }
 
 create_pkg() {
@@ -31,7 +45,7 @@ install_from_source() {
     [ -d "./${SRCDIR}" ] && rm -rf "./${SRCDIR}"
     tar xvf $PKG
     cd "$SRCDIR"
-    ./configure --prefix=/usr   #TODO ???
+    ./configure --libdir=$(pkg-config --variable=libdir globus-gridftp-server)
     make
     sudo make install
 }
@@ -52,12 +66,20 @@ install_from_rpm() {
     sudo rpm -ivh rpmbuild/RPMS/x86_64/${NAME_VER}-*.rpm
 }
 
-enable_for_centos() {
+enable_for_systemd() {
     CONF=/etc/gridftp.conf
     sudo sed -i -e '/load_dsi_module \.\*/d' $CONF
     echo "load_dsi_module gfarm" | sudo tee -a $CONF > /dev/null
-    sudo /sbin/chkconfig globus-gridftp-server --level=5 on
+    if [ -f /sbin/chkconfig ]; then
+        sudo /sbin/chkconfig globus-gridftp-server --level=3,5 on
+    fi
+    sudo systemctl enable globus-gridftp-server
     sudo systemctl restart globus-gridftp-server
+}
+
+enable_gridftp_server() {
+    enable_for_systemd
+    # TODO enable_for_xinetd ?
 }
 
 cd $WORKDIR
@@ -66,12 +88,27 @@ case $GFDOCKER_PRJ_NAME in
     centos*-src)
         setup_for_centos
         install_from_source
-        enable_for_centos
+        enable_gridftp_server
         ;;
     centos*-pkg)
         setup_for_centos
         install_from_rpm
-        enable_for_centos
+        enable_gridftp_server
+        ;;
+    opensuse-src)
+        setup_for_opensuse
+        install_from_source
+        enable_gridftp_server
+        ;;
+    opensuse-pkg)
+        setup_for_opensuse
+        install_from_rpm
+        enable_gridftp_server
+        ;;
+    ubuntu*-*)
+        setup_for_ubuntu
+        install_from_source
+        enable_gridftp_server
         ;;
     *) exit 1;;
 esac

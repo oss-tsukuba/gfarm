@@ -11,7 +11,8 @@ RUN zypper install -y \
     patch \
     rpm-build \
     wget \
-    rsync
+    rsync \
+    git
 
 RUN systemctl enable sshd
 

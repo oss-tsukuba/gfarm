@@ -3,8 +3,7 @@
 set -eux
 
 WORKDIR=~/
-
-cd $WORKDIR
+PACKAGES="globus-gass-copy-progs"
 
 install_uberftp() {
     [ -d UberFTP ] || git clone https://github.com/gridcf/UberFTP.git
@@ -16,7 +15,17 @@ install_uberftp() {
 }
 
 install_globus_url_copy_for_centos() {
-    sudo yum install -y globus-gass-copy-progs
+    sudo yum -y update
+    sudo yum install -y $PACKAGES
+}
+
+install_globus_url_copy_for_opensuse() {
+    sudo zypper --non-interactive --no-gpg-checks refresh
+    sudo zypper --no-refresh install -y $PACKAGES
+}
+
+install_globus_url_copy_for_ubuntu() {
+    sudo apt-get install -y $PACKAGES
 }
 
 install_for_centos() {
@@ -24,9 +33,28 @@ install_for_centos() {
     install_globus_url_copy_for_centos
 }
 
+install_for_opensuse() {
+    install_uberftp
+    install_globus_url_copy_for_opensuse
+}
+
+install_for_ubuntu() {
+    sudo apt-get update
+    sudo apt-get install -y autoconf
+    install_uberftp
+    install_globus_url_copy_for_ubuntu
+}
+
+cd $WORKDIR
 case $GFDOCKER_PRJ_NAME in
-    centos*)
+    centos*-*)
         install_for_centos
+        ;;
+    opensuse-*)
+        install_for_opensuse
+        ;;
+    ubuntu*-*)
+        install_for_ubuntu
         ;;
     *) exit 1;;
 esac

@@ -230,14 +230,17 @@ shell:
 	$(check_config)
 	$(shell_user)
 
-shell-user:
-	$(check_config)
-	$(shell_user)
+shell-user: shell
 
 shell-root:
-	$(check_config)
 	echo "*** Please use sudo on shell-suer instead of shell-root ***"
-	$(COMPOSE) exec '$(PRIMARY_CLIENT_CONTAINER)' bash $(CONTSHELL_ARGS)
+#	$(check_config)
+#	$(COMPOSE) exec '$(PRIMARY_CLIENT_CONTAINER)' bash $(CONTSHELL_ARGS)
+
+shell-gfmd1:
+	$(check_config)
+	$(CONTSHELL_GFMD1) $(CONTSHELL_ARGS)
+
 
 define regress
 $(CONTSHELL) -c '. ~/gfarm/docker/dev/common/regress.rc'
