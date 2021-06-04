@@ -154,8 +154,12 @@ tls_iobufop_timeout_write(struct gfarm_iobuffer *b,
 	if (likely(ctx != NULL && b != NULL)) {
 		gfarm_error_t gfe = tls_session_timeout_write(
 					ctx, fd, buf, len,
+#if 1 /* XXX FIXME */
+					-1,
+#else
 					gfarm_ctxp->network_send_timeout *
 						1000 * 1000,
+#endif
 					&ret);
 		if (unlikely(gfe != GFARM_ERR_NO_ERROR)) {
 			gfarm_iobuffer_set_error(b, gfe);
