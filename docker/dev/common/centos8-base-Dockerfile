@@ -23,7 +23,8 @@ RUN yum -y update \
     fuse \
     fuse-devel \
     libacl-devel \
-    ruby
+    ruby \
+    perl-bignum
 
 RUN yum -y update \
     && yum -y --enablerepo=epel install \
