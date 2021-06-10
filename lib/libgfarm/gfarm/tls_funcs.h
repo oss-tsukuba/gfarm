@@ -2900,38 +2900,39 @@ tls_session_timeout_write(tls_session_ctx_t ctx, int fd, const void *buf,
 static inline gfarm_error_t
 tls_session_shutdown(tls_session_ctx_t ctx)
 {
-	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
+	gfarm_error_t ret;
 	SSL *ssl;
-	bool is_shutdown = false;
 
-	if (likely((ctx != NULL) && ((ssl = ctx->ssl_) != NULL))) {
-		int st = -1;
+	if (unlikely(ctx == NULL))
+		return (GFARM_ERR_NO_ERROR);
+
+	if (unlikely((ssl = ctx->ssl_) == NULL)) {
+		ctx->last_gfarm_error_ = GFARM_ERR_UNKNOWN;
+		return (GFARM_ERR_UNKNOWN);
+	}
+
+	if (gflog_auth_get_verbose()) {
+		gflog_tls_debug(GFARM_MSG_UNFIXED,
+			"%s(%s): about to shutdown SSL.",
+			__func__, ctx->peer_cn_);
+	}
+
+	if (!ctx->is_handshake_tried_) {
+		ret = GFARM_ERR_NO_ERROR;
+	} else if (ctx->got_fatal_ssl_error_) {
+		/* ctx->last_ssl_error_ is already set, do not override */
+		ret = GFARM_ERR_NO_ERROR;
+	} else {
+		int st = SSL_shutdown(ssl);
 
 		if (gflog_auth_get_verbose()) {
 			gflog_tls_debug(GFARM_MSG_UNFIXED,
-				"%s(%s): about to shutdown SSL.",
-				__func__, ctx->peer_cn_);
+				"%s(%s): shutdown SSL issued : %s",
+				__func__, ctx->peer_cn_,
+				(st == 1) ? "OK" : "NG");
 		}
 
-		if (ctx->is_handshake_tried_ == false) {
-			ret = GFARM_ERR_NO_ERROR;
-			goto done;
-		} else if (ctx->got_fatal_ssl_error_ == true) {
-			st = 1;
-		} else {
-			st = SSL_shutdown(ssl);
-
-			if (gflog_auth_get_verbose()) {
-				gflog_tls_debug(GFARM_MSG_UNFIXED,
-					"%s(%s): shutdown SSL issued : %s",
-					__func__, ctx->peer_cn_,
-					(st == 1) ? "OK" : "NG");
-			}
-
-			is_shutdown = true;
-		}
 		if (st == 1) {
-		shutdown_ok:
 			ctx->last_ssl_error_ = SSL_ERROR_SSL;
 			ctx->got_fatal_ssl_error_ = true;
 			ret = GFARM_ERR_NO_ERROR;
@@ -2953,30 +2954,29 @@ tls_session_shutdown(tls_session_ctx_t ctx)
 					"%d : %s", __func__, ctx->peer_cn_,
 					s_n, gfarm_error_string(ret));
 			}
-			
+
 			if ((ret == GFARM_ERR_NO_ERROR && s_n > 0) ||
 				(ret == GFARM_ERR_PROTOCOL)) {
-				goto shutdown_ok;
+				ctx->last_ssl_error_ = SSL_ERROR_SSL;
+				ctx->got_fatal_ssl_error_ = true;
+				ret = GFARM_ERR_NO_ERROR;
 			}
+		} else {
+			ret = GFARM_ERR_UNKNOWN;
 		}
-	done:
-		ctx->last_gfarm_error_ = ret;
-		if (is_shutdown == true) {
-			ctx->got_fatal_ssl_error_ = true;
-			ctx->is_verified_ = false;
-			ctx->io_key_update_ = 0;
-			ctx->io_total_ = 0;
-		}
+		ctx->got_fatal_ssl_error_ = true;
+		ctx->is_verified_ = false;
+		ctx->io_key_update_ = 0;
+		ctx->io_total_ = 0;
+	}
 
-		if (gflog_auth_get_verbose()) {
-			gflog_tls_debug(GFARM_MSG_UNFIXED,
-				"%s(%s): shutdown SSL done : %s",
-				__func__, ctx->peer_cn_,
-				gfarm_error_string(ret));
-		}
+	ctx->last_gfarm_error_ = ret;
 
-	} else if (ctx == NULL) {
-		ret = GFARM_ERR_NO_ERROR;
+	if (gflog_auth_get_verbose()) {
+		gflog_tls_debug(GFARM_MSG_UNFIXED,
+			"%s(%s): shutdown SSL done : %s",
+			__func__, ctx->peer_cn_,
+			gfarm_error_string(ret));
 	}
 
 	return (ret);
