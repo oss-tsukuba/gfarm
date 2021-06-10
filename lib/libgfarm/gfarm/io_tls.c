@@ -152,15 +152,15 @@ tls_iobufop_timeout_write(struct gfarm_iobuffer *b,
 	tls_session_ctx_t ctx = (tls_session_ctx_t)cookie;
 
 	if (likely(ctx != NULL && b != NULL)) {
-		gfarm_error_t gfe = tls_session_timeout_write(
-					ctx, fd, buf, len,
-#if 1 /* XXX FIXME */
-					-1,
-#else
-					gfarm_ctxp->network_send_timeout *
-						1000 * 1000,
-#endif
-					&ret);
+		gfarm_error_t gfe;
+		int timeout = gfarm_ctxp->network_send_timeout;
+
+		if (timeout == 0)
+			timeout = -1; /* inifinite */
+		else
+			timeout *= 1000 * 1000;
+		gfe = tls_session_timeout_write(ctx, fd, buf, len, timeout,
+						&ret);
 		if (unlikely(gfe != GFARM_ERR_NO_ERROR)) {
 			gfarm_iobuffer_set_error(b, gfe);
 		}
