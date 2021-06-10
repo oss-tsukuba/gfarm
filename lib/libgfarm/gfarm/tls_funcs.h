@@ -2923,6 +2923,9 @@ tls_session_shutdown(tls_session_ctx_t ctx)
 		/* ctx->last_ssl_error_ is already set, do not override */
 		ret = GFARM_ERR_NO_ERROR;
 	} else {
+#if 1 /* do not call SSL_shutdown() to avoid protocol interaction here */
+		ret = GFARM_ERR_NO_ERROR;
+#else
 		int st = SSL_shutdown(ssl);
 
 		if (gflog_auth_get_verbose()) {
@@ -2968,6 +2971,7 @@ tls_session_shutdown(tls_session_ctx_t ctx)
 		ctx->is_verified_ = false;
 		ctx->io_key_update_ = 0;
 		ctx->io_total_ = 0;
+#endif /* do not call SSL_shutdown() */
 	}
 
 	ctx->last_gfarm_error_ = ret;
