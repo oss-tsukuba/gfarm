@@ -68,10 +68,10 @@ install_from_rpm() {
 
 enable_for_systemd() {
     CONF=/etc/gridftp.conf
-    sudo sed -i -e '/load_dsi_module \.\*/d' $CONF
+    sudo sed -i -e '/load_dsi_module .*/d' $CONF
     echo "load_dsi_module gfarm" | sudo tee -a $CONF > /dev/null
     if [ -f /sbin/chkconfig ]; then
-        sudo /sbin/chkconfig globus-gridftp-server --level=3,5 on
+        sudo /sbin/chkconfig --level=35 globus-gridftp-server on
     fi
     sudo systemctl enable globus-gridftp-server
     sudo systemctl restart globus-gridftp-server
