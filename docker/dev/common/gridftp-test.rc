@@ -2,24 +2,36 @@
 
 set -eu
 
-WORKDIR=~/
+TEST_FILES_DIR=~/UberFTP
+WORKDIR=/tmp
 FTPURL=gsiftp://gfmd1
 TESTDIR_PATH=tmp/test-gridftp-server
 TESTDIR_FTP=${FTPURL}/${TESTDIR_PATH}
 TESTDIR_GFARM=gfarm:/${TESTDIR_PATH}
 
+LOCAL_TMPDIR=
+
 init() {
     grid-proxy-init
     gfmkdir -p ${TESTDIR_GFARM}
     gfchmod 1777 /tmp
+    LOCAL_TMPDIR=$(mktemp -d)
 }
 
 cleanup() {
     gfrm -rf ${TESTDIR_GFARM}
+    rm -rf ${LOCAL_TMPDIR}
 }
 
 randstr() {
     cat /dev/urandom | tr -dc '[:alpha:]' | head -c $1
+}
+
+createfile() {
+    NAME=$1
+    SIZE_MB=$2
+
+    dd if=/dev/urandom of=${NAME} bs=1M count=${SIZE_MB} > /dev/null 2>&1
 }
 
 msg_checking() {
@@ -51,6 +63,7 @@ test_mkdir_rmdir() {
 test_rename() {
     msg_checking
     NAME=$(randstr 10)
+
     uberftp -mkdir ${TESTDIR_FTP}/${NAME}
     uberftp -rename ${TESTDIR_FTP}/${NAME} /${TESTDIR_PATH}/${NAME}_2
     gftest -d ${TESTDIR_GFARM}/${NAME}_2
@@ -61,6 +74,7 @@ test_rename() {
 test_chmod() {
     msg_checking
     NAME=$(randstr 10)
+
     uberftp -mkdir ${TESTDIR_FTP}/${NAME}
     uberftp -chmod 400 ${TESTDIR_FTP}/${NAME}
     expect_mode ${TESTDIR_GFARM}/${NAME} 'dr--------'
@@ -70,6 +84,86 @@ test_chmod() {
     PASS
 }
 
+common_globus_url_copy_dir() {
+    PARA=$1
+    NAME=$(randstr 10)
+    TARGETDIR_FTP=${TESTDIR_FTP}/${NAME}
+    TARGETDIR_GFARM=${TESTDIR_GFARM}/${NAME}
+    COPY1=${LOCAL_TMPDIR}/copy1
+
+    uberftp -mkdir ${TARGETDIR_FTP}
+    globus-url-copy -r -p ${PARA} ${TEST_FILES_DIR}/ ${TARGETDIR_FTP}/
+    globus-url-copy -r -p ${PARA} ${TARGETDIR_FTP}/ ${COPY1}/
+    diff -r ${TEST_FILES_DIR} ${COPY1}
+    #uberftp -rm -r ${TARGETDIR_FTP}
+    gfrm -rf ${TARGETDIR_GFARM}
+    PASS
+}
+
+test_globus_url_copy_dir() {
+    msg_checking
+    common_globus_url_copy_dir 1
+}
+
+test_globus_url_copy_dir_para() {
+    msg_checking
+    common_globus_url_copy_dir 8
+}
+
+common_copy_file() {
+    COMMAND=$1
+    NAME=$(randstr 10)
+    SIZE_MB=1000
+    TARGETFILE_FTP=${TESTDIR_FTP}/${NAME}
+    TARGETFILE_GFARM=${TESTDIR_GFARM}/${NAME}
+    FILE1=${LOCAL_TMPDIR}/file1
+    FILE2=${LOCAL_TMPDIR}/file2
+
+    if [ ! -f ${FILE1} ]; then  # reuse
+        createfile ${FILE1} ${SIZE_MB}
+    fi
+
+    if [ ${COMMAND} = "globus-url-copy-p1" ]; then
+        globus-url-copy -p 1 file:${FILE1} ${TARGETFILE_FTP}
+        globus-url-copy -p 1 ${TARGETFILE_FTP} file:${FILE2}
+    elif [ ${COMMAND} = "globus-url-copy-p8" ]; then
+        globus-url-copy -p 8 file:${FILE1} ${TARGETFILE_FTP}
+        globus-url-copy -p 8 ${TARGETFILE_FTP} file:${FILE2}
+    elif [ ${COMMAND} = "uberftp-modeS" ]; then
+        uberftp -mode S file:${FILE1} ${TARGETFILE_FTP}
+        uberftp -mode S ${TARGETFILE_FTP} file:${FILE2}
+    elif [ ${COMMAND} = "uberftp-modeE" ]; then
+        uberftp -mode E file:${FILE1} ${TARGETFILE_FTP}
+        uberftp -mode E ${TARGETFILE_FTP} file:${FILE2}
+    else
+        exit 1
+    fi
+    cmp ${FILE1} ${FILE2}
+    gfrm -f ${TARGETFILE_GFARM}
+    rm -f ${FILE2}
+    PASS
+}
+
+test_globus_url_copy_file() {
+    msg_checking
+    common_copy_file globus-url-copy-p1
+}
+
+test_globus_url_copy_file_para() {
+    msg_checking
+    common_copy_file globus-url-copy-p8
+}
+
+test_uberftp_copy_file_modeS() {
+    msg_checking
+    common_copy_file uberftp-modeS
+}
+
+test_uberftp_copy_file_modeE() {
+    msg_checking
+    common_copy_file uberftp-modeE
+}
+
 trap cleanup EXIT
 
 cd $WORKDIR
@@ -77,3 +171,9 @@ init
 test_mkdir_rmdir
 test_rename
 test_chmod
+test_globus_url_copy_dir
+test_globus_url_copy_dir_para
+test_globus_url_copy_file
+test_globus_url_copy_file_para
+test_uberftp_copy_file_modeS
+test_uberftp_copy_file_modeE
