@@ -156,7 +156,8 @@ for host in $gfsds; do
   (gfservice set-gfarm-conf "$host" client_digest_check enable \
   && gfservice set-gfarm-conf "$host" spool_digest_error_check disable \
   && gfservice set-gfarm-conf "$host" 'auth enable gsi' '*' \
-  && gfservice restart-gfsd "$host") &
+  && gfservice restart-gfsd "$host" \
+  && ssh "$host" sudo systemctl enable "gfsd-${host}" ) &
 done
 wait
 
