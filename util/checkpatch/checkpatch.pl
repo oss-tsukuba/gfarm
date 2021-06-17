@@ -10,14 +10,15 @@ use strict;
 my $P = $0;
 $P =~ s@.*/@@g;
 
-my $V = '0.30';
+my $V = '0.30 for gfarm project';
 
 use Getopt::Long qw(:config no_auto_abbrev);
 
 my $quiet = 0;
-my $tree = 1;
-my $chk_signoff = 1;
+my $tree = 0;
+my $chk_signoff = 0;
 my $chk_patch = 1;
+my $chk_utf8 = 1;
 my $tst_only;
 my $emacs = 0;
 my $terse = 0;
@@ -39,8 +40,6 @@ Version: $V
 
 Options:
   -q, --quiet                quiet
-  --no-tree                  run without a kernel tree
-  --no-signoff               do not check for 'Signed-off-by' line
   --patch                    treat FILE as patchfile (default)
   --emacs                    emacs compile window format
   --terse                    one line per report
@@ -48,6 +47,7 @@ Options:
   --subjective, --strict     enable more subjective tests
   --root=PATH                PATH to the kernel tree root
   --no-summary               suppress the per-file summary
+  --no-utf8                  disable invalid UTF-8 check
   --mailback                 only produce a report in case of warnings/errors
   --summary-file             include the filename in summary
   --debug KEY=[0|1]          turn on/off debugging of KEY, where KEY is one of
@@ -67,6 +67,7 @@ GetOptions(
 	'q|quiet+'	=> \$quiet,
 	'tree!'		=> \$tree,
 	'signoff!'	=> \$chk_signoff,
+	'utf8!'		=> \$chk_utf8,
 	'patch!'	=> \$chk_patch,
 	'emacs!'	=> \$emacs,
 	'terse!'	=> \$terse,
@@ -1347,7 +1348,7 @@ sub process {
 		}
 
 # UTF-8 regex found at http://www.w3.org/International/questions/qa-forms-utf-8.en.php
-		if (($realfile =~ /^$/ || $line =~ /^\+/) &&
+		if ($chk_utf8 && ($realfile =~ /^$/ || $line =~ /^\+/) &&
 		    $rawline !~ m/^$UTF8*$/) {
 			my ($utf8_prefix) = ($rawline =~ /^($UTF8*)/);
 
@@ -1415,9 +1416,9 @@ sub process {
 		next if ($realfile !~ /\.(h|c)$/);
 
 # check for RCS/CVS revision markers
-		if ($rawline =~ /^\+.*\$(Revision|Log|Id)(?:\$|)/) {
-			WARN("CVS style keyword markers, these will _not_ be updated\n". $herecurr);
-		}
+#		if ($rawline =~ /^\+.*\$(Revision|Log|Id)(?:\$|)/) {
+#			WARN("CVS style keyword markers, these will _not_ be updated\n". $herecurr);
+#		}
 
 # Blackfin: don't use __builtin_bfin_[cs]sync
 		if ($line =~ /__builtin_bfin_csync/) {
@@ -1742,15 +1743,15 @@ sub process {
 		}
 
 # check for external initialisers.
-		if ($line =~ /^.$Type\s*$Ident\s*(?:\s+$Modifier)*\s*=\s*(0|NULL|false)\s*;/) {
-			ERROR("do not initialise externals to 0 or NULL\n" .
-				$herecurr);
-		}
+#		if ($line =~ /^.$Type\s*$Ident\s*(?:\s+$Modifier)*\s*=\s*(0|NULL|false)\s*;/) {
+#			ERROR("do not initialise externals to 0 or NULL\n" .
+#				$herecurr);
+#		}
 # check for static initialisers.
-		if ($line =~ /\bstatic\s.*=\s*(0|NULL|false)\s*;/) {
-			ERROR("do not initialise statics to 0 or NULL\n" .
-				$herecurr);
-		}
+#		if ($line =~ /\bstatic\s.*=\s*(0|NULL|false)\s*;/) {
+#			ERROR("do not initialise statics to 0 or NULL\n" .
+#				$herecurr);
+#		}
 
 # check for new typedefs, only function parameters and sparse annotations
 # make sense.
@@ -2117,24 +2118,17 @@ sub process {
 		}
 
 # Return is not a function.
-		if (defined($stat) && $stat =~ /^.\s*return(\s*)(\(.*);/s) {
+		if (defined($stat) && $stat =~ /^.\s*return(\s*)(.*);/s) {
 			my $spacing = $1;
 			my $value = $2;
 
-			# Flatten any parentheses
-			$value =~ s/\)\(/\) \(/g;
-			while ($value =~ s/\[[^\{\}]*\]/1/ ||
-			       $value !~ /(?:$Ident|-?$Constant)\s*
-					     $Compare\s*
-					     (?:$Ident|-?$Constant)/x &&
-			       $value =~ s/\([^\(\)]*\)/1/) {
-			}
+			if (length($value) > 0) {
+				if ($value !~ /^\(/) {
+					ERROR("return requires parentheses\n" . $herecurr);
 
-			if ($value =~ /^(?:$Ident|-?$Constant)$/) {
-				ERROR("return is not a function, parentheses are not required\n" . $herecurr);
-
-			} elsif ($spacing !~ /\s+/) {
-				ERROR("space required before the open parenthesis '('\n" . $herecurr);
+				} elsif ($spacing !~ /\s+/) {
+					ERROR("space required before the open parenthesis '('\n" . $herecurr);
+				}
 			}
 		}
 
@@ -2167,9 +2161,9 @@ sub process {
 		    $line =~ /\b(?:if|while|for)\s*\(/ && $line !~ /^.\s*#/) {
 			my ($s, $c) = ($stat, $cond);
 
-			if ($c =~ /\bif\s*\(.*[^<>!=]=[^=].*/s) {
-				ERROR("do not use assignment in if condition\n" . $herecurr);
-			}
+#			if ($c =~ /\bif\s*\(.*[^<>!=]=[^=].*/s) {
+#				ERROR("do not use assignment in if condition\n" . $herecurr);
+#			}
 
 			# Find out what is on the end of the line after the
 			# conditional.
@@ -2425,7 +2419,8 @@ sub process {
 					}
 				}
 				if ($seen && !$allowed) {
-					WARN("braces {} are not necessary for any arm of this statement\n" . $herectx);
+# redundant braces is OK in gfarm
+#					WARN("braces {} are not necessary for any arm of this statement\n" . $herectx);
 				}
 			}
 		}
@@ -2479,7 +2474,8 @@ sub process {
 					$herectx .= raw_line($linenr, $n) . "\n";;
 				}
 
-				WARN("braces {} are not necessary for single statement blocks\n" . $herectx);
+# redundant braces is OK in gfarm
+#				WARN("braces {} are not necessary for single statement blocks\n" . $herectx);
 			}
 		}
 
@@ -2719,3 +2715,5 @@ sub process {
 
 	return $clean;
 }
+
+ 	  	 
