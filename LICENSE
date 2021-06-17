@@ -33,3 +33,7 @@ General Public License as published by the Free Software Foundation.
 All files under the lib/gfs_hook/sysdep/solaris/ directory can be
 redistributed and/or modified under the terms of the Common Development
 and Distribution License (CDDL), Version 1.0 by Sun Microsystems, Inc.
+
+util/checkpatch/checkpatch.pl can be redistributed and/or modified
+under the terms of the GNU General Public License version 2
+as published by the Free Software Foundation.
