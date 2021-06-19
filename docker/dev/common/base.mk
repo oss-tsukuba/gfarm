@@ -90,6 +90,8 @@ endif
 
 CONTSHELL_COMMON = $(COMPOSE) exec $(CONTSHELL_FLAGS) \
 	-u '$(GFDOCKER_PRIMARY_USER)'
+CONTEXEC = $(CONTSHELL_COMMON) '$(PRIMARY_CLIENT_CONTAINER)'
+CONTEXEC_GFMD1 = $(CONTSHELL_COMMON) gfmd1
 CONTSHELL = $(CONTSHELL_COMMON) '$(PRIMARY_CLIENT_CONTAINER)' bash
 CONTSHELL_GFMD1 = $(CONTSHELL_COMMON) gfmd1 bash
 
@@ -97,6 +99,10 @@ CONTSHELL_GFMD1 = $(CONTSHELL_COMMON) gfmd1 bash
 CONTSHELL_ARGS :=  -c 'cd ~ && bash'
 
 DOCKER_RUN = $(DOCKER) run $(CONTSHELL_FLAGS)
+
+HOME_DIR = /home/$(GFDOCKER_PRIMARY_USER)
+GFARM_SRC_DIR = $(HOME_DIR)/gfarm
+SCRIPTS = $(GFARM_SRC_DIR)/docker/dev/common
 
 help:
 	@echo 'Usage:'
@@ -241,6 +247,9 @@ shell-gfmd1:
 	$(check_config)
 	$(CONTSHELL_GFMD1) $(CONTSHELL_ARGS)
 
+save-packages:
+	$(check_config)
+	$(CONTEXEC_GFMD1) $(SCRIPTS)/save_packages.sh
 
 define regress
 $(CONTSHELL) -c '. ~/gfarm/docker/dev/common/regress.rc'
@@ -317,7 +326,7 @@ s3test:
 	$(s3test)
 
 gridftp-setup:
-	$(CONTSHELL_GFMD1) -c '. ~/gfarm/docker/dev/common/gridftp-setup-server.rc'
+	$(CONTEXEC_GFMD1) $(SCRIPTS)/gridftp-setup-server.sh
 	$(CONTSHELL) -c '. ~/gfarm/docker/dev/common/gridftp-setup-client.rc'
 
 gridftp-test:

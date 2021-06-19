@@ -2,10 +2,14 @@
 
 set -eux
 
+BASEDIR=$(dirname $(realpath $0))
+FUNCTIONS=${BASEDIR}/functions.sh
+. ${FUNCTIONS}
+
 NAME=gfarm-gridftp-dsi
 
 # from git@github.com:oss-tsukuba/gfarm-gridftp-dsi.git
-WORKDIR=/mnt/work/${NAME}
+WORKDIR=${MNTDIR}/work/${NAME}
 
 PACKAGES="globus-gridftp-server-devel globus-gridftp-server-progs"
 
@@ -51,19 +55,24 @@ install_from_source() {
 }
 
 install_from_rpm() {
-    spec=${WORKDIR}/${NAME}.spec
+    spec="${WORKDIR}/${NAME}.spec"
 
     create_pkg
     PKG=$(get_pkg_name)
     NAME_VER=${PKG%.tar.gz}
+    SRPM_FILE="rpmbuild/SRPMS/${NAME_VER}-*.src.rpm"
+    RPM_FILE="rpmbuild/RPMS/x86_64/${NAME_VER}-*.rpm"
 
     mkdir -p ~/rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPEC,SPECS,SRPMS}
     mv $PKG ~/rpmbuild/SOURCES/
     cd ~
     rpmbuild -bs "${spec}"
-    rpmbuild --rebuild rpmbuild/SRPMS/${NAME_VER}-*.src.rpm
+    rpmbuild --rebuild ${SRPM_FILE}
 
-    sudo rpm -ivh rpmbuild/RPMS/x86_64/${NAME_VER}-*.rpm
+    sudo rpm -ivh --force ${RPM_FILE}
+
+    save_package ${SRPM_FILE}
+    save_package ${RPM_FILE}
 }
 
 enable_for_systemd() {
