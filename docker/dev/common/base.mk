@@ -153,18 +153,31 @@ ps:
 	$(check_config)
 	$(COMPOSE) ps
 
-define build
+define build_common
 for TAG in $(BUILD_IMAGE_ORDER); do \
 	$(DOCKER) build -t "$(IMAGE_BASENAME):$${TAG}" \
-		$(DOCKER_BUILD_FLAGS) \
+		$(DOCKER_BUILD_FLAGS) $${DOCKER_BUILD_FLAGS2} \
 		-f "$(TOP)/docker/dev/common/$${TAG}-Dockerfile" \
 		'$(TOP)' || exit 1; \
 done \
   && $(COMPOSE) build $(DOCKER_BUILD_FLAGS)
 endef
 
+define build
+DOCKER_BUILD_FLAGS2=""; \
+$(build_common)
+endef
+
+define build_nocache
+DOCKER_BUILD_FLAGS2="--no-cache"; \
+$(build_common)
+endef
+
 build:
 	$(build)
+
+build-nocache:
+	$(build_nocache)
 
 define down
 $(COMPOSE) down && rm -f $(TOP)/docker/dev/.shadow.config.mk
@@ -211,7 +224,7 @@ $(COMPOSE) up -d --force-recreate\
   && $(CONTSHELL) -c '. ~/gfarm/docker/dev/common/up.rc'
 endef
 
-reborn:
+define reborn
 	if [ -f $(TOP)/docker/dev/docker-compose.yml ]; then \
 		$(down); \
 	else \
@@ -219,8 +232,21 @@ reborn:
 	fi
 	$(gen)
 	$(prune)
-	$(build)
+	if [ $(USE_NOCACHE) -eq 1 ]; then \
+		$(build_nocache); \
+	else \
+		$(build); \
+	fi
 	$(up)
+endef
+
+reborn:
+	$(reborn)
+reborn: USE_NOCACHE = 0
+
+reborn-nocache:
+	$(reborn)
+reborn-nocache: USE_NOCACHE = 1
 
 start:
 	$(COMPOSE) start
