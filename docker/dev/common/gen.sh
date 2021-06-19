@@ -12,6 +12,7 @@ set -eu
 : $GFDOCKER_HOSTNAME_PREFIX_GFSD
 : $GFDOCKER_HOSTNAME_PREFIX_CLIENT
 : $GFDOCKER_AUTH_TYPE
+: $GFDOCKER_GFMD_JOURNAL_DIR
 : $GFDOCKER_PRJ_NAME
 
 gen_gfservicerc() {
@@ -31,7 +32,7 @@ EOF
 ## gfmd ${i}
 ##
 gfmd${i}=${gfmd}
-${gfmd}_CONFIG_GFARM_OPTIONS="-r -X -A \$LOGNAME -h \$gfmd${i} -a ${GFDOCKER_AUTH_TYPE} -D /O=Grid/OU=GlobusTest/OU=GlobusSimpleCA/CN=${GFDOCKER_PRIMARY_USER}"
+${gfmd}_CONFIG_GFARM_OPTIONS="-r -j ${GFDOCKER_GFMD_JOURNAL_DIR} -X -A \$LOGNAME -h \$gfmd${i} -a ${GFDOCKER_AUTH_TYPE} -D /O=Grid/OU=GlobusTest/OU=GlobusSimpleCA/CN=${GFDOCKER_PRIMARY_USER}"
 gfmd${i}_AUTH_TYPE=sharedsecret
 EOF
   done

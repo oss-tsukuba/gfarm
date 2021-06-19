@@ -31,6 +31,9 @@ GFDOCKER_HOSTNAME_PREFIX_CLIENT = client
 # syntax: sharedsecret, gsi or gsi_auth
 GFDOCKER_AUTH_TYPE = gsi_auth
 
+# GFDOCKER_GFMD_JOURNAL_DIR = /var/gfarm-metadata/journal/
+GFDOCKER_GFMD_JOURNAL_DIR = /dev/shm/gfarm-metadata/journal/
+
 # --no-cache for docker build (0: disable, 1: enable)
 GFDOCKER_NO_CACHE = 0
 SUDO = sudo
