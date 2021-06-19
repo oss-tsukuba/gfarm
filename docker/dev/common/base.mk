@@ -367,6 +367,8 @@ test-fo:
 	$(check_config)
 	$(test_fo)
 
+test-failover: test-fo
+
 define systest
 $(CONTSHELL) -c '. ~/gfarm/docker/dev/common/systest.rc'
 endef
