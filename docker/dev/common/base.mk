@@ -403,6 +403,12 @@ centos7:
 centos8:
 	$(DOCKER) run -it --rm 'centos:8' bash
 
+centos8stream:
+	$(DOCKER) run -it --rm 'quay.io/centos/centos:stream8' bash
+
+centos9stream:
+	$(DOCKER) run -it --rm 'quay.io/centos/centos:stream9-development' bash
+
 fedora33:
 	$(DOCKER) run -it --rm 'fedora:33' bash
 

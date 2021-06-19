@@ -1,4 +1,5 @@
 FROM centos:8
+#FROM quay.io/centos/centos:stream8
 
 # System dependent
 
@@ -24,6 +25,7 @@ RUN yum -y update \
     fuse-devel \
     libacl-devel \
     ruby \
+    hostname \
     perl-bignum
 
 RUN yum -y update \
