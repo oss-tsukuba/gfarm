@@ -2014,7 +2014,8 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 			}
 
 			is_build_chain =
-				gfarm_ctxp->tls_build_chain_local;
+				(gfarm_ctxp->tls_build_chain_local == 1) ?
+				true : false;
 			if (is_build_chain == true) {
 				/*
 				 * Build a complete cert chain locally.
@@ -2112,7 +2113,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 		ctxret->ssl_ctx_ = ssl_ctx;
 		ctxret->is_build_chain_ = is_build_chain;
 		ctxret->is_allow_no_crls_ =
-			gfarm_ctxp->tls_allow_no_crl;
+			(gfarm_ctxp->tls_allow_no_crl == 1) ? true : false;
 		ctxret->cert_file_ = cert_file;
 		ctxret->cert_chain_file_ = cert_chain_file;
 		ctxret->prvkey_file_ = prvkey_file;

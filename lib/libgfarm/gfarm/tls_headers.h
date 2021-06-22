@@ -110,9 +110,9 @@ struct tls_test_ctx_struct {
 	char *tls_certificate_file;
 	char *tls_certificate_chain_file;
 	char *tls_key_file;
-	int tls_key_update;
-	int tls_build_chain_local;
-	int tls_allow_no_crl;
+	int tls_key_update;		/* gfarm: bool, test: int */
+	int tls_build_chain_local;	/* bool */
+	int tls_allow_no_crl;		/* bool */
 	int network_receive_timeout;
 };
 typedef struct tls_test_ctx_struct *tls_test_ctx_p;
