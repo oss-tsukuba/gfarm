@@ -158,8 +158,8 @@ ctx_dump()
 			gfarm_ctxp->tls_key_update);
 	fprintf(stderr, "tls_build_chain_local: %d\n",
 			gfarm_ctxp->tls_build_chain_local);
-	fprintf(stderr, "tls_allow_crl_absence: %d\n",
-			gfarm_ctxp->tls_allow_crl_absence);
+	fprintf(stderr, "tls_allow_no_crl: %d\n",
+			gfarm_ctxp->tls_allow_no_crl);
 	fprintf(stderr, "network_receive_timeout: %d\n",
 			gfarm_ctxp->network_receive_timeout);
 
@@ -192,8 +192,8 @@ getopt_arg_dump()
 			gfarm_ctxp->tls_key_update);
 	fprintf(stderr, "tls_build_chain_local: %d\n",
 			gfarm_ctxp->tls_build_chain_local);
-	fprintf(stderr, "tls_allow_crl_absence: %d\n",
-			gfarm_ctxp->tls_allow_crl_absence);
+	fprintf(stderr, "tls_allow_no_crl: %d\n",
+			gfarm_ctxp->tls_allow_no_crl);
 	fprintf(stderr, "network_receive_timeout: %d\n",
 			gfarm_ctxp->network_receive_timeout);
 	fprintf(stderr, "mutual_authentication: %d\n",
@@ -325,7 +325,7 @@ prologue(int argc, char **argv, struct addrinfo **a_info)
 			}
 			break;
 		case 17:
-			gfarm_ctxp->tls_allow_crl_absence = 1;
+			gfarm_ctxp->tls_allow_no_crl = 1;
 			break;
 		case 's':
 			is_server = true;
