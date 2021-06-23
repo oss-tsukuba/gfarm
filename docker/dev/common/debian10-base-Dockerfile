@@ -47,6 +47,8 @@ RUN apt-get -y install software-properties-common \
     && apt-get -y install \
     libfuse2-dbgsym
 
+RUN sudo systemctl disable unattended-upgrades
+
 # System independent (see setup-univ.sh)
 
 ARG GFDOCKER_USERNAME_PREFIX

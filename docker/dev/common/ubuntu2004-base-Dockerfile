@@ -50,6 +50,8 @@ RUN apt-get update \
     libfuse2-dbgsym \
     valgrind-dbg
 
+RUN sudo systemctl disable unattended-upgrades
+
 # System independent (see setup-univ.sh)
 
 ARG GFDOCKER_USERNAME_PREFIX
