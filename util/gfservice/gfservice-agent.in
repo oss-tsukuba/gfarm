@@ -91,86 +91,58 @@ set_gfmd_params()
 	log_debug "set_gfmd_params"
 	CONFIG_GFARM_OPTIONS=`get_param config-gfarm-options || echo ''`
 
-	CONFIG_PREFIX=`eval config-gfarm -T $CONFIG_GFARM_OPTIONS \
-		| sed -ne '/^CONFIG_PREFIX=/s/^[^=]*=//p'`
+	eval `config-gfarm -T $CONFIG_GFARM_OPTIONS`
+
 	log_debug "set_gfmd_params: set CONFIG_PREFIX=$CONFIG_PREFIX"
 
-	BACKEND_PREFIX=`eval config-gfarm -T $CONFIG_GFARM_OPTIONS \
-		| sed -ne '/^BACKEND_PREFIX=/s/^[^=]*=//p'`
-	log_debug "set_gfmd_params: set CONFIG_PREFIX=$CONFIG_PREFIX"
-
-	BACKEND_TYPE=`eval config-gfarm -T $CONFIG_GFARM_OPTIONS \
-		| sed -ne '/^BACKEND_TYPE=/s/^[^=]*=//p'`
 	if [ "X$BACKEND_TYPE" != Xpostgresql ]; then
 		log_error "backend type '$BACKEND_TYPE' unsupported"
 		exit 1
 	fi
 	log_debug "set_gfmd_params: set BACKEND_TYPE=$BACKEND_TYPE"
 
-	GFMD_RC=`eval config-gfarm -T $CONFIG_GFARM_OPTIONS \
-		| sed -ne '/^GFMD_RC=/s/^[^=]*=//p'`
 	[ "X$GFMD_RC" = X ] \
 		&& log_error "failed to get rc script for gfmd"
 	log_debug "set_gfmd_params: set GFMD_RC=$GFMD_RC"
 
-	BACKEND_RC=`eval config-gfarm -T $CONFIG_GFARM_OPTIONS \
-		| sed -ne '/^BACKEND_RC=/s/^[^=]*=//p'`
 	[ "X$BACKEND_RC" = X ] \
 		&& log_error "failed to get rc script for backend"
 	log_debug "set_gfmd_params: set BACKEND_RC=$BACKEND_RC"
 
-	GFMD_CONF=`eval config-gfarm -T $CONFIG_GFARM_OPTIONS \
-		| sed -ne '/^GFMD_CONF=/s/^[^=]*=//p'`
 	[ "X$GFMD_CONF" = X ] \
 		&& log_error "failed to get gfmd conf file"
 	log_debug "set_gfmd_params: set GFMD_CONF=$GFMD_CONF"
 
-	JOURNAL_DIR=`eval config-gfarm -T $CONFIG_GFARM_OPTIONS \
-		| sed -ne '/^METADATA_JOURNAL_DIR=/s/^[^=]*=//p'`
+	JOURNAL_DIR=$METADATA_JOURNAL_DIR
 	[ "X$GFMD_MODE" != Xsingle -a "X$JOURNAL_DIR" = X ] \
 		&& log_error "failed to get metadata journal directory"
 	log_debug "set_gfmd_params: set JOURNAL_DIR=$JOURNAL_DIR"
 
-	GFMD_PID_FILE=`eval config-gfarm -T $CONFIG_GFARM_OPTIONS \
-		| sed -ne '/^GFMD_PID_FILE=/s/^[^=]*=//p'`
 	[ "X$GFMD_PID_FILE" = X ] \
 		&& log_error "failed to get gfmd pid file"
 	log_debug "set_gfmd_params: set GFMD_PID_FILE=$GFMD_PID_FILE"
 
-	METADATA_DIR=`eval config-gfarm -T $CONFIG_GFARM_OPTIONS \
-		| sed -ne '/^BACKEND_DATA_DIR=/s/^[^=]*=//p'`
+	METADATA_DIR=$BACKEND_DATA_DIR
 	[ "X$METADATA_DIR" = X ] \
 		&& log_error "failed to get metadata directory"
 	log_debug "set_gfmd_params: set METADATA_DIR=$METADATA_DIR"
 
-	GFMD_PORT=`eval config-gfarm -T $CONFIG_GFARM_OPTIONS \
-		| sed -ne '/^GFMD_PORT=/s/^[^=]*=//p'`
 	[ "X$GFMD_PORT" = X ] \
 		&& log_error "failed to get gfmd port"
 	log_debug "set_gfmd_params: set GFMD_PORT=$GFMD_PORT"
 
-	AUTH_TYPE=`eval config-gfarm -T $CONFIG_GFARM_OPTIONS \
-		| sed -ne '/^AUTH_TYPE=/s/^[^=]*=//p'`
 	[ "X$AUTH_TYPE" = X ] \
 		&& log_error "failed to get auth type"
 	log_debug "set_gfmd_params: set AUTH_TYPE=$AUTH_TYPE"
 
-	GFARM_CONF=`eval config-gfarm -T $CONFIG_GFARM_OPTIONS \
-		| sed -ne '/^GFARM_CONF=/s/^[^=]*=//p'`
 	[ "X$GFARM_CONF" = X ] \
 		&& log_error "failed to get gfarm client conf file"
 	log_debug "set_gfmd_params: set GFARM_CONF=$GFARM_CONF"
 
-	GFSD_CONF=`eval config-gfarm -T $CONFIG_GFARM_OPTIONS \
-		| sed -ne '/^GFSD_CONF=/s/^[^=]*=//p'`
 	log_debug "set_gfmd_params: set GFSD_CONF=$GFSD_CONF"
 
-	USERMAP_FILE=`eval config-gfarm -T $CONFIG_GFARM_OPTIONS \
-		| sed -ne '/^USERMAP_FILE=/s/^[^=]*=//p'`
 	log_debug "set_gfmd_params: set USERMAP_FILE=$USERMAP_FILE"
 
-	BACKEND_HOSTNAME=`eval config-gfarm -T $CONFIG_GFARM_OPTIONS \
-		| sed -ne '/^BACKEND_HOSTNAME=/s/^[^=]*=//p'`
 	[ "X$BACKEND_HOSTNAME" = X ] \
 		&& log_error "failed to get hostname"
 	log_debug "set_gfmd_params: set BACKEND_HOSTNAME=$BACKEND_HOSTNAME"
@@ -187,46 +159,32 @@ set_gfsd_params()
 	log_debug "set_gfsd_params"
 	CONFIG_GFSD_OPTIONS=`get_param config-gfsd-options || echo ''`
 
-	GFSD_RC=`config-gfsd -T $CONFIG_GFSD_OPTIONS \
-		| sed -ne '/^GFSD_RC=/s/^[^=]*=//p'`
+	eval `config-gfsd -T $CONFIG_GFSD_OPTIONS`
 	[ "X$GFSD_RC" = X ] \
 		&& log_error "failed to get rc script name for gfsd"
 	log_debug "set_gfsd_params: set GFSD_RC=$GFSD_RC"
 
-	GFSD_PID_FILE=`config-gfsd -T $CONFIG_GFSD_OPTIONS \
-		| sed -ne '/^GFSD_PID_FILE=/s/^[^=]*=//p'`
 	[ "X$GFSD_PID_FILE" = X ] \
 		&& log_error "failed to get gfsd pid file"
 	log_debug "set_gfsd_params: set GFSD_PID_FILE=$GFSD_PID_FILE"
 
-	ARCH=`config-gfsd -T $CONFIG_GFSD_OPTIONS \
-		| sed -ne '/^ARCH=/s/^[^=]*=//p'`
 	[ "X$ARCH" = X ] \
 		&& log_error "failed to get architecture"
 	log_debug "set_gfsd_params: set ARCH=$ARCH"
 
-	SPOOL_DIR=`config-gfsd -T $CONFIG_GFSD_OPTIONS \
-		| sed -ne '/^SPOOL_DIRECTORY=/s/^[^=]*=//p'`
+	SPOOL_DIR=$SPOOL_DIRECTORY
 	[ "X$SPOOL_DIR" = X ] \
 		&& log_error "failed to get spool directory"
 	log_debug "set_gfsd_params: set SPOOL_DIR=$SPOOL_DIR"
 
-	GFARM_CONF=`config-gfsd -T $CONFIG_GFSD_OPTIONS \
-		| sed -ne '/^GFARM_CONF=/s/^[^=]*=//p'`
 	[ "X$GFARM_CONF" = X ] \
 		&& log_error "failed to get gfarm client conf file"
 	log_debug "set_gfsd_params: set GFARM_CONF=$GFARM_CONF"
 
-	GFSD_CONF=`eval config-gfsd -T $CONFIG_GFSD_OPTIONS \
-		| sed -ne '/^GFSD_CONF=/s/^[^=]*=//p'`
 	log_debug "set_gfsd_params: set GFSD_CONF=$GFSD_CONF"
 
-	USERMAP_FILE=`eval config-gfsd -T $CONFIG_GFSD_OPTIONS \
-		| sed -ne '/^USERMAP_FILE=/s/^[^=]*=//p'`
 	log_debug "set_gfsd_params: set USERMAP_FILE=$USERMAP_FILE"
 
-	GFSD_HOSTNAME=`config-gfsd -T $CONFIG_GFSD_OPTIONS \
-		| sed -ne '/^GFSD_HOSTNAME=/s/^[^=]*=//p'`
 	[ "X$GFSD_HOSTNAME" = X ] \
 		&& log_error "failed to get hostname"
 	log_debug "set_gfsd_params: set GFSD_HOSTNAME=$GFHOSTNAME"
@@ -621,11 +579,11 @@ subcmd_get_config_gfarm_param()
 	if [ "X$PARAM" = X ]; then
 		eval config-gfarm -T $CONFIG_GFARM_OPTIONS
 	else
-		eval config-gfarm -T $CONFIG_GFARM_OPTIONS \
-			| sed -ne "/^$PARAM=/s/^[^=]*=//p"
-		log_debug "subcmd_get_config_gfarm_param: param=$PARAM," \
-			"value="`eval config-gfarm -T $CONFIG_GFARM_OPTIONS \
+		VALUE=`eval config-gfarm -T $CONFIG_GFARM_OPTIONS \
 			| sed -ne "/^$PARAM=/s/^[^=]*=//p"`
+		echo $VALUE
+		log_debug "subcmd_get_config_gfarm_param: param=$PARAM," \
+			"value=$VALUE"
 	fi
 	log_debug "end subcmd_get_config_gfarm_param"
 }
