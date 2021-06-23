@@ -2684,7 +2684,7 @@ tls_session_update_key(tls_session_ctx_t ctx, int delta)
 			ret = ctx->last_gfarm_error_ = GFARM_ERR_NO_ERROR;
 			if (gflog_auth_get_verbose()) {
 				gflog_tls_debug(GFARM_MSG_UNFIXED,
-					"TLS shared key updated after after "
+					"TLS shared key updated after "
 					" %zu bytes I/O.",
 					ctx->io_key_update_);
 			}

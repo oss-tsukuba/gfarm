@@ -78,7 +78,7 @@ if [ ${server_fail_flag} -ne 1 ]; then
 
 	if [ ${client_exitstatus} -ne 2 -a ${client_exitstatus} -ne 3 ]; then
 		key_update_num=`echo "${client_log}" | \
-				grep "key updatted" | wc -l`
+				grep "TLS shared key updated" | wc -l`
 		wait_server ${server_pid}
 	fi
 	if [ -s ${s_exit_file} ]; then
