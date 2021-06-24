@@ -90,8 +90,8 @@ fi
 for f in $(echo $MNT_SSH_HOST_KEY_DIR/ssh_host_*_key); do
   if [ -f "$f" ]; then
     sudo cp -p "$f" $SSH_HOST_KEY_DIR/
+    sudo chmod 400 $SSH_HOST_KEY_DIR/$(basename "$f")
   fi
-  sudo chmod 400 $SSH_HOST_KEY_DIR/ssh_host_*_key
 done
 sudo systemctl restart sshd
 
