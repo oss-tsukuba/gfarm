@@ -10,8 +10,8 @@ install_uberftp() {
     cd UberFTP
     ./bootstrap
     ./configure
-    make
-    sudo make install
+    make -j
+    sudo make -j install
 }
 
 install_globus_url_copy_for_centos() {

@@ -163,18 +163,44 @@ done \
   && $(COMPOSE) build $(DOCKER_BUILD_FLAGS)
 endef
 
+define buildx_common
+if ! $(SUDO) $(TOP)/docker/dev/common/qemu-user-static.sh check; then \
+	echo "Please run 'make enable-qemu'"; \
+	exit 1; \
+fi && \
+for TAG in $(BUILD_IMAGE_ORDER); do \
+	$(DOCKER) buildx build -t "$(IMAGE_BASENAME):$${TAG}" \
+		--platform $(GFDOCKER_PLATFORM) \
+		$(DOCKER_BUILD_FLAGS) $${DOCKER_BUILD_FLAGS2} \
+		-f "$(TOP)/docker/dev/common/$${TAG}-Dockerfile" \
+		'$(TOP)' || exit 1; \
+done \
+  && $(COMPOSE) build $(DOCKER_BUILD_FLAGS)
+endef
+
+enable-qemu:
+	$(SUDO) $(TOP)/docker/dev/common/qemu-user-static.sh enable
+
+define build_switch
+if [ -n "$(GFDOCKER_PLATFORM)" ]; then \
+	$(buildx_common); \
+else \
+	$(build_common); \
+fi
+endef
+
 define build
 DOCKER_BUILD_FLAGS2=""; \
-$(build_common)
+$(build_switch)
 endef
 
 define build_nocache
 DOCKER_BUILD_FLAGS2="--no-cache"; \
-$(build_common)
+$(build_switch)
 endef
 
 build:
-	$(build)
+	$(build) \
 
 build-nocache:
 	$(build_nocache)
@@ -248,6 +274,10 @@ reborn: USE_NOCACHE = 0
 reborn-nocache:
 	$(reborn)
 reborn-nocache: USE_NOCACHE = 1
+
+reborn-without-build:
+	$(down)
+	$(up)
 
 start:
 	$(COMPOSE) start

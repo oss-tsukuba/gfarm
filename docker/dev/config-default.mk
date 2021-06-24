@@ -28,6 +28,14 @@ GFDOCKER_HOSTNAME_PREFIX_GFMD = gfmd
 GFDOCKER_HOSTNAME_PREFIX_GFSD = gfsd
 GFDOCKER_HOSTNAME_PREFIX_CLIENT = client
 
+# qemu-user-static is used if not empty
+GFDOCKER_PLATFORM =
+#GFDOCKER_PLATFORM = linux/arm64
+#GFDOCKER_PLATFORM = linux/arm/v7
+#GFDOCKER_PLATFORM = linux/amd64
+#GFDOCKER_PLATFORM = linux/386
+#GFDOCKER_PLATFORM = linux/ppc64le
+
 # syntax: sharedsecret, gsi or gsi_auth
 GFDOCKER_AUTH_TYPE = gsi_auth
 

@@ -26,7 +26,7 @@ su - "$GFDOCKER_PRIMARY_USER" -c " \
     && make -j '${GFDOCKER_NUM_JOBS}' \
 " \
   && cd "/home/${GFDOCKER_PRIMARY_USER}/gfarm" \
-  && make install || exit 1
+  && make -j install || exit 1
 
 su - "$GFDOCKER_PRIMARY_USER" -c " \
   cd ~/gfarm2fs \
@@ -35,4 +35,4 @@ su - "$GFDOCKER_PRIMARY_USER" -c " \
     && make -j '${GFDOCKER_NUM_JOBS}' \
 " \
   && cd "/home/${GFDOCKER_PRIMARY_USER}/gfarm2fs" \
-  && make install || exit 1
+  && make -j install || exit 1
