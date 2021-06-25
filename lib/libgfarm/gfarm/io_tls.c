@@ -233,16 +233,17 @@ gfp_xdr_tls_alloc(struct gfp_xdr *conn,	int fd, int flags)
 {
 	gfarm_error_t ret;
 
-
 	tls_session_ctx_t ctx = NULL;
+	bool use_proxy_cert = false;
 	bool do_mutual_auth =
 		((flags & GFP_XDR_TLS_CLIENT_AUTHENTICATION) != 0) ?
 		true : false;
 	tls_role_t role =
 		(GFP_XDR_TLS_ROLE_IS_INITIATOR(flags)) ?
 		TLS_ROLE_INITIATOR : TLS_ROLE_ACCEPTOR;
-
-	ret = tls_session_create_ctx(&ctx, role, do_mutual_auth);
+	
+	ret = tls_session_create_ctx(&ctx, role,
+		do_mutual_auth, use_proxy_cert);
 	if (likely(ret == GFARM_ERR_NO_ERROR && ctx != NULL)) {
 		ret = tls_session_establish(ctx, fd);
 		if (likely(ret == GFARM_ERR_NO_ERROR)) {

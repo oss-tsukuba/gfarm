@@ -17,6 +17,7 @@
 static int debug_level = 0;
 static int buf_size = 65536;
 static bool is_server = false;
+static bool is_proxy = false;
 static bool is_mutual_authentication = false;
 static bool is_verify_only = false;
 static bool is_once = false;
@@ -34,7 +35,6 @@ static struct tls_test_ctx_struct ttcs = {
 	NULL,
 	NULL,
 	-INT_MAX,
-	0,	/* No domain check. Mandatory to initialize properly 0 or 1 */
 	0,	/* No domain check. Mandatory to initialize properly 0 or 1 */
 	0,	/* No domain check. Mandatory to initialize properly 0 or 1 */
 	60,
@@ -163,8 +163,6 @@ ctx_dump()
 			gfarm_ctxp->tls_build_chain_local);
 	fprintf(stderr, "tls_allow_no_crl: %d\n",
 			gfarm_ctxp->tls_allow_no_crl);
-	fprintf(stderr, "tls_gsi_proxy_certificate: %d\n",
-			gfarm_ctxp->tls_gsi_proxy_certificate);
 	fprintf(stderr, "network_receive_timeout: %d\n",
 			gfarm_ctxp->network_receive_timeout);
 	fprintf(stderr, "network_send_timeout: %d\n",
@@ -177,6 +175,7 @@ static inline void
 getopt_arg_dump()
 {
 	fprintf(stderr, "is_server: %d\n", is_server);
+	fprintf(stderr, "is_proxy: %d\n", is_proxy);
 	fprintf(stderr, "address: '%s'\n", ipaddr);
 	fprintf(stderr, "portnum: '%s'\n", portnum);
 	fprintf(stderr, "tls_cipher_suite: '%s'\n",
@@ -341,7 +340,7 @@ prologue(int argc, char **argv, struct addrinfo **a_info)
 			gfarm_ctxp->tls_allow_no_crl = 1;
 			break;
 		case 18:
-			gfarm_ctxp->tls_gsi_proxy_certificate = 1;
+			is_proxy = true;
 			break;
 		case 's':
 			is_server = true;
@@ -839,7 +838,8 @@ main(int argc, char **argv)
 		gerr = tls_session_create_ctx(&tls_ctx,
 				(is_server == true) ?
 				TLS_ROLE_SERVER : TLS_ROLE_CLIENT,
-				is_mutual_authentication);
+				is_mutual_authentication,
+				is_proxy);
 		if (gerr == GFARM_ERR_NO_ERROR) {
 			ret = (is_server == true) ?
 				run_server(tls_ctx, a_info)
