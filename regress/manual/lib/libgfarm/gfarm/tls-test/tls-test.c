@@ -36,7 +36,9 @@ static struct tls_test_ctx_struct ttcs = {
 	-INT_MAX,
 	0,	/* No domain check. Mandatory to initialize properly 0 or 1 */
 	0,	/* No domain check. Mandatory to initialize properly 0 or 1 */
-	-INT_MAX
+	0,	/* No domain check. Mandatory to initialize properly 0 or 1 */
+	60,
+	60
 };
 tls_test_ctx_p gfarm_ctxp = &ttcs;
 
@@ -82,6 +84,7 @@ usage()
 		"\t--interactive\n"
 		"\t--buf_size\n"
 		"\t--allow_no_crl\n"
+		"\t--proxy_cert\n"
 		"\t--debug_level\n");
 	return;
 }
@@ -160,8 +163,12 @@ ctx_dump()
 			gfarm_ctxp->tls_build_chain_local);
 	fprintf(stderr, "tls_allow_no_crl: %d\n",
 			gfarm_ctxp->tls_allow_no_crl);
+	fprintf(stderr, "tls_gsi_proxy_certificate: %d\n",
+			gfarm_ctxp->tls_gsi_proxy_certificate);
 	fprintf(stderr, "network_receive_timeout: %d\n",
 			gfarm_ctxp->network_receive_timeout);
+	fprintf(stderr, "network_send_timeout: %d\n",
+			gfarm_ctxp->network_send_timeout);
 
 	return;
 }
@@ -196,6 +203,8 @@ getopt_arg_dump()
 			gfarm_ctxp->tls_allow_no_crl);
 	fprintf(stderr, "network_receive_timeout: %d\n",
 			gfarm_ctxp->network_receive_timeout);
+	fprintf(stderr, "network_send_timeout: %d\n",
+			gfarm_ctxp->network_send_timeout);
 	fprintf(stderr, "mutual_authentication: %d\n",
 			is_mutual_authentication);
 	fprintf(stderr, "verify_only: %d\n", is_verify_only);
@@ -240,6 +249,7 @@ prologue(int argc, char **argv, struct addrinfo **a_info)
 		{"interactive", 0, NULL, 15},
 		{"buf_size", 1, NULL, 16},
 		{"allow_no_crl", 0, NULL, 17},
+		{"proxy_cert", 0, NULL, 18},
 		{NULL, 0, NULL, 0}
 	};
 
@@ -284,6 +294,9 @@ prologue(int argc, char **argv, struct addrinfo **a_info)
 					DECIMAL_NUMBER))) {
 				fprintf(stderr,
 				"fail to set network_receive_timeout.\n");
+			} else {
+				gfarm_ctxp->network_send_timeout =
+					gfarm_ctxp->network_receive_timeout;
 			}
 			break;
 		case 10:
@@ -326,6 +339,9 @@ prologue(int argc, char **argv, struct addrinfo **a_info)
 			break;
 		case 17:
 			gfarm_ctxp->tls_allow_no_crl = 1;
+			break;
+		case 18:
+			gfarm_ctxp->tls_gsi_proxy_certificate = 1;
 			break;
 		case 's':
 			is_server = true;

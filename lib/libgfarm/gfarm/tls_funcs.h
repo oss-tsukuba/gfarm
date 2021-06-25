@@ -504,6 +504,14 @@ is_valid_cert_store_dir(const char *dir)
 	return (ret);
 }
 
+static inline bool
+has_gsi_proxy_cert(char **path)
+{
+	bool ret = false;
+
+	return (ret);
+}
+
 
 
 /*
@@ -1562,6 +1570,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 	bool need_cert_merge = false;
 	bool has_cert_file = false;
 	bool has_cert_chain_file = false;
+	bool use_proxy_cert = false;
 
 	/*
 	 * Parameter check
@@ -1585,6 +1594,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 	 * No doamin check for following variables in gfarm_ctxp:
 	 *	tls_build_chain_local
 	 *	tls_allow_no_crl
+	 *	tls_gsi_proxy_certificate
 	 * Callers must guarantee that values are 0 or 1.
          */
 
@@ -1668,6 +1678,14 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 		char *tmp_acceptable_ca_path =
 			str_or_NULL(
 				gfarm_ctxp->tls_client_ca_certificate_path);
+		char *tmp_proxy_cert_file = NULL;
+
+		if (gfarm_ctxp->tls_gsi_proxy_certificate != 0 &&
+			role == TLS_ROLE_CLIENT &&
+			has_gsi_proxy_cert(&tmp_proxy_cert_file) == true &&
+			is_valid_string(tmp_proxy_cert_file) == true) {
+			use_proxy_cert = true;
+		}
 
 		/* cert/cert chain file */
 		if ((is_valid_string(tmp_cert_chain_file) == true) &&

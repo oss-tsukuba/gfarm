@@ -113,7 +113,9 @@ struct tls_test_ctx_struct {
 	int tls_key_update;		/* gfarm: bool, test: int */
 	int tls_build_chain_local;	/* bool */
 	int tls_allow_no_crl;		/* bool */
+	int tls_gsi_proxy_certificate;	/* bool */
 	int network_receive_timeout;
+	int network_send_timeout;
 };
 typedef struct tls_test_ctx_struct *tls_test_ctx_p;
 
@@ -217,6 +219,7 @@ struct tls_session_ctx_struct {
 	int cert_verify_result_error_;
 	bool is_build_chain_;
 	bool is_allow_no_crls_;
+	bool is_gsi_proxy_cert_;
 	size_t io_total_;	/* How many bytes transmitted */
 	size_t io_key_update_;	/* KeyUpdate water level (bytes) */
 	ssize_t keyupd_thresh_;	/* KeyUpdate threshold (bytes) */
