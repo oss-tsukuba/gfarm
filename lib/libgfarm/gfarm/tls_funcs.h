@@ -1582,6 +1582,13 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 	}
 
 	/*
+	 * No doamin check for following variables in gfarm_ctxp:
+	 *	tls_build_chain_local
+	 *	tls_allow_no_crl
+	 * Callers must guarantee that values are 0 or 1.
+         */
+
+	/*
 	 * Gfarm context check
 	 */
 	if (unlikely(gfarm_ctxp == NULL)) {
@@ -2013,9 +2020,8 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 				goto bailout;
 			}
 
-			is_build_chain =
-				(gfarm_ctxp->tls_build_chain_local == 1) ?
-				true : false;
+			/* no domain check */
+			is_build_chain = gfarm_ctxp->tls_build_chain_local;
 			if (is_build_chain == true) {
 				/*
 				 * Build a complete cert chain locally.
@@ -2112,8 +2118,8 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 		ctxret->prvkey_ = prvkey;
 		ctxret->ssl_ctx_ = ssl_ctx;
 		ctxret->is_build_chain_ = is_build_chain;
-		ctxret->is_allow_no_crls_ =
-			(gfarm_ctxp->tls_allow_no_crl == 1) ? true : false;
+		/* no domain check */
+		ctxret->is_allow_no_crls_ = gfarm_ctxp->tls_allow_no_crl;
 		ctxret->cert_file_ = cert_file;
 		ctxret->cert_chain_file_ = cert_chain_file;
 		ctxret->prvkey_file_ = prvkey_file;

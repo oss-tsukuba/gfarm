@@ -34,8 +34,8 @@ static struct tls_test_ctx_struct ttcs = {
 	NULL,
 	NULL,
 	-INT_MAX,
-	-INT_MAX,
-	-INT_MAX,
+	0,	/* No domain check. Mandatory to initialize properly 0 or 1 */
+	0,	/* No domain check. Mandatory to initialize properly 0 or 1 */
 	-INT_MAX
 };
 tls_test_ctx_p gfarm_ctxp = &ttcs;
