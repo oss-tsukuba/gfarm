@@ -236,8 +236,7 @@ gfp_xdr_tls_alloc(struct gfp_xdr *conn,	int fd, int flags)
 
 	tls_session_ctx_t ctx = NULL;
 	bool do_mutual_auth =
-		((flags & GFP_XDR_TLS_CLIENT_AUTHENTICATION) != 0) ?
-		true : false;
+		(flags & GFP_XDR_TLS_CLIENT_AUTHENTICATION) != 0;
 	tls_role_t role =
 		(GFP_XDR_TLS_ROLE_IS_INITIATOR(flags)) ?
 		TLS_ROLE_INITIATOR : TLS_ROLE_ACCEPTOR;
