@@ -5,7 +5,7 @@
 
 
 #define IN_TLS_CORE
-#define TLS_TEST
+#undef TLS_TEST
 
 #include "tls_headers.h"
 #include "tls_funcs.h"
@@ -234,12 +234,13 @@ gfp_xdr_tls_alloc(struct gfp_xdr *conn,	int fd, int flags)
 	gfarm_error_t ret;
 
 	tls_session_ctx_t ctx = NULL;
-	bool use_proxy_cert = false;
 	bool do_mutual_auth =
 		(flags & GFP_XDR_TLS_CLIENT_AUTHENTICATION) != 0;
 	tls_role_t role =
 		(GFP_XDR_TLS_ROLE_IS_INITIATOR(flags)) ?
 		TLS_ROLE_INITIATOR : TLS_ROLE_ACCEPTOR;
+	bool use_proxy_cert =
+		flags & GFP_XDR_TLS_CLIENT_USE_GSI_PROXY_CERTIFICATE;
 	
 	ret = tls_session_create_ctx(&ctx, role,
 		do_mutual_auth, use_proxy_cert);

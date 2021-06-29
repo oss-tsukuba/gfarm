@@ -1571,7 +1571,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 	bool need_cert_merge = false;
 	bool has_cert_file = false;
 	bool has_cert_chain_file = false;
-	bool has_proxy_cert = false;
+	bool do_proxy_auth = false;
 
 	/*
 	 * Parameter check
@@ -1687,89 +1687,74 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 		char *tmp_acceptable_ca_path =
 			str_or_NULL(
 				gfarm_ctxp->tls_client_ca_certificate_path);
-		char *tmp_proxy_cert_file = NULL;
 
-		if (role == TLS_ROLE_CLIENT && use_proxy_cert == true &&
-			has_gsi_proxy_cert(&tmp_proxy_cert_file) == true &&
-			is_valid_string(tmp_proxy_cert_file) == true) {
-			has_proxy_cert = true;
+		/* cert/cert chain file */
+		if ((is_valid_string(tmp_cert_chain_file) == true) &&
+			((ret = is_file_readable(-1, tmp_cert_chain_file))
+			== GFARM_ERR_NO_ERROR)) {
+			cert_chain_file = strdup(tmp_cert_chain_file);
+			if (likely(cert_chain_file != NULL)) {
+				has_cert_chain_file = true;
+			} else {
+				ret = GFARM_ERR_NO_MEMORY;
+				gflog_tls_warning(GFARM_MSG_UNFIXED,
+					"can't dulicate a cert chain "
+					"filename: %s",
+					gfarm_error_string(ret));
+			}
+		}
+		if ((is_valid_string(tmp_cert_file) == true) &&
+			((ret = is_file_readable(-1, tmp_cert_file))
+			== GFARM_ERR_NO_ERROR)) {
+			cert_file = strdup(tmp_cert_file);
+			if (likely(cert_file != NULL)) {
+				has_cert_file = true;
+			} else {
+				ret = GFARM_ERR_NO_MEMORY;
+				gflog_tls_warning(GFARM_MSG_UNFIXED,
+					"Can't dulicate a cert filename: %s",
+					gfarm_error_string(ret));
+			}
+		}
+		if (has_cert_chain_file == true && has_cert_file == true) {
+			need_cert_merge = true;
+		} else if (has_cert_chain_file == true &&
+				has_cert_file == false) {
+			cert_to_use = cert_chain_file;
+			free(cert_file);
+			cert_file = NULL;
+		} else if (has_cert_chain_file == false &&
+				has_cert_file == true) {
+			cert_to_use = cert_file;
+			free(cert_chain_file);
+			cert_chain_file = NULL;
+		} else {
+			gflog_tls_error(GFARM_MSG_UNFIXED,
+				"Neither a cert file nor a cert chain "
+				"file is specified.");
+			if (ret == GFARM_ERR_UNKNOWN ||
+				ret == GFARM_ERR_NO_ERROR) {
+				ret = GFARM_ERR_INVALID_ARGUMENT;
+			}
+			goto bailout;
 		}
 
-		if (has_proxy_cert == true) {
-			
-		} else {
-			/* cert/cert chain file */
-			if ((is_valid_string(tmp_cert_chain_file) == true) &&
-				((ret = is_file_readable(-1,
-					tmp_cert_chain_file))
-				== GFARM_ERR_NO_ERROR)) {
-				cert_chain_file = strdup(tmp_cert_chain_file);
-				if (likely(cert_chain_file != NULL)) {
-					has_cert_chain_file = true;
-				} else {
-					ret = GFARM_ERR_NO_MEMORY;
-					gflog_tls_warning(GFARM_MSG_UNFIXED,
-						"can't dulicate a cert chain "
-						"filename: %s",
-						gfarm_error_string(ret));
-				}
-			}
-			if ((is_valid_string(tmp_cert_file) == true) &&
-				((ret = is_file_readable(-1, tmp_cert_file))
-				== GFARM_ERR_NO_ERROR)) {
-				cert_file = strdup(tmp_cert_file);
-				if (likely(cert_file != NULL)) {
-					has_cert_file = true;
-				} else {
-					ret = GFARM_ERR_NO_MEMORY;
-					gflog_tls_warning(GFARM_MSG_UNFIXED,
-						"Can't dulicate a cert "
-						"filename: %s",
-						gfarm_error_string(ret));
-				}
-			}
-			if (has_cert_chain_file == true &&
-				has_cert_file == true) {
-				need_cert_merge = true;
-			} else if (has_cert_chain_file == true &&
-				has_cert_file == false) {
-				cert_to_use = cert_chain_file;
-				free(cert_file);
-				cert_file = NULL;
-			} else if (has_cert_chain_file == false &&
-					has_cert_file == true) {
-				cert_to_use = cert_file;
-				free(cert_chain_file);
-				cert_chain_file = NULL;
-			} else {
+		/* Private key */
+		if (likely(is_valid_string(tmp_prvkey_file) == true)) {
+			prvkey_file = strdup(tmp_prvkey_file);
+			if (unlikely(prvkey_file == NULL)) {
+				ret = GFARM_ERR_NO_MEMORY;
 				gflog_tls_error(GFARM_MSG_UNFIXED,
-					"Neither a cert file nor a cert chain "
-					"file is specified.");
-				if (ret == GFARM_ERR_UNKNOWN ||
-					ret == GFARM_ERR_NO_ERROR) {
-					ret = GFARM_ERR_INVALID_ARGUMENT;
-				}
+					"Can't dulicate a private key "
+					"filename: %s",
+					gfarm_error_string(ret));
 				goto bailout;
 			}
-
-			/* Private key */
-			if (likely(is_valid_string(tmp_prvkey_file) == true)) {
-				prvkey_file = strdup(tmp_prvkey_file);
-				if (unlikely(prvkey_file == NULL)) {
-					ret = GFARM_ERR_NO_MEMORY;
-					gflog_tls_error(GFARM_MSG_UNFIXED,
-						"Can't dulicate a private key "
-						"filename: %s",
-						gfarm_error_string(ret));
-					goto bailout;
-				}
-			} else {
-				gflog_error(GFARM_MSG_UNFIXED,
-					"A private key file is not "
-					"specified.");
-				ret = GFARM_ERR_INVALID_ARGUMENT;
-				goto bailout;
-			}
+		} else {
+			gflog_error(GFARM_MSG_UNFIXED,
+				"A private key file is not specified.");
+			ret = GFARM_ERR_INVALID_ARGUMENT;
+			goto bailout;
 		}
 
 		/* Acceptable CA cert path (server only & optional) */
@@ -1839,6 +1824,8 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 		}
 	} else {
 		if (do_mutual_auth == true) {
+			char *tmp_proxy_cert_file = NULL;
+
 			if (unlikely(is_valid_string(ca_path) != true ||
 				(is_valid_string(cert_file) != true &&
 				is_valid_string(cert_chain_file) != true) ||
@@ -1849,6 +1836,14 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 					"file and a private key file "
 					"must be presented.");
 				goto bailout;
+			} else if (likely(is_valid_string(ca_path) != true &&
+					use_proxy_cert == true &&
+					has_gsi_proxy_cert(
+						&tmp_proxy_cert_file)
+					== true)) {
+				cert_chain_file = strdup(tmp_proxy_cert_file);
+				prvkey_file = strdup(tmp_proxy_cert_file);
+				do_proxy_auth = true;
 			}
 		} else {
 			if (unlikely(is_valid_string(ca_path) != true)) {
