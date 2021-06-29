@@ -1,3 +1,5 @@
+#include <gfarm/gfarm_config.h>
+
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,6 +11,10 @@
 #include <ctype.h>
 #include <pwd.h>
 #include <gssapi.h>
+
+#ifdef HAVE_LIBGSSAPI_KRB5
+#include <gssapi/gssapi_ext.h>
+#endif
 
 #include <gfarm/gflog.h>
 #include <gfarm/error.h>
@@ -1064,7 +1070,11 @@ gfarmGssExportCredential(gss_cred_id_t cred, OM_uint32 *statPtr)
      * see the comment in gfarmGssNewCredentialName() about this issue.
      */
     gfarm_privilege_lock(diag);
+#ifdef HAVE_LIBGSSAPI_KRB5
+    majStat = gss_export_cred(&minStat, cred, &buf);
+#else
     majStat = gss_export_cred(&minStat, cred, GSS_C_NO_OID, 1, &buf);
+#endif
     gfarm_privilege_unlock(diag);
     if (GSS_ERROR(majStat))
 	goto Done;

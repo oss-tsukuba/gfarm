@@ -1,6 +1,7 @@
 #include <pthread.h>
 #include <sys/types.h>
 #include <pwd.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <gssapi.h>

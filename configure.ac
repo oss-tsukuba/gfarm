@@ -245,6 +245,25 @@ AC_SUBST(openssl_includes)
 AC_SUBST(openssl_libs)
 
 ###
+### --enable-kerberos
+###
+
+AC_ARG_ENABLE(kerberos,
+AS_HELP_STRING([--enable-kerberos],[enable Kerberos authentication as GSI [default=disable]]),
+[if test x"${enable_kerberos}" = x"yes"; then
+  AC_CHECK_LIB(gssapi_krb5, gss_init_sec_context)
+  if test x"${ac_cv_lib_gssapi_krb5_gss_init_sec_context}" = x"yes"; then
+    AC_MSG_CHECKING(Kerberos library available)
+
+    globus_gssapi_libs=-lgssapi_krb5
+
+  else
+    enable_kerberos=no
+  fi
+  AC_MSG_RESULT(${enable_kerberos})
+fi], [])
+
+###
 ### --with-globus=GLOBUS_ROOT --with-globus-flavor=FLAVOR -with-globus-static
 ###
 
@@ -278,7 +297,13 @@ AC_MSG_CHECKING([globus])
 AC_ARG_WITH(globus,
 [  --with-globus=GLOBUS_ROOT	globus root directory
 				[[default=disable]]],
-[globus_location="${withval}"
+[
+ if test x"${enable_kerberos}" = x"yes"; then
+   AC_MSG_ERROR([--with-globus and --enable-kerberos cannot co-exist])
+   exit 1
+ fi
+
+ globus_location="${withval}"
  case "${globus_location}" in yes) globus_location=${GLOBUS_LOCATION};; esac
 
  # try pkg-config first
@@ -407,25 +432,32 @@ AC_ARG_WITH(globus,
    fi
  fi # End of Grid Packaging Tools (GPT)
 
- # for conditional compilation which depends on whether globus is enabled or not
- globus_srcs='${GLOBUS_SRCS}'
- globus_objs='${GLOBUS_OBJS}'
- globus_cflags='${GLOBUS_CFLAGS}'
- globus_targets='${GLOBUS_TARGETS}'
-
- AC_DEFINE(HAVE_GSI, 1, [Grid Security Infrastructure exists])
+ enable_globus=yes
 ],
 [AC_MSG_RESULT([disabled])
+
+ enable_globus=no
+
  globus_location=
  globus_includes=
- globus_gssapi_libs=
+])
 
- # for conditional compilation which depends on whether globus is enabled or not
+# for conditional compilation which depends on whether globus is enabled or not
+if test x"${enable_kerberos}" = x"yes" -o x"${enable_globus}" = x"yes"; then
+  globus_srcs='${GLOBUS_SRCS}'
+  globus_objs='${GLOBUS_OBJS}'
+  globus_cflags='${GLOBUS_CFLAGS}'
+  globus_targets='${GLOBUS_TARGETS}'
+  AC_DEFINE(HAVE_GSI, 1, [Grid Security Infrastructure exists])
+else
  globus_srcs=
  globus_objs=
  globus_cflags=
  globus_targets=
-])
+
+ globus_gssapi_libs=
+fi
+
 
 AC_SUBST(globus_location)
 AC_SUBST(globus_includes)
