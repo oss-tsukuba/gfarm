@@ -504,11 +504,23 @@ is_valid_cert_store_dir(const char *dir)
 	return (ret);
 }
 
-static inline bool
-has_gsi_proxy_cert(char **path)
+static inline char *
+has_gsi_proxy_cert(void)
 {
-	bool ret = false;
-
+	char *ret = NULL;
+	char *tmp = NULL;
+	char buf[PATH_MAX];
+	gfarm_error_t ge = GFARM_ERR_UNKNOWN;
+	
+	if ((tmp =  getenv("X509_USER_PROXY")) != NULL) {
+		snprintf(buf, sizeof(buf), "%s", tmp);
+	} else {
+		snprintf(buf, sizeof(buf), "/tmp/x509up_u%u", geteuid());
+	}
+	ge = is_valid_prvkey_file_permission(-1, buf);
+	if (ge == GFARM_ERR_NO_ERROR) {
+		ret = strdup(buf);
+	}
 	return (ret);
 }
 
@@ -1826,24 +1838,28 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 		if (do_mutual_auth == true) {
 			char *tmp_proxy_cert_file = NULL;
 
-			if (unlikely(is_valid_string(ca_path) != true ||
-				(is_valid_string(cert_file) != true &&
-				is_valid_string(cert_chain_file) != true) ||
-				is_valid_string(prvkey_file) != true)) {
-				gflog_tls_error(GFARM_MSG_UNFIXED,
-					"For TLS client auth, at least "
-					"a CA ptth, a cert file/cert chain "
-					"file and a private key file "
-					"must be presented.");
-				goto bailout;
-			} else if (likely(is_valid_string(ca_path) != true &&
-					use_proxy_cert == true &&
-					has_gsi_proxy_cert(
-						&tmp_proxy_cert_file)
+			if (likely(is_valid_string(ca_path) == true &&
+				(is_valid_string(cert_file) == true ||
+				is_valid_string(cert_chain_file) == true) &&
+				is_valid_string(prvkey_file) == true)) {
+				goto runtime_init;
+			} else if (likely(use_proxy_cert == true &&
+					is_valid_string(ca_path) == true &&
+					is_valid_string((tmp_proxy_cert_file =
+						has_gsi_proxy_cert()))
 					== true)) {
 				cert_chain_file = strdup(tmp_proxy_cert_file);
 				prvkey_file = strdup(tmp_proxy_cert_file);
 				do_proxy_auth = true;
+				goto runtime_init;
+			} else {
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"For TLS client auth, at least "
+					"a CA ptth, a cert file/cert chain "
+					"file and a private key file, or a "
+					"CA path and GSI/GCT proxy cert "
+					"must be presented.");
+				goto bailout;
 			}
 		} else {
 			if (unlikely(is_valid_string(ca_path) != true)) {
@@ -1858,6 +1874,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 	/*
 	 * TLS runtime initialize
 	 */
+runtime_init:
 	if (unlikely((ret = tls_session_runtime_initialize())
 		!= GFARM_ERR_NO_ERROR)) {
 		gflog_error(GFARM_MSG_UNFIXED,
