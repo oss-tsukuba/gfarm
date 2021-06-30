@@ -2094,19 +2094,34 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 		 */
 		tmpvpm = SSL_CTX_get0_param(ssl_ctx);
 
-		/*
-		 * Seems revoked certs in tls_ca_certificate_path
-		 * should be rejected. openssl s_{client|server} does
-		 * following for this.
-		 */
 		if (likely(tmpvpm != NULL)) {
+			unsigned long flags = 0;
+
+			/*
+			 * Seems revoked certs in
+			 * tls_ca_certificate_path should be
+			 * rejected. openssl s_{client|server} add
+			 * following flags.
+			 */
+			flags |= (X509_V_FLAG_CRL_CHECK |
+					X509_V_FLAG_CRL_CHECK_ALL);
+
+			/*
+			 * Allow GSI/GCT/Globus proxy cert authentication
+			 */
+			if (role == TLS_ROLE_SERVER &&
+				do_mutual_auth == true &&
+				use_proxy_cert == true) {
+				flags |= X509_V_FLAG_ALLOW_PROXY_CERTS;
+			}
+
 			tls_runtime_flush_error();
 			osst = X509_VERIFY_PARAM_set_flags(tmpvpm,
 					X509_V_FLAG_CRL_CHECK |
 					X509_V_FLAG_CRL_CHECK_ALL);
 			if (unlikely(osst != 1)) {
 				gflog_tls_error(GFARM_MSG_UNFIXED,
-					"Failed to set CRL check bits "
+					"Failed to set CRL check, etc. flags "
 					"to a X509_VERIFY_PARAM");
 				ret = GFARM_ERR_TLS_RUNTIME_ERROR;
 				goto bailout;
@@ -2145,9 +2160,11 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 		}
 		ctxret->prvkey_ = prvkey;
 		ctxret->ssl_ctx_ = ssl_ctx;
-		ctxret->is_build_chain_ = is_build_chain;
 		/* no domain check */
+		ctxret->is_build_chain_ = is_build_chain;
 		ctxret->is_allow_no_crls_ = gfarm_ctxp->tls_allow_no_crl;
+		ctxret->is_allow_gsi_proxy_cert_ = (role == TLS_ROLE_SERVER) ?
+			use_proxy_cert : do_proxy_auth;
 		ctxret->cert_file_ = cert_file;
 		ctxret->cert_chain_file_ = cert_chain_file;
 		ctxret->prvkey_file_ = prvkey_file;
