@@ -1889,7 +1889,8 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 	}
 	if (likely(ssl_ctx != NULL)) {
 		int osst;
-		
+		X509_VERIFY_PARAM *tmpvpm = NULL;
+
 		/*
 		 * Clear cert chain for our sanity.
 		 */
@@ -2088,29 +2089,27 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 			}
 		}
 
-		if (false) {
-			/*
-			 * NOTE: 
-			 * Seems revoked certs in
-			 * tls_ca_certificate_path should be
-			 * rejected. openssl s_{client|server} does
-			 * following for this.
-			 */
-			X509_VERIFY_PARAM *vpm =
-				SSL_CTX_get0_param(ssl_ctx);
-			if (likely(vpm != NULL)) {
-				tls_runtime_flush_error();
-				osst = X509_VERIFY_PARAM_set_flags(vpm,
+		/*
+		 * Final verify param tweaks
+		 */
+		tmpvpm = SSL_CTX_get0_param(ssl_ctx);
+
+		/*
+		 * Seems revoked certs in tls_ca_certificate_path
+		 * should be rejected. openssl s_{client|server} does
+		 * following for this.
+		 */
+		if (likely(tmpvpm != NULL)) {
+			tls_runtime_flush_error();
+			osst = X509_VERIFY_PARAM_set_flags(tmpvpm,
 					X509_V_FLAG_CRL_CHECK |
 					X509_V_FLAG_CRL_CHECK_ALL);
-				if (unlikely(osst != 1)) {
-					gflog_tls_error(GFARM_MSG_UNFIXED,
-						"Failed to set CRL check bits "
-						"to a X509_VERIFY_PARAM");
-					ret = GFARM_ERR_TLS_RUNTIME_ERROR;
-					X509_VERIFY_PARAM_free(vpm);
-					goto bailout;
-				}
+			if (unlikely(osst != 1)) {
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"Failed to set CRL check bits "
+					"to a X509_VERIFY_PARAM");
+				ret = GFARM_ERR_TLS_RUNTIME_ERROR;
+				goto bailout;
 			}
 		}
 
