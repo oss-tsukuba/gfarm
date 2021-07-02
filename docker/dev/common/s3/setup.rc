@@ -70,7 +70,7 @@ ${SUDO} yum install -y \
 ### nginx is not supported yet
 #${SUDO} yum install -y nginx
 
-${SUDO} python3 -m pip install 'Django<2.2'
+${SUDO} python3 -m pip install Django
 ${SUDO} python3 -m pip install gunicorn
 
 ## for test.py
