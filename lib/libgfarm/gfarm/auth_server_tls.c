@@ -58,8 +58,8 @@ gfarm_error_t gfarm_authorize_tls_client_certificate(
 
 	e = gfp_xdr_tls_alloc(conn, gfp_xdr_fd(conn), GFP_XDR_TLS_ACCEPT|
 	    GFP_XDR_TLS_CLIENT_AUTHENTICATION |
-	    (gfarm_ctxp->tls_gsi_proxy_certificate ?
-	     GFP_XDR_TLS_CLIENT_USE_GSI_PROXY_CERTIFICATE : 0));
+	    (gfarm_ctxp->tls_proxy_certificate ?
+	     GFP_XDR_TLS_CLIENT_USE_PROXY_CERTIFICATE : 0));
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_notice(GFARM_MSG_UNFIXED,
 		    "failed to establish SSL connection");
