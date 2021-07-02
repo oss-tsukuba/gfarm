@@ -505,7 +505,7 @@ is_valid_cert_store_dir(const char *dir)
 }
 
 static inline char *
-has_gsi_proxy_cert(void)
+has_proxy_cert(void)
 {
 	char *ret = NULL;
 	char *tmp = NULL;
@@ -1445,7 +1445,7 @@ get_peer_subjectdn_gsi_ish(X509_NAME *pn, char **nameptr, int maxlen)
 }
 
 static inline gfarm_error_t
-get_peer_cn(X509_NAME *pn, char **nameptr, int maxlen)
+get_peer_cn(X509_NAME *pn, char **nameptr, int maxlen, bool allow_many_cn)
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 
@@ -1460,8 +1460,9 @@ get_peer_cn(X509_NAME *pn, char **nameptr, int maxlen)
 		 */
 		pos = X509_NAME_get_index_by_NID(pn, NID_commonName, pos);
 		pos2 = X509_NAME_get_index_by_NID(pn, NID_commonName, pos);
-		if (likely((pos != -1 && pos != -2) &&
-			(pos2 == -1 || pos2 == -2) &&
+		if (likely(((allow_many_cn == true && pos != -1) ||
+			((pos != -1 && pos != -2) &&
+			(pos2 == -1 || pos2 == -2))) &&
 			(ne = X509_NAME_get_entry(pn, pos)) != NULL &&
 			(as = X509_NAME_ENTRY_get_data(ne)) != NULL)) {
 			unsigned char *u8 = NULL;
@@ -1584,6 +1585,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 	bool has_cert_file = false;
 	bool has_cert_chain_file = false;
 	bool do_proxy_auth = false;
+	char *tmp_proxy_cert_file = NULL;
 
 	/*
 	 * Parameter check
@@ -1599,10 +1601,6 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 	if (unlikely(role != TLS_ROLE_SERVER && role != TLS_ROLE_CLIENT)) {
 		gflog_error(GFARM_MSG_UNFIXED,
 			"fatal: invalid TLS role.");
-		ret = GFARM_ERR_INVALID_ARGUMENT;
-		goto bailout;
-	}
-	if (unlikely(role == TLS_ROLE_SERVER && use_proxy_cert == true)) {
 		ret = GFARM_ERR_INVALID_ARGUMENT;
 		goto bailout;
 	}
@@ -1700,6 +1698,10 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 			str_or_NULL(
 				gfarm_ctxp->tls_client_ca_certificate_path);
 
+		tmp_proxy_cert_file =
+			(use_proxy_cert == true && role == TLS_ROLE_CLIENT) ?
+			has_proxy_cert() : NULL;
+
 		/* cert/cert chain file */
 		if ((is_valid_string(tmp_cert_chain_file) == true) &&
 			((ret = is_file_readable(-1, tmp_cert_chain_file))
@@ -1740,7 +1742,11 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 			cert_to_use = cert_file;
 			free(cert_chain_file);
 			cert_chain_file = NULL;
-		} else {
+		} else if (is_valid_string(tmp_proxy_cert_file) == false) {
+			/*
+			 * We still have a chance to go if we had a
+			 * usable proxy cert.
+			 */
 			gflog_tls_error(GFARM_MSG_UNFIXED,
 				"Neither a cert file nor a cert chain "
 				"file is specified.");
@@ -1762,7 +1768,11 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 					gfarm_error_string(ret));
 				goto bailout;
 			}
-		} else {
+		} else if (is_valid_string(tmp_proxy_cert_file) == false) {
+			/*
+			 * We still have a chance to go if we had a
+			 * usable proxy cert.
+			 */
 			gflog_error(GFARM_MSG_UNFIXED,
 				"A private key file is not specified.");
 			ret = GFARM_ERR_INVALID_ARGUMENT;
@@ -1836,20 +1846,17 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 		}
 	} else {
 		if (do_mutual_auth == true) {
-			char *tmp_proxy_cert_file = NULL;
-
 			if (likely(is_valid_string(ca_path) == true &&
 				(is_valid_string(cert_file) == true ||
 				is_valid_string(cert_chain_file) == true) &&
 				is_valid_string(prvkey_file) == true)) {
 				goto runtime_init;
-			} else if (likely(use_proxy_cert == true &&
-					is_valid_string(ca_path) == true &&
-					is_valid_string((tmp_proxy_cert_file =
-						has_gsi_proxy_cert()))
+			} else if (likely(is_valid_string(ca_path) == true &&
+					is_valid_string(tmp_proxy_cert_file)
 					== true)) {
 				cert_chain_file = strdup(tmp_proxy_cert_file);
 				prvkey_file = strdup(tmp_proxy_cert_file);
+				cert_to_use = cert_chain_file;
 				do_proxy_auth = true;
 				goto runtime_init;
 			} else {
@@ -2133,9 +2140,7 @@ runtime_init:
 			}
 
 			tls_runtime_flush_error();
-			osst = X509_VERIFY_PARAM_set_flags(tmpvpm,
-					X509_V_FLAG_CRL_CHECK |
-					X509_V_FLAG_CRL_CHECK_ALL);
+			osst = X509_VERIFY_PARAM_set_flags(tmpvpm, flags);
 			if (unlikely(osst != 1)) {
 				gflog_tls_error(GFARM_MSG_UNFIXED,
 					"Failed to set CRL check, etc. flags "
@@ -2542,8 +2547,9 @@ tls_session_verify(tls_session_ctx_t ctx, bool *is_verified)
 				GFARM_ERR_NO_ERROR)) {
 				ctx->peer_dn_gsi_ = dn_gsi;
 			}
-			if (likely((ret = get_peer_cn(pn, &cn, 0)) ==
-				GFARM_ERR_NO_ERROR)) {
+			if (likely((ret = get_peer_cn(pn, &cn, 0,
+						ctx->is_allow_gsi_proxy_cert_))
+				   == GFARM_ERR_NO_ERROR)) {
 				ctx->peer_cn_ = cn;
 			}
 #undef DN_FORMAT_ONELINE
