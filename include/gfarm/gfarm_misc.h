@@ -61,12 +61,22 @@ gfarm_error_t gfarm_set_global_user_for_this_local_account(void);
 gfarm_error_t gfarm_initialize(int *, char ***);
 gfarm_error_t gfarm_terminate(void);
 gfarm_error_t gfarm_config_read(void);
-gfarm_error_t gfarm_auth_method_gsi_available(void);
 
 const char *gfarm_version(void);
 int gfarm_version_major(void);
 int gfarm_version_minor(void);
 int gfarm_version_teeny(void);
+
+int gfarm_get_client_file_bufsize(void);
+
+/*
+ * authentication
+ */
+gfarm_error_t gfarm_auth_method_gsi_available(void);
+char *gfarm_gsi_client_cred_name(void);
+#ifdef GFARM_USE_GSSAPI
+void gfarm_gsi_client_cred_set(gss_cred_id_t);
+#endif
 
 /*
  * GFarm URL and pathname handling

@@ -5,6 +5,7 @@
 
 #include <gssapi.h>
 
+#define GFARM_USE_GSSAPI
 #include <gfarm/gfarm_config.h>
 #include <gfarm/gflog.h>
 #include <gfarm/error.h>
@@ -25,7 +26,7 @@
 #define staticp	(gfarm_ctxp->auth_common_gsi_static)
 
 struct gfarm_auth_common_gsi_static {
-	gss_cred_id_t delegated_cred;
+	gss_cred_id_t client_cred;
 
 	/* gfarm_gsi_client_cred_name() */
 	pthread_mutex_t client_cred_init_mutex;
@@ -43,7 +44,8 @@ gfarm_auth_common_gsi_static_init(struct gfarm_context *ctxp)
 	if (s == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
-	s->delegated_cred = GSS_C_NO_CREDENTIAL;
+	s->client_cred = GSS_C_NO_CREDENTIAL;
+
 	gfarm_mutex_init(&s->client_cred_init_mutex,
 	    diag, "client_cred_initialize");
 	s->client_cred_initialized = 0;
@@ -99,7 +101,7 @@ gfarm_gsi_client_initialize(void)
 char *
 gfarm_gsi_client_cred_name(void)
 {
-	gss_cred_id_t cred = gfarm_gsi_get_delegated_cred();
+	gss_cred_id_t cred = gfarm_gsi_client_cred_get();
 	gss_name_t name;
 	OM_uint32 e_major, e_minor;
 	char *client_dn;
@@ -178,15 +180,25 @@ gfarm_gsi_server_initialize(void)
  * like gfsd and gfarm_gridftp_dsi.  this is not for gfmd.
  */
 void
-gfarm_gsi_set_delegated_cred(gss_cred_id_t cred)
+gfarm_gsi_client_cred_set(gss_cred_id_t cred)
 {
-	staticp->delegated_cred = cred;
+	staticp->client_cred = cred;
 }
 
 gss_cred_id_t
-gfarm_gsi_get_delegated_cred()
+gfarm_gsi_client_cred_get()
 {
-	return (staticp->delegated_cred);
+	return (staticp->client_cred);
+}
+
+/*
+ * deprecated. gfarm_gsi_set_delegated_cred() will be removed in future.
+ * (currently gfarm-gridftp-dsi is using this)
+ */
+void
+gfarm_gsi_set_delegated_cred(gss_cred_id_t cred)
+{
+	gfarm_gsi_client_cred_set(cred);
 }
 
 /*
