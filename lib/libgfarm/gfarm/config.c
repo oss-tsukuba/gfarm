@@ -990,7 +990,7 @@ char *gfarm_postgresql_conninfo = NULL;
 char *gfarm_localfs_datadir = NULL;
 
 /* auth TLS dependent */
-#define GFARM_TLS_GSI_PROXY_CERTIFICATE_DEFAULT	1	/* enable */
+#define GFARM_TLS_PROXY_CERTIFICATE_DEFAULT	1	/* enable */
 
 /* IO statistics */
 char *gfarm_iostat_gfmd_path;
@@ -3413,9 +3413,9 @@ parse_one_line(const char *s, char *p,
 	} else if (strcmp(s, o = "tls_allow_no_crl") == 0) {
 		e = parse_set_misc_enabled(p,
 		    &gfarm_ctxp->tls_allow_no_crl);
-	} else if (strcmp(s, o = "tls_gsi_proxy_certificate") == 0) {
+	} else if (strcmp(s, o = "tls_proxy_certificate") == 0) {
 		e = parse_set_misc_enabled(p,
-		    &gfarm_ctxp->tls_gsi_proxy_certificate);
+		    &gfarm_ctxp->tls_proxy_certificate);
 
 	} else if (strcmp(s, o = "auth") == 0) {
 		e = parse_auth_arguments(p, position, &o);
@@ -3898,9 +3898,9 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_ctxp->tls_allow_no_crl == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->tls_allow_no_crl =
 		    GFARM_TLS_ALLOW_NO_CRL_DEFAULT;
-	if (gfarm_ctxp->tls_gsi_proxy_certificate == GFARM_CONFIG_MISC_DEFAULT)
-		gfarm_ctxp->tls_gsi_proxy_certificate =
-		    GFARM_TLS_GSI_PROXY_CERTIFICATE_DEFAULT;
+	if (gfarm_ctxp->tls_proxy_certificate == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_ctxp->tls_proxy_certificate =
+		    GFARM_TLS_PROXY_CERTIFICATE_DEFAULT;
 
 	if (gfarm_ctxp->log_level == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->log_level = GFARM_DEFAULT_PRIORITY_LEVEL_TO_LOG;
