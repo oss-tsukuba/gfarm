@@ -240,7 +240,7 @@ gfp_xdr_tls_alloc(struct gfp_xdr *conn,	int fd, int flags)
 		(GFP_XDR_TLS_ROLE_IS_INITIATOR(flags)) ?
 		TLS_ROLE_INITIATOR : TLS_ROLE_ACCEPTOR;
 	bool use_proxy_cert =
-		flags & GFP_XDR_TLS_CLIENT_USE_GSI_PROXY_CERTIFICATE;
+		flags & GFP_XDR_TLS_CLIENT_USE_PROXY_CERTIFICATE;
 	
 	ret = tls_session_create_ctx(&ctx, role,
 		do_mutual_auth, use_proxy_cert);
