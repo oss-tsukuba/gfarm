@@ -277,7 +277,7 @@ gfarm_authorize_gsi_common0(struct gfp_xdr *conn, int switch_to,
 		 * in gfmd, but it is not harmful since gfmd currently
 		 * does not support to use delegated credential.
 		 */
-		gfarm_gsi_set_delegated_cred(
+		gfarm_gsi_client_cred_set(
 		    gfarmSecSessionGetDelegatedCredential(session));
 	}
 
