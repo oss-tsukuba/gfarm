@@ -413,6 +413,7 @@ gfarm_auth_request_gsi_multiplexed(struct gfarm_eventqueue *q,
 	 */
 	state->readable = gfarm_fd_event_alloc(
 	    GFARM_EVENT_READ|GFARM_EVENT_TIMEOUT, gfp_xdr_fd(conn),
+	    gfp_xdr_recv_is_ready_call, conn,
 	    gfarm_auth_request_gsi_receive_result, state);
 	if (state->readable == NULL) {
 		gflog_debug(GFARM_MSG_1001474,

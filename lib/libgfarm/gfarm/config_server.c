@@ -22,7 +22,10 @@
 #include "config.h"
 #include "config_openssl.h"
 
-/* the following function is for server. */
+/*
+ * functions in this file are for server.
+ */
+
 gfarm_error_t
 gfarm_server_config_read(void)
 {
@@ -50,8 +53,7 @@ gfarm_server_config_read(void)
 	return (GFARM_ERR_NO_ERROR);
 }
 
-/* the following function is for server. */
-gfarm_error_t
+static gfarm_error_t
 gfarm_server_initialize(char *config_file, int *argcp, char ***argvp)
 {
 	gfarm_error_t e;
@@ -80,6 +82,54 @@ gfarm_server_initialize(char *config_file, int *argcp, char ***argvp)
 	gfarm_setup_debug_command();
 
 	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfarm_server_initialize_for_gfmd(char *config_file, int *argcp, char ***argvp)
+{
+	gfarm_error_t e;
+
+	e = gfarm_server_initialize(config_file, argcp, argvp);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	/*
+	 * gfarm_config_set_default for gfmd
+	 */
+	if (gfarm_ctxp->tls_certificate_file == NULL) {
+		gfarm_ctxp->tls_certificate_file =
+		    strdup(GFARM_TLS_CERTIFICATE_FILE_DEFAULT_FOR_GFMD);
+	}
+	if (gfarm_ctxp->tls_key_file == NULL) {
+		gfarm_ctxp->tls_key_file =
+		    strdup(GFARM_TLS_KEY_FILE_DEFAULT_FOR_GFMD);
+	}
+
+	return (gfarm_config_sanity_check());
+}
+
+gfarm_error_t
+gfarm_server_initialize_for_gfsd(char *config_file, int *argcp, char ***argvp)
+{
+	gfarm_error_t e;
+
+	e = gfarm_server_initialize(config_file, argcp, argvp);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	/*
+	 * gfarm_config_set_default for gfsd
+	 */
+	if (gfarm_ctxp->tls_certificate_file == NULL) {
+		gfarm_ctxp->tls_certificate_file =
+		    strdup(GFARM_TLS_CERTIFICATE_FILE_DEFAULT_FOR_GFSD);
+	}
+	if (gfarm_ctxp->tls_key_file == NULL) {
+		gfarm_ctxp->tls_key_file =
+		    strdup(GFARM_TLS_KEY_FILE_DEFAULT_FOR_GFSD);
+	}
+
+	return (gfarm_config_sanity_check());
 }
 
 /* the following function is for server. */

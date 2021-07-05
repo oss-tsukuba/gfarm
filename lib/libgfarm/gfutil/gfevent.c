@@ -49,6 +49,8 @@ struct gfarm_event {
 	struct gfarm_event *next, *prev;
 
 	int filter;
+	int (*recv_buffer_is_ready)(void *);
+	void *recv_buffer_is_ready_closure;
 	void *closure;
 	struct timeval timeout;
 	int timeout_specified;
@@ -84,6 +86,7 @@ static int gfarm_eventqueue_alloc_fd_set(struct gfarm_eventqueue *q,
 
 struct gfarm_event *
 gfarm_fd_event_alloc(int filter, int fd,
+	int (*recv_buffer_is_ready)(void *), void *recv_buffer_is_ready_closure,
 	void (*callback)(int, int, void *, const struct timeval *),
 	void *closure)
 {
@@ -95,6 +98,8 @@ gfarm_fd_event_alloc(int filter, int fd,
 	ev->next = ev->prev = NULL; /* to be sure */
 	ev->type = GFARM_FD_EVENT;
 	ev->filter = filter;
+	ev->recv_buffer_is_ready = recv_buffer_is_ready;
+	ev->recv_buffer_is_ready_closure = recv_buffer_is_ready_closure;
 	ev->closure = closure;
 	ev->u.fd.callback = callback;
 	ev->u.fd.fd = fd;
@@ -555,6 +560,24 @@ gfarm_eventqueue_turn(struct gfarm_eventqueue *q,
 	/* queue is empty? */
 	if (q->header.next == &q->header)
 		return (0); /* finished */
+
+	for (ev = q->header.next; ev != &q->header; ev = ev->next) {
+		if (ev->recv_buffer_is_ready != NULL &&
+		    (*ev->recv_buffer_is_ready)(
+		    ev->recv_buffer_is_ready_closure)) {
+			gfarm_eventqueue_delete_event(q, ev);
+			gettimeofday(&end_time, NULL);
+			(*ev->u.fd.callback)(
+			    GFARM_EVENT_READ, ev->u.fd.fd,
+			    ev->closure, &end_time);
+
+			/* queue is empty? */
+			if (q->header.next == &q->header)
+				return (0); /* finished */
+
+			return (EAGAIN);
+		}
+	}
 
 	/*
 	 * prepare arguments for select(2)

@@ -35,9 +35,16 @@ struct gfarm_auth_method_name_value {
 	char *name;
 	enum gfarm_auth_method method;
 } gfarm_auth_method_name_value_table[] = {
-	{ 's', "sharedsecret",	GFARM_AUTH_METHOD_SHAREDSECRET },
-	{ 'G', "gsi",		GFARM_AUTH_METHOD_GSI },
-	{ 'g', "gsi_auth",	GFARM_AUTH_METHOD_GSI_AUTH },
+	{ 'S', "tls_sharedsecret",
+	  GFARM_AUTH_METHOD_TLS_SHAREDSECRET },
+	{ 's', "sharedsecret",
+	  GFARM_AUTH_METHOD_SHAREDSECRET },
+	{ 'T', "tls_client_certificate",
+	  GFARM_AUTH_METHOD_TLS_CLIENT_CERTIFICATE },
+	{ 'G', "gsi",
+	  GFARM_AUTH_METHOD_GSI },
+	{ 'g', "gsi_auth",
+	  GFARM_AUTH_METHOD_GSI_AUTH },
 };
 
 enum gfarm_auth_config_command { GFARM_AUTH_ENABLE, GFARM_AUTH_DISABLE };

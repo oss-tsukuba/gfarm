@@ -1779,7 +1779,7 @@ negotiateConfigParamInitiatorRequest(struct gfarm_eventqueue *q, int fd,
 			 "no memory");
     } else {
 	state->writable = gfarm_fd_event_alloc(
-	    GFARM_EVENT_WRITE, fd,
+	    GFARM_EVENT_WRITE, fd, NULL, NULL,
 	    negotiateConfigParamInitiatorSend, state);
 	if (state->writable == NULL) {
 	    gflog_auth_error(GFARM_MSG_1000685, "gfarmSecSession: "
@@ -1792,7 +1792,7 @@ negotiateConfigParamInitiatorRequest(struct gfarm_eventqueue *q, int fd,
 	     * it's possible that both event handlers are called at once.
 	     */
 	    state->readable = gfarm_fd_event_alloc(
-		GFARM_EVENT_READ|GFARM_EVENT_TIMEOUT, fd,
+		GFARM_EVENT_READ|GFARM_EVENT_TIMEOUT, fd, NULL, NULL,
 		negotiateConfigParamInitiatorReceive, state);
 	    if (state->readable == NULL) {
 		gflog_auth_error(GFARM_MSG_1000686, "gfarmSecSession: "
@@ -2088,7 +2088,7 @@ secSessionInitiateRequest(struct gfarm_eventqueue *q, int fd,
 	(void)gfarmGetPeernameOfSocket(fd, &state->rPort, &state->peerName);
 
 	state->readable = gfarm_fd_event_alloc(
-	    GFARM_EVENT_READ|GFARM_EVENT_TIMEOUT, fd,
+	    GFARM_EVENT_READ|GFARM_EVENT_TIMEOUT, fd, NULL, NULL,
 	    secSessionInitiateReceiveAuthorizationAck, state);
 	if (state->readable != NULL) {
 	    /*

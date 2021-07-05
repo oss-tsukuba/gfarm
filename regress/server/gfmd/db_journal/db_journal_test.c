@@ -3619,7 +3619,7 @@ main(int argc, char **argv)
 	char *config  = getenv("GFARM_CONFIG_FILE");
 
 	debug_mode = 1;
-	e = gfarm_server_initialize(config, &argc, &argv);
+	e = gfarm_server_initialize_for_gfmd(config, &argc, &argv);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: gfarm_server_initialize: %s\n",
 		    argv[0], gfarm_error_string(e));

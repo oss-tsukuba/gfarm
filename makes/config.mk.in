@@ -119,6 +119,9 @@ postgresql_targets = @postgresql_targets@
 rdma_includes = @rdma_includes@
 rdma_libs = @rdma_libs@
 
+tls_srcs = @tls_srcs@
+tls_objs = @tls_objs@
+
 # build lib/gfs_hook/sysdep/$(gfs_hook_sysdep_subdir)
 gfs_hook_sysdep_subdir = @gfs_hook_sysdep_subdir@
 

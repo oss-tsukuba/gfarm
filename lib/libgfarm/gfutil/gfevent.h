@@ -15,7 +15,7 @@ struct gfarm_event;
 #define GFARM_EVENT_WRITE	4
 #define GFARM_EVENT_EXCEPTION	8
 
-struct gfarm_event *gfarm_fd_event_alloc(int, int,
+struct gfarm_event *gfarm_fd_event_alloc(int, int, int (*)(void *), void *,
 	void (*)(int, int, void *, const struct timeval *), void *);
 void gfarm_fd_event_set_callback(struct gfarm_event *,
 	void (*)(int, int, void *, const struct timeval *), void *);

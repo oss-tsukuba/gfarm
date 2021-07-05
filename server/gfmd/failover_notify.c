@@ -192,11 +192,11 @@ failover_notify_closure_alloc(struct host *h, int sock)
 		return (NULL);
 	}
 
-	if ((e = watcher_fd_readable_or_timeout_event_alloc(sock,
+	if ((e = watcher_socket_readable_or_timeout_event_alloc(sock,
 	    &fnc->result_event)) != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1004071,
 		    "failover_notify(%s): "
-		    "watcher_fd_readable_or_timeout_event_alloc: %s",
+		    "watcher_socket_readable_or_timeout_event_alloc: %s",
 		    host_name(h), gfarm_error_string(e));
 	} else {
 		fnc->fsnode = h;
