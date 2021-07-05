@@ -15,4 +15,5 @@ if [ ! -e $WORK/gfarm-s3-minio-web ]; then
 (cd $WORK/gfarm-s3-minio-web && git checkout develop)
 fi
 
+unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY
 (cd $WORK/gfarm-s3-minio-web/test && python3 test_s3.py)
