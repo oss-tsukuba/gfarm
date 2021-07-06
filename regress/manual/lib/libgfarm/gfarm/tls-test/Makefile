@@ -40,6 +40,7 @@ env: $(toolsdir)
 		-o $(envname) && \
 	sudo -u $${SUDO_USER} $(toolsdir)/test_data_permission_cert_store.sh \
 		-o $(envname)
+	sudo -u $${SUDO_USER} $(toolsdir)/test_data_proxy_cert.sh -o $(envname)
 	@echo
 	@echo
 	@echo "NOTE: In case following tests require a passphrase, " \
