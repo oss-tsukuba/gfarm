@@ -2242,6 +2242,9 @@ tls_session_destroy_ctx(tls_session_ctx_t x)
 		free(x->peer_dn_rfc2253_);
 		free(x->peer_dn_gsi_);
 		free(x->peer_cn_);
+		if (x->proxy_issuer_ != NULL) {
+			X509_NAME_free(x->proxy_issuer_);
+		}
 		if (x->ssl_ != NULL) {
 			SSL_free(x->ssl_);
 		}
