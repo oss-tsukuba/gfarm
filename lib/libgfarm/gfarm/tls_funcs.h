@@ -1551,9 +1551,18 @@ tls_verify_callback_body(int ok, X509_STORE_CTX *sctx)
 					 * issuer only for the first
 					 * proxy cert.
 					 */
+					ctx->is_got_proxy_cert_ = true;
 					ctx->proxy_issuer_ =
 						X509_NAME_dup(tmp);
-					ctx->is_got_proxy_cert_ = true;
+#ifdef PROXY_CERT_DEBUG
+					char b[4096];
+					char *bp = b;
+					get_peer_dn_gsi_ish(ctx->proxy_issuer_,
+							    &bp, sizeof(b));
+					gflog_error(GFARM_MSG_UNFIXED,
+						"DEBUG: got proxy: issure: "
+						"\"%s\"", b);
+#endif /* PROXY_CERT_DEBUG */
 				} else {
 					gflog_error(GFARM_MSG_UNFIXED,
 						"Can't acquire an issure name "
@@ -2588,11 +2597,11 @@ tls_session_verify(tls_session_ctx_t ctx, bool *is_verified)
 		ctx->peer_cn_ = NULL;
 		tls_runtime_flush_error();
 
-		if (likely((((p = SSL_get_peer_certificate(ssl)) != NULL) &&
-			((pn = X509_get_subject_name(p)) != NULL)) ||
-			((ctx->is_allow_proxy_cert_ == true &&
+		if (likely(((ctx->is_allow_proxy_cert_ == true &&
 			ctx->is_got_proxy_cert_ == true &&
-			(pn = ctx->proxy_issuer_) != NULL)))) {
+			(pn = ctx->proxy_issuer_) != NULL)) ||
+			(((p = SSL_get_peer_certificate(ssl)) != NULL) &&
+			((pn = X509_get_subject_name(p)) != NULL)))) {
 			char *dn_oneline = NULL;
 			char *dn_rfc2253 = NULL;
 			char *dn_gsi = NULL;
