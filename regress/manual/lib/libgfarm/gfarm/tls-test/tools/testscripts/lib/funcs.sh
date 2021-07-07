@@ -92,6 +92,37 @@ run_test() {
 	return ${_r}
 }
 
+run_test_for_single() {
+    test_id=$1
+    type=$2
+    cmd=$3
+    debug_flag=$4
+    expected_result_csv="`dirname $0`/expected-test-result.csv"
+
+    ${cmd} > /dev/null 2>&1
+    exitstatus=$?
+
+    if [ ${debug_flag} -eq 1 ]; then
+        echo "${type}:${exitstatus}"
+    fi
+    if [ "x${type}" = "xclient" ]; then
+        # client
+        column=3
+    else
+        # server
+        column=2
+    fi
+    expected_result=`grep -E "^${test_id}," ${expected_result_csv} | \
+                cut -d ',' -f${column}`
+    if [ "x${exitstatus}" = "x${expected_result}" ]; then
+        echo "${test_id}:   PASS"
+        return 0
+    fi
+
+    echo "${test_id}:   FAIL"
+    return 1
+}
+
 wait_server(){
 	while :
 	do
