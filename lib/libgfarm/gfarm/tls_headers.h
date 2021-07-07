@@ -35,6 +35,8 @@
 #include <openssl/rand.h>
 #include <openssl/err.h>
 #include <openssl/x509_vfy.h>
+#include <openssl/x509.h>
+#include <openssl/x509v3.h>
 #include <openssl/obj_mac.h>
 #include <openssl/objects.h>
 
@@ -218,7 +220,7 @@ struct tls_session_ctx_struct {
 	int cert_verify_result_error_;
 	bool is_build_chain_;
 	bool is_allow_no_crls_;
-	bool is_allow_gsi_proxy_cert_;
+	bool is_allow_proxy_cert_;
 	bool is_got_proxy_cert_;
 	size_t io_total_;		/* How many bytes transmitted */
 	size_t io_key_update_;		/* KeyUpdate water level (bytes) */
