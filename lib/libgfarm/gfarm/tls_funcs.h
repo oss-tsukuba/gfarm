@@ -1308,7 +1308,7 @@ done:
  */
 
 static inline gfarm_error_t
-get_peer_subjectdn(X509_NAME *pn, int mode, char **nameptr, int maxlen)
+get_peer_dn(X509_NAME *pn, int mode, char **nameptr, int maxlen)
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 	BIO *bio = BIO_new(BIO_s_mem());
@@ -1366,7 +1366,7 @@ get_peer_subjectdn(X509_NAME *pn, int mode, char **nameptr, int maxlen)
 }
 
 static inline gfarm_error_t
-get_peer_subjectdn_gsi_ish(X509_NAME *pn, char **nameptr, int maxlen)
+get_peer_dn_gsi_ish(X509_NAME *pn, char **nameptr, int maxlen)
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 
@@ -1377,7 +1377,7 @@ get_peer_subjectdn_gsi_ish(X509_NAME *pn, char **nameptr, int maxlen)
 
 #define DN_FORMAT_GLOBUS						\
 		(XN_FLAG_RFC2253 & ~(ASN1_STRFLGS_ESC_MSB|XN_FLAG_DN_REV))
-		ret = get_peer_subjectdn(pn, DN_FORMAT_GLOBUS,
+		ret = get_peer_dn(pn, DN_FORMAT_GLOBUS,
 				 &dn, sizeof(buf));
 #undef DN_FORMAT_GLOBUS			
 		if (likely(ret == GFARM_ERR_NO_ERROR &&
@@ -1518,24 +1518,91 @@ tls_verify_callback_body(int ok, X509_STORE_CTX *sctx)
 	int verr = X509_STORE_CTX_get_error(sctx);
 	int vdepth = X509_STORE_CTX_get_error_depth(sctx);
 	const char *verrstr = NULL;
+	X509 *p = X509_STORE_CTX_get_current_cert(sctx);
 
-	if (ctx->is_allow_no_crls_ == true &&
-		ok != 1 && verr == X509_V_ERR_UNABLE_TO_GET_CRL) {
-		X509_STORE_CTX_set_error(sctx, X509_V_OK);
-		verr = X509_V_OK;
-		ok = ret = 1;
+	if (likely(ok == 1)) {
+
+		/*
+		 * Here we can deny auth for our own purpose even it
+		 * is accpetable.
+		 */
+
+		/*
+		 * NOTE: The certs gonna coming here in order of top
+		 *	to bottom (root CA, ... some intermediate CAs,
+		 *	... EEC, proxy cert, proxy cert 1, ...)
+		 */
+
+		PROXY_CERT_INFO_EXTENSION *pci = NULL;
+
+		if (ctx->is_got_proxy_cert_ == false &&
+			(p != NULL &&
+			((X509_get_extension_flags(p) & EXFLAG_PROXY) != 0) &&
+			(pci = X509_get_ext_d2i(p, NID_proxyCertInfo,
+					NULL, NULL)) != NULL)) {
+			/*
+			 * got a proxy cert.
+			 */
+			if (ctx->is_allow_proxy_cert_ == true) {
+				X509_NAME *tmp = X509_get_issuer_name(p);
+				if (likely(tmp != NULL)) {
+					/*
+					 * Acquire X509_NAME of the
+					 * issuer only for the first
+					 * proxy cert.
+					 */
+					ctx->proxy_issuer_ =
+						X509_NAME_dup(tmp);
+					ctx->is_got_proxy_cert_ = true;
+				} else {
+					gflog_error(GFARM_MSG_UNFIXED,
+						"Can't acquire an issure name "
+						"of the proxy cert.");
+					/* make the auth failure. */
+					ok = ret = 0;
+					verr = X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT;
+					X509_STORE_CTX_set_error(sctx, verr);
+				}
+			} else {
+				/*
+				 * Must not happen.
+				 */
+				gflog_warning(GFARM_MSG_UNFIXED,
+					"Something wrong: got a proxy cert "
+					"and it's authorized by the verify "
+					"flags, but Gfarm itself doesn't "
+					"allow the internal proxy use??");
+			}
+			goto done;
+		}
+	} else {
+
+		/*
+		 * Here we can accept auth for our own purpose even it
+		 * must be denied.
+		 */
+
+		if (ctx->is_allow_no_crls_ == true &&
+			verr == X509_V_ERR_UNABLE_TO_GET_CRL) {
+			/* CRL error recovery */
+			X509_STORE_CTX_set_error(sctx, X509_V_OK);
+			verr = X509_V_OK;
+			ok = ret = 1;
+			goto done;
+		}
 	}
 
+done:
 	verrstr = X509_verify_cert_error_string(verr);
+	ctx->cert_verify_callback_error_ = verr;
 
 	if (gflog_get_priority_level() >= LOG_DEBUG) {
 		char dnbuf[4096];
 		char *dn = dnbuf;
-		X509 *p = X509_STORE_CTX_get_current_cert(sctx);
 		X509_NAME *pn = (p != NULL) ? X509_get_subject_name(p) : NULL;
 
 		if (pn != NULL &&
-			get_peer_subjectdn_gsi_ish(pn, &dn, sizeof(dnbuf)) ==
+			get_peer_dn_gsi_ish(pn, &dn, sizeof(dnbuf)) ==
 			GFARM_ERR_NO_ERROR) {
 			dn = dnbuf;
 		} else {
@@ -1547,8 +1614,6 @@ tls_verify_callback_body(int ok, X509_STORE_CTX *sctx)
 				vdepth, ok, dn, verr, verrstr);
 		}
 	}
-
-	ctx->cert_verify_callback_error_ = verr;
 	
 	return (ret);
 }
@@ -2185,7 +2250,7 @@ runtime_init:
 		/* no domain check */
 		ctxret->is_build_chain_ = is_build_chain;
 		ctxret->is_allow_no_crls_ = gfarm_ctxp->tls_allow_no_crl;
-		ctxret->is_allow_gsi_proxy_cert_ = (role == TLS_ROLE_SERVER) ?
+		ctxret->is_allow_proxy_cert_ = (role == TLS_ROLE_SERVER) ?
 			use_proxy_cert : do_proxy_auth;
 		ctxret->cert_file_ = cert_file;
 		ctxret->cert_chain_file_ = cert_chain_file;
@@ -2242,6 +2307,9 @@ tls_session_destroy_ctx(tls_session_ctx_t x)
 		free(x->peer_dn_rfc2253_);
 		free(x->peer_dn_gsi_);
 		free(x->peer_cn_);
+		if (x->proxy_issuer_ != NULL) {
+			X509_NAME_free(x->proxy_issuer_);
+		}
 		if (x->ssl_ != NULL) {
 			SSL_free(x->ssl_);
 		}
@@ -2519,8 +2587,12 @@ tls_session_verify(tls_session_ctx_t ctx, bool *is_verified)
 		ctx->peer_dn_gsi_ = NULL;
 		ctx->peer_cn_ = NULL;
 		tls_runtime_flush_error();
-		if (likely(((p = SSL_get_peer_certificate(ssl)) != NULL) &&
-			((pn = X509_get_subject_name(p)) != NULL))) {
+
+		if (likely((((p = SSL_get_peer_certificate(ssl)) != NULL) &&
+			((pn = X509_get_subject_name(p)) != NULL)) ||
+			((ctx->is_allow_proxy_cert_ == true &&
+			ctx->is_got_proxy_cert_ == true &&
+			(pn = ctx->proxy_issuer_) != NULL)))) {
 			char *dn_oneline = NULL;
 			char *dn_rfc2253 = NULL;
 			char *dn_gsi = NULL;
@@ -2530,25 +2602,25 @@ tls_session_verify(tls_session_ctx_t ctx, bool *is_verified)
 
 #define DN_FORMAT_ONELINE	(XN_FLAG_ONELINE & ~ASN1_STRFLGS_ESC_MSB)
 #define DN_FORMAT_RFC2253	(XN_FLAG_RFC2253 & ~ASN1_STRFLGS_ESC_MSB)
-			if (likely((ret = get_peer_subjectdn(pn,
+			if (likely((ret = get_peer_dn(pn,
 						DN_FORMAT_ONELINE,
 						&dn_oneline, 0)) ==
 				GFARM_ERR_NO_ERROR)) {
 				ctx->peer_dn_oneline_ = dn_oneline;
 			}
-			if (likely((ret = get_peer_subjectdn(pn,
+			if (likely((ret = get_peer_dn(pn,
 						DN_FORMAT_RFC2253,
 						&dn_rfc2253, 0)) ==
 				GFARM_ERR_NO_ERROR)) {
 				ctx->peer_dn_rfc2253_ = dn_rfc2253;
 			}
-			if (likely((ret = get_peer_subjectdn_gsi_ish(pn,
+			if (likely((ret = get_peer_dn_gsi_ish(pn,
 						&dn_gsi, 0)) ==
 				GFARM_ERR_NO_ERROR)) {
 				ctx->peer_dn_gsi_ = dn_gsi;
 			}
 			if (likely((ret = get_peer_cn(pn, &cn, 0,
-						ctx->is_allow_gsi_proxy_cert_))
+						ctx->is_allow_proxy_cert_))
 				   == GFARM_ERR_NO_ERROR)) {
 				ctx->peer_cn_ = cn;
 			}
@@ -2709,7 +2781,11 @@ tls_session_establish(tls_session_ctx_t ctx, int fd)
 			if (is_valid_string(ctx->peer_dn_oneline_) == true) {
 				gflog_tls_notice(GFARM_MSG_UNFIXED,
 					"Authentication failed between peer: "
-					"'%s'", ctx->peer_cn_);
+					"'%s' with %s.",
+					ctx->peer_cn_,
+					(ctx->is_got_proxy_cert_ == true) ?
+						 "proxy certificate" :
+						 "end-entity certificate");
 			} else {
 				gflog_tls_notice(GFARM_MSG_UNFIXED,
 					"Authentication failed "

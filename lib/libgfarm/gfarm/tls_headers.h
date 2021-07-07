@@ -35,6 +35,8 @@
 #include <openssl/rand.h>
 #include <openssl/err.h>
 #include <openssl/x509_vfy.h>
+#include <openssl/x509.h>
+#include <openssl/x509v3.h>
 #include <openssl/obj_mac.h>
 #include <openssl/objects.h>
 
@@ -218,19 +220,21 @@ struct tls_session_ctx_struct {
 	int cert_verify_result_error_;
 	bool is_build_chain_;
 	bool is_allow_no_crls_;
-	bool is_allow_gsi_proxy_cert_;
-	size_t io_total_;	/* How many bytes transmitted */
-	size_t io_key_update_;	/* KeyUpdate water level (bytes) */
-	ssize_t keyupd_thresh_;	/* KeyUpdate threshold (bytes) */
+	bool is_allow_proxy_cert_;
+	bool is_got_proxy_cert_;
+	size_t io_total_;		/* How many bytes transmitted */
+	size_t io_key_update_;		/* KeyUpdate water level (bytes) */
+	ssize_t keyupd_thresh_;		/* KeyUpdate threshold (bytes) */
 
-	SSL_CTX *ssl_ctx_;	/* API alloc'd */
+	SSL_CTX *ssl_ctx_;		/* API alloc'd */
 	STACK_OF(X509_NAME) *trusted_certs_;
-				/* API alloc'd */
-	EVP_PKEY *prvkey_;	/* API alloc'd */
-	char *peer_dn_oneline_;	/* malloc'd */
-	char *peer_dn_rfc2253_;	/* malloc'd */
-	char *peer_dn_gsi_;	/* malloc'd */
-	char *peer_cn_;		/* malloc'd */
+					/* API alloc'd */
+	EVP_PKEY *prvkey_;		/* API alloc'd */
+	X509_NAME *proxy_issuer_;	/* API alloc'd */
+	char *peer_dn_oneline_;		/* malloc'd */
+	char *peer_dn_rfc2253_;		/* malloc'd */
+	char *peer_dn_gsi_;		/* malloc'd */
+	char *peer_cn_;			/* malloc'd */
 
 	/*
 	 * gfarm_ctxp contents backup
