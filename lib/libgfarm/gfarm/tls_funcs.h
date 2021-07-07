@@ -2784,8 +2784,8 @@ tls_session_establish(tls_session_ctx_t ctx, int fd)
 					"'%s' with %s.",
 					ctx->peer_cn_,
 					(ctx->is_got_proxy_cert_ == true) ?
-						 "proxy certificate" :
-						 "end-entity certificate");
+						"proxy certificate" :
+						"end-entity certificate");
 			} else {
 				gflog_tls_notice(GFARM_MSG_UNFIXED,
 					"Authentication failed "
@@ -2797,12 +2797,15 @@ tls_session_establish(tls_session_ctx_t ctx, int fd)
 			gflog_auth_get_verbose()) {
 			gflog_tls_debug(GFARM_MSG_UNFIXED,
 				"Authentication between \"%s\" %s and a "
-				"TLS session %s.",
+				"TLS session %s with %s.",
 				ctx->peer_dn_gsi_,
 				(is_verified == true) ?
-					 "verified" : "not verified",
+					"verified" : "not verified",
 				(is_verified == true) ?
-					 "established" : "not established");
+					"established" : "not established",
+				(ctx->is_got_proxy_cert_ == true) ?
+					"proxy certificate" :
+					"end-entity certificate");
 			gflog_tls_debug(GFARM_MSG_UNFIXED,
 				"peer CN \"%s\"", tls_session_peer_cn(ctx));
 		}
