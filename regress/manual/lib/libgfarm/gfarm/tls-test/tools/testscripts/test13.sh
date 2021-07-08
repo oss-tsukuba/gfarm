@@ -368,7 +368,7 @@ test_13_10() {
         --build_chain \
         --debug_level 1 \
         --mutual_authentication" \
-        "X509_USER_PROXY=${ENV_DIR}//A/client_under_root/client_cat_all.crt \
+        "X509_USER_PROXY=${ENV_DIR}/A/client_under_root/client_cat_all.crt \
         ${TOP_DIR}/tls-test \
         --once \
         --verify_only \
