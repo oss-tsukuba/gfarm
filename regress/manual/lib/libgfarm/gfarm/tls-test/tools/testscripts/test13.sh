@@ -41,7 +41,7 @@ trap "cleanup" 1 2 3 15
 
 # 13-1
 test_13_1() {
-    run_test_for_single "13-1" "client" \
+    run_test_for_client "13-1" \
         "${TOP_DIR}/tls-test \
         --once \
         --verify_only \
@@ -214,7 +214,7 @@ test_13_6() {
 test_13_7() {
     copy_tmp_cert ${ENV_DIR}/A/client_under_root/client_cat_all_bad_permissions.crt
 
-    run_test_for_single "13-7" "client" \
+    run_test_for_client "13-7" \
         "${TOP_DIR}/tls-test \
         --once \
         --verify_only \

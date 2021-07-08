@@ -135,7 +135,7 @@ run_test() {
 	return ${_r}
 }
 
-# run tests for single
+# run tests for single.
 #
 # params:
 #   test_id:    Test ID.
@@ -148,8 +148,8 @@ run_test() {
 #   1: Test failed.
 #
 run_test_for_single() {
-    test_id=$1
-    type=$2
+    type=$1
+    test_id=$2
     cmd=$3
     debug_flag=$4
     expected_result_csv="`dirname $0`/expected-test-result.csv"
@@ -176,6 +176,38 @@ run_test_for_single() {
 
     echo "${test_id}:   FAIL"
     return 1
+}
+
+# run tests for client.
+#
+# params:
+#   test_id:    Test ID.
+#   cmd:        Command to execute.
+#   debug_flag: Debug flag.
+#
+# return:
+#   0: Test succeeded.
+#   1: Test failed.
+#
+run_test_for_client() {
+    run_test_for_single "client" "$@"
+    return $?
+}
+
+# run tests for server.
+#
+# params:
+#   test_id:    Test ID.
+#   cmd:        Command to execute.
+#   debug_flag: Debug flag.
+#
+# return:
+#   0: Test succeeded.
+#   1: Test failed.
+#
+run_test_for_server() {
+    run_test_for_single "server" "$@"
+    return $?
 }
 
 wait_server(){
