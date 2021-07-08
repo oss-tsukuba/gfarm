@@ -118,7 +118,7 @@ ${TOP_DIR}/tls-test -s --allow_no_crl --mutual_authentication \
 --tls_key_file ${ENV_DIR}/A/server/server.key \
 --tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
 --tls_ca_revocation_path ${ENV_DIR}/B/crls/client/root_bad_permissions \
---once > ${logfile} 2>&1; \
+--once --debug_level 1 > ${logfile} 2>&1; \
 echo \$? > ${s_exit_file}; sync" &
 server_pid=$!
 while :
@@ -282,6 +282,7 @@ if [ ${server_fail_flag} -ne 1 ]; then
 	--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
 	--tls_ca_revocation_path \
 		${ENV_DIR}/A/crls/server/root_bad_permissions \
+	--debug_level 1 \
 	> ${logfile} 2>&1
 	client_exitstatus=$?
 
