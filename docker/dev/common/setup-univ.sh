@@ -53,8 +53,11 @@ if [ ! -s $VARADMWTMP ]; then  # not exist or size is zero
     mkdir -p $VARADM && head -1000 /dev/urandom >> $VARADMWTMP
 fi
 if [ ! -s $VARLOGMESSAGES ]; then
-    cat $VARADMWTMP >> $VARLOGMESSAGES
+    date >> $VARLOGMESSAGES
 fi
+
+# readable from users for grid-cert-request
+chmod go+r $VARLOGMESSAGES
 
 grid-ca-create -pass "$ca_key_pass" -noint \
   -subject 'cn=GlobusSimpleCA,ou=GlobusTest,o=Grid'
