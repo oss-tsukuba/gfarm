@@ -433,6 +433,12 @@ centos7:
 centos8:
 	$(DOCKER) run -it --rm 'centos:8' bash
 
+rockylinux8:
+	$(DOCKER) run -it --rm 'rockylinux/rockylinux:8' bash
+
+almalinux8:
+	$(DOCKER) run -it --rm 'almalinux:8' bash
+
 centos8stream:
 	$(DOCKER) run -it --rm 'quay.io/centos/centos:stream8' bash
 
