@@ -44,8 +44,8 @@ RUN yum -y update \
     man man-pages man-db which \
     nano emacs-nox less
 
-RUN yum -y update \
-    && yum debuginfo-install -y --enablerepo=debuginfo \
+RUN yum install 'dnf-command(debuginfo-install)' \
+    && dnf debuginfo-install -y \
     fuse-libs
 
 RUN sed -i 's@^Defaults    secure_path = /sbin:/bin:/usr/sbin:/usr/bin$@Defaults    secure_path = /usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin@' /etc/sudoers
