@@ -135,6 +135,18 @@ run_test() {
 	return ${_r}
 }
 
+# run tests for single
+#
+# params:
+#   test_id:    Test ID.
+#   type:       Type of target (client or server).
+#   cmd:        Command to execute.
+#   debug_flag: Debug flag.
+#
+# return:
+#   0: Test succeeded.
+#   1: Test failed.
+#
 run_test_for_single() {
     test_id=$1
     type=$2
