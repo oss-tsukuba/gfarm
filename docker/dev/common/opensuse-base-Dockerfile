@@ -7,6 +7,7 @@ ENV TZ=Asia/Tokyo
 RUN zypper install -y \
     sudo \
     openssh \
+    rsyslog \
     systemd-sysvinit \
     patch \
     rpm-build \

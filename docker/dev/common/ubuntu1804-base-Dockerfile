@@ -16,6 +16,7 @@ RUN apt-get update \
     sudo \
     openssh-server \
     rsync \
+    rsyslog \
     build-essential \
     libssl-dev \
     libldap2-dev \
