@@ -58,7 +58,8 @@ if [ ${exec_test_num} -ne 0 \
 	-a ${exec_test_num} -ne 9 \
 	-a ${exec_test_num} -ne 10 \
 	-a ${exec_test_num} -ne 11 \
-	-a ${exec_test_num} -ne 12 ]; then
+	-a ${exec_test_num} -ne 12 \
+	-a ${exec_test_num} -ne 13 ]; then
 		puts_error "wrong argument."
 		exit 1
 fi
@@ -210,6 +211,21 @@ if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 12 ]; then
 	if [ ${test12_fail_num} -ne 0 ]; then
 		fail_flag=1
 		total_fail_num=`expr ${total_fail_num} + ${test12_fail_num}`
+	fi
+fi
+
+# test 13
+if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 13 ]; then
+	if [ ${debug_flag} -eq 1 ]; then
+		${TOP_DIR}/test13.sh -d
+		test13_fail_num=$?
+	else
+		${TOP_DIR}/test13.sh
+		test13_fail_num=$?
+	fi
+	if [ ${test13_fail_num} -ne 0 ]; then
+		fail_flag=1
+		total_fail_num=`expr ${total_fail_num} + ${test13_fail_num}`
 	fi
 fi
 
