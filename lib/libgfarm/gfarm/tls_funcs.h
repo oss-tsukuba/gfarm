@@ -603,6 +603,7 @@ tls_runtime_init_once_body(void)
 	}
 }
 
+
 static inline gfarm_error_t
 tls_session_runtime_initialize(void)
 {
@@ -614,7 +615,6 @@ tls_session_runtime_initialize(void)
 /*
  * TLS runtime error handling
  */
-
 static inline bool
 tls_has_runtime_error(void)
 {
@@ -628,9 +628,211 @@ tls_runtime_flush_error(void)
 }
 
 /*
+ * X509_NAME to string
+ */
+static inline gfarm_error_t
+get_peer_dn(X509_NAME *pn, int mode, char **nameptr, int maxlen)
+{
+	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
+	BIO *bio = BIO_new(BIO_s_mem());
+
+	if (likely(pn != NULL && nameptr != NULL && bio != NULL)) {
+		int len = 0;
+		char *buf = NULL;
+
+		(void)X509_NAME_print_ex(bio, pn, 0, mode);
+		len = BIO_pending(bio);
+
+		if (*nameptr != NULL && maxlen > 0) {
+			buf = *nameptr;
+			len = (maxlen > len) ? len : maxlen - 1;
+		} else {
+			*nameptr = NULL;
+			buf = (char *)malloc(len + 1);
+		}
+		if (likely(len > 0 && buf != NULL)) {
+			(void)BIO_read(bio, buf, len);
+			buf[len] = '\0';
+			ret = GFARM_ERR_NO_ERROR;
+			if (*nameptr != NULL) {
+				*nameptr = buf;
+			}
+			*nameptr = buf;
+		} else {
+			if (buf == NULL && len > 0) {
+				ret = GFARM_ERR_NO_MEMORY;
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"Can't allocate a %d bytes buffer for "
+					"a peer SubjectDN.", len);
+			} else if (len <= 0) {
+				ret = GFARM_ERR_INTERNAL_ERROR;
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"Failed to acquire a length of peer "
+					"SubjectDN.");
+			}
+		}
+	} else {
+		if (bio == NULL) {
+			ret = GFARM_ERR_NO_MEMORY;
+			gflog_tls_error(GFARM_MSG_UNFIXED,
+				"Can't allocate a BIO.");
+		} else {
+			ret = GFARM_ERR_INVALID_ARGUMENT;
+		}
+	}
+
+	if (bio != NULL) {
+		BIO_free(bio);
+	}
+
+	return (ret);
+}
+
+static inline gfarm_error_t
+get_peer_dn_gsi_ish(X509_NAME *pn, char **nameptr, int maxlen)
+{
+	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
+
+	if (likely(pn != NULL && nameptr != NULL)) {
+		char buf[4096];
+		char *dn = buf;
+		char *cnp = NULL;
+
+#define DN_FORMAT_GLOBUS						\
+		(XN_FLAG_RFC2253 & ~(ASN1_STRFLGS_ESC_MSB|XN_FLAG_DN_REV))
+		ret = get_peer_dn(pn, DN_FORMAT_GLOBUS,
+				 &dn, sizeof(buf));
+#undef DN_FORMAT_GLOBUS			
+		if (likely(ret == GFARM_ERR_NO_ERROR &&
+				(cnp = (char *)memmem(buf, sizeof(buf),
+						"CN=", 3)) != NULL &&
+				*(cnp += 3) != '\0')) {
+			char result[4096];
+			char *r = result;
+			char *d = buf;
+
+			*r++ = '/';
+			do {
+				switch (*d) {
+				case '/':
+					if (likely(r < cnp)) {
+						*r++ = '\\';
+					}
+					*r++ = *d++;
+					break;
+				case ',':
+					*r++ = '/';
+					d++;
+					break;
+				case '\\':
+					if (d[1] == ',')
+						d++;
+					/*FALLTHROUGH*/
+				default:
+					*r++ = *d++;
+					break;
+				}
+			} while (*d != '\0' &&
+				r < (&result[0] + sizeof(result)));
+			result[r - &result[0]] = '\0';
+
+			if (*nameptr != NULL && maxlen > 0) {
+				snprintf(*nameptr, maxlen, "%s", result);
+				ret = GFARM_ERR_NO_ERROR;
+			} else {
+				char *dn = strdup(result);
+
+				if (likely(dn != NULL)) {
+					ret = GFARM_ERR_NO_ERROR;
+					*nameptr = dn;
+				} else {
+					ret = GFARM_ERR_NO_MEMORY;
+					gflog_tls_error(GFARM_MSG_UNFIXED,
+						"Can't allocate a buffer for "
+						"a GSI-compat SubjectDN.");
+				}
+			}
+		} else {
+			if (unlikely(ret == GFARM_ERR_NO_ERROR &&
+					cnp == NULL)) {
+				ret = GFARM_ERR_INVALID_CREDENTIAL;
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"A SubjectDN \"%s\" has no CN.", buf);
+			}
+		}
+	} else {
+		ret = GFARM_ERR_INVALID_ARGUMENT;
+	}
+
+	return (ret);
+}
+
+static inline gfarm_error_t
+get_peer_cn(X509_NAME *pn, char **nameptr, int maxlen, bool allow_many_cn)
+{
+	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
+
+	if (likely(pn != NULL && nameptr != NULL)) {
+		int pos = -1;
+		int pos2 = -1;
+		X509_NAME_ENTRY *ne = NULL;
+		ASN1_STRING *as = NULL;
+
+		/*
+		 * Assumption: pn has only one CN.
+		 */
+		pos = X509_NAME_get_index_by_NID(pn, NID_commonName, pos);
+		pos2 = X509_NAME_get_index_by_NID(pn, NID_commonName, pos);
+		if (likely(((allow_many_cn == true && pos != -1) ||
+			((pos != -1 && pos != -2) &&
+			(pos2 == -1 || pos2 == -2))) &&
+			(ne = X509_NAME_get_entry(pn, pos)) != NULL &&
+			(as = X509_NAME_ENTRY_get_data(ne)) != NULL)) {
+			unsigned char *u8 = NULL;
+			int u8len = ASN1_STRING_to_UTF8(&u8, as);
+			char *cn = NULL;
+
+			if (likely(u8len > 0)) {
+				if (*nameptr != NULL && maxlen > 0) {
+					snprintf(*nameptr, maxlen, "%s", u8);
+					ret = GFARM_ERR_NO_ERROR;
+				} else {
+					cn = strdup((char *)u8);
+					if (likely(cn != NULL)) {
+						ret = GFARM_ERR_NO_ERROR;
+						*nameptr = cn;
+					} else {
+						ret = GFARM_ERR_NO_MEMORY;
+						gflog_tls_error(
+							GFARM_MSG_UNFIXED,
+							"Can't allocate a "
+							"buffer for a CN.");
+						*nameptr = NULL;
+					}
+				}
+			}
+			if (u8 != NULL) {
+				OPENSSL_free(u8);
+			}
+		} else if (pos >= 0 && pos2 >= 0) {
+			ret = GFARM_ERR_INVALID_CREDENTIAL;
+			gflog_tls_notice(GFARM_MSG_UNFIXED,
+				"More than one CNs are included.");
+		} else if (pos == -1 || pos == -2) {
+			ret = GFARM_ERR_INVALID_CREDENTIAL;
+			gflog_tls_notice(GFARM_MSG_UNFIXED,
+				"No CN is included.");
+		}
+	} else {
+		ret = GFARM_ERR_INVALID_ARGUMENT;
+	}
+
+	return (ret);
+}
+
+/*
  * Private key loader
  */
-
 static inline int
 tty_passwd_callback_body(char *buf, int maxlen, int rwflag, void *u)
 {
@@ -1078,6 +1280,98 @@ done:
 }
 
 /*
+ * Add cert(s) from a file into SSL_CTX
+ */
+static inline gfarm_error_t
+tls_add_certs(SSL_CTX *ssl_ctx, const char *file, int *n_added)
+{
+	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
+	FILE *fd = NULL;
+	int osst = -INT_MAX;
+
+	errno = 0;
+	tls_runtime_flush_error();
+	if (likely(ssl_ctx != NULL && is_valid_string(file) == true &&
+		   ((osst = SSL_CTX_set_current_cert(ssl_ctx,
+				SSL_CERT_SET_FIRST)) == 1) &&
+		   ((fd = fopen(file, "r")) != NULL))) {
+		X509 *x = NULL;
+		X509_NAME *xn = NULL;
+		int n_certs = 0;
+		bool got_failure = false;
+		char b[4096];
+		char *bp = b;
+		bool do_dbg_msg = (gflog_get_priority_level() >= LOG_DEBUG) ?
+			true : false;
+
+		if (n_added != NULL) {
+			*n_added = 0;
+		}
+
+		while ((x = PEM_read_X509(fd, NULL, NULL, NULL)) != NULL &&
+			got_failure == false) {
+			tls_runtime_flush_error();
+			osst = SSL_CTX_add0_chain_cert(ssl_ctx, x);
+			if (likely(osst == 1)) {
+				n_certs++;
+				if (unlikely((do_dbg_msg == true) &&
+					(xn = X509_get_subject_name(x)) !=
+					NULL)) {
+					get_peer_dn_gsi_ish(xn,
+						&bp, sizeof(b));
+					gflog_tls_debug(GFARM_MSG_UNFIXED,
+						"Add a cert \"%s\" from %s.",
+						b, file);
+				}
+			} else {
+				got_failure = true;
+				xn = X509_get_subject_name(x);
+				if (xn != NULL) {
+					get_peer_dn_gsi_ish(xn,
+						&bp, sizeof(b));
+					gflog_tls_error(GFARM_MSG_UNFIXED,
+						"Can't add a cert \"%s\" "
+						"from %s.", b, file);
+				} else {
+					gflog_tls_error(GFARM_MSG_UNFIXED,
+						"Can't add a cert from %s.",
+						file);
+				}
+			}
+		}
+		if (likely(got_failure == false)) {
+			ret = GFARM_ERR_NO_ERROR;
+			if (n_added != NULL) {
+				*n_added = n_certs;
+			}
+			if (n_certs == 0) {
+				gflog_tls_warning(GFARM_MSG_UNFIXED,
+					"No cert is added from %s.", file);
+						  
+			}
+		} else {
+			ret = GFARM_ERR_TLS_RUNTIME_ERROR;
+			/* GFARM_ERR_INVALID_CREDENTIAL ??*/
+		}
+	} else {
+		if (osst == -INT_MAX && fd == NULL) {
+			ret = GFARM_ERR_INVALID_ARGUMENT;
+		} else if (osst != -INT_MAX && fd == NULL) {
+			ret = GFARM_ERR_TLS_RUNTIME_ERROR;
+			gflog_tls_error(GFARM_MSG_UNFIXED,
+				"Failed to set the current cert.");
+		} else if (fd == NULL) {
+			ret = gfarm_errno_to_error(errno);
+			gflog_tls_error(GFARM_MSG_UNFIXED,
+				"Can't open %s: %s.",
+				file, gfarm_error_string(ret));
+		}
+	}
+			
+	return (ret);
+}
+
+/*
  * Load both cert file and cert chain file
  */
 static inline gfarm_error_t
@@ -1332,206 +1626,6 @@ done:
  * Certificate verification callback
  */
 
-static inline gfarm_error_t
-get_peer_dn(X509_NAME *pn, int mode, char **nameptr, int maxlen)
-{
-	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
-	BIO *bio = BIO_new(BIO_s_mem());
-
-	if (likely(pn != NULL && nameptr != NULL && bio != NULL)) {
-		int len = 0;
-		char *buf = NULL;
-
-		(void)X509_NAME_print_ex(bio, pn, 0, mode);
-		len = BIO_pending(bio);
-
-		if (*nameptr != NULL && maxlen > 0) {
-			buf = *nameptr;
-			len = (maxlen > len) ? len : maxlen - 1;
-		} else {
-			*nameptr = NULL;
-			buf = (char *)malloc(len + 1);
-		}
-		if (likely(len > 0 && buf != NULL)) {
-			(void)BIO_read(bio, buf, len);
-			buf[len] = '\0';
-			ret = GFARM_ERR_NO_ERROR;
-			if (*nameptr != NULL) {
-				*nameptr = buf;
-			}
-			*nameptr = buf;
-		} else {
-			if (buf == NULL && len > 0) {
-				ret = GFARM_ERR_NO_MEMORY;
-				gflog_tls_error(GFARM_MSG_UNFIXED,
-					"Can't allocate a %d bytes buffer for "
-					"a peer SubjectDN.", len);
-			} else if (len <= 0) {
-				ret = GFARM_ERR_INTERNAL_ERROR;
-				gflog_tls_error(GFARM_MSG_UNFIXED,
-					"Failed to acquire a length of peer "
-					"SubjectDN.");
-			}
-		}
-	} else {
-		if (bio == NULL) {
-			ret = GFARM_ERR_NO_MEMORY;
-			gflog_tls_error(GFARM_MSG_UNFIXED,
-				"Can't allocate a BIO.");
-		} else {
-			ret = GFARM_ERR_INVALID_ARGUMENT;
-		}
-	}
-
-	if (bio != NULL) {
-		BIO_free(bio);
-	}
-
-	return (ret);
-}
-
-static inline gfarm_error_t
-get_peer_dn_gsi_ish(X509_NAME *pn, char **nameptr, int maxlen)
-{
-	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
-
-	if (likely(pn != NULL && nameptr != NULL)) {
-		char buf[4096];
-		char *dn = buf;
-		char *cnp = NULL;
-
-#define DN_FORMAT_GLOBUS						\
-		(XN_FLAG_RFC2253 & ~(ASN1_STRFLGS_ESC_MSB|XN_FLAG_DN_REV))
-		ret = get_peer_dn(pn, DN_FORMAT_GLOBUS,
-				 &dn, sizeof(buf));
-#undef DN_FORMAT_GLOBUS			
-		if (likely(ret == GFARM_ERR_NO_ERROR &&
-				(cnp = (char *)memmem(buf, sizeof(buf),
-						"CN=", 3)) != NULL &&
-				*(cnp += 3) != '\0')) {
-			char result[4096];
-			char *r = result;
-			char *d = buf;
-
-			*r++ = '/';
-			do {
-				switch (*d) {
-				case '/':
-					if (likely(r < cnp)) {
-						*r++ = '\\';
-					}
-					*r++ = *d++;
-					break;
-				case ',':
-					*r++ = '/';
-					d++;
-					break;
-				case '\\':
-					if (d[1] == ',')
-						d++;
-					/*FALLTHROUGH*/
-				default:
-					*r++ = *d++;
-					break;
-				}
-			} while (*d != '\0' &&
-				r < (&result[0] + sizeof(result)));
-			result[r - &result[0]] = '\0';
-
-			if (*nameptr != NULL && maxlen > 0) {
-				snprintf(*nameptr, maxlen, "%s", result);
-				ret = GFARM_ERR_NO_ERROR;
-			} else {
-				char *dn = strdup(result);
-
-				if (likely(dn != NULL)) {
-					ret = GFARM_ERR_NO_ERROR;
-					*nameptr = dn;
-				} else {
-					ret = GFARM_ERR_NO_MEMORY;
-					gflog_tls_error(GFARM_MSG_UNFIXED,
-						"Can't allocate a buffer for "
-						"a GSI-compat SubjectDN.");
-				}
-			}
-		} else {
-			if (unlikely(ret == GFARM_ERR_NO_ERROR &&
-					cnp == NULL)) {
-				ret = GFARM_ERR_INVALID_CREDENTIAL;
-				gflog_tls_error(GFARM_MSG_UNFIXED,
-					"A SubjectDN \"%s\" has no CN.", buf);
-			}
-		}
-	} else {
-		ret = GFARM_ERR_INVALID_ARGUMENT;
-	}
-
-	return (ret);
-}
-
-static inline gfarm_error_t
-get_peer_cn(X509_NAME *pn, char **nameptr, int maxlen, bool allow_many_cn)
-{
-	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
-
-	if (likely(pn != NULL && nameptr != NULL)) {
-		int pos = -1;
-		int pos2 = -1;
-		X509_NAME_ENTRY *ne = NULL;
-		ASN1_STRING *as = NULL;
-
-		/*
-		 * Assumption: pn has only one CN.
-		 */
-		pos = X509_NAME_get_index_by_NID(pn, NID_commonName, pos);
-		pos2 = X509_NAME_get_index_by_NID(pn, NID_commonName, pos);
-		if (likely(((allow_many_cn == true && pos != -1) ||
-			((pos != -1 && pos != -2) &&
-			(pos2 == -1 || pos2 == -2))) &&
-			(ne = X509_NAME_get_entry(pn, pos)) != NULL &&
-			(as = X509_NAME_ENTRY_get_data(ne)) != NULL)) {
-			unsigned char *u8 = NULL;
-			int u8len = ASN1_STRING_to_UTF8(&u8, as);
-			char *cn = NULL;
-
-			if (likely(u8len > 0)) {
-				if (*nameptr != NULL && maxlen > 0) {
-					snprintf(*nameptr, maxlen, "%s", u8);
-					ret = GFARM_ERR_NO_ERROR;
-				} else {
-					cn = strdup((char *)u8);
-					if (likely(cn != NULL)) {
-						ret = GFARM_ERR_NO_ERROR;
-						*nameptr = cn;
-					} else {
-						ret = GFARM_ERR_NO_MEMORY;
-						gflog_tls_error(
-							GFARM_MSG_UNFIXED,
-							"Can't allocate a "
-							"buffer for a CN.");
-						*nameptr = NULL;
-					}
-				}
-			}
-			if (u8 != NULL) {
-				OPENSSL_free(u8);
-			}
-		} else if (pos >= 0 && pos2 >= 0) {
-			ret = GFARM_ERR_INVALID_CREDENTIAL;
-			gflog_tls_notice(GFARM_MSG_UNFIXED,
-				"More than one CNs are included.");
-		} else if (pos == -1 || pos == -2) {
-			ret = GFARM_ERR_INVALID_CREDENTIAL;
-			gflog_tls_notice(GFARM_MSG_UNFIXED,
-				"No CN is included.");
-		}
-	} else {
-		ret = GFARM_ERR_INVALID_ARGUMENT;
-	}
-
-	return (ret);
-}
-
 static inline int
 tls_verify_callback_body(int ok, X509_STORE_CTX *sctx)
 {
@@ -1543,8 +1637,10 @@ tls_verify_callback_body(int ok, X509_STORE_CTX *sctx)
 	int verr = X509_STORE_CTX_get_error(sctx);
 	int vdepth = X509_STORE_CTX_get_error_depth(sctx);
 	const char *verrstr = NULL;
+	bool do_dbg_msg = (gflog_get_priority_level() >= LOG_DEBUG) ?
+		true : false;
 	X509 *p = X509_STORE_CTX_get_current_cert(sctx);
-
+	
 	if (likely(ok == 1)) {
 
 		/*
@@ -1579,15 +1675,17 @@ tls_verify_callback_body(int ok, X509_STORE_CTX *sctx)
 					ctx->is_got_proxy_cert_ = true;
 					ctx->proxy_issuer_ =
 						X509_NAME_dup(tmp);
-#ifdef PROXY_CERT_DEBUG
-					char b[4096];
-					char *bp = b;
-					get_peer_dn_gsi_ish(ctx->proxy_issuer_,
-							    &bp, sizeof(b));
-					gflog_tls_error(GFARM_MSG_UNFIXED,
-						"DEBUG: got proxy: issure: "
-						"\"%s\"", b);
-#endif /* PROXY_CERT_DEBUG */
+					if (do_dbg_msg == true) {
+						char b[4096];
+						char *bp = b;
+						get_peer_dn_gsi_ish(
+							ctx->proxy_issuer_,
+							&bp, sizeof(b));
+						gflog_tls_debug(
+							GFARM_MSG_UNFIXED,
+							"got proxy issure: "
+							"\"%s\"", b);
+					}
 				} else {
 					gflog_tls_error(GFARM_MSG_UNFIXED,
 						"Can't acquire an issure name "
@@ -1630,7 +1728,7 @@ done:
 	verrstr = X509_verify_cert_error_string(verr);
 	ctx->cert_verify_callback_error_ = verr;
 
-	if (gflog_get_priority_level() >= LOG_DEBUG) {
+	if (do_dbg_msg == true) {
 		char dnbuf[4096];
 		char *dn = dnbuf;
 		X509_NAME *pn = (p != NULL) ? X509_get_subject_name(p) : NULL;
@@ -1642,11 +1740,9 @@ done:
 		} else {
 			dn = NULL;
 		}
-		if (gflog_auth_get_verbose()) {
-			gflog_tls_debug(GFARM_MSG_UNFIXED, "depth %d: ok %d: "
-				" cert \"%s\": error %d: error string '%s'",
-				vdepth, ok, dn, verr, verrstr);
-		}
+		gflog_tls_debug(GFARM_MSG_UNFIXED, "depth %d: ok %d: "
+			" cert \"%s\": error %d: error string '%s'",
+			vdepth, ok, dn, verr, verrstr);
 	}
 	
 	return (ret);
@@ -2110,7 +2206,7 @@ runtime_init:
 
 		if (need_self_cert == true) {
 			/*
-			 * Load a cert into the SSL_CTX
+			 * Load a cert/cert chain into the SSL_CTX
 			 */
 			if (need_cert_merge == true) {
 				ret = tls_load_cert_and_chain(
