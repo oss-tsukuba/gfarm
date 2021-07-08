@@ -1078,6 +1078,31 @@ done:
 }
 
 /*
+ * Load both cert file and cert chain file
+ */
+static inline gfarm_error_t
+tls_load_cert_and_chain(SSL_CTX *ssl_ctx,
+	const char *cert_file,
+	const char *cert_chain_file)
+{
+	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
+
+	/*
+	 * XXX FIXME:
+	 *	Using both cert file and cert chain file is not
+	 *	supported at this moment. Marging both files into
+	 *	single chained cert is needed and now we are working
+	 *	on it.
+	 *
+	 *	IMO, SSL_CTX_add0_chain_cert() siblings and
+	 *	SSL_CTX_set_current_cert(SSL_CERT_SET_FIRST) should
+	 *	work.
+	 */
+
+	return (ret);
+}
+
+/*
  * Set revocation path
  */
 static inline gfarm_error_t
@@ -2087,36 +2112,30 @@ runtime_init:
 			/*
 			 * Load a cert into the SSL_CTX
 			 */
-			/*
-			 * XXX FIXME:
-			 *	Using both cert file and cert chain file is
-			 *	not supported at this moment. Marging both
-			 *	files into single chained cert is needed and
-			 *	now we are working on it.
-			 *
-			 *	IMO, SSL_CTX_add0_chain_cert() siblings and
-			 *	SSL_CTX_set_current_cert(SSL_CERT_SET_FIRST)
-			 *	should work.
-			 */
 			if (need_cert_merge == true) {
-				gflog_warning(GFARM_MSG_UNFIXED,
-					"Merging a cert file and a cert chain "
-					"file is not supported at this "
-					"moment. It continues with the cert "
-					"file \"%s\".", cert_file);
-				cert_to_use = cert_file;
-			}
-			tls_runtime_flush_error();			
-			osst = SSL_CTX_use_certificate_chain_file(
-				ssl_ctx, cert_to_use);
-			if (unlikely(osst != 1)) {
-				gflog_tls_error(GFARM_MSG_UNFIXED,
-					"Can't load a certificate "
-					"file \"%s\" into a SSL_CTX.",
-					cert_to_use);
-				/* XXX ret code */
-				ret = GFARM_ERR_TLS_RUNTIME_ERROR;
-				goto bailout;
+				ret = tls_load_cert_and_chain(
+					ssl_ctx, cert_file, cert_chain_file);
+				if (unlikely(ret != GFARM_ERR_NO_ERROR)) {
+					gflog_tls_error(GFARM_MSG_UNFIXED,
+						"Can't load both %s and %s: "
+						"%s", cert_file,
+						cert_chain_file,
+						gfarm_error_string(ret));
+					goto bailout;
+				}
+			} else {
+				tls_runtime_flush_error();
+				osst = SSL_CTX_use_certificate_chain_file(
+					ssl_ctx, cert_to_use);
+				if (unlikely(osst != 1)) {
+					gflog_tls_error(GFARM_MSG_UNFIXED,
+						"Can't load a certificate "
+						"file \"%s\" into a SSL_CTX.",
+						cert_to_use);
+					/* XXX ret code */
+					ret = GFARM_ERR_TLS_RUNTIME_ERROR;
+					goto bailout;
+				}
 			}
 
 			/*
@@ -2165,7 +2184,7 @@ runtime_init:
 				}
 			}
 		}
-		
+
 		/*
 		 * Set revocation path
 		 */
