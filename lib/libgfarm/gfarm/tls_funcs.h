@@ -726,7 +726,7 @@ tls_load_prvkey(const char *file, EVP_PKEY **keyptr)
 			}
 		} else {
 			if (errno != 0) {
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_tls_error(GFARM_MSG_UNFIXED,
 					"Can't open %s: %s", file,
 					strerror(errno));
 				ret = gfarm_errno_to_error(errno);
@@ -1559,12 +1559,12 @@ tls_verify_callback_body(int ok, X509_STORE_CTX *sctx)
 					char *bp = b;
 					get_peer_dn_gsi_ish(ctx->proxy_issuer_,
 							    &bp, sizeof(b));
-					gflog_error(GFARM_MSG_UNFIXED,
+					gflog_tls_error(GFARM_MSG_UNFIXED,
 						"DEBUG: got proxy: issure: "
 						"\"%s\"", b);
 #endif /* PROXY_CERT_DEBUG */
 				} else {
-					gflog_error(GFARM_MSG_UNFIXED,
+					gflog_tls_error(GFARM_MSG_UNFIXED,
 						"Can't acquire an issure name "
 						"of the proxy cert.");
 					/* make the auth failure. */
@@ -1576,7 +1576,7 @@ tls_verify_callback_body(int ok, X509_STORE_CTX *sctx)
 				/*
 				 * Must not happen.
 				 */
-				gflog_warning(GFARM_MSG_UNFIXED,
+				gflog_tls_warning(GFARM_MSG_UNFIXED,
 					"Something wrong: got a proxy cert "
 					"and it's authorized by the verify "
 					"flags, but Gfarm itself doesn't "
@@ -1665,7 +1665,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 	 * Parameter check
 	 */
 	if (unlikely(ctxptr == NULL)) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_tls_error(GFARM_MSG_UNFIXED,
 			"return pointer is NULL.");
 		ret = GFARM_ERR_INVALID_ARGUMENT;
 		goto bailout;
@@ -1673,7 +1673,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 		*ctxptr = NULL;
 	}
 	if (unlikely(role != TLS_ROLE_SERVER && role != TLS_ROLE_CLIENT)) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_tls_error(GFARM_MSG_UNFIXED,
 			"fatal: invalid TLS role.");
 		ret = GFARM_ERR_INVALID_ARGUMENT;
 		goto bailout;
@@ -1695,7 +1695,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 	 * Gfarm context check
 	 */
 	if (unlikely(gfarm_ctxp == NULL)) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_tls_error(GFARM_MSG_UNFIXED,
 			"fatal: NULL gfarm_ctxp.");
 		ret = GFARM_ERR_INTERNAL_ERROR;
 		goto bailout;
@@ -1716,7 +1716,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 		if (unlikely(ca_path == NULL)) {
 			ret = GFARM_ERR_NO_MEMORY;
 			gflog_tls_error(GFARM_MSG_UNFIXED,
-				"Can't dulicate a CA certs directory "
+				"Can't duplicate a CA certs directory "
 				" name: %s", gfarm_error_string(ret));
 			goto bailout;
 		}
@@ -1742,7 +1742,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 		if (unlikely(revoke_path == NULL)) {
 			ret = GFARM_ERR_NO_MEMORY;
 			gflog_tls_error(GFARM_MSG_UNFIXED,
-				"Can't dulicate a revoked CA certs "
+				"Can't duplicate a revoked CA certs "
 				"directory name: %s",
 				gfarm_error_string(ret));
 			goto bailout;
@@ -1786,7 +1786,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 			} else {
 				ret = GFARM_ERR_NO_MEMORY;
 				gflog_tls_warning(GFARM_MSG_UNFIXED,
-					"can't dulicate a cert chain "
+					"can't duplicate a cert chain "
 					"filename: %s",
 					gfarm_error_string(ret));
 			}
@@ -1800,7 +1800,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 			} else {
 				ret = GFARM_ERR_NO_MEMORY;
 				gflog_tls_warning(GFARM_MSG_UNFIXED,
-					"Can't dulicate a cert filename: %s",
+					"Can't duplicate a cert filename: %s",
 					gfarm_error_string(ret));
 			}
 		}
@@ -1837,7 +1837,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 			if (unlikely(prvkey_file == NULL)) {
 				ret = GFARM_ERR_NO_MEMORY;
 				gflog_tls_error(GFARM_MSG_UNFIXED,
-					"Can't dulicate a private key "
+					"Can't duplicate a private key "
 					"filename: %s",
 					gfarm_error_string(ret));
 				goto bailout;
@@ -1847,7 +1847,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 			 * We still have a chance to go if we had a
 			 * usable proxy cert.
 			 */
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_tls_error(GFARM_MSG_UNFIXED,
 				"A private key file is not specified.");
 			ret = GFARM_ERR_INVALID_ARGUMENT;
 			goto bailout;
@@ -1863,7 +1863,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 			if (unlikely(acceptable_ca_path == NULL)) {
 				ret = GFARM_ERR_NO_MEMORY;
 				gflog_tls_error(GFARM_MSG_UNFIXED,
-					"Can't dulicate an acceptable CA "
+					"Can't duplicate an acceptable CA "
 					"certs directory nmae: %s",
 					gfarm_error_string(ret));
 				goto bailout;
@@ -1898,7 +1898,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 		if (unlikely(ciphersuites == NULL)) {
 			ret = GFARM_ERR_NO_MEMORY;
 			gflog_tls_error(GFARM_MSG_UNFIXED,
-				"Can't dulicate a CA cert store name: %s",
+				"Can't duplicate a CA cert store name: %s",
 				gfarm_error_string(ret));
 			goto bailout;
 		}
@@ -1958,7 +1958,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 runtime_init:
 	if (unlikely((ret = tls_session_runtime_initialize())
 		!= GFARM_ERR_NO_ERROR)) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_tls_error(GFARM_MSG_UNFIXED,
 			"TLS runtime library initialization failed.");
 		goto bailout;
 	}
@@ -1969,7 +1969,7 @@ runtime_init:
 		 */
 		ret = tls_load_prvkey(prvkey_file, &prvkey);
 		if (unlikely(ret != GFARM_ERR_NO_ERROR || prvkey == NULL)) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_tls_error(GFARM_MSG_UNFIXED,
 				"Can't load a private key file \"%s\".",
 				prvkey_file);
 			goto bailout;
@@ -2059,7 +2059,7 @@ runtime_init:
 		tls_runtime_flush_error();
 		if (unlikely(SSL_CTX_set_ciphersuites(ssl_ctx,
 					ciphersuites) != 1)) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_tls_error(GFARM_MSG_UNFIXED,
 				"Failed to set ciphersuites "
 				"\"%s\" to the SSL_CTX.",
 				ciphersuites);
@@ -2099,7 +2099,7 @@ runtime_init:
 			 *	should work.
 			 */
 			if (need_cert_merge == true) {
-				gflog_warning(GFARM_MSG_UNFIXED,
+				gflog_tls_warning(GFARM_MSG_UNFIXED,
 					"Merging a cert file and a cert chain "
 					"file is not supported at this "
 					"moment. It continues with the cert "
@@ -2276,7 +2276,7 @@ runtime_init:
 		ret = GFARM_ERR_NO_ERROR;
 		goto ok;
 	} else {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_tls_error(GFARM_MSG_UNFIXED,
 			"Can't allocate a TLS session context.");
 		ret = GFARM_ERR_NO_MEMORY;
 	}
@@ -2428,7 +2428,7 @@ tls_session_io_continuable(int sslerr, tls_session_ctx_t ctx,
 			 * done BEFORE gfp_* thingies call this
 			 * function.
 			 */
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_tls_error(GFARM_MSG_UNFIXED,
 				    "The TLS handshake must be done before "
 				    "begining data I/O in Gfarm.");
 			ctx->last_gfarm_error_ = GFARM_ERR_INTERNAL_ERROR;
@@ -2439,7 +2439,7 @@ tls_session_io_continuable(int sslerr, tls_session_ctx_t ctx,
 		break;
 
 	default:
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_tls_error(GFARM_MSG_UNFIXED,
 			"All the TLS I/O error must be handled, but got "
 			"TLS I/O error %d.", sslerr);
 		ctx->last_gfarm_error_ = GFARM_ERR_INTERNAL_ERROR;
@@ -2857,7 +2857,7 @@ tls_session_update_key(tls_session_ctx_t ctx, int delta)
 			 *	what to do when SSL_key_update()
 			 *	failure.
 			 */
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_tls_warning(GFARM_MSG_UNFIXED,
 				"SSL_update_key() failed but we don't know "
 				"how to deal with it.");
 			ret = ctx->last_gfarm_error_ =
