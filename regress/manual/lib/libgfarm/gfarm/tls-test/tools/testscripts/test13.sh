@@ -41,6 +41,11 @@ trap "cleanup" 1 2 3 15
 
 # 13-1
 test_13_1() {
+    # client:
+    #   --proxy_cert opt: o
+    #   proxy cert file:  x
+    #   user cert file:   x
+
     run_test_for_client "13-1" \
         "${TOP_DIR}/tls-test \
         --once \
@@ -56,6 +61,13 @@ test_13_1() {
 
 # 13-2
 test_13_2() {
+    # server:
+    #   --proxy_cert opt: o
+    # client:
+    #   --proxy_cert opt: o
+    #   proxy cert file:  o (env variable)
+    #   user cert file:   x
+
     run_test "13-2" \
         "${TOP_DIR}/tls-test -s \
         --once \
@@ -86,6 +98,13 @@ test_13_2() {
 
 # 13-3
 test_13_3() {
+    # server:
+    #   --proxy_cert opt: o
+    # client:
+    #   --proxy_cert opt: o
+    #   proxy cert file:  o (tmp file)
+    #   user cert file:   x
+
     copy_tmp_cert ${ENV_DIR}/A/client_under_root/client_cat_all.crt
 
     run_test "13-3" \
@@ -119,6 +138,13 @@ test_13_3() {
 
 # 13-4
 test_13_4() {
+    # server:
+    #   --proxy_cert opt: x
+    # client:
+    #   --proxy_cert opt: o
+    #   proxy cert file:  o (tmp file)
+    #   user cert file:   x
+
     copy_tmp_cert ${ENV_DIR}/A/client_under_root/client_cat_all.crt
 
     run_test "13-4" \
@@ -149,6 +175,13 @@ test_13_4() {
 
 # 13-5
 test_13_5() {
+    # server:
+    #   --proxy_cert opt: x
+    # client:
+    #   --proxy_cert opt: o
+    #   proxy cert file:  o (env variable)
+    #   user cert file:   o
+
     run_test "13-5" \
         "${TOP_DIR}/tls-test -s \
         --once \
@@ -180,6 +213,13 @@ test_13_5() {
 
 # 13-6
 test_13_6() {
+    # server:
+    #   --proxy_cert opt: o
+    # client:
+    #   --proxy_cert opt: o
+    #   proxy cert file:  o (env variable)
+    #   user cert file:   o
+
     run_test "13-6" \
         "${TOP_DIR}/tls-test -s \
         --once \
@@ -212,6 +252,11 @@ test_13_6() {
 
 # 13-7
 test_13_7() {
+    # client:
+    #   --proxy_cert opt: o
+    #   proxy cert file:  o (tmp file, bad permissions(644))
+    #   user cert file:   x
+
     copy_tmp_cert ${ENV_DIR}/A/client_under_root/client_cat_all_bad_permissions.crt
 
     run_test_for_client "13-7" \
@@ -232,6 +277,13 @@ test_13_7() {
 
 # 13-8
 test_13_8() {
+    # server:
+    #   --proxy_cert opt: x
+    # client:
+    #   --proxy_cert opt: o
+    #   proxy cert file:  x
+    #   user cert file:   o
+
     run_test "13-8" \
         "${TOP_DIR}/tls-test -s \
         --once \
@@ -262,6 +314,13 @@ test_13_8() {
 
 # 13-9
 test_13_9() {
+    # server:
+    #   --proxy_cert opt: x
+    # client:
+    #   --proxy_cert opt: x
+    #   proxy cert file:  x
+    #   user cert file:   o
+
     run_test "13-9" \
         "${TOP_DIR}/tls-test -s \
         --once \
@@ -291,6 +350,13 @@ test_13_9() {
 
 # 13-10
 test_13_10() {
+    # server:
+    #   --proxy_cert opt: x
+    # client:
+    #   --proxy_cert opt: x
+    #   proxy cert file:  o (env variable)
+    #   user cert file:   o
+
     run_test "13-10" \
         "${TOP_DIR}/tls-test -s \
         --once \
