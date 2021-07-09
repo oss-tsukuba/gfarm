@@ -1817,13 +1817,9 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 	char *tmp = NULL;
 
 	bool is_build_chain = false;
-	char *cert_to_use = NULL;
 	EVP_PKEY *prvkey = NULL;
 	SSL_CTX *ssl_ctx = NULL;
 	bool need_self_cert = false;
-	bool need_cert_merge = false;
-	bool has_cert_file = false;
-	bool has_cert_chain_file = false;
 	bool do_proxy_auth = false;
 	char *tmp_proxy_cert_file = NULL;
 
@@ -1848,7 +1844,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 		do_mutual_auth == false)) {
 		ret = GFARM_ERR_INVALID_ARGUMENT;
 		goto bailout;
-	}	
+	}
 
 	/*
 	 * No doamin check for following variables in gfarm_ctxp:
@@ -1947,9 +1943,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 			((ret = is_file_readable(-1, tmp_cert_chain_file))
 			== GFARM_ERR_NO_ERROR)) {
 			cert_chain_file = strdup(tmp_cert_chain_file);
-			if (likely(cert_chain_file != NULL)) {
-				has_cert_chain_file = true;
-			} else {
+			if (unlikely(cert_chain_file == NULL)) {
 				ret = GFARM_ERR_NO_MEMORY;
 				gflog_tls_warning(GFARM_MSG_UNFIXED,
 					"can't duplicate a cert chain "
@@ -1961,35 +1955,24 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 			((ret = is_file_readable(-1, tmp_cert_file))
 			== GFARM_ERR_NO_ERROR)) {
 			cert_file = strdup(tmp_cert_file);
-			if (likely(cert_file != NULL)) {
-				has_cert_file = true;
-			} else {
+			if (unlikely(cert_file == NULL)) {
 				ret = GFARM_ERR_NO_MEMORY;
 				gflog_tls_warning(GFARM_MSG_UNFIXED,
 					"Can't duplicate a cert filename: %s",
 					gfarm_error_string(ret));
 			}
 		}
-		if (has_cert_chain_file == true && has_cert_file == true) {
-			need_cert_merge = true;
-		} else if (has_cert_chain_file == true &&
-				has_cert_file == false) {
-			cert_to_use = cert_chain_file;
-			free(cert_file);
-			cert_file = NULL;
-		} else if (has_cert_chain_file == false &&
-				has_cert_file == true) {
-			cert_to_use = cert_file;
-			free(cert_chain_file);
-			cert_chain_file = NULL;
-		} else if (is_valid_string(tmp_proxy_cert_file) == false) {
+		if (unlikely(is_valid_string(cert_chain_file) == false &&
+			is_valid_string(cert_file) == false &&
+			is_valid_string(tmp_proxy_cert_file) == false)) {
 			/*
 			 * We still have a chance to go if we had a
 			 * usable proxy cert.
 			 */
 			gflog_tls_error(GFARM_MSG_UNFIXED,
-				"Neither a cert file nor a cert chain "
-				"file is specified.");
+				"None of a cert file, a cert chain "
+				"file, and a proxy cert file is specified.");
+			/* Don't overwrite return code ever set */
 			if (ret == GFARM_ERR_UNKNOWN ||
 				ret == GFARM_ERR_NO_ERROR) {
 				ret = GFARM_ERR_INVALID_ARGUMENT;
@@ -2094,9 +2077,8 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 			} else if (likely(is_valid_string(ca_path) == true &&
 					is_valid_string(tmp_proxy_cert_file)
 					== true)) {
-				cert_chain_file = strdup(tmp_proxy_cert_file);
+				cert_file = strdup(tmp_proxy_cert_file);
 				prvkey_file = strdup(tmp_proxy_cert_file);
-				cert_to_use = cert_chain_file;
 				do_proxy_auth = true;
 				goto runtime_init;
 			} else {
@@ -2253,60 +2235,38 @@ runtime_init:
 			/*
 			 * Load a cert/cert chain into the SSL_CTX
 			 */
-			if (need_cert_merge == true) {
-				int n_certs = 0;
-				ret = tls_load_cert_and_chain(
-					ssl_ctx, cert_file, cert_chain_file,
-					&n_certs);
-				if (unlikely(ret != GFARM_ERR_NO_ERROR)) {
+			int n_certs = 0;
+			ret = tls_load_cert_and_chain(
+				ssl_ctx, cert_file, cert_chain_file, &n_certs);
+			if (unlikely(ret != GFARM_ERR_NO_ERROR)) {
+				if (is_valid_string(cert_file) == true &&
+					is_valid_string(cert_chain_file) ==
+					true) {
 					gflog_tls_error(GFARM_MSG_UNFIXED,
 						"Can't load both %s and %s: "
-						"%s", cert_file,
+						"%s.",
+						cert_file, cert_chain_file,
+						gfarm_error_string(ret));
+				} else if (is_valid_string(cert_file) ==
+						true) {
+					gflog_tls_error(GFARM_MSG_UNFIXED,
+						"Can't load %s: %s.",
+						cert_file,
+						gfarm_error_string(ret));
+				} else if (is_valid_string(cert_chain_file) ==
+						true) {
+					gflog_tls_error(GFARM_MSG_UNFIXED,
+						"Can't load %s: %s.",
 						cert_chain_file,
 						gfarm_error_string(ret));
-					goto bailout;
-				} else if (unlikely(n_certs == 0)) {
-					gflog_tls_error(GFARM_MSG_UNFIXED,
-						"No cert is load both %s and "
-						"%s: %s.", cert_file,
-						cert_chain_file,
-						gfarm_error_string(ret));
-					goto bailout;
 				}
-			} else {
-#ifdef LOAD_CERTS_WITH_OPENSSL_UTIL
-				tls_runtime_flush_error();
-				osst = SSL_CTX_use_certificate_chain_file(
-					ssl_ctx, cert_to_use);
-				if (unlikely(osst != 1)) {
-					gflog_tls_error(GFARM_MSG_UNFIXED,
-						"Can't load a certificate "
-						"file \"%s\" into a SSL_CTX.",
-						cert_to_use);
-					/* XXX ret code */
-					ret = GFARM_ERR_TLS_RUNTIME_ERROR;
-					goto bailout;
-				}
-#else
-				int n_certs = 0;
-				ret = tls_add_certs(ssl_ctx, cert_to_use,
-					&n_certs);
-				if (likely(ret == GFARM_ERR_NO_ERROR)) {
-					gflog_tls_debug(GFARM_MSG_UNFIXED,
-						"Load %d certificates from "
-						"file \"%s\" into a SSL_CTX.",
-						n_certs, cert_to_use);
-				} else {
-					gflog_tls_error(GFARM_MSG_UNFIXED,
-						"Can't load a certificate "
-						"file \"%s\" into a SSL_CTX: "
-						"%s.", cert_to_use,
-						gfarm_error_string(ret));
-					/* XXX ret code */
-					ret = GFARM_ERR_TLS_RUNTIME_ERROR;
-					goto bailout;
-				}
-#endif /* LOAD_CERTS_WITH_OPENSSL_UTIL */
+				goto bailout;
+			} else if (unlikely(n_certs == 0)) {
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"No cert is load both %s and %s: %s.",
+					cert_file, cert_chain_file,
+					gfarm_error_string(ret));
+				goto bailout;
 			}
 
 			/*
@@ -2324,9 +2284,8 @@ runtime_init:
 			}
 
 			/*
-			 * XXX FIXME:
-			 *	Check prvkey in SSL_CTX by 
-			 *	SSL_CTX_check_private_key
+			 * Then check prvkey in SSL_CTX by
+			 * SSL_CTX_check_private_key
 			 */
 			tls_runtime_flush_error();
 			osst = SSL_CTX_check_private_key(ssl_ctx);
