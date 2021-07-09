@@ -42,7 +42,12 @@ make_client_chain() {
         && cat ${i}/client/client.crt \
         ${i}/cacerts_all/inter_ca_3.crt \
         ${i}/cacerts_all/inter_ca_1.crt \
-        > ${i}/client/client_cat_3_1.crt
+        > ${i}/client/client_cat_3_1.crt \
+        && cat ${i}/cacerts_all/inter_ca_3.crt \
+        ${i}/cacerts_all/inter_ca_2.crt \
+        ${i}/cacerts_all/inter_ca_1.crt \
+        ${i}/cacerts_all/root_ca.crt \
+        > ${i}/client/client_cat_all_without_end_entity.crt
         if [ $? -ne 0 ]; then
             break
         fi
@@ -64,7 +69,11 @@ make_server_chain() {
         > ${i}/server/server_cat_2.crt \
         && cat ${i}/server/server.crt \
         ${i}/cacerts_all/inter_ca_1.crt \
-        > ${i}/server/server_cat_1.crt
+        > ${i}/server/server_cat_1.crt \
+        && cat ${i}/cacerts_all/inter_ca_2.crt \
+        ${i}/cacerts_all/inter_ca_1.crt \
+        ${i}/cacerts_all/root_ca.crt \
+        > ${i}/server/server_cat_all_without_end_entity.crt
         if [ $? -ne 0 ]; then
             break
         fi

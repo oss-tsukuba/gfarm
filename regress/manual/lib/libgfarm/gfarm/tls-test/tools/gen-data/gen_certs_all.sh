@@ -143,19 +143,6 @@ cat_certs() {
     cat ${CAT_CERT} > ${OUT_CAT_CERT}
 }
 
-cat_certs_without_end_entity() {
-    ISSUER_CA=$1
-    OUT_CAT_CERT=$2
-    CAT_CERT=""
-
-    for CA_NUM in `seq ${ISSUER_CA} -1 1`; do
-        CAT_CERT+=" ${OUTPUT_CACERTS_ALL_DIR}/${PREFIX_INTER_CA_NAME}${CA_NUM}.crt"
-    done
-    CAT_CERT+=" ${OUTPUT_CACERTS_ALL_DIR}/${ROOT_CA_NAME}.crt"
-
-    cat ${CAT_CERT} > ${OUT_CAT_CERT}
-}
-
 
 ## Opts. ##
 while getopts o:n:s:c:S:C:X:Ph OPT; do
@@ -230,24 +217,10 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# cat server cert (without_end_entity).
-cat_certs_without_end_entity "${ISSUER_CA_SERVER_CERT}" \
-    "${OUTPUT_SERVER_DIR}/${SERVER_NAME}_cat_all_without_end_entity.crt"
-if [ $? -ne 0 ]; then
-    exit 1
-fi
-
 # cat client cert.
 cat_certs "${ISSUER_CA_CLIENT_CERT}" \
     "${OUTPUT_CLIENT_DIR}/${CLIENT_NAME}.crt" \
     "${OUTPUT_CLIENT_DIR}/${CLIENT_NAME}_cat_all.crt"
-if [ $? -ne 0 ]; then
-    exit 1
-fi
-
-# cat client cert (without_end_entity).
-cat_certs_without_end_entity "${ISSUER_CA_CLIENT_CERT}" \
-    "${OUTPUT_CLIENT_DIR}/${CLIENT_NAME}_cat_all_without_end_entity.crt"
 if [ $? -ne 0 ]; then
     exit 1
 fi
