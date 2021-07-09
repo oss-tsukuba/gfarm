@@ -232,7 +232,7 @@ fi
 
 # cat server cert (without_end_entity).
 cat_certs_without_end_entity "${ISSUER_CA_SERVER_CERT}" \
-    "${OUTPUT_SERVER_DIR}/${SERVER_NAME}_cat_all.crt"
+    "${OUTPUT_SERVER_DIR}/${SERVER_NAME}_cat_all_without_end_entity.crt"
 if [ $? -ne 0 ]; then
     exit 1
 fi
