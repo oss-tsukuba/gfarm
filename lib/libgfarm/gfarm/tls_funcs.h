@@ -1302,22 +1302,15 @@ tls_add_certs(SSL_CTX *ssl_ctx, const char *file, int *n_added)
 		bool do_dbg_msg = (gflog_get_priority_level() >= LOG_DEBUG) ?
 			true : false;
 		bool cherry = false;
-		STACK_OF(X509) *sk = NULL;
 		char *method = NULL;
 
-		tls_runtime_flush_error();
-		osst = SSL_CTX_get0_chain_certs(ssl_ctx, &sk);
-		if (likely(osst == 1)) {
-			if (sk == NULL || sk_X509_num(sk) == 0) {
-				cherry = true;
-			}
-		} else {
-			gflog_tls_error(GFARM_MSG_UNFIXED,
-				"Can't acquire a current X509 stack from a "
-				"SSL_CTX.");
-			ret = GFARM_ERR_TLS_RUNTIME_ERROR;
-			goto done;
-		}
+		/*
+		 * Check an end-entity cert is already loaded or not.
+		 * At least an end-entity cert must be loaded to add
+		 * chain cert.
+		 */
+		x = SSL_CTX_get0_certificate(ssl_ctx); if
+		(x == NULL) { cherry = true; }
 
 		if (n_added != NULL) {
 			*n_added = 0;
@@ -1327,9 +1320,17 @@ tls_add_certs(SSL_CTX *ssl_ctx, const char *file, int *n_added)
 			got_failure == false) {
 			tls_runtime_flush_error();
 			if (cherry == false) {
+				/*
+				 * The end-entity cert already loaded.
+				 * Use add0 API to add the cert.
+				 */
 				osst = SSL_CTX_add0_chain_cert(ssl_ctx, x);
 				method = "add0 API";
 			} else {
+				/*
+				 * This is the first time to load a cert.
+				 * Use use API to set the cert.
+				 */
 				osst = SSL_CTX_use_certificate(ssl_ctx, x);
 				method = "use API";
 				cherry = false;
@@ -1380,10 +1381,6 @@ tls_add_certs(SSL_CTX *ssl_ctx, const char *file, int *n_added)
 	} else {
 		if (osst == -INT_MAX && fd == NULL) {
 			ret = GFARM_ERR_INVALID_ARGUMENT;
-		} else if (osst != -INT_MAX && fd == NULL) {
-			ret = GFARM_ERR_TLS_RUNTIME_ERROR;
-			gflog_tls_error(GFARM_MSG_UNFIXED,
-				"Failed to set the current cert.");
 		} else if (fd == NULL) {
 			ret = gfarm_errno_to_error(errno);
 			gflog_tls_error(GFARM_MSG_UNFIXED,
@@ -1392,7 +1389,6 @@ tls_add_certs(SSL_CTX *ssl_ctx, const char *file, int *n_added)
 		}
 	}
 
-done:
 	if (fd != NULL) {
 		(void)fclose(fd);
 	}
