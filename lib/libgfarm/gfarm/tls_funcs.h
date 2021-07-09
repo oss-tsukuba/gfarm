@@ -1292,9 +1292,7 @@ tls_add_certs(SSL_CTX *ssl_ctx, const char *file, int *n_added)
 	errno = 0;
 	tls_runtime_flush_error();
 	if (likely(ssl_ctx != NULL && is_valid_string(file) == true &&
-		   ((osst = SSL_CTX_set_current_cert(ssl_ctx,
-				SSL_CERT_SET_FIRST)) == 1) &&
-		   ((fd = fopen(file, "r")) != NULL))) {
+		((fd = fopen(file, "r")) != NULL))) {
 		X509 *x = NULL;
 		X509_NAME *xn = NULL;
 		int n_certs = 0;
@@ -1303,6 +1301,23 @@ tls_add_certs(SSL_CTX *ssl_ctx, const char *file, int *n_added)
 		char *bp = b;
 		bool do_dbg_msg = (gflog_get_priority_level() >= LOG_DEBUG) ?
 			true : false;
+		bool cherry = false;
+		STACK_OF(X509) *sk = NULL;
+		char *method = NULL;
+
+		tls_runtime_flush_error();
+		osst = SSL_CTX_get0_chain_certs(ssl_ctx, &sk);
+		if (likely(osst == 1)) {
+			if (sk == NULL || sk_X509_num(sk) == 0) {
+				cherry = true;
+			}
+		} else {
+			gflog_tls_error(GFARM_MSG_UNFIXED,
+				"Can't acquire a current X509 stack from a "
+				"SSL_CTX.");
+			ret = GFARM_ERR_TLS_RUNTIME_ERROR;
+			goto done;
+		}
 
 		if (n_added != NULL) {
 			*n_added = 0;
@@ -1311,7 +1326,14 @@ tls_add_certs(SSL_CTX *ssl_ctx, const char *file, int *n_added)
 		while ((x = PEM_read_X509(fd, NULL, NULL, NULL)) != NULL &&
 			got_failure == false) {
 			tls_runtime_flush_error();
-			osst = SSL_CTX_add0_chain_cert(ssl_ctx, x);
+			if (cherry == false) {
+				osst = SSL_CTX_add0_chain_cert(ssl_ctx, x);
+				method = "add0 API";
+			} else {
+				osst = SSL_CTX_use_certificate(ssl_ctx, x);
+				method = "use API";
+				cherry = false;
+			}
 			if (likely(osst == 1)) {
 				n_certs++;
 				if (unlikely((do_dbg_msg == true) &&
@@ -1320,8 +1342,8 @@ tls_add_certs(SSL_CTX *ssl_ctx, const char *file, int *n_added)
 					get_peer_dn_gsi_ish(xn,
 						&bp, sizeof(b));
 					gflog_tls_debug(GFARM_MSG_UNFIXED,
-						"Add a cert \"%s\" from %s.",
-						b, file);
+						"Add a cert \"%s\" from %s "
+						"(%s.)", b, file, method);
 				}
 			} else {
 				got_failure = true;
@@ -1340,6 +1362,7 @@ tls_add_certs(SSL_CTX *ssl_ctx, const char *file, int *n_added)
 			}
 		}
 		if (likely(got_failure == false)) {
+			tls_runtime_flush_error();
 			ret = GFARM_ERR_NO_ERROR;
 			if (n_added != NULL) {
 				*n_added = n_certs;
@@ -1350,8 +1373,9 @@ tls_add_certs(SSL_CTX *ssl_ctx, const char *file, int *n_added)
 						  
 			}
 		} else {
-			ret = GFARM_ERR_TLS_RUNTIME_ERROR;
+			/* XXX ret code */
 			/* GFARM_ERR_INVALID_CREDENTIAL ??*/
+			ret = GFARM_ERR_TLS_RUNTIME_ERROR;
 		}
 	} else {
 		if (osst == -INT_MAX && fd == NULL) {
@@ -1367,7 +1391,12 @@ tls_add_certs(SSL_CTX *ssl_ctx, const char *file, int *n_added)
 				file, gfarm_error_string(ret));
 		}
 	}
-			
+
+done:
+	if (fd != NULL) {
+		(void)fclose(fd);
+	}
+
 	return (ret);
 }
 
@@ -1376,23 +1405,43 @@ tls_add_certs(SSL_CTX *ssl_ctx, const char *file, int *n_added)
  */
 static inline gfarm_error_t
 tls_load_cert_and_chain(SSL_CTX *ssl_ctx,
-	const char *cert_file,
-	const char *cert_chain_file)
+	const char *cert_file, const char *cert_chain_file, int *nptr)
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 
-	/*
-	 * XXX FIXME:
-	 *	Using both cert file and cert chain file is not
-	 *	supported at this moment. Marging both files into
-	 *	single chained cert is needed and now we are working
-	 *	on it.
-	 *
-	 *	IMO, SSL_CTX_add0_chain_cert() siblings and
-	 *	SSL_CTX_set_current_cert(SSL_CERT_SET_FIRST) should
-	 *	work.
-	 */
+	if (likely(ssl_ctx != NULL)) {
+		int n_certs = 0;
+		int n;
 
+		if (nptr != NULL) {
+			*nptr = 0;
+		}
+
+		if (is_valid_string(cert_file) == true) {
+			n = 0;
+			ret = tls_add_certs(ssl_ctx, cert_file, &n);
+			if (likely(ret == GFARM_ERR_NO_ERROR)) {
+				n_certs += n;
+			} else {
+				goto done;
+			}
+		}
+		if (is_valid_string(cert_chain_file) == true) {
+			n = 0;
+			ret = tls_add_certs(ssl_ctx, cert_chain_file, &n);
+			if (likely(ret == GFARM_ERR_NO_ERROR)) {
+				n_certs += n;
+			} else {
+				goto done;
+			}
+		}
+
+		if (nptr != NULL) {
+			*nptr = n_certs;
+		}
+	}
+
+done:
 	return (ret);
 }
 
@@ -2209,8 +2258,10 @@ runtime_init:
 			 * Load a cert/cert chain into the SSL_CTX
 			 */
 			if (need_cert_merge == true) {
+				int n_certs = 0;
 				ret = tls_load_cert_and_chain(
-					ssl_ctx, cert_file, cert_chain_file);
+					ssl_ctx, cert_file, cert_chain_file,
+					&n_certs);
 				if (unlikely(ret != GFARM_ERR_NO_ERROR)) {
 					gflog_tls_error(GFARM_MSG_UNFIXED,
 						"Can't load both %s and %s: "
@@ -2218,8 +2269,16 @@ runtime_init:
 						cert_chain_file,
 						gfarm_error_string(ret));
 					goto bailout;
+				} else if (unlikely(n_certs == 0)) {
+					gflog_tls_error(GFARM_MSG_UNFIXED,
+						"No cert is load both %s and "
+						"%s: %s.", cert_file,
+						cert_chain_file,
+						gfarm_error_string(ret));
+					goto bailout;
 				}
 			} else {
+#ifdef LOAD_CERTS_WITH_OPENSSL_UTIL
 				tls_runtime_flush_error();
 				osst = SSL_CTX_use_certificate_chain_file(
 					ssl_ctx, cert_to_use);
@@ -2232,6 +2291,26 @@ runtime_init:
 					ret = GFARM_ERR_TLS_RUNTIME_ERROR;
 					goto bailout;
 				}
+#else
+				int n_certs = 0;
+				ret = tls_add_certs(ssl_ctx, cert_to_use,
+					&n_certs);
+				if (likely(ret == GFARM_ERR_NO_ERROR)) {
+					gflog_tls_debug(GFARM_MSG_UNFIXED,
+						"Load %d certificates from "
+						"file \"%s\" into a SSL_CTX.",
+						n_certs, cert_to_use);
+				} else {
+					gflog_tls_error(GFARM_MSG_UNFIXED,
+						"Can't load a certificate "
+						"file \"%s\" into a SSL_CTX: "
+						"%s.", cert_to_use,
+						gfarm_error_string(ret));
+					/* XXX ret code */
+					ret = GFARM_ERR_TLS_RUNTIME_ERROR;
+					goto bailout;
+				}
+#endif /* LOAD_CERTS_WITH_OPENSSL_UTIL */
 			}
 
 			/*
