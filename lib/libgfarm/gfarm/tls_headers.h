@@ -205,44 +205,25 @@ typedef enum {
  * The cookie for TLS
  */
 struct tls_session_ctx_struct {
-	/*
-	 * Cache aware alignment
-	 */
 	SSL *ssl_;		/* API alloc'd */
 
-	gfarm_error_t last_gfarm_error_;
 	int last_ssl_error_;
 	bool got_fatal_ssl_error_;
 				/* got SSL_ERROR_SYSCALL or SSL_ERROR_SSL */
-
-	tls_role_t role_;
-	bool do_mutual_auth_;
-	int n_cert_chain_;
-	bool is_handshake_tried_;
-	bool is_verified_;
-	int cert_verify_callback_error_;
-	int cert_verify_result_error_;
-	bool is_build_chain_;
-	bool is_allow_no_crls_;
-	bool is_allow_proxy_cert_;
-	bool is_got_proxy_cert_;
 	size_t io_total_;		/* How many bytes transmitted */
 	size_t io_key_update_;		/* KeyUpdate water level (bytes) */
 	ssize_t keyupd_thresh_;		/* KeyUpdate threshold (bytes) */
 
-	SSL_CTX *ssl_ctx_;		/* API alloc'd */
-	STACK_OF(X509_NAME) *trusted_certs_;
-					/* API alloc'd */
-	EVP_PKEY *prvkey_;		/* API alloc'd */
-	X509_NAME *proxy_issuer_;	/* API alloc'd */
-	char *peer_dn_oneline_;		/* malloc'd */
-	char *peer_dn_rfc2253_;		/* malloc'd */
-	char *peer_dn_gsi_;		/* malloc'd */
-	char *peer_cn_;			/* malloc'd */
+	gfarm_error_t last_gfarm_error_;
 
 	/*
-	 * gfarm_ctxp contents backup
+	 * Read-only parameters start
 	 */
+	tls_role_t role_;
+	bool do_mutual_auth_;
+	bool is_build_chain_;
+	bool is_allow_no_crls_;
+	bool is_allow_proxy_cert_;
 	char *cert_file_;
 	char *cert_chain_file_;
 	char *prvkey_file_;
@@ -250,8 +231,42 @@ struct tls_session_ctx_struct {
 	char *ca_path_;
 	char *acceptable_ca_path_;
 	char *revoke_path_;
+	/*
+	 * Read-only parameters end
+	 */
+
+	char *peer_dn_oneline_;		/* malloc'd */
+	char *peer_dn_rfc2253_;		/* malloc'd */
+	char *peer_dn_gsi_;		/* malloc'd */
+	char *peer_cn_;			/* malloc'd */
+
+	bool is_handshake_tried_;
+	bool is_verified_;
+	bool is_got_proxy_cert_;
+
+	int cert_verify_callback_error_;
+	int cert_verify_result_error_;
+
+	STACK_OF(X509_NAME) *trusted_certs_;
+					/* API alloc'd */
+
+	SSL_CTX *ssl_ctx_;		/* API alloc'd */
+	EVP_PKEY *prvkey_;		/* API alloc'd */
+	X509_NAME *proxy_issuer_;	/* API alloc'd */
 };
 typedef struct tls_session_ctx_struct *tls_session_ctx_t;
+
+#define CTX_CLEAR_RECONN	1
+#define CTX_CLEAR_VAR	2
+#define	CTX_CLEAR_SSL	4
+#define CTX_CLEAR_CTX	8
+
+#define CTX_CLEAR_READY_FOR_RECONNECT \
+	CTX_CLEAR_RECONN
+#define CTX_CLEAR_READY_FOR_ESTABLISH \
+	(CTX_CLEAR_VAR | CTX_CLEAR_SSL)
+#define CTX_CLEAR_FREEUP \
+	(CTX_CLEAR_VAR | CTX_CLEAR_SSL | CTX_CLEAR_CTX)
 
 /*
  * Password callback arg

@@ -562,7 +562,7 @@ do_write_read(tls_session_ctx_t tls_ctx)
 		}
 
 	teardown:
-		gerr = tls_session_clear_ctx(tls_ctx);
+		gerr = tls_session_clear_ctx_for_reestablish(tls_ctx);
 		if (gerr != GFARM_ERR_NO_ERROR) {
 			gflog_tls_error(GFARM_MSG_UNFIXED,
 				"SSL reset failure: %s",
@@ -642,7 +642,7 @@ run_server_process(tls_session_ctx_t tls_ctx, int socketfd)
 						"SSL read failure: %s",
 						gfarm_error_string(gerr));
 				teardown:
-					gerr = tls_session_clear_ctx(tls_ctx);
+					gerr = tls_session_clear_ctx_for_reestablish(tls_ctx);
 					if (gerr == GFARM_ERR_NO_ERROR || 
 						r_size == 0) {
 						goto loopend;
@@ -667,7 +667,7 @@ run_server_process(tls_session_ctx_t tls_ctx, int socketfd)
 						"SSL write failure: %s",
 						gfarm_error_string(gerr));
 				teardown2:
-					gerr = tls_session_clear_ctx(tls_ctx);
+					gerr = tls_session_clear_ctx_for_reestablish(tls_ctx);
 					if (gerr == GFARM_ERR_NO_ERROR) {
 						goto loopend;
 					} else {
@@ -769,7 +769,8 @@ run_client_process(tls_session_ctx_t tls_ctx, int socketfd)
 				gflog_tls_error(GFARM_MSG_UNFIXED,
 					"SSL write failure: %s",
 					gfarm_error_string(gerr));
-				gerr = tls_session_clear_ctx(tls_ctx);
+				gerr = tls_session_clear_ctx_for_reestablish(
+					tls_ctx);
 				if (gerr != GFARM_ERR_NO_ERROR) {
 					gflog_tls_error(GFARM_MSG_UNFIXED,
 						"SSL reset failure: %s",
@@ -791,7 +792,8 @@ run_client_process(tls_session_ctx_t tls_ctx, int socketfd)
 					"SSL read failure: %s",
 						gfarm_error_string(gerr));
 			teardown:
-				gerr = tls_session_clear_ctx(tls_ctx);
+				gerr = tls_session_clear_ctx_for_reestablish(
+					tls_ctx);
 				if (gerr != GFARM_ERR_NO_ERROR) {
 					gflog_tls_error(GFARM_MSG_UNFIXED,
 						"SSL reset failure: %s",

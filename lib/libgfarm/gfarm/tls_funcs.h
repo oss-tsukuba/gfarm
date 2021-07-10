@@ -1285,6 +1285,18 @@ done:
 static inline gfarm_error_t
 tls_add_certs(SSL_CTX *ssl_ctx, const char *file, int *n_added)
 {
+#if 0
+	typedef int (*cert_add_func_t)(SSL_CTX *ctx, X509 *cert);
+	typedef struct {
+		cert_add_func_t f;
+		char *name;
+	} add_method_t;
+	const add_method_t methods[] = {
+		{ SSL_CTX_use_certificate, "use" },
+		{ SSL_CTX_add_extra_chain_cert, "add0" }
+	};
+#endif
+
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 	FILE *fd = NULL;
 	int osst = -INT_MAX;
@@ -1324,7 +1336,12 @@ tls_add_certs(SSL_CTX *ssl_ctx, const char *file, int *n_added)
 				 * The end-entity cert already loaded.
 				 * Use add0 API to add the cert.
 				 */
+#if 0
 				osst = SSL_CTX_add0_chain_cert(ssl_ctx, x);
+#else
+				osst = SSL_CTX_add_extra_chain_cert(
+						ssl_ctx, x);
+#endif
 				method = "add0 API";
 			} else {
 				/*
@@ -1493,42 +1510,105 @@ tls_set_revoke_path(SSL_CTX *ssl_ctx, const char *revoke_path)
 	return (ret);
 }
 
+
 /*
  * Internal TLS context constructor/destructor
  */
-static inline gfarm_error_t
-tls_session_shutdown(tls_session_ctx_t ctx);
-
-static inline gfarm_error_t
-tls_session_clear_handle(tls_session_ctx_t ctx, bool do_free)
+static inline void
+tls_session_clear_ctx(tls_session_ctx_t ctx, int flags)
 {
-	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
-	SSL *ssl = NULL;
+#define free_n_nullify(free_func, obj)			\
+	do {						\
+		if (ctx -> obj != NULL) {		\
+			(void)free_func(ctx -> obj);	\
+			ctx -> obj = NULL;		\
+		}					\
+	} while (false)
 
-	if (likely((ssl = ctx->ssl_) != NULL)) {
-		ret = tls_session_shutdown(ctx);
-		if (likely(ret == GFARM_ERR_NO_ERROR)) {
-			(void)SSL_clear(ssl);
-			if (do_free == true) {
-				SSL_free(ssl);
-				ctx->ssl_ = NULL;
+	if (likely(ctx != NULL)) {
+		if ((flags & CTX_CLEAR_RECONN) != 0) {
+			if (ctx->ssl_ != NULL) {
+				(void)SSL_clear(ctx->ssl_);
 			}
-			ctx->is_verified_ = false;
-			ctx->is_handshake_tried_ = false;
-			ctx->got_fatal_ssl_error_ = false;
+		}
+		if ((flags & CTX_CLEAR_SSL) != 0) {
+			free_n_nullify(SSL_free, ssl_);
+		}
+		if ((flags & (CTX_CLEAR_VAR | CTX_CLEAR_RECONN)) != 0) {
 			ctx->last_ssl_error_ = SSL_ERROR_SSL;
-			ctx->last_gfarm_error_ = GFARM_ERR_UNKNOWN;
+			ctx->got_fatal_ssl_error_ = false;
 			ctx->io_total_ = 0;
 			ctx->io_key_update_ = 0;
-			free(ctx->peer_dn_oneline_);
-			ctx->peer_dn_oneline_ = NULL;
-			free(ctx->peer_dn_rfc2253_);
-			ctx->peer_dn_rfc2253_ = NULL;
-			free(ctx->peer_dn_gsi_);
-			ctx->peer_dn_gsi_ = NULL;
-			free(ctx->peer_cn_);
-			ctx->peer_cn_ = NULL;
 		}
+
+		/*
+		 * ssize_t keyupd_thresh_;
+		 */
+
+		if ((flags & (CTX_CLEAR_VAR | CTX_CLEAR_RECONN)) != 0) {
+			ctx->last_gfarm_error_ = GFARM_ERR_UNKNOWN;
+		}
+
+		/*
+		 * tls_role_t role_;
+		 * bool do_mutual_auth_;
+		 * bool is_build_chain_;
+		 * bool is_allow_no_crls_;
+		 * bool is_allow_proxy_cert_;
+		 */
+
+		if ((flags & CTX_CLEAR_CTX) != 0) {
+			free_n_nullify(free, cert_file_);
+			free_n_nullify(free, cert_chain_file_);
+			free_n_nullify(free, prvkey_file_);
+			free_n_nullify(free, ciphersuites_);
+			free_n_nullify(free, ca_path_);
+			free_n_nullify(free, acceptable_ca_path_);
+			free_n_nullify(free, revoke_path_);
+		}
+
+		if ((flags & (CTX_CLEAR_CTX | CTX_CLEAR_VAR)) != 0) {
+			free_n_nullify(free, peer_dn_oneline_);
+			free_n_nullify(free, peer_dn_rfc2253_);
+			free_n_nullify(free, peer_dn_gsi_);
+			free_n_nullify(free, peer_cn_);
+		}
+
+		if ((flags & CTX_CLEAR_VAR) != 0) {
+			ctx->is_handshake_tried_ = false;
+			ctx->is_verified_ = false;
+			ctx->is_got_proxy_cert_ = false;
+
+			ctx->cert_verify_callback_error_ =
+				X509_V_ERR_UNSPECIFIED;
+			ctx->cert_verify_result_error_ =
+				X509_V_ERR_UNSPECIFIED;
+		}
+
+		if ((flags & CTX_CLEAR_CTX) != 0) {
+#if 0
+			sk_X509_NAME_pop_free(ctx->trusted_certs_,
+				X509_NAME_free);
+			ctx->trusted_certs_ = NULL;
+#endif
+			free_n_nullify(SSL_CTX_free, ssl_ctx_);
+			free_n_nullify(EVP_PKEY_free, prvkey_);
+			free_n_nullify(X509_NAME_free, proxy_issuer_);
+
+			free(ctx);
+		}
+	}
+#undef free_n_nullify
+}
+
+static inline gfarm_error_t
+tls_session_clear_ctx_for_reconnect(tls_session_ctx_t ctx)
+{
+	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
+
+	if (likely(ctx != NULL)) {
+		tls_session_clear_ctx(ctx,
+			CTX_CLEAR_READY_FOR_RECONNECT);
 	} else {
 		ret = GFARM_ERR_INVALID_ARGUMENT;
 	}
@@ -1537,7 +1617,26 @@ tls_session_clear_handle(tls_session_ctx_t ctx, bool do_free)
 }
 
 static inline gfarm_error_t
-tls_session_setup_handle(tls_session_ctx_t ctx)
+tls_session_shutdown(tls_session_ctx_t ctx);
+
+static inline gfarm_error_t
+tls_session_clear_ctx_for_reestablish(tls_session_ctx_t ctx)
+{
+	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
+
+	if (likely(ctx != NULL)) {
+		(void)tls_session_shutdown(ctx);
+		tls_session_clear_ctx(ctx,
+		      CTX_CLEAR_READY_FOR_ESTABLISH);
+	} else {
+		ret = GFARM_ERR_INVALID_ARGUMENT;
+	}
+
+	return (ret);
+}
+
+static inline gfarm_error_t
+tls_session_setup_ssl(tls_session_ctx_t ctx)
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 	SSL *ssl = NULL;
@@ -1639,20 +1738,9 @@ tls_session_setup_handle(tls_session_ctx_t ctx)
 #endif
 
 		if (ret == GFARM_ERR_NO_ERROR) {
+			tls_session_clear_ctx(ctx,
+				CTX_CLEAR_READY_FOR_ESTABLISH);
 			ctx->ssl_ = ssl;
-			ctx->is_verified_ = false;
-			ctx->is_handshake_tried_ = false;
-			ctx->last_ssl_error_ = SSL_ERROR_NONE;
-			ctx->last_gfarm_error_ = GFARM_ERR_NO_ERROR;
-			ctx->io_total_ = 0;
-			ctx->io_key_update_ = 0;
-			free(ctx->peer_dn_oneline_);
-			ctx->peer_dn_oneline_ = NULL;
-			free(ctx->peer_dn_rfc2253_);
-			ctx->peer_dn_rfc2253_ = NULL;
-			free(ctx->peer_dn_gsi_);
-			free(ctx->peer_cn_);
-			ctx->peer_dn_gsi_ = NULL;
 		}
 	} else {
 		ret = GFARM_ERR_INVALID_ARGUMENT;
@@ -1802,7 +1890,18 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 		       bool do_mutual_auth, bool use_proxy_cert)
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
+
 	tls_session_ctx_t ctxret = NULL;
+
+	EVP_PKEY *prvkey = NULL;
+	SSL_CTX *ssl_ctx = NULL;
+
+	bool is_build_chain = false;
+	bool need_self_cert = false;
+	bool do_proxy_auth = false;
+
+	char *tmp = NULL;
+	char *tmp_proxy_cert_file = NULL;
 
 	/*
 	 * Following strings must be copied to *ctxret
@@ -1814,14 +1913,6 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 	char *acceptable_ca_path = NULL;
 	char *revoke_path = NULL;
 	char *ciphersuites = NULL;
-	char *tmp = NULL;
-
-	bool is_build_chain = false;
-	EVP_PKEY *prvkey = NULL;
-	SSL_CTX *ssl_ctx = NULL;
-	bool need_self_cert = false;
-	bool do_proxy_auth = false;
-	char *tmp_proxy_cert_file = NULL;
 
 	/*
 	 * Parameter check
@@ -1866,10 +1957,9 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 #define str_or_NULL(x)					\
 	((is_valid_string((x)) == true) ? (x) : NULL)
 
-	/*
-	 * ca_path is mandatory always.
+	/* 
+	 * CA certs path (mandatory always)
 	 */
-	/* CA certs path */
 	tmp = str_or_NULL(gfarm_ctxp->tls_ca_certificate_path);
 	if ((is_valid_string(tmp) == true) &&
 		((ret = is_valid_cert_store_dir(tmp))
@@ -1895,7 +1985,9 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 		goto bailout;
 	}
 
-	/* Revocation path (optional) */
+	/*
+	 * Revocation path (optional)
+	 */
 	tmp = str_or_NULL(gfarm_ctxp->tls_ca_revocation_path);
 	if ((is_valid_string(tmp) == true) &&
 		((ret = is_valid_cert_store_dir(tmp)) ==
@@ -1938,7 +2030,9 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 			(use_proxy_cert == true && role == TLS_ROLE_CLIENT) ?
 			has_proxy_cert() : NULL;
 
-		/* cert/cert chain file */
+		/*
+		 * cert/cert chain file (mandatory)
+		 */
 		if ((is_valid_string(tmp_cert_chain_file) == true) &&
 			((ret = is_file_readable(-1, tmp_cert_chain_file))
 			== GFARM_ERR_NO_ERROR)) {
@@ -1980,7 +2074,9 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 			goto bailout;
 		}
 
-		/* Private key */
+		/*
+		 * Private key (mandatory)
+		 */
 		if (likely(is_valid_string(tmp_prvkey_file) == true)) {
 			prvkey_file = strdup(tmp_prvkey_file);
 			if (unlikely(prvkey_file == NULL)) {
@@ -2002,7 +2098,9 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 			goto bailout;
 		}
 
-		/* Acceptable CA cert path (server only & optional) */
+		/*
+		 * Acceptable CA cert path (server only & optional)
+		 */
 		if (role == TLS_ROLE_SERVER &&
 			(is_valid_string(tmp_acceptable_ca_path) == true) &&
 			((ret = is_valid_cert_store_dir(
@@ -2029,7 +2127,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 	}
 
 	/*
-	 * Ciphersuites check
+	 * Ciphersuites (optional)
 	 * Set only TLSv1.3 allowed ciphersuites
 	 */
 	if (is_valid_string(gfarm_ctxp->tls_cipher_suite) == true) {
@@ -2099,11 +2197,11 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 			}
 		}
 	}
-	
+
+runtime_init:
 	/*
 	 * TLS runtime initialize
 	 */
-runtime_init:
 	if (unlikely((ret = tls_session_runtime_initialize())
 		!= GFARM_ERR_NO_ERROR)) {
 		gflog_tls_error(GFARM_MSG_UNFIXED,
@@ -2200,6 +2298,7 @@ runtime_init:
 				SSL_CTX_set_post_handshake_auth(ssl_ctx, 1);
 			}
 		}
+#undef VERIFY_DEPTH
 
 		/*
 		 * Set ciphersuites
@@ -2354,7 +2453,7 @@ runtime_init:
 					X509_V_FLAG_CRL_CHECK_ALL);
 
 			/*
-			 * Allow GSI/GCT/Globus proxy cert authentication
+			 * Allow RFC 3820 proxy cert authentication
 			 */
 			if (role == TLS_ROLE_SERVER &&
 				do_mutual_auth == true &&
@@ -2390,6 +2489,8 @@ runtime_init:
 
 		(void)memset(ctxret, 0,
 			sizeof(struct tls_session_ctx_struct));
+		tls_session_clear_ctx(ctxret, CTX_CLEAR_READY_FOR_ESTABLISH);
+
 		ctxret->role_ = role;
 		ctxret->do_mutual_auth_ = do_mutual_auth;
 		if (gfarm_ctxp->tls_key_update > 0) {
@@ -2439,6 +2540,10 @@ bailout:
 	free(acceptable_ca_path);
 	free(revoke_path);
 
+	/*
+	 * not forget to release trusted certs if it is used.
+	 */
+
 	if (prvkey != NULL) {
 		EVP_PKEY_free(prvkey);
 	}
@@ -2460,40 +2565,7 @@ ok:
 static inline void
 tls_session_destroy_ctx(tls_session_ctx_t x)
 {
-	if (x != NULL) {
-		free(x->peer_dn_oneline_);
-		free(x->peer_dn_rfc2253_);
-		free(x->peer_dn_gsi_);
-		free(x->peer_cn_);
-		if (x->proxy_issuer_ != NULL) {
-			X509_NAME_free(x->proxy_issuer_);
-		}
-		if (x->ssl_ != NULL) {
-			SSL_free(x->ssl_);
-		}
-		if (x->prvkey_ != NULL) {
-			EVP_PKEY_free(x->prvkey_);
-		}
-		if (x->ssl_ctx_ != NULL) {
-			(void)SSL_CTX_clear_chain_certs(x->ssl_ctx_);
-			SSL_CTX_free(x->ssl_ctx_);
-		}
-		free(x->cert_file_);
-		free(x->cert_chain_file_);
-		free(x->prvkey_file_);
-		free(x->ciphersuites_);
-		free(x->ca_path_);
-		free(x->acceptable_ca_path_);
-		free(x->revoke_path_);
-
-		free(x);
-	}
-}
-
-static inline gfarm_error_t
-tls_session_clear_ctx(tls_session_ctx_t x)
-{
-	return tls_session_clear_handle(x, true);
+	tls_session_clear_ctx(x, CTX_CLEAR_FREEUP);
 }
 
 
@@ -2855,7 +2927,7 @@ tls_session_establish(tls_session_ctx_t ctx, int fd)
 		/*
 		 * Create an SSL
 		 */
-		ret = tls_session_setup_handle(ctx);
+		ret = tls_session_setup_ssl(ctx);
 		if (unlikely(ret != GFARM_ERR_NO_ERROR || ctx->ssl_ == NULL)) {
 			goto bailout;
 		}
