@@ -8,32 +8,8 @@
 #undef TLS_TEST
 
 #include "tls_headers.h"
+#include "tls_instances.h"
 #include "tls_funcs.h"
-
-
-
-static int
-tls_add_cert_to_SSL_CTX_chain(SSL_CTX *sctx, X509 *x)
-{
-	return SSL_CTX_add_extra_chain_cert(sctx, x);
-}
-
-static void
-tls_runtime_init_once(void)
-{
-	tls_runtime_init_once_body();
-}
-
-static int 
-tls_verify_callback(int ok, X509_STORE_CTX *sctx) {
-	return tls_verify_callback_body(ok, sctx);
-}
-
-static int
-tty_passwd_callback(char *buf, int maxlen, int rwflag, void *u)
-{
-	return tty_passwd_callback_body(buf, maxlen, rwflag, u);
-}
 
 
 

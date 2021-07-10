@@ -578,12 +578,6 @@ tlslog_tls_message(int msg_no, int priority,
 /*
  * TLS runtime library initialization
  */
-static pthread_once_t tls_init_once = PTHREAD_ONCE_INIT;
-static bool is_tls_runtime_initd = false;
-
-static void
-tls_runtime_init_once(void);
-
 static inline void
 tls_runtime_init_once_body(void)
 {
@@ -1282,19 +1276,6 @@ done:
 /*
  * Add cert(s) from a file into SSL_CTX
  */
-static int
-tls_add_cert_to_SSL_CTX_chain(SSL_CTX *sctx, X509 *x);
-
-typedef int (*cert_add_func_t)(SSL_CTX *ctx, X509 *cert);
-typedef struct {
-	cert_add_func_t f;
-	char *name;
-} cert_add_method_t;
-static cert_add_method_t const methods[] = {
-	{ SSL_CTX_use_certificate, "use" },
-	{ tls_add_cert_to_SSL_CTX_chain, "add" }
-};
-
 static inline gfarm_error_t
 tls_add_certs(SSL_CTX *ssl_ctx, const char *file, int *n_added)
 {
@@ -1714,9 +1695,6 @@ tls_session_clear_ctx_for_reconnect(tls_session_ctx_t ctx)
 
 	return (ret);
 }
-
-static inline gfarm_error_t
-tls_session_shutdown(tls_session_ctx_t ctx);
 
 static inline gfarm_error_t
 tls_session_clear_ctx_for_reestablish(tls_session_ctx_t ctx)
@@ -2883,9 +2861,6 @@ done:
 
 	return (ret);
 }
-
-static inline char *
-tls_session_peer_cn(tls_session_ctx_t ctx);
 
 static inline gfarm_error_t
 tls_session_establish(tls_session_ctx_t ctx, int fd)

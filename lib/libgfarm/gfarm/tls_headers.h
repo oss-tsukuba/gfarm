@@ -125,72 +125,6 @@ extern tls_test_ctx_p gfarm_ctxp;
 #endif /* TLS_TEST */
 
 /*
- * Logger
- */
-
-#define TLS_LOG_MSG_LEN	2048
-
-/*
- * gflog with TLS runtime message
- */
-#define tls_log_template(msg_no, level, ...)	     \
-	do {					     \
-		if (gflog_auth_get_verbose() != 0 && \
-			gflog_get_priority_level() >= level) {		\
-			tlslog_tls_message(msg_no, level,		\
-				__FILE__, __LINE__, __func__, __VA_ARGS__); \
-		}							\
-	} while (false)
-
-#define gflog_tls_error(msg_no, ...)		\
-	tls_log_template(msg_no, LOG_ERR, __VA_ARGS__)
-#define gflog_tls_warning(msg_no, ...)		\
-	tls_log_template(msg_no, LOG_WARNING, __VA_ARGS__)
-#define gflog_tls_debug(msg_no, ...)	     \
-	tls_log_template(msg_no, LOG_DEBUG, __VA_ARGS__)
-#define gflog_tls_info(msg_no, ...)	     \
-	tls_log_template(msg_no, LOG_INFO, __VA_ARGS__)
-#define gflog_tls_notice(msg_no, ...)	       \
-	tls_log_template(msg_no, LOG_NOTICE, __VA_ARGS__)
-/*
- * Declaration: TLS support version of gflog_message()
- */
-static inline void
-tlslog_tls_message(int msg_no, int priority,
-	const char *file, int line_no, const char *func,
-	const char *format, ...) GFLOG_PRINTF_ARG(6, 7);
-
-
-
-/*
- * Default ciphersuites for TLSv1.3
- *
- * See also:
- *	https://www.openssl.org/docs/manmaster/man3/\
- *	SSL_CTX_set_ciphersuites.html
- *	https://wiki.openssl.org/index.php/TLS1.3
- *		"Ciphersuites"
- */
-#define TLS13_DEFAULT_CIPHERSUITES \
-	"TLS_AES_128_GCM_SHA256:" \
-	"TLS_AES_256_GCM_SHA384:" \
-	"TLS_CHACHA20_POLY1305_SHA256:" \
-	"TLS_AES_128_CCM_SHA256:" \
-	"TLS_AES_128_CCM_8_SHA256"
-
-static const char *const tls13_valid_cyphers[] = {
-	"TLS_AES_128_GCM_SHA256",
-	"TLS_AES_256_GCM_SHA384",
-	"TLS_CHACHA20_POLY1305_SHA256",
-	"TLS_AES_128_CCM_SHA256:",
-	"TLS_AES_128_CCM_8_SHA256",
-
-	NULL
-};
-
-
-
-/*
  * TLS role
  */
 typedef enum {
@@ -292,34 +226,57 @@ struct tls_passwd_cb_arg_struct {
 };
 typedef struct tls_passwd_cb_arg_struct *tls_passwd_cb_arg_t;
 
-/*
- * Password thingies
-*/
+typedef int (*cert_add_func_t)(SSL_CTX *ctx, X509 *cert);
+typedef struct {
+	cert_add_func_t f;
+	char *name;
+} cert_add_method_t;
 
 /*
- * Static passwd buffer
+ * Pre-declarations
  */
-static char the_privkey_passwd[4096] = { 0 };
+static inline gfarm_error_t
+tls_session_shutdown(tls_session_ctx_t ctx);
+
+static inline char *
+tls_session_peer_cn(tls_session_ctx_t ctx);
 
 /*
- * tty control
+ * Logger
  */
-static bool is_tty_saved = false;
-static struct termios saved_tty = { 0 };
+
+#define TLS_LOG_MSG_LEN	2048
 
 /*
- * MT safeness guarantee, for in case.
+ *TLS support version of gflog_message()
  */
-static pthread_mutex_t pwd_cb_lock = PTHREAD_MUTEX_INITIALIZER;
-
-static int
-tty_passwd_callback(char *buf, int maxlen, int rwflag, void *u);
+static inline void
+tlslog_tls_message(int msg_no, int priority,
+	const char *file, int line_no, const char *func,
+	const char *format, ...) GFLOG_PRINTF_ARG(6, 7);
 
 /*
- * Verify callback
+ * gflog with TLS runtime message
  */
-static int
-tls_verify_callback(int ok, X509_STORE_CTX *sctx);
+#define tls_log_template(msg_no, level, ...)	     \
+	do {					     \
+		if (gflog_auth_get_verbose() != 0 && \
+			gflog_get_priority_level() >= level) {		\
+			tlslog_tls_message(msg_no, level,		\
+				__FILE__, __LINE__, __func__, __VA_ARGS__); \
+		}							\
+	} while (false)
+
+#define gflog_tls_error(msg_no, ...)		\
+	tls_log_template(msg_no, LOG_ERR, __VA_ARGS__)
+#define gflog_tls_warning(msg_no, ...)		\
+	tls_log_template(msg_no, LOG_WARNING, __VA_ARGS__)
+#define gflog_tls_debug(msg_no, ...)	     \
+	tls_log_template(msg_no, LOG_DEBUG, __VA_ARGS__)
+#define gflog_tls_info(msg_no, ...)	     \
+	tls_log_template(msg_no, LOG_INFO, __VA_ARGS__)
+#define gflog_tls_notice(msg_no, ...)	       \
+	tls_log_template(msg_no, LOG_NOTICE, __VA_ARGS__)
 
 #else
 
