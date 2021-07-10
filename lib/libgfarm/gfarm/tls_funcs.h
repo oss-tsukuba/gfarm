@@ -1473,11 +1473,13 @@ static inline int
 tls_verify_callback_body(int ok, X509_STORE_CTX *sctx)
 {
 	int ret = ok;
+	int org_ok = ok;
 	SSL *ssl = X509_STORE_CTX_get_ex_data(sctx,
 			SSL_get_ex_data_X509_STORE_CTX_idx());
 	tls_session_ctx_t ctx = (ssl != NULL) ?
 		(tls_session_ctx_t)SSL_get_app_data(ssl) : NULL;
 	int verr = X509_STORE_CTX_get_error(sctx);
+	int org_verr = verr;
 	int vdepth = X509_STORE_CTX_get_error_depth(sctx);
 	const char *verrstr = NULL;
 	bool do_dbg_msg = (gflog_get_priority_level() >= LOG_DEBUG) ?
@@ -1568,13 +1570,18 @@ tls_verify_callback_body(int ok, X509_STORE_CTX *sctx)
 	}
 
 done:
-	verrstr = X509_verify_cert_error_string(verr);
 	ctx->cert_verify_callback_error_ = verr;
 
 	if (do_dbg_msg == true) {
 		char dnbuf[4096];
 		char *dn = dnbuf;
 		X509_NAME *pn = (p != NULL) ? X509_get_subject_name(p) : NULL;
+
+		if (org_ok == 0 && org_verr != X509_V_OK) {
+			verrstr = X509_verify_cert_error_string(org_verr);
+		} else {
+			verrstr = X509_verify_cert_error_string(verr);
+		}
 
 		if (pn != NULL &&
 			get_peer_dn_gsi_ish(pn, &dn, sizeof(dnbuf)) ==
@@ -1583,11 +1590,12 @@ done:
 		} else {
 			dn = NULL;
 		}
-		gflog_tls_debug(GFARM_MSG_UNFIXED, "depth %d: ok %d: "
-			" cert \"%s\": error %d: error string '%s'",
-			vdepth, ok, dn, verr, verrstr);
+
+		gflog_tls_debug(GFARM_MSG_UNFIXED, "depth %d; ok %d -> %d; "
+			" cert \"%s\"; error %d -> %d: error string \"%s.\"",
+			vdepth, org_ok, ok, dn, org_verr, verr, verrstr);
 	}
-	
+
 	return (ret);
 }
 
