@@ -42,6 +42,12 @@ static struct tls_test_ctx_struct ttcs = {
 };
 tls_test_ctx_p gfarm_ctxp = &ttcs;
 
+static int
+tls_add_cert_to_SSL_CTX_chain(SSL_CTX *sctx, X509 *x)
+{
+	return SSL_CTX_add_extra_chain_cert(sctx, x);
+}
+
 static void
 tls_runtime_init_once(void)
 {

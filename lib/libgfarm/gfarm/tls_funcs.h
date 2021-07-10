@@ -1282,21 +1282,22 @@ done:
 /*
  * Add cert(s) from a file into SSL_CTX
  */
+static int
+tls_add_cert_to_SSL_CTX_chain(SSL_CTX *sctx, X509 *x);
+
+typedef int (*cert_add_func_t)(SSL_CTX *ctx, X509 *cert);
+typedef struct {
+	cert_add_func_t f;
+	char *name;
+} cert_add_method_t;
+static cert_add_method_t const methods[] = {
+	{ SSL_CTX_use_certificate, "use" },
+	{ tls_add_cert_to_SSL_CTX_chain, "add" }
+};
+
 static inline gfarm_error_t
 tls_add_certs(SSL_CTX *ssl_ctx, const char *file, int *n_added)
 {
-#if 0
-	typedef int (*cert_add_func_t)(SSL_CTX *ctx, X509 *cert);
-	typedef struct {
-		cert_add_func_t f;
-		char *name;
-	} add_method_t;
-	const add_method_t methods[] = {
-		{ SSL_CTX_use_certificate, "use" },
-		{ SSL_CTX_add_extra_chain_cert, "add0" }
-	};
-#endif
-
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 	FILE *fd = NULL;
 	int osst = -INT_MAX;
@@ -1313,16 +1314,8 @@ tls_add_certs(SSL_CTX *ssl_ctx, const char *file, int *n_added)
 		char *bp = b;
 		bool do_dbg_msg = (gflog_get_priority_level() >= LOG_DEBUG) ?
 			true : false;
-		bool cherry = false;
-		char *method = NULL;
-
-		/*
-		 * Check an end-entity cert is already loaded or not.
-		 * At least an end-entity cert must be loaded to add
-		 * chain cert.
-		 */
-		x = SSL_CTX_get0_certificate(ssl_ctx); if
-		(x == NULL) { cherry = true; }
+		int midx = ((x = SSL_CTX_get0_certificate(ssl_ctx)) == NULL) ?
+			0 : 1;
 
 		if (n_added != NULL) {
 			*n_added = 0;
@@ -1331,27 +1324,7 @@ tls_add_certs(SSL_CTX *ssl_ctx, const char *file, int *n_added)
 		while ((x = PEM_read_X509(fd, NULL, NULL, NULL)) != NULL &&
 			got_failure == false) {
 			tls_runtime_flush_error();
-			if (cherry == false) {
-				/*
-				 * The end-entity cert already loaded.
-				 * Use add0 API to add the cert.
-				 */
-#if 0
-				osst = SSL_CTX_add0_chain_cert(ssl_ctx, x);
-#else
-				osst = SSL_CTX_add_extra_chain_cert(
-						ssl_ctx, x);
-#endif
-				method = "add0 API";
-			} else {
-				/*
-				 * This is the first time to load a cert.
-				 * Use use API to set the cert.
-				 */
-				osst = SSL_CTX_use_certificate(ssl_ctx, x);
-				method = "use API";
-				cherry = false;
-			}
+			osst = methods[midx].f(ssl_ctx, x);
 			if (likely(osst == 1)) {
 				n_certs++;
 				if (unlikely((do_dbg_msg == true) &&
@@ -1361,7 +1334,8 @@ tls_add_certs(SSL_CTX *ssl_ctx, const char *file, int *n_added)
 						&bp, sizeof(b));
 					gflog_tls_debug(GFARM_MSG_UNFIXED,
 						"Add a cert \"%s\" from %s "
-						"(%s.)", b, file, method);
+						"(%s.)", b, file,
+						methods[midx].name);
 				}
 			} else {
 				got_failure = true;
@@ -1378,6 +1352,7 @@ tls_add_certs(SSL_CTX *ssl_ctx, const char *file, int *n_added)
 						file);
 				}
 			}
+			midx = 1;
 		}
 		if (likely(got_failure == false)) {
 			tls_runtime_flush_error();
