@@ -208,11 +208,13 @@ struct tls_session_ctx_struct {
 	SSL *ssl_;		/* API alloc'd */
 
 	int last_ssl_error_;
-	bool got_fatal_ssl_error_;
+	bool is_got_fatal_ssl_error_;
 				/* got SSL_ERROR_SYSCALL or SSL_ERROR_SSL */
-	size_t io_total_;		/* How many bytes transmitted */
-	size_t io_key_update_;		/* KeyUpdate water level (bytes) */
-	ssize_t keyupd_thresh_;		/* KeyUpdate threshold (bytes) */
+	size_t io_total_;	/* How many bytes transmitted */
+	size_t io_key_update_accum_;
+				/* KeyUpdate current water level (bytes) */
+	ssize_t io_key_update_thresh_;
+				/* KeyUpdate threshold (bytes) */
 
 	gfarm_error_t last_gfarm_error_;
 
@@ -221,9 +223,9 @@ struct tls_session_ctx_struct {
 	 */
 	tls_role_t role_;
 	bool do_mutual_auth_;
-	bool is_build_chain_;
-	bool is_allow_no_crls_;
-	bool is_allow_proxy_cert_;
+	bool do_build_chain_;
+	bool do_allow_no_crls_;
+	bool do_allow_proxy_cert_;
 	char *cert_file_;
 	char *cert_chain_file_;
 	char *prvkey_file_;
