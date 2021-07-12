@@ -125,72 +125,6 @@ extern tls_test_ctx_p gfarm_ctxp;
 #endif /* TLS_TEST */
 
 /*
- * Logger
- */
-
-#define TLS_LOG_MSG_LEN	2048
-
-/*
- * gflog with TLS runtime message
- */
-#define tls_log_template(msg_no, level, ...)	     \
-	do {					     \
-		if (gflog_auth_get_verbose() != 0 && \
-			gflog_get_priority_level() >= level) {		\
-			tlslog_tls_message(msg_no, level,		\
-				__FILE__, __LINE__, __func__, __VA_ARGS__); \
-		}							\
-	} while (false)
-
-#define gflog_tls_error(msg_no, ...)		\
-	tls_log_template(msg_no, LOG_ERR, __VA_ARGS__)
-#define gflog_tls_warning(msg_no, ...)		\
-	tls_log_template(msg_no, LOG_WARNING, __VA_ARGS__)
-#define gflog_tls_debug(msg_no, ...)	     \
-	tls_log_template(msg_no, LOG_DEBUG, __VA_ARGS__)
-#define gflog_tls_info(msg_no, ...)	     \
-	tls_log_template(msg_no, LOG_INFO, __VA_ARGS__)
-#define gflog_tls_notice(msg_no, ...)	       \
-	tls_log_template(msg_no, LOG_NOTICE, __VA_ARGS__)
-/*
- * Declaration: TLS support version of gflog_message()
- */
-static inline void
-tlslog_tls_message(int msg_no, int priority,
-	const char *file, int line_no, const char *func,
-	const char *format, ...) GFLOG_PRINTF_ARG(6, 7);
-
-
-
-/*
- * Default ciphersuites for TLSv1.3
- *
- * See also:
- *	https://www.openssl.org/docs/manmaster/man3/\
- *	SSL_CTX_set_ciphersuites.html
- *	https://wiki.openssl.org/index.php/TLS1.3
- *		"Ciphersuites"
- */
-#define TLS13_DEFAULT_CIPHERSUITES \
-	"TLS_AES_128_GCM_SHA256:" \
-	"TLS_AES_256_GCM_SHA384:" \
-	"TLS_CHACHA20_POLY1305_SHA256:" \
-	"TLS_AES_128_CCM_SHA256:" \
-	"TLS_AES_128_CCM_8_SHA256"
-
-static const char *const tls13_valid_cyphers[] = {
-	"TLS_AES_128_GCM_SHA256",
-	"TLS_AES_256_GCM_SHA384",
-	"TLS_CHACHA20_POLY1305_SHA256",
-	"TLS_AES_128_CCM_SHA256:",
-	"TLS_AES_128_CCM_8_SHA256",
-
-	NULL
-};
-
-
-
-/*
  * TLS role
  */
 typedef enum {
@@ -205,44 +139,27 @@ typedef enum {
  * The cookie for TLS
  */
 struct tls_session_ctx_struct {
-	/*
-	 * Cache aware alignment
-	 */
 	SSL *ssl_;		/* API alloc'd */
 
-	gfarm_error_t last_gfarm_error_;
 	int last_ssl_error_;
-	bool got_fatal_ssl_error_;
+	bool is_got_fatal_ssl_error_;
 				/* got SSL_ERROR_SYSCALL or SSL_ERROR_SSL */
+	size_t io_total_;	/* How many bytes transmitted */
+	size_t io_key_update_accum_;
+				/* KeyUpdate current water level (bytes) */
+	ssize_t io_key_update_thresh_;
+				/* KeyUpdate threshold (bytes) */
 
-	tls_role_t role_;
-	bool do_mutual_auth_;
-	int n_cert_chain_;
-	bool is_handshake_tried_;
-	bool is_verified_;
-	int cert_verify_callback_error_;
-	int cert_verify_result_error_;
-	bool is_build_chain_;
-	bool is_allow_no_crls_;
-	bool is_allow_proxy_cert_;
-	bool is_got_proxy_cert_;
-	size_t io_total_;		/* How many bytes transmitted */
-	size_t io_key_update_;		/* KeyUpdate water level (bytes) */
-	ssize_t keyupd_thresh_;		/* KeyUpdate threshold (bytes) */
-
-	SSL_CTX *ssl_ctx_;		/* API alloc'd */
-	STACK_OF(X509_NAME) *trusted_certs_;
-					/* API alloc'd */
-	EVP_PKEY *prvkey_;		/* API alloc'd */
-	X509_NAME *proxy_issuer_;	/* API alloc'd */
-	char *peer_dn_oneline_;		/* malloc'd */
-	char *peer_dn_rfc2253_;		/* malloc'd */
-	char *peer_dn_gsi_;		/* malloc'd */
-	char *peer_cn_;			/* malloc'd */
+	gfarm_error_t last_gfarm_error_;
 
 	/*
-	 * gfarm_ctxp contents backup
+	 * Read-only parameters start
 	 */
+	tls_role_t role_;
+	bool do_mutual_auth_;
+	bool do_build_chain_;
+	bool do_allow_no_crls_;
+	bool do_allow_proxy_cert_;
 	char *cert_file_;
 	char *cert_chain_file_;
 	char *prvkey_file_;
@@ -250,8 +167,42 @@ struct tls_session_ctx_struct {
 	char *ca_path_;
 	char *acceptable_ca_path_;
 	char *revoke_path_;
+	/*
+	 * Read-only parameters end
+	 */
+
+	char *peer_dn_oneline_;		/* malloc'd */
+	char *peer_dn_rfc2253_;		/* malloc'd */
+	char *peer_dn_gsi_;		/* malloc'd */
+	char *peer_cn_;			/* malloc'd */
+
+	bool is_handshake_tried_;
+	bool is_verified_;
+	bool is_got_proxy_cert_;
+
+	int cert_verify_callback_error_;
+	int cert_verify_result_error_;
+
+	STACK_OF(X509_NAME) *trusted_certs_;
+					/* API alloc'd */
+
+	SSL_CTX *ssl_ctx_;		/* API alloc'd */
+	EVP_PKEY *prvkey_;		/* API alloc'd */
+	X509_NAME *proxy_issuer_;	/* API alloc'd */
 };
 typedef struct tls_session_ctx_struct *tls_session_ctx_t;
+
+#define CTX_CLEAR_RECONN	1
+#define CTX_CLEAR_VAR	2
+#define	CTX_CLEAR_SSL	4
+#define CTX_CLEAR_CTX	8
+
+#define CTX_CLEAR_READY_FOR_RECONNECT \
+	CTX_CLEAR_RECONN
+#define CTX_CLEAR_READY_FOR_ESTABLISH \
+	(CTX_CLEAR_VAR | CTX_CLEAR_SSL)
+#define CTX_CLEAR_FREEUP \
+	(CTX_CLEAR_VAR | CTX_CLEAR_SSL | CTX_CLEAR_CTX)
 
 /*
  * Password callback arg
@@ -275,34 +226,57 @@ struct tls_passwd_cb_arg_struct {
 };
 typedef struct tls_passwd_cb_arg_struct *tls_passwd_cb_arg_t;
 
-/*
- * Password thingies
-*/
+typedef int (*cert_add_func_t)(SSL_CTX *ctx, X509 *cert);
+typedef struct {
+	cert_add_func_t f;
+	char *name;
+} cert_add_method_t;
 
 /*
- * Static passwd buffer
+ * Pre-declarations
  */
-static char the_privkey_passwd[4096] = { 0 };
+static inline gfarm_error_t
+tls_session_shutdown(tls_session_ctx_t ctx);
+
+static inline char *
+tls_session_peer_cn(tls_session_ctx_t ctx);
 
 /*
- * tty control
+ * Logger
  */
-static bool is_tty_saved = false;
-static struct termios saved_tty = { 0 };
+
+#define TLS_LOG_MSG_LEN	2048
 
 /*
- * MT safeness guarantee, for in case.
+ *TLS support version of gflog_message()
  */
-static pthread_mutex_t pwd_cb_lock = PTHREAD_MUTEX_INITIALIZER;
-
-static int
-tty_passwd_callback(char *buf, int maxlen, int rwflag, void *u);
+static inline void
+tlslog_tls_message(int msg_no, int priority,
+	const char *file, int line_no, const char *func,
+	const char *format, ...) GFLOG_PRINTF_ARG(6, 7);
 
 /*
- * Verify callback
+ * gflog with TLS runtime message
  */
-static int
-tls_verify_callback(int ok, X509_STORE_CTX *sctx);
+#define tls_log_template(msg_no, level, ...)	     \
+	do {					     \
+		if (gflog_auth_get_verbose() != 0 && \
+			gflog_get_priority_level() >= level) {		\
+			tlslog_tls_message(msg_no, level,		\
+				__FILE__, __LINE__, __func__, __VA_ARGS__); \
+		}							\
+	} while (false)
+
+#define gflog_tls_error(msg_no, ...)		\
+	tls_log_template(msg_no, LOG_ERR, __VA_ARGS__)
+#define gflog_tls_warning(msg_no, ...)		\
+	tls_log_template(msg_no, LOG_WARNING, __VA_ARGS__)
+#define gflog_tls_debug(msg_no, ...)	     \
+	tls_log_template(msg_no, LOG_DEBUG, __VA_ARGS__)
+#define gflog_tls_info(msg_no, ...)	     \
+	tls_log_template(msg_no, LOG_INFO, __VA_ARGS__)
+#define gflog_tls_notice(msg_no, ...)	       \
+	tls_log_template(msg_no, LOG_NOTICE, __VA_ARGS__)
 
 #else
 

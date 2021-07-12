@@ -6,6 +6,7 @@
 #define TLS_TEST
 
 #include "tls_headers.h"
+#include "tls_instances.h"
 #include "tls_funcs.h"
 
 #define MAX_PORT_NUMBER 65535
@@ -41,23 +42,6 @@ static struct tls_test_ctx_struct ttcs = {
 	60
 };
 tls_test_ctx_p gfarm_ctxp = &ttcs;
-
-static void
-tls_runtime_init_once(void)
-{
-	tls_runtime_init_once_body();
-}
-
-static int 
-tls_verify_callback(int ok, X509_STORE_CTX *sctx) {
-	return tls_verify_callback_body(ok, sctx);
-}
-
-static int
-tty_passwd_callback(char *buf, int maxlen, int rwflag, void *u)
-{
-	return tty_passwd_callback_body(buf, maxlen, rwflag, u);
-}
 
 static inline void
 usage()
@@ -562,7 +546,7 @@ do_write_read(tls_session_ctx_t tls_ctx)
 		}
 
 	teardown:
-		gerr = tls_session_clear_ctx(tls_ctx);
+		gerr = tls_session_clear_ctx_for_reestablish(tls_ctx);
 		if (gerr != GFARM_ERR_NO_ERROR) {
 			gflog_tls_error(GFARM_MSG_UNFIXED,
 				"SSL reset failure: %s",
@@ -642,7 +626,7 @@ run_server_process(tls_session_ctx_t tls_ctx, int socketfd)
 						"SSL read failure: %s",
 						gfarm_error_string(gerr));
 				teardown:
-					gerr = tls_session_clear_ctx(tls_ctx);
+					gerr = tls_session_clear_ctx_for_reestablish(tls_ctx);
 					if (gerr == GFARM_ERR_NO_ERROR || 
 						r_size == 0) {
 						goto loopend;
@@ -667,7 +651,7 @@ run_server_process(tls_session_ctx_t tls_ctx, int socketfd)
 						"SSL write failure: %s",
 						gfarm_error_string(gerr));
 				teardown2:
-					gerr = tls_session_clear_ctx(tls_ctx);
+					gerr = tls_session_clear_ctx_for_reestablish(tls_ctx);
 					if (gerr == GFARM_ERR_NO_ERROR) {
 						goto loopend;
 					} else {
@@ -769,7 +753,8 @@ run_client_process(tls_session_ctx_t tls_ctx, int socketfd)
 				gflog_tls_error(GFARM_MSG_UNFIXED,
 					"SSL write failure: %s",
 					gfarm_error_string(gerr));
-				gerr = tls_session_clear_ctx(tls_ctx);
+				gerr = tls_session_clear_ctx_for_reestablish(
+					tls_ctx);
 				if (gerr != GFARM_ERR_NO_ERROR) {
 					gflog_tls_error(GFARM_MSG_UNFIXED,
 						"SSL reset failure: %s",
@@ -791,7 +776,8 @@ run_client_process(tls_session_ctx_t tls_ctx, int socketfd)
 					"SSL read failure: %s",
 						gfarm_error_string(gerr));
 			teardown:
-				gerr = tls_session_clear_ctx(tls_ctx);
+				gerr = tls_session_clear_ctx_for_reestablish(
+					tls_ctx);
 				if (gerr != GFARM_ERR_NO_ERROR) {
 					gflog_tls_error(GFARM_MSG_UNFIXED,
 						"SSL reset failure: %s",
