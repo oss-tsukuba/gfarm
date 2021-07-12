@@ -2367,6 +2367,21 @@ runtime_init:
 				/*
 				 * Build a complete cert chain locally.
 				 */
+				/*
+				 * Don't set
+				 * SSL_BUILD_CHAIN_FLAG_NO_ROOT or
+				 * build chain always fail.
+				 *
+				 * Neither SSL_BUILD_CHAIN_FLAG_CHECK
+				 * shouldn't be set since the
+				 * SSL_CTX_build_cert_chain() seems
+				 * try to use all the existing chain
+				 * cert file under CA path for build
+				 * ths local chain.
+				 *
+				 * Conlusion: only zero is suitable
+				 * for our usage.
+				 */
 				tls_runtime_flush_error();
 				osst = SSL_CTX_build_cert_chain(ssl_ctx, 0);
 				if (unlikely(osst != 1)) {
