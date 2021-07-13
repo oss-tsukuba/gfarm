@@ -976,4 +976,205 @@ if [ $? -ne 0 ]; then
 	fail_num=`expr ${fail_num} + 1`
 fi
 
+run_test "1-6-1" \
+"${TOP_DIR}/tls-test -s \
+--once \
+--tls_certificate_file ${ENV_DIR}/B/server/server.crt \
+--tls_key_file ${ENV_DIR}/B/server/server.key \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_root \
+--mutual_authentication \
+--allow_no_crl \
+--verify_only" \
+"${TOP_DIR}/tls-test \
+--once \
+--tls_certificate_file ${ENV_DIR}/A/client/client.crt \
+--tls_key_file ${ENV_DIR}/A/client/client.key \
+--tls_certificate_chain_file ${ENV_DIR}/A/client/client_cat_all_without_end_entity.crt \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
+--mutual_authentication \
+--allow_no_crl \
+--verify_only" ${debug_flag}
+if [ $? -ne 0 ]; then
+	fail_num=`expr ${fail_num} + 1`
+fi
+
+run_test "1-6-2" \
+"${TOP_DIR}/tls-test -s \
+--once \
+--tls_certificate_file ${ENV_DIR}/B/server/server.crt \
+--tls_key_file ${ENV_DIR}/B/server/server.key \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_root \
+--mutual_authentication \
+--allow_no_crl \
+--verify_only" \
+"${TOP_DIR}/tls-test \
+--once \
+--tls_certificate_file ${ENV_DIR}/A/client/client.crt \
+--tls_key_file ${ENV_DIR}/A/client/client.key \
+--tls_certificate_chain_file ${ENV_DIR}/A/client/client_cat_all_without_end_entity_out_of_order.crt \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
+--mutual_authentication \
+--allow_no_crl \
+--verify_only" ${debug_flag}
+if [ $? -ne 0 ]; then
+	fail_num=`expr ${fail_num} + 1`
+fi
+
+run_test "1-6-3" \
+"${TOP_DIR}/tls-test -s \
+--once \
+--tls_certificate_file ${ENV_DIR}/B/server/server.crt \
+--tls_key_file ${ENV_DIR}/B/server/server.key \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+--mutual_authentication \
+--allow_no_crl \
+--verify_only" \
+"${TOP_DIR}/tls-test \
+--once \
+--tls_certificate_file ${ENV_DIR}/A/client/client.crt \
+--tls_key_file ${ENV_DIR}/A/client/client.key \
+--tls_certificate_chain_file ${ENV_DIR}/A/client/client_cat_all_without_end_entity_inter_ca_2.crt \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
+--mutual_authentication \
+--allow_no_crl \
+--verify_only" ${debug_flag}
+if [ $? -ne 0 ]; then
+	fail_num=`expr ${fail_num} + 1`
+fi
+
+run_test "1-6-4" \
+"${TOP_DIR}/tls-test -s \
+--once \
+--tls_certificate_file ${ENV_DIR}/B/server/server.crt \
+--tls_key_file ${ENV_DIR}/B/server/server.key \
+--tls_certificate_chain_file ${ENV_DIR}/B/server/server_cat_all_without_end_entity.crt \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+--mutual_authentication \
+--allow_no_crl \
+--verify_only" \
+"${TOP_DIR}/tls-test \
+--once \
+--tls_certificate_file ${ENV_DIR}/A/client/client.crt \
+--tls_key_file ${ENV_DIR}/A/client/client.key \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_root \
+--mutual_authentication \
+--allow_no_crl \
+--verify_only" ${debug_flag}
+if [ $? -ne 0 ]; then
+	fail_num=`expr ${fail_num} + 1`
+fi
+
+run_test "1-6-5" \
+"${TOP_DIR}/tls-test -s \
+--once \
+--tls_certificate_file ${ENV_DIR}/B/server/server.crt \
+--tls_key_file ${ENV_DIR}/B/server/server.key \
+--tls_certificate_chain_file ${ENV_DIR}/B/server/server_cat_all_without_end_entity_out_of_order.crt  \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+--mutual_authentication \
+--allow_no_crl \
+--verify_only" \
+"${TOP_DIR}/tls-test \
+--once \
+--tls_certificate_file ${ENV_DIR}/A/client/client.crt \
+--tls_key_file ${ENV_DIR}/A/client/client.key \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_root \
+--mutual_authentication \
+--allow_no_crl \
+--verify_only" ${debug_flag}
+if [ $? -ne 0 ]; then
+	fail_num=`expr ${fail_num} + 1`
+fi
+
+run_test "1-6-6" \
+"${TOP_DIR}/tls-test -s \
+--once \
+--tls_certificate_file ${ENV_DIR}/B/server/server.crt \
+--tls_key_file ${ENV_DIR}/B/server/server.key \
+--tls_certificate_chain_file ${ENV_DIR}/B/server/server_cat_all_without_end_entity_inter_ca_2.crt  \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+--mutual_authentication \
+--allow_no_crl \
+--verify_only" \
+"${TOP_DIR}/tls-test \
+--once \
+--tls_certificate_file ${ENV_DIR}/A/client/client.crt \
+--tls_key_file ${ENV_DIR}/A/client/client.key \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
+--mutual_authentication \
+--allow_no_crl \
+--verify_only" ${debug_flag}
+if [ $? -ne 0 ]; then
+	fail_num=`expr ${fail_num} + 1`
+fi
+
+run_test "1-6-7" \
+"${TOP_DIR}/tls-test -s \
+--once \
+--tls_certificate_file ${ENV_DIR}/B/server/server.crt \
+--tls_key_file ${ENV_DIR}/B/server/server.key \
+--tls_certificate_chain_file ${ENV_DIR}/B/server/server_cat_all_without_end_entity.crt \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_root \
+--mutual_authentication \
+--allow_no_crl \
+--verify_only" \
+"${TOP_DIR}/tls-test \
+--once \
+--tls_certificate_file ${ENV_DIR}/A/client/client.crt \
+--tls_key_file ${ENV_DIR}/A/client/client.key \
+--tls_certificate_chain_file ${ENV_DIR}/A/client/client_cat_all_without_end_entity.crt \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_root \
+--mutual_authentication \
+--allow_no_crl \
+--verify_only" ${debug_flag}
+if [ $? -ne 0 ]; then
+	fail_num=`expr ${fail_num} + 1`
+fi
+
+run_test "1-6-8" \
+"${TOP_DIR}/tls-test -s \
+--once \
+--tls_certificate_file ${ENV_DIR}/B/server/server.crt \
+--tls_key_file ${ENV_DIR}/B/server/server.key \
+--tls_certificate_chain_file ${ENV_DIR}/B/server/server_cat_all_without_end_entity_out_of_order.crt \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_root \
+--mutual_authentication \
+--allow_no_crl \
+--verify_only" \
+"${TOP_DIR}/tls-test \
+--once \
+--tls_certificate_file ${ENV_DIR}/A/client/client.crt \
+--tls_key_file ${ENV_DIR}/A/client/client.key \
+--tls_certificate_chain_file ${ENV_DIR}/A/client/client_cat_all_without_end_entity_out_of_order.crt \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_root \
+--mutual_authentication \
+--allow_no_crl \
+--verify_only" ${debug_flag}
+if [ $? -ne 0 ]; then
+	fail_num=`expr ${fail_num} + 1`
+fi
+
+run_test "1-6-9" \
+"${TOP_DIR}/tls-test -s \
+--once \
+--tls_certificate_file ${ENV_DIR}/B/server/server.crt \
+--tls_key_file ${ENV_DIR}/B/server/server.key \
+--tls_certificate_chain_file ${ENV_DIR}/B/server/cat_all_without_end_entity_inter_ca_2.crt \
+--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+--mutual_authentication \
+--allow_no_crl \
+--verify_only" \
+"${TOP_DIR}/tls-test \
+--once \
+--tls_certificate_file ${ENV_DIR}/A/client/client.crt \
+--tls_key_file ${ENV_DIR}/A/client/client.key \
+--tls_certificate_chain_file ${ENV_DIR}/A/client/client_cat_all_without_end_entity_inter_ca_2.crt \
+--tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
+--mutual_authentication \
+--allow_no_crl \
+--verify_only" ${debug_flag}
+if [ $? -ne 0 ]; then
+	fail_num=`expr ${fail_num} + 1`
+fi
+
 exit ${fail_num}
