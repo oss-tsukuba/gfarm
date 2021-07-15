@@ -3393,12 +3393,9 @@ parse_one_line(const char *s, char *p,
 		e = parse_set_var(p, &gfarm_ctxp->tls_ca_certificate_path);
 	} else if (strcmp(s, o = "tls_ca_revocation_path") == 0) {
 		e = parse_set_var(p, &gfarm_ctxp->tls_ca_revocation_path);
-	} else if (strcmp(s, o = "tls_client_ca_certificate_path") == 0) {
+	} else if (strcmp(s, o = "tls_ca_peer_verify_chain_path") == 0) {
 		e = parse_set_var(p,
-		    &gfarm_ctxp->tls_client_ca_certificate_path);
-	} else if (strcmp(s, o = "tls_client_ca_revocation_path") == 0) {
-		e = parse_set_var(p,
-		    &gfarm_ctxp->tls_client_ca_revocation_path);
+		    &gfarm_ctxp->tls_ca_peer_verify_chain_path);
 	} else if (strcmp(s, o = "tls_certificate_file") == 0) {
 		e = parse_set_var(p, &gfarm_ctxp->tls_certificate_file);
 	} else if (strcmp(s, o = "tls_certificate_chain_file") == 0) {
@@ -3883,12 +3880,9 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_ctxp->tls_ca_revocation_path == NULL)
 		gfarm_ctxp->tls_ca_revocation_path =
 		    strdup(GFARM_TLS_CA_REVOCATION_PATH_DEFAULT);
-	if (gfarm_ctxp->tls_client_ca_certificate_path == NULL)
-		gfarm_ctxp->tls_client_ca_certificate_path =
-		    strdup(GFARM_TLS_CLIENT_CA_CERTIFICATE_PATH_DEFAULT);
-	if (gfarm_ctxp->tls_client_ca_revocation_path == NULL)
-		gfarm_ctxp->tls_client_ca_revocation_path =
-		    strdup(GFARM_TLS_CLIENT_CA_REVOCATION_PATH_DEFAULT);
+	if (gfarm_ctxp->tls_ca_peer_verify_chain_path == NULL)
+		gfarm_ctxp->tls_ca_peer_verify_chain_path =
+		    strdup(GFARM_TLS_CA_PEER_VERIFY_CHAIN_PATH_DEFAULT);
 	/* GFARM_TLS_CERTIFICATE_CHAIN_FILE_DEFAULT is NULL */
 	if (gfarm_ctxp->tls_key_update == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->tls_key_update = GFARM_TLS_KEY_UPDATE_DEFAULT;
@@ -4163,8 +4157,7 @@ gfarm_config_sanity_check(void)
 {
 	if (gfarm_ctxp->tls_ca_certificate_path == NULL ||
 	    gfarm_ctxp->tls_ca_revocation_path == NULL ||
-	    gfarm_ctxp->tls_client_ca_certificate_path == NULL ||
-	    gfarm_ctxp->tls_client_ca_revocation_path == NULL ||
+	    gfarm_ctxp->tls_ca_peer_verify_chain_path == NULL ||
 	    gfarm_ctxp->tls_key_file == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 

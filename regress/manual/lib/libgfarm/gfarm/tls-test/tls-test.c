@@ -34,7 +34,6 @@ static struct tls_test_ctx_struct ttcs = {
 	NULL,
 	NULL,
 	NULL,
-	NULL,
 	-INT_MAX,
 	0,	/* No domain check. Mandatory to initialize properly 0 or 1 */
 	0,	/* No domain check. Mandatory to initialize properly 0 or 1 */
@@ -54,8 +53,7 @@ usage()
 		"\t--tls_cipher_suite\n"
 		"\t--tls_ca_certificate_path\n"
 		"\t--tls_ca_revocation_path\n"
-		"\t--tls_client_ca_certificate_path\n"
-		"\t--tls_client_ca_revocation_path\n"
+		"\t--tls_ca_peer_verify_chain_path\n"
 		"\t--tls_certificate_file\n"
 		"\t--tls_certificate_chain_file\n"
 		"\t--tls_key_file\n"
@@ -131,10 +129,8 @@ ctx_dump()
 			gfarm_ctxp->tls_ca_certificate_path);
 	fprintf(stderr, "tls_ca_revocation_path: '%s'\n",
 			gfarm_ctxp->tls_ca_revocation_path);
-	fprintf(stderr, "tls_client_ca_certificate_path: '%s'\n",
-			gfarm_ctxp->tls_client_ca_certificate_path);
-	fprintf(stderr, "tls_client_ca_revocation_path: '%s'\n",
-			gfarm_ctxp->tls_client_ca_revocation_path);
+	fprintf(stderr, "tls_ca_peer_verify_chain_path: '%s'\n",
+			gfarm_ctxp->tls_ca_peer_verify_chain_path);
 	fprintf(stderr, "tls_certificate_file: '%s'\n",
 			gfarm_ctxp->tls_certificate_file);
 	fprintf(stderr, "tls_certificate_chain_file: '%s'\n",
@@ -168,10 +164,8 @@ getopt_arg_dump()
 			gfarm_ctxp->tls_ca_certificate_path);
 	fprintf(stderr, "tls_ca_revocation_path: '%s'\n",
 			gfarm_ctxp->tls_ca_revocation_path);
-	fprintf(stderr, "tls_client_ca_certificate_path: '%s'\n",
-			gfarm_ctxp->tls_client_ca_certificate_path);
-	fprintf(stderr, "tls_client_ca_revocation_path: '%s'\n",
-			gfarm_ctxp->tls_client_ca_revocation_path);
+	fprintf(stderr, "tls_ca_peer_verify_chain_path: '%s'\n",
+			gfarm_ctxp->tls_ca_peer_verify_chain_path);
 	fprintf(stderr, "tls_certificate_file: '%s'\n",
 			gfarm_ctxp->tls_certificate_file);
 	fprintf(stderr, "tls_certificate_chain_file: '%s'\n",
@@ -217,22 +211,21 @@ prologue(int argc, char **argv, struct addrinfo **a_info)
 		{"tls_cipher_suite", 1, NULL, 0},
 		{"tls_ca_certificate_path", 1, NULL, 1},
 		{"tls_ca_revocation_path", 1, NULL, 2},
-		{"tls_client_ca_certificate_path", 1, NULL, 3},
-		{"tls_client_ca_revocation_path", 1, NULL, 4},
-		{"tls_certificate_file", 1, NULL, 5},
-		{"tls_certificate_chain_file", 1, NULL, 6},
-		{"tls_key_file", 1, NULL, 7},
-		{"tls_key_update", 1, NULL, 8},
-		{"network_receive_timeout", 1, NULL, 9},
-		{"mutual_authentication", 0, NULL, 10},
-		{"debug_level", 1, NULL, 11},
-		{"verify_only", 0, NULL, 12},
-		{"once", 0, NULL, 13},
-		{"build_chain", 0, NULL, 14},
-		{"interactive", 0, NULL, 15},
-		{"buf_size", 1, NULL, 16},
-		{"allow_no_crl", 0, NULL, 17},
-		{"proxy_cert", 0, NULL, 18},
+		{"tls_ca_peer_verify_chain_path", 1, NULL, 3},
+		{"tls_certificate_file", 1, NULL, 4},
+		{"tls_certificate_chain_file", 1, NULL, 5},
+		{"tls_key_file", 1, NULL, 6},
+		{"tls_key_update", 1, NULL, 7},
+		{"network_receive_timeout", 1, NULL, 8},
+		{"mutual_authentication", 0, NULL, 9},
+		{"debug_level", 1, NULL, 10},
+		{"verify_only", 0, NULL, 11},
+		{"once", 0, NULL, 12},
+		{"build_chain", 0, NULL, 13},
+		{"interactive", 0, NULL, 14},
+		{"buf_size", 1, NULL, 15},
+		{"allow_no_crl", 0, NULL, 16},
+		{"proxy_cert", 0, NULL, 17},
 		{NULL, 0, NULL, 0}
 	};
 
@@ -249,21 +242,18 @@ prologue(int argc, char **argv, struct addrinfo **a_info)
 			gfarm_ctxp->tls_ca_revocation_path = optarg;
 			break;
 		case 3:
-			gfarm_ctxp->tls_client_ca_certificate_path = optarg;
+			gfarm_ctxp->tls_ca_peer_verify_chain_path = optarg;
 			break;
 		case 4:
-			gfarm_ctxp->tls_client_ca_revocation_path = optarg;
-			break;
-		case 5:
 			gfarm_ctxp->tls_certificate_file = optarg;
 			break;
-		case 6:
+		case 5:
 			gfarm_ctxp->tls_certificate_chain_file = optarg;
 			break;
-		case 7:
+		case 6:
 			gfarm_ctxp->tls_key_file = optarg;
 			break;
-		case 8:
+		case 7:
 			if (!(string_to_int(optarg,
 					&gfarm_ctxp->tls_key_update,
 					DECIMAL_NUMBER))) {
@@ -271,7 +261,7 @@ prologue(int argc, char **argv, struct addrinfo **a_info)
 				"fail to set tls_key_update.\n");
 			}
 			break;
-		case 9:
+		case 8:
 			if (!(string_to_int(optarg,
 					&gfarm_ctxp->network_receive_timeout,
 					DECIMAL_NUMBER))) {
@@ -282,10 +272,10 @@ prologue(int argc, char **argv, struct addrinfo **a_info)
 					gfarm_ctxp->network_receive_timeout;
 			}
 			break;
-		case 10:
+		case 9:
 			is_mutual_authentication = true;
 			break;
-		case 11:
+		case 10:
 			if (!(string_to_int(optarg,
 					&debug_level,
 					DECIMAL_NUMBER))) {
@@ -293,20 +283,20 @@ prologue(int argc, char **argv, struct addrinfo **a_info)
 				"fail to set debug_level.\n");
 			}
 			break;
-		case 12:
+		case 11:
 			is_verify_only = true;
 			is_once = true;
 			break;
-		case 13:
+		case 12:
 			is_once = true;
 			break;
-		case 14:
+		case 13:
 			gfarm_ctxp->tls_build_chain_local = 1;
 			break;
-		case 15:
+		case 14:
 			is_interactive = true;
 			break;
-		case 16:
+		case 15:
 			if ((string_to_int(optarg,
 					&buf_size,
 					DECIMAL_NUMBER))) {
@@ -320,10 +310,10 @@ prologue(int argc, char **argv, struct addrinfo **a_info)
 				"fail to set buf_size.\n");
 			}
 			break;
-		case 17:
+		case 16:
 			gfarm_ctxp->tls_allow_no_crl = 1;
 			break;
-		case 18:
+		case 17:
 			is_proxy = true;
 			break;
 		case 's':

@@ -1069,8 +1069,8 @@ tls_set_ca_path(SSL_CTX *ssl_ctx, tls_role_t role,
 	 *
 	 *	SSL_CTX_load_verify_locations(ctx,
 	 *		tls_ca_certificate_path);
-	 *	if (tls_client_ca_certificate_path) {
-	 *		dir = tls_client_ca_certificate_path;
+	 *	if (tls_ca_peer_verify_chain_path) {
+	 *		dir = tls_ca_peer_verify_chain_path;
 	 *	} else {
 	 *		dir = tls_ca_certificate_path;
 	 *	}
@@ -1989,7 +1989,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 			str_or_NULL(gfarm_ctxp->tls_key_file);
 		char *tmp_acceptable_ca_path =
 			str_or_NULL(
-				gfarm_ctxp->tls_client_ca_certificate_path);
+				gfarm_ctxp->tls_ca_peer_verify_chain_path);
 
 		tmp_proxy_cert_file =
 			(use_proxy_cert == true && role == TLS_ROLE_CLIENT) ?
