@@ -69,7 +69,7 @@ run_test "10-3" \
 --tls_certificate_file ${CERT_DIR}/A/server/server.crt \
 --tls_key_file ${CERT_DIR}/A/server/server.key \
 --tls_ca_certificate_path ${CERT_DIR}/B/cacerts_all \
---tls_client_ca_certificate_path ${CERT_DIR}/B/cacerts_all \
+--tls_ca_peer_verify_chain_path ${CERT_DIR}/B/cacerts_all \
 --allow_no_crl --once" \
 "${TOP_DIR}/tls-test --mutual_authentication \
 --tls_certificate_file ${CERT_DIR}/B/client/client.crt \

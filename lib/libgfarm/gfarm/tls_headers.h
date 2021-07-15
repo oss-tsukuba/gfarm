@@ -105,8 +105,7 @@ struct tls_test_ctx_struct {
 	char *tls_cipher_suite;
 	char *tls_ca_certificate_path;
 	char *tls_ca_revocation_path;
-	char *tls_client_ca_certificate_path;
-	char *tls_client_ca_revocation_path;
+	char *tls_ca_peer_verify_chain_path;
 	char *tls_certificate_file;
 	char *tls_certificate_chain_file;
 	char *tls_key_file;

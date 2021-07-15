@@ -171,8 +171,7 @@ gfarm_context_init(void)
 	ctxp->tls_cipher_suite = NULL;
 	ctxp->tls_ca_certificate_path = NULL;
 	ctxp->tls_ca_revocation_path = NULL;
-	ctxp->tls_client_ca_certificate_path = NULL;
-	ctxp->tls_client_ca_revocation_path = NULL;
+	ctxp->tls_ca_peer_verify_chain_path = NULL;
 	ctxp->tls_certificate_file = NULL;
 	ctxp->tls_certificate_chain_file = NULL;
 	ctxp->tls_key_file = NULL;
@@ -222,8 +221,7 @@ gfarm_context_term(void)
 	free(gfarm_ctxp->tls_cipher_suite);
 	free(gfarm_ctxp->tls_ca_certificate_path);
 	free(gfarm_ctxp->tls_ca_revocation_path);
-	free(gfarm_ctxp->tls_client_ca_certificate_path);
-	free(gfarm_ctxp->tls_client_ca_revocation_path);
+	free(gfarm_ctxp->tls_ca_peer_verify_chain_path);
 	free(gfarm_ctxp->tls_certificate_file);
 	free(gfarm_ctxp->tls_certificate_chain_file);
 
