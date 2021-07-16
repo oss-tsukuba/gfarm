@@ -59,6 +59,22 @@ gen_certs() {
         return 1
     fi
 
-    ${GEN_CERTS_ALL_PATH}/gen_certs_all.sh -o "${OUTPUT_DIR}/${TEST_SUITE}/A"
-    ${GEN_CERTS_ALL_PATH}/gen_certs_all.sh -o "${OUTPUT_DIR}/${TEST_SUITE}/B" -X 2
+    ${GEN_CERTS_ALL_PATH}/gen_certs_all.sh -o "${OUTPUT_DIR}/${TEST_SUITE}/A" && \
+        ${GEN_CERTS_ALL_PATH}/gen_certs_all.sh -o "${OUTPUT_DIR}/${TEST_SUITE}/B" -X 2 && \
+        ${GEN_CERTS_ALL_PATH}/gen_certs_all.sh -o "${OUTPUT_DIR}/${TEST_SUITE}/C" -X 3
+}
+
+gen_certs_chain() {
+    TEST_SUITE=$1
+    GEN_CERTS_ALL_PATH=$2
+    OUTPUT_DIR=$3
+
+    if [ -z "${TEST_SUITE}" -o \
+        -z "${OUTPUT_DIR}" ]; then
+        puts_error "TEST_SUITE and OUTPUT_DIR" \
+            " are required arguments."
+        return 1
+    fi
+
+    ${GEN_CERTS_ALL_PATH}/gen_certs_chain.sh -d "${OUTPUT_DIR}/${TEST_SUITE}"
 }
