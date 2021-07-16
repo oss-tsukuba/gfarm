@@ -8,6 +8,7 @@ OUTPUT_DIR=${PWD}/out
 ISSUER_CA=""
 INTER_CA_SUFFIX=""
 SUBJECT_SUFFIX="1"
+DIR_NAME=""
 CA_TYPE="root"
 DAYS=36500
 IS_INTERACTIVE_INPUT_PASS="FALSE"
@@ -41,6 +42,8 @@ Generate a certificate.
     -I ISSUER_CA         Issuer CA. (default: empty)
     -S SUBJ              Subject.
                          Last subject of the server certificate and client certificate must be CN.
+    -D DIR_NAME          Certificate directory under 'OUTPUT_DIR'.
+                         (default: root_ca,server,client,inter_ca_XX)
     -h                   Help.
 EOS
     exit 0
@@ -173,7 +176,7 @@ gen_client() {
 
 
 ## Opts. ##
-while getopts riscd:x:o:p:PRX:I:S:C:h OPT; do
+while getopts riscd:x:o:p:PRX:I:S:C:D:h OPT; do
     case ${OPT} in
         r) CA_TYPE="root";;
         i) CA_TYPE="inter";;
@@ -187,6 +190,7 @@ while getopts riscd:x:o:p:PRX:I:S:C:h OPT; do
         R) IS_GEN_CRL="TRUE";;
         X) SUBJECT_SUFFIX=${OPTARG};;
         I) ISSUER_CA=`readlink -f ${OPTARG}`;;
+        D) DIR_NAME=${OPTARG};;
         S) SUBJ=${OPTARG};;
         h) usage;;
         *) usage;;
@@ -203,7 +207,7 @@ case ${CA_TYPE} in
         if [ -z "${SUBJ}" ]; then
             SUBJ="/C=JP/ST=Tokyo/O=SRA/CN=root_ca${SUBJECT_SUFFIX}.sra.co.jp"
         fi
-        DIR=root_ca
+        DIR=${DIR_NAME:-"root_ca"}
         CONF=${CONF_DIR}/openssl_ca.cnf
         ;;
     "inter")
@@ -216,7 +220,7 @@ case ${CA_TYPE} in
         if [ -z "${SUBJ}" ]; then
             SUBJ="/C=JP/ST=Tokyo/O=SRA/CN=inter_ca${SUBJECT_SUFFIX}_${INTER_CA_SUFFIX}.sra.co.jp"
         fi
-        DIR=inter_ca_${INTER_CA_SUFFIX}
+        DIR=${DIR_NAME:-"inter_ca_${INTER_CA_SUFFIX}"}
         CONF=${CONF_DIR}/openssl_ca.cnf
         ;;
     "server")
@@ -235,7 +239,7 @@ case ${CA_TYPE} in
             exit 1
         fi
 
-        DIR=server
+        DIR=${DIR_NAME:-"server"}
         CONF=${CONF_DIR}/openssl_server.cnf
         ;;
     "client")
@@ -259,7 +263,7 @@ case ${CA_TYPE} in
             read -sp "Password of client private key: " PASS
         fi
 
-        DIR=client
+        DIR=${DIR_NAME:-"client"}
         CONF=${CONF_DIR}/openssl_client.cnf
         ;;
 esac
