@@ -7,8 +7,8 @@ OUTPUT_DIR=${PWD}/out
 TEST_SUITE="verify_chain_path"
 
 PASS=test
-CLIENT_NAME="client2"
-SERVER_NAME="server2"
+CLIENT_NAME="client_under_inter_ca_4"
+SERVER_NAME="server_under_inter_ca_4"
 PREFIX_INTER_CA_NAME="inter_ca_"
 
 ISSUER_CA_SERVER_CERT=4
@@ -99,6 +99,17 @@ gen_cacerts_all() {
     fi
 }
 
+gen_cacerts_all_for_AB() {
+    output_certs_all_dir=$1
+    output_certs_all2_dir=$2
+
+    cp ${output_certs_all_dir}/*\.crt ${output_certs_all2_dir}/
+    ${TOP_DIR}/gen_hash_cert_files.sh "${output_certs_all2_dir}"
+    if [ $? -ne 0 ]; then
+        puts_error "gen_hash_cert_files.sh"
+        exit 1
+    fi
+}
 
 ## Opts. ##
 while getopts o:h OPT; do
@@ -128,6 +139,11 @@ fi
 # set test data.
 OUTPUT_SUITE_DIR="${OUTPUT_DIR}/${TEST_SUITE}"
 
+OUTPUT_AB_CERTS_ALL_DIR="${OUTPUT_SUITE_DIR}/A_B/cacerts_all"
+OUTPUT_AB_CERTS_ALL2_DIR="${OUTPUT_SUITE_DIR}/A_B/cacerts_all_under_inter_ca_4"
+
+mkdir -p ${OUTPUT_AB_CERTS_ALL2_DIR}
+
 SEQ=0
 TARGETS="A B"
 for TARGET in ${TARGETS};do
@@ -138,7 +154,7 @@ for TARGET in ${TARGETS};do
     OUTPUT_CLIENT_DIR="${OUTPUT_SUITE_DIR}/${TARGET}/${CLIENT_NAME}"
     OUTPUT_SERVER_DIR="${OUTPUT_SUITE_DIR}/${TARGET}/${SERVER_NAME}"
     OUTPUT_CERTS_ALL_DIR="${OUTPUT_SUITE_DIR}/${TARGET}/cacerts_all"
-    OUTPUT_CERTS_ALL2_DIR="${OUTPUT_SUITE_DIR}/${TARGET}/cacerts_all2"
+    OUTPUT_CERTS_ALL2_DIR="${OUTPUT_SUITE_DIR}/${TARGET}/cacerts_all_under_inter_ca_4"
 
     # Lazy evaluation.
     SUBJECT_SERVER_CERT=`eval echo ${SUBJECT_SERVER_CERT_TPL}`
@@ -173,7 +189,17 @@ for TARGET in ${TARGETS};do
         exit 1
     fi
 
+    cp ${OUTPUT_SUITE_DIR}/${TARGET}/cas/${PREFIX_INTER_CA_NAME}${ISSUER_CA_CLIENT_CERT}/ca.crt \
+        ${OUTPUT_AB_CERTS_ALL2_DIR}/${PREFIX_INTER_CA_NAME}${TARGET}_${ISSUER_CA_CLIENT_CERT}.crt
+
     SEQ=`expr ${SEQ} + 1`
 done
+
+# generate cacerts_all dir for A_B.
+gen_cacerts_all_for_AB "${OUTPUT_AB_CERTS_ALL_DIR}" "${OUTPUT_AB_CERTS_ALL2_DIR}"
+if [ $? -ne 0 ]; then
+    puts_error "gen_cacerts_all_for_AB: $?"
+    exit 1
+fi
 
 exit 0
