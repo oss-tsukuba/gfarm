@@ -82,23 +82,6 @@ gen_client() {
     cp ${output_cas_dir}/${CLIENT_NAME}/client.key ${output_dir}/
 }
 
-gen_cacerts_all() {
-    output_certs_all_dir=$1
-    output_certs_all2_dir=$2
-    output_cas_dir=$3
-
-    mkdir -p ${output_certs_all2_dir}/
-    cp ${output_certs_all_dir}/*\.crt ${output_certs_all2_dir}/
-    cp ${output_cas_dir}/${PREFIX_INTER_CA_NAME}${ISSUER_CA_CLIENT_CERT}/ca.crt \
-        ${output_certs_all2_dir}/${PREFIX_INTER_CA_NAME}${ISSUER_CA_CLIENT_CERT}.crt
-
-    ${TOP_DIR}/gen_hash_cert_files.sh "${output_certs_all2_dir}"
-    if [ $? -ne 0 ]; then
-        puts_error "gen_hash_cert_files.sh"
-        exit 1
-    fi
-}
-
 gen_cacerts_all_for_AB() {
     output_certs_all_dir=$1
     output_certs_all2_dir=$2
@@ -178,14 +161,6 @@ for TARGET in ${TARGETS};do
     gen_client "${OUTPUT_CAS_DIR}" "${OUTPUT_CLIENT_DIR}"
     if [ $? -ne 0 ]; then
         puts_error "gen_client"
-        exit 1
-    fi
-
-    # generate cacerts_all dir.
-    gen_cacerts_all "${OUTPUT_CERTS_ALL_DIR}" \
-        "${OUTPUT_CERTS_ALL2_DIR}" "${OUTPUT_CAS_DIR}"
-    if [ $? -ne 0 ]; then
-        puts_error "cp_cacerts_all"
         exit 1
     fi
 
