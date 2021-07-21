@@ -53,6 +53,7 @@ if [ ${exec_test_num} -ne 0 \
 	-a ${exec_test_num} -ne 2 \
 	-a ${exec_test_num} -ne 4 \
 	-a ${exec_test_num} -ne 5 \
+	-a ${exec_test_num} -ne 6 \
 	-a ${exec_test_num} -ne 7 \
 	-a ${exec_test_num} -ne 8 \
 	-a ${exec_test_num} -ne 9 \
@@ -121,6 +122,21 @@ if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 5 ]; then
 	if [ ${test5_fail_num} -ne 0 ]; then
 		fail_flag=1
 		total_fail_num=`expr ${total_fail_num} + ${test5_fail_num}`
+	fi
+fi
+
+# test 6
+if [ ${exec_test_num} -eq 0 -o ${exec_test_num} -eq 6 ]; then
+	if [ ${debug_flag} -eq 1 ]; then
+		${TOP_DIR}/test6.sh -d
+		test6_fail_num=$?
+	else
+		${TOP_DIR}/test6.sh
+		test6_fail_num=$?
+	fi
+	if [ ${test6_fail_num} -ne 0 ]; then
+		fail_flag=1
+		total_fail_num=`expr ${total_fail_num} + ${test6_fail_num}`
 	fi
 fi
 
