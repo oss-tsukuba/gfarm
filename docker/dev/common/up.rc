@@ -173,6 +173,17 @@ ${GFDOCKER_COPY_SHARED_KEY}
 gfuser -c user2 user2 / /O=Grid/OU=GlobusTest/OU=GlobusSimpleCA/CN=user2
 ${SUDO_USER2} ${GFDOCKER_COPY_SHARED_KEY}
 
+gfmdhost -m -C cluster1 ${GFDOCKER_HOSTNAME_PREFIX_GFMD}1
+### sync slave gfmd
+if [ $GFDOCKER_NUM_GFMDS -ge 2 ]; then
+  gfmdhost -m -C cluster1 ${GFDOCKER_HOSTNAME_PREFIX_GFMD}2
+fi
+### async slave gfmd
+### (required by docker/dev/common/test-fo.sh)
+if [ $GFDOCKER_NUM_GFMDS -ge 3 ]; then
+  gfmdhost -m -C cluster2 ${GFDOCKER_HOSTNAME_PREFIX_GFMD}3
+fi
+
 set +x
 
 test_auth() {
