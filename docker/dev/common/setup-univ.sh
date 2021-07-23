@@ -130,6 +130,15 @@ for i in $(seq 1 "$GFDOCKER_NUM_USERS"); do
     >> "$GRID_MAPFILE"
 done
 
+# make ${GFDOCKER_USERNAME_PREFIX}1 accesible to root@...
+root_dotssh=/root/.ssh
+root_authkey="${root_dotssh}/authorized_keys"
+user1="${GFDOCKER_USERNAME_PREFIX}1"
+user1_dotssh="/home/${user1}/.ssh"
+user1_authkey="${user1_dotssh}/authorized_keys"
+mkdir "${root_dotssh}"
+cat "${user1_authkey}" >> "${root_authkey}"
+
 base_gfservicerc="${gfarm_src_path}/docker/dev/common/rc.gfservice"
 base_gfarm2rc="${gfarm_src_path}/docker/dev/common/rc.gfarm2rc"
 for i in $(seq 1 "$GFDOCKER_NUM_USERS"); do
