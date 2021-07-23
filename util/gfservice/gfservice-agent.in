@@ -457,6 +457,7 @@ slavestart_gfmd()
 		log_debug "slavestart_gfmd: execute gfservice-timeout $1" \
 			"systemctl start `basename $GFMD_RC`"
 		# NOTE: "systemctl slavestart" is not defined.
+		set_conf $GFMD_CONF metadb_server_force_slave enable
 		gfservice-timeout $1 systemctl start \
 			`basename $GFMD_RC` > /dev/null 2>&1
 	else
