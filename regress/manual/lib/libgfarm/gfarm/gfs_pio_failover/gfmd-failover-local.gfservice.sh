@@ -5,7 +5,6 @@ set -eu
 GFSERVICE=${GFSERVICE-"gfservice"}
 TIMEOUT=${TIMEOUT-"30"}
 GFSERVICE_CONF=${GFSERVICE_CONF-""}
-#BACKUP_FILE=gfarm-pgsql.dmp
 
 if [ X$GFSERVICE_CONF != X ]; then
     GFSERVICE_OPT="-f $GFSERVICE_CONF"
@@ -62,6 +61,23 @@ wait_for_sync_all()
     done
 }
 
+# specified gfmds are not restarted.
+restart_gfmd()
+{
+    for gfmd in `gfmdhost`; do
+        skip=0
+        for ignored_gfmd in $@; do
+            if [ $gfmd = $ignored_gfmd ]; then
+                skip=1
+                break
+            fi
+        done
+        if [ $skip -ne 1 ]; then
+            $GFSERVICE $GFSERVICE_OPT -t $TIMEOUT restart-gfmd $gfmd
+        fi
+    done
+}
+
 MASTER=`get_master`
 if [ -z "$MASTER" ]; then
     exit 1
@@ -81,10 +97,15 @@ $GFSERVICE $GFSERVICE_OPT -t $TIMEOUT start-gfmd $SLAVE
 wait_for_sync_one $SLAVE
 
 $GFSERVICE $GFSERVICE_OPT -t $TIMEOUT stop-gfmd $MASTER
+
+### set "metadb_server_force_slave enable" to gfmd.conf
 $GFSERVICE $GFSERVICE_OPT promote-gfmd $SLAVE
 
 $GFSERVICE $GFSERVICE_OPT -t $TIMEOUT start-gfmd-slave $MASTER
 
 ### set async
 gfmdhost -m -C ${SLAVE_CLUSTER} $MASTER
+
+### fast synchronization
+restart_gfmd $MASTER $SLAVE
 wait_for_sync_all
