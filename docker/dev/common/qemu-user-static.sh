@@ -8,13 +8,11 @@ set -eux
 
 SWITCH="$1"
 
-CHECK_FILE=/proc/sys/fs/binfmt_misc/qemu-aarch64
-
 docker buildx ls
 
 case $SWITCH in
     check)
-        if [ -f $CHECK_FILE ]; then
+        if docker buildx ls | grep linux/arm64; then
             echo "enabled"
             exit 0
         else
