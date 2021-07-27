@@ -173,15 +173,26 @@ ${GFDOCKER_COPY_SHARED_KEY}
 gfuser -c user2 user2 / /O=Grid/OU=GlobusTest/OU=GlobusSimpleCA/CN=user2
 ${SUDO_USER2} ${GFDOCKER_COPY_SHARED_KEY}
 
+### master gfmd
 gfmdhost -m -C cluster1 ${GFDOCKER_HOSTNAME_PREFIX_GFMD}1
+
 ### sync slave gfmd
 if [ $GFDOCKER_NUM_GFMDS -ge 2 ]; then
-  gfmdhost -m -C cluster1 ${GFDOCKER_HOSTNAME_PREFIX_GFMD}2
+  ### XXX If "stop-gfmd" is not executed, master gfmd may freeze.
+  GFMD_NAME=${GFDOCKER_HOSTNAME_PREFIX_GFMD}2
+  gfservice stop-gfmd ${GFMD_NAME}
+  gfmdhost -m -C cluster1 ${GFMD_NAME}
+  gfservice start-gfmd ${GFMD_NAME}
 fi
+
 ### async slave gfmd
 ### (required by docker/dev/common/test-fo.sh)
 if [ $GFDOCKER_NUM_GFMDS -ge 3 ]; then
-  gfmdhost -m -C cluster2 ${GFDOCKER_HOSTNAME_PREFIX_GFMD}3
+  ### XXX If "stop-gfmd" is not executed, master gfmd may freeze.
+  GFMD_NAME=${GFDOCKER_HOSTNAME_PREFIX_GFMD}3
+  gfservice stop-gfmd ${GFMD_NAME}
+  gfmdhost -m -C cluster2 ${GFMD_NAME}
+  gfservice start-gfmd ${GFMD_NAME}
 fi
 
 set +x
