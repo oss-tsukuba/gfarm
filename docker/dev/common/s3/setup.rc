@@ -20,6 +20,8 @@ if [ ! -d $GFARM_S3_MINIO_WEB_SRC ]; then
 fi
 
 ### choose parameters
+export WORK=$HOME/tmp/work
+export MINIO_BUILDDIR=/mnt/user1/tmp/work
 GFARM_S3_PREFIX=/usr/local
 SHARED_DIR=$GFDOCKER_GFARMS3_SHARED_DIR
 CACHE_BASEDIR=$GFDOCKER_GFARMS3_CACHE_BASEDIR
@@ -30,13 +32,436 @@ WSGI_GROUP=$GFDOCKER_GFARMS3_WSGI_GROUP
 WSGI_PORT=$GFDOCKER_GFARMS3_WSGI_PORT
 MYPROXY_SERVER=$GFDOCKER_GFARMS3_MYPROXY_SERVER
 USERS=$GFDOCKER_GFARMS3_USERS
+CERT_DIR=$WORK/cert
+
+install_package_for_centos() {
+    ${SUDO} yum update -y
+    ${SUDO} yum install -y \
+	httpd \
+	mod_ssl \
+	uuid \
+	myproxy \
+	python3-devel \
+	python3-pip \
+	nodejs
+
+    ### nginx is not supported yet
+    #${SUDO} yum install -y nginx
+}
+
+install_package_for_ubuntu() {
+    ${SUDO} apt-get update
+    ${SUDO} apt-get upgrade -y
+    ${SUDO} apt-get install -y \
+        apache2 \
+        uuid \
+        myproxy \
+        python3 \
+        python3-pip \
+        python3-dev \
+        npm
+}
+
+install_package() {
+    case $GFDOCKER_PRJ_NAME in
+        centos*-*)
+            install_package_for_centos
+            ;;
+        ubuntu*-*)
+            install_package_for_ubuntu
+            ;;
+       *)
+            ;;
+    esac
+}
+
+install_prerequisites() {
+    install_package
+
+    ${SUDO} python3 -m pip install Django
+    ${SUDO} python3 -m pip install gunicorn
+
+    ## for test.py
+    ${SUDO} python3 -m pip install boto3
+}
+
+create_certificate() {
+    mkdir $CERT_DIR
+    cd $CERT_DIR
+    openssl genrsa 2048 > ca.key
+    openssl rsa -in ca.key -pubout -out ca.pub
+    openssl req -new -key ca.key -subj "/CN=testca" > ca.csr
+    openssl x509 -req -in ca.csr -signkey ca.key -days 1825 -out ca.crt
+
+    echo "subjectAltName = DNS:${GFDOCKER_SUBNET%.0/24}.$GFDOCKER_START_HOST_ADDR" > san.txt
+    openssl genrsa 2048 > server.key
+    openssl req -new -key server.key -subj "/CN=${GFDOCKER_SUBNET%.0/24}.$GFDOCKER_START_HOST_ADDR" > server.csr
+    openssl x509 -req -in server.csr -out server.crt -days 365 -CAkey ca.key -CA ca.crt -CAcreateserial -extfile san.txt
+
+    case $GFDOCKER_PRJ_NAME in
+        centos*-*)
+            SYSTEM_CERT_DIR=/usr/share/pki/ca-trust-source/anchors
+            GFARM_CA_CERT_DIR=$SYSTEM_CERT_DIR
+            SYSTEM_CERT_UPDATE=update-ca-trust
+            SERVER_CERT_DIR=/etc/pki/tls/certs
+	    SERVER_KEY_DIR=/etc/pki/tls/private
+            ;;
+        ubuntu*-*)
+            SYSTEM_CERT_DIR=/usr/local/share/ca-certificates
+            GFARM_CA_CERT_DIR=$SYSTEM_CERT_DIR/gfarm
+            SYSTEM_CERT_UPDATE=update-ca-certificates
+            SERVER_CERT_DIR=/etc/ssl/server
+	    SERVER_KEY_DIR=/etc/ssl/server
+            ${SUDO} mkdir -p $SERVER_CERT_DIR
+            ${SUDO} chmod 700 $SERVER_CERT_DIR
+            ;;
+       *)
+            ;;
+    esac
+
+    ${SUDO} mkdir -p $GFARM_CA_CERT_DIR
+    ${SUDO} cp ca.crt $GFARM_CA_CERT_DIR
+    ${SUDO} chown root:root $GFARM_CA_CERT_DIR/ca.crt
+
+    ${SUDO} $SYSTEM_CERT_UPDATE
+
+    ${SUDO} cp server.crt $SERVER_CERT_DIR
+    ${SUDO} chown root:root $SERVER_CERT_DIR/server.crt
+    ${SUDO} chmod 644 $SERVER_CERT_DIR/server.crt
+
+    ${SUDO} cp server.key $SERVER_KEY_DIR
+    ${SUDO} chown root:root $SERVER_KEY_DIR
+    ${SUDO} chmod 600 $SERVER_KEY_DIR/server.key
+}
+
+deploy_http_server_for_centos() {
+    cat <<EOF | sed -e "s;@SERVER_CRT@;$SERVER_CRT;" \
+                    -e "s;@SERVER_KEY@;$SERVER_KEY;" \
+                    -e "s;@HTTPD_COMMON_CONF@;$HTTPD_COMMON_CONF;" \
+		    | ${SUDO} dd of=$HTTPD_CONF
+ServerName ${GFDOCKER_SUBNET%.0/24}.$GFDOCKER_START_HOST_ADDR
+<VirtualHost *:80>
+	Include @HTTPD_COMMON_CONF@
+</VirtualHost>
+
+<VirtualHost *:443>
+	SSLEngine on
+	SSLCertificateFile @SERVER_CRT@
+	SSLCertificateKeyFile @SERVER_KEY@
+	Include @HTTPD_COMMON_CONF@
+</VirtualHost>
+EOF
+
+    cat <<EOF | ${SUDO} dd of=$HTTPD_COMMON_CONF
+DocumentRoot $HTTPD_DocumentRoot
+ServerAdmin root@localhost
+CustomLog logs/access_log common
+ErrorLog logs/error_log
+
+<Directory "$HTTPD_DocumentRoot">
+	AllowOverride FileInfo AuthConfig Limit Indexes
+	Options MultiViews Indexes SymLinksIfOwnerMatch Includes
+	AllowOverride All
+	Require all granted
+</Directory>
+EOF
+
+    ## for debug (do not apply following settings on service host)
+    ${SUDO} chmod og+rX /var/log/httpd
+}
+
+deploy_http_server_for_ubuntu() {
+    ${SUDO} apt-get install -y language-pack-ja language-pack-en
+
+    cat <<EOF | sed -e "s;@SERVER_CRT@;$SERVER_CRT;" \
+                    -e "s;@SERVER_KEY@;$SERVER_KEY;" \
+                    -e "s;@HTTPD_COMMON_CONF@;$HTTPD_COMMON_CONF;" \
+		    | ${SUDO} dd of=$HTTPD_CONF
+ServerName ${GFDOCKER_SUBNET%.0/24}.$GFDOCKER_START_HOST_ADDR
+<VirtualHost *:80>
+	Include @HTTPD_COMMON_CONF@
+</VirtualHost>
+
+<VirtualHost *:443>
+	SSLEngine on
+	SSLCertificateFile @SERVER_CRT@
+	SSLCertificateKeyFile @SERVER_KEY@
+	Include @HTTPD_COMMON_CONF@
+</VirtualHost>
+EOF
+
+    cat <<EOF | ${SUDO} dd of=$HTTPD_COMMON_CONF
+DocumentRoot $HTTPD_DocumentRoot
+ServerAdmin root@localhost
+CustomLog /var/log/apache2/access_log common
+ErrorLog /var/log/apache2/error_log
+
+<Directory "$HTTPD_DocumentRoot">
+	AllowOverride FileInfo AuthConfig Limit Indexes
+	Options MultiViews Indexes SymLinksIfOwnerMatch Includes
+	AllowOverride All
+	Require all granted
+</Directory>
+EOF
+
+    HTTPD_UNIT_DROPIN=/etc/systemd/system/apache2.d
+    HTTPD_COMMON_ENV=$HTTPD_UNIT_DROPIN/env.conf
+    ${SUDO} mkdir $HTTPD_UNIT_DROPIN
+    ${SUDO} cat <<EOF | ${SUDO} dd of=$HTTPD_COMMON_ENV
+Environment="APACHE_RUN_USER=www-data APACHE_RUN_GROUP=www-data APACHE_PID_FILE=/var/run/apache2/apache2.pid APACHE_RUN_DIR=/var/run/apache2 APACHE_LOCK_DIR=/var/lock/apache2 APACHE_LOG_DIR=/var/log/apache2 LANG=C"
+EOF
+    ${SUDO} systemctl daemon-reload
+
+    ${SUDO} a2ensite `basename $HTTPD_CONF`
+    ${SUDO} a2dissite 000-default
+    ${SUDO} a2enmod ssl
+    ${SUDO} a2enmod rewrite
+    ${SUDO} a2enmod proxy
+    ${SUDO} a2enmod proxy_http
+    ${SUDO} systemctl restart $HTTPD_UNIT_NAME
+}
+
+deploy_http_server() {
+    SERVER_CRT=$SERVER_CERT_DIR/server.crt
+    SERVER_KEY=$SERVER_KEY_DIR/server.key
+    HTTPD_DocumentRoot=/usr/local/share/www
+    INDEX_HTML="${HTTPD_DocumentRoot}/index.html"
+
+    case $GFDOCKER_PRJ_NAME in
+        centos*-*)
+            HTTPD_UNIT_NAME=httpd
+            HTTPD_CONF=/etc/httpd/conf.d/myserver.conf
+            HTTPD_COMMON_CONF=/etc/httpd/conf.d/myserver-common.conf
+            deploy_http_server_for_centos
+            ;;
+        ubuntu*-*)
+            HTTPD_UNIT_NAME=apache2
+            HTTPD_CONF=/etc/apache2/sites-available/myserver.conf
+            HTTPD_COMMON_CONF=/etc/apache2/sites-available/myserver-common.conf
+            deploy_http_server_for_ubuntu
+            ;;
+       *)
+            ;;
+    esac
+
+    ${SUDO} systemctl enable $HTTPD_UNIT_NAME
+
+    if [ ! -f "$INDEX_HTML" ]; then
+	${SUDO} mkdir -p "$HTTPD_DocumentRoot"
+#	echo "gfarm -- $(date)" | ${SUDO} dd of="$INDEX_HTML"
+	echo '<a href="/gfarm/console">Gfarm-S3</a>' |
+		${SUDO} dd of="$INDEX_HTML" oflag=append
+    fi
+
+    ### nginx is not supported yet
+    #vi /etc/nginx/nginx.conf
+    #systemctl enable nginx.service
+    ## debug
+    #chmod o+rx /var/log/nginx
+}
+
+install_gfarm_s3() {
+    cd $WORK/gfarm-s3-minio-web
+    ./configure \
+	--prefix=$GFARM_S3_PREFIX \
+	--with-gfarm=$WITH_GFARM \
+	--with-globus=/usr \
+	--with-myproxy=/usr \
+	--with-apache=/usr \
+	--with-gunicorn=/usr/local \
+	--with-wsgi-homedir=$WSGI_HOMEDIR \
+	--with-wsgi-user=$WSGI_USER \
+	--with-wsgi-group=$WSGI_GROUP \
+	--with-wsgi-port=$WSGI_PORT \
+	--with-cache-basedir=$CACHE_BASEDIR \
+	--with-cache-size=$CACHE_SIZE \
+	--with-myproxy-server=$MYPROXY_SERVER \
+	--with-gfarm-shared-dir=$SHARED_DIR \
+	--with-minio-builddir=$MINIO_BUILDDIR
+    make
+    ${SUDO} make install
+    cd -
+}
+
+configure_gfarm_s3() {
+    ## create cache directory
+    ${SUDO} mkdir -p $CACHE_BASEDIR
+    ${SUDO} chmod 1777 $CACHE_BASEDIR
+
+    ## create shared directory
+    gfmkdir -p ${SHARED_DIR#/} || true
+    gfchmod 1777 ${SHARED_DIR#/} || true
+
+    . ${GFARM_S3_PREFIX}/etc/gfarm-s3.conf
+
+    echo 'user1 ALL=(user1) NOPASSWD: ALL' |
+        ${SUDO} dd of=/etc/sudoers.d/gfarm-s3-user1 oflag=append
+
+    ## register users
+    for u in $USERS; do
+	# match whole line
+	if grep -q -x ${u} ${GFARMS3_LOCAL_USER_MAP}; then
+	    echo "already exists: ${u}"
+	    continue
+	fi
+	global_user=${u%%:*}
+	local_user=${u%:*}
+	local_user=${local_user#*:}
+	access_key_id=${u##*:}
+	${SUDO} $GFARM_S3_PREFIX/bin/gfarm-s3-useradd $global_user $local_user $access_key_id
+	${SUDO} usermod -a -G gfarms3 $local_user
+	shared_dir_user=${SHARED_DIR#/}/$local_user
+	gfmkdir -p $shared_dir_user
+	gfsudo gfchown $global_user $shared_dir_user
+	gfsudo gfchmod 755 $shared_dir_user
+    done
+
+    ## edit HTTPD's configfile (i.e. myserver-common.conf)
+    tmpfile=$(mktemp /tmp/XXXXXX) || exit 1
+    (cat $HTTPD_COMMON_CONF
+    cat $WORK/gfarm-s3-minio-web/etc/apache-gfarm-s3.conf
+    ) >$tmpfile
+    ${SUDO} cp $WORK/gfarm-s3-minio-web/etc/e403.html $HTTPD_DocumentRoot/e403.html
+    ${SUDO} systemctl stop $HTTPD_UNIT_NAME
+    ${SUDO} chown --reference $HTTPD_COMMON_CONF $tmpfile
+    ${SUDO} chgrp --reference $HTTPD_COMMON_CONF $tmpfile
+    ${SUDO} chmod --reference $HTTPD_COMMON_CONF $tmpfile
+    ${SUDO} mv $tmpfile $HTTPD_COMMON_CONF
+    ${SUDO} systemctl start $HTTPD_UNIT_NAME
+
+    ## start gunicorn service
+    ${SUDO} systemctl enable --now gunicorn.service
+}
+
+install_aws_cli() {
+    case $GFDOCKER_PRJ_NAME in
+        ubuntu*-*)
+            ${SUDO} apt-get install -y curl
+            ;;
+       *)
+            ;;
+    esac
+
+    # XXX TODO define in Dockerfile
+    ## install AWS CLI v1
+    #sudo yum install -y awscli
+
+    # install AWS CLI v2
+    AWSCLI_URL="https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
+    AWSCLI_ZIP=${WORK}/awscliv2.zip
+
+    if [ ! -f ${AWSCLI_ZIP} ]; then
+        curl ${AWSCLI_URL} -o ${AWSCLI_ZIP}
+        cd ${WORK}
+        # overwrite existing files
+        unzip -o ${AWSCLI_ZIP}
+        ${SUDO} ./aws/install --update
+    fi
+    /usr/local/bin/aws --version
+}
+
+install_s3cmd() {
+    # XXX TODO define in Dockerfile
+    ## install s3cmd
+    case $GFDOCKER_PRJ_NAME in
+        centos*-*)
+            ${SUDO} yum install -y s3cmd
+            ;;
+        ubuntu*-*)
+            ${SUDO} apt-get install -y s3cmd
+            ;;
+       *)
+            ;;
+    esac
+}
+
+install_goofys_dep_package_for_centos() {
+    ${SUDO} yum install -y wget
+}
+
+install_goofys_dep_package_for_ubuntu() {
+    ${SUDO} apt-get install -y wget
+}
+
+install_goofys() {
+    case $GFDOCKER_PRJ_NAME in
+        centos*-*)
+            install_goofys_dep_package_for_centos
+            ;;
+        ubuntu*-*)
+            install_goofys_dep_package_for_ubuntu
+            ;;
+       *)
+            ;;
+    esac
+
+    ### use source package
+    # GOPATH=${HOME}/work
+    # export GOPATH
+    # GO=${MINIO_BUILDDIR}/minio/work/go/bin/go
+    # GOOFYS_URL=github.com/kahing/goofys
+    # ${GO} get ${GOOFYS_URL}
+    # ${GO} install ${GOOFYS_URL}
+
+    ### use binary
+    GOOFYS_BIN_URL=https://github.com/kahing/goofys/releases/latest/download/goofys
+    GOOFYS_BIN=/usr/local/bin/goofys
+    if [ ! -f ${GOOFYS_BIN} ]; then
+	    ${SUDO} wget -O ${GOOFYS_BIN} ${GOOFYS_BIN_URL}
+	    ${SUDO} chmod +x ${GOOFYS_BIN}
+    fi
+}
+
+install_s3fs_dep_package_for_centos() {
+    ${SUDO} yum install -y \
+        automake \
+        gcc-c++ \
+        fuse-devel \
+        openssl-devel \
+        libcurl-devel \
+        libxml2-devel
+}
+
+install_s3fs_dep_package_for_ubuntu() {
+    ${SUDO} apt-get install -y \
+        automake \
+        g++ \
+        libfuse-dev \
+        libssl-dev \
+        libcurl4-openssl-dev \
+        libxml2-dev
+}
+
+install_s3fs() {
+    case $GFDOCKER_PRJ_NAME in
+        centos*-*)
+            install_s3fs_dep_package_for_centos
+            ;;
+        ubuntu*-*)
+            install_s3fs_dep_package_for_ubuntu
+            ;;
+       *)
+            ;;
+    esac
+
+    S3FS_URL=https://github.com/s3fs-fuse/s3fs-fuse.git
+    [ -d $WORK/s3fs-fuse ] || (cd $WORK && git clone ${S3FS_URL})
+    (cd $WORK/s3fs-fuse && \
+    ./autogen.sh && \
+    ./configure --prefix=/usr && \
+    make -j && \
+    ${SUDO} make install)
+}
+
+#cleanup() {
+#    (cd $WORK/gfarm-s3-minio-web && ${SUDO} make clean)
+#    (cd $WORK/gfarm-s3-minio-web && ${SUDO} make distclean)
+#}
 
 ## create working directory
-export WORK=$HOME/tmp/work
 mkdir -p $WORK
 
 # MINIO_BUILDDIR is used by "make install-go"
-export MINIO_BUILDDIR=/mnt/user1/tmp/work
 ${SUDO} mkdir -p ${MINIO_BUILDDIR}/minio/work/build
 ${SUDO} chown -R user1 ${MINIO_BUILDDIR}
 
@@ -55,216 +480,41 @@ if [ $GFDOCKER_GFARMS3_UPDATE_ONLY -eq 1 ]; then
 	exit 0
 fi
 
-# XXX TODO define in Dockerfile
 ### install prerequisites
-${SUDO} yum update -y
-${SUDO} yum install -y \
-	httpd \
-	mod_ssl \
-	uuid \
-	myproxy \
-	python3-devel \
-	python3-pip \
-	nodejs \
-
-### nginx is not supported yet
-#${SUDO} yum install -y nginx
-
-${SUDO} python3 -m pip install Django
-${SUDO} python3 -m pip install gunicorn
-
-## for test.py
-${SUDO} python3 -m pip install boto3
+install_prerequisites
 
 ### site settings
 
+## create self signed certificate
+create_certificate
+
 ## deploy apache http server
-HTTPD_CONF=/etc/httpd/conf.d/myserver.conf
-HTTPD_COMMON_CONF=/etc/httpd/conf.d/myserver-common.conf
-HTTPD_DocumentRoot=/usr/local/share/www
-INDEX_HTML="${HTTPD_DocumentRoot}/index.html"
-SERVER_CRT=/etc/pki/tls/certs/localhost.crt
-SERVER_KEY=/etc/pki/tls/private/localhost.key
-
-cat <<EOF | sed -e "s;@SERVER_CRT@;$SERVER_CRT;" \
-                -e "s;@SERVER_KEY@;$SERVER_KEY;" \
-                -e "s;@HTTPD_COMMON_CONF@;$HTTPD_COMMON_CONF;" \
-		| ${SUDO} dd of=$HTTPD_CONF
-ServerName ${GFDOCKER_SUBNET%.0/24}.$GFDOCKER_START_HOST_ADDR
-<VirtualHost *:80>
-	Include @HTTPD_COMMON_CONF@
-</VirtualHost>
-
-<VirtualHost *:443>
-	SSLEngine on
-	SSLCertificateFile @SERVER_CRT@
-	SSLCertificateKeyFile @SERVER_KEY@
-	Include @HTTPD_COMMON_CONF@
-</VirtualHost>
-EOF
-
-cat <<EOF | ${SUDO} dd of=$HTTPD_COMMON_CONF
-DocumentRoot $HTTPD_DocumentRoot
-ServerAdmin root@localhost
-CustomLog logs/access_log common
-ErrorLog logs/error_log
-
-<Directory "$HTTPD_DocumentRoot">
-	AllowOverride FileInfo AuthConfig Limit Indexes
-	Options MultiViews Indexes SymLinksIfOwnerMatch Includes
-	AllowOverride All
-	Require all granted
-</Directory>
-EOF
-
-if [ ! -f "$INDEX_HTML" ]; then
-	${SUDO} mkdir -p "$HTTPD_DocumentRoot"
-#	echo "gfarm -- $(date)" | ${SUDO} dd of="$INDEX_HTML"
-	echo '<a href="/gfarm/console">Gfarm-S3</a>' |
-		${SUDO} dd of="$INDEX_HTML" oflag=append
-fi
-
-## for debug (do not apply following settings on service host)
-${SUDO} chmod og+rX /var/log/httpd
-
-${SUDO} systemctl enable httpd
-
-### nginx is not supported yet
-#vi /etc/nginx/nginx.conf
-#systemctl enable nginx.service
-## debug
-#chmod o+rx /var/log/nginx
+deploy_http_server
 
 ## create user for wsgi
 ${SUDO} groupadd $WSGI_GROUP || true
-id $WSGI_USER || ${SUDO} useradd $WSGI_USER -g $WSGI_GROUP -d $WSGI_HOMEDIR
+id $WSGI_USER || ${SUDO} useradd -m $WSGI_USER -g $WSGI_GROUP -d $WSGI_HOMEDIR
 
-#### install gfarm-s3
+## install gfarm-s3
+install_gfarm_s3
 
-(cd $WORK/gfarm-s3-minio-web && ./configure \
-	--prefix=$GFARM_S3_PREFIX \
-	--with-gfarm=$WITH_GFARM \
-	--with-globus=/usr \
-	--with-myproxy=/usr \
-	--with-apache=/usr \
-	--with-gunicorn=/usr/local \
-	--with-wsgi-homedir=$WSGI_HOMEDIR \
-	--with-wsgi-user=$WSGI_USER \
-	--with-wsgi-group=$WSGI_GROUP \
-	--with-wsgi-port=$WSGI_PORT \
-	--with-cache-basedir=$CACHE_BASEDIR \
-	--with-cache-size=$CACHE_SIZE \
-	--with-myproxy-server=$MYPROXY_SERVER \
-	--with-gfarm-shared-dir=$SHARED_DIR \
-	--with-minio-builddir=$MINIO_BUILDDIR)
+## gfarm-s3-settings
+configure_gfarm_s3
 
-#(cd $WORK/gfarm-s3-minio-web/minio && make install-go)
-## include install-go
-(cd $WORK/gfarm-s3-minio-web && make)
-(cd $WORK/gfarm-s3-minio-web && ${SUDO} make install)
+## install aws
+install_aws_cli
 
-#### gfarm-s3-settings
-
-## create cache directory
-${SUDO} mkdir -p $CACHE_BASEDIR
-${SUDO} chmod 1777 $CACHE_BASEDIR
-
-## create shared directory
-gfmkdir -p ${SHARED_DIR#/} || true
-gfchmod 1777 ${SHARED_DIR#/} || true
-
-. ${GFARM_S3_PREFIX}/etc/gfarm-s3.conf
-
-## register users
-for u in $USERS; do
-	# match whole line
-	if grep -q -x ${u} ${GFARMS3_LOCAL_USER_MAP}; then
-		echo "already exists: ${u}"
-		continue
-	fi
-	global_user=${u%%:*}
-	local_user=${u%:*}
-	local_user=${local_user#*:}
-	access_key_id=${u##*:}
-	${SUDO} $GFARM_S3_PREFIX/bin/gfarm-s3-useradd $global_user $local_user $access_key_id
-	${SUDO} usermod -a -G gfarms3 $local_user
-	shared_dir_user=${SHARED_DIR#/}/$local_user
-	gfmkdir -p $shared_dir_user
-	gfsudo gfchown $global_user $shared_dir_user
-	gfsudo gfchmod 755 $shared_dir_user
-done
-
-## edit HTTPD's configfile (i.e. myserver-common.conf)
-tmpfile=$(mktemp /tmp/XXXXXX) || exit 1
-(cat $HTTPD_COMMON_CONF
- cat $WORK/gfarm-s3-minio-web/etc/apache-gfarm-s3.conf
- ) >$tmpfile
-${SUDO} cp $WORK/gfarm-s3-minio-web/etc/e403.html $HTTPD_DocumentRoot/e403.html
-${SUDO} apachectl stop
-${SUDO} chown --reference $HTTPD_COMMON_CONF $tmpfile
-${SUDO} chgrp --reference $HTTPD_COMMON_CONF $tmpfile
-${SUDO} chmod --reference $HTTPD_COMMON_CONF $tmpfile
-${SUDO} mv $tmpfile $HTTPD_COMMON_CONF
-${SUDO} apachectl start
-
-## start gunicorn service
-${SUDO} systemctl enable --now gunicorn.service
-
-# XXX TODO define in Dockerfile
-## install AWS CLI v1
-#sudo yum install -y awscli
-
-# install AWS CLI v2
-AWSCLI_URL="https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
-AWSCLI_ZIP=${WORK}/awscliv2.zip
-
-if [ ! -f ${AWSCLI_ZIP} ]; then
-    curl ${AWSCLI_URL} -o ${AWSCLI_ZIP}
-    cd ${WORK}
-    # overwrite existing files
-    unzip -o ${AWSCLI_ZIP}
-    ${SUDO} ./aws/install --update
-fi
-/usr/local/bin/aws --version
-
-# XXX TODO define in Dockerfile
 ## install s3cmd
-sudo yum install -y s3cmd
+install_s3cmd
 
 ## install goofys
-### use source package
-# GOPATH=${HOME}/work
-# export GOPATH
-# GO=${MINIO_BUILDDIR}/minio/work/go/bin/go
-# GOOFYS_URL=github.com/kahing/goofys
-# ${GO} get ${GOOFYS_URL}
-# ${GO} install ${GOOFYS_URL}
-
-### use binary
-GOOFYS_BIN_URL=https://github.com/kahing/goofys/releases/latest/download/goofys
-GOOFYS_BIN=/usr/local/bin/goofys
-if [ ! -f ${GOOFYS_BIN} ]; then
-	${SUDO} yum install -y wget
-	${SUDO} wget -O ${GOOFYS_BIN} ${GOOFYS_BIN_URL}
-	${SUDO} chmod +x ${GOOFYS_BIN}
-fi
+install_goofys
 
 ## install s3fs
-S3FS_URL=https://github.com/s3fs-fuse/s3fs-fuse.git
-
-# XXX TODO define in Dockerfile
-sudo yum install -y automake gcc-c++ fuse-devel openssl-devel libcurl-devel libxml2-devel
-
-[ -d $WORK/s3fs-fuse ] || (cd $WORK && git clone ${S3FS_URL})
-(cd $WORK/s3fs-fuse && \
-./autogen.sh && \
-./configure --prefix=/usr && \
-make -j && \
-${SUDO} make install)
+install_s3fs
 
 ## cleanup
-#(cd $WORK/gfarm-s3-minio-web && ${SUDO} make clean)
-#(cd $WORK/gfarm-s3-minio-web && ${SUDO} make distclean)
+# cleanup
 
 update_secret() {
 	user="${1}"
