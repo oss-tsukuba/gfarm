@@ -159,3 +159,32 @@ su - "$GFDOCKER_PRIMARY_USER" -c " \
       patch -p0 < \${f}; \
     done \
 "
+
+SYSTEMD_DIR=/etc/systemd/system
+CLEAR_NOLOGIN=clear-nologin.service
+CLEAR_NOLOGIN_SCRIPT=/root/clear-nologin.sh
+
+cat <<EOF > ${SYSTEMD_DIR}/${CLEAR_NOLOGIN}
+[Unit]
+After=systemd-user-sessions.service
+
+[Service]
+User=root
+ExecStart=${CLEAR_NOLOGIN_SCRIPT}
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+cat <<EOF > ${CLEAR_NOLOGIN_SCRIPT}
+#!/bin/sh
+
+while systemctl is-failed systemd-user-sessions; do
+  systemctl start systemd-user-sessions
+  sleep 1
+done
+exit 0
+EOF
+
+chmod +x ${CLEAR_NOLOGIN_SCRIPT}
+systemctl enable ${CLEAR_NOLOGIN}
