@@ -938,6 +938,117 @@ tls_load_prvkey(const char *file, EVP_PKEY **keyptr)
 }
 
 /*
+ * Accumulate X509_NAMEs from X509s in a file.
+ */
+static inline gfarm_error_t
+accumulate_x509_names_from_file(const char *file,
+	STACK_OF(X509_NAME) *stack, int *n_added)
+{
+	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
+	FILE *fd = NULL;
+
+	errno = 0;
+	tls_runtime_flush_error();
+	if (likely(is_valid_string(file) == true && stack != NULL &&
+		((fd = fopen(file, "r")) != NULL))) {
+		X509 *x = NULL;
+		X509_NAME *xn = NULL;
+		X509_NAME *xndup = NULL;
+		int n_certs = 0;
+		int total_certs = 0;
+		bool got_failure = false;
+		char b[4096];
+		char *bp = b;
+		gfarm_error_t got_dn = GFARM_ERR_UNKNOWN;
+		bool do_dbg_msg = (gflog_get_priority_level() >= LOG_DEBUG) ?
+			true : false;
+
+		if (n_added != NULL) {
+			*n_added = 0;
+		}
+
+		while ((x = PEM_read_X509(fd, NULL, NULL, NULL)) != NULL &&
+			got_failure == false) {
+			if (likely((xn = X509_get_subject_name(x)) != NULL &&
+				(do_dbg_msg == true &&
+				(got_dn = get_peer_dn_gsi_ish(xn, &bp,
+					sizeof(b))) == GFARM_ERR_NO_ERROR) &&
+				(xndup = X509_NAME_dup(xn)) != NULL &&
+				(n_certs = sk_X509_NAME_push(stack, xndup)) !=
+				0)) {
+				total_certs = n_certs;
+				if (do_dbg_msg == true) {
+					gflog_tls_debug(GFARM_MSG_UNFIXED,
+						"push a cert \"%s\" to a "
+						"stack from %s.", b, file);
+				}
+			} else if (xndup == NULL || n_certs == 0) {
+				got_failure = true;
+				if (xndup == NULL) {
+					ret = GFARM_ERR_NO_MEMORY;
+				} else if (n_certs == 0) {
+					ret = GFARM_ERR_TLS_RUNTIME_ERROR;
+				}
+				if (xndup != NULL) {
+					X509_NAME_free(xndup);
+				}
+				if (do_dbg_msg == true) {
+					gflog_tls_debug(GFARM_MSG_UNFIXED,
+						"failed to push a cert \"%s\" "
+						"to a stack from %s.",
+						b, file);
+				}
+			} else {
+				got_failure = true;
+				ret = GFARM_ERR_TLS_RUNTIME_ERROR;
+				if (xn != NULL && got_dn == true) {
+					gflog_tls_error(GFARM_MSG_UNFIXED,
+						"Can't add a cert \"%s\" "
+						"from %s.", b, file);
+				} else {
+					gflog_tls_error(GFARM_MSG_UNFIXED,
+						"Can't add a cert from %s.",
+						file);
+				}
+			}
+			got_dn = GFARM_ERR_UNKNOWN;
+			n_certs = 0;
+			X509_free(x);
+			x = NULL;
+			b[0] = '\0';
+			xn = NULL;
+			xndup = NULL;
+		}
+		if (likely(got_failure == false)) {
+			tls_runtime_flush_error();
+			ret = GFARM_ERR_NO_ERROR;
+			if (n_added != NULL) {
+				*n_added = total_certs;
+			}
+			if (total_certs == 0) {
+				gflog_tls_warning(GFARM_MSG_UNFIXED,
+					"No cert is added from %s.", file);
+			}
+		}
+	} else {
+		if (is_valid_string(file) == true && fd == NULL) {
+			ret = gfarm_errno_to_error(errno);
+			gflog_tls_error(GFARM_MSG_UNFIXED,
+				"Can't open %s: %s.",
+				file, gfarm_error_string(ret));
+		} else {
+			ret = GFARM_ERR_INVALID_ARGUMENT;
+		}
+	}
+
+	if (fd != NULL) {
+		(void)fclose(fd);
+	}
+
+	return (ret);
+}
+
+/*
  * Cert files collector for acceptable certs list.
  */
 static inline gfarm_error_t
@@ -1334,6 +1445,7 @@ tls_add_certs(SSL_CTX *ssl_ctx, const char *file, int *n_added)
 				}
 			}
 			midx = 1;
+			X509_free(x);
 		}
 		if (likely(got_failure == false)) {
 			tls_runtime_flush_error();
@@ -1347,8 +1459,6 @@ tls_add_certs(SSL_CTX *ssl_ctx, const char *file, int *n_added)
 						  
 			}
 		} else {
-			/* XXX ret code */
-			/* GFARM_ERR_INVALID_CREDENTIAL ??*/
 			ret = GFARM_ERR_TLS_RUNTIME_ERROR;
 		}
 	} else {
