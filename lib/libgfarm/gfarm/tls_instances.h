@@ -3,34 +3,8 @@
 #if defined(HAVE_TLS_1_3) && defined(IN_TLS_CORE)
 
 /*
- * Here declare and define static objects needed in tls_funcs.f
+ * Here declare and define static objects needed in tls_funcs.h
  */
-
-/*
- * Default ciphersuites for TLSv1.3
- *
- * See also:
- *	https://www.openssl.org/docs/manmaster/man3/\
- *	SSL_CTX_set_ciphersuites.html
- *	https://wiki.openssl.org/index.php/TLS1.3
- *		"Ciphersuites"
- */
-#define TLS13_DEFAULT_CIPHERSUITES \
-	"TLS_AES_128_GCM_SHA256:" \
-	"TLS_AES_256_GCM_SHA384:" \
-	"TLS_CHACHA20_POLY1305_SHA256:" \
-	"TLS_AES_128_CCM_SHA256:" \
-	"TLS_AES_128_CCM_8_SHA256"
-
-static const char *const tls13_valid_cyphers[] = {
-	"TLS_AES_128_GCM_SHA256",
-	"TLS_AES_256_GCM_SHA384",
-	"TLS_CHACHA20_POLY1305_SHA256",
-	"TLS_AES_128_CCM_SHA256:",
-	"TLS_AES_128_CCM_8_SHA256",
-
-	NULL
-};
 
 /*
  * Static passwd buffer
@@ -88,7 +62,6 @@ static cert_add_method_t const methods[] = {
 
 #else
 
-#error Don not include this header unless you know what you need.
+#error Do not include this header unless you know what you need.
 
 #endif /* HAVE_TLS_1_3 && IN_TLS_CORE */
-

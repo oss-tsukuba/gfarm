@@ -299,6 +299,6 @@ stringlist.lo:
 timespec.lo: timespec.h
 url.lo: $(GFUTIL_SRCDIR)/queue.h config.h gfs_pio.h
 gfs_rdma.lo: gfs_rdma.h
-io_tls.lo: tls_headers.h tls_funcs.h context.h gfp_xdr.h io_tls.h
+io_tls.lo: tls_headers.h tls_instances.h tls_funcs.h context.h gfp_xdr.h io_tls.h
 
 include $(optional_rule)

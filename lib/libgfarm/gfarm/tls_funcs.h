@@ -197,68 +197,6 @@ tty_get_passwd(char *buf, size_t maxlen, const char *prompt, int *lenptr)
  */
 
 /*
- * TLSv1.3 suitable cipher checker
- */
-static inline gfarm_error_t
-is_str_a_tls13_allowed_cipher(const char *str)
-{
-	gfarm_error_t ret = GFARM_ERRMSG_TLS_INVALID_CIPHER;
-
-	if (likely(is_valid_string(str) == true)) {
-		const char * const *c = tls13_valid_cyphers;
-		do {
-			if (strcmp(str, *c) == 0) {
-				ret = GFARM_ERR_NO_ERROR;
-				break;
-			}
-		} while (*++c != NULL);
-
-		if (ret != GFARM_ERR_NO_ERROR) {
-			gflog_tls_error(GFARM_MSG_UNFIXED,
-				"\"%s\" is not a TLSv1.3 suitable cipher.",
-				str);
-		}
-	}
-
-	return (ret);
-}
-
-static inline gfarm_error_t
-is_ciphersuites_ok(const char *cipher_list)
-{
-	gfarm_error_t ret = GFARM_ERR_INVALID_ARGUMENT;
-
-	if (likely(is_valid_string(cipher_list) == true)) {
-		if (strchr(cipher_list, ':') == NULL) {
-			ret = is_str_a_tls13_allowed_cipher(cipher_list);
-		} else {
-			char *str = strdup(cipher_list);
-			char *p = str;
-			char *c;
-			bool loop = true;
-
-			do {
-				c = strchr(p, ':');
-				if (c != NULL) {
-					*c = '\0';
-				} else {
-					loop = false;
-				}
-				ret = is_str_a_tls13_allowed_cipher(p);
-				if (ret == GFARM_ERR_NO_ERROR) {
-					break;
-				}
-				p = ++c;
-			} while (loop == true);
-
-			free(str);
-		}
-	}
-
-	return (ret);
-}
-
-/*
  * Directory/File permission check primitives
  */
 
@@ -1445,7 +1383,6 @@ tls_add_certs(SSL_CTX *ssl_ctx, const char *file, int *n_added)
 				}
 			}
 			midx = 1;
-			X509_free(x);
 		}
 		if (likely(got_failure == false)) {
 			tls_runtime_flush_error();
@@ -2205,26 +2142,9 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 	 * Ciphersuites (optional)
 	 * Set only TLSv1.3 allowed ciphersuites
 	 */
-	if (is_valid_string(gfarm_ctxp->tls_cipher_suite) == true) {
-		if ((ret = is_ciphersuites_ok(gfarm_ctxp->tls_cipher_suite)
-			== GFARM_ERR_NO_ERROR)) {
-			tmp = gfarm_ctxp->tls_cipher_suite;
-		} else {
-			goto bailout;
-		}
-	} else {
-		tmp = TLS13_DEFAULT_CIPHERSUITES;
-	}
-	if (tmp != NULL) {
-		ciphersuites = strdup(tmp);
-		if (unlikely(ciphersuites == NULL)) {
-			ret = GFARM_ERR_NO_MEMORY;
-			gflog_tls_error(GFARM_MSG_UNFIXED,
-				"Can't duplicate a CA cert store name: %s",
-				gfarm_error_string(ret));
-			goto bailout;
-		}
-	}
+	ciphersuites =
+		(tmp = str_or_NULL(gfarm_ctxp->tls_cipher_suite)) != NULL ?
+		strdup(tmp) : NULL;
 
 	/*
 	 * Final parameter check
@@ -2378,22 +2298,17 @@ runtime_init:
 		/*
 		 * Set ciphersuites
 		 */
-		tls_runtime_flush_error();
-		if (unlikely(SSL_CTX_set_ciphersuites(ssl_ctx,
-					ciphersuites) != 1)) {
-			gflog_tls_error(GFARM_MSG_UNFIXED,
-				"Failed to set ciphersuites "
-				"\"%s\" to the SSL_CTX.",
-				ciphersuites);
-			/* ?? GFARM_ERRMSG_TLS_INVALID_CIPHER ?? */
-			ret = GFARM_ERR_INTERNAL_ERROR;
-			goto bailout;
-		} else {
-			/*
-			 * XXX FIXME:
-			 *	How one can check the ciphers are
-			 *	successfully set?
-			 */
+		if (is_valid_string(ciphersuites) == true) {
+			tls_runtime_flush_error();
+			if (unlikely(SSL_CTX_set_ciphersuites(ssl_ctx,
+						ciphersuites) != 1)) {
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"Failed to set ciphersuites "
+					"\"%s\" to the SSL_CTX.",
+					ciphersuites);
+				ret = GFARM_ERRMSG_TLS_INVALID_CIPHER;
+				goto bailout;
+			}
 		}
 
 		/*
