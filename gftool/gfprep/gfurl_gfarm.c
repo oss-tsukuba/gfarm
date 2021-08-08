@@ -16,6 +16,7 @@ gfurl_convert_gfs_stat(struct gfs_stat *from_st, struct gfurl_stat *to_st)
 {
 	to_st->nlink = from_st->st_nlink;
 	to_st->mode = from_st->st_mode;
+	to_st->ino = from_st->st_ino;
 	to_st->size = from_st->st_size;
 	to_st->mtime = from_st->st_mtimespec;
 }
@@ -69,6 +70,16 @@ gfurl_gfarm_chmod(const char *path, int mode)
 
 	e = gfs_lchmod(path, (gfarm_mode_t)mode);
 	gfmsg_debug_e(e, "gfs_lchmod(%s, %o)", path, mode);
+	return (e);
+}
+
+static gfarm_error_t
+gfurl_gfarm_rename(const char *from, const char *to)
+{
+	gfarm_error_t e;
+
+	e = gfs_rename(from, to);
+	gfmsg_debug_e(e, "gfs_rename(%s, %s)", from, to);
 	return (e);
 }
 
@@ -137,6 +148,7 @@ const struct gfurl_functions gfurl_func_gfarm = {
 	.exist = gfurl_gfarm_exist,
 	.lutimens = gfurl_gfarm_lutimens,
 	.chmod = gfurl_gfarm_chmod,
+	.rename = gfurl_gfarm_rename,
 	.mkdir = gfurl_gfarm_mkdir,
 	.rmdir = gfurl_gfarm_rmdir,
 	.unlink = gfurl_gfarm_unlink,

@@ -54,6 +54,12 @@ gfurl_hpss_chmod(const char *path, int mode)
 }
 
 static gfarm_error_t
+gfurl_hpss_rename(const char *from, const char *to)
+{
+	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
+}
+
+static gfarm_error_t
 gfurl_hpss_mkdir(const char *path, int mode, int skip_existing)
 {
 	int retv;
@@ -100,6 +106,7 @@ const struct gfurl_functions gfurl_func_hpss = {
 	.exist = gfurl_hpss_exist,
 	.lutimens = gfurl_hpss_lutimens,
 	.chmod = gfurl_hpss_chmod,
+	.rename = gfurl_hpss_rename,
 	.mkdir = gfurl_hpss_mkdir,
 	.rmdir = gfurl_hpss_rmdir,
 	.readlink = gfurl_hpss_readlink,

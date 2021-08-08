@@ -34,6 +34,7 @@ SUBDIRS = \
 	gfmv \
 	gfncopy \
 	gfpath \
+	gfpcat \
 	gfprep \
 	gfquota \
 	gfreg \

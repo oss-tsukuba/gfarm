@@ -652,6 +652,16 @@ gfurl_chmod(GFURL u, int mode)
 	return (u->func.chmod(u->epath, mode));
 }
 
+/* same scheme */
+gfarm_error_t
+gfurl_rename(GFURL from, GFURL to)
+{
+	if (from->scheme != to->scheme) {
+		gfmsg_fatal("different scheme");
+	}
+	return (from->func.rename(from->epath, to->epath));
+}
+
 gfarm_error_t
 gfurl_mkdir(GFURL u, int mode, int skip_existing)
 {

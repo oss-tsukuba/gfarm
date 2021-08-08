@@ -5,6 +5,7 @@
 struct gfurl_stat {
 	gfarm_int32_t nlink;
 	gfarm_int32_t mode;
+	gfarm_ino_t ino;
 	gfarm_int64_t size;
 	struct gfarm_timespec mtime;
 };
@@ -15,6 +16,7 @@ struct gfurl_functions {
 	gfarm_error_t (*lutimens)(const char *, struct gfarm_timespec *,
 				  struct gfarm_timespec *);
 	gfarm_error_t (*chmod)(const char *, int);
+	gfarm_error_t (*rename)(const char *, const char *);
 	gfarm_error_t (*mkdir)(const char *, int, int);
 	gfarm_error_t (*rmdir)(const char *);
 	gfarm_error_t (*unlink)(const char *);
@@ -83,6 +85,7 @@ gfarm_error_t gfurl_lutimens(GFURL, struct gfarm_timespec *,
 	struct gfarm_timespec *);
 gfarm_error_t gfurl_set_mtime(GFURL, struct gfarm_timespec *);
 gfarm_error_t gfurl_chmod(GFURL, int);
+gfarm_error_t gfurl_rename(GFURL, GFURL);
 gfarm_error_t gfurl_mkdir(GFURL, int, int);
 gfarm_error_t gfurl_rmdir(GFURL);
 gfarm_error_t gfurl_unlink(GFURL);

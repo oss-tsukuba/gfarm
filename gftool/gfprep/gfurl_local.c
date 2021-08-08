@@ -2,6 +2,7 @@
  * $Id$
  */
 
+#include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/stat.h>
@@ -20,6 +21,7 @@ gfurl_convert_local_stat(struct stat *from_st, struct gfurl_stat *to_st)
 {
 	to_st->nlink = from_st->st_nlink;
 	to_st->mode = from_st->st_mode;
+	to_st->ino = from_st->st_ino;
 	to_st->size = from_st->st_size;
 	to_st->mtime.tv_sec = from_st->st_mtime;
 	to_st->mtime.tv_nsec = gfarm_stat_mtime_nsec(from_st);
@@ -86,6 +88,21 @@ gfurl_local_chmod(const char *path, int mode)
 	if (retv == -1) {
 		e = gfarm_errno_to_error(errno);
 		gfmsg_debug_e(e, "chmod(%s, %o)", path, mode);
+		return (e);
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+gfurl_local_rename(const char *from, const char *to)
+{
+	gfarm_error_t e;
+	int retv;
+
+	retv = rename(from, to);
+	if (retv == -1) {
+		e = gfarm_errno_to_error(errno);
+		gfmsg_debug_e(e, "rename(%s, %s)", from, to);
 		return (e);
 	}
 	return (GFARM_ERR_NO_ERROR);
@@ -192,6 +209,7 @@ const struct gfurl_functions gfurl_func_local = {
 	.exist = gfurl_local_exist,
 	.lutimens = gfurl_local_lutimens,
 	.chmod = gfurl_local_chmod,
+	.rename = gfurl_local_rename,
 	.mkdir = gfurl_local_mkdir,
 	.rmdir = gfurl_local_rmdir,
 	.unlink = gfurl_local_unlink,
