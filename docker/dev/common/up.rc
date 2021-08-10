@@ -148,6 +148,8 @@ for host in $gfmds; do
   (gfservice set-gfmd-conf "$host" digest md5 \
   && gfservice set-gfmd-conf "$host" metadb_server_heartbeat_interval 10 \
   && gfservice set-gfmd-conf "$host" 'auth enable gsi' '*' \
+  && gfservice set-gfmd-conf "$host" write_verify enable \
+  && gfservice set-gfmd-conf "$host" write_verify_interval 600 \
   && gfservice restart-gfmd "$host") &
 done
 wait
