@@ -117,6 +117,7 @@ free_option(struct gfpcat_option *opt)
 struct gfpcat_range {
 	off_t offset;
 	off_t size;
+	int pattern;
 };
 
 static void
@@ -129,33 +130,44 @@ gfpcat_get_range(off_t assigned_offset, off_t assigned_size,
 	if (part_offset < assigned_offset) {
 		if (part_end < assigned_offset) {
 			/* PAT 0 : out of range */
+			range->pattern = 0;
 			range->offset = 0;
 			range->size = 0;
 		} else {  /* assigned_offset <= part_end */
 			range->offset = assigned_offset;
 			if (part_end < assigned_end) {
 				/* PAT 2 : left assigned */
+				range->pattern = 2;
 				/* ex. 5 = 14 - 10 + 1 */
 				range->size = part_end - assigned_offset + 1;
 			} else {  /*  assigned_end <= part_end */
-				/* PAT 5 : full assigned */
+				/* PAT 5 : full assigned (1) */
+				range->pattern = 5;
 				range->size = assigned_size;
 			}
 		}
 	} else {  /* assigned_offset <= part_offset */
-		if (part_end < assigned_end) {
+		if (part_end <= assigned_end) {
 			/* PAT 4 : full part */
+			range->pattern = 4;
 			range->offset = part_offset;
 			range->size = part_size;
-		} else {  /* assigned_end <= part_end */
-			if (part_offset < assigned_end) {
+		} else {  /* assigned_end < part_end */
+			if (assigned_offset == part_offset) {
+				/* PAT 6 : full assigned (2) */
+				range->pattern = 6;
+				range->offset = part_offset;
+				range->size = assigned_size;
+			} else if (part_offset <= assigned_end) {
 				/* PAT 3 : right assigned */
+				range->pattern = 3;
 				range->offset = part_offset;
 				/* ex. 5 = 10 - (24 - 19) */
 				range->size = part_size
 				    - (part_end - assigned_end);
-			} else {  /* assigned_end <= part_offset */
+			} else {  /* assigned_end < part_offset */
 				/* PAT 1 : out of range */
+				range->pattern = 1;
 				range->offset = 0;
 				range->size = 0;
 			}
@@ -164,6 +176,7 @@ gfpcat_get_range(off_t assigned_offset, off_t assigned_size,
 }
 
 struct range_pattern {
+	int expect_pattern;
 	off_t assigned_offset;
 	off_t assigned_size;
 	off_t part_offset;
@@ -176,12 +189,25 @@ static int
 gfpcat_get_range_test(void)
 {
 	struct range_pattern patterns[] = {
-		{ 10, 10, 0, 10, 0, 0 },	/* PAT 0 : out of range */
-		{ 10, 10, 20, 10, 0, 0 },	/* PAT 1 : out of range */
-		{ 10, 10, 5, 10, 10, 5 },	/* PAT 2 : left assigned */
-		{ 10, 10, 15, 10, 15, 5 },	/* PAT 3 : right assigned */
-		{ 10, 10, 11, 5, 11, 5 },	/* PAT 4 : full part */
-		{ 10, 10, 5, 20, 10, 10 },	/* PAT 5 : full assigned */
+		{ 0, 10, 10, 0, 10, 0, 0 },	/* PAT 0 : out of range */
+		{ 1, 10, 10, 20, 10, 0, 0 },	/* PAT 1 : out of range */
+		{ 2, 10, 10, 5, 10, 10, 5 },	/* PAT 2 : left assigned */
+		{ 3, 10, 10, 15, 10, 15, 5 },	/* PAT 3 : right assigned */
+		{ 4, 10, 10, 11, 5, 11, 5 },	/* PAT 4 : full part */
+		{ 5, 10, 10, 5, 20, 10, 10 },	/* PAT 5 : full assigned (1) */
+		{ 6, 10, 10, 10, 11, 10, 10 },	/* PAT 6 : full assigned (2) */
+
+		/* boundary */
+		{ 0, 1, 1, 0, 1, 0, 0 },
+		{ 1, 1, 1, 2, 1, 0, 0 },
+		{ 2, 1, 2, 0, 2, 1, 1 },
+		{ 3, 1, 2, 2, 2, 2, 1 },
+		{ 4, 1, 2, 1, 1, 1, 1 },
+		{ 5, 1, 2, 0, 3, 1, 2 },
+		{ 6, 1, 2, 1, 3, 1, 2 },
+
+		/* example */
+		{ 6, 2110911, 1, 2110911, 1048937, 2110911, 1 },
 	};
 	size_t num = sizeof(patterns) / sizeof(patterns[0]);
 	int i;
@@ -193,13 +219,21 @@ gfpcat_get_range_test(void)
 
 		gfpcat_get_range(p->assigned_offset, p->assigned_size,
 		    p->part_offset, p->part_size, &range);
-		if (range.offset != p->expect_offset
+		if (range.pattern != p->expect_pattern
+		    || range.offset != p->expect_offset
 		    || range.size != p->expect_size) {
-			gfmsg_error("gfpcat_get_range_test: PAT=%d", i);
-
+			gfmsg_error("gfpcat_get_range_test[%d]: "
+			   "range.pattern=%d, p->expect_pattern=%d, "
+			   "range.offset=%lld, p->expect_offset=%lld, "
+			   "range.size=%lld, p->expect_size=%lld\n", i,
+			    range.pattern, p->expect_pattern,
+			    (long long)range.offset,
+			    (long long)p->expect_offset,
+			    (long long)range.size,
+			    (long long)p->expect_size);
 			return (1);
 		}
-		gfmsg_info("gfpcat_get_range_test: PAT=%d: PASS", i);
+		gfmsg_info("gfpcat_get_range_test[%d]: PASS", i);
 	}
 
 	return (0);
@@ -367,13 +401,10 @@ gfpcat_copy_io(struct gfpcat_file *src_fp, off_t src_offset,
 	size_t bufsize = sizeof(buf);
 	off_t result_len;
 
-	gfmsg_debug("off_t size=%ld", sizeof(off_t));
-
 	gfmsg_debug("copy_io: src_url=%s, src_offset=%lld,"
-	    " dst_url=%s, dst_offset=%lld, len=%lld",
+	    " dst_offset=%lld, len=%lld",
 	    gfurl_url(src_fp->url),
 	    (long long)src_offset,
-	    gfurl_url(dst_fp->url),
 	    (long long)dst_offset,
 	    (long long)len);
 
@@ -695,6 +726,8 @@ gfpcat_read_a_file(GFURL url, int write_fd)
 	int rsize, wsize;
 	off_t fsize;
 
+	gfmsg_debug("gfpcat_read_a_file: start: %s", gfurl_url(url));
+
 	e = gfpcat_open(url, O_RDONLY, 0, &fh);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfmsg_error_e(e, "%s: open", gfurl_url(url));
@@ -708,21 +741,20 @@ gfpcat_read_a_file(GFURL url, int write_fd)
 			gfmsg_error_e(e, "%s: gfs_pio_recvfile",
 			    gfurl_url(url));
 		}
-		gfmsg_debug("gfpcat_read_a_file: %s: size=%lld",
-			    gfurl_url(url), (long long)fsize);
+		gfmsg_debug("gfpcat_read_a_file: done: %s: size=%lld",
+		    gfurl_url(url), (long long)fsize);
 		gfpcat_close(&fh);
 		return (e);
 	}
+
+	gfmsg_debug("gfpcat_read_a_file: from local: %s", gfurl_url(url));
 
 	/* from local */
 	fsize = 0;
 	while ((e = gfpcat_read(&fh, buf, bufsize, &rsize))
 	    == GFARM_ERR_NO_ERROR) {
 		if (rsize == 0) {  /* EOF */
-			gfmsg_debug("gfpcat_read_a_file: %s: size=%lld",
-			    gfurl_url(url), (long long)fsize);
-			gfpcat_close(&fh);
-			return (0);
+			goto end;
 		}
 		wsize = write(write_fd, buf, rsize);
 		if (rsize != wsize) {
@@ -732,9 +764,15 @@ gfpcat_read_a_file(GFURL url, int write_fd)
 		}
 		fsize += wsize;
 	}
-	gfmsg_error_e(e, "%s: read", gfurl_url(url));
+end:
 	gfpcat_close(&fh);
-
+	if (e == GFARM_ERR_NO_ERROR) {
+		gfmsg_debug("gfpcat_read_a_file: done: %s: size=%lld",
+		    gfurl_url(url), (long long)fsize);
+		return (0);
+	} else {
+		gfmsg_error_e(e, "%s: read", gfurl_url(url));
+	}
 	return (3);
 }
 
@@ -791,6 +829,8 @@ gfpcat_fork_read(struct gfpcat_option *opt,
 		close(0);
 		close(1);
 		close(pipefds[0]);
+		/* line buffered */
+		setvbuf(stderr, (char *)NULL, _IOLBF, 0);
 		rv = read_func(opt, pipefds[1]);
 		close(pipefds[1]);
 		fflush(stderr);
@@ -1113,6 +1153,7 @@ copied:
 		gfpcat_gfarm_initialize(&opt);
 	}
 	if (rv != 0) { /* failed */
+		gfmsg_debug("unlink: %s", gfurl_url(opt.tmp_url));
 		e = gfurl_unlink(opt.tmp_url);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gfmsg_warn("cannot remove a temporary file: %s",
@@ -1122,6 +1163,8 @@ copied:
 	}
 	/* succeeded */
 
+	gfmsg_debug("rename: %s -> %s",
+	    gfurl_url(opt.tmp_url), gfurl_url(opt.out_url));
 	e = gfurl_rename(opt.tmp_url, opt.out_url);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfmsg_error_e(e, "cannot rename a temporary file: %s -> %s",
