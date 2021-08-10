@@ -816,6 +816,94 @@ tty_passwd_callback_body(char *buf, int maxlen, int rwflag, void *u)
 
 }
 
+/*
+ * An iterator for every file in a directory
+ */
+static inline gfarm_error_t
+iterate_file_in_a_dir(const char *dir,
+	gfarm_error_t (*func)(const char *, void *, int *), void *funcarg,
+	int *nptr)
+{
+	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
+	DIR *d = NULL;
+	struct stat s;
+	struct dirent *de = NULL;
+	char filebuf[PATH_MAX];
+	int nadd = 0;
+	int iter_n = 0;
+
+	errno = 0;
+	if (unlikely(dir == NULL || nptr == NULL ||
+		   (d = opendir(dir)) == NULL || errno != 0)) {
+		if (errno != 0) {
+			ret = gfarm_errno_to_error(errno);
+			gflog_tls_error(GFARM_MSG_UNFIXED,
+				"Can't open a directory %s: %s", dir,
+				gfarm_error_string(ret));
+		} else {
+			ret = GFARM_ERR_INVALID_ARGUMENT;
+		}
+		goto done;
+	}
+		
+	*nptr = 0;
+	do {
+		errno = 0;
+		if (likely((de = readdir(d)) != NULL)) {
+			if ((de->d_name[0] == '.' && de->d_name[1] == '\0') ||
+				(de->d_name[0] == '.' && de->d_name[1] == '.'
+				 && de->d_name[2] == '\0')) {
+				continue;
+			}
+			if (func == NULL) {
+				nadd++;
+				continue;
+			}
+			(void)snprintf(filebuf, sizeof(filebuf),
+				"%s/%s", dir, de->d_name);
+			errno = 0;
+			if (stat(filebuf, &s) == 0 &&
+				S_ISREG(s.st_mode) != 0 &&
+				(ret = is_file_readable(-1, filebuf)) ==
+				GFARM_ERR_NO_ERROR) {
+				iter_n = 0;
+				ret = (func)(filebuf, funcarg, &iter_n);
+				if (likely(ret == GFARM_ERR_NO_ERROR)) {
+					if (iter_n > 0) {
+						nadd += iter_n;
+					}
+				} else {
+					break;
+				}
+			} else {
+				gflog_tls_warning(GFARM_MSG_UNFIXED,
+					"Skip to treat %s.", filebuf);
+				continue;
+			}
+		} else {
+			if (errno == 0) {
+				ret = GFARM_ERR_NO_ERROR;
+			} else {
+				ret = gfarm_errno_to_error(errno);
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"readdir(3) error: %s (%d)",
+					gfarm_error_string(ret), errno);
+			}
+			break;
+		}
+	} while (true);
+
+done:
+	if (likely(ret == GFARM_ERR_NO_ERROR)) {
+		*nptr = nadd;
+	}
+	if (d != NULL) {
+		(void)closedir(d);
+	}
+
+	return (ret);
+}
+
 static inline gfarm_error_t
 tls_load_prvkey(const char *file, EVP_PKEY **keyptr)
 {
@@ -1473,8 +1561,9 @@ tls_set_revoke_path(SSL_CTX *ssl_ctx, const char *revoke_path)
 
 	tls_runtime_flush_error();
 	if (likely(ssl_ctx != NULL &&
-		(ret = scan_dir_for_x509_name(revoke_path, NULL, &nent)) ==
-		GFARM_ERR_NO_ERROR && nent > 0 &&
+		(ret = iterate_file_in_a_dir(revoke_path,
+			NULL, NULL, &nent)) == GFARM_ERR_NO_ERROR &&
+		nent > 0 &&
 		(store = SSL_CTX_get_cert_store(ssl_ctx)) != NULL &&
 		is_valid_string(revoke_path) == true)) {
 		int st;
