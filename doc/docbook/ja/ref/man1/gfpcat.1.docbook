@@ -1,0 +1,253 @@
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
+<!-- $Id$ -->
+
+<refentry id="gfpcat.1">
+
+<refentryinfo><date>10 Aug 2021</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfpcat</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id="name">
+<refname>gfpcat</refname>
+<refpurpose>複数ファイルを結合しながら並列にコピーする</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfpcat</command>
+  <arg choice="opt" rep="norepeat">-pqvd</arg>
+  <arg choice="opt" rep="norepeat">-h <replaceable>filesystem-node</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-j <replaceable>num-of-processes</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-m <replaceable>minimum-bytes</replaceable></arg>
+  <arg choice="plain" rep="norepeat">-o <replaceable>destination-file</replaceable></arg>
+  <arg choice="plain" rep="repeat"><replaceable>source-file</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id="description"><title>DESCRIPTION</title>
+
+<para>
+<command moreinfo="none">gfpcat</command>
+は、単一ファイルまたは複数ファイルを単一のファイルに対して
+並列にコピーします。
+</para>
+
+<para>
+<parameter moreinfo="none">source-file</parameter>
+には、コピー元のファイル名を指定します。
+ファイル名を複数指定した場合は、指定した順序で結合します。
+</para>
+
+<para>
+<parameter moreinfo="none">destination-file</parameter>
+には、コピー先のファイル名を指定します。
+ファイルが存在する場合は、上書きします。
+</para>
+
+</refsect1>
+
+<refsect1 id="source-file"><title>SOURCE FILE</title>
+<para>
+<parameter moreinfo="none">source-file</parameter> には以下を指定できます。
+</para>
+
+<variablelist>
+
+<varlistentry>
+<term><parameter moreinfo="none">パス名</parameter></term>
+<listitem>
+<para>
+ローカルファイルシステム上のパスを絶対パスまたは相対パスで指定しま
+す。そのパスが gfarm2fs のマウントポイントの場合は、gfarm2fsを経由
+せずにGfarm からコピーします。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><parameter moreinfo="none">gfarm:...</parameter></term>
+<listitem>
+<para>
+Gfarm URL で指定します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><parameter moreinfo="none">file:...</parameter></term>
+<listitem>
+<para>
+ローカルファイルシステム上のパスを URL で指定します。
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id="dest-file"><title>DESTINATION FILE</title>
+<para>
+<parameter moreinfo="none">destination-file</parameter>
+には以下を指定できます。
+</para>
+
+<variablelist>
+
+<varlistentry>
+<term><parameter moreinfo="none">パス名</parameter></term>
+<listitem>
+<para>
+ローカルファイルシステム上のディレクトリを絶対パスまたは相対パスで
+指定します。そのパスが gfarm2fs のマウントポイントの場合は、
+gfarm2fs を経由せずに Gfarm へコピーします。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><parameter moreinfo="none">gfarm:...</parameter></term>
+<listitem>
+<para>
+ディレクトリを Gfarm URL で指定します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><parameter moreinfo="none">file:...</parameter></term>
+<listitem>
+<para>
+ローカルファイルシステム上のディレクトリを URL で指定します。
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id="options"><title>OPTIONS</title>
+
+<variablelist>
+
+<varlistentry>
+<term><option>-h</option> <parameter moreinfo="none">filesystem-node</parameter></term>
+<listitem>
+  <para>指定したファイルシステムノードにファイルを作成します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-j</option> <parameter moreinfo="none">num-of-processes</parameter></term>
+<listitem>
+<para>
+並列プロセス数を指定します。
+入力ファイルを均等なサイズに分割し、各プロセスに割り当てます。
+</para>
+<para>
+デフォルト値は gfarm2.conf の client_parallel_copy パラメータです。
+最大値は gfarm2.conf の client_parallel_max パラメータです。
+詳細は gfarm2.conf のマニュアルを参照してください。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-m</option> <parameter moreinfo="none">minimum-bytes</parameter></term>
+<listitem>
+<para>
+並列コピーする場合に、1 プロセス当たりに割り当てる最小データサイズを
+バイト数で指定します。
+1 プロセス当たりのサイズがこのサイズよりも小さい場合は、
+1 プロセスでコピーします (並列コピーしません)。
+デフォルトは 0 バイト (常に並列コピーする) です。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-p</option></term>
+<listitem>
+<para>
+コピー性能を報告します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-q</option></term>
+<listitem>
+<para>
+警告を表示しません。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-v</option></term>
+<listitem>
+<para>
+冗長な情報を出力します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-d</option></term>
+<listitem>
+<para>
+デバッグ情報を出力します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-?</option></term>
+<listitem>
+<para>
+コマンドオプションを出力します。
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id="notes"><title>NOTES</title>
+<para>
+Gfarm 上にファイルを 1つ作成する際に、並列に書き込んだり、
+ランダムアクセスで書き込んだりすると、チェックサムがファイルに付加されません。
+そのため、<command moreinfo="none">gfpcat</command> を使用すると、
+チェックサムが付加されません。
+
+一度ファイルをシーケンシャルに読むと、または複製を作成すると
+チェックサムが付加されます。
+
+または gfmd.conf の <parameter moreinfo="none">write_verify</parameter>
+が enable となっていれば、
+<command moreinfo="none">gfpcat</command> でファイル作成後にしばらく経つと
+チェックサムが付加されます。
+詳細は gfarm2.conf のマニュアルを参照してください。
+</para>
+</refsect1>
+
+<refsect1 id="see-also"><title>SEE ALSO</title>
+<para>
+  <citerefentry>
+  <refentrytitle>gfcksum</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>,
+  <citerefentry>
+  <refentrytitle>gfarm2.conf</refentrytitle><manvolnum>5</manvolnum>
+  </citerefentry>
+</para>
+</refsect1>
+
+</refentry>
