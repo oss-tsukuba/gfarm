@@ -1,0 +1,155 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfpcat</title>
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
+<a name="gfpcat.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfpcat — concatenate files and copy in parallel</p>
+</div>
+<div class="refsynopsisdiv">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gfpcat</code>  [-pqvd] [-h <em class="replaceable"><code>filesystem-node</code></em>] [-j <em class="replaceable"><code>num-of-processes</code></em>] [-m <em class="replaceable"><code>minimum-bytes</code></em>]  -o <em class="replaceable"><code>destination-file</code></em>   <em class="replaceable"><code>source-file</code></em>... </p></div>
+</div>
+<div class="refsect1">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>
+<span class="command"><strong>gfpcat</strong></span>
+copies a single file or multiple files to a single file in parallel.
+</p>
+<p>
+<em class="parameter"><code>source-file</code></em> is a source file to
+copy.  When multiple source files are specified, they will be
+concatinated in that order.
+</p>
+<p>
+<em class="parameter"><code>destination-file</code></em>
+is a destination file to copy.
+When a destination file exists, the file will be overwritten.
+</p>
+</div>
+<div class="refsect1">
+<a name="source-file"></a><h2>SOURCE FILE</h2>
+<p>
+<em class="parameter"><code>source-file</code></em>
+must be one of the following formats.
+</p>
+<div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><em class="parameter"><code>path-name</code></em></span></dt>
+<dd><p>
+is a relative path or an absolute path of a local file system. When
+the path is a mount point on gfarm2fs, the file is read without
+passing through the gfarm2fs.
+</p></dd>
+<dt><span class="term"><em class="parameter"><code>gfarm:...</code></em></span></dt>
+<dd><p>
+is a Gfarm URL.
+</p></dd>
+<dt><span class="term"><em class="parameter"><code>file:...</code></em></span></dt>
+<dd><p>
+is an URL of a local file system.
+</p></dd>
+</dl></div>
+</div>
+<div class="refsect1">
+<a name="dest-file"></a><h2>DESTINATION FILE</h2>
+<p>
+<em class="parameter"><code>destination-file</code></em>
+must be one of the following formats.
+</p>
+<div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><em class="parameter"><code>path-name</code></em></span></dt>
+<dd><p>
+is a relative path or an absolute path of a local file system. When
+the path is a mount point on gfarm2fs, the file is written without
+passing through the gfarm2fs.
+</p></dd>
+<dt><span class="term"><em class="parameter"><code>gfarm:...</code></em></span></dt>
+<dd><p>
+is a Gfarm URL.
+</p></dd>
+<dt><span class="term"><em class="parameter"><code>file:...</code></em></span></dt>
+<dd><p>
+is an URL of a local file system.
+</p></dd>
+</dl></div>
+</div>
+<div class="refsect1">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><code class="option">-h</code> <em class="parameter"><code>filesystem-node</code></em></span></dt>
+<dd><p>
+explicitly specifies the file system node to be stored.
+</p></dd>
+<dt><span class="term"><code class="option">-j</code> <em class="parameter"><code>num-of-processes</code></em></span></dt>
+<dd>
+<p>
+Specifies the number of processes to copy.
+The source files are splited evenly, and they will be assigned to each process.
+</p>
+<p>
+The default value is the parameter
+of <em class="parameter"><code>client_parallel_copy</code></em> in
+gfarm2.conf. (see man gfarm2.conf)
+</p>
+</dd>
+<dt><span class="term"><code class="option">-m</code> <em class="parameter"><code>minimum-bytes</code></em></span></dt>
+<dd><p>
+Specifies the minimum size (byte) per a process to copy in parallel.
+When the size assigned to a process is equal or smaller than -m,
+single process is used to copy (not copied in parallel).
+
+The default value is 0 byte (always copied in parallel).
+</p></dd>
+<dt><span class="term"><code class="option">-p</code></span></dt>
+<dd><p>
+Reports copy performance.
+</p></dd>
+<dt><span class="term"><code class="option">-q</code></span></dt>
+<dd><p>
+Suppresses non-error messages.
+</p></dd>
+<dt><span class="term"><code class="option">-v</code></span></dt>
+<dd><p>
+Displays verbose output.
+</p></dd>
+<dt><span class="term"><code class="option">-d</code></span></dt>
+<dd><p>
+Displays debug output.
+</p></dd>
+<dt><span class="term"><code class="option">-?</code></span></dt>
+<dd><p>
+Displays a list of command options.
+</p></dd>
+</dl></div>
+</div>
+<div class="refsect1">
+<a name="notes"></a><h2>NOTES</h2>
+<p>
+When a file is created in Gfarm and the file is written in parallel or
+randomly, checksum for the file will not be calculated and not added.
+
+Therefore, when <span class="command"><strong>gfpcat</strong></span> is used,
+checksum will not be added to the file.
+
+Once the file is read sequentially or replicas for the file are
+created, checksum will be added to the file.
+
+Or, when <em class="parameter"><code>write_verify</code></em> of
+gfmd.conf (see man gfarm2.conf) is "enable", checksum is added to the
+file after a while after copying
+by <span class="command"><strong>gfpcat</strong></span>.
+</p>
+</div>
+<div class="refsect1">
+<a name="see-also"></a><h2>SEE ALSO</h2>
+<p>
+  <span class="citerefentry"><span class="refentrytitle">gfcksum</span>(1)</span>,
+  <span class="citerefentry"><span class="refentrytitle">gfarm2.conf</span>(5)</span>
+</p>
+</div>
+</div></body>
+</html>

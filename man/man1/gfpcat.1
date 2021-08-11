@@ -1,0 +1,139 @@
+'\" t
+.\"     Title: gfpcat
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 10 Aug 2021
+.\"    Manual: Gfarm
+.\"    Source: Gfarm
+.\"  Language: English
+.\"
+.TH "GFPCAT" "1" "10 Aug 2021" "Gfarm" "Gfarm"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+gfpcat \- concatenate files and copy in parallel
+.SH "SYNOPSIS"
+.HP \w'\fBgfpcat\fR\ 'u
+\fBgfpcat\fR [\-pqvd] [\-h\ \fIfilesystem\-node\fR] [\-j\ \fInum\-of\-processes\fR] [\-m\ \fIminimum\-bytes\fR] \-o\ \fIdestination\-file\fR \fIsource\-file\fR...
+.SH "DESCRIPTION"
+.PP
+\fBgfpcat\fR
+copies a single file or multiple files to a single file in parallel\&.
+.PP
+\fIsource\-file\fR
+is a source file to copy\&. When multiple source files are specified, they will be concatinated in that order\&.
+.PP
+\fIdestination\-file\fR
+is a destination file to copy\&. When a destination file exists, the file will be overwritten\&.
+.SH "SOURCE FILE"
+.PP
+\fIsource\-file\fR
+must be one of the following formats\&.
+.PP
+\fIpath\-name\fR
+.RS 4
+is a relative path or an absolute path of a local file system\&. When the path is a mount point on gfarm2fs, the file is read without passing through the gfarm2fs\&.
+.RE
+.PP
+\fIgfarm:\&.\&.\&.\fR
+.RS 4
+is a Gfarm URL\&.
+.RE
+.PP
+\fIfile:\&.\&.\&.\fR
+.RS 4
+is an URL of a local file system\&.
+.RE
+.SH "DESTINATION FILE"
+.PP
+\fIdestination\-file\fR
+must be one of the following formats\&.
+.PP
+\fIpath\-name\fR
+.RS 4
+is a relative path or an absolute path of a local file system\&. When the path is a mount point on gfarm2fs, the file is written without passing through the gfarm2fs\&.
+.RE
+.PP
+\fIgfarm:\&.\&.\&.\fR
+.RS 4
+is a Gfarm URL\&.
+.RE
+.PP
+\fIfile:\&.\&.\&.\fR
+.RS 4
+is an URL of a local file system\&.
+.RE
+.SH "OPTIONS"
+.PP
+\fB\-h\fR \fIfilesystem\-node\fR
+.RS 4
+explicitly specifies the file system node to be stored\&.
+.RE
+.PP
+\fB\-j\fR \fInum\-of\-processes\fR
+.RS 4
+Specifies the number of processes to copy\&. The source files are splited evenly, and they will be assigned to each process\&.
+.sp
+The default value is the parameter of
+\fIclient_parallel_copy\fR
+in gfarm2\&.conf\&. (see man gfarm2\&.conf)
+.RE
+.PP
+\fB\-m\fR \fIminimum\-bytes\fR
+.RS 4
+Specifies the minimum size (byte) per a process to copy in parallel\&. When the size assigned to a process is equal or smaller than \-m, single process is used to copy (not copied in parallel)\&. The default value is 0 byte (always copied in parallel)\&.
+.RE
+.PP
+\fB\-p\fR
+.RS 4
+Reports copy performance\&.
+.RE
+.PP
+\fB\-q\fR
+.RS 4
+Suppresses non\-error messages\&.
+.RE
+.PP
+\fB\-v\fR
+.RS 4
+Displays verbose output\&.
+.RE
+.PP
+\fB\-d\fR
+.RS 4
+Displays debug output\&.
+.RE
+.PP
+\fB\-?\fR
+.RS 4
+Displays a list of command options\&.
+.RE
+.SH "NOTES"
+.PP
+When a file is created in Gfarm and the file is written in parallel or randomly, checksum for the file will not be calculated and not added\&. Therefore, when
+\fBgfpcat\fR
+is used, checksum will not be added to the file\&. Once the file is read sequentially or replicas for the file are created, checksum will be added to the file\&. Or, when
+\fIwrite_verify\fR
+of gfmd\&.conf (see man gfarm2\&.conf) is "enable", checksum is added to the file after a while after copying by
+\fBgfpcat\fR\&.
+.SH "SEE ALSO"
+.PP
+\fBgfcksum\fR(1),
+\fBgfarm2.conf\fR(5)

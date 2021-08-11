@@ -1,0 +1,137 @@
+'\" t
+.\"     Title: gfpcat
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 10 Aug 2021
+.\"    Manual: Gfarm
+.\"    Source: Gfarm
+.\"  Language: English
+.\"
+.TH "GFPCAT" "1" "10 Aug 2021" "Gfarm" "Gfarm"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+gfpcat \- 複数ファイルを結合しながら並列にコピーする
+.SH "SYNOPSIS"
+.HP \w'\fBgfpcat\fR\ 'u
+\fBgfpcat\fR [\-pqvd] [\-h\ \fIfilesystem\-node\fR] [\-j\ \fInum\-of\-processes\fR] [\-m\ \fIminimum\-bytes\fR] \-o\ \fIdestination\-file\fR \fIsource\-file\fR...
+.SH "DESCRIPTION"
+.PP
+\fBgfpcat\fR
+は、単一ファイルまたは複数ファイルを単一のファイルに対して 並列にコピーします。
+.PP
+\fIsource\-file\fR
+には、コピー元のファイル名を指定します。 ファイル名を複数指定した場合は、指定した順序で結合します。
+.PP
+\fIdestination\-file\fR
+には、コピー先のファイル名を指定します。 ファイルが存在する場合は、上書きします。
+.SH "SOURCE FILE"
+.PP
+\fIsource\-file\fR
+には以下を指定できます。
+.PP
+\fIパス名\fR
+.RS 4
+ローカルファイルシステム上のパスを絶対パスまたは相対パスで指定しま す。そのパスが gfarm2fs のマウントポイントの場合は、gfarm2fsを経由 せずにGfarm からコピーします。
+.RE
+.PP
+\fIgfarm:\&.\&.\&.\fR
+.RS 4
+Gfarm URL で指定します。
+.RE
+.PP
+\fIfile:\&.\&.\&.\fR
+.RS 4
+ローカルファイルシステム上のパスを URL で指定します。
+.RE
+.SH "DESTINATION FILE"
+.PP
+\fIdestination\-file\fR
+には以下を指定できます。
+.PP
+\fIパス名\fR
+.RS 4
+ローカルファイルシステム上のディレクトリを絶対パスまたは相対パスで 指定します。そのパスが gfarm2fs のマウントポイントの場合は、 gfarm2fs を経由せずに Gfarm へコピーします。
+.RE
+.PP
+\fIgfarm:\&.\&.\&.\fR
+.RS 4
+ディレクトリを Gfarm URL で指定します。
+.RE
+.PP
+\fIfile:\&.\&.\&.\fR
+.RS 4
+ローカルファイルシステム上のディレクトリを URL で指定します。
+.RE
+.SH "OPTIONS"
+.PP
+\fB\-h\fR \fIfilesystem\-node\fR
+.RS 4
+指定したファイルシステムノードにファイルを作成します。
+.RE
+.PP
+\fB\-j\fR \fInum\-of\-processes\fR
+.RS 4
+並列プロセス数を指定します。 入力ファイルを均等なサイズに分割し、各プロセスに割り当てます。
+.sp
+デフォルト値は gfarm2\&.conf の client_parallel_copy パラメータです。 最大値は gfarm2\&.conf の client_parallel_max パラメータです。 詳細は gfarm2\&.conf のマニュアルを参照してください。
+.RE
+.PP
+\fB\-m\fR \fIminimum\-bytes\fR
+.RS 4
+並列コピーする場合に、1 プロセス当たりに割り当てる最小データサイズを バイト数で指定します。 1 プロセス当たりのサイズがこのサイズよりも小さい場合は、 1 プロセスでコピーします (並列コピーしません)。 デフォルトは 0 バイト (常に並列コピーする) です。
+.RE
+.PP
+\fB\-p\fR
+.RS 4
+コピー性能を報告します。
+.RE
+.PP
+\fB\-q\fR
+.RS 4
+警告を表示しません。
+.RE
+.PP
+\fB\-v\fR
+.RS 4
+冗長な情報を出力します。
+.RE
+.PP
+\fB\-d\fR
+.RS 4
+デバッグ情報を出力します。
+.RE
+.PP
+\fB\-?\fR
+.RS 4
+コマンドオプションを出力します。
+.RE
+.SH "NOTES"
+.PP
+Gfarm 上にファイルを 1つ作成する際に、並列に書き込んだり、 ランダムアクセスで書き込んだりすると、チェックサムが付加されません。 そのため、\fBgfpcat\fR
+を使用すると、 チェックサムがファイルに付加されません。 一度ファイルをシーケンシャルに読むと、または複製を作成するとチェックサ ムが付加されます。 または gfmd\&.conf の
+\fIwrite_verify\fR
+が enable となっていれば、
+\fBgfpcat\fR
+でファイル作成後にしばらく経つと チェックサムが付加されます。 詳細は gfarm2\&.conf のマニュアルを参照してください。
+.SH "SEE ALSO"
+.PP
+\fBgfcksum\fR(1),
+\fBgfarm2.conf\fR(5)
