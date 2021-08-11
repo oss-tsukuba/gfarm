@@ -84,10 +84,12 @@ gfimport_to(int ifd, char *gfarm_url, int mode,
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t5);
 
 	gfs_profile(gfarm_gettimerval(&t1));
-	if (off > 0)
+	if (off >= 0)
 		flags = GFARM_FILE_WRONLY;
-	else
+	else {
 		flags = GFARM_FILE_WRONLY|GFARM_FILE_TRUNC;
+		off = 0;
+	}
 	e = gfs_pio_create(gfarm_url, flags, mode, &gf);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: %s\n", gfarm_url, gfarm_error_string(e));
@@ -187,7 +189,7 @@ main(int argc, char **argv)
 	gfarm_error_t e;
 	int c, status = 0;
 	char *host = NULL, *path = NULL;
-	gfarm_off_t off = 0, size = -1;
+	gfarm_off_t off = -1, size = -1;
 
 	if (argc > 0)
 		program_name = basename(argv[0]);
