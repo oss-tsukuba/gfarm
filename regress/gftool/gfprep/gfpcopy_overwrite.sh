@@ -194,7 +194,7 @@ test_overwrite() {
 
   SRC_PREFIX=`get_scheme "$SRC_ISGFARM"`
   DST_PREFIX=`get_scheme "$DST_ISGFARM"`
-  if gfpcopy "${SRC_PREFIX}${SRCDIR}" "${DST_PREFIX}${DSTDIR_PARENT}"; then
+  if $GFPCOPY "${SRC_PREFIX}${SRCDIR}" "${DST_PREFIX}${DSTDIR_PARENT}"; then
     :
   else
     echo "gfpcopy failed"
