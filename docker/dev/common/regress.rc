@@ -20,6 +20,17 @@ me=$GFDOCKER_PRIMARY_USER
 gfsdhost=${GFDOCKER_HOSTNAME_PREFIX_GFSD}1
 
 GFARM_TEST_CKSUM_MISMATCH=/tmp/cksum_mismatch
+
+trap_sigs='1 2 15'
+restore() {
+    gfrm -f $GFARM_TEST_CKSUM_MISMATCH
+
+    if [ $is_gfarmroot -ne 0 ]; then
+        gfgroup -r -m gfarmroot $me
+    fi
+}
+trap 'restore' $trap_sigs
+
 printf '%4194308s' ' ' | gfreg -h $gfsdhost - $GFARM_TEST_CKSUM_MISMATCH
 SPOOL_PATH=/var/gfarm-spool-$gfsdhost/$(gfspoolpath $GFARM_TEST_CKSUM_MISMATCH)
 ssh $gfsdhost "printf '%4194307sX' ' ' | sudo dd of=$SPOOL_PATH"
@@ -36,14 +47,6 @@ USE_SUDO=true
 EOF
 
 scp $SPOOL_CHECK_CONFIG $gfsdhost:~/gfarm/regress/manual/server/gfsd/spool_check/config.sh
-
-trap_sigs='1 2 15'
-restore() {
-    if [ $is_gfarmroot -ne 0 ]; then
-        gfgroup -r -m gfarmroot $me
-    fi
-}
-trap 'restore' $trap_sigs
 
 if [ $is_gfarmroot -eq 0 ]; then
     gfgroup -r -m gfarmroot $me
