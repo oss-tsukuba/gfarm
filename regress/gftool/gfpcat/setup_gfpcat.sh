@@ -1,8 +1,10 @@
 gfile1=gfarm:$gftmp/file1
 gfile2=gfarm:$gftmp/file2
+gfile_zero=gfarm:$gftmp/0byte
 gfile_out=gfarm:$gftmp/OUTPUT
 lfile1=$localtmp/tmpfile1
 lfile2=$localtmp/tmpfile2
+lfile_zero=$data/0byte
 lfile_out=$localtmp/OUTPUT
 
 RANDF=/dev/urandom
@@ -35,4 +37,5 @@ setup_test()
     create_rand_file $lfile2
     gfreg $lfile1 $gfile1
     gfreg $lfile2 $gfile2
+    gfreg $lfile_zero $gfile_zero
 }

@@ -496,6 +496,20 @@ gfpcat_gfarm_terminate(struct gfpcat_option *opt)
 	}
 }
 
+static gfarm_error_t
+gfpcat_create_empty_file(GFURL url, int mode)
+{
+	gfarm_error_t e;
+	struct gfpcat_file fp;
+
+	e = gfpcat_open(url, O_CREAT | O_WRONLY | O_TRUNC,
+	    mode & 0777 & ~0022, &fp);
+	if (e == GFARM_ERR_NO_ERROR) {
+		e = gfpcat_close(&fp);
+	}
+	return (e);
+}
+
 static int
 gfpcat_child_copy_parts(struct gfpcat_option *opt, int child_id)
 {
@@ -1121,6 +1135,17 @@ main(int argc, char *argv[])
 	}
 	gfmsg_debug("total_size = %lld", (long long)opt.total_size);
 
+	if (opt.total_size == 0) {
+		e = gfpcat_create_empty_file(opt.tmp_url, opt.mode);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gfmsg_error_e(e, "cannot create empty file: %s",
+			    gfurl_url(opt.tmp_url));
+			rv = 1;
+		} else {
+			rv = 0;
+		}
+		goto copied;
+	}
 	if (opt.n_para == 1
 	    || opt.total_size / opt.n_para <= opt.minimum_size) {
 		int child_id = 1;
