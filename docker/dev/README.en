@@ -91,6 +91,13 @@ Note
 
 - Do not edit .shadow.config.mk, docker-compose.yml, and common/rc.gfservice.
 
+Debug
+=====
+
+* to dump core file in container
+
+  (host_os)$ echo core.%p | sudo tee /proc/sys/kernel/core_pattern
+
 
 Gfarm-S3-MinIO
 ==============
