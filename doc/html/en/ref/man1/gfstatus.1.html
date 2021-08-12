@@ -2,15 +2,15 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfstatus</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.75.2">
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
 </head>
-<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfstatus">
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
 <a name="gfstatus.1"></a><div class="titlepage"></div>
 <div class="refnamediv">
 <a name="name"></a><h2>Name</h2>
 <p>gfstatus — display Gfarm configuration status</p>
 </div>
-<div class="refsynopsisdiv" title="Synopsis">
+<div class="refsynopsisdiv">
 <a name="synopsis"></a><h2>Synopsis</h2>
 <div class="cmdsynopsis"><p><code class="command">gfstatus</code>  [-P <em class="replaceable"><code>path</code></em>] [-d]</p></div>
 <div class="cmdsynopsis"><p><code class="command">gfstatus</code>  [-P <em class="replaceable"><code>path</code></em>] [ -d  |   -M ] [ -l  |   -L ]</p></div>
@@ -18,7 +18,7 @@
 <div class="cmdsynopsis"><p><code class="command">gfstatus</code>   -Mm  [-P <em class="replaceable"><code>path</code></em>] [-d]  <em class="replaceable"><code>configuration_directive</code></em>... </p></div>
 <div class="cmdsynopsis"><p><code class="command">gfstatus</code>   -V </p></div>
 </div>
-<div class="refsect1" title="DESCRIPTION">
+<div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p>
 When no argument is specified, and neither -l nor -L option is specified,
@@ -61,9 +61,9 @@ NOTE: Currently, only limited set of directives can be specified.
 	$ gfstatus -Mm 'digest sha1'<br>
 </p></div>
 </div>
-<div class="refsect1" title="OPTIONS">
+<div class="refsect1">
 <a name="options"></a><h2>OPTIONS</h2>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="option">-d</code></span></dt>
 <dd><p>Displays debug messages.</p></dd>
 <dt><span class="term"><code class="option">-l</code></span></dt>
@@ -71,7 +71,7 @@ NOTE: Currently, only limited set of directives can be specified.
 Lists configuration names.
 This option can be used with the -M option.
 </p></dd>
-<dt><span class="term"><code class="option">-l</code></span></dt>
+<dt><span class="term"><code class="option">-L</code></span></dt>
 <dd><p>
 Lists configuration names and their values.
 This option can be used with the -M option.
