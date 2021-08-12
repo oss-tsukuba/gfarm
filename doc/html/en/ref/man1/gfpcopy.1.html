@@ -2,7 +2,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfpcopy</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
 <a name="gfpcopy.1"></a><div class="titlepage"></div>
@@ -141,10 +141,207 @@ Does not copy symbolic links.
 <div class="refsect1">
 <a name="common-options"></a><h2>COMMON OPTIONS</h2>
 <p>
-There are several common options
-with <span class="command"><strong>gfprep</strong></span>.  (see
-man <span class="command"><strong>gfprep</strong></span>)
+The following options are common options
+for <span class="command"><strong>gfprep</strong></span>
+and <span class="command"><strong>gfpcopy</strong></span>.
 </p>
+<div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><code class="option">-X</code> <em class="parameter"><code>regexp</code></em></span></dt>
+<dd><p>
+Skips files matched by the pattern
+of <em class="parameter"><code>regexp</code></em>.  When multiple
+patterns need to be specified, specify -X options multiple times.
+</p></dd>
+<dt><span class="term"><code class="option">-S</code> <em class="parameter"><code>source-domainname</code></em></span></dt>
+<dd><p>
+Creates file replicas or copies files only stored on the hosts in the
+specified domain name.
+</p></dd>
+<dt><span class="term"><code class="option">-h</code> <em class="parameter"><code>source-hostfile</code></em></span></dt>
+<dd>
+<p>
+Creates file replicas or copies files only stored on the hosts listed
+in the specified hostfile.
+The <em class="parameter"><code>source-hostfile</code></em> consists of
+a file system node name on each line.
+</p>
+<p>
+If ``-'' is specified, standard input is used to read the host list.</p>
+</dd>
+<dt><span class="term"><code class="option">-L</code></span></dt>
+<dd><p>
+Creates file replicas or copies files from the hosts specified by the
+-S or -h option.
+</p></dd>
+<dt><span class="term"><code class="option">-D</code> <em class="parameter"><code>destination-domainname</code></em></span></dt>
+<dd>
+<p>
+Specifies the domain name for destination.
+</p>
+<p>
+If neither this nor the <code class="option">-H</code> option is specified,
+replicas may be copied to any available host.
+</p>
+</dd>
+<dt><span class="term"><code class="option">-H</code> <em class="parameter"><code>destination-hostfile</code></em></span></dt>
+<dd>
+<p>
+Specifies a file which describes hostnames for destination.
+The <em class="parameter"><code>destination-hostfile</code></em>
+consists of a file system node name on each line.
+</p>
+<p>
+If ``-'' is specified, standard input is used to read the host list.
+</p>
+</dd>
+<dt><span class="term"><code class="option">-j</code> <em class="parameter"><code>num-of-processes</code></em></span></dt>
+<dd>
+<p>
+Specifies the maximum number of processes to create file replicas (or
+copy files) simultaneously.
+</p>
+<p>
+The default value is the parameter of client_parallel_copy in gfarm2.conf.
+(see man gfarm2.conf)
+</p>
+<p>
+The maximum number of process per file system node for source or destination
+is the number of CPUs (see man <span class="command"><strong>gfhost</strong></span>).
+</p>
+</dd>
+<dt><span class="term"><code class="option">-J</code> <em class="parameter"><code>num-of-processes</code></em></span></dt>
+<dd>
+<p>
+Specifies the number of processes to retrieve directory entries in parallel.
+</p>
+<p>
+The default value is 8.
+</p>
+</dd>
+<dt><span class="term"><code class="option">-M</code> <em class="parameter"><code>total-byte</code></em></span></dt>
+<dd>
+<p>
+Specifies the total file size in bytes to replicate or copy.  This
+option is useful to increase the available capacity by moving the
+specified bytes of files.
+</p>
+<p>
+The default value is unlimited.
+</p>
+</dd>
+<dt><span class="term"><code class="option">-z</code> <em class="parameter"><code>minimum-byte</code></em></span></dt>
+<dd>
+<p>
+Specifies the minimum file size in bytes to replicate or copy.  This
+option is useful not to replicate or copy small files.
+</p>
+<p>
+The default value is unlimited.
+</p>
+</dd>
+<dt><span class="term"><code class="option">-Z</code> <em class="parameter"><code>maximum-byte</code></em></span></dt>
+<dd>
+<p>
+Specifies the maximum file size in bytes to replicate or copy.  This
+option is useful not to replicate or copy large files.
+</p>
+<p>
+The default value is unlimited.
+</p>
+</dd>
+<dt><span class="term"><code class="option">-w</code> <em class="parameter"><code>way-of-scheduling</code></em></span></dt>
+<dd>
+<p>
+Specifies a scheduling method.
+``noplan'' replicates/copies while finding files.
+``greedy'' schedules greedily the order of replication/copy beforehand.
+</p>
+<p>
+The default behavior is ``noplan''.
+</p>
+<p>
+``greedy'' scheduling cannot use with the -N option and -m option.
+</p>
+</dd>
+<dt><span class="term"><code class="option">-W</code> <em class="parameter"><code>kibibytes</code></em></span></dt>
+<dd>
+<p>
+Specifies a threshold size/cost(KiB) to flat costs of Connections.
+A Connection means a scheduling information to assign files per a
+child-process
+</p>
+<p>
+This option is effective with -w greedy.
+</p>
+<p>
+The default value is 50*1024 KiB (50 MiB).
+</p>
+</dd>
+<dt><span class="term"><code class="option">-I</code> <em class="parameter"><code>sec-to-update</code></em></span></dt>
+<dd>
+<p>
+Specifies the interval in seconds to collect load average and
+available capacity.
+</p>
+<p>
+Default is 300 seconds.
+</p>
+</dd>
+<dt><span class="term"><code class="option">-B</code></span></dt>
+<dd>
+<p>
+Gfarm 2.6.16 or later does not select high loaded file system nodes.
+This option disables this feature.
+</p>
+<p>
+High loaded node is defined by having more CPU load than schedule_busy_load_thresh * number of CPUs.  For details of schedule_busy_load_thresh, refer to a manual page of gfarm2.conf.
+</p>
+</dd>
+<dt><span class="term"><code class="option">-U</code></span></dt>
+<dd><p>
+Disables checking the available disk space of the selected node every
+time.
+</p></dd>
+<dt><span class="term"><code class="option">-F</code> <em class="parameter"><code>num-of-dirents</code></em></span></dt>
+<dd>
+<p>
+Specifies the number of readahead entries to retrieve the directory
+entries.
+</p>
+<p>
+The default value is 10000.
+</p>
+</dd>
+<dt><span class="term"><code class="option">-s</code> <em class="parameter"><code>kilobytes-per-second</code></em></span></dt>
+<dd><p>
+Specifies a throughput(KB/s) to simulate the replication/copy, and
+does nothing (gets file information only).
+</p></dd>
+<dt><span class="term"><code class="option">-n</code></span></dt>
+<dd><p>
+Does nothing.
+</p></dd>
+<dt><span class="term"><code class="option">-p</code></span></dt>
+<dd><p>
+Reports the total performance information.
+</p></dd>
+<dt><span class="term"><code class="option">-P</code></span></dt>
+<dd><p>
+Reports the performance information for each file and all files.
+</p></dd>
+<dt><span class="term"><code class="option">-q</code></span></dt>
+<dd><p>
+Suppresses non-error messages.
+</p></dd>
+<dt><span class="term"><code class="option">-v</code></span></dt>
+<dd><p>Displays verbose output.
+</p></dd>
+<dt><span class="term"><code class="option">-d</code></span></dt>
+<dd><p>Displays debug output.
+</p></dd>
+<dt><span class="term"><code class="option">-?</code></span></dt>
+<dd><p>Displays a list of command options.</p></dd>
+</dl></div>
 </div>
 <div class="refsect1">
 <a name="examples"></a><h2>EXAMPLES</h2>
