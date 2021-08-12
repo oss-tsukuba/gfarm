@@ -134,7 +134,7 @@ This option can be used with the -M option.
 </varlistentry>
 
 <varlistentry>
-<term><option>-l</option></term>
+<term><option>-L</option></term>
 <listitem>
 <para>
 Lists configuration names and their values.
