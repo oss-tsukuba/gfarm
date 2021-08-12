@@ -231,10 +231,307 @@ Does not copy symbolic links.
 
 <refsect1 id="common-options"><title>COMMON OPTIONS</title>
 <para>
-There are several common options
-with <command moreinfo="none">gfprep</command>.  (see
-man <command moreinfo="none">gfprep</command>)
+The following options are common options
+for <command moreinfo="none">gfprep</command>
+and <command moreinfo="none">gfpcopy</command>.
 </para>
+
+<variablelist>
+<varlistentry>
+<term><option>-X</option> <parameter moreinfo="none">regexp</parameter></term>
+<listitem>
+<para>
+Skips files matched by the pattern
+of <parameter moreinfo="none">regexp</parameter>.  When multiple
+patterns need to be specified, specify -X options multiple times.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-S</option> <parameter moreinfo="none">source-domainname</parameter></term>
+<listitem>
+<para>
+Creates file replicas or copies files only stored on the hosts in the
+specified domain name.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-h</option> <parameter moreinfo="none">source-hostfile</parameter></term>
+<listitem>
+<para>
+Creates file replicas or copies files only stored on the hosts listed
+in the specified hostfile.
+The <parameter moreinfo="none">source-hostfile</parameter> consists of
+a file system node name on each line.
+</para>
+<para>
+If ``-'' is specified, standard input is used to read the host list.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-L</option></term>
+<listitem>
+<para>
+Creates file replicas or copies files from the hosts specified by the
+-S or -h option.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-D</option> <parameter moreinfo="none">destination-domainname</parameter></term>
+<listitem>
+<para>
+Specifies the domain name for destination.
+</para>
+<para>
+If neither this nor the <option>-H</option> option is specified,
+replicas may be copied to any available host.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-H</option> <parameter moreinfo="none">destination-hostfile</parameter></term>
+<listitem>
+<para>
+Specifies a file which describes hostnames for destination.
+The <parameter moreinfo="none">destination-hostfile</parameter>
+consists of a file system node name on each line.
+</para>
+<para>
+If ``-'' is specified, standard input is used to read the host list.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-j</option> <parameter moreinfo="none">num-of-processes</parameter></term>
+<listitem>
+<para>
+Specifies the maximum number of processes to create file replicas (or
+copy files) simultaneously.
+</para>
+<para>
+The default value is the parameter of client_parallel_copy in gfarm2.conf.
+(see man gfarm2.conf)
+</para>
+<para>
+The maximum number of process per file system node for source or destination
+is the number of CPUs (see man <command moreinfo="none">gfhost</command>).
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-J</option> <parameter moreinfo="none">num-of-processes</parameter></term>
+<listitem>
+<para>
+Specifies the number of processes to retrieve directory entries in parallel.
+</para>
+<para>
+The default value is 8.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-M</option> <parameter moreinfo="none">total-byte</parameter></term>
+<listitem>
+<para>
+Specifies the total file size in bytes to replicate or copy.  This
+option is useful to increase the available capacity by moving the
+specified bytes of files.
+</para>
+<para>
+The default value is unlimited.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-z</option> <parameter moreinfo="none">minimum-byte</parameter></term>
+<listitem>
+<para>
+Specifies the minimum file size in bytes to replicate or copy.  This
+option is useful not to replicate or copy small files.
+</para>
+<para>
+The default value is unlimited.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-Z</option> <parameter moreinfo="none">maximum-byte</parameter></term>
+<listitem>
+<para>
+Specifies the maximum file size in bytes to replicate or copy.  This
+option is useful not to replicate or copy large files.
+</para>
+<para>
+The default value is unlimited.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-w</option> <parameter moreinfo="none">way-of-scheduling</parameter></term>
+<listitem>
+<para>
+Specifies a scheduling method.
+``noplan'' replicates/copies while finding files.
+``greedy'' schedules greedily the order of replication/copy beforehand.
+</para>
+<para>
+The default behavior is ``noplan''.
+</para>
+<para>
+``greedy'' scheduling cannot use with the -N option and -m option.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-W</option> <parameter moreinfo="none">kibibytes</parameter></term>
+<listitem>
+<para>
+Specifies a threshold size/cost(KiB) to flat costs of Connections.
+A Connection means a scheduling information to assign files per a
+child-process
+</para>
+<para>
+This option is effective with -w greedy.
+</para>
+<para>
+The default value is 50*1024 KiB (50 MiB).
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-I</option> <parameter moreinfo="none">sec-to-update</parameter></term>
+<listitem>
+<para>
+Specifies the interval in seconds to collect load average and
+available capacity.
+</para>
+<para>
+Default is 300 seconds.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-B</option></term>
+<listitem>
+<para>
+Gfarm 2.6.16 or later does not select high loaded file system nodes.
+This option disables this feature.
+</para>
+<para>
+High loaded node is defined by having more CPU load than schedule_busy_load_thresh * number of CPUs.  For details of schedule_busy_load_thresh, refer to a manual page of gfarm2.conf.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-U</option></term>
+<listitem>
+<para>
+Disables checking the available disk space of the selected node every
+time.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-F</option> <parameter moreinfo="none">num-of-dirents</parameter></term>
+<listitem>
+<para>
+Specifies the number of readahead entries to retrieve the directory
+entries.
+</para>
+<para>
+The default value is 10000.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-s</option> <parameter moreinfo="none">kilobytes-per-second</parameter></term>
+<listitem>
+<para>
+Specifies a throughput(KB/s) to simulate the replication/copy, and
+does nothing (gets file information only).
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-n</option></term>
+<listitem>
+<para>
+Does nothing.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-p</option></term>
+<listitem>
+<para>
+Reports the total performance information.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-P</option></term>
+<listitem>
+<para>
+Reports the performance information for each file and all files.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-q</option></term>
+<listitem>
+<para>
+Suppresses non-error messages.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-v</option></term>
+<listitem>
+<para>Displays verbose output.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-d</option></term>
+<listitem>
+<para>Displays debug output.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-?</option></term>
+<listitem>
+<para>Displays a list of command options.</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
 </refsect1>
 
 <refsect1 id="examples"><title>EXAMPLES</title>

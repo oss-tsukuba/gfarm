@@ -231,12 +231,329 @@ gfpcopy を複数同時に実行するために、コピー先にファイルが
 
 <refsect1 id="common-options"><title>COMMON OPTIONS</title>
 <para>
-
-<command moreinfo="none">gfpcopy</command> には
-<command moreinfo="none">gfprep</command> と共通のオプションがあります。
-<command moreinfo="none">gfprep</command> のマニュアル
-を参照してください。
+<command moreinfo="none">gfprep</command>
+と <command moreinfo="none">gfpcopy</command> には、
+共通で利用できるオプションがあります。
 </para>
+
+<variablelist>
+<varlistentry>
+<term><option>-X</option> <parameter moreinfo="none">regexp</parameter></term>
+<listitem>
+<para>
+<parameter moreinfo="none">regexp</parameter>で指定した正規表現による
+パターンと一致するパス名を無視しま
+す。
+複数個のパターンを指定する場合は、-X オプションを複数回指定し
+ます。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-S</option> <parameter moreinfo="none">source-domainname</parameter></term>
+<listitem>
+<para>
+指定されたドメイン名に格納されているファイルだけを複製作成、コピー
+の対象にします。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-h</option> <parameter moreinfo="none">source-hostfile</parameter></term>
+<listitem>
+<para>
+指定されたホストファイルのホストに格納されているファイルだけを複
+製作成、コピーの対象にします。ホストファイルには、ホストを一行ず
+つ記述します。
+</para>
+<para>
+``-'' を指定すると、ホスト名のリストを標準入力から読み込みます。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-L</option></term>
+<listitem>
+<para>
+-S または -h で指定したホストから複製、コピーを作成します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-D</option> <parameter moreinfo="none">destination-domainname</parameter></term>
+<listitem>
+<para>
+指定されたドメイン名のホストに複製、コピーを作成します。
+</para>
+<para>
+このオプションも -H オプションも指定しない場合、利用可能な全ホスト
+を対象に複製、コピーを作成します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-H</option> <parameter moreinfo="none">destination-hostfile</parameter></term>
+<listitem>
+<para>
+指定されたホストファイルのホストに複製、コピーを作成します。ホスト
+ファイルには、ホストを一行ずつ記述します。
+</para>
+<para>
+``-'' を指定すると、ホスト名のリストを標準入力から読み込みます。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-j</option> <parameter moreinfo="none">num-of-processes</parameter></term>
+<listitem>
+<para>
+同時に複製作成やコピーをする際の最大並列数を指定します。
+</para>
+<para>
+デフォルト値は gfarm2.conf の client_parallel_copy パラメータです。
+最大値は gfarm2.conf の client_parallel_max パラメータです。
+詳細
+は gfarm2.conf のマニュアルを参照してください。
+</para>
+<para>
+作成元または作成先のホストごとの最大並列数は、CPU 数です。
+CPU 数
+については、<command moreinfo="none">gfhost</command>
+のマニュアルを
+参照してください。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-J</option> <parameter moreinfo="none">num-of-processes</parameter></term>
+<listitem>
+<para>
+並列にディレクトリを辿るための並列数を指定します。
+</para>
+<para>
+デフォルト値は 8 です。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-M</option> <parameter moreinfo="none">total-byte</parameter></term>
+<listitem>
+<para>
+ファイル複製、またはコピーするファイルの合計のバイト数を指定します。
+あるホストに格納されているファイルの容量を、指定バイト数移動して減
+らしたいときなどに便利です。
+</para>
+<para>
+デフォルトでは制限しません。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-z</option> <parameter moreinfo="none">minimum-byte</parameter></term>
+<listitem>
+<para>
+ファイル複製、またはコピーするファイルの最低サイズをバイト単位
+で指定します。小さいファイルはファイル複製やコピーの対象外とし
+たいときに便利です。
+</para>
+<para>
+デフォルトでは制限しません。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-Z</option> <parameter moreinfo="none">maximum-byte</parameter></term>
+<listitem>
+<para>
+ファイル複製、またはコピーするファイルの最大サイズをバイト単位
+で指定します。大きいファイルはファイル複製やコピーの対象外とし
+たいときに便利です。
+</para>
+<para>
+デフォルトでは制限しません。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-w</option> <parameter moreinfo="none">way-of-scheduling</parameter></term>
+<listitem>
+<para>
+スケジューリング方法を指定します。
+noplan にすると、ファイルを
+見つけながら、複製作成またはコピーします。
+greedy にすると、複
+製作成やコピーする前に、貪欲法によってスケジューリングします。
+</para>
+<para>
+デフォルトは noplan です。
+</para>
+<para>
+greedy にすると、-N や -m オプションを使用することができません。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-W</option> <parameter moreinfo="none">kibibytes</parameter></term>
+<listitem>
+<para>
+各 Connection のコスト(合計ファイルサイズ)を平均とみなすまでの
+閾値をキビバイトで指定します。Connection とは、子プロセスごとに
+ファイルを割り当てるための、計画情報です。
+</para>
+<para>
+-w greedy オプションを使用した場合のみ効果があります。
+</para>
+<para>
+デフォルトは 50 * 1024 キビバイト (50 メビバイト) です。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-I</option> <parameter moreinfo="none">sec-to-update</parameter></term>
+<listitem>
+<para>
+各ホストのロードアベレージやディスクの空き容量を定期的に取得する
+間隔を秒単位で指定します。
+</para>
+<para>
+</para>
+<para>
+デフォルトは 300 秒です。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-B</option></term>
+<listitem>
+<para>
+高負荷なホストも作成先の対象にします。
+</para>
+<para>
+デフォルトでは高負荷なホストを作成先の対象にしません。そのため、
+すべてのホストが高負荷の場合はファイル複製、コピーは行われません。
+</para>
+<para>
+高負荷なホストとは、(ロードアベレージ / CPU 数) が gfarm2.conf の
+schedule_busy_load_thresh よりも高いホストです。
+schedule_busy_load_thresh のデフォルト値は gfarm2.conf
+のマニュ
+アルを参照してください。
+CPU 数については gfhost のマニュアルを
+参照してください。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-U</option></term>
+<listitem>
+<para>
+ホストのディスクの空き容量を毎回チェックしなくなります。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-F</option> <parameter moreinfo="none">num-of-dirents</parameter></term>
+<listitem>
+<para>
+ディレクトリエントリの情報を先読みする数を指定します。
+</para>
+<para>
+デフォルトは 10000 です。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-s</option> <parameter moreinfo="none">kilobytes-per-second</parameter></term>
+<listitem>
+<para>
+シミュレーションする際の転送速度を KB/s で指定します。
+実際にはコピーせず、ファイル情報を取得するのみになります。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-n</option></term>
+<listitem>
+<para>
+何もしません。
+ディレクトリを辿るだけです。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-p</option></term>
+<listitem>
+<para>
+性能の総合結果を報告します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-P</option></term>
+<listitem>
+<para>
+性能に関してファイルごとの結果と総合結果を報告します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-q</option></term>
+<listitem>
+<para>
+警告を表示しません。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-v</option></term>
+<listitem>
+<para>
+冗長な情報を出力します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-d</option></term>
+<listitem>
+<para>
+デバッグ情報を出力します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-?</option></term>
+<listitem>
+<para>
+コマンドオプションを出力します。
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
 </refsect1>
 
 <refsect1 id="examples"><title>EXAMPLES</title>
