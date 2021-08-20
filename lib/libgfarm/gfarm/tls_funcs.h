@@ -872,9 +872,10 @@ iterate_file_in_a_dir(const char *dir,
 					if (iter_n > 0) {
 						nadd += iter_n;
 					}
-				} else {
-					break;
 				}
+				/*
+				 * ignore errors. iterate all the files.
+				 */
 			} else {
 				gflog_tls_warning(GFARM_MSG_UNFIXED,
 					"Skip to treat %s.", filebuf);
@@ -985,6 +986,7 @@ accumulate_x509_names_from_file(const char *file,
 		bool got_failure = false;
 		char b[4096];
 		char *bp = b;
+		int found = INT_MAX;
 		gfarm_error_t got_dn = GFARM_ERR_UNKNOWN;
 		bool do_dbg_msg = (gflog_get_priority_level() >= LOG_DEBUG) ?
 			true : false;
@@ -996,19 +998,25 @@ accumulate_x509_names_from_file(const char *file,
 		while ((x = PEM_read_X509(fd, NULL, NULL, NULL)) != NULL &&
 			got_failure == false) {
 			if (likely((xn = X509_get_subject_name(x)) != NULL &&
-				(do_dbg_msg == true &&
-				(got_dn = get_peer_dn_gsi_ish(xn, &bp,
-					sizeof(b))) == GFARM_ERR_NO_ERROR) &&
+				(found = sk_X509_NAME_find(stack, xn)) == -1 &&
+				((do_dbg_msg == true) ?
+				(((got_dn = get_peer_dn_gsi_ish(xn, &bp,
+					sizeof(b))) == GFARM_ERR_NO_ERROR) ?
+						true : false) : true) &&
 				(xndup = X509_NAME_dup(xn)) != NULL &&
 				(n_certs = sk_X509_NAME_push(stack, xndup)) !=
 				0)) {
-				total_certs = n_certs;
+				if (n_certs > 1) {
+					sk_X509_NAME_sort(stack);
+				}
+				total_certs++;
 				if (do_dbg_msg == true) {
 					gflog_tls_debug(GFARM_MSG_UNFIXED,
 						"push a cert \"%s\" to a "
 						"stack from %s.", b, file);
 				}
-			} else if (xndup == NULL || n_certs == 0) {
+			} else if (found == -1 &&
+					(xndup == NULL || n_certs == 0)) {
 				got_failure = true;
 				if (xndup == NULL) {
 					ret = GFARM_ERR_NO_MEMORY;
@@ -1024,10 +1032,11 @@ accumulate_x509_names_from_file(const char *file,
 						"to a stack from %s.",
 						b, file);
 				}
-			} else {
+			} else if (found == -1) {
 				got_failure = true;
 				ret = GFARM_ERR_TLS_RUNTIME_ERROR;
-				if (xn != NULL && got_dn == true) {
+				if (xn != NULL && got_dn ==
+					GFARM_ERR_NO_ERROR) {
 					gflog_tls_error(GFARM_MSG_UNFIXED,
 						"Can't add a cert \"%s\" "
 						"from %s.", b, file);
@@ -1037,6 +1046,7 @@ accumulate_x509_names_from_file(const char *file,
 						file);
 				}
 			}
+			found = INT_MAX;
 			got_dn = GFARM_ERR_UNKNOWN;
 			n_certs = 0;
 			X509_free(x);
@@ -1078,124 +1088,15 @@ accumulate_x509_names_from_file(const char *file,
  * Cert files collector for acceptable certs list.
  */
 static inline gfarm_error_t
-scan_dir_for_x509_name(const char *dir,
-	STACK_OF(X509_NAME) *stack, int *nptr)
-{
-	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
-	DIR *d = NULL;
-	struct stat s;
-	struct dirent *de = NULL;
-	char cert_file[PATH_MAX];
-	char *fpath = NULL;
-	int nadd = 0;
-
-	errno = 0;
-	if (unlikely(dir == NULL || nptr == NULL ||
-		   (d = opendir(dir)) == NULL || errno != 0)) {
-		if (errno != 0) {
-			ret = gfarm_errno_to_error(errno);
-			gflog_tls_error(GFARM_MSG_UNFIXED,
-				"Can't open a directory %s: %s", dir,
-				gfarm_error_string(ret));
-		} else {
-			ret = GFARM_ERR_INVALID_ARGUMENT;
-		}
-		goto done;
-	}
-		
-	*nptr = 0;
-	do {
-		errno = 0;
-		if (likely((de = readdir(d)) != NULL)) {
-			if ((de->d_name[0] == '.' && de->d_name[1] == '\0') ||
-				(de->d_name[0] == '.' && de->d_name[1] == '.'
-				 && de->d_name[2] == '\0')) {
-				continue;
-			}
-			if (stack == NULL) {
-				nadd++;
-				continue;
-			}
-			(void)snprintf(cert_file, sizeof(cert_file),
-				"%s/%s", dir, de->d_name);
-			errno = 0;
-			if (stat(cert_file, &s) == 0 &&
-				S_ISREG(s.st_mode) != 0 &&
-				(ret = is_file_readable(-1, cert_file)) ==
-				GFARM_ERR_NO_ERROR) {
-				/*
-				 * Seems SSL_add_file_cert_subjects_to_stack()
-				 * requires heap allocated filename.
-				 */
-				fpath = strdup(cert_file);
-				if (unlikely(fpath == NULL)) {
-					ret = GFARM_ERR_NO_MEMORY;
-					gflog_tls_error(GFARM_MSG_UNFIXED,
-						"Can't allocate a "
-						"filename buffer: %s",
-						gfarm_error_string(ret));
-					break;
-				}
-				/*
-				 * NOTE:
-				 *	SSL_add_file_cert_subjects_to_stack()
-				 *	has no explanation of return value.
-				 */
-				tls_runtime_flush_error();
-				(void)SSL_add_file_cert_subjects_to_stack(
-					stack, fpath);
-				if (likely(tls_has_runtime_error() == false)) {
-					nadd++;
-				} else {
-					gflog_tls_error(GFARM_MSG_UNFIXED,
-						"Failed to add a cert"
-						"file to X509_NAME "
-						"stack: %s", fpath);
-					free(fpath);
-					ret = GFARM_ERR_INTERNAL_ERROR;
-					break;
-				}
-			} else {
-				if (ret != GFARM_ERR_NO_ERROR) {
-					gflog_tls_warning(GFARM_MSG_UNFIXED,
-						"Skip adding %s as a valid "
-						"cert.", cert_file);
-					continue;
-				}
-			}
-		} else {
-			if (errno == 0) {
-				ret = GFARM_ERR_NO_ERROR;
-			} else {
-				ret = gfarm_errno_to_error(errno);
-				gflog_tls_error(GFARM_MSG_UNFIXED,
-					"readdir(3) error: %s (%d)",
-					gfarm_error_string(ret), errno);
-			}
-			break;
-		}
-	} while (true);
-
-done:
-	if (likely(ret == GFARM_ERR_NO_ERROR)) {
-		*nptr = nadd;
-	}
-	if (d != NULL) {
-		(void)closedir(d);
-	}
-
-	return (ret);
-}
-
-static inline gfarm_error_t
 tls_get_x509_name_stack_from_dir(const char *dir,
 	STACK_OF(X509_NAME) *stack, int *nptr)
 {
-	return scan_dir_for_x509_name(dir, stack, nptr);
+	return iterate_file_in_a_dir(dir,
+			iterate_file_for_x509_name, stack, nptr);
 }
 
 static inline gfarm_error_t
-tls_set_ca_path(SSL_CTX *ssl_ctx, tls_role_t role,
+tls_set_ca_path(SSL_CTX *ssl_ctx,
 	const char *ca_path, const char* acceptable_ca_path,
 	STACK_OF(X509_NAME) **trust_ca_list)
 {
@@ -1255,38 +1156,33 @@ tls_set_ca_path(SSL_CTX *ssl_ctx, tls_role_t role,
 
 #ifndef HAVE_OPENSSL_3_0
 	if (likely(ssl_ctx != NULL && is_valid_string(ca_path) == true)) {
+		if (trust_ca_list != NULL) {
+			*trust_ca_list = NULL;
+		}
 		tls_runtime_flush_error();
-		if (unlikely(SSL_CTX_load_verify_locations(ssl_ctx,
-				NULL, ca_path) == 0)) {
+		if (likely(SSL_CTX_load_verify_locations(ssl_ctx,
+				NULL, ca_path) == 1)) {
+			ret = GFARM_ERR_NO_ERROR;
+		} else {
 			gflog_tls_error(GFARM_MSG_UNFIXED,
 				"Failed to set CA path to a SSL_CTX.");
+			ret = GFARM_ERR_TLS_RUNTIME_ERROR;
 			goto done;
 		}
-		if (role == TLS_ROLE_SERVER) {
+		if (is_valid_string(acceptable_ca_path) == true) {
 			int ncerts = 0;
-			const char *dir =
-				(is_valid_string(acceptable_ca_path) == true)
-				? acceptable_ca_path : ca_path;
-			STACK_OF(X509_NAME) *ca_list = sk_X509_NAME_new_null();
+			const char *dir = acceptable_ca_path;
+			STACK_OF(X509_NAME) *ca_list =
+				sk_X509_NAME_new(x509_name_compare);
 			if (likely(ca_list != NULL &&
 				(ret = tls_get_x509_name_stack_from_dir(
 					dir, ca_list, &ncerts)) ==
 				GFARM_ERR_NO_ERROR && ncerts > 0)) {
-				tls_runtime_flush_error();
-				SSL_CTX_set_client_CA_list(ssl_ctx, ca_list);
-				/*
-				 * NOTE:
-				 *	To release ca_list, check runtime 
-				 *	error.
-				 */
-				if (unlikely(tls_has_runtime_error() ==
-					true)) {
-					gflog_tls_error(GFARM_MSG_UNFIXED,
-							"Can't add valid "
-							"clients CA certs in "
-							"%s for server.", dir);
-					ret = GFARM_ERR_TLS_RUNTIME_ERROR;
-					goto free_ca_list;
+				if (trust_ca_list != NULL) {
+					*trust_ca_list = ca_list;
+				} else {
+					sk_X509_NAME_pop_free(ca_list,
+						X509_NAME_free);
 				}
 			} else {
 				if (ca_list == NULL) {
@@ -1302,13 +1198,7 @@ tls_set_ca_path(SSL_CTX *ssl_ctx, tls_role_t role,
 						"added as a valid cert under "
 						"%s directory.", dir);
 				}
-			free_ca_list:
-				sk_X509_NAME_pop_free(ca_list,
-						X509_NAME_free);
-				
 			}
-		} else {
-			ret = GFARM_ERR_NO_ERROR;
 		}
 	} else {
 		ret = GFARM_ERR_INVALID_ARGUMENT;
@@ -1810,11 +1700,11 @@ tls_session_clear_ctx(tls_session_ctx_t ctx, int flags)
 		}
 
 		if ((flags & CTX_CLEAR_CTX) != 0) {
-#if 0
-			sk_X509_NAME_pop_free(ctx->trusted_certs_,
-				X509_NAME_free);
+			if (ctx->trusted_certs_ != NULL) {
+				sk_X509_NAME_pop_free(ctx->trusted_certs_,
+						X509_NAME_free);
+			}
 			ctx->trusted_certs_ = NULL;
-#endif
 			free_n_nullify(SSL_CTX_free, ssl_ctx_);
 			free_n_nullify(EVP_PKEY_free, prvkey_);
 			free_n_nullify(X509_NAME_free, proxy_issuer_);
@@ -2007,13 +1897,14 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 	/*
 	 * Following strings must be copied to *ctxret
 	 */
-	char *cert_file = NULL;		/* required for server/mutual */
+	char *cert_file = NULL;		/* required always */
 	char *cert_chain_file = NULL;	/* required for server/mutual */
 	char *prvkey_file = NULL;	/* required for server/mutual */
 	char *ca_path = NULL;		/* required for server/mutual */
 	char *acceptable_ca_path = NULL;
 	char *revoke_path = NULL;
 	char *ciphersuites = NULL;
+	STACK_OF(X509_NAME) *trust_ca_list = NULL;
 
 	/*
 	 * Parameter check
@@ -2091,8 +1982,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 	 */
 	tmp = str_or_NULL(gfarm_ctxp->tls_ca_revocation_path);
 	if ((is_valid_string(tmp) == true) &&
-		((ret = is_valid_cert_store_dir(tmp)) ==
-		GFARM_ERR_NO_ERROR)) {
+		((ret = is_valid_cert_store_dir(tmp)) == GFARM_ERR_NO_ERROR)) {
 		revoke_path = strdup(tmp);
 		if (unlikely(revoke_path == NULL)) {
 			ret = GFARM_ERR_NO_MEMORY;
@@ -2111,6 +2001,30 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 	}
 
 	/*
+	 * Acceptable CA cert path (optional)
+	 */
+	tmp = str_or_NULL(gfarm_ctxp->tls_ca_peer_verify_chain_path);
+	if (is_valid_string(tmp) == true &&
+		((ret = is_valid_cert_store_dir(tmp)) == GFARM_ERR_NO_ERROR)) {
+		acceptable_ca_path = strdup(tmp);
+		if (unlikely(acceptable_ca_path == NULL)) {
+			ret = GFARM_ERR_NO_MEMORY;
+			gflog_tls_error(GFARM_MSG_UNFIXED,
+				"Can't duplicate an acceptable CA "
+				"certs directory nmae: %s",
+				gfarm_error_string(ret));
+			goto bailout;
+		}
+	} else {
+		if (tmp != NULL) {
+			gflog_tls_warning(GFARM_MSG_UNFIXED,
+				"Failed to check peer certs verification "
+				"directory %s: %s",
+				tmp, gfarm_error_string(ret));
+		}
+	}
+
+	/*
 	 * Self certificate check
 	 */
 	if (do_mutual_auth == true || role == TLS_ROLE_SERVER) {
@@ -2123,9 +2037,6 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 			str_or_NULL(gfarm_ctxp->tls_certificate_chain_file);
 		char *tmp_prvkey_file =
 			str_or_NULL(gfarm_ctxp->tls_key_file);
-		char *tmp_acceptable_ca_path =
-			str_or_NULL(
-				gfarm_ctxp->tls_ca_peer_verify_chain_path);
 
 		tmp_proxy_cert_file =
 			(use_proxy_cert == true && role == TLS_ROLE_CLIENT) ?
@@ -2199,32 +2110,6 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 			goto bailout;
 		}
 
-		/*
-		 * Acceptable CA cert path (server only & optional)
-		 */
-		if (role == TLS_ROLE_SERVER &&
-			(is_valid_string(tmp_acceptable_ca_path) == true) &&
-			((ret = is_valid_cert_store_dir(
-					tmp_acceptable_ca_path)) ==
-			 GFARM_ERR_NO_ERROR)) {
-			acceptable_ca_path = strdup(tmp_acceptable_ca_path);
-			if (unlikely(acceptable_ca_path == NULL)) {
-				ret = GFARM_ERR_NO_MEMORY;
-				gflog_tls_error(GFARM_MSG_UNFIXED,
-					"Can't duplicate an acceptable CA "
-					"certs directory nmae: %s",
-					gfarm_error_string(ret));
-				goto bailout;
-			}
-		} else if (role == TLS_ROLE_SERVER) {
-			if (tmp_acceptable_ca_path != NULL) {
-				gflog_tls_warning(GFARM_MSG_UNFIXED,
-					"Failed to check server acceptable "
-					"certs directory %s: %s",
-					tmp_acceptable_ca_path,
-					gfarm_error_string(ret));
-			}
-		}
 	}
 
 	/*
@@ -2403,9 +2288,33 @@ runtime_init:
 		/*
 		 * Set CA path
 		 */
-		ret = tls_set_ca_path(ssl_ctx, role,
-			ca_path, acceptable_ca_path, NULL);
-		if (unlikely(ret != GFARM_ERR_NO_ERROR)) {
+		ret = tls_set_ca_path(ssl_ctx, ca_path, acceptable_ca_path,
+				&trust_ca_list);
+		if (likely(ret == GFARM_ERR_NO_ERROR)) {
+			if (is_valid_string(acceptable_ca_path) == true) {
+				if (trust_ca_list != NULL &&
+					sk_X509_NAME_num(trust_ca_list) > 0) {
+					if (sk_X509_NAME_is_sorted(
+						    trust_ca_list) != 1) {
+						sk_X509_NAME_sort(
+							trust_ca_list);
+					}
+				} else if (sk_X509_NAME_num(
+						   trust_ca_list) <= 0) {
+					gflog_tls_warning(GFARM_MSG_UNFIXED,
+						"No cert is collected "
+						"in %s for peer chain "
+						"verifiation.",
+						acceptable_ca_path);
+					if (trust_ca_list != NULL) {
+						sk_X509_NAME_pop_free(
+							trust_ca_list,
+							X509_NAME_free);
+					}
+					trust_ca_list = NULL;
+				}
+			}
+		} else {
 			goto bailout;
 		}
 
@@ -2613,6 +2522,7 @@ runtime_init:
 		ctxret->ca_path_ = ca_path;
 		ctxret->acceptable_ca_path_ = acceptable_ca_path;
 		ctxret->revoke_path_ = revoke_path;
+		ctxret->trusted_certs_ = trust_ca_list;
 
 		/*
 		 * All done.

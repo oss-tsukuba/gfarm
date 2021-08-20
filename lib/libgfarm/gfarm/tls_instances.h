@@ -49,6 +49,16 @@ tls_runtime_init_once(void)
 	tls_runtime_init_once_body();
 }
 
+static inline gfarm_error_t
+accumulate_x509_names_from_file(const char *file,
+	STACK_OF(X509_NAME) *stack, int *n_added);
+static gfarm_error_t
+iterate_file_for_x509_name(const char *file, void *arg, int *n_added)
+{
+	return accumulate_x509_names_from_file(file,
+			(STACK_OF(X509_NAME) *)arg, n_added);
+}
+
 static int
 tls_add_cert_to_SSL_CTX_chain(SSL_CTX *sctx, X509 *x)
 {
@@ -59,6 +69,12 @@ static cert_add_method_t const methods[] = {
 	{ SSL_CTX_use_certificate, "use" },
 	{ tls_add_cert_to_SSL_CTX_chain, "add" }
 };
+
+static int
+x509_name_compare(const X509_NAME * const *a, const X509_NAME * const *b)
+{
+	return X509_NAME_cmp(*a, *b);
+}
 
 #else
 
