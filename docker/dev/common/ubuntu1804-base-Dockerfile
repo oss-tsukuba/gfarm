@@ -1,18 +1,24 @@
 FROM ubuntu:18.04
-RUN DEBIAN_FRONTEND=noninteractive
+ARG DEBIAN_FRONTEND=noninteractive
 
 # System dependent
 
+ARG TZ
+ARG LANG
+
+ENV TZ=${TZ}
+#ENV LANG=${LANG}
+
+## speedup in Japan
+RUN sed -i 's@archive.ubuntu.com@ftp.riken.go.jp/Linux@g' /etc/apt/sources.list
+
 RUN yes | unminimize
-ENV TZ=Asia/Tokyo
-# avoid "Configuring tzdata"
+
 RUN apt-get update \
     && apt-get -y upgrade \
     && apt-get -y install \
-    tzdata
-RUN apt-get update \
-    && apt-get -y upgrade \
-    && apt-get -y install \
+    systemd \
+    language-pack-ja \
     sudo \
     openssh-server \
     rsync \

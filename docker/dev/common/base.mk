@@ -41,6 +41,8 @@ endif
 
 DOCKER_BUILD_FLAGS = \
 		$(NO_CACHE) \
+		--build-arg TZ='$(TZ)' \
+		--build-arg LANG='$(LANG)' \
 		--build-arg GFDOCKER_NUM_JOBS='$(GFDOCKER_NUM_JOBS)' \
 		--build-arg GFDOCKER_USERNAME_PREFIX='$(GFDOCKER_USERNAME_PREFIX)' \
 		--build-arg GFDOCKER_PRIMARY_USER='$(GFDOCKER_PRIMARY_USER)' \
@@ -67,6 +69,8 @@ DOCKER = $(SUDO) docker
 COMPOSE = $(SUDO) COMPOSE_PROJECT_NAME=gfarm-$(GFDOCKER_PRJ_NAME) \
 	GFDOCKER_PRJ_NAME=$(GFDOCKER_PRJ_NAME) docker-compose
 CONTSHELL_FLAGS = \
+		--env TZ='$(TZ)' \
+		--env LANG='$(LANG)' \
 		--env GFDOCKER_PRJ_NAME='$(GFDOCKER_PRJ_NAME)' \
 		--env GFDOCKER_SUBNET='$(GFDOCKER_SUBNET)' \
 		--env GFDOCKER_START_HOST_ADDR='$(GFDOCKER_START_HOST_ADDR)' \
@@ -428,34 +432,34 @@ valgrind-gfmd:
 	@false
 
 centos7:
-	$(DOCKER) run -it --rm 'centos:7' bash
+	$(DOCKER_RUN) -it --rm 'centos:7' bash
 
 centos8:
-	$(DOCKER) run -it --rm 'centos:8' bash
+	$(DOCKER_RUN) -it --rm 'centos:8' bash
 
 rockylinux8:
-	$(DOCKER) run -it --rm 'rockylinux/rockylinux:8' bash
+	$(DOCKER_RUN) -it --rm 'rockylinux/rockylinux:8' bash
 
 almalinux8:
-	$(DOCKER) run -it --rm 'almalinux:8' bash
+	$(DOCKER_RUN) -it --rm 'almalinux:8' bash
 
 centos8stream:
-	$(DOCKER) run -it --rm 'quay.io/centos/centos:stream8' bash
+	$(DOCKER_RUN) -it --rm 'quay.io/centos/centos:stream8' bash
 
 centos9stream:
-	$(DOCKER) run -it --rm 'quay.io/centos/centos:stream9-development' bash
+	$(DOCKER_RUN) -it --rm 'quay.io/centos/centos:stream9-development' bash
 
 fedora33:
-	$(DOCKER) run -it --rm 'fedora:33' bash
+	$(DOCKER_RUN) -it --rm 'fedora:33' bash
 
 opensuse:
-	$(DOCKER) run -it --rm 'opensuse/leap' bash
+	$(DOCKER_RUN) -it --rm 'opensuse/leap' bash
 
 ubuntu1804:
-	$(DOCKER) run -it --rm 'ubuntu:18.04' bash
+	$(DOCKER_RUN) -it --rm 'ubuntu:18.04' bash
 
 ubuntu2004:
-	$(DOCKER) run -it --rm 'ubuntu:20.04' bash
+	$(DOCKER_RUN) -it --rm 'ubuntu:20.04' bash
 
 debian10:
-	$(DOCKER) run -it --rm 'debian:buster' bash
+	$(DOCKER_RUN) -it --rm 'debian:buster' bash

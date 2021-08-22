@@ -2,7 +2,11 @@ FROM fedora:33
 
 # System dependent
 
-ENV TZ=Asia/Tokyo
+ARG TZ
+ARG LANG
+
+ENV TZ=${TZ}
+#ENV LANG=${LANG}
 
 #RUN echo fastestmirror=True >> /etc/dnf/dnf.conf
 

@@ -2,7 +2,11 @@ FROM opensuse/leap
 
 # System dependent
 
-ENV TZ=Asia/Tokyo
+ARG TZ
+ARG LANG
+
+ENV TZ=${TZ}
+#ENV LANG=${LANG}
 
 RUN zypper install -y \
     sudo \

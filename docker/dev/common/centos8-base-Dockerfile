@@ -3,8 +3,13 @@ FROM centos:8
 
 # System dependent
 
+ARG TZ
+ARG LANG
+
+ENV TZ=${TZ}
+#ENV LANG=${LANG}
+
 RUN rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
-ENV TZ=Asia/Tokyo
 
 RUN yum -y update \
     && yum -y install \

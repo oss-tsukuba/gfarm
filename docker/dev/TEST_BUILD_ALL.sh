@@ -31,8 +31,9 @@ trap 'cleanup; exit 1' $trap_sigs
 
 REULT_NAME=0
 for name in ${LIST}; do
-    (cd ${BASEDIR}/${name} && time make reborn; make down)
+    (cd ${BASEDIR}/${name} && time make reborn)
     RESULT=$?
+    (cd ${BASEDIR}/${name} && make down)
     REULT_NAME=$name
     [ $RESULT -eq 0 ] || break
 done

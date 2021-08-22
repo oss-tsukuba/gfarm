@@ -1,17 +1,18 @@
 FROM debian:buster
-RUN DEBIAN_FRONTEND=noninteractive
+ARG DEBIAN_FRONTEND=noninteractive
 
 # System dependent
 
-ENV TZ=Asia/Tokyo
-# avoid "Configuring tzdata"
+ARG TZ
+ARG LANG
+
+ENV TZ=${TZ}
+#ENV LANG=${LANG}
+
 RUN apt-get update \
     && apt-get -y upgrade \
     && apt-get -y install \
-    tzdata
-RUN apt-get update \
-    && apt-get -y upgrade \
-    && apt-get -y install \
+    systemd \
     sudo \
     openssh-server \
     rsyslog \
@@ -33,6 +34,10 @@ RUN apt-get update \
     globus-gsi-cert-utils-progs \
     globus-proxy-utils \
     && globus-version
+
+RUN sed -i -E "s/# (${LANG})/\1/" /etc/locale.gen \
+    && locale-gen \
+    && update-locale LANG=${LANG}
 
 # for debug
 RUN apt-get update \

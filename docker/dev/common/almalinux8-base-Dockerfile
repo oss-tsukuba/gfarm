@@ -2,7 +2,11 @@ FROM almalinux:8
 
 # System dependent
 
-ENV TZ=Asia/Tokyo
+ARG TZ
+ARG LANG
+
+ENV TZ=${TZ}
+#ENV LANG=${LANG}
 
 RUN yum -y update \
     && yum -y install \

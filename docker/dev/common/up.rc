@@ -1,5 +1,8 @@
 set -eux
 
+: $GFDOCKER_PRJ_NAME
+: $TZ
+: $LANG
 : $GFDOCKER_USERNAME_PREFIX
 : $GFDOCKER_PRIMARY_USER
 : $GFDOCKER_NUM_GFMDS
@@ -71,8 +74,9 @@ chmod 600 \${BACKUP_KEY}
 
 for h in \${ALLHOSTS}; do
    [ \${h} = "${GFDOCKER_HOSTNAME_PREFIX_CLIENT}1" ] && continue
-   scp \${KEY} \${h}:
+   scp \${KEY} \${h}: &
 done
+wait
 EOS
 
 sudo chmod +x ${GFDOCKER_COPY_SHARED_KEY}
@@ -137,12 +141,20 @@ ln '/etc/grid-security/${host}key.pem' /etc/grid-security/hostkey.pem
 EOF
 done
 
+## before systemd 235: "rsyslog.service: Failed to kill control group"
 for host in $gfmds $gfsds $clients; do
   gfservice -d grid-proxy-init "$host" &
+  ssh "$host" sudo systemctl stop postgresql &
+  ssh "$host" sudo systemctl disable postgresql &
+  (ssh "$host" sudo localectl set-locale "${LANG}"  \
+  && ssh "$host" sudo timedatectl set-timezone "${TZ}" \
+  && ssh "$host" sudo systemctl restart rsyslog
+  ) &
 done
 wait
 
 gfservice -k -d config-all
+
 
 for host in $gfmds; do
   (gfservice set-gfmd-conf "$host" digest md5 \
@@ -150,21 +162,24 @@ for host in $gfmds; do
   && gfservice set-gfmd-conf "$host" 'auth enable gsi' '*' \
   && gfservice set-gfmd-conf "$host" write_verify enable \
   && gfservice set-gfmd-conf "$host" write_verify_interval 600 \
-  && gfservice restart-gfmd "$host") &
+  && gfservice restart-gfmd "$host" \
+  ) &
 done
-wait
+#wait
 
 for host in $gfsds; do
   (gfservice set-gfarm-conf "$host" client_digest_check enable \
   && gfservice set-gfarm-conf "$host" spool_digest_error_check disable \
   && gfservice set-gfarm-conf "$host" 'auth enable gsi' '*' \
   && gfservice restart-gfsd "$host" \
-  && ssh "$host" sudo systemctl enable "gfsd-${host}" ) &
+  && ssh "$host" sudo systemctl enable "gfsd-${host}" \
+  ) &
 done
-wait
+#wait
 
 for host in $clients; do
-  gfservice set-gfarm-conf "$host" client_digest_check enable &
+  (gfservice set-gfarm-conf "$host" client_digest_check enable \
+  ) &
 done
 wait
 
@@ -233,4 +248,13 @@ EOF
   GFARM_CONFIG_FILE=$tmp_gfarmconf test_auth $authtype
 done
 rm -f $tmp_gfarmconf
+
+echo "GFDOCKER_PRJ_NAME=$GFDOCKER_PRJ_NAME: setup is now complete."
 date
+
+LOG=/var/log/messages
+SYSLOG=/var/log/syslog
+if [ -f $SYSLOG ]; then
+   LOG=$SYSLOG
+fi
+sudo tail -1 $LOG
