@@ -312,6 +312,8 @@ gfpcat_seek(struct gfpcat_file *fp, off_t offset, int whence)
 		break;
 	case SEEK_END:
 		gwhence = GFARM_SEEK_END;
+	default:
+		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
 	e = gfs_pio_seek(fp->gf, offset, gwhence, NULL);
 
@@ -793,7 +795,7 @@ end:
 static int
 gfpcat_read_func_parts(struct gfpcat_option *opt, int write_fd)
 {
-	int i, rv;
+	int i, rv = 0;
 
 	for (i = 0; i < opt->n_part; i++) {
 		struct gfpcat_part *p = &opt->part_list[i];
@@ -879,7 +881,7 @@ gfpcat_compare(struct gfpcat_option *opt)
 
 	while ((rv1 = read(p1.read_fd, buf1, bufsize)) >= 0) {
 		char *b = buf2;
-		int len, remain = rv1;
+		int len = 0, remain = rv1;
 
 		rv2 = 0;
 		while (remain > 0 && (len = read(p2.read_fd, b, remain)) > 0) {
