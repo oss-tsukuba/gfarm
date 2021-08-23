@@ -508,7 +508,7 @@ _EOF_
 		sleep 5
 	done
 	# -q option for createuser and createdb is obsolete in 8.4
-	$PGSQL_BINDIR/createuser $createuser_option -A -D $BACKEND_USER
+	$PGSQL_BINDIR/createuser $createuser_option -D $BACKEND_USER
 	$PGSQL_BINDIR/createdb $DB_NAME
 #	$PGSQL_BINDIR/psql -q \
 #		-f "$config_dir/gfarm.schema-$SCHEMA_VERSION.sql" $DB_NAME
