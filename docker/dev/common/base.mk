@@ -463,3 +463,6 @@ ubuntu2004:
 
 debian10:
 	$(DOCKER_RUN) -it --rm 'debian:buster' bash
+
+debian11:
+	$(DOCKER_RUN) -it --rm 'debian:bullseye' bash

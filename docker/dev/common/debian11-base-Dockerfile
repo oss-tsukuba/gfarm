@@ -1,4 +1,4 @@
-FROM debian:buster
+FROM debian:bullseye
 ARG DEBIAN_FRONTEND=noninteractive
 
 # System dependent
@@ -48,7 +48,7 @@ RUN apt-get update \
     vim nano emacs-nox less
 
 RUN apt-get -y install software-properties-common \
-    && add-apt-repository 'deb http://debug.mirrors.debian.org/debian-debug/ buster-debug main'\
+    && add-apt-repository 'deb http://debug.mirrors.debian.org/debian-debug/ bullseye-debug main'\
     && apt-get update \
     && apt-get -y install \
     libfuse2-dbgsym

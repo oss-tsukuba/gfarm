@@ -15,6 +15,7 @@ opensuse/pkg
 ubuntu1804/src
 ubuntu2004/src
 debian10/src
+debian11/src
 "
 
 BASEDIR=dist
