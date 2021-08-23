@@ -312,6 +312,7 @@ gfpcat_seek(struct gfpcat_file *fp, off_t offset, int whence)
 		break;
 	case SEEK_END:
 		gwhence = GFARM_SEEK_END;
+		break;
 	default:
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
