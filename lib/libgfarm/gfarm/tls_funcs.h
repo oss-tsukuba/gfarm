@@ -1511,7 +1511,8 @@ tls_verify_callback_body(int ok, X509_STORE_CTX *sctx)
 	bool do_dbg_msg = (gflog_get_priority_level() >= LOG_DEBUG) ?
 		true : false;
 	X509 *p = X509_STORE_CTX_get_current_cert(sctx);
-	
+	X509_NAME *pn = (p != NULL) ? X509_get_subject_name(p) : NULL;
+
 	if (likely(ok == 1)) {
 
 		/*
@@ -1536,8 +1537,8 @@ tls_verify_callback_body(int ok, X509_STORE_CTX *sctx)
 			 * got a proxy cert.
 			 */
 			if (ctx->do_allow_proxy_cert_ == true) {
-				X509_NAME *tmp = X509_get_issuer_name(p);
-				if (likely(tmp != NULL)) {
+				X509_NAME *xn = X509_get_issuer_name(p);
+				if (likely(xn != NULL)) {
 					/*
 					 * Acquire X509_NAME of the
 					 * issuer only for the first
@@ -1545,7 +1546,7 @@ tls_verify_callback_body(int ok, X509_STORE_CTX *sctx)
 					 */
 					ctx->is_got_proxy_cert_ = true;
 					ctx->proxy_issuer_ =
-						X509_NAME_dup(tmp);
+						X509_NAME_dup(xn);
 					if (do_dbg_msg == true) {
 						char b[4096];
 						char *bp = b;
@@ -1578,6 +1579,19 @@ tls_verify_callback_body(int ok, X509_STORE_CTX *sctx)
 			}
 			goto done;
 		}
+
+		/*
+		 * Trusted cert check
+		 */
+		if (likely(vdepth > 0 && pn != NULL &&
+			ctx->trusted_certs_ != NULL &&
+			sk_X509_NAME_find(ctx->trusted_certs_, pn) == -1)) {
+			ok = ret = 0;
+			verr = X509_V_ERR_CERT_UNTRUSTED;
+			X509_STORE_CTX_set_error(sctx, verr);
+			goto done;
+		}
+
 	} else {
 
 		/*
@@ -1601,7 +1615,6 @@ done:
 	if (do_dbg_msg == true) {
 		char dnbuf[4096];
 		char *dn = dnbuf;
-		X509_NAME *pn = (p != NULL) ? X509_get_subject_name(p) : NULL;
 
 		if (org_ok == 0 && org_verr != X509_V_OK) {
 			verrstr = X509_verify_cert_error_string(org_verr);
