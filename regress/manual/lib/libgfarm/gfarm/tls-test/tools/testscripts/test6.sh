@@ -59,8 +59,8 @@ test_6_2() {
         "${TOP_DIR}/tls-test -s \
         --tls_certificate_file ${ENV_DIR}/A/server/server.crt \
         --tls_key_file ${ENV_DIR}/A/server/server.key \
-        --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
-        --tls_ca_peer_verify_chain_path ${ENV_DIR}/B/cacerts_all \
+        --tls_ca_certificate_path ${ENV_DIR}/A_B/cacerts_all \
+        --tls_ca_peer_verify_chain_path ${ENV_DIR}/A/cacerts_all \
         --once \
         --allow_no_crl \
         --build_chain \
@@ -88,8 +88,8 @@ test_6_3() {
         "${TOP_DIR}/tls-test -s \
         --tls_certificate_file ${ENV_DIR}/A/server/server.crt \
         --tls_key_file ${ENV_DIR}/A/server/server.key \
-        --tls_ca_certificate_path ${ENV_DIR}/A_B/cacerts_all \
-        --tls_ca_peer_verify_chain_path ${ENV_DIR}/A/cacerts_all \
+        --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+        --tls_ca_peer_verify_chain_path ${ENV_DIR}/C/cacerts_all \
         --once \
         --allow_no_crl \
         --build_chain \
@@ -117,8 +117,7 @@ test_6_4() {
         "${TOP_DIR}/tls-test -s \
         --tls_certificate_file ${ENV_DIR}/A/server/server.crt \
         --tls_key_file ${ENV_DIR}/A/server/server.key \
-        --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
-        --tls_ca_peer_verify_chain_path ${ENV_DIR}/C/cacerts_all \
+        --tls_ca_certificate_path ${ENV_DIR}/A_B/cacerts_all \
         --once \
         --allow_no_crl \
         --build_chain \
@@ -128,6 +127,7 @@ test_6_4() {
         --tls_certificate_file ${ENV_DIR}/B/client/client.crt \
         --tls_key_file ${ENV_DIR}/B/client/client.key \
         --tls_ca_certificate_path ${ENV_DIR}/A_B/cacerts_all \
+        --tls_ca_peer_verify_chain_path ${ENV_DIR}/A/cacerts_all \
         --once \
         --allow_no_crl \
         --build_chain \
@@ -156,7 +156,7 @@ test_6_5() {
         --tls_certificate_file ${ENV_DIR}/B/client/client.crt \
         --tls_key_file ${ENV_DIR}/B/client/client.key \
         --tls_ca_certificate_path ${ENV_DIR}/A_B/cacerts_all \
-        --tls_ca_peer_verify_chain_path ${ENV_DIR}/A/cacerts_all \
+        --tls_ca_peer_verify_chain_path ${ENV_DIR}/B/cacerts_all \
         --once \
         --allow_no_crl \
         --build_chain \
@@ -185,7 +185,7 @@ test_6_6() {
         --tls_certificate_file ${ENV_DIR}/B/client/client.crt \
         --tls_key_file ${ENV_DIR}/B/client/client.key \
         --tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
-        --tls_ca_peer_verify_chain_path ${ENV_DIR}/A/cacerts_all \
+        --tls_ca_peer_verify_chain_path ${ENV_DIR}/C/cacerts_all \
         --once \
         --allow_no_crl \
         --build_chain \
@@ -205,6 +205,7 @@ test_6_7() {
         --tls_certificate_file ${ENV_DIR}/A/server/server.crt \
         --tls_key_file ${ENV_DIR}/A/server/server.key \
         --tls_ca_certificate_path ${ENV_DIR}/A_B/cacerts_all \
+        --tls_ca_peer_verify_chain_path ${ENV_DIR}/B/cacerts_all \
         --once \
         --allow_no_crl \
         --build_chain \
@@ -214,7 +215,7 @@ test_6_7() {
         --tls_certificate_file ${ENV_DIR}/B/client/client.crt \
         --tls_key_file ${ENV_DIR}/B/client/client.key \
         --tls_ca_certificate_path ${ENV_DIR}/A_B/cacerts_all \
-        --tls_ca_peer_verify_chain_path ${ENV_DIR}/B/cacerts_all \
+        --tls_ca_peer_verify_chain_path ${ENV_DIR}/A/cacerts_all \
         --once \
         --allow_no_crl \
         --build_chain \
@@ -234,6 +235,7 @@ test_6_8() {
         --tls_certificate_file ${ENV_DIR}/A/server/server.crt \
         --tls_key_file ${ENV_DIR}/A/server/server.key \
         --tls_ca_certificate_path ${ENV_DIR}/A_B/cacerts_all \
+        --tls_ca_peer_verify_chain_path ${ENV_DIR}/A/cacerts_all \
         --once \
         --allow_no_crl \
         --build_chain \
@@ -242,8 +244,8 @@ test_6_8() {
         "${TOP_DIR}/tls-test \
         --tls_certificate_file ${ENV_DIR}/B/client/client.crt \
         --tls_key_file ${ENV_DIR}/B/client/client.key \
-        --tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
-        --tls_ca_peer_verify_chain_path ${ENV_DIR}/C/cacerts_all \
+        --tls_ca_certificate_path ${ENV_DIR}/A_B/cacerts_all \
+        --tls_ca_peer_verify_chain_path ${ENV_DIR}/B/cacerts_all \
         --once \
         --allow_no_crl \
         --build_chain \
@@ -262,8 +264,8 @@ test_6_9() {
         "${TOP_DIR}/tls-test -s \
         --tls_certificate_file ${ENV_DIR}/A/server/server.crt \
         --tls_key_file ${ENV_DIR}/A/server/server.key \
-        --tls_ca_certificate_path ${ENV_DIR}/A_B/cacerts_all \
-        --tls_ca_peer_verify_chain_path ${ENV_DIR}/B/cacerts_all \
+        --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
+        --tls_ca_peer_verify_chain_path ${ENV_DIR}/C/cacerts_all \
         --once \
         --allow_no_crl \
         --build_chain \
@@ -272,8 +274,8 @@ test_6_9() {
         "${TOP_DIR}/tls-test \
         --tls_certificate_file ${ENV_DIR}/B/client/client.crt \
         --tls_key_file ${ENV_DIR}/B/client/client.key \
-        --tls_ca_certificate_path ${ENV_DIR}/A_B/cacerts_all \
-        --tls_ca_peer_verify_chain_path ${ENV_DIR}/A/cacerts_all \
+        --tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
+        --tls_ca_peer_verify_chain_path ${ENV_DIR}/C/cacerts_all \
         --once \
         --allow_no_crl \
         --build_chain \
@@ -285,101 +287,11 @@ test_6_9() {
 	    fail_num=`expr ${fail_num} + 1`
     fi
 }
+
 
 # 6-10
 test_6_10() {
     run_test "6-10" \
-        "${TOP_DIR}/tls-test -s \
-        --tls_certificate_file ${ENV_DIR}/A/server/server.crt \
-        --tls_key_file ${ENV_DIR}/A/server/server.key \
-        --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
-        --tls_ca_peer_verify_chain_path ${ENV_DIR}/B/cacerts_all \
-        --once \
-        --allow_no_crl \
-        --build_chain \
-        --verify_only \
-        --mutual_authentication" \
-        "${TOP_DIR}/tls-test \
-        --tls_certificate_file ${ENV_DIR}/B/client/client.crt \
-        --tls_key_file ${ENV_DIR}/B/client/client.key \
-        --tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
-        --tls_ca_peer_verify_chain_path ${ENV_DIR}/A/cacerts_all \
-        --once \
-        --allow_no_crl \
-        --build_chain \
-        --verify_only \
-        --mutual_authentication" \
-        ${debug_flag}
-
-    if [ $? -ne 0 ]; then
-	    fail_num=`expr ${fail_num} + 1`
-    fi
-}
-
-# 6-11
-test_6_11() {
-    run_test "6-11" \
-        "${TOP_DIR}/tls-test -s \
-        --tls_certificate_file ${ENV_DIR}/A/server/server.crt \
-        --tls_key_file ${ENV_DIR}/A/server/server.key \
-        --tls_ca_certificate_path ${ENV_DIR}/A_B/cacerts_all \
-        --tls_ca_peer_verify_chain_path ${ENV_DIR}/A/cacerts_all \
-        --once \
-        --allow_no_crl \
-        --build_chain \
-        --verify_only \
-        --mutual_authentication" \
-        "${TOP_DIR}/tls-test \
-        --tls_certificate_file ${ENV_DIR}/B/client/client.crt \
-        --tls_key_file ${ENV_DIR}/B/client/client.key \
-        --tls_ca_certificate_path ${ENV_DIR}/A_B/cacerts_all \
-        --tls_ca_peer_verify_chain_path ${ENV_DIR}/B/cacerts_all \
-        --once \
-        --allow_no_crl \
-        --build_chain \
-        --verify_only \
-        --mutual_authentication" \
-        ${debug_flag}
-
-    if [ $? -ne 0 ]; then
-	    fail_num=`expr ${fail_num} + 1`
-    fi
-}
-
-# 6-12
-test_6_12() {
-    run_test "6-12" \
-        "${TOP_DIR}/tls-test -s \
-        --tls_certificate_file ${ENV_DIR}/A/server/server.crt \
-        --tls_key_file ${ENV_DIR}/A/server/server.key \
-        --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
-        --tls_ca_peer_verify_chain_path ${ENV_DIR}/C/cacerts_all \
-        --once \
-        --allow_no_crl \
-        --build_chain \
-        --verify_only \
-        --mutual_authentication" \
-        "${TOP_DIR}/tls-test \
-        --tls_certificate_file ${ENV_DIR}/B/client/client.crt \
-        --tls_key_file ${ENV_DIR}/B/client/client.key \
-        --tls_ca_certificate_path ${ENV_DIR}/B/cacerts_all \
-        --tls_ca_peer_verify_chain_path ${ENV_DIR}/C/cacerts_all \
-        --once \
-        --allow_no_crl \
-        --build_chain \
-        --verify_only \
-        --mutual_authentication" \
-        ${debug_flag}
-
-    if [ $? -ne 0 ]; then
-	    fail_num=`expr ${fail_num} + 1`
-    fi
-}
-
-
-# 6-13
-test_6_13() {
-    run_test "6-13" \
         "${TOP_DIR}/tls-test -s \
         --tls_certificate_file ${ENV_DIR}/A/server/server.crt \
         --tls_key_file ${ENV_DIR}/A/server/server.key \
@@ -406,9 +318,9 @@ test_6_13() {
     fi
 }
 
-# 6-14
-test_6_14() {
-    run_test "6-14" \
+# 6-11
+test_6_11() {
+    run_test "6-11" \
         "${TOP_DIR}/tls-test -s \
         --tls_certificate_file ${ENV_DIR}/A/server_under_inter_ca_4/server.crt \
         --tls_key_file ${ENV_DIR}/A/server_under_inter_ca_4/server.key \
@@ -435,9 +347,9 @@ test_6_14() {
     fi
 }
 
-# 6-15
-test_6_15() {
-    run_test "6-15" \
+# 6-12
+test_6_12() {
+    run_test "6-12" \
         "${TOP_DIR}/tls-test -s \
         --tls_certificate_file ${ENV_DIR}/A/server_under_inter_ca_4/server.crt \
         --tls_key_file ${ENV_DIR}/A/server_under_inter_ca_4/server.key \
@@ -490,8 +402,5 @@ test_6_9
 test_6_10
 test_6_11
 test_6_12
-test_6_13
-test_6_14
-test_6_15
 
 exit ${fail_num}
