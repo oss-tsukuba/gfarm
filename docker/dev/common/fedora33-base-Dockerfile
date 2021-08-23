@@ -3,9 +3,9 @@ FROM fedora:33
 # System dependent
 
 ARG TZ
-ARG LANG
-
 ENV TZ=${TZ}
+
+#ARG LANG
 #ENV LANG=${LANG}
 
 #RUN echo fastestmirror=True >> /etc/dnf/dnf.conf

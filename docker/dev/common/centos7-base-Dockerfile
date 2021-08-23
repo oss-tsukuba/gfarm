@@ -3,9 +3,9 @@ FROM centos:7
 # System dependent
 
 ARG TZ
-ARG LANG
-
 ENV TZ=${TZ}
+
+#ARG LANG
 #ENV LANG=${LANG}
 
 RUN sed -i -e '/override_install_langs/s/$/,ja_JP.utf8/g' /etc/yum.conf

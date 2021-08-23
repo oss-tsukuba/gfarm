@@ -3,9 +3,9 @@ FROM opensuse/leap
 # System dependent
 
 ARG TZ
-ARG LANG
-
 ENV TZ=${TZ}
+
+#ARG LANG
 #ENV LANG=${LANG}
 
 RUN zypper install -y \

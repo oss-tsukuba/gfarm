@@ -4,9 +4,9 @@ ARG DEBIAN_FRONTEND=noninteractive
 # System dependent
 
 ARG TZ
-ARG LANG
-
 ENV TZ=${TZ}
+
+#ARG LANG
 #ENV LANG=${LANG}
 
 RUN apt-get update \

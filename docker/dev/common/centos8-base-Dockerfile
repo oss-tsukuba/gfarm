@@ -4,9 +4,9 @@ FROM centos:8
 # System dependent
 
 ARG TZ
-ARG LANG
-
 ENV TZ=${TZ}
+
+#ARG LANG
 #ENV LANG=${LANG}
 
 RUN rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial

@@ -3,9 +3,9 @@ FROM almalinux:8
 # System dependent
 
 ARG TZ
-ARG LANG
-
 ENV TZ=${TZ}
+
+#ARG LANG
 #ENV LANG=${LANG}
 
 RUN yum -y update \
