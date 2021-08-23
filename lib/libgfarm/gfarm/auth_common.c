@@ -221,10 +221,6 @@ gfarm_auth_shared_key_get(unsigned int *expirep, char *shared_key,
 		o_uid = geteuid();
 		if (seteuid(0) == 0) /* recover root privilege */
 			is_root = 1;
-		if (initgroups(pwd->pw_name, pwd->pw_gid) == -1 && is_root)
-			gflog_error_errno(GFARM_MSG_1002339,
-			    "inigroups(%s, %d)",
-			    pwd->pw_name, (int)pwd->pw_gid);
 		if (setegid(pwd->pw_gid) == -1 && is_root)
 			gflog_error_errno(GFARM_MSG_1002340,
 			    "setegid(%d)", (int)pwd->pw_gid);
@@ -310,9 +306,6 @@ finish:
 		if (seteuid(0) == -1 && is_root) /* recover root privilege */
 			gflog_error_errno(GFARM_MSG_1002342, "seteuid(0)");
 		/* abandon group privileges */
-		if (setgroups(1, &o_gid) == -1 && is_root)
-			gflog_error_errno(GFARM_MSG_1002343,
-			    "setgroups(%d)", (int)o_gid);
 		if (setegid(o_gid) == -1 && is_root)
 			gflog_error_errno(GFARM_MSG_1002344,
 			    "setegid(%d)", (int)o_gid);

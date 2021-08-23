@@ -158,7 +158,7 @@ gfarm_auth_request_gsi(struct gfp_xdr *conn,
 		    service_tag, hostname, gfarm_error_string(e));
 		return (e);
 	}
-	cred = gfarm_gsi_get_delegated_cred();
+	cred = gfarm_gsi_client_cred_get();
 	if (cred == GSS_C_NO_CREDENTIAL) { /* if not delegated */
 		e = gfarm_gsi_acquire_client_credential(hostname, self_type,
 		    &cred, &initiator_name);
@@ -434,7 +434,7 @@ gfarm_auth_request_gsi_multiplexed(struct gfarm_eventqueue *q,
 	}
 
 	state->cred_acquired = 0;
-	state->cred = gfarm_gsi_get_delegated_cred();
+	state->cred = gfarm_gsi_client_cred_get();
 	if (state->cred == GSS_C_NO_CREDENTIAL) { /* if not delegated */
 		e = gfarm_gsi_acquire_client_credential(hostname, self_type,
 		    &state->cred, &initiator_name);

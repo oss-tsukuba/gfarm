@@ -1447,9 +1447,15 @@ gfarm_set_metadb_server_force_slave(int slave)
 }
 
 char *
-gfarm_get_shared_key_file()
+gfarm_get_shared_key_file(void)
 {
 	return (staticp->shared_key_file);
+}
+
+int
+gfarm_get_client_file_bufsize(void)
+{
+	return (gfarm_ctxp->client_file_bufsize);
 }
 
 enum gfarm_spool_check_level
