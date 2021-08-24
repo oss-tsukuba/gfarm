@@ -2,16 +2,12 @@
 
 #ifdef HAVE_TLS_1_3
 
-
-
 #define IN_TLS_CORE
 #undef TLS_TEST
 
 #include "tls_headers.h"
 #include "tls_instances.h"
 #include "tls_funcs.h"
-
-
 
 /*
  * Gfarm iobuffer iops
@@ -25,7 +21,8 @@ tls_iobufop_close(void *cookie, int fd)
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 	int st = -1;
-	tls_session_ctx_t ctx = (tls_session_ctx_t)cookie;
+	struct tls_session_ctx_struct *ctx =
+		(struct tls_session_ctx_struct *)cookie;
 
 	ret = tls_session_shutdown(ctx);
 	tls_session_destroy_ctx(ctx);
@@ -34,7 +31,7 @@ tls_iobufop_close(void *cookie, int fd)
 	if (st != 0) {
 		ret = gfarm_errno_to_error(errno);
 	}
-	
+
 	return (ret);
 }
 
@@ -46,7 +43,8 @@ tls_iobufop_shutdown(void *cookie, int fd)
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 	int st = -1;
-	tls_session_ctx_t ctx = (tls_session_ctx_t)cookie;
+	struct tls_session_ctx_struct *ctx =
+		(struct tls_session_ctx_struct *)cookie;
 
 	ret = tls_session_shutdown(ctx);
 	errno = 0;
@@ -75,7 +73,8 @@ tls_iobufop_timeout_read(struct gfarm_iobuffer *b,
 	void *cookie, int fd, void *buf, int len)
 {
 	int ret = -1;
-	tls_session_ctx_t ctx = (tls_session_ctx_t)cookie;
+	struct tls_session_ctx_struct *ctx =
+		(struct tls_session_ctx_struct *)cookie;
 
 	if (likely(ctx != NULL && b != NULL)) {
 		gfarm_error_t gfe = tls_session_timeout_read(ctx, fd, buf, len,
@@ -104,7 +103,8 @@ tls_iobufop_full_blocking_read(struct gfarm_iobuffer *b,
 	void *cookie, int fd, void *buf, int len)
 {
 	int ret = -1;
-	tls_session_ctx_t ctx = (tls_session_ctx_t)cookie;
+	struct tls_session_ctx_struct *ctx =
+		(struct tls_session_ctx_struct *)cookie;
 
 	if (likely(ctx != NULL && b != NULL)) {
 		gfarm_error_t gfe = tls_session_timeout_read(ctx, fd, buf, len,
@@ -131,7 +131,8 @@ tls_iobufop_timeout_write(struct gfarm_iobuffer *b,
 	void *cookie, int fd, void *buf, int len)
 {
 	int ret = -1;
-	tls_session_ctx_t ctx = (tls_session_ctx_t)cookie;
+	struct tls_session_ctx_struct *ctx =
+		(struct tls_session_ctx_struct *)cookie;
 
 	if (likely(ctx != NULL && b != NULL)) {
 		gfarm_error_t gfe;
@@ -165,7 +166,8 @@ tls_iobufop_full_blocking_write(struct gfarm_iobuffer *b,
 	void *cookie, int fd, void *buf, int len)
 {
 	int ret = -1;
-	tls_session_ctx_t ctx = (tls_session_ctx_t)cookie;
+	struct tls_session_ctx_struct *ctx =
+		(struct tls_session_ctx_struct *)cookie;
 
 	if (likely(ctx != NULL && b != NULL)) {
 		gfarm_error_t gfe = tls_session_timeout_write(
@@ -201,8 +203,6 @@ static struct gfp_iobuffer_ops gfp_xdr_tls_iobuf_ops = {
 	tls_iobufop_full_blocking_write,
 };
 
-
-
 /*
  * Gfarm internal APIs
  */
@@ -215,15 +215,15 @@ gfp_xdr_tls_alloc(struct gfp_xdr *conn,	int fd, int flags)
 {
 	gfarm_error_t ret;
 
-	tls_session_ctx_t ctx = NULL;
+	struct tls_session_ctx_struct *ctx = NULL;
 	bool do_mutual_auth =
 		(flags & GFP_XDR_TLS_CLIENT_AUTHENTICATION) != 0;
-	tls_role_t role =
+	enum tls_role role =
 		(GFP_XDR_TLS_ROLE_IS_INITIATOR(flags)) ?
 		TLS_ROLE_INITIATOR : TLS_ROLE_ACCEPTOR;
 	bool use_proxy_cert =
 		flags & GFP_XDR_TLS_CLIENT_USE_PROXY_CERTIFICATE;
-	
+
 	ret = tls_session_create_ctx(&ctx, role,
 		do_mutual_auth, use_proxy_cert);
 	if (likely(ret == GFARM_ERR_NO_ERROR && ctx != NULL)) {
@@ -245,7 +245,7 @@ gfp_xdr_tls_alloc(struct gfp_xdr *conn,	int fd, int flags)
 void
 gfp_xdr_tls_reset(struct gfp_xdr *conn)
 {
-	tls_session_ctx_t ctx = gfp_xdr_cookie(conn);
+	struct tls_session_ctx_struct *ctx = gfp_xdr_cookie(conn);
 
 	(void)tls_session_shutdown(ctx);
 	tls_session_destroy_ctx(ctx);
@@ -257,23 +257,24 @@ char *
 gfp_xdr_tls_peer_dn_rfc2253(struct gfp_xdr *conn)
 {
 	return (tls_session_peer_subjectdn_rfc2253(
-			((tls_session_ctx_t)(gfp_xdr_cookie(conn)))));
+			((struct tls_session_ctx_struct *)
+			(gfp_xdr_cookie(conn)))));
 }
 
 char *
 gfp_xdr_tls_peer_dn_gsi(struct gfp_xdr *conn)
 {
 	return (tls_session_peer_subjectdn_gsi(
-			((tls_session_ctx_t)(gfp_xdr_cookie(conn)))));
+			((struct tls_session_ctx_struct *)
+			(gfp_xdr_cookie(conn)))));
 }
 
 char *
 gfp_xdr_tls_peer_dn_common_name(struct gfp_xdr *conn)
 {
 	return (tls_session_peer_cn(
-			((tls_session_ctx_t)(gfp_xdr_cookie(conn)))));
+			((struct tls_session_ctx_struct *)
+			(gfp_xdr_cookie(conn)))));
 }
-
-
 
 #endif /* HAVE_TLS_1_3 */

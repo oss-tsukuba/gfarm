@@ -40,7 +40,7 @@ static struct tls_test_ctx_struct ttcs = {
 	60,
 	60
 };
-tls_test_ctx_p gfarm_ctxp = &ttcs;
+struct tls_test_ctx_struct *gfarm_ctxp = &ttcs;
 
 static inline void
 usage()
@@ -381,7 +381,7 @@ prologue(int argc, char **argv, struct addrinfo **a_info)
 }
 
 static inline void
-epilogue(tls_session_ctx_t tls_ctx, struct addrinfo *a_info)
+epilogue(struct tls_session_ctx_struct *tls_ctx, struct addrinfo *a_info)
 {
 	(void)tls_session_destroy_ctx(tls_ctx);
 	freeaddrinfo(a_info);
@@ -390,7 +390,7 @@ epilogue(tls_session_ctx_t tls_ctx, struct addrinfo *a_info)
 }
 
 static inline int
-do_write_read(tls_session_ctx_t tls_ctx)
+do_write_read(struct tls_session_ctx_struct *tls_ctx)
 {
 	int urandom_fd;
 	int ret = 4;
@@ -552,7 +552,7 @@ do_write_read(tls_session_ctx_t tls_ctx)
 }
 
 static inline int
-run_server_process(tls_session_ctx_t tls_ctx, int socketfd)
+run_server_process(struct tls_session_ctx_struct *tls_ctx, int socketfd)
 {
 	int acceptfd, ret;
 	struct addrinfo clientaddr;
@@ -668,7 +668,7 @@ run_server_process(tls_session_ctx_t tls_ctx, int socketfd)
 }
 
 static inline int
-run_server(tls_session_ctx_t tls_ctx, struct addrinfo *a_info)
+run_server(struct tls_session_ctx_struct *tls_ctx, struct addrinfo *a_info)
 {
 	int socketfd;
 	int optval = 1, ret = 3;
@@ -702,7 +702,7 @@ run_server(tls_session_ctx_t tls_ctx, struct addrinfo *a_info)
 }
 
 static inline int
-run_client_process(tls_session_ctx_t tls_ctx, int socketfd)
+run_client_process(struct tls_session_ctx_struct *tls_ctx, int socketfd)
 {
 	int ret = 4;
 	gfarm_error_t gerr = GFARM_ERR_UNKNOWN;
@@ -783,7 +783,7 @@ done:
 }
 
 static inline int
-run_client(tls_session_ctx_t tls_ctx, struct addrinfo *a_info)
+run_client(struct tls_session_ctx_struct *tls_ctx, struct addrinfo *a_info)
 {
 	int socketfd, ret = 3;
 	if ((socketfd = socket(a_info->ai_family,
@@ -806,7 +806,7 @@ main(int argc, char **argv)
 {
 	int ret = 1;
 	struct addrinfo *a_info;
-	tls_session_ctx_t tls_ctx = NULL;
+	struct tls_session_ctx_struct *tls_ctx = NULL;
 
 	if (prologue(argc, argv, &a_info) == 0) {
 		gfarm_error_t gerr = GFARM_ERR_UNKNOWN;

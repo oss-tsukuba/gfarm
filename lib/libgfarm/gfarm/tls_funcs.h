@@ -2,8 +2,6 @@
 
 #if defined(HAVE_TLS_1_3) && defined(IN_TLS_CORE)
 
-
-
 /*
  * misc. utils.
  */
@@ -63,8 +61,6 @@ trim_string_tail(char *buf)
 	return;
 }
 
-
-
 static inline void
 tty_lock(void)
 {
@@ -107,7 +103,7 @@ tty_reset(int ttyfd)
 		}
 	}
 }
-		
+
 static inline void
 tty_echo_off(int ttyfd)
 {
@@ -161,7 +157,7 @@ tty_get_passwd(char *buf, size_t maxlen, const char *prompt, int *lenptr)
 			tty_reset(ttyfd);
 			(void)fprintf(stdout, "\n");
 			(void)fflush(stdout);
-			
+
 			if (likely(rst != NULL)) {
 				trim_string_tail(buf);
 				*lenptr = strlen(buf);
@@ -175,7 +171,7 @@ tty_get_passwd(char *buf, size_t maxlen, const char *prompt, int *lenptr)
 				}
 			}
 		} else {
-		ttyerr:
+ttyerr:
 			ret = gfarm_errno_to_error(s_errno);
 			gflog_tls_error(GFARM_MSG_UNFIXED,
 				"stdin is not a terminal: %s",
@@ -346,7 +342,7 @@ is_valid_prvkey_file_permission(int fd, const char *file)
 		}
 		if (likely((st == 0) &&	(S_ISDIR(s.st_mode) == 0))) {
 			uid_t uid;
-				
+
 			if (likely((uid = geteuid()) == s.st_uid)) {
 				if (likely(((s.st_mode &
 					(S_IRGRP | S_IWGRP |
@@ -389,7 +385,7 @@ is_valid_prvkey_file_permission(int fd, const char *file)
 		gflog_tls_error(GFARM_MSG_UNFIXED,
 			"Specified filename is nul or "
 			"file invalid file descriptor.");
-		ret = GFARM_ERR_INVALID_ARGUMENT;			
+		ret = GFARM_ERR_INVALID_ARGUMENT;
 	}
 
 	return (ret);
@@ -449,7 +445,7 @@ has_proxy_cert(void)
 	char *tmp = NULL;
 	char buf[PATH_MAX];
 	gfarm_error_t ge = GFARM_ERR_UNKNOWN;
-	
+
 	if ((tmp =  getenv("X509_USER_PROXY")) != NULL) {
 		snprintf(buf, sizeof(buf), "%s", tmp);
 	} else {
@@ -461,8 +457,6 @@ has_proxy_cert(void)
 	}
 	return (ret);
 }
-
-
 
 /*
  * TLS thingies
@@ -556,7 +550,8 @@ tls_has_runtime_error(void)
 static inline void
 tls_runtime_flush_error(void)
 {
-	for ((void)ERR_get_error(); ERR_get_error() != 0;);
+	for ((void)ERR_get_error(); ERR_get_error() != 0;)
+		;
 }
 
 /*
@@ -634,7 +629,7 @@ get_peer_dn_gsi_ish(X509_NAME *pn, char **nameptr, int maxlen)
 		(XN_FLAG_RFC2253 & ~(ASN1_STRFLGS_ESC_MSB|XN_FLAG_DN_REV))
 		ret = get_peer_dn(pn, DN_FORMAT_GLOBUS,
 				 &dn, sizeof(buf));
-#undef DN_FORMAT_GLOBUS			
+#undef DN_FORMAT_GLOBUS
 		if (likely(ret == GFARM_ERR_NO_ERROR &&
 				(cnp = (char *)memmem(buf, sizeof(buf),
 						"CN=", 3)) != NULL &&
@@ -769,7 +764,8 @@ static inline int
 tty_passwd_callback_body(char *buf, int maxlen, int rwflag, void *u)
 {
 	int ret = 0;
-	tls_passwd_cb_arg_t arg = (tls_passwd_cb_arg_t)u;
+	struct tls_passwd_cb_arg_struct *arg =
+		(struct tls_passwd_cb_arg_struct *)u;
 
 	(void)rwflag;
 
@@ -794,7 +790,7 @@ tty_passwd_callback_body(char *buf, int maxlen, int rwflag, void *u)
 					"Passphrase: ");
 			}
 		}
-		
+
 		tty_lock();
 		{
 			if (unlikely(do_passwd == true)) {
@@ -804,7 +800,7 @@ tty_passwd_callback_body(char *buf, int maxlen, int rwflag, void *u)
 					goto copy_cache;
 				}
 			} else if (likely(has_passwd_cache == true)) {
-			copy_cache:
+copy_cache:
 				ret = snprintf(buf, maxlen, "%s",
 						arg->pw_buf_);
 			}
@@ -845,7 +841,7 @@ iterate_file_in_a_dir(const char *dir,
 		}
 		goto done;
 	}
-		
+
 	*nptr = 0;
 	do {
 		errno = 0;
@@ -1091,8 +1087,8 @@ static inline gfarm_error_t
 tls_get_x509_name_stack_from_dir(const char *dir,
 	STACK_OF(X509_NAME) *stack, int *nptr)
 {
-	return iterate_file_in_a_dir(dir,
-			iterate_file_for_x509_name, stack, nptr);
+	return (iterate_file_in_a_dir(dir,
+			iterate_file_for_x509_name, stack, nptr));
 }
 
 static inline gfarm_error_t
@@ -1205,7 +1201,7 @@ tls_set_ca_path(SSL_CTX *ssl_ctx,
 	}
 
 done:
-	
+
 #else
 	X509_STORE *ch = NULL;
 	X509_STORE *ve = NULL;
@@ -1250,7 +1246,7 @@ done:
 		}
 		goto done;
 	}
-		
+
 	/* verify */
 	tls_runtime_flush_error();
 	if (likely(ssl_ctx != NULL && is_valid_string(ca_path) == true &&
@@ -1296,7 +1292,7 @@ done:
 		}
 	}
 #endif /* ! HAVE_OPENSSL_3_0 */
-	
+
 	return (ret);
 }
 
@@ -1371,7 +1367,6 @@ tls_add_certs(SSL_CTX *ssl_ctx, const char *file, int *n_added)
 			if (n_certs == 0) {
 				gflog_tls_warning(GFARM_MSG_UNFIXED,
 					"No cert is added from %s.", file);
-						  
 			}
 		} else {
 			ret = GFARM_ERR_TLS_RUNTIME_ERROR;
@@ -1502,8 +1497,8 @@ tls_verify_callback_body(int ok, X509_STORE_CTX *sctx)
 	int org_ok = ok;
 	SSL *ssl = X509_STORE_CTX_get_ex_data(sctx,
 			SSL_get_ex_data_X509_STORE_CTX_idx());
-	tls_session_ctx_t ctx = (ssl != NULL) ?
-		(tls_session_ctx_t)SSL_get_app_data(ssl) : NULL;
+	struct tls_session_ctx_struct *ctx = (ssl != NULL) ?
+		(struct tls_session_ctx_struct *)SSL_get_app_data(ssl) : NULL;
 	int verr = X509_STORE_CTX_get_error(sctx);
 	int org_verr = verr;
 	int vdepth = X509_STORE_CTX_get_error_depth(sctx);
@@ -1642,13 +1637,13 @@ done:
  * Internal TLS context constructor/destructor
  */
 static inline void
-tls_session_clear_ctx(tls_session_ctx_t ctx, int flags)
+tls_session_clear_ctx(struct tls_session_ctx_struct *ctx, int flags)
 {
 #define free_n_nullify(free_func, obj)			\
 	do {						\
-		if (ctx -> obj != NULL) {		\
-			(void)free_func(ctx -> obj);	\
-			ctx -> obj = NULL;		\
+		if (ctx->obj != NULL) {		\
+			(void)free_func(ctx->obj);	\
+			ctx->obj = NULL;		\
 		}					\
 	} while (false)
 
@@ -1677,7 +1672,7 @@ tls_session_clear_ctx(tls_session_ctx_t ctx, int flags)
 		}
 
 		/*
-		 * tls_role_t role_;
+		 * enum tls_role role_;
 		 * bool do_mutual_auth_;
 		 * bool do_build_chain_;
 		 * bool do_allow_no_crls_;
@@ -1729,7 +1724,7 @@ tls_session_clear_ctx(tls_session_ctx_t ctx, int flags)
 }
 
 static inline gfarm_error_t
-tls_session_clear_ctx_for_reconnect(tls_session_ctx_t ctx)
+tls_session_clear_ctx_for_reconnect(struct tls_session_ctx_struct *ctx)
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 
@@ -1744,7 +1739,7 @@ tls_session_clear_ctx_for_reconnect(tls_session_ctx_t ctx)
 }
 
 static inline gfarm_error_t
-tls_session_clear_ctx_for_reestablish(tls_session_ctx_t ctx)
+tls_session_clear_ctx_for_reestablish(struct tls_session_ctx_struct *ctx)
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 
@@ -1760,13 +1755,13 @@ tls_session_clear_ctx_for_reestablish(tls_session_ctx_t ctx)
 }
 
 static inline gfarm_error_t
-tls_session_setup_ssl(tls_session_ctx_t ctx)
+tls_session_setup_ssl(struct tls_session_ctx_struct *ctx)
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 	SSL *ssl = NULL;
 	SSL_CTX *ssl_ctx = NULL;
-	tls_role_t role = TLS_ROLE_UNKNOWN;
-	
+	enum tls_role role = TLS_ROLE_UNKNOWN;
+
 	if (unlikely(ctx == NULL || (ssl_ctx = ctx->ssl_ctx_) == NULL ||
 		(role = ctx->role_) == TLS_ROLE_UNKNOWN)) {
 		ret = GFARM_ERR_INVALID_ARGUMENT;
@@ -1787,8 +1782,8 @@ tls_session_setup_ssl(tls_session_ctx_t ctx)
 
 		if ((osst = SSL_get_min_proto_version(ssl)) !=
 			TLS1_3_VERSION ||
-			(osst = SSL_get_max_proto_version(
-			    ssl)) != TLS1_3_VERSION ) {
+			(osst = SSL_get_max_proto_version(ssl)) !=
+			TLS1_3_VERSION) {
 
 			tls_runtime_flush_error();
 			if (unlikely((osst = SSL_set_min_proto_version(ssl,
@@ -1804,7 +1799,7 @@ tls_session_setup_ssl(tls_session_ctx_t ctx)
 				if ((osst = SSL_get_min_proto_version(ssl)) !=
 					TLS1_3_VERSION ||
 					(osst = SSL_get_max_proto_version(
-						ssl)) != TLS1_3_VERSION ) {
+						ssl)) != TLS1_3_VERSION) {
 					gflog_tls_error(GFARM_MSG_UNFIXED,
 						"Failed to check if the SSL "
 						"only using TLSv1.3.");
@@ -1879,8 +1874,6 @@ done:
 	return (ret);
 }
 
-
-
 /*
  * Official xported APIs
  */
@@ -1889,13 +1882,13 @@ done:
  * Constructor
  */
 static inline gfarm_error_t
-tls_session_create_ctx(tls_session_ctx_t *ctxptr,
-		       tls_role_t role,
+tls_session_create_ctx(struct tls_session_ctx_struct **ctxptr,
+		       enum tls_role role,
 		       bool do_mutual_auth, bool use_proxy_cert)
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 
-	tls_session_ctx_t ctxret = NULL;
+	struct tls_session_ctx_struct *ctxret = NULL;
 
 	EVP_PKEY *prvkey = NULL;
 	SSL_CTX *ssl_ctx = NULL;
@@ -1947,7 +1940,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 	 *	tls_build_chain_local
 	 *	tls_allow_no_crl
 	 * Callers must guarantee that values are 0 or 1.
-         */
+	 */
 
 	/*
 	 * Gfarm context check
@@ -1962,7 +1955,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 #define str_or_NULL(x)					\
 	((is_valid_string((x)) == true) ? (x) : NULL)
 
-	/* 
+	/*
 	 * CA certs path (mandatory always)
 	 */
 	tmp = str_or_NULL(gfarm_ctxp->tls_ca_certificate_path);
@@ -2239,7 +2232,7 @@ runtime_init:
 			if ((osst = SSL_CTX_get_min_proto_version(ssl_ctx)) !=
 				TLS1_3_VERSION ||
 				(osst = SSL_CTX_get_max_proto_version(
-						ssl_ctx)) != TLS1_3_VERSION ) {
+						ssl_ctx)) != TLS1_3_VERSION) {
 				gflog_tls_error(GFARM_MSG_UNFIXED,
 					"Failed to check if the SSL_CTX "
 					"only using TLSv1.3.");
@@ -2496,10 +2489,10 @@ runtime_init:
 	}
 
 	/*
-	 * Create a new tls_session_ctx_t
+	 * Create a new tls_session_ctx_struct
 	 */
-	ctxret = (tls_session_ctx_t)malloc(
-		sizeof(struct tls_session_ctx_struct));
+	ctxret = (struct tls_session_ctx_struct *)malloc(
+			sizeof(struct tls_session_ctx_struct));
 	if (likely(ctxret != NULL)) {
 		tls_runtime_flush_error();
 
@@ -2581,12 +2574,10 @@ ok:
  * Destructor
  */
 static inline void
-tls_session_destroy_ctx(tls_session_ctx_t x)
+tls_session_destroy_ctx(struct tls_session_ctx_struct *ctx)
 {
-	tls_session_clear_ctx(x, CTX_CLEAR_FREEUP);
+	tls_session_clear_ctx(ctx, CTX_CLEAR_FREEUP);
 }
-
-
 
 /*
  * TLS I/O operations
@@ -2596,7 +2587,7 @@ tls_session_destroy_ctx(tls_session_ctx_t x)
  * SSL_ERROR_* handler
  */
 static inline bool
-tls_session_io_continuable(int sslerr, tls_session_ctx_t ctx,
+tls_session_io_continuable(int sslerr, struct tls_session_ctx_struct *ctx,
 	bool in_handshake, const char *diag)
 {
 	bool ret = false;
@@ -2692,7 +2683,8 @@ tls_session_io_continuable(int sslerr, tls_session_ctx_t ctx,
  * TLS session read/write timeout checker
  */
 static inline gfarm_error_t
-tls_session_wait_io(tls_session_ctx_t ctx, int fd, int tous, bool to_read)
+tls_session_wait_io(struct tls_session_ctx_struct *ctx,
+	int fd, int tous, bool to_read)
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 	char *method = NULL;
@@ -2757,7 +2749,7 @@ tls_session_wait_io(tls_session_ctx_t ctx, int fd, int tous, bool to_read)
 					loop = false;
 				}
 				break;
-			
+
 			default:
 				ret = GFARM_ERR_NO_ERROR;
 				loop = false;
@@ -2777,24 +2769,25 @@ tls_session_wait_io(tls_session_ctx_t ctx, int fd, int tous, bool to_read)
 }
 
 static inline gfarm_error_t
-tls_session_wait_readable(tls_session_ctx_t ctx, int fd, int tous)
+tls_session_wait_readable(struct tls_session_ctx_struct *ctx, int fd, int tous)
 {
 	return (tls_session_wait_io(ctx, fd, tous, true));
 }
 
 static inline gfarm_error_t
-tls_session_wait_writable(tls_session_ctx_t ctx, int fd, int tous)
+tls_session_wait_writable(struct tls_session_ctx_struct *ctx, int fd, int tous)
 
 {
 	return (tls_session_wait_io(ctx, fd, tous, false));
 }
 
 static inline gfarm_error_t
-tls_session_get_pending_read_bytes_n(tls_session_ctx_t ctx, int *nptr)
+tls_session_get_pending_read_bytes_n(struct tls_session_ctx_struct *ctx,
+	int *nptr)
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 	SSL *ssl = NULL;
-	
+
 	if (likely(ctx != NULL && (ssl = ctx->ssl_) != NULL && nptr != NULL)) {
 		*nptr = SSL_pending(ssl);
 		ret = GFARM_ERR_NO_ERROR;
@@ -2812,7 +2805,7 @@ tls_session_get_pending_read_bytes_n(tls_session_ctx_t ctx, int *nptr)
  * Session establish
  */
 static inline gfarm_error_t
-tls_session_verify(tls_session_ctx_t ctx, bool *is_verified)
+tls_session_verify(struct tls_session_ctx_struct *ctx, bool *is_verified)
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 	SSL *ssl = NULL;
@@ -2886,7 +2879,7 @@ tls_session_verify(tls_session_ctx_t ctx, bool *is_verified)
 				gflog_tls_notice(GFARM_MSG_UNFIXED,
 					"Certificate verification failed: %s",
 					X509_verify_cert_error_string(vres));
-				ret = ctx->last_gfarm_error_ = 
+				ret = ctx->last_gfarm_error_ =
 					GFARM_ERRMSG_TLS_CERT_VERIFIY_FAILURE;
 			}
 			ctx->cert_verify_result_error_ = vres;
@@ -2923,7 +2916,7 @@ done:
 }
 
 static inline gfarm_error_t
-tls_session_establish(tls_session_ctx_t ctx, int fd)
+tls_session_establish(struct tls_session_ctx_struct *ctx, int fd)
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 	struct sockaddr sa;
@@ -2946,7 +2939,7 @@ tls_session_establish(tls_session_ctx_t ctx, int fd)
 			goto bailout;
 		}
 		ssl = ctx->ssl_;
-		
+
 		tls_runtime_flush_error();
 		if (likely(SSL_set_fd(ssl, fd) == 1)) {
 			int st;
@@ -2957,7 +2950,7 @@ tls_session_establish(tls_session_ctx_t ctx, int fd)
 			p = (ctx->role_ == TLS_ROLE_SERVER) ?
 				SSL_accept : SSL_connect;
 
-		retry:
+retry:
 			errno = 0;
 			tls_runtime_flush_error();
 			st = p(ssl);
@@ -3063,7 +3056,7 @@ bailout:
  * TLS 1.3 key update
  */
 static inline gfarm_error_t
-tls_session_update_key(tls_session_ctx_t ctx, int delta)
+tls_session_update_key(struct tls_session_ctx_struct *ctx, int delta)
 {
 	/*
 	 * Only clients initiate KeyUpdate.
@@ -3106,12 +3099,12 @@ tls_session_update_key(tls_session_ctx_t ctx, int delta)
 
 	return (ret);
 }
-	
+
 /*
  * TLS session read(2)'ish
  */
 static inline gfarm_error_t
-tls_session_read(tls_session_ctx_t ctx, void *buf, int len,
+tls_session_read(struct tls_session_ctx_struct *ctx, void *buf, int len,
 	int *actual_io_bytes)
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
@@ -3139,7 +3132,7 @@ tls_session_read(tls_session_ctx_t ctx, void *buf, int len,
 
 		*actual_io_bytes = 0;
 
-	retry:
+retry:
 		if (gflog_auth_get_verbose()) {
 			gflog_tls_debug(GFARM_MSG_UNFIXED,
 				"%s(%s): read %d/%d", __func__,
@@ -3190,7 +3183,7 @@ done:
  * TLS session write(2)'ish
  */
 static inline gfarm_error_t
-tls_session_write(tls_session_ctx_t ctx, const void *buf, int len,
+tls_session_write(struct tls_session_ctx_struct *ctx, const void *buf, int len,
 	int *actual_io_bytes)
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
@@ -3216,7 +3209,8 @@ tls_session_write(tls_session_ctx_t ctx, const void *buf, int len,
 		}
 
 		*actual_io_bytes = 0;
-	retry:
+
+retry:
 		if (gflog_auth_get_verbose()) {
 			gflog_tls_debug(GFARM_MSG_UNFIXED,
 				"%s(%s): write %d/%d", __func__,
@@ -3266,8 +3260,8 @@ done:
  * tls session io with timeout (includes "forever")
  */
 static inline gfarm_error_t
-tls_session_timeout_read(tls_session_ctx_t ctx, int fd, void *buf, int len,
-	int timeout, int *actual_read)
+tls_session_timeout_read(struct tls_session_ctx_struct *ctx,
+	int fd, void *buf, int len, int timeout, int *actual_read)
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 
@@ -3280,8 +3274,8 @@ tls_session_timeout_read(tls_session_ctx_t ctx, int fd, void *buf, int len,
 }
 
 static inline gfarm_error_t
-tls_session_timeout_write(tls_session_ctx_t ctx, int fd, const void *buf,
-	int len, int timeout, int *actual_io_bytes)
+tls_session_timeout_write(struct tls_session_ctx_struct *ctx,
+	int fd, const void *buf, int len, int timeout, int *actual_io_bytes)
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 
@@ -3297,7 +3291,7 @@ tls_session_timeout_write(tls_session_ctx_t ctx, int fd, const void *buf,
  * TLS session shutdown
  */
 static inline gfarm_error_t
-tls_session_shutdown(tls_session_ctx_t ctx)
+tls_session_shutdown(struct tls_session_ctx_struct *ctx)
 {
 	gfarm_error_t ret;
 	SSL *ssl;
@@ -3385,13 +3379,11 @@ tls_session_shutdown(tls_session_ctx_t ctx)
 	return (ret);
 }
 
-
-
 /*
  * DN, CN
  */
 static inline char *
-tls_session_peer_subjectdn_oneline(tls_session_ctx_t ctx)
+tls_session_peer_subjectdn_oneline(struct tls_session_ctx_struct *ctx)
 {
 	if (likely(ctx != NULL)) {
 		return (ctx->peer_dn_oneline_);
@@ -3399,9 +3391,9 @@ tls_session_peer_subjectdn_oneline(tls_session_ctx_t ctx)
 		return (NULL);
 	}
 }
-	
+
 static inline char *
-tls_session_peer_subjectdn_rfc2253(tls_session_ctx_t ctx)
+tls_session_peer_subjectdn_rfc2253(struct tls_session_ctx_struct *ctx)
 {
 	if (likely(ctx != NULL)) {
 		return (ctx->peer_dn_rfc2253_);
@@ -3411,7 +3403,7 @@ tls_session_peer_subjectdn_rfc2253(tls_session_ctx_t ctx)
 }
 
 static inline char *
-tls_session_peer_subjectdn_gsi(tls_session_ctx_t ctx)
+tls_session_peer_subjectdn_gsi(struct tls_session_ctx_struct *ctx)
 {
 	if (likely(ctx != NULL)) {
 		return (ctx->peer_dn_gsi_);
@@ -3421,7 +3413,7 @@ tls_session_peer_subjectdn_gsi(tls_session_ctx_t ctx)
 }
 
 static inline char *
-tls_session_peer_cn(tls_session_ctx_t ctx)
+tls_session_peer_cn(struct tls_session_ctx_struct *ctx)
 {
 	if (likely(ctx != NULL)) {
 		return (ctx->peer_cn_);
@@ -3429,8 +3421,6 @@ tls_session_peer_cn(tls_session_ctx_t ctx)
 		return (NULL);
 	}
 }
-
-
 
 #else
 

@@ -2,8 +2,6 @@
 
 #if defined(HAVE_TLS_1_3) && defined(IN_TLS_CORE)
 
-
-
 #include <inttypes.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -55,8 +53,6 @@
 
 #include "io_tls.h"
 
-
-
 #ifdef likely
 #undef likely
 #endif /* likely */
@@ -93,8 +89,6 @@
 	(((flags) & GFP_XDR_TLS_ROLE) == GFP_XDR_TLS_INITIATE)
 #endif /* GFP_XDR_TLS_ROLE_IS_INITIATOR */
 
-
-
 #ifdef TLS_TEST
 
 /* Copied from logutil.c */
@@ -117,20 +111,19 @@ struct tls_test_ctx_struct {
 	int network_receive_timeout;
 	int network_send_timeout;
 };
-typedef struct tls_test_ctx_struct *tls_test_ctx_p;
 
-extern tls_test_ctx_p gfarm_ctxp;
+extern struct tls_test_ctx_struct *gfarm_ctxp;
 
 #endif /* TLS_TEST */
 
 /*
  * TLS role
  */
-typedef enum {
+enum tls_role {
 	TLS_ROLE_UNKNOWN = 0,
 	TLS_ROLE_CLIENT,
 	TLS_ROLE_SERVER
-} tls_role_t;
+};
 #define TLS_ROLE_INITIATOR	TLS_ROLE_CLIENT
 #define TLS_ROLE_ACCEPTOR	TLS_ROLE_SERVER
 
@@ -154,7 +147,7 @@ struct tls_session_ctx_struct {
 	/*
 	 * Read-only parameters start
 	 */
-	tls_role_t role_;
+	enum tls_role role_;
 	bool do_mutual_auth_;
 	bool do_build_chain_;
 	bool do_allow_no_crls_;
@@ -189,7 +182,6 @@ struct tls_session_ctx_struct {
 	EVP_PKEY *prvkey_;		/* API alloc'd */
 	X509_NAME *proxy_issuer_;	/* API alloc'd */
 };
-typedef struct tls_session_ctx_struct *tls_session_ctx_t;
 
 #define CTX_CLEAR_RECONN	1
 #define CTX_CLEAR_VAR	2
@@ -223,22 +215,20 @@ struct tls_passwd_cb_arg_struct {
 		 */
 	const char *filename_;
 };
-typedef struct tls_passwd_cb_arg_struct *tls_passwd_cb_arg_t;
 
-typedef int (*cert_add_func_t)(SSL_CTX *ctx, X509 *cert);
-typedef struct {
-	cert_add_func_t f;
+struct cert_add_method_struct {
+	int (*f)(SSL_CTX *ctx, X509 *cert);
 	char *name;
-} cert_add_method_t;
+};
 
 /*
  * Pre-declarations
  */
 static inline gfarm_error_t
-tls_session_shutdown(tls_session_ctx_t ctx);
+tls_session_shutdown(struct tls_session_ctx_struct *ctx);
 
 static inline char *
-tls_session_peer_cn(tls_session_ctx_t ctx);
+tls_session_peer_cn(struct tls_session_ctx_struct *ctx);
 
 /*
  * Logger

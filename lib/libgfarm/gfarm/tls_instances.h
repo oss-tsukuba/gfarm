@@ -30,15 +30,15 @@ tty_passwd_callback_body(char *buf, int maxlen, int rwflag, void *u);
 static int
 tty_passwd_callback(char *buf, int maxlen, int rwflag, void *u)
 {
-	return tty_passwd_callback_body(buf, maxlen, rwflag, u);
+	return (tty_passwd_callback_body(buf, maxlen, rwflag, u));
 }
 
 static inline int
 tls_verify_callback_body(int ok, X509_STORE_CTX *sctx);
-static int 
+static int
 tls_verify_callback(int ok, X509_STORE_CTX *sctx)
 {
-	return tls_verify_callback_body(ok, sctx);
+	return (tls_verify_callback_body(ok, sctx));
 }
 
 static inline void
@@ -55,17 +55,17 @@ accumulate_x509_names_from_file(const char *file,
 static gfarm_error_t
 iterate_file_for_x509_name(const char *file, void *arg, int *n_added)
 {
-	return accumulate_x509_names_from_file(file,
-			(STACK_OF(X509_NAME) *)arg, n_added);
+	return (accumulate_x509_names_from_file(file,
+			(STACK_OF(X509_NAME) *)arg, n_added));
 }
 
 static int
 tls_add_cert_to_SSL_CTX_chain(SSL_CTX *sctx, X509 *x)
 {
-	return SSL_CTX_add_extra_chain_cert(sctx, x);
+	return (SSL_CTX_add_extra_chain_cert(sctx, x));
 }
 
-static cert_add_method_t const methods[] = {
+static struct cert_add_method_struct const methods[] = {
 	{ SSL_CTX_use_certificate, "use" },
 	{ tls_add_cert_to_SSL_CTX_chain, "add" }
 };
@@ -73,7 +73,7 @@ static cert_add_method_t const methods[] = {
 static int
 x509_name_compare(const X509_NAME * const *a, const X509_NAME * const *b)
 {
-	return X509_NAME_cmp(*a, *b);
+	return (X509_NAME_cmp(*a, *b));
 }
 
 #else
