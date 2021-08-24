@@ -187,9 +187,9 @@ gfarm_auth_request_tls_client_certificate(struct gfp_xdr *conn,
 	if (req != GFARM_AUTH_TLS_CLIENT_CERTIFICATE_CLIENT_TYPE) {
 		/* giveup, due to server cert problem */
 		gfp_xdr_tls_reset(conn); /* is this case graceful? */
-		return (GFARM_ERR_AUTHENTICATION); 
+		return (GFARM_ERR_AUTHENTICATION);
 	}
-	
+
 	if ((e = gfp_xdr_recv(conn, 1, &eof, "i", &result))
 	    != GFARM_ERR_NO_ERROR || eof) {
 		if (e == GFARM_ERR_NO_ERROR) /* i.e. eof */
@@ -319,7 +319,7 @@ gfarm_auth_request_tls_client_certificate_multiplexed(
 		/* giveup, due to server cert problem */
 		free(state);
 		gfp_xdr_tls_reset(conn); /* is this case graceful? */
-		return (GFARM_ERR_AUTHENTICATION); 
+		return (GFARM_ERR_AUTHENTICATION);
 	}
 
 	/*

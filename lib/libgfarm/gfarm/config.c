@@ -3406,7 +3406,8 @@ parse_one_line(const char *s, char *p,
 		e = parse_set_misc_enabled(p, &gfarm_ctxp->tls_key_update);
 
 	} else if (strcmp(s, o = "tls_build_chain_local") == 0) {
-		e = parse_set_misc_enabled(p, &gfarm_ctxp->tls_build_chain_local);
+		e = parse_set_misc_enabled(p,
+		    &gfarm_ctxp->tls_build_chain_local);
 	} else if (strcmp(s, o = "tls_allow_no_crl") == 0) {
 		e = parse_set_misc_enabled(p,
 		    &gfarm_ctxp->tls_allow_no_crl);

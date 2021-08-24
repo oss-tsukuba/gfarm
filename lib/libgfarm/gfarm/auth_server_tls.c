@@ -91,7 +91,7 @@ gfarm_error_t gfarm_authorize_tls_client_certificate(
 		gfp_xdr_tls_reset(conn); /* is this case graceful? */
 		return (GFARM_ERR_PROTOCOL);
 	}
-		
+
 
 	if (peer_type != GFARM_AUTH_ID_TYPE_USER &&
 	    peer_type != GFARM_AUTH_ID_TYPE_SPOOL_HOST &&
