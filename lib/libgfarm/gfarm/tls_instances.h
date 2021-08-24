@@ -51,12 +51,12 @@ tls_runtime_init_once(void)
 
 static inline gfarm_error_t
 accumulate_x509_names_from_file(const char *file,
-	STACK_OF(X509_NAME) *stack, int *n_added);
+	STACK_OF(X509_NAME) (*stack), int *n_added);
 static gfarm_error_t
 iterate_file_for_x509_name(const char *file, void *arg, int *n_added)
 {
 	return (accumulate_x509_names_from_file(file,
-			(STACK_OF(X509_NAME) *)arg, n_added));
+			(STACK_OF(X509_NAME) (*))arg, n_added));
 }
 
 static int

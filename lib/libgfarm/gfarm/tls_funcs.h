@@ -965,7 +965,7 @@ tls_load_prvkey(const char *file, EVP_PKEY **keyptr)
  */
 static inline gfarm_error_t
 accumulate_x509_names_from_file(const char *file,
-	STACK_OF(X509_NAME) *stack, int *n_added)
+	STACK_OF(X509_NAME) (*stack), int *n_added)
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 	FILE *fd = NULL;
@@ -1085,7 +1085,7 @@ accumulate_x509_names_from_file(const char *file,
  */
 static inline gfarm_error_t
 tls_get_x509_name_stack_from_dir(const char *dir,
-	STACK_OF(X509_NAME) *stack, int *nptr)
+	STACK_OF(X509_NAME) (*stack), int *nptr)
 {
 	return (iterate_file_in_a_dir(dir,
 			iterate_file_for_x509_name, stack, nptr));
@@ -1094,7 +1094,7 @@ tls_get_x509_name_stack_from_dir(const char *dir,
 static inline gfarm_error_t
 tls_set_ca_path(SSL_CTX *ssl_ctx,
 	const char *ca_path, const char* acceptable_ca_path,
-	STACK_OF(X509_NAME) **trust_ca_list)
+	STACK_OF(X509_NAME) (**trust_ca_list))
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 
@@ -1168,7 +1168,7 @@ tls_set_ca_path(SSL_CTX *ssl_ctx,
 		if (is_valid_string(acceptable_ca_path) == true) {
 			int ncerts = 0;
 			const char *dir = acceptable_ca_path;
-			STACK_OF(X509_NAME) *ca_list =
+			STACK_OF(X509_NAME) (*ca_list) =
 				sk_X509_NAME_new(x509_name_compare);
 			if (likely(ca_list != NULL &&
 				(ret = tls_get_x509_name_stack_from_dir(
@@ -1910,7 +1910,7 @@ tls_session_create_ctx(struct tls_session_ctx_struct **ctxptr,
 	char *acceptable_ca_path = NULL;
 	char *revoke_path = NULL;
 	char *ciphersuites = NULL;
-	STACK_OF(X509_NAME) *trust_ca_list = NULL;
+	STACK_OF(X509_NAME) (*trust_ca_list) = NULL;
 
 	/*
 	 * Parameter check

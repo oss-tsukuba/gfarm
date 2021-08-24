@@ -175,7 +175,7 @@ struct tls_session_ctx_struct {
 	int cert_verify_callback_error_;
 	int cert_verify_result_error_;
 
-	STACK_OF(X509_NAME) *trusted_certs_;
+	STACK_OF(X509_NAME) (*trusted_certs_);
 					/* API alloc'd */
 
 	SSL_CTX *ssl_ctx_;		/* API alloc'd */
