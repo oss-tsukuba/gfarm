@@ -357,7 +357,11 @@ is_valid_prvkey_file_permission(int fd, const char *file)
 						"open too widely. It would "
 						"be nice if the file "
 						"permission was 0600.", file);
-					ret = GFARM_ERRMSG_TLS_PRIVATE_KEY_FILE_PERMISSION_TOO_WIDELY_OPEN;
+/* for checkpatch */
+#define GFMERR_PKEY_PERM						\
+	GFARM_ERRMSG_TLS_PRIVATE_KEY_FILE_PERMISSION_TOO_WIDELY_OPEN
+					ret = GFMERR_PKEY_PERM;
+#undef GFMERR_PKEY_PERM
 				}
 			} else {
 				gflog_tls_error(GFARM_MSG_UNFIXED,
@@ -366,9 +370,12 @@ is_valid_prvkey_file_permission(int fd, const char *file)
 					"which is strongly discouraged even "
 					"this process can read it for privacy "
 					"and security.", uid, file);
-				ret = GFARM_ERRMSG_TLS_PRIVATE_KEY_FILE_ABOUT_TO_BE_OPENED_BY_OTHERS;
+/* for checkpatch */
+#define GFMERR_PKEY_OPEN \
+	GFARM_ERRMSG_TLS_PRIVATE_KEY_FILE_ABOUT_TO_BE_OPENED_BY_OTHERS
+				ret = GFMERR_PKEY_OPEN;
+#undef GFMERR_PKEY_OPEN
 			}
-
 		} else {
 			if (errno != 0) {
 				gflog_tls_error(GFARM_MSG_UNFIXED,
@@ -1559,7 +1566,11 @@ tls_verify_callback_body(int ok, X509_STORE_CTX *sctx)
 						"of the proxy cert.");
 					/* make the auth failure. */
 					ok = ret = 0;
-					verr = X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT;
+/* checkpatch */
+#define VFYERR_GET_ISSUER \
+	X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT
+					verr = VFYERR_GET_ISSUER;
+#undef VFYERR_GET_ISSUER
 					X509_STORE_CTX_set_error(sctx, verr);
 				}
 			} else {

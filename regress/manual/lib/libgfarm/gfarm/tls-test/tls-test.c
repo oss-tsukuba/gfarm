@@ -9,6 +9,9 @@
 #include "tls_instances.h"
 #include "tls_funcs.h"
 
+#define tls_session_clear(ctx) \
+	tls_session_clear_ctx_for_reestablish(ctx)
+
 #define MAX_PORT_NUMBER 65535
 #define MIN_PORT_NUMBER 1024
 #define LISTEN_BACKLOG 64
@@ -80,7 +83,7 @@ safe_strtol(const char *str, long *result, int base)
 	size_t len;
 
 	if (str == NULL) {
-		return ret;
+		return (ret);
 	} else if (result != NULL) {
 		*result = 0;
 	}
@@ -98,7 +101,7 @@ safe_strtol(const char *str, long *result, int base)
 		}
 	}
 
-	return ret;
+	return (ret);
 }
 
 static inline bool
@@ -107,7 +110,7 @@ string_to_int(const char *str, int *result, int base)
 	bool ret = false;
 	long retval_strtol;
 	if (safe_strtol(str, &retval_strtol, base)) {
-		if (retval_strtol <= INT_MAX && retval_strtol >= INT_MIN){
+		if ((retval_strtol <= INT_MAX) && (retval_strtol >= INT_MIN)) {
 			*result = (int)retval_strtol;
 			ret = true;
 		} else {
@@ -117,7 +120,7 @@ string_to_int(const char *str, int *result, int base)
 		perror("strtol");
 	}
 
-	return ret;
+	return (ret);
 }
 
 static inline void
@@ -328,7 +331,7 @@ prologue(int argc, char **argv, struct addrinfo **a_info)
 		case 'h':
 		default:
 			usage();
-			return ret;
+			return (ret);
 		}
 	}
 
@@ -377,7 +380,7 @@ prologue(int argc, char **argv, struct addrinfo **a_info)
 		}
 	}
 
-	return ret;
+	return (ret);
 }
 
 static inline void
@@ -405,7 +408,7 @@ do_write_read(struct tls_session_ctx_struct *tls_ctx)
 
 	errno = 0;
 	if ((urandom_fd = open("/dev/urandom", O_RDONLY)) > -1) {
-		while(r_size_from_urandom < sizeof(buf)) {
+		while (r_size_from_urandom < sizeof(buf)) {
 			errno = 0;
 			r_size = read(urandom_fd, buf + r_size_from_urandom,
 					sizeof(buf) - r_size_from_urandom);
@@ -535,20 +538,20 @@ do_write_read(struct tls_session_ctx_struct *tls_ctx)
 					buf[debug_buf_in]);
 		}
 
-	teardown:
-		gerr = tls_session_clear_ctx_for_reestablish(tls_ctx);
+teardown:
+		gerr = tls_session_clear(tls_ctx);
 		if (gerr != GFARM_ERR_NO_ERROR) {
 			gflog_tls_error(GFARM_MSG_UNFIXED,
 				"SSL reset failure: %s",
 				gfarm_error_string(gerr));
 		}
-	done:
+done:
 		close(urandom_fd);
 	} else {
 		perror("open");
 	}
 
-	return ret;
+	return (ret);
 }
 
 static inline int
@@ -615,9 +618,9 @@ run_server_process(struct tls_session_ctx_struct *tls_ctx, int socketfd)
 					gflog_tls_error(GFARM_MSG_UNFIXED,
 						"SSL read failure: %s",
 						gfarm_error_string(gerr));
-				teardown:
-					gerr = tls_session_clear_ctx_for_reestablish(tls_ctx);
-					if (gerr == GFARM_ERR_NO_ERROR || 
+teardown:
+					gerr = tls_session_clear(tls_ctx);
+					if (gerr == GFARM_ERR_NO_ERROR ||
 						r_size == 0) {
 						goto loopend;
 					} else {
@@ -640,8 +643,8 @@ run_server_process(struct tls_session_ctx_struct *tls_ctx, int socketfd)
 					gflog_tls_error(GFARM_MSG_UNFIXED,
 						"SSL write failure: %s",
 						gfarm_error_string(gerr));
-				teardown2:
-					gerr = tls_session_clear_ctx_for_reestablish(tls_ctx);
+teardown2:
+					gerr = tls_session_clear(tls_ctx);
 					if (gerr == GFARM_ERR_NO_ERROR) {
 						goto loopend;
 					} else {
@@ -657,7 +660,7 @@ run_server_process(struct tls_session_ctx_struct *tls_ctx, int socketfd)
 			perror("accept");
 		}
 
-	loopend:
+loopend:
 		if (is_once) {
 			break;
 		}
@@ -698,7 +701,7 @@ run_server(struct tls_session_ctx_struct *tls_ctx, struct addrinfo *a_info)
 	} else {
 		perror("socket");
 	}
-	return ret;
+	return (ret);
 }
 
 static inline int
@@ -734,7 +737,7 @@ run_client_process(struct tls_session_ctx_struct *tls_ctx, int socketfd)
 		int w_size = -1;
 
 		errno = 0;
-		if (fgets(buf, sizeof(buf) -1, stdin) != NULL) {
+		if (fgets(buf, sizeof(buf) - 1, stdin) != NULL) {
 			r_size = strlen(buf);
 			errno = 0;
 			gerr = tls_session_write(tls_ctx, buf, r_size,
@@ -743,8 +746,7 @@ run_client_process(struct tls_session_ctx_struct *tls_ctx, int socketfd)
 				gflog_tls_error(GFARM_MSG_UNFIXED,
 					"SSL write failure: %s",
 					gfarm_error_string(gerr));
-				gerr = tls_session_clear_ctx_for_reestablish(
-					tls_ctx);
+				gerr = tls_session_clear(tls_ctx);
 				if (gerr != GFARM_ERR_NO_ERROR) {
 					gflog_tls_error(GFARM_MSG_UNFIXED,
 						"SSL reset failure: %s",
@@ -765,9 +767,8 @@ run_client_process(struct tls_session_ctx_struct *tls_ctx, int socketfd)
 				gflog_tls_error(GFARM_MSG_UNFIXED,
 					"SSL read failure: %s",
 						gfarm_error_string(gerr));
-			teardown:
-				gerr = tls_session_clear_ctx_for_reestablish(
-					tls_ctx);
+teardown:
+				gerr = tls_session_clear(tls_ctx);
 				if (gerr != GFARM_ERR_NO_ERROR) {
 					gflog_tls_error(GFARM_MSG_UNFIXED,
 						"SSL reset failure: %s",
@@ -779,7 +780,7 @@ run_client_process(struct tls_session_ctx_struct *tls_ctx, int socketfd)
 		}
 	}
 done:
-	return ret;
+	return (ret);
 }
 
 static inline int
@@ -798,7 +799,7 @@ run_client(struct tls_session_ctx_struct *tls_ctx, struct addrinfo *a_info)
 	} else {
 		perror("socket");
 	}
-	return ret;
+	return (ret);
 }
 
 int
