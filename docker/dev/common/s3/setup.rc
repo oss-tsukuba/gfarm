@@ -7,21 +7,25 @@ SUDO="sudo -E"
 SUDO_USER2="sudo sudo -u user2"
 
 case $GFDOCKER_PRJ_NAME in
-	*-src) WITH_GFARM=/usr/local;;
-	*-pkg) WITH_GFARM=/usr;;
-	*) exit 1;;
+     *-src) WITH_GFARM=/usr/local;;
+     *-pkg) WITH_GFARM=/usr;;
+     *) exit 1;;
 esac
 
 GFARM_S3_MINIO_WEB_SRC=/mnt/work/gfarm-s3-minio-web
 GFARM_S3_MINIO_SRC=/mnt/work/gfarm-s3-minio
 
 if [ ! -d $GFARM_S3_MINIO_WEB_SRC ]; then
-	exit 1
+    exit 1
 fi
 
-### choose parameters
-export WORK=$HOME/tmp/work
-export MINIO_BUILDDIR=/mnt/user1/tmp/work
+## choose parameters
+WORKDIR=$HOME/tmp/work
+
+### /mnt: persistent directory
+### caching files for next build
+MINIO_BUILDDIR=/mnt/user1/tmp/work
+
 GFARM_S3_PREFIX=/usr/local
 SHARED_DIR=$GFDOCKER_GFARMS3_SHARED_DIR
 CACHE_BASEDIR=$GFDOCKER_GFARMS3_CACHE_BASEDIR
@@ -32,7 +36,7 @@ WSGI_GROUP=$GFDOCKER_GFARMS3_WSGI_GROUP
 WSGI_PORT=$GFDOCKER_GFARMS3_WSGI_PORT
 MYPROXY_SERVER=$GFDOCKER_GFARMS3_MYPROXY_SERVER
 USERS=$GFDOCKER_GFARMS3_USERS
-CERT_DIR=$WORK/cert
+CERT_DIR=$WORKDIR/cert
 
 install_package_for_centos() {
     ${SUDO} yum update -y
@@ -261,7 +265,7 @@ deploy_http_server() {
 }
 
 install_gfarm_s3() {
-    cd $WORK/gfarm-s3-minio-web
+    cd $WORKDIR/gfarm-s3-minio-web
     ./configure \
         --prefix=$GFARM_S3_PREFIX \
         --with-gfarm=$WITH_GFARM \
@@ -319,9 +323,9 @@ configure_gfarm_s3() {
     ## edit HTTPD's configfile (i.e. myserver-common.conf)
     tmpfile=$(mktemp /tmp/XXXXXX) || exit 1
     (cat $HTTPD_COMMON_CONF
-    cat $WORK/gfarm-s3-minio-web/etc/apache-gfarm-s3.conf
+    cat $WORKDIR/gfarm-s3-minio-web/etc/apache-gfarm-s3.conf
     ) >$tmpfile
-    ${SUDO} cp $WORK/gfarm-s3-minio-web/etc/e403.html $HTTPD_DocumentRoot/e403.html
+    ${SUDO} cp $WORKDIR/gfarm-s3-minio-web/etc/e403.html $HTTPD_DocumentRoot/e403.html
     ${SUDO} systemctl stop $HTTPD_UNIT_NAME
     ${SUDO} chown --reference $HTTPD_COMMON_CONF $tmpfile
     ${SUDO} chgrp --reference $HTTPD_COMMON_CONF $tmpfile
@@ -348,11 +352,11 @@ install_aws_cli() {
 
     # install AWS CLI v2
     AWSCLI_URL="https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
-    AWSCLI_ZIP=${WORK}/awscliv2.zip
+    AWSCLI_ZIP=${WORKDIR}/awscliv2.zip
 
     if [ ! -f ${AWSCLI_ZIP} ]; then
         curl ${AWSCLI_URL} -o ${AWSCLI_ZIP}
-        cd ${WORK}
+        cd ${WORKDIR}
         # overwrite existing files
         unzip -o ${AWSCLI_ZIP}
         ${SUDO} ./aws/install --update
@@ -445,8 +449,8 @@ install_s3fs() {
     esac
 
     S3FS_URL=https://github.com/s3fs-fuse/s3fs-fuse.git
-    [ -d $WORK/s3fs-fuse ] || (cd $WORK && git clone ${S3FS_URL})
-    (cd $WORK/s3fs-fuse && \
+    [ -d $WORKDIR/s3fs-fuse ] || (cd $WORKDIR && git clone ${S3FS_URL})
+    (cd $WORKDIR/s3fs-fuse && \
     ./autogen.sh && \
     ./configure --prefix=/usr && \
     make -j && \
@@ -454,30 +458,37 @@ install_s3fs() {
 }
 
 #cleanup() {
-#    (cd $WORK/gfarm-s3-minio-web && ${SUDO} make clean)
-#    (cd $WORK/gfarm-s3-minio-web && ${SUDO} make distclean)
+#    (cd $WORKDIR/gfarm-s3-minio-web && ${SUDO} make clean)
+#    (cd $WORKDIR/gfarm-s3-minio-web && ${SUDO} make distclean)
 #}
 
-## create working directory
-mkdir -p $WORK
+#########################################################################
+### main
 
-# MINIO_BUILDDIR is used by "make install-go"
-${SUDO} mkdir -p ${MINIO_BUILDDIR}/minio/work/build
+## create working directory
+mkdir -p $WORKDIR
+
+# "make install-go" installs "golang" into $MINIO_BUILDDIR/minio/work/go
+MINIO_BUILDDIR_WORKDIR=${MINIO_BUILDDIR}/minio/work/build
+${SUDO} mkdir -p ${MINIO_BUILDDIR_WORKDIR}
 ${SUDO} chown -R user1 ${MINIO_BUILDDIR}
 
+MINIO_WEB_WORK_SRCDIR=$WORKDIR/gfarm-s3-minio-web
+MINIO_WORK_SRCDIR=$MINIO_BUILDDIR_WORKDIR/gfarm-s3-minio
+
 ## obtain or update source code
-${SUDO} rsync -rlptD $GFARM_S3_MINIO_WEB_SRC/ $WORK/gfarm-s3-minio-web/
+${SUDO} rsync -rlptD $GFARM_S3_MINIO_WEB_SRC/ $MINIO_WEB_WORK_SRCDIR/
 if [ -e $GFARM_S3_MINIO_SRC ]; then
-        ${SUDO} rsync -rlptD $GFARM_S3_MINIO_SRC/ $MINIO_BUILDDIR/minio/work/build/gfarm-s3-minio/
+    ${SUDO} rsync -rlptD $GFARM_S3_MINIO_SRC/ $MINIO_WORK_SRCDIR/
 fi
-${SUDO} chown -R user1 $WORK/gfarm-s3-minio-web/
+${SUDO} chown -R user1 $MINIO_WEB_WORK_SRCDIR/
 
 ## update only
 if [ $GFDOCKER_GFARMS3_UPDATE_ONLY -eq 1 ]; then
-        cd $WORK/gfarm-s3-minio-web/web
-        make
-        ${SUDO} make install
-        exit 0
+    cd $MINIO_WEB_WORK_SRCDIR
+    make
+    ${SUDO} make install
+    exit 0
 fi
 
 ### install prerequisites
