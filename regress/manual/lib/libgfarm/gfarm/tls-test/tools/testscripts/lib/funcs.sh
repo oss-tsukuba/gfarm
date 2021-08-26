@@ -179,8 +179,8 @@ run_test() {
 	if [ ${do_valg} -eq 1 ]; then
 	    srvwarn=`grep tls_funcs.h "${server_output_file}" | grep -v '<debug>' | wc -l`
 	    cliwarn=`grep tls_funcs.h "${client_output_file}" | grep -v '<debug>' | wc -l`
-	    echo "		server leaks: ${srvwarn}"
-	    echo "		client leaks: ${cliwarn}"
+	    echo "${test_id}		server leaks: ${srvwarn}"
+	    echo "${test_id}		client leaks: ${cliwarn}"
 	fi
 
 	rm -f ./${s_exit_file}

@@ -1304,10 +1304,10 @@ done:
 }
 
 /*
- * Add cert(s) from a file into SSL_CTX
+ * Add extra cert(s) from a file into SSL_CTX
  */
 static inline gfarm_error_t
-tls_add_certs(SSL_CTX *ssl_ctx, const char *file, int *n_added)
+tls_add_extra_certs(SSL_CTX *ssl_ctx, const char *file, int *n_added)
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 	FILE *fd = NULL;
@@ -1325,17 +1325,16 @@ tls_add_certs(SSL_CTX *ssl_ctx, const char *file, int *n_added)
 		char *bp = b;
 		bool do_dbg_msg = (gflog_get_priority_level() >= LOG_DEBUG) ?
 			true : false;
-		int midx = ((x = SSL_CTX_get0_certificate(ssl_ctx)) == NULL) ?
-			0 : 1;
-
+	
 		if (n_added != NULL) {
 			*n_added = 0;
 		}
 
+		(void)SSL_CTX_clear_extra_chain_certs(ssl_ctx);
 		while ((x = PEM_read_X509(fd, NULL, NULL, NULL)) != NULL &&
 			got_failure == false) {
 			tls_runtime_flush_error();
-			osst = methods[midx].f(ssl_ctx, x);
+			osst = SSL_CTX_add_extra_chain_cert(ssl_ctx, x);
 			if (likely(osst == 1)) {
 				n_certs++;
 				if (unlikely((do_dbg_msg == true) &&
@@ -1344,9 +1343,8 @@ tls_add_certs(SSL_CTX *ssl_ctx, const char *file, int *n_added)
 					get_peer_dn_gsi_ish(xn,
 						&bp, sizeof(b));
 					gflog_tls_debug(GFARM_MSG_UNFIXED,
-						"Add a cert \"%s\" from %s "
-						"(%s.)", b, file,
-						methods[midx].name);
+						"Add a cert \"%s\" from %s.",
+						b, file);
 				}
 			} else {
 				got_failure = true;
@@ -1362,8 +1360,8 @@ tls_add_certs(SSL_CTX *ssl_ctx, const char *file, int *n_added)
 						"Can't add a cert from %s.",
 						file);
 				}
+				X509_free(x);
 			}
-			midx = 1;
 		}
 		if (likely(got_failure == false)) {
 			tls_runtime_flush_error();
@@ -1408,27 +1406,40 @@ tls_load_cert_and_chain(SSL_CTX *ssl_ctx,
 	if (likely(ssl_ctx != NULL)) {
 		int n_certs = 0;
 		int n;
+		int ost = INT_MAX - 1;
 
 		if (nptr != NULL) {
 			*nptr = 0;
 		}
 
-		if (is_valid_string(cert_file) == true) {
-			n = 0;
-			ret = tls_add_certs(ssl_ctx, cert_file, &n);
-			if (likely(ret == GFARM_ERR_NO_ERROR)) {
-				n_certs += n;
-			} else {
-				goto done;
-			}
-		}
-		if (is_valid_string(cert_chain_file) == true) {
-			n = 0;
-			ret = tls_add_certs(ssl_ctx, cert_chain_file, &n);
-			if (likely(ret == GFARM_ERR_NO_ERROR)) {
-				n_certs += n;
-			} else {
-				goto done;
+		tls_runtime_flush_error();
+		if (is_valid_string(cert_file) == true &&
+			is_valid_string(cert_chain_file) == false &&
+			(ost = SSL_CTX_use_certificate_chain_file(ssl_ctx,
+				cert_file)) == 1) {
+			ret = GFARM_ERR_NO_ERROR;
+			n_certs = 1;
+		} else if (is_valid_string(cert_file) == false &&
+			is_valid_string(cert_chain_file) == true &&
+			(ost = SSL_CTX_use_certificate_chain_file(ssl_ctx,
+				cert_chain_file)) == 1) {
+			ret = GFARM_ERR_NO_ERROR;
+			n_certs = 1;
+		} else {
+			if (is_valid_string(cert_file) == true &&
+				(ost = SSL_CTX_use_certificate_chain_file(
+					ssl_ctx, cert_file)) == 1) {
+				if (is_valid_string(cert_chain_file) == true) {
+					n = 0;
+					ret = tls_add_extra_certs(ssl_ctx,
+						cert_chain_file, &n);
+					if (likely(ret ==
+						GFARM_ERR_NO_ERROR)) {
+						n_certs += n;
+					} else {
+						goto done;
+					}
+				}
 			}
 		}
 
