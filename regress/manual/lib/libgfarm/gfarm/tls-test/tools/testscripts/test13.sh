@@ -68,6 +68,9 @@ test_13_2() {
     #   proxy cert file:  o (env variable)
     #   user cert file:   x
 
+    X509_USER_PROXY=${ENV_DIR}/A/client_under_root/client_cat_all.crt
+    export X509_USER_PROXY
+
     run_test "13-2" \
         "${TOP_DIR}/tls-test -s \
         --once \
@@ -80,13 +83,13 @@ test_13_2() {
         --proxy_cert \
         --debug_level 1 \
         --mutual_authentication" \
-        "X509_USER_PROXY=${ENV_DIR}/A/client_under_root/client_cat_all.crt \
-        ${TOP_DIR}/tls-test \
+        "${TOP_DIR}/tls-test \
         --once \
         --verify_only \
         --allow_no_crl \
         --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_root/ \
         --proxy_cert \
+        --debug_level 1 \
         --mutual_authentication" \
         ${debug_flag} \
         "a TLS session established with proxy certificate"
@@ -94,6 +97,7 @@ test_13_2() {
     if [ $? -ne 0 ]; then
 	    fail_num=`expr ${fail_num} + 1`
     fi
+    unset X509_USER_PROXY
 }
 
 # 13-3
@@ -125,6 +129,7 @@ test_13_3() {
         --allow_no_crl \
         --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_root/ \
         --proxy_cert \
+        --debug_level 1 \
         --mutual_authentication" \
         ${debug_flag} \
         "a TLS session established with proxy certificate"
@@ -164,6 +169,7 @@ test_13_4() {
         --allow_no_crl \
         --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_root/ \
         --proxy_cert \
+        --debug_level 1 \
         --mutual_authentication" ${debug_flag}
 
     if [ $? -ne 0 ]; then
@@ -182,6 +188,9 @@ test_13_5() {
     #   proxy cert file:  o (env variable)
     #   user cert file:   o
 
+    X509_USER_PROXY=${ENV_DIR}/A/client_under_root/client_cat_all.crt
+    export X509_USER_PROXY
+
     run_test "13-5" \
         "${TOP_DIR}/tls-test -s \
         --once \
@@ -193,8 +202,7 @@ test_13_5() {
         --build_chain \
         --debug_level 1 \
         --mutual_authentication" \
-        "X509_USER_PROXY=${ENV_DIR}/A/client_under_root/client_cat_all.crt \
-        ${TOP_DIR}/tls-test \
+        "${TOP_DIR}/tls-test \
         --once \
         --verify_only \
         --allow_no_crl \
@@ -202,6 +210,7 @@ test_13_5() {
         --tls_certificate_file ${ENV_DIR}/A/client_under_root/client.crt \
         --tls_key_file ${ENV_DIR}/A/client_under_root/client.key \
         --proxy_cert \
+        --debug_level 1 \
         --mutual_authentication" \
         ${debug_flag} \
         "a TLS session established with end-entity certificate"
@@ -209,6 +218,7 @@ test_13_5() {
     if [ $? -ne 0 ]; then
 	    fail_num=`expr ${fail_num} + 1`
     fi
+    unset X509_USER_PROXY
 }
 
 # 13-6
@@ -219,6 +229,8 @@ test_13_6() {
     #   --proxy_cert opt: o
     #   proxy cert file:  o (env variable)
     #   user cert file:   o
+    X509_USER_PROXY=${ENV_DIR}/A/client_under_root/client_cat_all.crt
+    export X509_USER_PROXY
 
     run_test "13-6" \
         "${TOP_DIR}/tls-test -s \
@@ -232,8 +244,7 @@ test_13_6() {
         --proxy_cert \
         --debug_level 1 \
         --mutual_authentication" \
-        "X509_USER_PROXY=${ENV_DIR}/A/client_under_root/client_cat_all.crt \
-        ${TOP_DIR}/tls-test \
+        "${TOP_DIR}/tls-test \
         --once \
         --verify_only \
         --allow_no_crl \
@@ -241,6 +252,7 @@ test_13_6() {
         --tls_certificate_file ${ENV_DIR}/A/client_under_root/client.crt \
         --tls_key_file ${ENV_DIR}/A/client_under_root/client.key \
         --proxy_cert \
+        --debug_level 1 \
         --mutual_authentication" \
         ${debug_flag} \
         "a TLS session established with end-entity certificate"
@@ -248,6 +260,7 @@ test_13_6() {
     if [ $? -ne 0 ]; then
 	    fail_num=`expr ${fail_num} + 1`
     fi
+    unset X509_USER_PROXY
 }
 
 # 13-7
@@ -303,6 +316,7 @@ test_13_8() {
         --tls_certificate_file ${ENV_DIR}/A/client_under_root/client.crt \
         --tls_key_file ${ENV_DIR}/A/client_under_root/client.key \
         --proxy_cert \
+        --debug_level 1 \
         --mutual_authentication" \
         ${debug_flag} \
         "a TLS session established with end-entity certificate"
@@ -339,6 +353,7 @@ test_13_9() {
         --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_root/ \
         --tls_certificate_file ${ENV_DIR}/A/client_under_root/client.crt \
         --tls_key_file ${ENV_DIR}/A/client_under_root/client.key \
+        --debug_level 1 \
         --mutual_authentication" \
         ${debug_flag} \
         "a TLS session established with end-entity certificate"
@@ -356,6 +371,8 @@ test_13_10() {
     #   --proxy_cert opt: x
     #   proxy cert file:  o (env variable)
     #   user cert file:   o
+    X509_USER_PROXY=${ENV_DIR}/A/client_under_root/client_cat_all.crt
+    export X509_USER_PROXY
 
     run_test "13-10" \
         "${TOP_DIR}/tls-test -s \
@@ -368,14 +385,14 @@ test_13_10() {
         --build_chain \
         --debug_level 1 \
         --mutual_authentication" \
-        "X509_USER_PROXY=${ENV_DIR}/A/client_under_root/client_cat_all.crt \
-        ${TOP_DIR}/tls-test \
+        "${TOP_DIR}/tls-test \
         --once \
         --verify_only \
         --allow_no_crl \
         --tls_ca_certificate_path ${ENV_DIR}/A/cacerts_root/ \
         --tls_certificate_file ${ENV_DIR}/A/client_under_root/client.crt \
         --tls_key_file ${ENV_DIR}/A/client_under_root/client.key \
+        --debug_level 1 \
         --mutual_authentication" \
         ${debug_flag} \
         "a TLS session established with end-entity certificate"
@@ -383,6 +400,7 @@ test_13_10() {
     if [ $? -ne 0 ]; then
 	    fail_num=`expr ${fail_num} + 1`
     fi
+    unset X509_USER_PROXY
 }
 
 

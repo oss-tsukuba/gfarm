@@ -14,3 +14,4 @@ Use following environmental variables:
 	An enviromnment variable to determine run valgrind or not
 
 If ./suppressed_funcs exists valgrind uses it as the supression file.
+
