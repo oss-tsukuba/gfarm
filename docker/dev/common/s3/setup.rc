@@ -37,13 +37,13 @@ CERT_DIR=$WORK/cert
 install_package_for_centos() {
     ${SUDO} yum update -y
     ${SUDO} yum install -y \
-	httpd \
-	mod_ssl \
-	uuid \
-	myproxy \
-	python3-devel \
-	python3-pip \
-	nodejs
+        httpd \
+        mod_ssl \
+        uuid \
+        myproxy \
+        python3-devel \
+        python3-pip \
+        nodejs
 
     ### nginx is not supported yet
     #${SUDO} yum install -y nginx
@@ -104,14 +104,14 @@ create_certificate() {
             GFARM_CA_CERT_DIR=$SYSTEM_CERT_DIR
             SYSTEM_CERT_UPDATE=update-ca-trust
             SERVER_CERT_DIR=/etc/pki/tls/certs
-	    SERVER_KEY_DIR=/etc/pki/tls/private
+            SERVER_KEY_DIR=/etc/pki/tls/private
             ;;
         ubuntu*-*)
             SYSTEM_CERT_DIR=/usr/local/share/ca-certificates
             GFARM_CA_CERT_DIR=$SYSTEM_CERT_DIR/gfarm
             SYSTEM_CERT_UPDATE=update-ca-certificates
             SERVER_CERT_DIR=/etc/ssl/server
-	    SERVER_KEY_DIR=/etc/ssl/server
+            SERVER_KEY_DIR=/etc/ssl/server
             ${SUDO} mkdir -p $SERVER_CERT_DIR
             ${SUDO} chmod 700 $SERVER_CERT_DIR
             ;;
@@ -138,7 +138,7 @@ deploy_http_server_for_centos() {
     cat <<EOF | sed -e "s;@SERVER_CRT@;$SERVER_CRT;" \
                     -e "s;@SERVER_KEY@;$SERVER_KEY;" \
                     -e "s;@HTTPD_COMMON_CONF@;$HTTPD_COMMON_CONF;" \
-		    | ${SUDO} dd of=$HTTPD_CONF
+                    | ${SUDO} dd of=$HTTPD_CONF
 ServerName ${GFDOCKER_SUBNET%.0/24}.$GFDOCKER_START_HOST_ADDR
 <VirtualHost *:80>
 	Include @HTTPD_COMMON_CONF@
@@ -176,7 +176,7 @@ deploy_http_server_for_ubuntu() {
     cat <<EOF | sed -e "s;@SERVER_CRT@;$SERVER_CRT;" \
                     -e "s;@SERVER_KEY@;$SERVER_KEY;" \
                     -e "s;@HTTPD_COMMON_CONF@;$HTTPD_COMMON_CONF;" \
-		    | ${SUDO} dd of=$HTTPD_CONF
+                    | ${SUDO} dd of=$HTTPD_CONF
 ServerName ${GFDOCKER_SUBNET%.0/24}.$GFDOCKER_START_HOST_ADDR
 <VirtualHost *:80>
 	Include @HTTPD_COMMON_CONF@
@@ -247,10 +247,10 @@ deploy_http_server() {
     ${SUDO} systemctl enable $HTTPD_UNIT_NAME
 
     if [ ! -f "$INDEX_HTML" ]; then
-	${SUDO} mkdir -p "$HTTPD_DocumentRoot"
-#	echo "gfarm -- $(date)" | ${SUDO} dd of="$INDEX_HTML"
-	echo '<a href="/gfarm/console">Gfarm-S3</a>' |
-		${SUDO} dd of="$INDEX_HTML" oflag=append
+        ${SUDO} mkdir -p "$HTTPD_DocumentRoot"
+#       echo "gfarm -- $(date)" | ${SUDO} dd of="$INDEX_HTML"
+        echo '<a href="/gfarm/console">Gfarm-S3</a>' |
+                ${SUDO} dd of="$INDEX_HTML" oflag=append
     fi
 
     ### nginx is not supported yet
@@ -263,21 +263,21 @@ deploy_http_server() {
 install_gfarm_s3() {
     cd $WORK/gfarm-s3-minio-web
     ./configure \
-	--prefix=$GFARM_S3_PREFIX \
-	--with-gfarm=$WITH_GFARM \
-	--with-globus=/usr \
-	--with-myproxy=/usr \
-	--with-apache=/usr \
-	--with-gunicorn=/usr/local \
-	--with-wsgi-homedir=$WSGI_HOMEDIR \
-	--with-wsgi-user=$WSGI_USER \
-	--with-wsgi-group=$WSGI_GROUP \
-	--with-wsgi-port=$WSGI_PORT \
-	--with-cache-basedir=$CACHE_BASEDIR \
-	--with-cache-size=$CACHE_SIZE \
-	--with-myproxy-server=$MYPROXY_SERVER \
-	--with-gfarm-shared-dir=$SHARED_DIR \
-	--with-minio-builddir=$MINIO_BUILDDIR
+        --prefix=$GFARM_S3_PREFIX \
+        --with-gfarm=$WITH_GFARM \
+        --with-globus=/usr \
+        --with-myproxy=/usr \
+        --with-apache=/usr \
+        --with-gunicorn=/usr/local \
+        --with-wsgi-homedir=$WSGI_HOMEDIR \
+        --with-wsgi-user=$WSGI_USER \
+        --with-wsgi-group=$WSGI_GROUP \
+        --with-wsgi-port=$WSGI_PORT \
+        --with-cache-basedir=$CACHE_BASEDIR \
+        --with-cache-size=$CACHE_SIZE \
+        --with-myproxy-server=$MYPROXY_SERVER \
+        --with-gfarm-shared-dir=$SHARED_DIR \
+        --with-minio-builddir=$MINIO_BUILDDIR
     make
     ${SUDO} make install
     cd -
@@ -299,21 +299,21 @@ configure_gfarm_s3() {
 
     ## register users
     for u in $USERS; do
-	# match whole line
-	if grep -q -x ${u} ${GFARMS3_LOCAL_USER_MAP}; then
-	    echo "already exists: ${u}"
-	    continue
-	fi
-	global_user=${u%%:*}
-	local_user=${u%:*}
-	local_user=${local_user#*:}
-	access_key_id=${u##*:}
-	${SUDO} $GFARM_S3_PREFIX/bin/gfarm-s3-useradd $global_user $local_user $access_key_id
-	${SUDO} usermod -a -G gfarms3 $local_user
-	shared_dir_user=${SHARED_DIR#/}/$local_user
-	gfmkdir -p $shared_dir_user
-	gfsudo gfchown $global_user $shared_dir_user
-	gfsudo gfchmod 755 $shared_dir_user
+        # match whole line
+        if grep -q -x ${u} ${GFARMS3_LOCAL_USER_MAP}; then
+            echo "already exists: ${u}"
+            continue
+        fi
+        global_user=${u%%:*}
+        local_user=${u%:*}
+        local_user=${local_user#*:}
+        access_key_id=${u##*:}
+        ${SUDO} $GFARM_S3_PREFIX/bin/gfarm-s3-useradd $global_user $local_user $access_key_id
+        ${SUDO} usermod -a -G gfarms3 $local_user
+        shared_dir_user=${SHARED_DIR#/}/$local_user
+        gfmkdir -p $shared_dir_user
+        gfsudo gfchown $global_user $shared_dir_user
+        gfsudo gfchmod 755 $shared_dir_user
     done
 
     ## edit HTTPD's configfile (i.e. myserver-common.conf)
@@ -407,8 +407,8 @@ install_goofys() {
     GOOFYS_BIN_URL=https://github.com/kahing/goofys/releases/latest/download/goofys
     GOOFYS_BIN=/usr/local/bin/goofys
     if [ ! -f ${GOOFYS_BIN} ]; then
-	    ${SUDO} wget -O ${GOOFYS_BIN} ${GOOFYS_BIN_URL}
-	    ${SUDO} chmod +x ${GOOFYS_BIN}
+        ${SUDO} wget -O ${GOOFYS_BIN} ${GOOFYS_BIN_URL}
+        ${SUDO} chmod +x ${GOOFYS_BIN}
     fi
 }
 
@@ -468,16 +468,16 @@ ${SUDO} chown -R user1 ${MINIO_BUILDDIR}
 ## obtain or update source code
 ${SUDO} rsync -rlptD $GFARM_S3_MINIO_WEB_SRC/ $WORK/gfarm-s3-minio-web/
 if [ -e $GFARM_S3_MINIO_SRC ]; then
-	${SUDO} rsync -rlptD $GFARM_S3_MINIO_SRC/ $MINIO_BUILDDIR/minio/work/build/gfarm-s3-minio/
+        ${SUDO} rsync -rlptD $GFARM_S3_MINIO_SRC/ $MINIO_BUILDDIR/minio/work/build/gfarm-s3-minio/
 fi
 ${SUDO} chown -R user1 $WORK/gfarm-s3-minio-web/
 
 ## update only
 if [ $GFDOCKER_GFARMS3_UPDATE_ONLY -eq 1 ]; then
-	cd $WORK/gfarm-s3-minio-web/web
-	make
-	${SUDO} make install
-	exit 0
+        cd $WORK/gfarm-s3-minio-web/web
+        make
+        ${SUDO} make install
+        exit 0
 fi
 
 ### install prerequisites
@@ -517,14 +517,14 @@ install_s3fs
 # cleanup
 
 update_secret() {
-	user="${1}"
-	secret="${2}"
-	gfarm_s3_dir="/home/${user}/.gfarm-s3"
-	if [ -n "${secret}" ]; then
-		${SUDO} mkdir -p "${gfarm_s3_dir}"
-		echo "${secret}" | ${SUDO} dd of="${gfarm_s3_dir}/secret_key"
-		${SUDO} chown -R "${user}" "${gfarm_s3_dir}"
-	fi
+    user="${1}"
+    secret="${2}"
+    gfarm_s3_dir="/home/${user}/.gfarm-s3"
+    if [ -n "${secret}" ]; then
+        ${SUDO} mkdir -p "${gfarm_s3_dir}"
+        echo "${secret}" | ${SUDO} dd of="${gfarm_s3_dir}/secret_key"
+        ${SUDO} chown -R "${user}" "${gfarm_s3_dir}"
+    fi
 }
 
 update_secret user1 "${GFDOCKER_GFARMS3_SECRET_USER1}"
