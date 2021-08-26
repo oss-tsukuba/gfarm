@@ -6,3 +6,11 @@ How to test:
 % make run-test-interactive
 	... requires user interaction and must login with a tty/pty
 		 for passphrase input.
+
+Running with algrind:
+
+Use following environmental variables:
+	__RUN_VALGRIND__
+	An enviromnment variable to determine run valgrind or not
+
+If ./suppressed_funcs exists valgrind uses it as the supression file.

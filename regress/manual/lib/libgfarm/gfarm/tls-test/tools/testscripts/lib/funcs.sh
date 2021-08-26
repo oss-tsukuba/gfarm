@@ -38,6 +38,9 @@ puts_error() {
 # enhancement for valgrind check:
 #   __RUN_VALGRIND__:
 #	An enviromnment variable to determine run valgrind or not
+#
+#   __VALGRIND_NO_SUPPRESS__
+#	An enviromnment variable for valgrind not use option "--suppressions=./suppressed_funcs"
 run_test() {
 	test_id=$1
 	server_cmd=$2
@@ -60,7 +63,10 @@ run_test() {
 	valgcmd=""
 	if [ ! -z "${__RUN_VALGRIND__}" ]; then
 	    do_valg=1
-	    valgcmd="valgrind --leak-check=full --leak-resolution=high --show-leak-kinds=all"
+	    valgcmd="valgrind --leak-check=full --leak-resolution=high --show-leak-kinds=all --gen-suppressions=all"
+	    if [ -z "${__VALGRIND_NO_SUPPRESS__}" -a -r "./suppressed_funcs" ]; then
+		valgcmd="${valgcmd} --suppressions=./suppressed_funcs"
+	    fi
 	fi
 
 	no_out=0
