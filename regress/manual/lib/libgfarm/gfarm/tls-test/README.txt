@@ -7,7 +7,7 @@ How to test:
 	... requires user interaction and must login with a tty/pty
 		 for passphrase input.
 
-Running with algrind:
+Running with valgrind:
 
 Use following environmental variables:
 	__RUN_VALGRIND__
