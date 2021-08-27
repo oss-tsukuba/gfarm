@@ -8,13 +8,13 @@ include $(top_srcdir)/makes/var.mk
 
 GFPREP_SRCDIR = $(srcdir)/../gfprep
 
-SRCS = gfpcat.c gfmsg.c gfurl.c gfurl_local.c gfurl_gfarm.c gfurl_hpss.c \
-	gfarm_cmd.c
-OBJS = gfpcat.o gfmsg.o gfurl.o gfurl_local.o gfurl_gfarm.o gfurl_hpss.o \
-	gfarm_cmd.o
-EXTRA_CLEAN_TARGETS = gfmsg.c gfurl.c gfurl_local.c gfurl_gfarm.c
+SRCS = gfpcat.c $(GFPREP_SRCDIR)/gfmsg.c $(GFPREP_SRCDIR)/gfurl.c \
+	$(GFPREP_SRCDIR)/gfurl_local.c $(GFPREP_SRCDIR)/gfurl_gfarm.c \
+	$(GFPREP_SRCDIR)/gfurl_hpss.c $(GFPREP_SRCDIR)/gfarm_cmd.c
+OBJS = gfpcat.o $(GFPREP_SRCDIR)/gfmsg.o $(GFPREP_SRCDIR)/gfurl.o \
+	$(GFPREP_SRCDIR)/gfurl_local.o $(GFPREP_SRCDIR)/gfurl_gfarm.o \
+	$(GFPREP_SRCDIR)/gfurl_hpss.o $(GFPREP_SRCDIR)/gfarm_cmd.o
 PROGRAM = gfpcat
-GFPCOPY = gfpcopy
 CFLAGS = $(pthread_includes) $(COMMON_CFLAGS) \
 	-I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR) \
 	-I$(GFPREP_SRCDIR) -I$(srcdir) $(openssl_includes)
@@ -22,24 +22,6 @@ LDLIBS = $(COMMON_LDFLAGS) $(GFARMLIB) $(LIBS)
 DEPLIBS = $(DEPGFARMLIB)
 
 all: $(PROGRAM)
-
-gfmsg.c:
-	ln -s $(GFPREP_SRCDIR)/$@ .
-
-gfurl.c:
-	ln -s $(GFPREP_SRCDIR)/$@ .
-
-gfurl_local.c:
-	ln -s $(GFPREP_SRCDIR)/$@ .
-
-gfurl_gfarm.c:
-	ln -s $(GFPREP_SRCDIR)/$@ .
-
-gfurl_hpss.c:
-	ln -s $(GFPREP_SRCDIR)/$@ .
-
-gfarm_cmd.c:
-	ln -s $(GFPREP_SRCDIR)/$@ .
 
 include $(top_srcdir)/makes/prog.mk
 include $(top_srcdir)/makes/subdir.mk
