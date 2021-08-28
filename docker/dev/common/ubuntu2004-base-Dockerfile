@@ -45,6 +45,7 @@ RUN apt-get update \
 # for debug
 RUN apt-get update \
     && apt-get -y install \
+    docbook-utils docbook-xsl xsltproc \
     ncat ldnsutils iproute2 net-tools bind9-dnsutils telnet tcpdump \
     manpages manpages-ja man-db \
     gdb valgrind strace inotify-tools \
