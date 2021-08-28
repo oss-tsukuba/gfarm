@@ -312,6 +312,21 @@ save-packages:
 	$(check_config)
 	$(CONTEXEC_GFMD1) $(SCRIPTS)/save_packages.sh
 
+ECHO_ROOTDIR:
+	@echo $(ROOTDIR)
+
+ECHO_DOCKER:
+	@echo $(DOCKER)
+
+ECHO_COMPOSE:
+	@echo $(COMPOSE)
+
+COPY_FILES:
+	$(ROOTDIR)/common/copy-updated-files-to-container.sh
+
+UPDATE_MANPAGES:
+	$(ROOTDIR)/common/copy-manpages-from-container.sh
+
 define regress
 $(CONTSHELL) -c '. ~/gfarm/docker/dev/common/regress.rc'
 endef
