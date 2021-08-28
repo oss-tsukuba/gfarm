@@ -33,12 +33,13 @@ struct gfpcat_part {
 };
 
 /* options */
-static char *optstring = "cfh:j:m:o:pqvdt?";
+static char *optstring = "cfh:i:j:m:o:pqvdt?";
 
 struct gfpcat_option {
 	int compare;		/* -c */
 	int force;		/* -f */
 	char *dst_host; 	/* -h */
+	char *input_list; 	/* -i */
 	int n_para;		/* -j */
 	off_t minimum_size;	/* -m */
 	char *out_file; 	/* -o */
@@ -66,6 +67,7 @@ gfpcat_debug_print_options(struct gfpcat_option *opt)
 	gfmsg_debug("-c = %d", opt->compare);
 	gfmsg_debug("-f = %d", opt->force);
 	gfmsg_debug("-h = %s", opt->dst_host);
+	gfmsg_debug("-i = %s", opt->input_list);
 	gfmsg_debug("-j = %d", opt->n_para);
 	gfmsg_debug("-m = %lld", (long long)opt->minimum_size);
 	gfmsg_debug("-o = %s", opt->out_file);
@@ -86,9 +88,10 @@ gfpcat_usage(int error, struct gfpcat_option *opt)
 "\t[-h <destination hostname>]\n"
 "\t[-j <#parallel(to copy parts)(connections)(default: %d)>]\n"
 "\t[-m <minimum data size per a child process for parallel copying>]\n"
-"\t[-p (report performance)\n"
+"\t[-p (report performance)]\n"
+"\t[-i <list file of input URLs> (instead of input-file arguments)]\n"
 "\t-o <output file(gfarm:... or file:...) (required)>\n"
-"\tinput-part1(gfarm:... or file:...)...\n"
+"\tinput-file(gfarm:... or file:...)...\n"
 		,
 		program_name, opt->n_para);
 	if (error) {
@@ -407,13 +410,6 @@ gfpcat_copy_io(struct gfpcat_file *src_fp, off_t src_offset,
 	size_t bufsize = sizeof(buf);
 	off_t result_len;
 
-	gfmsg_debug("copy_io: src_url=%s, src_offset=%lld,"
-	    " dst_offset=%lld, len=%lld",
-	    gfurl_url(src_fp->url),
-	    (long long)src_offset,
-	    (long long)dst_offset,
-	    (long long)len);
-
 	e = gfpcat_seek(src_fp, src_offset, SEEK_SET);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfmsg_error_e(e, "%s: seek", gfurl_url(src_fp->url));
@@ -617,6 +613,14 @@ retry_set_view:
 				    gfurl_url(p->url));
 				goto close_dst_fp;
 			}
+
+			gfmsg_debug("[%d/%d] src_url=%s, "
+			    "src_offset=%lld, dst_offset=%lld, len=%lld",
+			    child_id, opt->n_para,
+			    gfurl_url(src_fp.url),
+			    (long long)local_offset,
+			    (long long)range.offset,
+			    (long long)range.size);
 			e = gfpcat_copy_io(&src_fp, local_offset,
 			    &dst_fp, range.offset, range.size);
 			e2 = gfpcat_close(&src_fp);
@@ -927,6 +931,22 @@ end:
 	return (result);
 }
 
+#include "liberror.h"	/* only for GFARM_ERRMSG_HOSTNAME_EXPECTED */
+
+static gfarm_error_t
+gfarm_filelist_read(char *filename,
+	int *np, char ***file_names_p, int *error_linep)
+{
+	gfarm_error_t e;
+
+	/* XXX implement for filelist */
+	e = gfarm_hostlist_read(filename, np, file_names_p, error_linep);
+	if (e == GFARM_ERRMSG_HOSTNAME_EXPECTED) {
+		e = GFARM_ERR_INVALID_ARGUMENT;
+	}
+	return (e);
+}
+
 static const char tmp_url_suffix[] = "__tmp_gfpcat__";
 
 int
@@ -942,7 +962,10 @@ main(int argc, char *argv[])
 	struct timeval time_start, time_end;
 	static struct gfpcat_option opt = {
 		/* default values */
+		.compare = 0,		/* -c */
+		.force = 0,		/* -f */
 		.dst_host = NULL,	/* -h */
+		.input_list = NULL,	/* -i */
 		/* .n_para = 2, */	/* -j */
 		.minimum_size = 0,	/* -m */
 		.out_file = NULL,	/* -o */
@@ -969,6 +992,7 @@ main(int argc, char *argv[])
 
 	gfpcat_gfarm_initialize(&opt);
 
+	/* default -j */
 	default_n_para = gfarm_ctxp->client_parallel_copy;
 	if (default_n_para > gfarm_ctxp->client_parallel_max) {
 		default_n_para = gfarm_ctxp->client_parallel_max;
@@ -985,6 +1009,9 @@ main(int argc, char *argv[])
 			break;
 		case 'h':
 			opt.dst_host = optarg;
+			break;
+		case 'i':
+			opt.input_list = optarg;
 			break;
 		case 'j':
 			opt.n_para = strtol(optarg, NULL, 0);
@@ -1049,13 +1076,40 @@ main(int argc, char *argv[])
 		}
 	}
 
+	if (opt.input_list != NULL) {
+		int error_line = -1, nparts;
+		char **parts;
+
+		if (opt.n_part > 0) {
+			gfmsg_error("When -i is specified, "
+				    "input-file arguments are not required");
+			gfpcat_usage(1, &opt);
+			/* NOTREACHED */
+		}
+		e = gfarm_filelist_read(opt.input_list, &nparts, &parts,
+		    &error_line);
+		if (e != GFARM_ERR_NO_ERROR) {
+			if (error_line != -1) {
+				gfmsg_error_e(e, "%s: line %d", opt.input_list,
+				    error_line);
+			} else {
+				gfmsg_error_e(e, "%s", opt.input_list);
+			}
+			exit(EXIT_FAILURE);
+		}
+		opt.n_part = nparts;
+		input_parts = parts;
+	}
+
 	if (opt.out_file == NULL) {
 		gfmsg_error("-o is required");
 		gfpcat_usage(1, &opt);
+		/* NOTREACHED */
 	}
 	if (opt.n_part <= 0) {
-		gfmsg_error("input part files are required");
+		gfmsg_error("input files are required");
 		gfpcat_usage(1, &opt);
+		/* NOTREACHED */
 	}
 	if (opt.n_para > gfarm_ctxp->client_parallel_max) {
 		opt.n_para = gfarm_ctxp->client_parallel_max;
@@ -1115,21 +1169,21 @@ main(int argc, char *argv[])
 		int file_type;
 		char *part_path = input_parts[i];
 
-		p->url = gfurl_init(input_parts[i]); /* realpath()ed */
+		p->url = gfurl_init(part_path); /* realpath()ed */
 		gfmsg_nomem_check(p->url);
 		e = gfurl_lstat(p->url, &st);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gfmsg_error_e(e, "input part[%d]=%s", i, part_path);
+			gfmsg_error_e(e, "input[%d]=%s", i, part_path);
 			exit(EXIT_FAILURE);
 		}
 		file_type = gfurl_stat_file_type(&st);
 		/* check regular file */
 		if (file_type != GFS_DT_REG) {
 			gfmsg_error_e(GFARM_ERR_NOT_A_REGULAR_FILE,
-			    "input parts[%d]=%s", i, part_path);
+			    "input[%d]=%s", i, part_path);
 			exit(EXIT_FAILURE);
 		}
-		gfmsg_debug("input part[%d] %s: size=%lld",
+		gfmsg_debug("input[%d] %s: size=%lld",
 		    i, part_path, (long long)st.size);
 		/* check same file */
 		if (opt.out_exist && st.ino == opt.out_ino
@@ -1149,6 +1203,10 @@ main(int argc, char *argv[])
 		opt.total_size += p->size;
 	}
 	gfmsg_debug("total_size = %lld", (long long)opt.total_size);
+
+	if (opt.input_list != NULL) {
+		gfarm_strings_free_deeply(opt.n_part, input_parts);
+	}
 
 	if (opt.total_size == 0) {
 		e = gfpcat_create_empty_file(opt.tmp_url, opt.mode);

@@ -157,6 +157,18 @@ explicitly specifies the file system node to be stored.
 </varlistentry>
 
 <varlistentry>
+<term><option>-i</option> <parameter moreinfo="none">input-listfile</parameter></term>
+<listitem>
+<para>
+Specifies a file which describes input files instead
+of <parameter moreinfo="none">source-file</parameter> arguments.
+The <parameter moreinfo="none">input-listfile</parameter> consists of
+an input URL on each line.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-j</option> <parameter moreinfo="none">num-of-processes</parameter></term>
 <listitem>
 <para>

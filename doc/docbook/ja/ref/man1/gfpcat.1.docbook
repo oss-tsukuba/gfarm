@@ -147,11 +147,21 @@ gfarm2fs を経由せずに Gfarm へコピーします。
 </listitem>
 </varlistentry>
 
-
 <varlistentry>
 <term><option>-h</option> <parameter moreinfo="none">filesystem-node</parameter></term>
 <listitem>
   <para>指定したファイルシステムノードにファイルを作成します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-i</option> <parameter moreinfo="none">input-listfile</parameter></term>
+<listitem>
+<para>
+入力ファイルを列挙したファイルをコマンドライン引数
+<parameter moreinfo="none">source-file</parameter> の代わりに指定します。
+そのファイル中の各行に入力 URL を一つずつ記述します。
+</para>
 </listitem>
 </varlistentry>
 

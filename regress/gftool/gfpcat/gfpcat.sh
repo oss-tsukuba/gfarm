@@ -74,6 +74,28 @@ test_same_gfarm_file()
     fi
 }
 
+test_inputlist_from_file()
+{
+    gfrm -f $gfile_out
+    LIST=$lfile_out
+    echo $lfile1 > $LIST
+    echo file:$lfile2 >> $LIST
+    echo $gfile1 >> $LIST
+    echo $gfile2 >> $LIST
+    $GFPCAT -o $gfile_out -i $LIST
+}
+
+test_inputlist_from_stdin()
+{
+    gfrm -f $gfile_out
+    cat <<EOF | $GFPCAT -o $gfile_out -i -
+$lfile1
+file:$lfile2
+$gfile1
+$gfile2
+EOF
+}
+
 test_write_to_gfarm_j1
 test_write_to_local
 test_write_to_gfarm
@@ -83,6 +105,8 @@ test_overwrite_to_local
 test_overwrite_to_gfarm
 test_same_locale_file
 test_same_gfarm_file
+test_inputlist_from_file
+test_inputlist_from_stdin
 
 clean_test
 exit $exit_pass
