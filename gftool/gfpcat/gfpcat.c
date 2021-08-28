@@ -33,10 +33,11 @@ struct gfpcat_part {
 };
 
 /* options */
-static char *optstring = "ch:j:m:o:pqvdt?";
+static char *optstring = "cfh:j:m:o:pqvdt?";
 
 struct gfpcat_option {
 	int compare;		/* -c */
+	int force;		/* -f */
 	char *dst_host; 	/* -h */
 	int n_para;		/* -j */
 	off_t minimum_size;	/* -m */
@@ -63,6 +64,7 @@ static void
 gfpcat_debug_print_options(struct gfpcat_option *opt)
 {
 	gfmsg_debug("-c = %d", opt->compare);
+	gfmsg_debug("-f = %d", opt->force);
 	gfmsg_debug("-h = %s", opt->dst_host);
 	gfmsg_debug("-j = %d", opt->n_para);
 	gfmsg_debug("-m = %lld", (long long)opt->minimum_size);
@@ -80,6 +82,7 @@ gfpcat_usage(int error, struct gfpcat_option *opt)
 	fprintf(stderr,
 "Usage: %s [-?] [-q (quiet)] [-v (verbose)] [-d (debug)]\n"
 "\t[-c (compare after copy)]\n"
+"\t[-f (overwrite existing file)]\n"
 "\t[-h <destination hostname>]\n"
 "\t[-j <#parallel(to copy parts)(connections)(default: %d)>]\n"
 "\t[-m <minimum data size per a child process for parallel copying>]\n"
@@ -977,6 +980,9 @@ main(int argc, char *argv[])
 		case 'c':
 			opt.compare = 1;
 			break;
+		case 'f':
+			opt.force = 1;
+			break;
 		case 'h':
 			opt.dst_host = optarg;
 			break;
@@ -1069,8 +1075,14 @@ main(int argc, char *argv[])
 	gfmsg_debug("output URL: %s", gfurl_url(opt.out_url));
 	e = gfurl_lstat(opt.out_url, &st);
 	if (e == GFARM_ERR_NO_ERROR) {
-		opt.out_exist = 1;
-		opt.out_ino = st.ino;
+		if (opt.force) {
+			opt.out_exist = 1;
+			opt.out_ino = st.ino;
+		} else {
+			e = GFARM_ERR_ALREADY_EXISTS;
+			gfmsg_error_e(e, "%s", gfurl_url(opt.out_url));
+			exit(EXIT_FAILURE);
+		}
 	} else if (e == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY) {
 		opt.out_exist = 0;
 		opt.out_ino = 0;

@@ -8,6 +8,7 @@ lfile_zero=$data/0byte
 lfile_out=$localtmp/OUTPUT
 
 RANDF=/dev/urandom
+RAND_NUM=`awk "BEGIN{srand();print int(1024 * rand()) + 1;}"`
 GFPCAT="gfpcat -c"
 
 clean_test() {
@@ -20,7 +21,7 @@ trap 'clean_test; exit $exit_trap' $trap_sigs
 create_rand_file()
 {
     FILE=$1
-    SIZE=`expr 1024 \* 1024 + $RANDOM`
+    SIZE=`expr 1024 \* 1024 + $RAND_NUM`
     dd if=$RANDF of=$FILE bs=1M count=$SIZE iflag=count_bytes 2> /dev/null
 }
 
