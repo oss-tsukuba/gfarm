@@ -5,7 +5,7 @@ set -eu
 . ./regress.conf
 
 BASEDIR=`dirname $0`
-. ${BASEDIR}/setup_gfpcat.sh
+. ${BASEDIR}/setup_gfpconcat.sh
 
 setup_test
 
@@ -13,63 +13,63 @@ test_write_to_gfarm_j1()
 {
     gfrm -f $gfile_out
     # with -t
-    $GFPCAT -t -j 1 -o $gfile_out $gfile2 $lfile2 $gfile1 file:$lfile1
+    $GFPCONCAT -t -j 1 -o $gfile_out $gfile2 $lfile2 $gfile1 file:$lfile1
 }
 
 test_write_to_local()
 {
     rm -f $lfile_out
-    $GFPCAT -o $lfile_out $lfile1 file:$lfile2 $gfile1 $gfile2
+    $GFPCONCAT -o $lfile_out $lfile1 file:$lfile2 $gfile1 $gfile2
 }
 
 test_write_to_gfarm()
 {
     gfrm -f $gfile_out
-    $GFPCAT -o $gfile_out $gfile2 $gfile1 $lfile2 file:$lfile1
+    $GFPCONCAT -o $gfile_out $gfile2 $gfile1 $lfile2 file:$lfile1
 }
 
 test_write_to_local_0byte()
 {
     rm -f $lfile_out
-    $GFPCAT -o $lfile_out $gfile_zero $lfile_zero
+    $GFPCONCAT -o $lfile_out $gfile_zero $lfile_zero
 }
 
 test_write_to_gfarm_0byte()
 {
     gfrm -f $gfile_out
-    $GFPCAT -o $gfile_out $gfile_zero $lfile_zero
+    $GFPCONCAT -o $gfile_out $gfile_zero $lfile_zero
 }
 
 test_overwrite_to_local()
 {
     rm -f $lfile_out
-    $GFPCAT -o $lfile_out $lfile1 $gfile1
-    if $GFPCAT -o $lfile_out $lfile1 $gfile1 2> /dev/null; then
+    $GFPCONCAT -o $lfile_out $lfile1 $gfile1
+    if $GFPCONCAT -o $lfile_out $lfile1 $gfile1 2> /dev/null; then
         exit $exit_fail
     fi
-    $GFPCAT -f -o $lfile_out $lfile1 $gfile1
+    $GFPCONCAT -f -o $lfile_out $lfile1 $gfile1
 }
 
 test_overwrite_to_gfarm()
 {
     gfrm -f $gfile_out
-    $GFPCAT -o $gfile_out $lfile1
-    if $GFPCAT -o $gfile_out $lfile1 2> /dev/null; then
+    $GFPCONCAT -o $gfile_out $lfile1
+    if $GFPCONCAT -o $gfile_out $lfile1 2> /dev/null; then
         exit $exit_fail
     fi
-    $GFPCAT -f -o $gfile_out $lfile1
+    $GFPCONCAT -f -o $gfile_out $lfile1
 }
 
 test_same_locale_file()
 {
-    if $GFPCAT -f -o file:$lfile1 $lfile1 2> /dev/null; then
+    if $GFPCONCAT -f -o file:$lfile1 $lfile1 2> /dev/null; then
         exit $exit_fail
     fi
 }
 
 test_same_gfarm_file()
 {
-    if $GFPCAT -f -o $gfile1 $gfile1 2> /dev/null; then
+    if $GFPCONCAT -f -o $gfile1 $gfile1 2> /dev/null; then
         exit $exit_fail
     fi
 }
@@ -82,13 +82,13 @@ test_inputlist_from_file()
     echo file:$lfile2 >> $LIST
     echo $gfile1 >> $LIST
     echo $gfile2 >> $LIST
-    $GFPCAT -o $gfile_out -i $LIST
+    $GFPCONCAT -o $gfile_out -i $LIST
 }
 
 test_inputlist_from_stdin()
 {
     gfrm -f $gfile_out
-    cat <<EOF | $GFPCAT -o $gfile_out -i -
+    cat <<EOF | $GFPCONCAT -o $gfile_out -i -
 $lfile1
 file:$lfile2
 $gfile1

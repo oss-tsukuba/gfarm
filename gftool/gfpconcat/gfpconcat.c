@@ -25,9 +25,9 @@
 #include "gfurl.h"
 #include "gfmsg.h"
 
-static char *program_name = "gfpcat";
+static char *program_name = "gfpconcat";
 
-struct gfpcat_part {
+struct gfpconcat_part {
 	GFURL url;
 	off_t size;
 };
@@ -35,7 +35,7 @@ struct gfpcat_part {
 /* options */
 static char *optstring = "cfh:i:j:m:o:pqvdt?";
 
-struct gfpcat_option {
+struct gfpconcat_option {
 	int compare;		/* -c */
 	int force;		/* -f */
 	char *dst_host; 	/* -h */
@@ -54,7 +54,7 @@ struct gfpcat_option {
 	GFURL out_url;
 	gfarm_ino_t out_ino;
 	int out_exist;
-	struct gfpcat_part *part_list;
+	struct gfpconcat_part *part_list;
 	int n_part;
 	int mode;
 	off_t total_size;
@@ -62,7 +62,7 @@ struct gfpcat_option {
 };
 
 static void
-gfpcat_debug_print_options(struct gfpcat_option *opt)
+gfpconcat_debug_print_options(struct gfpconcat_option *opt)
 {
 	gfmsg_debug("-c = %d", opt->compare);
 	gfmsg_debug("-f = %d", opt->force);
@@ -79,7 +79,7 @@ gfpcat_debug_print_options(struct gfpcat_option *opt)
 }
 
 static void
-gfpcat_usage(int error, struct gfpcat_option *opt)
+gfpconcat_usage(int error, struct gfpconcat_option *opt)
 {
 	fprintf(stderr,
 "Usage: %s [-?] [-q (quiet)] [-v (verbose)] [-d (debug)]\n"
@@ -100,12 +100,12 @@ gfpcat_usage(int error, struct gfpcat_option *opt)
 }
 
 static void
-free_part_list(struct gfpcat_part *part_list, int n_part)
+free_part_list(struct gfpconcat_part *part_list, int n_part)
 {
 	int i;
 
 	for (i = 0; i < n_part; i++) {
-		struct gfpcat_part *p = &part_list[i];
+		struct gfpconcat_part *p = &part_list[i];
 
 		gfurl_free(p->url);
 	}
@@ -113,22 +113,22 @@ free_part_list(struct gfpcat_part *part_list, int n_part)
 }
 
 static void
-free_option(struct gfpcat_option *opt)
+free_option(struct gfpconcat_option *opt)
 {
 	free_part_list(opt->part_list, opt->n_part);
 	gfurl_free(opt->out_url);
 	gfurl_free(opt->tmp_url);
 }
 
-struct gfpcat_range {
+struct gfpconcat_range {
 	off_t offset;
 	off_t size;
 	int pattern;
 };
 
 static void
-gfpcat_get_range(off_t assigned_offset, off_t assigned_size,
-    off_t part_offset, off_t part_size, struct gfpcat_range *range)
+gfpconcat_get_range(off_t assigned_offset, off_t assigned_size,
+    off_t part_offset, off_t part_size, struct gfpconcat_range *range)
 {
 	off_t assigned_end = assigned_offset + assigned_size - 1;
 	off_t part_end = part_offset + part_size - 1;
@@ -192,7 +192,7 @@ struct range_pattern {
 };
 
 static int
-gfpcat_get_range_test(void)
+gfpconcat_get_range_test(void)
 {
 	struct range_pattern patterns[] = {
 		{ 0, 10, 10, 0, 10, 0, 0 },	/* PAT 0 : out of range */
@@ -218,17 +218,17 @@ gfpcat_get_range_test(void)
 	size_t num = sizeof(patterns) / sizeof(patterns[0]);
 	int i;
 
-	gfmsg_debug("gfpcat_get_range_test: num=%ld", num);
+	gfmsg_debug("gfpconcat_get_range_test: num=%ld", num);
 	for (i = 0; i < num; i++) {
 		struct range_pattern *p = &patterns[i];
-		struct gfpcat_range range;
+		struct gfpconcat_range range;
 
-		gfpcat_get_range(p->assigned_offset, p->assigned_size,
+		gfpconcat_get_range(p->assigned_offset, p->assigned_size,
 		    p->part_offset, p->part_size, &range);
 		if (range.pattern != p->expect_pattern
 		    || range.offset != p->expect_offset
 		    || range.size != p->expect_size) {
-			gfmsg_error("gfpcat_get_range_test[%d]: "
+			gfmsg_error("gfpconcat_get_range_test[%d]: "
 			   "range.pattern=%d, p->expect_pattern=%d, "
 			   "range.offset=%lld, p->expect_offset=%lld, "
 			   "range.size=%lld, p->expect_size=%lld\n", i,
@@ -239,20 +239,20 @@ gfpcat_get_range_test(void)
 			    (long long)p->expect_size);
 			return (1);
 		}
-		gfmsg_info("gfpcat_get_range_test[%d]: PASS", i);
+		gfmsg_info("gfpconcat_get_range_test[%d]: PASS", i);
 	}
 
 	return (0);
 }
 
-struct gfpcat_file {
+struct gfpconcat_file {
 	GFURL url;
 	int fd;
 	GFS_File gf;
 };
 
 static gfarm_error_t
-gfpcat_open(GFURL url, int flags, int mode, struct gfpcat_file *fp)
+gfpconcat_open(GFURL url, int flags, int mode, struct gfpconcat_file *fp)
 {
 	if (gfurl_is_local(url)) {
 		fp->fd = open(gfurl_epath(url), flags, mode);
@@ -296,7 +296,7 @@ gfpcat_open(GFURL url, int flags, int mode, struct gfpcat_file *fp)
 }
 
 static gfarm_error_t
-gfpcat_seek(struct gfpcat_file *fp, off_t offset, int whence)
+gfpconcat_seek(struct gfpconcat_file *fp, off_t offset, int whence)
 {
 	gfarm_error_t e;
 	int rv, gwhence;
@@ -328,7 +328,7 @@ gfpcat_seek(struct gfpcat_file *fp, off_t offset, int whence)
 }
 
 static gfarm_error_t
-gfpcat_read(struct gfpcat_file *fp, void *buf, int bufsize, int *rsize)
+gfpconcat_read(struct gfpconcat_file *fp, void *buf, int bufsize, int *rsize)
 {
 	int len;
 	char *b = buf;
@@ -355,7 +355,7 @@ gfpcat_read(struct gfpcat_file *fp, void *buf, int bufsize, int *rsize)
 }
 
 static gfarm_error_t
-gfpcat_write(struct gfpcat_file *fp, void *buf, int bufsize, int *wsize)
+gfpconcat_write(struct gfpconcat_file *fp, void *buf, int bufsize, int *wsize)
 {
 	int len;
 	char *b = buf;
@@ -383,7 +383,7 @@ gfpcat_write(struct gfpcat_file *fp, void *buf, int bufsize, int *wsize)
 }
 
 static gfarm_error_t
-gfpcat_close(struct gfpcat_file *fp)
+gfpconcat_close(struct gfpconcat_file *fp)
 {
 	int retv;
 
@@ -401,8 +401,8 @@ gfpcat_close(struct gfpcat_file *fp)
 #define GFS_FILE_BUFSIZE 65536
 
 static gfarm_error_t
-gfpcat_copy_io(struct gfpcat_file *src_fp, off_t src_offset,
-    struct gfpcat_file *dst_fp, off_t dst_offset, off_t len)
+gfpconcat_copy_io(struct gfpconcat_file *src_fp, off_t src_offset,
+    struct gfpconcat_file *dst_fp, off_t dst_offset, off_t len)
 {
 	gfarm_error_t e;
 	int rsize, wsize;
@@ -410,12 +410,12 @@ gfpcat_copy_io(struct gfpcat_file *src_fp, off_t src_offset,
 	size_t bufsize = sizeof(buf);
 	off_t result_len;
 
-	e = gfpcat_seek(src_fp, src_offset, SEEK_SET);
+	e = gfpconcat_seek(src_fp, src_offset, SEEK_SET);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfmsg_error_e(e, "%s: seek", gfurl_url(src_fp->url));
 		return (e);
 	}
-	e = gfpcat_seek(dst_fp, dst_offset, SEEK_SET);
+	e = gfpconcat_seek(dst_fp, dst_offset, SEEK_SET);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfmsg_error_e(e, "%s: seek", gfurl_url(dst_fp->url));
 		return (e);
@@ -447,12 +447,12 @@ gfpcat_copy_io(struct gfpcat_file *src_fp, off_t src_offset,
 	}
 
 	/* 'gfarm -> gfarm' or 'local -> local' */
-	while ((e = gfpcat_read(src_fp, buf, bufsize, &rsize))
+	while ((e = gfpconcat_read(src_fp, buf, bufsize, &rsize))
 	    == GFARM_ERR_NO_ERROR) {
 		if (rsize == 0) {  /* EOF */
 			return (GFARM_ERR_NO_ERROR);
 		}
-		e = gfpcat_write(dst_fp, buf, rsize, &wsize);
+		e = gfpconcat_write(dst_fp, buf, rsize, &wsize);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gfmsg_error_e(e, "%s: write", gfurl_url(dst_fp->url));
 			return (e);
@@ -469,7 +469,7 @@ gfpcat_copy_io(struct gfpcat_file *src_fp, off_t src_offset,
 }
 
 static void
-gfpcat_gfarm_initialize(struct gfpcat_option *opt)
+gfpconcat_gfarm_initialize(struct gfpconcat_option *opt)
 {
 	gfarm_error_t e;
 
@@ -484,7 +484,7 @@ gfpcat_gfarm_initialize(struct gfpcat_option *opt)
 }
 
 static void
-gfpcat_gfarm_terminate(struct gfpcat_option *opt)
+gfpconcat_gfarm_terminate(struct gfpconcat_option *opt)
 {
 	gfarm_error_t e;
 
@@ -499,27 +499,27 @@ gfpcat_gfarm_terminate(struct gfpcat_option *opt)
 }
 
 static gfarm_error_t
-gfpcat_create_empty_file(GFURL url, int mode)
+gfpconcat_create_empty_file(GFURL url, int mode)
 {
 	gfarm_error_t e;
-	struct gfpcat_file fp;
+	struct gfpconcat_file fp;
 
-	e = gfpcat_open(url, O_CREAT | O_WRONLY | O_TRUNC,
+	e = gfpconcat_open(url, O_CREAT | O_WRONLY | O_TRUNC,
 	    mode & 0777 & ~0022, &fp);
 	if (e == GFARM_ERR_NO_ERROR) {
-		e = gfpcat_close(&fp);
+		e = gfpconcat_close(&fp);
 	}
 	return (e);
 }
 
 static int
-gfpcat_child_copy_parts(struct gfpcat_option *opt, int child_id)
+gfpconcat_child_copy_parts(struct gfpconcat_option *opt, int child_id)
 {
 	gfarm_error_t e, e2;
 	int i;
 	off_t assigned_offset, assigned_size, assigned_size_modulo;
 	off_t part_offset, current_offset, remain_size;
-	struct gfpcat_file dst_fp;
+	struct gfpconcat_file dst_fp;
 
 	/* child_id: 1, 2, 3, ... */
 	if (child_id <= 0) {
@@ -558,14 +558,14 @@ gfpcat_child_copy_parts(struct gfpcat_option *opt, int child_id)
 	    (long long)(assigned_offset + assigned_size - 1));
 
 	if (gfurl_is_gfarm(opt->tmp_url)) {
-		gfpcat_gfarm_initialize(opt);
+		gfpconcat_gfarm_initialize(opt);
 
 		/* disable client_digest_check */
 		gfarm_ctxp->client_digest_check = 0; /* XXX FIXME */
 	}
 
 	/* Do not use O_TRUNC */
-	e = gfpcat_open(opt->tmp_url, O_CREAT | O_WRONLY,
+	e = gfpconcat_open(opt->tmp_url, O_CREAT | O_WRONLY,
 	    opt->mode & 0777 & ~0022, &dst_fp);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfmsg_error_e(e, "%s: open", gfurl_url(opt->tmp_url));
@@ -593,21 +593,21 @@ retry_set_view:
 	current_offset = assigned_offset;
 	remain_size = assigned_size;
 	for (i = 0; i < opt->n_part; i++) {
-		struct gfpcat_part *p = &opt->part_list[i];
-		struct gfpcat_range range;
+		struct gfpconcat_part *p = &opt->part_list[i];
+		struct gfpconcat_range range;
 
 		if (opt->gfarm_initialized == 0
 		    && (gfurl_is_gfarm(p->url))) {
-			gfpcat_gfarm_initialize(opt);
+			gfpconcat_gfarm_initialize(opt);
 		}
-		gfpcat_get_range(assigned_offset, assigned_size,
+		gfpconcat_get_range(assigned_offset, assigned_size,
 		    part_offset, p->size, &range);
 		if (range.size > 0) { /* This is a my part */
-			struct gfpcat_file src_fp;
+			struct gfpconcat_file src_fp;
 			off_t local_offset = range.offset - part_offset;
 
 			assert(local_offset >= 0);
-			e = gfpcat_open(p->url, O_RDONLY, 0, &src_fp);
+			e = gfpconcat_open(p->url, O_RDONLY, 0, &src_fp);
 			if (e != GFARM_ERR_NO_ERROR) {
 				gfmsg_error_e(e, "%s: open",
 				    gfurl_url(p->url));
@@ -621,9 +621,9 @@ retry_set_view:
 			    (long long)local_offset,
 			    (long long)range.offset,
 			    (long long)range.size);
-			e = gfpcat_copy_io(&src_fp, local_offset,
+			e = gfpconcat_copy_io(&src_fp, local_offset,
 			    &dst_fp, range.offset, range.size);
-			e2 = gfpcat_close(&src_fp);
+			e2 = gfpconcat_close(&src_fp);
 			gfmsg_error_e(e2, "%s: cannot close",
 			    gfurl_url(p->url));
 			if (e != GFARM_ERR_NO_ERROR) {
@@ -650,28 +650,28 @@ retry_set_view:
 	}
 
 close_dst_fp:
-	e2 = gfpcat_close(&dst_fp);
+	e2 = gfpconcat_close(&dst_fp);
 	gfmsg_error_e(e2, "%s: cannot close", gfurl_url(opt->tmp_url));
 	if (e == GFARM_ERR_NO_ERROR) {
 		e = e2;
 	}
 
 terminate:
-	gfpcat_gfarm_terminate(opt);
+	gfpconcat_gfarm_terminate(opt);
 
 	return (e == GFARM_ERR_NO_ERROR ? 0 : 1);
 }
 
-struct gfpcat_proc {
+struct gfpconcat_proc {
 	pid_t pid;
 };
 
 static int
-gfpcat_para_copy_parts(struct gfpcat_option *opt)
+gfpconcat_para_copy_parts(struct gfpconcat_option *opt)
 {
 	int i, n_procs = opt->n_para;
 	int n_error = 0;
-	struct gfpcat_proc *procs;
+	struct gfpconcat_proc *procs;
 
 	assert(opt->gfarm_initialized == 0);
 
@@ -694,7 +694,7 @@ gfpcat_para_copy_parts(struct gfpcat_option *opt)
 			/* line buffered */
 			setvbuf(stderr, (char *)NULL, _IOLBF, 0);
 
-			rv = gfpcat_child_copy_parts(opt, i + 1);
+			rv = gfpconcat_child_copy_parts(opt, i + 1);
 
 			fflush(stderr);
 			close(2);
@@ -735,24 +735,24 @@ gfpcat_para_copy_parts(struct gfpcat_option *opt)
 	return (n_error > 0 ? 1 : 0);
 }
 
-struct gfpcat_read_proc {
+struct gfpconcat_read_proc {
 	pid_t pid;
 	int read_fd;
 };
 
 static int
-gfpcat_read_a_file(GFURL url, int write_fd)
+gfpconcat_read_a_file(GFURL url, int write_fd)
 {
 	gfarm_error_t e;
-	struct gfpcat_file fh;
+	struct gfpconcat_file fh;
 	char buf[GFS_FILE_BUFSIZE];
 	size_t bufsize = sizeof(buf);
 	int rsize, wsize;
 	off_t fsize;
 
-	gfmsg_debug("gfpcat_read_a_file: start: %s", gfurl_url(url));
+	gfmsg_debug("gfpconcat_read_a_file: start: %s", gfurl_url(url));
 
-	e = gfpcat_open(url, O_RDONLY, 0, &fh);
+	e = gfpconcat_open(url, O_RDONLY, 0, &fh);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfmsg_error_e(e, "%s: open", gfurl_url(url));
 		return (1);
@@ -765,17 +765,17 @@ gfpcat_read_a_file(GFURL url, int write_fd)
 			gfmsg_error_e(e, "%s: gfs_pio_recvfile",
 			    gfurl_url(url));
 		}
-		gfmsg_debug("gfpcat_read_a_file: done: %s: size=%lld",
+		gfmsg_debug("gfpconcat_read_a_file: done: %s: size=%lld",
 		    gfurl_url(url), (long long)fsize);
-		gfpcat_close(&fh);
+		gfpconcat_close(&fh);
 		return (e);
 	}
 
-	gfmsg_debug("gfpcat_read_a_file: from local: %s", gfurl_url(url));
+	gfmsg_debug("gfpconcat_read_a_file: from local: %s", gfurl_url(url));
 
 	/* from local */
 	fsize = 0;
-	while ((e = gfpcat_read(&fh, buf, bufsize, &rsize))
+	while ((e = gfpconcat_read(&fh, buf, bufsize, &rsize))
 	    == GFARM_ERR_NO_ERROR) {
 		if (rsize == 0) {  /* EOF */
 			goto end;
@@ -783,15 +783,15 @@ gfpcat_read_a_file(GFURL url, int write_fd)
 		wsize = write(write_fd, buf, rsize);
 		if (rsize != wsize) {
 			gfmsg_error("%s: write: rsize!=wsize", gfurl_url(url));
-			gfpcat_close(&fh);
+			gfpconcat_close(&fh);
 			return (2);
 		}
 		fsize += wsize;
 	}
 end:
-	gfpcat_close(&fh);
+	gfpconcat_close(&fh);
 	if (e == GFARM_ERR_NO_ERROR) {
-		gfmsg_debug("gfpcat_read_a_file: done: %s: size=%lld",
+		gfmsg_debug("gfpconcat_read_a_file: done: %s: size=%lld",
 		    gfurl_url(url), (long long)fsize);
 		return (0);
 	} else {
@@ -801,43 +801,43 @@ end:
 }
 
 static int
-gfpcat_read_func_parts(struct gfpcat_option *opt, int write_fd)
+gfpconcat_read_func_parts(struct gfpconcat_option *opt, int write_fd)
 {
 	int i, rv = 0;
 
 	for (i = 0; i < opt->n_part; i++) {
-		struct gfpcat_part *p = &opt->part_list[i];
+		struct gfpconcat_part *p = &opt->part_list[i];
 
 		if (opt->gfarm_initialized == 0 && gfurl_is_gfarm(p->url)) {
-			gfpcat_gfarm_initialize(opt);
+			gfpconcat_gfarm_initialize(opt);
 		}
-		rv = gfpcat_read_a_file(p->url, write_fd);
+		rv = gfpconcat_read_a_file(p->url, write_fd);
 		if (rv != 0) {
 			break;
 		}
 	}
-	gfpcat_gfarm_terminate(opt);
+	gfpconcat_gfarm_terminate(opt);
 	return (rv);
 }
 
 static int
-gfpcat_read_func_dst(struct gfpcat_option *opt, int write_fd)
+gfpconcat_read_func_dst(struct gfpconcat_option *opt, int write_fd)
 {
 	int rv;
 
 	if (gfurl_is_gfarm(opt->out_url)) {
-		gfpcat_gfarm_initialize(opt);
+		gfpconcat_gfarm_initialize(opt);
 	}
-	rv = gfpcat_read_a_file(opt->out_url, write_fd);
-	gfpcat_gfarm_terminate(opt);
+	rv = gfpconcat_read_a_file(opt->out_url, write_fd);
+	gfpconcat_gfarm_terminate(opt);
 
 	return (rv);
 }
 
 static int
-gfpcat_fork_read(struct gfpcat_option *opt,
-    int (*read_func)(struct gfpcat_option *opt, int write_fd),
-    struct gfpcat_read_proc *proc)
+gfpconcat_fork_read(struct gfpconcat_option *opt,
+    int (*read_func)(struct gfpconcat_option *opt, int write_fd),
+    struct gfpconcat_read_proc *proc)
 {
 	pid_t pid;
 	int pipefds[2];
@@ -877,15 +877,15 @@ gfpcat_fork_read(struct gfpcat_option *opt,
 
 /* 0: OK */
 static int
-gfpcat_compare(struct gfpcat_option *opt)
+gfpconcat_compare(struct gfpconcat_option *opt)
 {
-	struct gfpcat_read_proc p1, p2;
+	struct gfpconcat_read_proc p1, p2;
 	char buf1[GFS_FILE_BUFSIZE], buf2[GFS_FILE_BUFSIZE];
 	size_t bufsize = sizeof(buf1);
 	int rv1, rv2, result;
 
-	gfpcat_fork_read(opt, gfpcat_read_func_parts, &p1);
-	gfpcat_fork_read(opt, gfpcat_read_func_dst, &p2);
+	gfpconcat_fork_read(opt, gfpconcat_read_func_parts, &p1);
+	gfpconcat_fork_read(opt, gfpconcat_read_func_dst, &p2);
 
 	while ((rv1 = read(p1.read_fd, buf1, bufsize)) >= 0) {
 		char *b = buf2;
@@ -947,7 +947,7 @@ gfarm_filelist_read(char *filename,
 	return (e);
 }
 
-static const char tmp_url_suffix[] = "__tmp_gfpcat__";
+static const char tmp_url_suffix[] = "__tmp_gfpconcat__";
 
 int
 main(int argc, char *argv[])
@@ -960,7 +960,7 @@ main(int argc, char *argv[])
 	int default_n_para;
 	struct gfurl_stat st;
 	struct timeval time_start, time_end;
-	static struct gfpcat_option opt = {
+	static struct gfpconcat_option opt = {
 		/* default values */
 		.compare = 0,		/* -c */
 		.force = 0,		/* -f */
@@ -990,7 +990,7 @@ main(int argc, char *argv[])
 	}
 	program_name = basename(argv[0]);
 
-	gfpcat_gfarm_initialize(&opt);
+	gfpconcat_gfarm_initialize(&opt);
 
 	/* default -j */
 	default_n_para = gfarm_ctxp->client_parallel_copy;
@@ -1040,7 +1040,7 @@ main(int argc, char *argv[])
 			break;
 		case '?':
 		default:
-			gfpcat_usage(0, &opt);
+			gfpconcat_usage(0, &opt);
 			return (EXIT_SUCCESS);
 		}
 	}
@@ -1067,12 +1067,12 @@ main(int argc, char *argv[])
 	}
 
 	gfmsg_init(program_name, msglevel);
-	gfpcat_debug_print_options(&opt);
+	gfpconcat_debug_print_options(&opt);
 
 	if (opt.test) {
 		/* for regress */
-		if (gfpcat_get_range_test() != 0) {
-			gfmsg_fatal("gfpcat_get_range_test");
+		if (gfpconcat_get_range_test() != 0) {
+			gfmsg_fatal("gfpconcat_get_range_test");
 		}
 	}
 
@@ -1083,7 +1083,7 @@ main(int argc, char *argv[])
 		if (opt.n_part > 0) {
 			gfmsg_error("When -i is specified, "
 				    "input-file arguments are not required");
-			gfpcat_usage(1, &opt);
+			gfpconcat_usage(1, &opt);
 			/* NOTREACHED */
 		}
 		e = gfarm_filelist_read(opt.input_list, &nparts, &parts,
@@ -1103,12 +1103,12 @@ main(int argc, char *argv[])
 
 	if (opt.out_file == NULL) {
 		gfmsg_error("-o is required");
-		gfpcat_usage(1, &opt);
+		gfpconcat_usage(1, &opt);
 		/* NOTREACHED */
 	}
 	if (opt.n_part <= 0) {
 		gfmsg_error("input files are required");
-		gfpcat_usage(1, &opt);
+		gfpconcat_usage(1, &opt);
 		/* NOTREACHED */
 	}
 	if (opt.n_para > gfarm_ctxp->client_parallel_max) {
@@ -1165,7 +1165,7 @@ main(int argc, char *argv[])
 	gfmsg_nomem_check(opt.part_list);
 
 	for (i = 0; i < opt.n_part; i++) {
-		struct gfpcat_part *p = &opt.part_list[i];
+		struct gfpconcat_part *p = &opt.part_list[i];
 		int file_type;
 		char *part_path = input_parts[i];
 
@@ -1209,7 +1209,7 @@ main(int argc, char *argv[])
 	}
 
 	if (opt.total_size == 0) {
-		e = gfpcat_create_empty_file(opt.tmp_url, opt.mode);
+		e = gfpconcat_create_empty_file(opt.tmp_url, opt.mode);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gfmsg_error_e(e, "cannot create empty file: %s",
 			    gfurl_url(opt.tmp_url));
@@ -1225,12 +1225,12 @@ main(int argc, char *argv[])
 
 		gfmsg_debug("using single child process");
 		opt.n_para = 1;
-		rv = gfpcat_child_copy_parts(&opt, child_id);
+		rv = gfpconcat_child_copy_parts(&opt, child_id);
 		goto copied;
 	}
 
-	gfpcat_gfarm_terminate(&opt);
-	rv = gfpcat_para_copy_parts(&opt);
+	gfpconcat_gfarm_terminate(&opt);
+	rv = gfpconcat_para_copy_parts(&opt);
 
 copied:
 	if (opt.performance) {
@@ -1248,7 +1248,7 @@ copied:
 	}
 
 	if (gfurl_is_gfarm(opt.tmp_url)) {
-		gfpcat_gfarm_initialize(&opt);
+		gfpconcat_gfarm_initialize(&opt);
 	}
 	if (rv != 0) { /* failed */
 		gfmsg_debug("unlink: %s", gfurl_url(opt.tmp_url));
@@ -1274,16 +1274,16 @@ copied:
 		/* for regress */
 		int cmp_result;
 
-		gfpcat_gfarm_terminate(&opt);
+		gfpconcat_gfarm_terminate(&opt);
 		gettimeofday(&time_start, NULL);
-		cmp_result = gfpcat_compare(&opt);
+		cmp_result = gfpconcat_compare(&opt);
 		if (cmp_result != 0) {
-			gfmsg_error("gfpcat_compare: %d", cmp_result);
+			gfmsg_error("gfpconcat_compare: %d", cmp_result);
 			rv = EXIT_FAILURE;
 			goto end;
 		}
 		if (opt.performance) {
-			gfmsg_debug("gfpcat_compare: %d", cmp_result);
+			gfmsg_debug("gfpconcat_compare: %d", cmp_result);
 			gettimeofday(&time_end, NULL);
 			gfarm_timeval_sub(&time_end, &time_start);
 			/* Bytes/usec == MiB/sec */
@@ -1297,7 +1297,7 @@ copied:
 	}
 	rv = EXIT_SUCCESS;
 end:
-	gfpcat_gfarm_terminate(&opt);
+	gfpconcat_gfarm_terminate(&opt);
 	free_option(&opt);
 
 	return (rv);

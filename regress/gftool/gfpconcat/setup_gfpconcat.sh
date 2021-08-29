@@ -9,7 +9,7 @@ lfile_out=$localtmp/OUTPUT
 
 RANDF=/dev/urandom
 RAND_NUM=`awk "BEGIN{srand();print int(1024 * rand()) + 1;}"`
-GFPCAT="gfpcat -c"
+GFPCONCAT="gfpconcat -c"
 
 clean_test() {
     rm -rf $localtmp
