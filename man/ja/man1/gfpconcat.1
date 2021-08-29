@@ -1,13 +1,13 @@
 '\" t
-.\"     Title: gfpcat
-.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
-.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 10 Aug 2021
+.\"     Title: gfpconcat
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 28 Aug 2021
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFPCAT" "1" "10 Aug 2021" "Gfarm" "Gfarm"
+.TH "GFPCONCAT" "1" "28 Aug 2021" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -28,13 +28,13 @@
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
 .SH "NAME"
-gfpcat \- 複数ファイルを結合しながら並列にコピーする
+gfpconcat \- 複数ファイルを結合しながら並列にコピーする
 .SH "SYNOPSIS"
-.HP \w'\fBgfpcat\fR\ 'u
-\fBgfpcat\fR [\-pqvd] [\-h\ \fIfilesystem\-node\fR] [\-j\ \fInum\-of\-processes\fR] [\-m\ \fIminimum\-bytes\fR] \-o\ \fIdestination\-file\fR \fIsource\-file\fR...
+.HP \w'\fBgfpconcat\fR\ 'u
+\fBgfpconcat\fR [\-fpqvd] [\-h\ \fIfilesystem\-node\fR] [\-j\ \fInum\-of\-processes\fR] [\-m\ \fIminimum\-bytes\fR] \-o\ \fIdestination\-file\fR \fIsource\-file\fR...
 .SH "DESCRIPTION"
 .PP
-\fBgfpcat\fR
+\fBgfpconcat\fR
 は、単一ファイルまたは複数ファイルを単一のファイルに対して 並列にコピーします。
 .PP
 \fIsource\-file\fR
@@ -82,9 +82,21 @@ Gfarm URL で指定します。
 .RE
 .SH "OPTIONS"
 .PP
+\fB\-f\fR
+.RS 4
+既存ファイルを上書きします。
+.RE
+.PP
 \fB\-h\fR \fIfilesystem\-node\fR
 .RS 4
 指定したファイルシステムノードにファイルを作成します。
+.RE
+.PP
+\fB\-i\fR \fIinput\-listfile\fR
+.RS 4
+入力ファイルを列挙したファイルをコマンドライン引数
+\fIsource\-file\fR
+の代わりに指定します。 そのファイル中の各行に入力 URL を一つずつ記述します。
 .RE
 .PP
 \fB\-j\fR \fInum\-of\-processes\fR
@@ -125,11 +137,11 @@ Gfarm URL で指定します。
 .RE
 .SH "NOTES"
 .PP
-Gfarm 上にファイルを 1つ作成する際に、並列に書き込んだり、 ランダムアクセスで書き込んだりすると、チェックサムが付加されません。 そのため、\fBgfpcat\fR
-を使用すると、 チェックサムがファイルに付加されません。 一度ファイルをシーケンシャルに読むと、または複製を作成するとチェックサ ムが付加されます。 または gfmd\&.conf の
+Gfarm 上にファイルを 1つ作成する際に、並列に書き込んだり、 ランダムアクセスで書き込んだりすると、チェックサムがファイルに付加されません。 そのため、\fBgfpconcat\fR
+を使用すると、 チェックサムが付加されません。 一度ファイルをシーケンシャルに読むと、または複製を作成すると チェックサムが付加されます。 または gfmd\&.conf の
 \fIwrite_verify\fR
 が enable となっていれば、
-\fBgfpcat\fR
+\fBgfpconcat\fR
 でファイル作成後にしばらく経つと チェックサムが付加されます。 詳細は gfarm2\&.conf のマニュアルを参照してください。
 .SH "SEE ALSO"
 .PP

@@ -1,23 +1,23 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title>gfpcat</title>
-<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
+<title>gfpconcat</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
-<a name="gfpcat.1"></a><div class="titlepage"></div>
+<a name="gfpconcat.1"></a><div class="titlepage"></div>
 <div class="refnamediv">
 <a name="name"></a><h2>Name</h2>
-<p>gfpcat — concatenate files and copy in parallel</p>
+<p>gfpconcat — concatenate files in parallel</p>
 </div>
 <div class="refsynopsisdiv">
 <a name="synopsis"></a><h2>Synopsis</h2>
-<div class="cmdsynopsis"><p><code class="command">gfpcat</code>  [-pqvd] [-h <em class="replaceable"><code>filesystem-node</code></em>] [-j <em class="replaceable"><code>num-of-processes</code></em>] [-m <em class="replaceable"><code>minimum-bytes</code></em>]  -o <em class="replaceable"><code>destination-file</code></em>   <em class="replaceable"><code>source-file</code></em>... </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfpconcat</code>  [-fpqvd] [-h <em class="replaceable"><code>filesystem-node</code></em>] [-j <em class="replaceable"><code>num-of-processes</code></em>] [-m <em class="replaceable"><code>minimum-bytes</code></em>]  -o <em class="replaceable"><code>destination-file</code></em>   <em class="replaceable"><code>source-file</code></em>... </p></div>
 </div>
 <div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p>
-<span class="command"><strong>gfpcat</strong></span>
+<span class="command"><strong>gfpconcat</strong></span>
 copies a single file or multiple files to a single file in parallel.
 </p>
 <p>
@@ -80,9 +80,20 @@ is an URL of a local file system.
 <div class="refsect1">
 <a name="options"></a><h2>OPTIONS</h2>
 <div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><code class="option">-f</code></span></dt>
+<dd><p>
+Overwrites existing file.
+</p></dd>
 <dt><span class="term"><code class="option">-h</code> <em class="parameter"><code>filesystem-node</code></em></span></dt>
 <dd><p>
 explicitly specifies the file system node to be stored.
+</p></dd>
+<dt><span class="term"><code class="option">-i</code> <em class="parameter"><code>input-listfile</code></em></span></dt>
+<dd><p>
+Specifies a file which describes input files instead
+of <em class="parameter"><code>source-file</code></em> arguments.
+The <em class="parameter"><code>input-listfile</code></em> consists of
+an input URL on each line.
 </p></dd>
 <dt><span class="term"><code class="option">-j</code> <em class="parameter"><code>num-of-processes</code></em></span></dt>
 <dd>
@@ -132,7 +143,7 @@ Displays a list of command options.
 When a file is created in Gfarm and the file is written in parallel or
 randomly, checksum for the file will not be calculated and not added.
 
-Therefore, when <span class="command"><strong>gfpcat</strong></span> is used,
+Therefore, when <span class="command"><strong>gfpconcat</strong></span> is used,
 checksum will not be added to the file.
 
 Once the file is read sequentially or replicas for the file are
@@ -141,7 +152,7 @@ created, checksum will be added to the file.
 Or, when <em class="parameter"><code>write_verify</code></em> of
 gfmd.conf (see man gfarm2.conf) is "enable", checksum is added to the
 file after a while after copying
-by <span class="command"><strong>gfpcat</strong></span>.
+by <span class="command"><strong>gfpconcat</strong></span>.
 </p>
 </div>
 <div class="refsect1">
