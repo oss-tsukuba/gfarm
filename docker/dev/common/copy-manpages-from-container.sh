@@ -34,6 +34,6 @@ copy_from_service() {
 $COMPOSE_EXEC "xsltproc --version"
 $COMPOSE_EXEC "cd $GFARM_WORKDIR && make man html"
 
-FILES=$($COMPOSE_EXEC "cd $GFARM_WORKDIR && git status -s man/ doc/html/" | grep -v '^??' | cut -d " " -f 3)
+FILES=$($COMPOSE_EXEC "cd $GFARM_WORKDIR && git status -s man/ doc/html/" | grep -v '^??' | awk '{print $2}')
 
 copy_from_service "client1" "$FILES"

@@ -324,7 +324,7 @@ ECHO_COMPOSE:
 COPY_FILES:
 	$(ROOTDIR)/common/copy-updated-files-to-container.sh
 
-UPDATE_MANPAGES:
+REGEN_MANPAGES:
 	$(ROOTDIR)/common/copy-manpages-from-container.sh
 
 define regress

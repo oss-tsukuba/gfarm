@@ -20,7 +20,7 @@ docker_cp_to() {
 
 updated_files() {
     cd $GFARM_SRCDIR
-    git status -s | grep -v '^??' | cut -d " " -f 3
+    git status -s | grep -v '^??' | awk '{print $2}'
 }
 
 copy_to_service() {
