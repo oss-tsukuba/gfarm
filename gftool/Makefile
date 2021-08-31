@@ -13,6 +13,7 @@ SUBDIRS = \
 	gfchmod \
 	gfchown \
 	gfcksum \
+	gfcp \
 	gfdf \
 	gfdump \
 	gfexport \
