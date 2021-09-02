@@ -114,7 +114,7 @@ Gfarm-S3-MinIO
   $ cd gfarm-s3-minio
   $ git checkout gfarm
 
-2. to install gfarm-s3 into running container
+2. to install gfarm-s3 into running client1 container
 
   $ cd (docker/dev dir)
   $ cd dist/centos7/src

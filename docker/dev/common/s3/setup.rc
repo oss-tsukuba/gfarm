@@ -33,10 +33,14 @@ CACHE_SIZE=$GFDOCKER_GFARMS3_CACHE_SIZE
 WSGI_HOMEDIR=$GFDOCKER_GFARMS3_WSGI_HOMEDIR
 WSGI_USER=$GFDOCKER_GFARMS3_WSGI_USER
 WSGI_GROUP=$GFDOCKER_GFARMS3_WSGI_GROUP
-WSGI_PORT=$GFDOCKER_GFARMS3_WSGI_PORT
+WSGI_ADDR=$GFDOCKER_GFARMS3_WSGI_ADDR
+ROUTER_ADDR=$GFDOCKER_GFARMS3_ROUTER_ADDR
 MYPROXY_SERVER=$GFDOCKER_GFARMS3_MYPROXY_SERVER
 USERS=$GFDOCKER_GFARMS3_USERS
 CERT_DIR=$WORKDIR/cert
+
+MY_HOSTNAME=$(hostname)
+MY_IPADDR=$(dig $MY_HOSTNAME +short)
 
 install_package_for_centos() {
     ${SUDO} yum update -y
@@ -57,6 +61,7 @@ install_package_for_ubuntu() {
     ${SUDO} apt-get update
     ${SUDO} apt-get upgrade -y
     ${SUDO} apt-get install -y \
+        curl \
         apache2 \
         uuid \
         myproxy \
@@ -90,16 +95,16 @@ install_prerequisites() {
 }
 
 create_certificate() {
-    mkdir $CERT_DIR
+    mkdir -p $CERT_DIR
     cd $CERT_DIR
     openssl genrsa 2048 > ca.key
     openssl rsa -in ca.key -pubout -out ca.pub
     openssl req -new -key ca.key -subj "/CN=testca" > ca.csr
     openssl x509 -req -in ca.csr -signkey ca.key -days 1825 -out ca.crt
 
-    echo "subjectAltName = DNS:${GFDOCKER_SUBNET%.0/24}.$GFDOCKER_START_HOST_ADDR" > san.txt
+    echo "subjectAltName = DNS:${MY_HOSTNAME}, IP:${MY_IPADDR}" > san.txt
     openssl genrsa 2048 > server.key
-    openssl req -new -key server.key -subj "/CN=${GFDOCKER_SUBNET%.0/24}.$GFDOCKER_START_HOST_ADDR" > server.csr
+    openssl req -new -key server.key -subj "/CN=${MY_HOSTNAME}" > server.csr
     openssl x509 -req -in server.csr -out server.crt -days 365 -CAkey ca.key -CA ca.crt -CAcreateserial -extfile san.txt
 
     case $GFDOCKER_PRJ_NAME in
@@ -143,7 +148,7 @@ deploy_http_server_for_centos() {
                     -e "s;@SERVER_KEY@;$SERVER_KEY;" \
                     -e "s;@HTTPD_COMMON_CONF@;$HTTPD_COMMON_CONF;" \
                     | ${SUDO} dd of=$HTTPD_CONF
-ServerName ${GFDOCKER_SUBNET%.0/24}.$GFDOCKER_START_HOST_ADDR
+ServerName ${MY_HOSTNAME}
 <VirtualHost *:80>
 	Include @HTTPD_COMMON_CONF@
 </VirtualHost>
@@ -181,7 +186,7 @@ deploy_http_server_for_ubuntu() {
                     -e "s;@SERVER_KEY@;$SERVER_KEY;" \
                     -e "s;@HTTPD_COMMON_CONF@;$HTTPD_COMMON_CONF;" \
                     | ${SUDO} dd of=$HTTPD_CONF
-ServerName ${GFDOCKER_SUBNET%.0/24}.$GFDOCKER_START_HOST_ADDR
+ServerName ${MY_HOSTNAME}
 <VirtualHost *:80>
 	Include @HTTPD_COMMON_CONF@
 </VirtualHost>
@@ -210,7 +215,7 @@ EOF
 
     HTTPD_UNIT_DROPIN=/etc/systemd/system/apache2.d
     HTTPD_COMMON_ENV=$HTTPD_UNIT_DROPIN/env.conf
-    ${SUDO} mkdir $HTTPD_UNIT_DROPIN
+    ${SUDO} mkdir -p $HTTPD_UNIT_DROPIN
     ${SUDO} cat <<EOF | ${SUDO} dd of=$HTTPD_COMMON_ENV
 Environment="APACHE_RUN_USER=www-data APACHE_RUN_GROUP=www-data APACHE_PID_FILE=/var/run/apache2/apache2.pid APACHE_RUN_DIR=/var/run/apache2 APACHE_LOCK_DIR=/var/lock/apache2 APACHE_LOG_DIR=/var/log/apache2 LANG=C"
 EOF
@@ -276,7 +281,8 @@ install_gfarm_s3() {
         --with-wsgi-homedir=$WSGI_HOMEDIR \
         --with-wsgi-user=$WSGI_USER \
         --with-wsgi-group=$WSGI_GROUP \
-        --with-wsgi-port=$WSGI_PORT \
+        --with-wsgi-addr=$WSGI_ADDR \
+        --with-router-addr=$ROUTER_ADDR \
         --with-cache-basedir=$CACHE_BASEDIR \
         --with-cache-size=$CACHE_SIZE \
         --with-myproxy-server=$MYPROXY_SERVER \
@@ -335,12 +341,12 @@ configure_gfarm_s3() {
 
     ## start gunicorn service
     ${SUDO} systemctl enable --now gunicorn.service
+    ${SUDO} systemctl restart --now gunicorn.service
 }
 
 install_aws_cli() {
     case $GFDOCKER_PRJ_NAME in
         ubuntu*-*)
-            ${SUDO} apt-get install -y curl
             ;;
        *)
             ;;
@@ -352,6 +358,7 @@ install_aws_cli() {
 
     # install AWS CLI v2
     AWSCLI_URL="https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
+    #AWSCLI_URL="https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip"
     AWSCLI_ZIP=${WORKDIR}/awscliv2.zip
 
     if [ ! -f ${AWSCLI_ZIP} ]; then
@@ -476,10 +483,24 @@ ${SUDO} chown -R user1 ${MINIO_BUILDDIR}
 MINIO_WEB_WORK_SRCDIR=$WORKDIR/gfarm-s3-minio-web
 MINIO_WORK_SRCDIR=$MINIO_BUILDDIR_WORKDIR/gfarm-s3-minio
 
+basename_cmp() {
+    A=$(basename "$1")
+    B=$(basename "$2")
+    test "$A" = "$B"
+    return $?
+}
+
+safe_rsync() {
+    FROM="$1"
+    TO="$2"
+    basename_cmp "$FROM" "$TO" || exit 1
+    ${SUDO} rsync --delete -rlptD "$FROM" "$TO"
+}
+
 ## obtain or update source code
-${SUDO} rsync -rlptD $GFARM_S3_MINIO_WEB_SRC/ $MINIO_WEB_WORK_SRCDIR/
+safe_rsync "$GFARM_S3_MINIO_WEB_SRC/" "$MINIO_WEB_WORK_SRCDIR/"
 if [ -e $GFARM_S3_MINIO_SRC ]; then
-    ${SUDO} rsync -rlptD $GFARM_S3_MINIO_SRC/ $MINIO_WORK_SRCDIR/
+    safe_rsync "$GFARM_S3_MINIO_SRC/" "$MINIO_WORK_SRCDIR/"
 fi
 ${SUDO} chown -R user1 $MINIO_WEB_WORK_SRCDIR/
 
