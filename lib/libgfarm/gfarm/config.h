@@ -63,6 +63,33 @@ enum gfarm_db_access_type {
 };
 extern enum gfarm_db_access_type gfarm_db_access_type;
 
+/* auth TLS dependent */
+#define GFARM_TLS_CERTIFICATE_PATH_DEFAULT		"/etc/pki/tls/certs"
+#define GFARM_TLS_KEY_PATH_DEFAULT			"/etc/pki/tls/private"
+
+#define GFARM_TLS_CIPHER_SUITE_DEFAULT			NULL
+#define GFARM_TLS_CA_CERTIFICATE_PATH_DEFAULT \
+	GFARM_TLS_CERTIFICATE_PATH_DEFAULT "/gfarm"
+#define GFARM_TLS_CA_REVOCATION_PATH_DEFAULT \
+	GFARM_TLS_CA_CERTIFICATE_PATH_DEFAULT
+#define GFARM_TLS_CA_PEER_VERIFY_CHAIN_PATH_DEFAULT	""
+#define GFARM_TLS_CERTIFICATE_FILE_DEFAULT_FOR_CLIENT \
+	".gfarm/usercert.pem"
+#define GFARM_TLS_CERTIFICATE_FILE_DEFAULT_FOR_GFMD \
+	GFARM_TLS_CERTIFICATE_PATH_DEFAULT "/" "gfmd.crt"
+#define GFARM_TLS_CERTIFICATE_FILE_DEFAULT_FOR_GFSD \
+	GFARM_TLS_CERTIFICATE_PATH_DEFAULT "/" "gfsd.crt"
+#define GFARM_TLS_CERTIFICATE_CHAIN_FILE_DEFAULT	NULL
+#define GFARM_TLS_KEY_FILE_DEFAULT_FOR_CLIENT \
+	".gfarm/userkey.pem"
+#define GFARM_TLS_KEY_FILE_DEFAULT_FOR_GFMD \
+	GFARM_TLS_KEY_PATH_DEFAULT "/gfmd.key"
+#define GFARM_TLS_KEY_FILE_DEFAULT_FOR_GFSD \
+	GFARM_TLS_KEY_PATH_DEFAULT "/gfsd.key"
+#define GFARM_TLS_KEY_UPDATE_DEFAULT		1	/* enable */
+#define GFARM_TLS_BUILD_CHAIN_LOCAL_DEFAULT	0	/* disable */
+#define GFARM_TLS_ALLOW_NO_CRL_DEFAULT		1	/* enable */
+
 extern int gfarm_xattr_size_limit;
 extern int gfarm_xmlattr_size_limit;
 extern int gfarm_directory_quota_count_per_user_limit;
@@ -241,6 +268,7 @@ gfarm_error_t gfarm_config_read_file(FILE *, int *, const char *);
 #endif
 void gfarm_config_set_default_ports(void);
 void gfarm_config_set_default_misc(void);
+gfarm_error_t gfarm_config_sanity_check(void);
 gfarm_error_t gfarm_sockbuf_apply_limit(int, int, int, const char *);
 void gfs_display_timers(void);
 
@@ -248,6 +276,8 @@ int gfarm_xattr_caching_patterns_number(void);
 char **gfarm_xattr_caching_patterns(void);
 
 gfarm_error_t gfarm_set_local_user_for_this_uid(uid_t);
+
+gfarm_error_t gfarm_config_sanity_check(void);
 
 /* for client */
 struct gfs_connection;
@@ -258,7 +288,8 @@ gfarm_error_t gfarm_client_process_reset(struct gfs_connection *,
 	struct gfm_connection *);
 
 /* for server */
-gfarm_error_t gfarm_server_initialize(char *, int *, char ***);
+gfarm_error_t gfarm_server_initialize_for_gfmd(char *, int *, char ***);
+gfarm_error_t gfarm_server_initialize_for_gfsd(char *, int *, char ***);
 gfarm_error_t gfarm_server_terminate(void);
 gfarm_error_t gfarm_server_config_read(void);
 

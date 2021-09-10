@@ -1164,6 +1164,12 @@ journal_env_for_credential_fd_op(void *cookie)
 }
 
 static int
+journal_recv_is_ready_op(void *cookie)
+{
+	return (0); /* not internally buffered */
+}
+
+static int
 journal_blocking_read_op(struct gfarm_iobuffer *b,
 	void *cookie, int fd, void *data, int length)
 {
@@ -1290,6 +1296,7 @@ static struct gfp_iobuffer_ops journal_iobuffer_ops = {
 	journal_export_credential_fd_op,
 	journal_delete_credential_fd_op,
 	journal_env_for_credential_fd_op,
+	journal_recv_is_ready_op,
 	journal_blocking_read_op,
 	journal_blocking_read_op,
 	journal_blocking_write_op,
