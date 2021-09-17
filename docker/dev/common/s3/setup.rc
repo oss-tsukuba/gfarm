@@ -506,9 +506,7 @@ ${SUDO} chown -R user1 $MINIO_WEB_WORK_SRCDIR/
 
 ## update only
 if [ $GFDOCKER_GFARMS3_UPDATE_ONLY -eq 1 ]; then
-    cd $MINIO_WEB_WORK_SRCDIR
-    make
-    ${SUDO} make install
+    install_gfarm_s3
     exit 0
 fi
 
