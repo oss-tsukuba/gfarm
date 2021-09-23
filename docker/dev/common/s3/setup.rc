@@ -34,6 +34,7 @@ WSGI_HOMEDIR=$GFDOCKER_GFARMS3_WSGI_HOMEDIR
 WSGI_USER=$GFDOCKER_GFARMS3_WSGI_USER
 WSGI_GROUP=$GFDOCKER_GFARMS3_WSGI_GROUP
 WSGI_ADDR=$GFDOCKER_GFARMS3_WSGI_ADDR
+ROUTER_HOMEDIR=$GFDOCKER_GFARMS3_ROUTER_HOMEDIR
 ROUTER_ADDR=$GFDOCKER_GFARMS3_ROUTER_ADDR
 MYPROXY_SERVER=$GFDOCKER_GFARMS3_MYPROXY_SERVER
 USERS=$GFDOCKER_GFARMS3_USERS
@@ -282,6 +283,7 @@ install_gfarm_s3() {
         --with-wsgi-user=$WSGI_USER \
         --with-wsgi-group=$WSGI_GROUP \
         --with-wsgi-addr=$WSGI_ADDR \
+        --with-router-homedir=$ROUTER_HOMEDIR \
         --with-router-addr=$ROUTER_ADDR \
         --with-cache-basedir=$CACHE_BASEDIR \
         --with-cache-size=$CACHE_SIZE \
@@ -300,7 +302,7 @@ configure_gfarm_s3() {
 
     ## create shared directory
     gfmkdir -p ${SHARED_DIR#/} || true
-    gfchmod 1777 ${SHARED_DIR#/} || true
+    gfchmod 0755 ${SHARED_DIR#/} || true
 
     . ${GFARM_S3_PREFIX}/etc/gfarm-s3.conf
 
@@ -321,9 +323,9 @@ configure_gfarm_s3() {
         ${SUDO} $GFARM_S3_PREFIX/bin/gfarm-s3-useradd $global_user $local_user $access_key_id
         ${SUDO} usermod -a -G gfarms3 $local_user
         shared_dir_user=${SHARED_DIR#/}/$local_user
-        gfmkdir -p $shared_dir_user
+        gfsudo gfmkdir -p $shared_dir_user
+        gfsudo gfchmod 0755 $shared_dir_user
         gfsudo gfchown $global_user $shared_dir_user
-        gfsudo gfchmod 755 $shared_dir_user
     done
 
     ## edit HTTPD's configfile (i.e. myserver-common.conf)
@@ -333,15 +335,21 @@ configure_gfarm_s3() {
     ) >$tmpfile
     ${SUDO} cp $WORKDIR/gfarm-s3-minio-web/etc/e403.html $HTTPD_DocumentRoot/e403.html
     ${SUDO} systemctl stop $HTTPD_UNIT_NAME
-    ${SUDO} chown --reference $HTTPD_COMMON_CONF $tmpfile
-    ${SUDO} chgrp --reference $HTTPD_COMMON_CONF $tmpfile
-    ${SUDO} chmod --reference $HTTPD_COMMON_CONF $tmpfile
+    ${SUDO} chown --reference=$HTTPD_COMMON_CONF $tmpfile
+    ${SUDO} chgrp --reference=$HTTPD_COMMON_CONF $tmpfile
+    ${SUDO} chmod --reference=$HTTPD_COMMON_CONF $tmpfile
     ${SUDO} mv $tmpfile $HTTPD_COMMON_CONF
     ${SUDO} systemctl start $HTTPD_UNIT_NAME
 
-    ## start gunicorn service
+    ## start gfarm-s3 WebUI service (gunicorn)
+    ${SUDO} systemctl disable --now gunicorn.service
     ${SUDO} systemctl enable --now gunicorn.service
     ${SUDO} systemctl restart --now gunicorn.service
+
+    ## start gfarm-s3 MinIO router service (gunicorn)
+    ${SUDO} systemctl disable --now gfarm-s3-router.service
+    ${SUDO} systemctl enable --now gfarm-s3-router.service
+    ${SUDO} systemctl restart --now gfarm-s3-router.service
 }
 
 install_aws_cli() {
