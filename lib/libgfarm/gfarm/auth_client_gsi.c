@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include <stdarg.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <stdio.h>
 
@@ -45,6 +46,9 @@ gfarm_gsi_acquire_client_credential(const char *hostname,
 	gfarm_error_t e;
 	int ret;
 	OM_uint32 e_major, e_minor;
+#ifdef HAVE_LIBGSSAPI_KRB5
+	char *spool_service_cred = NULL;
+#endif
 
 	switch (self_type) {
 	case GFARM_AUTH_ID_TYPE_SPOOL_HOST:
@@ -56,10 +60,19 @@ gfarm_gsi_acquire_client_credential(const char *hostname,
 			GFS_SERVICE_TAG);
 		spool_service_name = gfarm_auth_server_cred_service_get(
 			GFS_SERVICE_TAG);
+#ifdef HAVE_LIBGSSAPI_KRB5
+		spool_service_cred = gfarm_auth_server_cred_name_get(
+			GFS_SERVICE_TAG);
+#endif
 		e = gfarm_gsi_cred_config_convert_to_name(
 			spool_service_type != GFARM_AUTH_CRED_TYPE_DEFAULT ?
 			spool_service_type : GFARM_AUTH_CRED_TYPE_HOST,
-			spool_service_name, NULL,
+			spool_service_name,
+#ifdef HAVE_LIBGSSAPI_KRB5
+			spool_service_cred,
+#else
+			NULL,
+#endif
 			(char *)hostname, &desired_name);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_auth_error(GFARM_MSG_1000698,

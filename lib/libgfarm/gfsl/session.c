@@ -1,5 +1,6 @@
 #include <pthread.h>
 #include <assert.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -800,6 +801,14 @@ gfarmSecSessionInitializeBoth(char *iConfigFile, char *aConfigFile,
      * 	This implementation depends on gssapi_ssleay of Globus. With
      *	other GSSAPI implementation, a major change could be needed.
      */
+
+#ifdef HAVE_LIBGSSAPI_KRB5
+    if (initiatorInitialized && !acceptorInitialized == 0) {
+	gfarmSecSessionFinalizeInitiator();
+    } else if (!initiatorInitialized  && acceptorInitialized) {
+	gfarmSecSessionFinalizeAcceptor();
+    }
+#endif
 
     gfarm_mutex_lock(&initiator_mutex, diag, initiatorDiag);
     gfarm_mutex_lock(&acceptor_mutex, diag, acceptorDiag);
