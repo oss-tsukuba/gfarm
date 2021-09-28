@@ -1,4 +1,7 @@
-set -xeu
+set -o xtrace
+set -o errexit
+set -o nounset
+set -o pipefail
 
 GFDOCKER_GFARMS3_UPDATE_ONLY=${GFDOCKER_GFARMS3_UPDATE_ONLY:-0}
 
@@ -27,6 +30,7 @@ WORKDIR=$HOME/tmp/work
 MINIO_BUILDDIR=/mnt/user1/tmp/work
 
 GFARM_S3_PREFIX=/usr/local
+FRONT_WEBSERVER=$GFDOCKER_GFARMS3_FRONT_WEBSERVER
 SHARED_DIR=$GFDOCKER_GFARMS3_SHARED_DIR
 CACHE_BASEDIR=$GFDOCKER_GFARMS3_CACHE_BASEDIR
 CACHE_SIZE=$GFDOCKER_GFARMS3_CACHE_SIZE
@@ -46,30 +50,59 @@ MY_IPADDR=$(dig $MY_HOSTNAME +short)
 install_package_for_centos() {
     ${SUDO} yum update -y
     ${SUDO} yum install -y \
-        httpd \
-        mod_ssl \
         uuid \
         myproxy \
         python3-devel \
         python3-pip \
         nodejs
 
-    ### nginx is not supported yet
-    #${SUDO} yum install -y nginx
+    case $FRONT_WEBSERVER in
+        apache)
+            ${SUDO} yum install -y httpd mod_ssl
+            ;;
+        nginx)
+            ${SUDO} yum install -y nginx
+            ;;
+        *)
+            exit 1
+            ;;
+    esac
 }
 
 install_package_for_ubuntu() {
     ${SUDO} apt-get update
     ${SUDO} apt-get upgrade -y
+    case $GFDOCKER_PRJ_NAME in
+        ubuntu1804-*)
+            # for npm:
+            #   npm : Depends: node-gyp (>= 0.10.9) but it is not going
+            #   to be installed
+            ${SUDO} apt-get install -y \
+                    nodejs-dev node-gyp libssl1.0-dev
+            ;;
+    esac
     ${SUDO} apt-get install -y \
-        curl \
-        apache2 \
         uuid \
         myproxy \
         python3 \
         python3-pip \
         python3-dev \
         npm
+
+    # to download awscli
+    ${SUDO} apt-get install -y curl
+
+    case $FRONT_WEBSERVER in
+        apache)
+            ${SUDO} apt-get install -y apache2
+            ;;
+        nginx)
+            ${SUDO} apt-get install -y nginx
+            ;;
+        *)
+            exit 1
+            ;;
+    esac
 }
 
 install_package() {
@@ -80,7 +113,8 @@ install_package() {
         ubuntu*-*)
             install_package_for_ubuntu
             ;;
-       *)
+        *)
+            exit 1
             ;;
     esac
 }
@@ -88,11 +122,11 @@ install_package() {
 install_prerequisites() {
     install_package
 
-    ${SUDO} python3 -m pip install Django
-    ${SUDO} python3 -m pip install gunicorn
+    ${SUDO} python3 -m pip install -q Django
+    ${SUDO} python3 -m pip install -q gunicorn
 
     ## for test.py
-    ${SUDO} python3 -m pip install boto3
+    ${SUDO} python3 -m pip install -q boto3
 }
 
 create_certificate() {
@@ -125,38 +159,47 @@ create_certificate() {
             ${SUDO} mkdir -p $SERVER_CERT_DIR
             ${SUDO} chmod 700 $SERVER_CERT_DIR
             ;;
-       *)
+        *)
+            exit 1
             ;;
     esac
 
-    ${SUDO} mkdir -p $GFARM_CA_CERT_DIR
-    ${SUDO} cp ca.crt $GFARM_CA_CERT_DIR
-    ${SUDO} chown root:root $GFARM_CA_CERT_DIR/ca.crt
+    GFARM_CA_CERT=$GFARM_CA_CERT_DIR/ca.crt
+    SERVER_CERT=$SERVER_CERT_DIR/server.crt
+    SERVER_KEY=$SERVER_KEY_DIR/server.key
 
-    ${SUDO} $SYSTEM_CERT_UPDATE
+    if [ ! -f $GFARM_CA_CERT ]; then
+        ${SUDO} mkdir -p $GFARM_CA_CERT_DIR
+        ${SUDO} cp ca.crt $GFARM_CA_CERT_DIR
+        ${SUDO} chown root:root $GFARM_CA_CERT
 
-    ${SUDO} cp server.crt $SERVER_CERT_DIR
-    ${SUDO} chown root:root $SERVER_CERT_DIR/server.crt
-    ${SUDO} chmod 644 $SERVER_CERT_DIR/server.crt
+        ${SUDO} $SYSTEM_CERT_UPDATE
 
-    ${SUDO} cp server.key $SERVER_KEY_DIR
-    ${SUDO} chown root:root $SERVER_KEY_DIR
-    ${SUDO} chmod 600 $SERVER_KEY_DIR/server.key
+        ${SUDO} cp server.crt $SERVER_CERT
+        ${SUDO} chown root:root $SERVER_CERT
+        ${SUDO} chmod 644 $SERVER_CERT
+
+        ${SUDO} cp server.key $SERVER_KEY
+        ${SUDO} chown root:root $SERVER_KEY
+        ${SUDO} chmod 600 $SERVER_KEY
+    fi
 }
 
-deploy_http_server_for_centos() {
-    cat <<EOF | sed -e "s;@SERVER_CRT@;$SERVER_CRT;" \
-                    -e "s;@SERVER_KEY@;$SERVER_KEY;" \
-                    -e "s;@HTTPD_COMMON_CONF@;$HTTPD_COMMON_CONF;" \
-                    | ${SUDO} dd of=$HTTPD_CONF
-ServerName ${MY_HOSTNAME}
+deploy_apache_for_centos() {
+    cat <<'EOF' \
+        | sed -e "s;@SERVER_CERT@;$SERVER_CERT;" \
+              -e "s;@SERVER_KEY@;$SERVER_KEY;" \
+              -e "s;@HTTPD_COMMON_CONF@;$HTTPD_COMMON_CONF;" \
+              -e "s;@MY_HOSTNAME@;$MY_HOSTNAME;" \
+        | ${SUDO} dd of="$HTTPD_CONF"
+ServerName @MY_HOSTNAME@
 <VirtualHost *:80>
 	Include @HTTPD_COMMON_CONF@
 </VirtualHost>
 
 <VirtualHost *:443>
 	SSLEngine on
-	SSLCertificateFile @SERVER_CRT@
+	SSLCertificateFile @SERVER_CERT@
 	SSLCertificateKeyFile @SERVER_KEY@
 	Include @HTTPD_COMMON_CONF@
 </VirtualHost>
@@ -180,27 +223,27 @@ EOF
     ${SUDO} chmod og+rX /var/log/httpd
 }
 
-deploy_http_server_for_ubuntu() {
-    ${SUDO} apt-get install -y language-pack-ja language-pack-en
-
-    cat <<EOF | sed -e "s;@SERVER_CRT@;$SERVER_CRT;" \
-                    -e "s;@SERVER_KEY@;$SERVER_KEY;" \
-                    -e "s;@HTTPD_COMMON_CONF@;$HTTPD_COMMON_CONF;" \
-                    | ${SUDO} dd of=$HTTPD_CONF
-ServerName ${MY_HOSTNAME}
+deploy_apache_for_ubuntu() {
+    cat <<'EOF' \
+        | sed -e "s;@SERVER_CERT@;$SERVER_CERT;" \
+            -e "s;@SERVER_KEY@;$SERVER_KEY;" \
+            -e "s;@HTTPD_COMMON_CONF@;$HTTPD_COMMON_CONF;" \
+            -e "s;@MY_HOSTNAME@;$MY_HOSTNAME;" \
+        | ${SUDO} dd of=$HTTPD_CONF
+ServerName @MY_HOSTNAME@
 <VirtualHost *:80>
 	Include @HTTPD_COMMON_CONF@
 </VirtualHost>
 
 <VirtualHost *:443>
 	SSLEngine on
-	SSLCertificateFile @SERVER_CRT@
+	SSLCertificateFile @SERVER_CERT@
 	SSLCertificateKeyFile @SERVER_KEY@
 	Include @HTTPD_COMMON_CONF@
 </VirtualHost>
 EOF
 
-    cat <<EOF | ${SUDO} dd of=$HTTPD_COMMON_CONF
+    cat <<EOF | ${SUDO} dd of="$HTTPD_COMMON_CONF"
 DocumentRoot $HTTPD_DocumentRoot
 ServerAdmin root@localhost
 CustomLog /var/log/apache2/access_log common
@@ -231,43 +274,133 @@ EOF
     ${SUDO} systemctl restart $HTTPD_UNIT_NAME
 }
 
-deploy_http_server() {
-    SERVER_CRT=$SERVER_CERT_DIR/server.crt
-    SERVER_KEY=$SERVER_KEY_DIR/server.key
-    HTTPD_DocumentRoot=/usr/local/share/www
-    INDEX_HTML="${HTTPD_DocumentRoot}/index.html"
-
+deploy_apache() {
     case $GFDOCKER_PRJ_NAME in
         centos*-*)
             HTTPD_UNIT_NAME=httpd
             HTTPD_CONF=/etc/httpd/conf.d/myserver.conf
             HTTPD_COMMON_CONF=/etc/httpd/conf.d/myserver-common.conf
-            deploy_http_server_for_centos
+            deploy_apache_for_centos
             ;;
         ubuntu*-*)
             HTTPD_UNIT_NAME=apache2
             HTTPD_CONF=/etc/apache2/sites-available/myserver.conf
             HTTPD_COMMON_CONF=/etc/apache2/sites-available/myserver-common.conf
-            deploy_http_server_for_ubuntu
+            deploy_apache_for_ubuntu
             ;;
-       *)
+        *)
+            exit 1
             ;;
     esac
 
     ${SUDO} systemctl enable $HTTPD_UNIT_NAME
+}
+
+gen_nginx_conf() {
+    CONF="$1"
+
+    cat <<'EOF' \
+        | sed -e "s;@HTTPD_DocumentRoot@;$HTTPD_DocumentRoot;" \
+              -e "s;@SERVER_CERT@;$SERVER_CERT;" \
+              -e "s;@SERVER_KEY@;$SERVER_KEY;" \
+              -e "s;@MY_HOSTNAME@;$MY_HOSTNAME;" \
+        | ${SUDO} dd of="$CONF"
+server {
+  listen 80;
+  listen [::]:80;
+
+  listen 443 ssl;
+  listen [::]:443 ssl;
+
+  ssl_certificate @SERVER_CERT@;
+  ssl_certificate_key @SERVER_KEY@;
+
+  root @HTTPD_DocumentRoot@;
+  index index.html index.htm;
+
+  server_name @MY_HOSTNAME@;
+
+  client_max_body_size 16m;
+
+  location / {
+    proxy_set_header Host $http_host;
+    proxy_set_header X-Forwarded-Host $host:$server_port;
+    proxy_set_header X-Forwarded-Server $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+    if ($http_authorization ~ "AWS4-HMAC-SHA256.*") {
+      proxy_pass http://127.0.0.1:8001;
+      break;
+    }
+  }
+
+  location /gfarm/ {
+    proxy_pass http://127.0.0.1:8000;
+  }
+
+  location /static/ {
+    alias /home/wsgi/static/;
+    autoindex off;
+  }
+}
+EOF
+}
+
+deploy_nginx_for_centos() {
+    NGINX_GFARM_CONF=/etc/nginx/conf.d/gfarm.conf
+
+    gen_nginx_conf "$NGINX_GFARM_CONF"
+}
+
+deploy_nginx_for_ubuntu() {
+    NGINX_SITE_AVAILABLE=/etc/nginx/sites-available
+    NGINX_SITE_ENABLED=/etc/nginx/sites-enabled
+    NGINX_GFARM_AVAILABLE="$NGINX_SITE_AVAILABLE/gfarm"
+    NGINX_GFARM_ENABLED="$NGINX_SITE_ENABLED/gfarm"
+    NGINX_DEFAULT_ENABLED="$NGINX_SITE_ENABLED/default"
+
+    gen_nginx_conf "$NGINX_GFARM_AVAILABLE"
+
+    ${SUDO} ln -f -s "$NGINX_GFARM_AVAILABLE" "$NGINX_GFARM_ENABLED"
+    ${SUDO} rm -f "$NGINX_DEFAULT_ENABLED"
+}
+
+deploy_nginx() {
+    case $GFDOCKER_PRJ_NAME in
+        centos*-*)
+            deploy_nginx_for_centos
+            ;;
+        ubuntu*-*)
+            deploy_nginx_for_ubuntu
+            ;;
+        *)
+            exit 1
+            ;;
+    esac
+}
+
+deploy_http_server() {
+    #HTTPD_DocumentRoot=/usr/local/share/www
+    HTTPD_DocumentRoot=/var/www/html
+    INDEX_HTML="${HTTPD_DocumentRoot}/index.html"
+
+    case $FRONT_WEBSERVER in
+        apache)
+            deploy_apache
+            ;;
+        nginx)
+            deploy_nginx
+            ;;
+        *)
+            exit 1
+            ;;
+    esac
 
     if [ ! -f "$INDEX_HTML" ]; then
         ${SUDO} mkdir -p "$HTTPD_DocumentRoot"
-#       echo "gfarm -- $(date)" | ${SUDO} dd of="$INDEX_HTML"
         echo '<a href="/gfarm/console">Gfarm-S3</a>' |
-                ${SUDO} dd of="$INDEX_HTML" oflag=append
+                ${SUDO} dd of="$INDEX_HTML"
     fi
-
-    ### nginx is not supported yet
-    #vi /etc/nginx/nginx.conf
-    #systemctl enable nginx.service
-    ## debug
-    #chmod o+rx /var/log/nginx
 }
 
 install_gfarm_s3() {
@@ -295,19 +428,34 @@ install_gfarm_s3() {
     cd -
 }
 
+setup_apache() {
+    ## edit HTTPD's configfile (i.e. myserver-common.conf)
+    tmpfile=$(mktemp /tmp/XXXXXX) || exit 1
+    (cat $HTTPD_COMMON_CONF
+    cat $WORKDIR/gfarm-s3-minio-web/etc/apache-gfarm-s3.conf
+    ) >$tmpfile
+    ${SUDO} cp $WORKDIR/gfarm-s3-minio-web/etc/e403.html $HTTPD_DocumentRoot/e403.html
+    ${SUDO} chown --reference=$HTTPD_COMMON_CONF $tmpfile
+    ${SUDO} chgrp --reference=$HTTPD_COMMON_CONF $tmpfile
+    ${SUDO} chmod --reference=$HTTPD_COMMON_CONF $tmpfile
+    ${SUDO} mv $tmpfile $HTTPD_COMMON_CONF
+    ${SUDO} systemctl restart $HTTPD_UNIT_NAME
+}
+
+setup_nginx() {
+    ${SUDO} systemctl restart nginx
+}
+
 configure_gfarm_s3() {
-    ## create cache directory
+    ## create cache directory for S3 multipart
     ${SUDO} mkdir -p $CACHE_BASEDIR
     ${SUDO} chmod 1777 $CACHE_BASEDIR
 
-    ## create shared directory
-    gfmkdir -p ${SHARED_DIR#/} || true
-    gfchmod 0755 ${SHARED_DIR#/} || true
+    ## create shared directory on Gfarm
+    gfmkdir -p ${SHARED_DIR#/}
+    gfchmod 0755 ${SHARED_DIR#/}
 
     . ${GFARM_S3_PREFIX}/etc/gfarm-s3.conf
-
-    echo 'user1 ALL=(user1) NOPASSWD: ALL' |
-        ${SUDO} dd of=/etc/sudoers.d/gfarm-s3-user1 oflag=append
 
     ## register users
     for u in $USERS; do
@@ -328,18 +476,17 @@ configure_gfarm_s3() {
         gfsudo gfchown $global_user $shared_dir_user
     done
 
-    ## edit HTTPD's configfile (i.e. myserver-common.conf)
-    tmpfile=$(mktemp /tmp/XXXXXX) || exit 1
-    (cat $HTTPD_COMMON_CONF
-    cat $WORKDIR/gfarm-s3-minio-web/etc/apache-gfarm-s3.conf
-    ) >$tmpfile
-    ${SUDO} cp $WORKDIR/gfarm-s3-minio-web/etc/e403.html $HTTPD_DocumentRoot/e403.html
-    ${SUDO} systemctl stop $HTTPD_UNIT_NAME
-    ${SUDO} chown --reference=$HTTPD_COMMON_CONF $tmpfile
-    ${SUDO} chgrp --reference=$HTTPD_COMMON_CONF $tmpfile
-    ${SUDO} chmod --reference=$HTTPD_COMMON_CONF $tmpfile
-    ${SUDO} mv $tmpfile $HTTPD_COMMON_CONF
-    ${SUDO} systemctl start $HTTPD_UNIT_NAME
+    case $FRONT_WEBSERVER in
+        apache)
+            setup_apache
+            ;;
+        nginx)
+            setup_nginx
+            ;;
+        *)
+            exit 1
+            ;;
+    esac
 
     ## start gfarm-s3 WebUI service (gunicorn)
     ${SUDO} systemctl disable --now gunicorn.service
@@ -353,14 +500,6 @@ configure_gfarm_s3() {
 }
 
 install_aws_cli() {
-    case $GFDOCKER_PRJ_NAME in
-        ubuntu*-*)
-            ;;
-       *)
-            ;;
-    esac
-
-    # XXX TODO define in Dockerfile
     ## install AWS CLI v1
     #sudo yum install -y awscli
 
@@ -526,7 +665,7 @@ install_prerequisites
 ## create self signed certificate
 create_certificate
 
-## deploy apache http server
+## deploy http server
 deploy_http_server
 
 ## create user for wsgi
