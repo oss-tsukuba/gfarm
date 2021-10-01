@@ -1,6 +1,7 @@
 void user_init(void);
 void user_initial_entry(void);
 
+struct process;
 struct user;
 struct user *user_lookup_including_invalid(const char *);
 struct user *user_lookup_or_enter_invalid(const char *);
@@ -9,6 +10,15 @@ struct user *user_lookup_gsi_dn(const char *);
 char *user_name(struct user *);
 char *user_name_even_invalid(struct user *);
 char *user_name_with_invalid(struct user *);
+char *user_tenant_name(struct user *);
+char *user_tenant_name_even_invalid(struct user *);
+char *user_tenant_name_with_invalid(struct user *);
+char *user_tenant_name(struct user *);
+char *user_tenant_name_even_invalid(struct user *);
+char *user_tenant_name_with_invalid(struct user *);
+char *user_name_in_tenant(struct user *, struct process *);
+char *user_name_in_tenant_even_invalid(struct user *, struct process *);
+char *user_name_in_tenant_with_invalid(struct user *, struct process *);
 char *user_realname(struct user *);
 char *user_gsi_dn(struct user *);
 int user_is_invalid(struct user *);

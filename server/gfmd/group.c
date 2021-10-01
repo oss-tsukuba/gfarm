@@ -268,6 +268,23 @@ group_lookup_or_enter_invalid(const char *groupname)
 char *
 group_name(struct group *g)
 {
+	/* FIXME: MultiTenancy */
+	return (g != NULL && group_is_valid(g) ?
+	    g->groupname : REMOVED_GROUP_NAME);
+}
+
+char *
+group_ternant_name(struct group *g)
+{
+	/* FIXME: MultiTenancy */
+	return (g != NULL && group_is_valid(g) ?
+	    g->groupname : REMOVED_GROUP_NAME);
+}
+
+char *
+group_name_in_ternant(struct group *g, struct process *p)
+{
+	/* FIXME: MultiTenancy */
 	return (g != NULL && group_is_valid(g) ?
 	    g->groupname : REMOVED_GROUP_NAME);
 }
@@ -275,12 +292,42 @@ group_name(struct group *g)
 char *
 group_name_even_invalid(struct group *g)
 {
+	/* FIXME: MultiTenancy */
+	return (g != NULL ? g->groupname : REMOVED_GROUP_NAME);
+}
+
+char *
+group_tenant_name_even_invalid(struct group *g)
+{
+	/* FIXME: MultiTenancy */
+	return (g != NULL ? g->groupname : REMOVED_GROUP_NAME);
+}
+
+char *
+group_name_in_tenant_even_invalid(struct group *g, struct process *p)
+{
+	/* FIXME: MultiTenancy */
 	return (g != NULL ? g->groupname : REMOVED_GROUP_NAME);
 }
 
 char *
 group_name_with_invalid(struct group *g)
 {
+	/* FIXME: MultiTenancy */
+	return (g != NULL ? g->groupname : "");
+}
+
+char *
+group_tenant_name_with_invalid(struct group *g)
+{
+	/* FIXME: MultiTenancy */
+	return (g != NULL ? g->groupname : "");
+}
+
+char *
+group_name_in_tenant_with_invalid(struct group *g, struct process *p)
+{
+	/* FIXME: MultiTenancy */
 	return (g != NULL ? g->groupname : "");
 }
 

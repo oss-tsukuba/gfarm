@@ -323,6 +323,23 @@ user_lookup_or_enter_invalid(const char *username)
 char *
 user_name(struct user *u)
 {
+	/* FIXME: MultiTenancy */
+	return (u != NULL && user_is_valid(u) ?
+	    u->ui.username : REMOVED_USER_NAME);
+}
+
+char *
+user_tenant_name(struct user *u)
+{
+	/* FIXME: MultiTenancy */
+	return (u != NULL && user_is_valid(u) ?
+	    u->ui.username : REMOVED_USER_NAME);
+}
+
+char *
+user_name_in_tenant(struct user *u, struct process *p)
+{
+	/* FIXME: MultiTenancy */
 	return (u != NULL && user_is_valid(u) ?
 	    u->ui.username : REMOVED_USER_NAME);
 }
@@ -330,12 +347,42 @@ user_name(struct user *u)
 char *
 user_name_even_invalid(struct user *u)
 {
+	/* FIXME: MultiTenancy */
+	return (u != NULL ? u->ui.username : REMOVED_USER_NAME);
+}
+
+char *
+user_tenant_name_even_invalid(struct user *u)
+{
+	/* FIXME: MultiTenancy */
+	return (u != NULL ? u->ui.username : REMOVED_USER_NAME);
+}
+
+char *
+user_name_in_tenant_even_invalid(struct user *u, struct process *p)
+{
+	/* FIXME: MultiTenancy */
 	return (u != NULL ? u->ui.username : REMOVED_USER_NAME);
 }
 
 char *
 user_name_with_invalid(struct user *u)
 {
+	/* FIXME: MultiTenancy */
+	return (u != NULL ? u->ui.username : "");
+}
+
+char *
+user_tenant_name_with_invalid(struct user *u)
+{
+	/* FIXME: MultiTenancy */
+	return (u != NULL ? u->ui.username : "");
+}
+
+char *
+user_name_in_tenant_with_invalid(struct user *u, struct process *p)
+{
+	/* FIXME: MultiTenancy */
 	return (u != NULL ? u->ui.username : "");
 }
 
