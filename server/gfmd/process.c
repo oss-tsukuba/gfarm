@@ -152,8 +152,7 @@ process_alloc(struct user *user,
 	struct file_opening **filetab;
 	int fd;
 	gfarm_int32_t pid32;
-	gfarm_ino_t root_inum;
-	gfarm_uint64_t root_igen;
+	struct inode *root_inode;
 
 	if (process_id_table == NULL) {
 		process_id_table = gfarm_id_table_alloc(&process_id_table_ops);
@@ -172,7 +171,7 @@ process_alloc(struct user *user,
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
 
-	e = inode_lookup_tenant_root(user, &root_inum, &root_igen);
+	e = inode_lookup_user_root(user, &root_inode);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_info(GFARM_MSG_UNFIXED,
 		    "user %s: process_alloc failed, tenant root: %s",
@@ -204,8 +203,8 @@ process_alloc(struct user *user,
 	process->filetab = filetab;
 	for (fd = 0; fd < FILETAB_INITIAL; fd++)
 		filetab[fd] = NULL;
-	process->root_inum = root_inum;
-	process->root_igen = root_igen;
+	process->root_inum = inode_get_number(root_inode);
+	process->root_igen = inode_get_gen(root_inode);
 
 	*processp = process;
 	*pidp = pid32;

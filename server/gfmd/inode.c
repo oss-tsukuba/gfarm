@@ -3538,8 +3538,7 @@ inode_lookup_by_name(struct inode *base, const char *name,
 }
 
 gfarm_error_t
-inode_lookup_tenant_root(struct user *u,
-	gfarm_ino_t *root_inump, gfarm_uint64_t *root_igenp)
+inode_lookup_user_root(struct user *u, struct inode **inodep)
 {
 	gfarm_error_t e;
 	/* do not check inode_access() here */
@@ -3566,10 +3565,7 @@ inode_lookup_tenant_root(struct user *u,
 			return (GFARM_ERR_NOT_A_DIRECTORY);
 		root_inode = tenant_root_inode;
 	}
-	if (root_inump != NULL)
-		*root_inump = inode_get_number(root_inode);
-	if (root_igenp != NULL)
-		*root_igenp = inode_get_gen(root_inode);
+	*inodep = root_inode;
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -4465,6 +4461,7 @@ is_ok_to_move_to(struct inode *movee, struct inode *dst_dir)
 		if (!inode_is_dir(dir)) /* something is going wrong */
 			return (0);
 
+		/* do not stop at tenant root, check until real root */
 		if (inode_get_number(dir) == ROOT_INUMBER)
 			return (1);
 
@@ -5381,7 +5378,7 @@ inode_getdirpath(struct inode *inode, struct process *process, char **namep)
 	struct inode *parent, *dei;
 	int ok;
 	struct user *user = process_get_user(process);
-	struct inode *root = inode_lookup(ROOT_INUMBER);
+	struct inode *root;
 	Dir dir;
 	DirEntry entry;
 	DirCursor cursor;
@@ -5390,6 +5387,10 @@ inode_getdirpath(struct inode *inode, struct process *process, char **namep)
 	size_t totallen = 0;
 	int overflow = 0;
 	static const char diag[] = "inode_getdirpath";
+
+	e = inode_lookup_root(process, 0, &root);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
 
 	GFARM_MALLOC_ARRAY(names, max_depth);
 	if (names == NULL) {
@@ -8617,6 +8618,7 @@ inode_search_replica_spec(struct inode *dir,
 		if (inode_get_replica_spec(dir, repattrp, desired_numberp))
 			return (1);
 
+		/* do not stop at tenant root, check until real root */
 		if (inode_get_number(dir) == ROOT_INUMBER)
 			return (0);
 
@@ -8642,6 +8644,7 @@ inode_search_tdirset(struct inode *dir)
 		    != NULL)
 			return (dirset);
 
+		/* do not stop at tenant root, check until real root */
 		if (dir->i_number == ROOT_INUMBER)
 			return (TDIRSET_IS_NOT_SET);
 
