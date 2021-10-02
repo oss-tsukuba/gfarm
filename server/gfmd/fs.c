@@ -2406,7 +2406,8 @@ gfm_server_getdirpath(struct peer *peer, int from_client, int skip)
 static gfarm_error_t
 fs_dir_get(struct peer *peer, int from_client,
 	gfarm_int32_t *np, struct process **processp, gfarm_int32_t *fdp,
-	struct inode **inodep, Dir *dirp, DirCursor *cursorp, const char *diag)
+	struct inode **inodep, int *dir_is_rootp,
+	Dir *dirp, DirCursor *cursorp, const char *diag)
 {
 	gfarm_error_t e;
 	gfarm_int32_t n = *np;
@@ -2471,10 +2472,37 @@ fs_dir_get(struct peer *peer, int from_client,
 		*processp = process;
 		*fdp = fd;
 		*inodep = inode;
+		*dir_is_rootp =
+		    inode_get_number(inode) == process_get_root_inum(process)
+		    && inode_get_gen(inode) == process_get_root_igen(process);
 		*dirp = dir;
 		/* *cursorp = *cursorp; */
 		return (GFARM_ERR_NO_ERROR);
 	}
+}
+
+static gfarm_error_t
+fs_dir_cursor_get_name_and_inode(Dir dir,
+	int dir_is_root, struct process *process,
+	DirCursor *cursorp,
+	char **namep, struct inode **inodep)
+{
+	gfarm_error_t e = dir_cursor_get_name_and_inode(dir, cursorp,
+	    namep, inodep);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (dir_is_root && strcmp(*namep, "..") == 0) {
+		struct inode *dot_inode =
+		    inode_lookup(process_get_root_inum(process));
+
+		if (dot_inode == NULL)
+			return (GFARM_ERR_STALE_FILE_HANDLE);
+		if (inode_get_gen(dot_inode) != process_get_root_igen(process))
+			return (GFARM_ERR_STALE_FILE_HANDLE);
+		*inodep = dot_inode;
+	}
+	return (GFARM_ERR_NO_ERROR);
 }
 
 /* remember current position */
@@ -2507,6 +2535,7 @@ gfm_server_getdirents(struct peer *peer, int from_client, int skip)
 	gfarm_int32_t fd, n, i;
 	struct process *process;
 	struct inode *inode, *entry_inode;
+	int dir_is_root;
 	Dir dir;
 	DirCursor cursor;
 	struct dir_result_rec {
@@ -2523,8 +2552,8 @@ gfm_server_getdirents(struct peer *peer, int from_client, int skip)
 		return (GFARM_ERR_NO_ERROR);
 	giant_lock();
 
-	if ((e_rpc = fs_dir_get(peer, from_client, &n, &process, &fd,
-	    &inode, &dir, &cursor, diag)) != GFARM_ERR_NO_ERROR) {
+	if ((e_rpc = fs_dir_get(peer, from_client, &n, &process, &fd, &inode,
+	    &dir_is_root, &dir, &cursor, diag)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001920, "fs_dir_get() failed: %s",
 			gfarm_error_string(e_rpc));
 	} else if (n > 0 && GFARM_MALLOC_ARRAY(p,  n) == NULL) {
@@ -2532,7 +2561,8 @@ gfm_server_getdirents(struct peer *peer, int from_client, int skip)
 		e_rpc = GFARM_ERR_NO_MEMORY;
 	} else { /* note: (n == 0) means the end of the directory */
 		for (i = 0; i < n; ) {
-			if ((e_rpc = dir_cursor_get_name_and_inode(dir, &cursor,
+			if ((e_rpc = fs_dir_cursor_get_name_and_inode(
+			    dir, dir_is_root, process, &cursor,
 			    &p[i].name, &entry_inode)) != GFARM_ERR_NO_ERROR ||
 			    p[i].name == NULL)
 				break;
@@ -2587,6 +2617,7 @@ gfm_server_getdirentsplus(struct peer *peer, int from_client, int skip)
 	gfarm_int32_t fd, n, i;
 	struct process *process;
 	struct inode *inode, *entry_inode;
+	int dir_is_root;
 	Dir dir;
 	DirCursor cursor;
 	struct dir_result_rec {
@@ -2603,7 +2634,8 @@ gfm_server_getdirentsplus(struct peer *peer, int from_client, int skip)
 	giant_lock();
 
 	if ((e_rpc = fs_dir_get(peer, from_client, &n, &process, &fd,
-	    &inode, &dir, &cursor, diag)) != GFARM_ERR_NO_ERROR) {
+	    &inode, &dir_is_root, &dir, &cursor, diag))
+	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001923, "fs_dir_get() failed: %s",
 		    gfarm_error_string(e_rpc));
 	} else if (n > 0 && GFARM_MALLOC_ARRAY(p,  n) == NULL) {
@@ -2611,7 +2643,8 @@ gfm_server_getdirentsplus(struct peer *peer, int from_client, int skip)
 		e_rpc = GFARM_ERR_NO_MEMORY;
 	} else { /* note: (n == 0) means the end of the directory */
 		for (i = 0; i < n; ) {
-			if ((e_rpc = dir_cursor_get_name_and_inode(dir, &cursor,
+			if ((e_rpc = fs_dir_cursor_get_name_and_inode(
+			    dir, dir_is_root, process, &cursor,
 			    &p[i].name, &entry_inode)) != GFARM_ERR_NO_ERROR ||
 			    p[i].name == NULL) {
 				gflog_debug(GFARM_MSG_1001925,
@@ -2686,6 +2719,7 @@ gfm_server_getdirentsplusxattr(struct peer *peer, int from_client, int skip)
 	char **attrpatterns;
 	struct process *process;
 	struct inode *inode, *entry_inode;
+	int dir_is_root;
 	Dir dir;
 	DirCursor cursor;
 	struct dir_result_rec {
@@ -2715,7 +2749,8 @@ gfm_server_getdirentsplusxattr(struct peer *peer, int from_client, int skip)
 	if (attrpatterns == NULL) {
 		e_rpc = GFARM_ERR_NO_MEMORY;
 	} else if ((e_rpc = fs_dir_get(peer, from_client, &n, &process, &fd,
-	    &inode, &dir, &cursor, diag)) != GFARM_ERR_NO_ERROR) {
+	    &inode, &dir_is_root, &dir, &cursor, diag))
+	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002504, "fs_dir_get() failed: %s",
 		    gfarm_error_string(e_rpc));
 	} else if (n > 0 && GFARM_CALLOC_ARRAY(p,  n) == NULL) {
@@ -2723,7 +2758,8 @@ gfm_server_getdirentsplusxattr(struct peer *peer, int from_client, int skip)
 		e_rpc = GFARM_ERR_NO_MEMORY;
 	} else { /* NOTE: (n == 0) means the end of the directory */
 		for (i = 0; i < n; ) {
-			if ((e_rpc = dir_cursor_get_name_and_inode(dir, &cursor,
+			if ((e_rpc = fs_dir_cursor_get_name_and_inode(
+			    dir, dir_is_root, process, &cursor,
 			    &p[i].name, &entry_inode)) != GFARM_ERR_NO_ERROR ||
 			    p[i].name == NULL) {
 				gflog_debug(GFARM_MSG_1002506,
