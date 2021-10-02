@@ -3685,6 +3685,13 @@ inode_create_link_internal(struct inode *base, const char *name,
 	    INODE_LINK, user, 0, NULL, &inode, NULL));
 }
 
+static gfarm_error_t
+inode_create_link_only(struct inode *base, const char *name,
+	struct process *process, struct inode *inode)
+{
+	return (inode_lookup_relative(base, name, GFS_DT_UNKNOWN,
+	    INODE_LINK, process, 0, NULL, &inode, NULL));
+}
 
 gfarm_error_t
 inode_create_link(struct inode *base, char *name,
@@ -3692,8 +3699,7 @@ inode_create_link(struct inode *base, char *name,
 {
 	gfarm_error_t e;
 
-	e = inode_create_link_internal(base, name, process_get_user(process),
-	    inode);
+	e = inode_create_link_only(base, name, process, inode);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
@@ -4627,7 +4633,7 @@ inode_rename(
 
 	/*
 	 * make sure that src has inode_activity,
-	 * otherwise inode_create_link_internal() may fail
+	 * otherwise inode_create_link_only() may fail
 	 */
 	fo = file_opening_alloc(src, peer, NULL, GFARM_FILE_LOOKUP);
 	if (fo == NULL)
@@ -4703,7 +4709,7 @@ inode_rename(
 
 		src->u.c.activity->tdirset = dst_tdirset;
 	}
-	e = inode_create_link_internal(ddir, dname, user, src);
+	e = inode_create_link_only(ddir, dname, process, src);
 	if (e != GFARM_ERR_NO_ERROR) {
 		/* undo src tdirset change */
 		if (dirquota_adjust || dirquota_root_adjust) {
