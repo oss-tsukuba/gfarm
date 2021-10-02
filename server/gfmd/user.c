@@ -690,6 +690,9 @@ user_is_root_for_inode(struct user *user, struct inode *inode)
 {
 	static struct group *root = NULL;
 
+	if (user == &filesystem_superuser)
+		return (1);
+
 	if (root == NULL)
 		root = group_lookup(ROOT_GROUP_NAME);
 	if (user_in_group(user, root))
