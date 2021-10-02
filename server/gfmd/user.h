@@ -9,16 +9,10 @@ struct user *user_lookup(const char *);
 struct user *user_lookup_gsi_dn(const char *);
 char *user_name(struct user *);
 char *user_name_even_invalid(struct user *);
-char *user_name_with_invalid(struct user *);
 char *user_tenant_name(struct user *);
 char *user_tenant_name_even_invalid(struct user *);
-char *user_tenant_name_with_invalid(struct user *);
-char *user_tenant_name(struct user *);
-char *user_tenant_name_even_invalid(struct user *);
-char *user_tenant_name_with_invalid(struct user *);
 char *user_name_in_tenant(struct user *, struct process *);
 char *user_name_in_tenant_even_invalid(struct user *, struct process *);
-char *user_name_in_tenant_with_invalid(struct user *, struct process *);
 char *user_get_tenant_name(struct user *);
 char *user_realname(struct user *);
 char *user_gsi_dn(struct user *);
@@ -46,6 +40,7 @@ gfarm_error_t user_remove_dirset(struct user *, const char *);
 struct dirsets;
 struct dirsets *user_get_dirsets(struct user *);
 
+#define TENANT_DELIMITER	'+'
 extern struct user filesystem_superuser;
 extern char ADMIN_USER_NAME[];
 

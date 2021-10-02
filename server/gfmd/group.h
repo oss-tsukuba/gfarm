@@ -26,13 +26,11 @@ gfarm_error_t grpassign_add(struct user *, struct group *);
 void grpassign_remove(struct group_assignment *);
 char *group_name(struct group *);
 char *group_name_even_invalid(struct group *);
-char *group_name_with_invalid(struct group *);
 char *group_tenant_name(struct group *);
 char *group_tenant_name_even_invalid(struct group *);
-char *group_tenant_name_with_invalid(struct group *);
 char *group_name_in_tenant(struct group *, struct process *);
 char *group_name_in_tenant_even_invalid(struct group *, struct process *);
-char *group_name_in_tenant_with_invalid(struct group *, struct process *);
+char *group_get_tenant_name(struct group *);
 int group_is_invalid(struct group *);
 int group_is_valid(struct group *);
 

@@ -28,11 +28,10 @@
 #include "dirset.h"
 #include "peer.h"
 #include "quota.h"
+#include "process.h"
 
 #define USER_HASHTAB_SIZE	3079	/* prime number */
 #define USER_DN_HASHTAB_SIZE	3079	/* prime number */
-
-#define TENANT_DELIMITER	'+'
 
 /* in-core gfarm_user_info */
 struct user {
@@ -42,6 +41,10 @@ struct user {
 	struct gfarm_quota_subject_info usage_tmp;
 	struct dirsets *dirsets;
 	int invalid;	/* set when deleted */
+
+	int needs_chroot;
+	char *tenant_name;
+	char *name_in_tenant;
 };
 
 /* used to access "/tenantes/${TENANT}", not registered in hashtabs */
@@ -62,6 +65,7 @@ struct user filesystem_superuser = {
 
 char ADMIN_USER_NAME[] = "gfarmadm";
 char REMOVED_USER_NAME[] = "gfarm-removed-user";
+char UNKNOWN_USER_NAME[] = "gfarm-unknown-user";
 
 static struct gfarm_hash_table *user_hashtab = NULL;
 static struct gfarm_hash_table *user_dn_hashtab = NULL;
@@ -178,6 +182,7 @@ user_enter(struct gfarm_user_info *ui, struct user **upp)
 	struct gfarm_hash_entry *entry;
 	int created;
 	struct user *u;
+	char *delim, *name_in_tenant;
 	gfarm_error_t e;
 
 	u = user_lookup_including_invalid(ui->username);
@@ -203,10 +208,31 @@ user_enter(struct gfarm_user_info *ui, struct user **upp)
 		}
 	}
 
+	delim = strchr(ui->username, TENANT_DELIMITER);
+	if (delim == NULL) {
+		name_in_tenant = strdup_log(ui->username, "user_enter");
+		if (name_in_tenant == NULL)
+			return (GFARM_ERR_NO_MEMORY);
+		delim = ui->username + strlen(ui->username); /* i.e. "" */
+	} else {
+		size_t len = delim - ui->username;
+
+		name_in_tenant = malloc(len + 1);
+		if (name_in_tenant == NULL) {
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "user_enter(%s): no memory", ui->username);
+			return (GFARM_ERR_NO_MEMORY);
+		}
+		memcpy(name_in_tenant, ui->username, len);
+		name_in_tenant[len] = '\0';
+		++delim;
+	}
+
 	GFARM_MALLOC(u);
 	if (u == NULL) {
 		gflog_debug(GFARM_MSG_1001493,
 			"allocation of 'user' failed");
+		free(name_in_tenant);
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	u->ui = *ui;
@@ -215,12 +241,14 @@ user_enter(struct gfarm_user_info *ui, struct user **upp)
 	    &u->ui.username, sizeof(u->ui.username), sizeof(struct user *),
 	    &created);
 	if (entry == NULL) {
+		free(name_in_tenant);
 		free(u);
 		gflog_debug(GFARM_MSG_1001494,
 			"gfarm_hash_enter() failed");
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	if (!created) {
+		free(name_in_tenant);
 		free(u);
 		gflog_debug(GFARM_MSG_1001495,
 			"Entry already exists");
@@ -230,6 +258,7 @@ user_enter(struct gfarm_user_info *ui, struct user **upp)
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfarm_hash_purge(user_hashtab,
 		    &u->ui.username, sizeof(u->ui.username));
+		free(name_in_tenant);
 		free(u);
 		return (e);
 	}
@@ -239,6 +268,11 @@ user_enter(struct gfarm_user_info *ui, struct user **upp)
 	u->groups.group_prev = u->groups.group_next = &u->groups;
 	*(struct user **)gfarm_hash_entry_data(entry) = u;
 	user_validate(u);
+
+	u->needs_chroot = delim[0] != '\0';
+	u->tenant_name = delim;
+	u->name_in_tenant = name_in_tenant;
+
 	if (upp != NULL)
 		*upp = u;
 	return (GFARM_ERR_NO_ERROR);
@@ -349,7 +383,6 @@ user_name(struct user *u)
 char *
 user_tenant_name(struct user *u)
 {
-	/* FIXME: MultiTenancy */
 	return (u != NULL && user_is_valid(u) ?
 	    u->ui.username : REMOVED_USER_NAME);
 }
@@ -357,9 +390,10 @@ user_tenant_name(struct user *u)
 char *
 user_name_in_tenant(struct user *u, struct process *p)
 {
-	/* FIXME: MultiTenancy */
-	return (u != NULL && user_is_valid(u) ?
-	    u->ui.username : REMOVED_USER_NAME);
+	if (u == NULL || !user_is_valid(u))
+		return (REMOVED_USER_NAME);
+	else
+		return (user_name_in_tenant_even_invalid(u, p));
 }
 
 char *
@@ -372,46 +406,24 @@ user_name_even_invalid(struct user *u)
 char *
 user_tenant_name_even_invalid(struct user *u)
 {
-	/* FIXME: MultiTenancy */
 	return (u != NULL ? u->ui.username : REMOVED_USER_NAME);
 }
 
 char *
 user_name_in_tenant_even_invalid(struct user *u, struct process *p)
 {
-	/* FIXME: MultiTenancy */
-	return (u != NULL ? u->ui.username : REMOVED_USER_NAME);
-}
-
-char *
-user_name_with_invalid(struct user *u)
-{
-	/* FIXME: MultiTenancy */
-	return (u != NULL ? u->ui.username : "");
-}
-
-char *
-user_tenant_name_with_invalid(struct user *u)
-{
-	/* FIXME: MultiTenancy */
-	return (u != NULL ? u->ui.username : "");
-}
-
-char *
-user_name_in_tenant_with_invalid(struct user *u, struct process *p)
-{
-	/* FIXME: MultiTenancy */
-	return (u != NULL ? u->ui.username : "");
+	if (u == NULL)
+		return (REMOVED_USER_NAME);
+	else if (strcmp(u->tenant_name, process_get_tenant_name(p)) == 0)
+		return (u->name_in_tenant);
+	else
+		return (UNKNOWN_USER_NAME);
 }
 
 char *
 user_get_tenant_name(struct user *u)
 {
-	char *p = strchr(u->ui.username, TENANT_DELIMITER);
-
-	if (p == NULL)
-		return ("");
-	return (p + 1);
+	return (u->tenant_name);
 }
 
 char *

@@ -253,7 +253,7 @@ quota_update_usage_user(void *closure, struct user *u)
 		gflog_notice(GFARM_MSG_1004294,
 		    "quota_check: removed user(%s), Usage: "
 		    "space=%lld, inodes=%lld, phys_space=%lld, phys_num=%lld",
-		    user_name_with_invalid(u),
+		    user_tenant_name_even_invalid(u),
 		    (long long)q->space, (long long)q->num,
 		    (long long)q->phy_space, (long long)q->phy_num);
 #endif
@@ -273,7 +273,7 @@ quota_update_usage_group(void *closure, struct group *g)
 		gflog_notice(GFARM_MSG_1004295,
 		    "quota_check: removed group(%s), Usage: "
 		    "space=%lld, inodes=%lld, phys_space=%lld, phys_num=%lld",
-		    group_name_with_invalid(g),
+		    group_tenant_name_even_invalid(g),
 		    (long long)q->space, (long long)q->num,
 		    (long long)q->phy_space, (long long)q->phy_num);
 #endif

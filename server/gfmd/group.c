@@ -26,6 +26,7 @@
 #include "group.h"
 #include "peer.h"
 #include "quota.h"
+#include "process.h"
 
 #define GROUP_HASHTAB_SIZE	3079	/* prime number */
 
@@ -35,11 +36,15 @@ struct group {
 	struct quota quota;
 	struct gfarm_quota_subject_info usage_tmp;
 	int invalid;	/* set when deleted */
+
+	char *tenant_name;
+	char *name_in_tenant;
 };
 
 char ADMIN_GROUP_NAME[] = "gfarmadm";
 char ROOT_GROUP_NAME[] = "gfarmroot";
 char REMOVED_GROUP_NAME[] = "gfarm-removed-group";
+char UNKNOWN_GROUP_NAME[] = "gfarm-unknown-group";
 
 static struct gfarm_hash_table *group_hashtab = NULL;
 
@@ -133,6 +138,7 @@ group_enter(char *groupname, struct group **gpp)
 	struct gfarm_hash_entry *entry;
 	int created;
 	struct group *g;
+	char *delim, *name_in_tenant;
 
 	g = group_lookup_including_invalid(groupname);
 	if (g != NULL) {
@@ -147,6 +153,26 @@ group_enter(char *groupname, struct group **gpp)
 			    "\"%s\" group already exists", group_name(g));
 			return (GFARM_ERR_ALREADY_EXISTS);
 		}
+	}
+
+	delim = strchr(groupname, TENANT_DELIMITER);
+	if (delim == NULL) {
+		name_in_tenant = strdup_log(groupname, "group_enter");
+		if (name_in_tenant == NULL)
+			return (GFARM_ERR_NO_MEMORY);
+		delim = groupname + strlen(groupname); /* i.e. "" */
+	} else {
+		size_t len = delim - groupname;
+
+		name_in_tenant = malloc(len + 1);
+		if (name_in_tenant == NULL) {
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "group_enter(%s): no memory", groupname);
+			return (GFARM_ERR_NO_MEMORY);
+		}
+		memcpy(name_in_tenant, groupname, len);
+		name_in_tenant[len] = '\0';
+		++delim;
 	}
 
 	GFARM_MALLOC(g);
@@ -176,6 +202,10 @@ group_enter(char *groupname, struct group **gpp)
 	g->users.user_prev = g->users.user_next = &g->users;
 	*(struct group **)gfarm_hash_entry_data(entry) = g;
 	group_validate(g);
+
+	g->tenant_name = delim;
+	g->name_in_tenant = name_in_tenant;
+
 	if (gpp != NULL)
 		*gpp = g;
 	return (GFARM_ERR_NO_ERROR);
@@ -276,7 +306,6 @@ group_name(struct group *g)
 char *
 group_ternant_name(struct group *g)
 {
-	/* FIXME: MultiTenancy */
 	return (g != NULL && group_is_valid(g) ?
 	    g->groupname : REMOVED_GROUP_NAME);
 }
@@ -284,9 +313,10 @@ group_ternant_name(struct group *g)
 char *
 group_name_in_ternant(struct group *g, struct process *p)
 {
-	/* FIXME: MultiTenancy */
-	return (g != NULL && group_is_valid(g) ?
-	    g->groupname : REMOVED_GROUP_NAME);
+	if (g == NULL || !group_is_valid(g))
+		return (REMOVED_GROUP_NAME);
+	else
+		return (group_name_in_tenant_even_invalid(g, p));
 }
 
 char *
@@ -299,36 +329,24 @@ group_name_even_invalid(struct group *g)
 char *
 group_tenant_name_even_invalid(struct group *g)
 {
-	/* FIXME: MultiTenancy */
 	return (g != NULL ? g->groupname : REMOVED_GROUP_NAME);
 }
 
 char *
 group_name_in_tenant_even_invalid(struct group *g, struct process *p)
 {
-	/* FIXME: MultiTenancy */
-	return (g != NULL ? g->groupname : REMOVED_GROUP_NAME);
+	if (g == NULL)
+		return (REMOVED_GROUP_NAME);
+	else if (strcmp(g->tenant_name, process_get_tenant_name(p)) == 0)
+		return (g->name_in_tenant);
+	else
+		return (UNKNOWN_GROUP_NAME);
 }
 
 char *
-group_name_with_invalid(struct group *g)
+group_get_tenant_name(struct group *g)
 {
-	/* FIXME: MultiTenancy */
-	return (g != NULL ? g->groupname : "");
-}
-
-char *
-group_tenant_name_with_invalid(struct group *g)
-{
-	/* FIXME: MultiTenancy */
-	return (g != NULL ? g->groupname : "");
-}
-
-char *
-group_name_in_tenant_with_invalid(struct group *g, struct process *p)
-{
-	/* FIXME: MultiTenancy */
-	return (g != NULL ? g->groupname : "");
+	return (g->tenant_name);
 }
 
 struct quota *

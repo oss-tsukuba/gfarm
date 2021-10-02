@@ -60,6 +60,7 @@ struct process {
 	int nfiles;
 	struct file_opening **filetab;
 
+	char *tenant_name;
 	gfarm_ino_t root_inum;
 	gfarm_uint64_t root_igen;
 };
@@ -203,6 +204,8 @@ process_alloc(struct user *user,
 	process->filetab = filetab;
 	for (fd = 0; fd < FILETAB_INITIAL; fd++)
 		filetab[fd] = NULL;
+
+	process->tenant_name = user_get_tenant_name(user);
 	process->root_inum = inode_get_number(root_inode);
 	process->root_igen = inode_get_gen(root_inode);
 
@@ -328,6 +331,12 @@ struct user *
 process_get_user(struct process *process)
 {
 	return (process->user);
+}
+
+char *
+process_get_tenant_name(struct process *process)
+{
+	return (process->tenant_name);
 }
 
 gfarm_ino_t
