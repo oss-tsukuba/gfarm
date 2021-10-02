@@ -3573,7 +3573,7 @@ inode_lookup_tenant_root(struct user *u,
 	return (GFARM_ERR_NO_ERROR);
 }
 
-struct inode *
+static struct inode *
 inode_lookup_lost_found(void)
 {
 	static gfarm_ino_t inum_lost_found = 0;
