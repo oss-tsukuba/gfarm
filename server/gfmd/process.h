@@ -17,6 +17,8 @@ void process_detach_peer(struct process *, struct peer *, const char *);
 
 gfarm_pid_t process_get_pid(struct process *);
 struct user *process_get_user(struct process *);
+gfarm_ino_t process_get_root_inum(struct process *);
+gfarm_uint64_t process_get_root_igen(struct process *);
 
 gfarm_error_t process_verify_fd(struct process *, struct peer *, int,
 	const char *);

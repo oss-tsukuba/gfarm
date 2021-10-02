@@ -19,6 +19,7 @@ char *user_tenant_name_with_invalid(struct user *);
 char *user_name_in_tenant(struct user *, struct process *);
 char *user_name_in_tenant_even_invalid(struct user *, struct process *);
 char *user_name_in_tenant_with_invalid(struct user *, struct process *);
+char *user_get_tenant_name(struct user *);
 char *user_realname(struct user *);
 char *user_gsi_dn(struct user *);
 int user_is_invalid(struct user *);
@@ -45,13 +46,14 @@ gfarm_error_t user_remove_dirset(struct user *, const char *);
 struct dirsets;
 struct dirsets *user_get_dirsets(struct user *);
 
-
+extern struct user filesystem_superuser;
 extern char ADMIN_USER_NAME[];
 
 struct group;
 int user_in_group(struct user *, struct group *);
 int user_is_admin(struct user *);
 int user_is_root(struct user *);
+int user_needs_chroot(struct user *);
 struct inode;
 int user_is_root_for_inode(struct user *, struct inode *);
 

@@ -32,6 +32,8 @@
 #define USER_HASHTAB_SIZE	3079	/* prime number */
 #define USER_DN_HASHTAB_SIZE	3079	/* prime number */
 
+#define TENANT_DELIMITER	'+'
+
 /* in-core gfarm_user_info */
 struct user {
 	struct gfarm_user_info ui;
@@ -40,6 +42,22 @@ struct user {
 	struct gfarm_quota_subject_info usage_tmp;
 	struct dirsets *dirsets;
 	int invalid;	/* set when deleted */
+};
+
+/* used to access "/tenantes/${TENANT}", not registered in hashtabs */
+struct user filesystem_superuser = {
+	{ "<filesystem>", "<filesystem>", "/", "" },
+	{ NULL,
+	  NULL,
+	  &filesystem_superuser.groups,
+	  &filesystem_superuser.groups,
+	  NULL,
+	  NULL,
+	},
+	{ 0 },
+	{ 0 },
+	NULL,
+	1
 };
 
 char ADMIN_USER_NAME[] = "gfarmadm";
@@ -387,6 +405,16 @@ user_name_in_tenant_with_invalid(struct user *u, struct process *p)
 }
 
 char *
+user_get_tenant_name(struct user *u)
+{
+	char *p = strchr(u->ui.username, TENANT_DELIMITER);
+
+	if (p == NULL)
+		return ("");
+	return (p + 1);
+}
+
+char *
 user_realname(struct user *u)
 {
 	return (u != NULL && user_is_valid(u) ?
@@ -501,6 +529,7 @@ user_in_group(struct user *user, struct group *group)
 int
 user_is_admin(struct user *user)
 {
+	/* protected by giant lock */
 	static struct group *admin = NULL;
 
 	if (admin == NULL)
@@ -511,11 +540,21 @@ user_is_admin(struct user *user)
 int
 user_is_root(struct user *user)
 {
+	/* protected by giant lock */
 	static struct group *root = NULL;
+
+	if (user == &filesystem_superuser)
+		return (1);
 
 	if (root == NULL)
 		root = group_lookup(ROOT_GROUP_NAME);
 	return (user_in_group(user, root));
+}
+
+int
+user_needs_chroot(struct user *user)
+{
+	return (strchr(user->ui.username, TENANT_DELIMITER) != NULL);
 }
 
 #define is_nl_cr(c)  ((c == '\n' || c == '\r' || c == '\0') ? 1 : 0)

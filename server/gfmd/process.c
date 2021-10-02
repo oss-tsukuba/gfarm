@@ -59,6 +59,9 @@ struct process {
 
 	int nfiles;
 	struct file_opening **filetab;
+
+	gfarm_ino_t root_inum;
+	gfarm_uint64_t root_igen;
 };
 
 static struct gfarm_id_table *process_id_table = NULL;
@@ -144,10 +147,13 @@ process_alloc(struct user *user,
 	gfarm_int32_t keytype, size_t keylen, char *sharedkey,
 	struct process **processp, gfarm_pid_t *pidp)
 {
+	gfarm_error_t e;
 	struct process *process;
 	struct file_opening **filetab;
 	int fd;
 	gfarm_int32_t pid32;
+	gfarm_ino_t root_inum;
+	gfarm_uint64_t root_igen;
 
 	if (process_id_table == NULL) {
 		process_id_table = gfarm_id_table_alloc(&process_id_table_ops);
@@ -165,6 +171,15 @@ process_alloc(struct user *user,
 			"'keytype' or 'keylen' is invalid");
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
+
+	e = inode_lookup_tenant_root(user, &root_inum, &root_igen);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "user %s: process_alloc failed, tenant root: %s",
+		    user_tenant_name(user), gfarm_error_string(e));
+		return (e);
+	}
+
 	GFARM_MALLOC_ARRAY(filetab, FILETAB_INITIAL);
 	if (filetab == NULL) {
 		gflog_debug(GFARM_MSG_1001595,
@@ -189,6 +204,8 @@ process_alloc(struct user *user,
 	process->filetab = filetab;
 	for (fd = 0; fd < FILETAB_INITIAL; fd++)
 		filetab[fd] = NULL;
+	process->root_inum = root_inum;
+	process->root_igen = root_igen;
 
 	*processp = process;
 	*pidp = pid32;
@@ -312,6 +329,18 @@ struct user *
 process_get_user(struct process *process)
 {
 	return (process->user);
+}
+
+gfarm_ino_t
+process_get_root_inum(struct process *process)
+{
+	return (process->root_inum);
+}
+
+gfarm_uint64_t
+process_get_root_igen(struct process *process)
+{
+	return (process->root_igen);
 }
 
 gfarm_error_t

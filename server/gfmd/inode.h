@@ -105,6 +105,8 @@ gfarm_error_t inode_lookup_parent(struct inode *, struct process *, int,
 	struct dirset **, struct inode **);
 gfarm_error_t inode_lookup_for_open(struct inode *, const char *,
 	struct process *, int, struct dirset **, struct inode **);
+gfarm_error_t inode_lookup_tenant_root(struct user *,
+	gfarm_ino_t *, gfarm_uint64_t *);
 gfarm_error_t inode_create_file(struct inode *, char *,
 	struct process *, int, gfarm_mode_t, int,
 	struct inode **, int *);
