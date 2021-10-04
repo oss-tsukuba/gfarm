@@ -6,7 +6,7 @@ set -o pipefail
 GFDOCKER_GFARMS3_UPDATE_ONLY=${GFDOCKER_GFARMS3_UPDATE_ONLY:-0}
 
 # user1 executes this script.
-SUDO="sudo -E"
+SUDO="sudo -E HOME=/root"
 SUDO_USER2="sudo sudo -u user2"
 
 case $GFDOCKER_PRJ_NAME in
@@ -23,11 +23,14 @@ if [ ! -d $GFARM_S3_MINIO_WEB_SRC ]; then
 fi
 
 ## choose parameters
+
+### clear files after containers are stopped
 WORKDIR=$HOME/tmp/work
 
-### /mnt: persistent directory
-### caching files for next build
-MINIO_BUILDDIR=/mnt/user1/tmp/work
+PERSISTENT_DIR=/mnt
+### temporary directory to cache files for next build
+PERSISTENT_TMPDIR=$PERSISTENT_DIR/user1/tmp/work
+MINIO_BUILDDIR=$PERSISTENT_TMPDIR
 
 GFARM_S3_PREFIX=/usr/local
 FRONT_WEBSERVER=$GFDOCKER_GFARMS3_FRONT_WEBSERVER
@@ -72,6 +75,7 @@ install_package_for_centos() {
 install_package_for_ubuntu() {
     ${SUDO} apt-get update
     ${SUDO} apt-get upgrade -y
+
     case $GFDOCKER_PRJ_NAME in
         ubuntu1804-*)
             # for npm:
@@ -81,13 +85,25 @@ install_package_for_ubuntu() {
                     nodejs-dev node-gyp libssl1.0-dev
             ;;
     esac
+    # install old npm to install new npm
+    ${SUDO} apt-get install -y npm
+    # old version
+    /usr/bin/npm --version || true  # may fail when re-installing
+    # install new npm (LTS version) with n
+    ${SUDO} npm install -g n
+    ${SUDO} n lts
+    # new version
+    /usr/local/bin/npm --version
+    # remove old version
+    ${SUDO} apt-get remove -y nodejs npm
+    ${SUDO} apt-get autoremove -y
+
     ${SUDO} apt-get install -y \
         uuid \
         myproxy \
         python3 \
         python3-pip \
-        python3-dev \
-        npm
+        python3-dev
 
     # to download awscli
     ${SUDO} apt-get install -y curl
@@ -506,15 +522,17 @@ install_aws_cli() {
     # install AWS CLI v2
     AWSCLI_URL="https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
     #AWSCLI_URL="https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip"
-    AWSCLI_ZIP=${WORKDIR}/awscliv2.zip
+    AWSCLI_ZIP=${PERSISTENT_TMPDIR}/awscliv2.zip
 
     if [ ! -f ${AWSCLI_ZIP} ]; then
         curl ${AWSCLI_URL} -o ${AWSCLI_ZIP}
-        cd ${WORKDIR}
-        # overwrite existing files
-        unzip -o ${AWSCLI_ZIP}
-        ${SUDO} ./aws/install --update
     fi
+
+    cd ${WORKDIR}
+    # overwrite existing files
+    unzip -o ${AWSCLI_ZIP}
+    ${SUDO} ./aws/install --update
+
     /usr/local/bin/aws --version
 }
 
@@ -562,12 +580,14 @@ install_goofys() {
     # ${GO} install ${GOOFYS_URL}
 
     ### use binary
-    GOOFYS_BIN_URL=https://github.com/kahing/goofys/releases/latest/download/goofys
+    GOOFYS_URL=https://github.com/kahing/goofys/releases/latest/download/goofys
+    GOOFYS_DOWNLOAD=${PERSISTENT_TMPDIR}/goofys
     GOOFYS_BIN=/usr/local/bin/goofys
-    if [ ! -f ${GOOFYS_BIN} ]; then
-        ${SUDO} wget -O ${GOOFYS_BIN} ${GOOFYS_BIN_URL}
-        ${SUDO} chmod +x ${GOOFYS_BIN}
+    if [ ! -f ${GOOFYS_DOWNLOAD} ]; then
+        ${SUDO} wget -O ${GOOFYS_DOWNLOAD} ${GOOFYS_URL}
     fi
+    ${SUDO} cp -a ${GOOFYS_DOWNLOAD} ${GOOFYS_BIN}
+    ${SUDO} chmod +x ${GOOFYS_BIN}
 }
 
 install_s3fs_dep_package_for_centos() {
@@ -603,7 +623,7 @@ install_s3fs() {
     esac
 
     S3FS_URL=https://github.com/s3fs-fuse/s3fs-fuse.git
-    [ -d $WORKDIR/s3fs-fuse ] || (cd $WORKDIR && git clone ${S3FS_URL})
+    [ -d $WORKDIR/s3fs-fuse ] || (cd $WORKDIR && git clone --depth 1 ${S3FS_URL})
     (cd $WORKDIR/s3fs-fuse && \
     ./autogen.sh && \
     ./configure --prefix=/usr && \
