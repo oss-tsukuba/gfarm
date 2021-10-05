@@ -15,7 +15,7 @@ TO RUN TEST
 
 optional variables:
 	$GFARM_TEST_CKSUM_MISMATCH=<path>
-					... a file which causes cksum mismatch
+		... pathname of a gfarm file which causes cksum mismatch
 	$GFARM_TEST_MDS2=<host>:<port>	... optional gfmd
 	$GFARM_TEST_MDS3=<host>:<port>	... optional gfmd
 	$GFARM_TEST_MDS4=<host>:<port>	... optional gfmd
