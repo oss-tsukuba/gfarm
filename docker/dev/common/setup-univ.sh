@@ -9,6 +9,7 @@
 # ARG GFDOCKER_NUM_USERS
 # ARG GFDOCKER_HOSTNAME_PREFIX_GFMD
 # ARG GFDOCKER_HOSTNAME_PREFIX_GFSD
+# ARG GFDOCKER_HOSTNAME_SUFFIX
 # COPY . /tmp/gfarm
 # COPY gfarm2fs /tmp/gfarm2fs
 # RUN "/tmp/gfarm/docker/dev/common/setup-univ.sh"
@@ -22,6 +23,7 @@ set -eux
 : $GFDOCKER_NUM_USERS
 : $GFDOCKER_HOSTNAME_PREFIX_GFMD
 : $GFDOCKER_HOSTNAME_PREFIX_GFSD
+: $GFDOCKER_HOSTNAME_SUFFIX
 
 MY_SHELL=/bin/bash
 USERADD="useradd -m -s "$MY_SHELL" -U"
@@ -68,18 +70,20 @@ force_yes=y
 MD=sha256
 
 for i in $(seq 1 "$GFDOCKER_NUM_GFMDS"); do
-  fqdn="${GFDOCKER_HOSTNAME_PREFIX_GFMD}${i}"
+  name="${GFDOCKER_HOSTNAME_PREFIX_GFMD}${i}"
+  fqdn="${name}${GFDOCKER_HOSTNAME_SUFFIX}"
   echo "$force_yes" \
-    | grid-cert-request -verbose -nopw -prefix "$fqdn" -host "$fqdn" \
+    | grid-cert-request -verbose -nopw -prefix "$name" -host "$fqdn" \
       -ca "$(cat /ca_hash)"
-  grid-ca-sign -in "/etc/grid-security/${fqdn}cert_request.pem" \
-    -out "/etc/grid-security/${fqdn}cert.pem" \
+  grid-ca-sign -in "/etc/grid-security/${name}cert_request.pem" \
+    -out "/etc/grid-security/${name}cert.pem" \
     -passin pass:"$ca_key_pass" -md $MD
 done
 
 
 for i in $(seq 1 "$GFDOCKER_NUM_GFSDS"); do
-  fqdn="${GFDOCKER_HOSTNAME_PREFIX_GFSD}${i}"
+  name="${GFDOCKER_HOSTNAME_PREFIX_GFSD}${i}"
+  fqdn="${name}${GFDOCKER_HOSTNAME_SUFFIX}"
   common_name="gfsd/${fqdn}"
   cert_path="/etc/grid-security/gfsd-${fqdn}"
   echo "$force_yes" \

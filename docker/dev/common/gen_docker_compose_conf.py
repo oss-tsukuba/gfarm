@@ -13,6 +13,7 @@ start_host_addr = int(environ['GFDOCKER_START_HOST_ADDR'])
 hostname_prefix_gfmd = environ['GFDOCKER_HOSTNAME_PREFIX_GFMD']
 hostname_prefix_gfsd = environ['GFDOCKER_HOSTNAME_PREFIX_GFSD']
 hostname_prefix_client = environ['GFDOCKER_HOSTNAME_PREFIX_CLIENT']
+hostname_suffix = environ['GFDOCKER_HOSTNAME_SUFFIX']
 
 hostport_s3_http = environ['GFDOCKER_HOSTPORT_S3_HTTP']
 hostport_s3_https = environ['GFDOCKER_HOSTPORT_S3_HTTPS']
@@ -25,8 +26,9 @@ else:
     sys.exit('invalid syntax: GFDOCKER_IP_VERSION')
 
 class ContainerHost:
-    def __init__(self, hostname, ipaddr):
-        self.hostname = hostname
+    def __init__(self, name, ipaddr):
+        self.name = name
+        self.hostname = name + hostname_suffix
         self.ipaddr = ipaddr
 
 hi = nw.hosts()
@@ -96,7 +98,7 @@ else:
 
 for h in hosts:
     ports = '';
-    if h.hostname == 'client1':
+    if h.name == 'client1':
         ports = client1_ports
     print('''\
   {}:
@@ -106,7 +108,7 @@ for h in hosts:
       default:
         ipv{}_address: {}
     <<: *common
-'''.format(h.hostname, h.hostname, ports, ip_version, str(h.ipaddr)), end='')
+'''.format(h.name, h.hostname, ports, ip_version, str(h.ipaddr)), end='')
 
 print('''\
 

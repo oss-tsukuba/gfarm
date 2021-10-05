@@ -11,6 +11,7 @@ set -eu
 : $GFDOCKER_HOSTNAME_PREFIX_GFMD
 : $GFDOCKER_HOSTNAME_PREFIX_GFSD
 : $GFDOCKER_HOSTNAME_PREFIX_CLIENT
+: $GFDOCKER_HOSTNAME_SUFFIX
 : $GFDOCKER_AUTH_TYPE
 : $GFDOCKER_GFMD_JOURNAL_DIR
 : $GFDOCKER_PRJ_NAME
@@ -31,7 +32,7 @@ EOF
 ##
 ## gfmd ${i}
 ##
-gfmd${i}=${gfmd}
+gfmd${i}=${gfmd}${GFDOCKER_HOSTNAME_SUFFIX}
 ${gfmd}_CONFIG_GFARM_OPTIONS="-r -j ${GFDOCKER_GFMD_JOURNAL_DIR} -X -A \$LOGNAME -h \$gfmd${i} -a ${GFDOCKER_AUTH_TYPE} -D /O=Grid/OU=GlobusTest/OU=GlobusSimpleCA/CN=${GFDOCKER_PRIMARY_USER}"
 gfmd${i}_AUTH_TYPE=sharedsecret
 EOF
@@ -45,7 +46,7 @@ EOF
 ##
 ## gfsd ${i}
 ##
-gfsd${i}=${gfsd}
+gfsd${i}=${gfsd}${GFDOCKER_HOSTNAME_SUFFIX}
 gfsd${i}_CONFIG_GFSD_OPTIONS="-h \$gfsd${i} -l \$gfsd${i} -a docker"
 gfsd${i}_AUTH_TYPE=sharedsecret
 EOF
@@ -59,7 +60,7 @@ EOF
 ##
 ## client ${i}
 ##
-client${i}=${client}
+client${i}=${client}${GFDOCKER_HOSTNAME_SUFFIX}
 client${i}_AUTH_TYPE=sharedsecret
 EOF
   done
