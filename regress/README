@@ -4,7 +4,7 @@ TO RUN TEST
   run this test.
   e.g. the following should be done by a gfarm administrator:
 	gfmkdir /tmp
-	gfchmod 777 /tmp
+	gfchmod 1777 /tmp
 
 2. prepare some optional tests
   although this is optional, it's STRONGLY recommended to do this.
