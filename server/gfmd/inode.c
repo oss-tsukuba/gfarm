@@ -191,7 +191,7 @@ struct inode **inode_table = NULL;
 gfarm_ino_t inode_table_size = 0;
 gfarm_ino_t inode_free_index = ROOT_INUMBER;
 
-static char TENANT_BASE_NAME[] = "tenants"; /* for /tenants/${TENANT_NAME} */
+static char TENANT_BASE_NAME[] = ".tenants"; /* for /.tenants/${TENANT_NAME} */
 
 struct inode inode_free_list; /* dummy header of doubly linked circular list */
 int inode_free_list_initialized = 0;
