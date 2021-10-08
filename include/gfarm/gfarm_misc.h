@@ -68,6 +68,7 @@ int gfarm_version_minor(void);
 int gfarm_version_teeny(void);
 
 int gfarm_get_client_file_bufsize(void);
+void gfarm_set_client_digest_check(int);
 
 /*
  * authentication
