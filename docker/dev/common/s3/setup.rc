@@ -530,7 +530,7 @@ install_aws_cli() {
 
     cd ${WORKDIR}
     # overwrite existing files
-    unzip -o ${AWSCLI_ZIP}
+    unzip -q -o ${AWSCLI_ZIP}
     ${SUDO} ./aws/install --update
 
     /usr/local/bin/aws --version
