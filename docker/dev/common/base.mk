@@ -57,8 +57,10 @@ ifdef GFDOCKER_ENABLE_PROXY
 DOCKER_BUILD_FLAGS += \
 		--build-arg http_proxy='$(PROXY_URL)' \
 		--build-arg https_proxy='$(PROXY_URL)' \
+		--build-arg no_proxy='$(GFDOCKER_NO_PROXY)' \
 		--build-arg HTTP_PROXY='$(PROXY_URL)' \
 		--build-arg HTTPS_PROXY='$(PROXY_URL)' \
+		--build-arg NO_PROXY='$(GFDOCKER_NO_PROXY)' \
 		--build-arg GFDOCKER_PROXY_HOST='$(GFDOCKER_PROXY_HOST)' \
 		--build-arg GFDOCKER_PROXY_PORT='$(GFDOCKER_PROXY_PORT)' \
 		--build-arg GFDOCKER_ENABLE_PROXY='$(GFDOCKER_ENABLE_PROXY)'
@@ -90,8 +92,10 @@ ifdef GFDOCKER_ENABLE_PROXY
 CONTSHELL_FLAGS += \
 		--env http_proxy='$(PROXY_URL)' \
 		--env https_proxy='$(PROXY_URL)' \
+		--env no_proxy='$(GFDOCKER_NO_PROXY)' \
 		--env HTTP_PROXY='$(PROXY_URL)' \
-		--env HTTPS_PROXY='$(PROXY_URL)'
+		--env HTTPS_PROXY='$(PROXY_URL)' \
+		--env NO_PROXY='$(GFDOCKER_NO_PROXY)'
 endif
 
 CONTSHELL_COMMON = $(COMPOSE) exec $(CONTSHELL_FLAGS) \
