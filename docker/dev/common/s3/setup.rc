@@ -719,7 +719,10 @@ update_secret() {
     gfarm_s3_dir="/home/${user}/.gfarm-s3"
     if [ -n "${secret}" ]; then
         ${SUDO} mkdir -p "${gfarm_s3_dir}"
-        echo "${secret}" | ${SUDO} dd of="${gfarm_s3_dir}/secret_key"
+        secret_file="${gfarm_s3_dir}/secret_key"
+        ${SUDO} touch "${secret_file}"
+        ${SUDO} chmod 700 "${secret_file}"
+        echo "${secret}" | ${SUDO} dd of="${secret_file}"
         ${SUDO} chown -R "${user}" "${gfarm_s3_dir}"
     fi
 }
