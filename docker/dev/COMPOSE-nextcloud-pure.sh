@@ -2,7 +2,7 @@
 
 set -eu
 
-NAME="nextcloud"
+NAME="nextcloud-pure"
 . ./_COMPOSE-COMMON.sh
 
 ${COMPOSE} $@
