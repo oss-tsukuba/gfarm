@@ -2,7 +2,7 @@
 
 set -eu
 
-NAME="minio"
+NAME="minio-pure"
 . ./_COMPOSE-COMMON.sh
 
 ${COMPOSE} $@
