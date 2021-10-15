@@ -68,7 +68,6 @@ x-common:
   volumes:
     - ./mnt:/mnt:rw
     - /sys/fs/cgroup:/sys/fs/cgroup:ro
-    - /run
   security_opt:
     - seccomp:unconfined
     - apparmor:unconfined
