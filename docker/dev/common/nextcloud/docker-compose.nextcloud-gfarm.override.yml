@@ -1,0 +1,24 @@
+version: '3.4'
+
+services:
+  nextcloud:
+    env_file:
+      - ./common/nextcloud/nextcloud.env
+    build:
+      context: ./mnt/work/nextcloud-gfarm/nextcloud
+      args:
+        NEXTCLOUD_VERSION: 22
+        GFARM_SRC_URL: https://github.com/oss-tsukuba/gfarm/archive/refs/tags/2.7.19.tar.gz
+        GFARM2FS_SRC_URL: https://github.com/oss-tsukuba/gfarm2fs/archive/refs/tags/1.2.15.tar.gz
+    volumes:
+      - ./mnt/user1/gfarm_shared_key:/gfarm_shared_key:ro
+      - ./mnt/user1/gfarm2.conf:/gfarm2.conf:ro
+      - ./mnt/user1/gfarm2rc:/gfarm2rc:ro
+    ports:
+      - 28080:80
+
+secrets:
+  admin_password:
+    file: ./common/nextcloud/nextcloud_admin_password
+  db_password:
+    file: ./common/nextcloud/nextcloud_db_password

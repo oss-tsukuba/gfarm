@@ -68,9 +68,12 @@ endif
 
 IMAGE_BASENAME = gfarm-dev
 
-DOCKER = $(SUDO) docker
-COMPOSE = $(SUDO) COMPOSE_PROJECT_NAME=gfarm-$(GFDOCKER_PRJ_NAME) \
-	GFDOCKER_PRJ_NAME=$(GFDOCKER_PRJ_NAME) docker-compose
+DOCKER = $(SUDO) $(DOCKER_CMD)
+
+GFDOCKER_PRJ_NAME_FULL=gfarm-$(GFDOCKER_PRJ_NAME)
+
+COMPOSE = $(SUDO) COMPOSE_PROJECT_NAME=$(GFDOCKER_PRJ_NAME_FULL) \
+	GFDOCKER_PRJ_NAME=$(GFDOCKER_PRJ_NAME) $(DOCKER_COMPOSE_CMD)
 CONTSHELL_FLAGS = \
 		--env TZ='$(TZ)' \
 		--env LANG='$(LANG)' \
@@ -200,13 +203,13 @@ fi
 endef
 
 define build
-DOCKER_BUILD_FLAGS2=""; \
-$(build_switch)
+	DOCKER_BUILD_FLAGS2=""; \
+	$(build_switch)
 endef
 
 define build_nocache
-DOCKER_BUILD_FLAGS2="--no-cache"; \
-$(build_switch)
+	DOCKER_BUILD_FLAGS2="--no-cache"; \
+	$(build_switch)
 endef
 
 build:
@@ -216,14 +219,15 @@ build-nocache:
 	$(build_nocache)
 
 define down
-$(COMPOSE) down && rm -f $(TOP)/docker/dev/.shadow.config.mk
+	$(COMPOSE) down --volumes --remove-orphans \
+		&& rm -f $(TOP)/docker/dev/.shadow.config.mk
 endef
 
 down:
 	$(down)
 
 define prune
-$(DOCKER) system prune -f
+	$(DOCKER) system prune -f
 endef
 
 prune:
@@ -424,6 +428,84 @@ gridftp-setup:
 
 gridftp-test:
 	$(CONTSHELL) -c '. ~/gfarm/docker/dev/common/gridftp-test.rc'
+
+
+NEXTCLOUD_GFARM_SRC = $(ROOTDIR)/mnt/work/nextcloud-gfarm
+NEXTCLOUD_GFARM_CONF = $(ROOTDIR)/common/nextcloud
+
+COMPOSE_NEXTCLOUD = $(COMPOSE) \
+	-f $(TOP)/docker/dev/docker-compose.yml \
+	-f $(NEXTCLOUD_GFARM_SRC)/docker-compose.yml \
+	-f $(NEXTCLOUD_GFARM_CONF)/docker-compose.nextcloud-gfarm.override.yml
+
+down-with-nextcloud:
+	$(COMPOSE_NEXTCLOUD) down --volumes --remove-orphans
+	$(down)
+
+nextcloud-backup:
+	@if $(DOCKER) ps --filter status=running --filter name=$(GFDOCKER_PRJ_NAME_FULL)_nextcloud_1 | grep -q nextcloud; \
+	then $(COMPOSE_NEXTCLOUD) exec -u www-data nextcloud /backup.sh; \
+	else echo "skip nextcloud-backup"; \
+	fi
+
+nextcloud-rm:
+	$(MAKE) nextcloud-backup
+	$(COMPOSE_NEXTCLOUD) rm --force --stop -v mariadb nextcloud
+
+nextcloud-rm-data:
+	$(MAKE) nextcloud-rm
+	$(DOCKER) volume rm --force \
+	$(GFDOCKER_PRJ_NAME_FULL)_db \
+	$(GFDOCKER_PRJ_NAME_FULL)_log \
+	$(GFDOCKER_PRJ_NAME_FULL)_nextcloud
+
+nextcloud-recreate:
+	$(MAKE) nextcloud-rm
+	$(COMPOSE_NEXTCLOUD) build $(DOCKER_BUILD_FLAGS) nextcloud
+	$(COMPOSE_NEXTCLOUD) up -d nextcloud
+
+nextcloud-reborn:
+	$(MAKE) nextcloud-rm-data
+	$(COMPOSE_NEXTCLOUD) build $(DOCKER_BUILD_FLAGS) nextcloud
+	$(COMPOSE_NEXTCLOUD) up -d nextcloud
+
+nextcloud-reborn-nocache:
+	$(MAKE) nextcloud-rm-data
+	$(COMPOSE_NEXTCLOUD) build $(DOCKER_BUILD_FLAGS) --no-cache nextcloud
+	$(COMPOSE_NEXTCLOUD) up -d nextcloud
+
+nextcloud-restart:
+	$(MAKE) nextcloud-stop
+	$(MAKE) nextcloud-start
+
+nextcloud-start:
+	$(COMPOSE_NEXTCLOUD) start mariadb nextcloud
+
+nextcloud-stop:
+	$(MAKE) nextcloud-backup
+	$(COMPOSE_NEXTCLOUD) stop mariadb nextcloud
+
+nextcloud-ps:
+	$(COMPOSE_NEXTCLOUD) ps
+
+nextcloud-logs:
+	$(COMPOSE_NEXTCLOUD) logs
+
+nextcloud-logs-less:
+	$(COMPOSE_NEXTCLOUD) logs --no-color | less
+
+nextcloud-logs-f:
+	$(COMPOSE_NEXTCLOUD) logs --follow
+
+nextcloud-shell:
+	$(COMPOSE_NEXTCLOUD) exec -u www-data nextcloud /bin/bash
+
+nextcloud-shell-root:
+	$(COMPOSE_NEXTCLOUD) exec nextcloud /bin/bash
+
+nextcloud-mariadb-shell:
+	$(COMPOSE_NEXTCLOUD) exec mariadb /bin/bash
+
 
 define test_fo
 $(CONTSHELL) -c '. ~/gfarm/docker/dev/common/test-fo.rc'

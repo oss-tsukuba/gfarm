@@ -185,10 +185,22 @@ for host in $clients; do
 done
 wait
 
-# for user1
+# backup for user1
 ${GFDOCKER_COPY_SHARED_KEY}
 
-# for user2
+BACKUP_DIR=/mnt/user1
+BACKUP_GFARM2RC=${BACKUP_DIR}/gfarm2rc
+BACKUP_GFARM2CONF=${BACKUP_DIR}/gfarm2.conf
+
+GFARM2RC_REGEXP="^user config file *\: "
+GFARM2RC=$(gfstatus | grep "$GFARM2RC_REGEXP" | sed "s/$GFARM2RC_REGEXP//")
+GFARM2CONF_REGEXP="^system config file: "
+GFARM2CONF=$(gfstatus | grep "$GFARM2CONF_REGEXP" | sed "s/$GFARM2CONF_REGEXP//")
+
+cp ${GFARM2RC} ${BACKUP_GFARM2RC}
+cp ${GFARM2CONF} ${BACKUP_GFARM2CONF}
+
+# backup for user2
 gfuser -c user2 user2 / /O=Grid/OU=GlobusTest/OU=GlobusSimpleCA/CN=user2
 ${SUDO_USER2} ${GFDOCKER_COPY_SHARED_KEY}
 

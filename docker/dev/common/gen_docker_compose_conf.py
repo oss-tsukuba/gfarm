@@ -76,7 +76,7 @@ x-common:
     - SYS_ADMIN
     - SYS_PTRACE
   devices:
-    - /dev/fuse
+    - /dev/fuse:/dev/fuse
   privileged: false
   extra_hosts:
 ''', end='')
