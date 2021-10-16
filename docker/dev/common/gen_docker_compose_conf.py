@@ -82,6 +82,7 @@ x-common:
 
 for h in hosts:
     print("    - {}:{}".format(h.hostname, str(h.ipaddr)))
+    print("    - {}:{}".format(h.name, str(h.ipaddr)))
 
 print('''\
 
@@ -89,7 +90,8 @@ services:
 ''', end='')
 
 if hostport_s3_http and hostport_s3_https:
-    client1_ports = '''    ports:
+    client1_ports = '''
+    ports:
       - {}:80
       - {}:443'''.format(int(hostport_s3_http), int(hostport_s3_https))
 else:
@@ -101,12 +103,12 @@ for h in hosts:
         ports = client1_ports
     print('''\
   {}:
-    hostname: {}
-{}
+    hostname: {}{}
     networks:
       default:
         ipv{}_address: {}
     <<: *common
+
 '''.format(h.name, h.hostname, ports, ip_version, str(h.ipaddr)), end='')
 
 print('''\
