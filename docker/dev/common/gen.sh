@@ -47,7 +47,7 @@ EOF
 ## gfsd ${i}
 ##
 gfsd${i}=${gfsd}${GFDOCKER_HOSTNAME_SUFFIX}
-gfsd${i}_CONFIG_GFSD_OPTIONS="-h \$gfsd${i} -l \$gfsd${i} -a docker"
+gfsd${i}_CONFIG_GFSD_OPTIONS="-h \$gfsd${i} -l \$gfsd${i} -a ${GFDOCKER_PRJ_NAME}"
 gfsd${i}_AUTH_TYPE=sharedsecret
 EOF
   done
