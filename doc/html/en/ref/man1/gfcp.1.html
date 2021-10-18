@@ -1,24 +1,24 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title>gfpconcat</title>
+<title>gfcp</title>
 <meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
-<a name="gfpconcat.1"></a><div class="titlepage"></div>
+<a name="gfcp.1"></a><div class="titlepage"></div>
 <div class="refnamediv">
 <a name="name"></a><h2>Name</h2>
-<p>gfpconcat — concatenate files in parallel</p>
+<p>gfcp — copy a file in parallel</p>
 </div>
 <div class="refsynopsisdiv">
 <a name="synopsis"></a><h2>Synopsis</h2>
-<div class="cmdsynopsis"><p><code class="command">gfpconcat</code>  [-fpqvd] [-h <em class="replaceable"><code>filesystem-node</code></em>] [-i <em class="replaceable"><code>input-listfile</code></em>] [-j <em class="replaceable"><code>num-of-processes</code></em>] [-m <em class="replaceable"><code>minimum-bytes</code></em>]  -o <em class="replaceable"><code>destination-file</code></em>   <em class="replaceable"><code>source-file</code></em>... </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfcp</code>  [-fpqvd] [-h <em class="replaceable"><code>filesystem-node</code></em>] [-j <em class="replaceable"><code>num-of-processes</code></em>] [-m <em class="replaceable"><code>minimum-bytes</code></em>]  -o <em class="replaceable"><code>destination-file</code></em>   <em class="replaceable"><code>source-file</code></em>... </p></div>
 </div>
 <div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p>
-<span class="command"><strong>gfpconcat</strong></span>
-copies a single file or multiple files to a single file in parallel.
+<span class="command"><strong>gfcp</strong></span>
+copies a single file to a single file in parallel.
 </p>
 <p>
 <em class="parameter"><code>source-file</code></em> is a source file to
@@ -143,7 +143,7 @@ Displays a list of command options.
 When a file is created in Gfarm and the file is written in parallel or
 randomly, checksum for the file will not be calculated and not added.
 
-Therefore, when <span class="command"><strong>gfpconcat</strong></span> is used,
+Therefore, when <span class="command"><strong>gfcp</strong></span> is used,
 checksum will not be added to the file.
 
 Once the file is read sequentially or replicas for the file are
@@ -152,12 +152,13 @@ created, checksum will be added to the file.
 Or, when <em class="parameter"><code>write_verify</code></em> of
 gfmd.conf (see man gfarm2.conf) is "enable", checksum is added to the
 file after a while after copying
-by <span class="command"><strong>gfpconcat</strong></span>.
+by <span class="command"><strong>gfcp</strong></span>.
 </p>
 </div>
 <div class="refsect1">
 <a name="see-also"></a><h2>SEE ALSO</h2>
 <p>
+  <span class="citerefentry"><span class="refentrytitle">gfpconcat</span>(1)</span>,
   <span class="citerefentry"><span class="refentrytitle">gfcksum</span>(1)</span>,
   <span class="citerefentry"><span class="refentrytitle">gfarm2.conf</span>(5)</span>
 </p>

@@ -1,30 +1,28 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title>gfpconcat</title>
+<title>gfcp</title>
 <meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
-<a name="gfpconcat.1"></a><div class="titlepage"></div>
+<a name="gfcp.1"></a><div class="titlepage"></div>
 <div class="refnamediv">
 <a name="name"></a><h2>Name</h2>
-<p>gfpconcat — 複数ファイルを結合しながら並列にコピーする</p>
+<p>gfcp — ファイル並列にコピーする</p>
 </div>
 <div class="refsynopsisdiv">
 <a name="synopsis"></a><h2>Synopsis</h2>
-<div class="cmdsynopsis"><p><code class="command">gfpconcat</code>  [-fpqvd] [-h <em class="replaceable"><code>filesystem-node</code></em>] [-i <em class="replaceable"><code>input-listfile</code></em>] [-j <em class="replaceable"><code>num-of-processes</code></em>] [-m <em class="replaceable"><code>minimum-bytes</code></em>]  -o <em class="replaceable"><code>destination-file</code></em>   <em class="replaceable"><code>source-file</code></em>... </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfcp</code>  [-fpqvd] [-h <em class="replaceable"><code>filesystem-node</code></em>] [-j <em class="replaceable"><code>num-of-processes</code></em>] [-m <em class="replaceable"><code>minimum-bytes</code></em>]  <em class="replaceable"><code>source-file</code></em>   <em class="replaceable"><code>destination-file</code></em> </p></div>
 </div>
 <div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p>
-<span class="command"><strong>gfpconcat</strong></span>
-は、単一ファイルまたは複数ファイルを単一のファイルに対して
-並列にコピーします。
+<span class="command"><strong>gfcp</strong></span>
+は、単一ファイルを並列にコピーします。
 </p>
 <p>
 <em class="parameter"><code>source-file</code></em>
 には、コピー元のファイル名を指定します。
-ファイル名を複数指定した場合は、指定した順序で結合します。
 </p>
 <p>
 <em class="parameter"><code>destination-file</code></em>
@@ -86,12 +84,6 @@ gfarm2fs を経由せずに Gfarm へコピーします。
 </p></dd>
 <dt><span class="term"><code class="option">-h</code> <em class="parameter"><code>filesystem-node</code></em></span></dt>
 <dd><p>指定したファイルシステムノードにファイルを作成します。</p></dd>
-<dt><span class="term"><code class="option">-i</code> <em class="parameter"><code>input-listfile</code></em></span></dt>
-<dd><p>
-入力ファイルを列挙したファイルをコマンドライン引数
-<em class="parameter"><code>source-file</code></em> の代わりに指定します。
-そのファイル中の各行に入力 URL を一つずつ記述します。
-</p></dd>
 <dt><span class="term"><code class="option">-j</code> <em class="parameter"><code>num-of-processes</code></em></span></dt>
 <dd>
 <p>
@@ -139,7 +131,7 @@ gfarm2fs を経由せずに Gfarm へコピーします。
 <p>
 Gfarm 上にファイルを 1つ作成する際に、並列に書き込んだり、
 ランダムアクセスで書き込んだりすると、チェックサムがファイルに付加されません。
-そのため、<span class="command"><strong>gfpconcat</strong></span> を使用すると、
+そのため、<span class="command"><strong>gfcp</strong></span> を使用すると、
 チェックサムが付加されません。
 
 一度ファイルをシーケンシャルに読むと、または複製を作成すると
@@ -147,7 +139,7 @@ Gfarm 上にファイルを 1つ作成する際に、並列に書き込んだり
 
 または gfmd.conf の <em class="parameter"><code>write_verify</code></em>
 が enable となっていれば、
-<span class="command"><strong>gfpconcat</strong></span> でファイル作成後にしばらく経つと
+<span class="command"><strong>gfcp</strong></span> でファイル作成後にしばらく経つと
 チェックサムが付加されます。
 詳細は gfarm2.conf のマニュアルを参照してください。
 </p>
@@ -155,7 +147,7 @@ Gfarm 上にファイルを 1つ作成する際に、並列に書き込んだり
 <div class="refsect1">
 <a name="see-also"></a><h2>SEE ALSO</h2>
 <p>
-  <span class="citerefentry"><span class="refentrytitle">gfcp</span>(1)</span>,
+  <span class="citerefentry"><span class="refentrytitle">gfpconcat</span>(1)</span>,
   <span class="citerefentry"><span class="refentrytitle">gfcksum</span>(1)</span>,
   <span class="citerefentry"><span class="refentrytitle">gfarm2.conf</span>(5)</span>
 </p>
