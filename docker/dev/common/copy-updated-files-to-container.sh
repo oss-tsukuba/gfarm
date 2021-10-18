@@ -6,7 +6,7 @@ DOCKER=$(make -s ECHO_DOCKER)
 COMPOSE=$(make -s ECHO_COMPOSE)
 ROOTDIR=$(make -s ECHO_ROOTDIR)
 GFARM_WORKDIR=/home/user1/gfarm
-SERVICES=$($COMPOSE ps --service)
+SERVICES=$($COMPOSE ps --services)
 GFARM_SRCDIR=$(cd $(realpath .) && cd $ROOTDIR/../.. && realpath .)
 
 docker_cp_to() {
