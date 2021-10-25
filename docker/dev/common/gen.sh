@@ -16,6 +16,10 @@ set -eu
 : $GFDOCKER_GFMD_JOURNAL_DIR
 : $GFDOCKER_PRJ_NAME
 
+### SEE ALSO: setup-univ.env
+#ADMIN_DN="/O=Grid/OU=GlobusTest/OU=GlobusSimpleCA/CN=${GFDOCKER_PRIMARY_USER}"
+ADMIN_DN="/O=Gfarm/OU=GfarmDev/OU=GfarmCA/CN=${GFDOCKER_PRIMARY_USER}"
+
 gen_gfservicerc() {
   cat <<EOF
 # This file was automatically generated.
@@ -33,7 +37,7 @@ EOF
 ## gfmd ${i}
 ##
 gfmd${i}=${gfmd}${GFDOCKER_HOSTNAME_SUFFIX}
-${gfmd}_CONFIG_GFARM_OPTIONS="-r -j ${GFDOCKER_GFMD_JOURNAL_DIR} -X -A \$LOGNAME -h \$gfmd${i} -a ${GFDOCKER_AUTH_TYPE} -D /O=Grid/OU=GlobusTest/OU=GlobusSimpleCA/CN=${GFDOCKER_PRIMARY_USER}"
+${gfmd}_CONFIG_GFARM_OPTIONS="-r -j ${GFDOCKER_GFMD_JOURNAL_DIR} -X -A \$LOGNAME -h \$gfmd${i} -a ${GFDOCKER_AUTH_TYPE} -D ${ADMIN_DN}"
 gfmd${i}_AUTH_TYPE=sharedsecret
 EOF
   done

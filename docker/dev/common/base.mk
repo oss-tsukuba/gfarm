@@ -105,8 +105,9 @@ CONTSHELL_COMMON = $(COMPOSE) exec $(CONTSHELL_FLAGS) \
 	-u '$(GFDOCKER_PRIMARY_USER)'
 CONTEXEC = $(CONTSHELL_COMMON) '$(PRIMARY_CLIENT_CONTAINER)'
 CONTEXEC_GFMD1 = $(CONTSHELL_COMMON) gfmd1
-CONTSHELL = $(CONTSHELL_COMMON) '$(PRIMARY_CLIENT_CONTAINER)' bash
-CONTSHELL_GFMD1 = $(CONTSHELL_COMMON) gfmd1 bash
+### "bash -l" to load /etc/profile.d/gfarm.sh
+CONTSHELL = $(CONTSHELL_COMMON) '$(PRIMARY_CLIENT_CONTAINER)' bash -l
+CONTSHELL_GFMD1 = $(CONTSHELL_COMMON) gfmd1 bash -l
 
 # overridable
 CONTSHELL_ARGS :=  -c 'cd ~ && bash'
@@ -311,9 +312,7 @@ shell:
 shell-user: shell
 
 shell-root:
-	echo "*** Please use sudo on shell-suer instead of shell-root ***"
-#	$(check_config)
-#	$(COMPOSE) exec '$(PRIMARY_CLIENT_CONTAINER)' bash $(CONTSHELL_ARGS)
+	echo "*** Please use sudo on shell-user ***"
 
 shell-gfmd1:
 	$(check_config)

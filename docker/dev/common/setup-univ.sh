@@ -61,8 +61,25 @@ fi
 # readable from users for grid-cert-request
 chmod go+r $VARLOGMESSAGES
 
+CA_DIR=/root/simple_ca
+CA_CONF=${CA_DIR}/grid-ca-ssl.conf
+
+### SEE ALSO: gen.sh
+#CA_SUBJECT="cn=GlobusSimpleCA,ou=GlobusTest,o=Grid"
+CA_SUBJECT="cn=GfarmCA,ou=GfarmDev,o=Gfarm"
+
 grid-ca-create -pass "$ca_key_pass" -noint \
-  -subject 'cn=GlobusSimpleCA,ou=GlobusTest,o=Grid'
+  -subject "${CA_SUBJECT}" -dir ${CA_DIR}
+
+# enable "copy_extensions" to copy subjectAltName from CSR
+mv ${CA_CONF} ${CA_CONF}_old
+while read line; do
+  echo "$line"
+  if echo "$line" | grep '\[ CA_default \]' > /dev/null 2>&1 ; then
+    echo "copy_extensions = copy"
+  fi
+done < ${CA_CONF}_old > ${CA_CONF}
+
 ls globus_simple_ca_*.tar.gz \
   | sed -E 's/^globus_simple_ca_(.*)\.tar\.gz$/\1/' > /ca_hash
 
@@ -72,30 +89,49 @@ MD=sha256
 for i in $(seq 1 "$GFDOCKER_NUM_GFMDS"); do
   name="${GFDOCKER_HOSTNAME_PREFIX_GFMD}${i}"
   fqdn="${name}${GFDOCKER_HOSTNAME_SUFFIX}"
+  ### -dns : use subjectAltName
   echo "$force_yes" \
-    | grid-cert-request -verbose -nopw -prefix "$name" -host "$fqdn" \
+    | grid-cert-request -verbose -nopw -prefix "$name" \
+     -host "$fqdn" -dns "${fqdn},${name}" \
       -ca "$(cat /ca_hash)"
   grid-ca-sign -in "/etc/grid-security/${name}cert_request.pem" \
     -out "/etc/grid-security/${name}cert.pem" \
-    -passin pass:"$ca_key_pass" -md $MD
+    -passin pass:"$ca_key_pass" -md $MD -dir ${CA_DIR}
+  grid-cert-info -file "/etc/grid-security/${name}cert.pem"
 done
 
+### NOTE: gfsd certificate with subjectAltName requires
+### "export GLOBUS_GSSAPI_NAME_COMPATIBILITY=HYBRID" (or STRICT_GT2).
+### (Maybe gfsd certificate should not use subjectAltName.)
+#USE_SAN_FOR_GFSD=0
+USE_SAN_FOR_GFSD=1
 
 for i in $(seq 1 "$GFDOCKER_NUM_GFSDS"); do
   name="${GFDOCKER_HOSTNAME_PREFIX_GFSD}${i}"
   fqdn="${name}${GFDOCKER_HOSTNAME_SUFFIX}"
   common_name="gfsd/${fqdn}"
   cert_path="/etc/grid-security/gfsd-${fqdn}"
+  if [ ${USE_SAN_FOR_GFSD} -eq 1 ]; then
+    ### -dns : use subjectAltName
+    SAN_DNS="-dns ${fqdn},${name}"
+  else
+    SAN_DNS=""
+  fi
   echo "$force_yes" \
-    | grid-cert-request -verbose -nopw -prefix gfsd -host "$fqdn" \
+    | grid-cert-request -verbose -nopw -prefix gfsd \
       -dir "$cert_path" -commonname "$common_name" -service gfsd \
+      -host "$fqdn" ${SAN_DNS} \
       -ca "$(cat /ca_hash)"
+  # openssl req -text -in "${cert_path}/gfsdcert_request.pem"
   grid-ca-sign -in "${cert_path}/gfsdcert_request.pem" \
     -out "${cert_path}/gfsdcert.pem" \
-    -passin pass:"$ca_key_pass" -md $MD
+    -passin pass:"$ca_key_pass" -md $MD -dir ${CA_DIR}
+  grid-cert-info -file "${cert_path}/gfsdcert.pem"
   chown -R _gfarmfs "$cert_path"
-  echo "/O=Grid/OU=GlobusTest/CN=${common_name} @host@ ${fqdn}" \
-    >> "$GRID_MAPFILE"
+
+  GFSD_SBJ=$(grid-cert-info -subject -file "${cert_path}/gfsdcert.pem")
+  ### unused
+  echo "#${GFSD_SBJ} @host@ ${fqdn}" >> "$GRID_MAPFILE"
 done
 
 base_ssh_config="${gfarm_src_path}/docker/dev/common/ssh_config"
@@ -129,9 +165,10 @@ for i in $(seq 1 "$GFDOCKER_NUM_USERS"); do
   '
   grid-ca-sign -in "${globus_dir}/usercert_request.pem" \
     -out "${globus_dir}/usercert.pem" \
-    -passin pass:"$ca_key_pass" -md $MD
-  echo "/O=Grid/OU=GlobusTest/OU=GlobusSimpleCA/CN=${user} ${user}" \
-    >> "$GRID_MAPFILE"
+    -passin pass:"$ca_key_pass" -md $MD -dir ${CA_DIR}
+
+  USER_SBJ=$(grid-cert-info -subject -file "${globus_dir}/usercert.pem")
+  echo "${USER_SBJ} ${user}" >> "$GRID_MAPFILE"
 done
 
 # make ${GFDOCKER_USERNAME_PREFIX}1 accesible to root@...
@@ -163,6 +200,15 @@ su - "$GFDOCKER_PRIMARY_USER" -c " \
       patch -p0 < \${f}; \
     done \
 "
+
+### for gfsd certificate ("CN=gfsd/... and subjectAltName")
+NAME_COMPATIBILITY_ENV="GLOBUS_GSSAPI_NAME_COMPATIBILITY=HYBRID"
+if [ ${USE_SAN_FOR_GFSD} -eq 1 ]; then
+  ### for "bash -l"
+  echo "export ${NAME_COMPATIBILITY_ENV}" >> /etc/profile.d/gfarm.sh
+  ### for "ssh"
+  echo "${NAME_COMPATIBILITY_ENV}" >> /etc/environment
+fi
 
 SYSTEMD_DIR=/etc/systemd/system
 CLEAR_NOLOGIN=clear-nologin.service
