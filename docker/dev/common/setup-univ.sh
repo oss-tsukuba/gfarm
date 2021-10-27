@@ -10,6 +10,7 @@
 # ARG GFDOCKER_HOSTNAME_PREFIX_GFMD
 # ARG GFDOCKER_HOSTNAME_PREFIX_GFSD
 # ARG GFDOCKER_HOSTNAME_SUFFIX
+# ARG GFDOCKER_USE_SAN_FOR_GFSD
 # COPY . /tmp/gfarm
 # COPY gfarm2fs /tmp/gfarm2fs
 # RUN "/tmp/gfarm/docker/dev/common/setup-univ.sh"
@@ -24,6 +25,7 @@ set -eux
 : $GFDOCKER_HOSTNAME_PREFIX_GFMD
 : $GFDOCKER_HOSTNAME_PREFIX_GFSD
 : $GFDOCKER_HOSTNAME_SUFFIX
+: $GFDOCKER_USE_SAN_FOR_GFSD
 
 MY_SHELL=/bin/bash
 USERADD="useradd -m -s "$MY_SHELL" -U"
@@ -100,18 +102,17 @@ for i in $(seq 1 "$GFDOCKER_NUM_GFMDS"); do
   grid-cert-info -file "/etc/grid-security/${name}cert.pem"
 done
 
-### NOTE: gfsd certificate with subjectAltName requires
+### GFDOCKER_USE_SAN_FOR_GFSD:
+### gfsd certificate with subjectAltName requires
 ### "export GLOBUS_GSSAPI_NAME_COMPATIBILITY=HYBRID" (or STRICT_GT2).
 ### (Maybe gfsd certificate should not use subjectAltName.)
-#USE_SAN_FOR_GFSD=0
-USE_SAN_FOR_GFSD=1
 
 for i in $(seq 1 "$GFDOCKER_NUM_GFSDS"); do
   name="${GFDOCKER_HOSTNAME_PREFIX_GFSD}${i}"
   fqdn="${name}${GFDOCKER_HOSTNAME_SUFFIX}"
   common_name="gfsd/${fqdn}"
   cert_path="/etc/grid-security/gfsd-${fqdn}"
-  if [ ${USE_SAN_FOR_GFSD} -eq 1 ]; then
+  if [ ${GFDOCKER_USE_SAN_FOR_GFSD} -eq 1 ]; then
     ### -dns : use subjectAltName
     SAN_DNS="-dns ${fqdn},${name}"
   else
@@ -203,7 +204,7 @@ su - "$GFDOCKER_PRIMARY_USER" -c " \
 
 ### for gfsd certificate ("CN=gfsd/... and subjectAltName")
 NAME_COMPATIBILITY_ENV="GLOBUS_GSSAPI_NAME_COMPATIBILITY=HYBRID"
-if [ ${USE_SAN_FOR_GFSD} -eq 1 ]; then
+if [ ${GFDOCKER_USE_SAN_FOR_GFSD} -eq 1 ]; then
   ### for "bash -l"
   echo "export ${NAME_COMPATIBILITY_ENV}" >> /etc/profile.d/gfarm.sh
   ### for "ssh"
