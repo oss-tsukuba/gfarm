@@ -203,12 +203,15 @@ su - "$GFDOCKER_PRIMARY_USER" -c " \
 "
 
 ### for gfsd certificate ("CN=gfsd/... and subjectAltName")
-NAME_COMPATIBILITY_ENV="GLOBUS_GSSAPI_NAME_COMPATIBILITY=HYBRID"
 if [ ${GFDOCKER_USE_SAN_FOR_GFSD} -eq 1 ]; then
+  NAME_COMPATIBILITY_ENV="GLOBUS_GSSAPI_NAME_COMPATIBILITY=HYBRID"
   ### for "bash -l"
-  echo "export ${NAME_COMPATIBILITY_ENV}" >> /etc/profile.d/gfarm.sh
+  #echo "export ${NAME_COMPATIBILITY_ENV}" >> /etc/profile.d/gfarm.sh
   ### for "ssh"
-  echo "${NAME_COMPATIBILITY_ENV}" >> /etc/environment
+  #echo "${NAME_COMPATIBILITY_ENV}" >> /etc/environment
+
+  ### system-wide configuration
+  sed -i -e 's/^NAME_COMPATIBILITY=STRICT_RFC2818$/NAME_COMPATIBILITY=HYBRID/' /etc/grid-security/gsi.conf
 fi
 
 SYSTEMD_DIR=/etc/systemd/system
