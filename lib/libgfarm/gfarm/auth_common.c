@@ -179,7 +179,7 @@ gfarm_auth_root_squash_support_disable(void)
  *	if home directory is NFS mounted and root access for
  *	the home directory partition is not permitted.
  *
- * Do not leave the user privilege switched here, even in the switch_to case,
+ * Do not leave the user privilege switched here,
  * because it is necessary to switch back to the original user privilege when
  * gfarm_auth_sharedsecret fails.
  */

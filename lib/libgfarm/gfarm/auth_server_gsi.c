@@ -37,7 +37,7 @@
  */
 
 static gfarm_error_t
-gfarm_authorize_gsi_common0(struct gfp_xdr *conn, int switch_to,
+gfarm_authorize_gsi_common0(struct gfp_xdr *conn,
 	char *service_tag, char *hostname, enum gfarm_auth_method auth_method,
 	gfarm_error_t (*auth_uid_to_global_user)(void *,
 	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
@@ -212,18 +212,6 @@ gfarm_authorize_gsi_common0(struct gfp_xdr *conn, int switch_to,
 		    gfarmAuthGetAuthEntryType(userinfo) == GFARM_AUTH_USER ?
 		    localname : "@host@", distname);
 
-		if (switch_to) {
-			GFARM_MALLOC_ARRAY(aux, strlen(global_username) + 1 +
-			    strlen(hostname) + 1);
-			if (aux == NULL) {
-				e = GFARM_ERR_NO_MEMORY;
-				error = GFARM_AUTH_ERROR_RESOURCE_UNAVAILABLE;
-				gflog_error(GFARM_MSG_1000722,
-				    "(%s@%s) authorize_gsi: %s",
-				    global_username, hostname,
-				    gfarm_error_string(e));
-			}
-		}
 	}
 
 	gfp_xdr_set_secsession(conn, session, GSS_C_NO_CREDENTIAL, NULL);
@@ -251,37 +239,6 @@ gfarm_authorize_gsi_common0(struct gfp_xdr *conn, int switch_to,
 		return (e != GFARM_ERR_NO_ERROR ? e : e2);
 	}
 
-	if (switch_to &&
-	    gfarmAuthGetAuthEntryType(userinfo) == GFARM_AUTH_USER) {
-		sprintf(aux, "%s@%s", global_username, hostname);
-		gflog_set_auxiliary_info(aux);
-
-		/*
-		 * because the name returned by getlogin() is
-		 * an attribute of a session on 4.4BSD derived OSs,
-		 * we should create new session before calling
-		 * setlogin().
-		 */
-		setsid();
-#ifdef HAVE_SETLOGIN
-		setlogin(localname);
-#endif
-		initgroups(localname, gfarmAuthGetGid(userinfo));
-		gfarmSecSessionDedicate(session);
-
-		gfarm_set_local_username(localname);
-		gfarm_set_local_homedir(gfarmAuthGetHomeDir(userinfo));
-		/*
-		 * set the delegated credential
-		 *
-		 * XXX - thread unsafe function.  this causes data race
-		 * in gfmd, but it is not harmful since gfmd currently
-		 * does not support to use delegated credential.
-		 */
-		gfarm_gsi_client_cred_set(
-		    gfarmSecSessionGetDelegatedCredential(session));
-	}
-
 	/* determine *peer_typep == GFARM_AUTH_ID_TYPE_SPOOL_HOST */
 	if (peer_typep != NULL)
 		*peer_typep = peer_type;
@@ -293,7 +250,7 @@ gfarm_authorize_gsi_common0(struct gfp_xdr *conn, int switch_to,
 }
 
 static gfarm_error_t
-gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
+gfarm_authorize_gsi_common(struct gfp_xdr *conn,
 	char *service_tag, char *hostname, enum gfarm_auth_method auth_method,
 	gfarm_error_t (*auth_uid_to_global_user)(void *,
 	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
@@ -302,7 +259,7 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 {
 	gfarm_error_t e;
 
-	e = gfarm_authorize_gsi_common0(conn, switch_to,
+	e = gfarm_authorize_gsi_common0(conn,
 	    service_tag, hostname, auth_method, auth_uid_to_global_user,
 	    closure, peer_typep, global_usernamep);
 	return (e);
@@ -313,14 +270,14 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
  */
 gfarm_error_t
 gfarm_authorize_gsi(struct gfp_xdr *conn,
-	int switch_to, char *service_tag, char *hostname,
+	char *service_tag, char *hostname,
 	gfarm_error_t (*auth_uid_to_global_user)(void *,
 	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
 	    char **), void *closure,
 	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
 {
 	return (gfarm_authorize_gsi_common(conn,
-	    switch_to, service_tag, hostname, GFARM_AUTH_METHOD_GSI,
+	    service_tag, hostname, GFARM_AUTH_METHOD_GSI,
 	    auth_uid_to_global_user, closure,
 	    peer_typep, global_usernamep));
 }
@@ -331,14 +288,14 @@ gfarm_authorize_gsi(struct gfp_xdr *conn,
 
 gfarm_error_t
 gfarm_authorize_gsi_auth(struct gfp_xdr *conn,
-	int switch_to, char *service_tag, char *hostname,
+	char *service_tag, char *hostname,
 	gfarm_error_t (*auth_uid_to_global_user)(void *,
 	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
 	    char **), void *closure,
 	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
 {
 	gfarm_error_t e = gfarm_authorize_gsi_common(conn,
-	    switch_to, service_tag, hostname, GFARM_AUTH_METHOD_GSI_AUTH,
+	    service_tag, hostname, GFARM_AUTH_METHOD_GSI_AUTH,
 	    auth_uid_to_global_user, closure,
 	    peer_typep, global_usernamep);
 

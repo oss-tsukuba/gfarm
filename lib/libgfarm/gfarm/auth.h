@@ -109,7 +109,7 @@ gfarm_error_t gfarm_auth_request_multiplexed(struct gfarm_eventqueue *,
 	void (*)(void *), void *, struct gfarm_auth_request_state **);
 gfarm_error_t gfarm_auth_result_multiplexed(struct gfarm_auth_request_state *,
 	enum gfarm_auth_method *);
-gfarm_error_t gfarm_authorize(struct gfp_xdr *, int, char *,
+gfarm_error_t gfarm_authorize_wo_setuid(struct gfp_xdr *, char *,
 	char *, struct sockaddr *,
 	gfarm_error_t (*)(void *,
 	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
@@ -225,27 +225,27 @@ gfarm_error_t gfarm_auth_result_tls_client_certificate_multiplexed(void *);
 
 /* auth_server_sharedsecret */
 gfarm_error_t gfarm_authorize_sharedsecret_common(struct gfp_xdr *,
-	int, char *, char *,
+	char *, char *,
 	gfarm_error_t (*)(void *,
 	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
 	    char **), void *,
 	const char *, enum gfarm_auth_id_type *, char **);
 gfarm_error_t gfarm_authorize_sharedsecret(struct gfp_xdr *,
-	int, char *, char *,
+	char *, char *,
 	gfarm_error_t (*)(void *,
 	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
 	    char **), void *,
 	enum gfarm_auth_id_type *, char **);
 
 /* auth_server_gsi */
-gfarm_error_t gfarm_authorize_gsi(struct gfp_xdr *, int, char *, char *,
+gfarm_error_t gfarm_authorize_gsi(struct gfp_xdr *, char *, char *,
 	gfarm_error_t (*)(void *,
 	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
 	    char **), void *,
 	enum gfarm_auth_id_type *, char **);
 
 /* auth_server_gsi_auth */
-gfarm_error_t gfarm_authorize_gsi_auth(struct gfp_xdr *, int, char *, char *,
+gfarm_error_t gfarm_authorize_gsi_auth(struct gfp_xdr *, char *, char *,
 	gfarm_error_t (*)(void *,
 	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
 	    char **), void *,
@@ -253,7 +253,7 @@ gfarm_error_t gfarm_authorize_gsi_auth(struct gfp_xdr *, int, char *, char *,
 
 /* auth_server_tls_sharedsecret */
 gfarm_error_t gfarm_authorize_tls_sharedsecret(struct gfp_xdr *,
-	int, char *, char *,
+	char *, char *,
 	gfarm_error_t (*)(void *,
 	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
 	    char **), void *,
@@ -261,7 +261,7 @@ gfarm_error_t gfarm_authorize_tls_sharedsecret(struct gfp_xdr *,
 
 /* auth_server_tls_client_certificate */
 gfarm_error_t gfarm_authorize_tls_client_certificate(struct gfp_xdr *,
-	int, char *, char *,
+	char *, char *,
 	gfarm_error_t (*)(void *,
 	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
 	    char **), void *,

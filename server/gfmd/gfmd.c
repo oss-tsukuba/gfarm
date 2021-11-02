@@ -1089,7 +1089,7 @@ peer_authorize(struct peer *peer)
 		if (hostname == NULL)
 			return (GFARM_ERR_NO_MEMORY);
 	}
-	e = gfarm_authorize(peer_get_conn(peer), 0, GFM_SERVICE_TAG,
+	e = gfarm_authorize_wo_setuid(peer_get_conn(peer), GFM_SERVICE_TAG,
 	    hostname, &addr, auth_uid_to_global_username, NULL,
 	    &id_type, &username, &auth_method);
 	if (e == GFARM_ERR_NO_ERROR) {

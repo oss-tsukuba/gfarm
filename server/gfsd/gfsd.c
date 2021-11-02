@@ -5654,7 +5654,7 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 		    client_name, gfarm_error_string(e));
 	}
 
-	e = gfarm_authorize(client, 0, GFS_SERVICE_TAG,
+	e = gfarm_authorize_wo_setuid(client, GFS_SERVICE_TAG,
 	    client_name, client_addr,
 	    gfarm_auth_uid_to_global_username, gfm_server,
 	    &peer_type, &username, &auth_method);
