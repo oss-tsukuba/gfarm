@@ -10,13 +10,6 @@
 #define GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS 0
 #endif /*  defined(USE_GLOBUS) && GLOBUS_FAKE_GSS_C_NT_USER */
 
-#ifdef USE_GLOBUS
-/* draft-engert-ggf-gss-extensions @ IETF & draft-ggf-gss-extensions @ GGF */
-# define GFARM_GSS_EXPORT_CRED_ENABLED	1
-#else
-# define GFARM_GSS_EXPORT_CRED_ENABLED	0
-#endif /* USE_GLOBUS */
-
 #if 0 /* defined(USE_GLOBUS) */ /* Now, Globus GSSAPI supports encryption */
 /*
  * Exportable version of Globus GSSAPI did not support confidentiality

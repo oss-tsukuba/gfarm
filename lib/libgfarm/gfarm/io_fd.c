@@ -265,25 +265,6 @@ gfp_iobuffer_shutdown_fd_op(void *cookie, int fd)
 	    GFARM_ERR_NO_ERROR);
 }
 
-gfarm_error_t
-gfp_iobuffer_export_credential_fd_op(void *cookie)
-{
-	/* it's already exported, or no way to export it. */
-	return (GFARM_ERR_NO_ERROR);
-}
-
-gfarm_error_t
-gfp_iobuffer_delete_credential_fd_op(void *cookie, int sighandler)
-{
-	return (GFARM_ERR_NO_ERROR);
-}
-
-char *
-gfp_iobuffer_env_for_credential_fd_op(void *cookie)
-{
-	return (NULL);
-}
-
 int
 gfp_iobuffer_recv_is_ready_fd_op(void *cookie)
 {
@@ -297,9 +278,6 @@ gfp_iobuffer_recv_is_ready_fd_op(void *cookie)
 struct gfp_iobuffer_ops gfp_xdr_socket_iobuffer_ops = {
 	gfp_iobuffer_close_fd_op,
 	gfp_iobuffer_shutdown_fd_op,
-	gfp_iobuffer_export_credential_fd_op,
-	gfp_iobuffer_delete_credential_fd_op,
-	gfp_iobuffer_env_for_credential_fd_op,
 	gfp_iobuffer_recv_is_ready_fd_op,
 	gfarm_iobuffer_blocking_read_timeout_fd_op,
 	gfarm_iobuffer_blocking_read_notimeout_fd_op,

@@ -1,9 +1,6 @@
 #ifndef _GFARM_GSI_H_
 #define _GFARM_GSI_H_
 
-/* only available on GFARM_GSS_EXPORT_CRED_ENABLED case */
-typedef struct gfarmExportedCredential gfarmExportedCredential;
-
 /*
  * Prototype
  */
@@ -109,15 +106,5 @@ extern int	gfarmGssInitiateSecurityContextResult(
 			gss_ctx_id_t *scPtr,
 			OM_uint32 *majStatPtr, OM_uint32 *minStatPtr,
 			gss_name_t *remoteNamePtr);
-
-/* only available on GFARM_GSS_EXPORT_CRED_ENABLED case */
-extern gfarmExportedCredential *
-		gfarmGssExportCredential(gss_cred_id_t cred,
-					 OM_uint32 *statPtr);
-extern char *	gfarmGssEnvForExportedCredential(
-			gfarmExportedCredential *exportedCred);
-extern void	gfarmGssDeleteExportedCredential(
-			gfarmExportedCredential *exportedCred,
-			int sigHandler);
 
 #endif /* _GFARM_GSI_H_ */

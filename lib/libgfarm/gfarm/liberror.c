@@ -245,8 +245,8 @@ static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {
 	"unknown cred_type",
 
 	/* refered only from gfarm/io_gfsl.c */
-	"GSI delegated credential doesn't exist",
-	"cannot export GSI delegated credential",
+	"GSI delegated credential doesn't exist",	/* obsolete */
+	"cannot export GSI delegated credential",	/* obsolete */
 
 	/* refered only from gfarm/gfs_client.c */
 	"gfsd aborted",
