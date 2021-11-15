@@ -33,16 +33,18 @@ PERSISTENT_TMPDIR=$PERSISTENT_DIR/user1/tmp/work
 MINIO_BUILDDIR=$PERSISTENT_TMPDIR
 
 GFARM_S3_PREFIX=/usr/local
+
+GFARM_S3_USERNAME=_gfarm_s3
+GFARM_S3_GROUPNAME=${GFARM_S3_USERNAME}
+GFARM_S3_HOMEDIR=/home/${GFARM_S3_USERNAME}
+GFARM_S3_LOCALTMP=/mnt/minio_tmp
+GFARM_S3_LOCALTMP_SIZE=1024
+GFARM_S3_WEBUI_ADDR=127.0.0.1:8000
+GFARM_S3_ROUTER_ADDR=127.0.0.1:8001
+
+# from config.mk
 FRONT_WEBSERVER=$GFDOCKER_GFARMS3_FRONT_WEBSERVER
 SHARED_DIR=$GFDOCKER_GFARMS3_SHARED_DIR
-CACHE_BASEDIR=$GFDOCKER_GFARMS3_CACHE_BASEDIR
-CACHE_SIZE=$GFDOCKER_GFARMS3_CACHE_SIZE
-WSGI_HOMEDIR=$GFDOCKER_GFARMS3_WSGI_HOMEDIR
-WSGI_USER=$GFDOCKER_GFARMS3_WSGI_USER
-WSGI_GROUP=$GFDOCKER_GFARMS3_WSGI_GROUP
-WSGI_ADDR=$GFDOCKER_GFARMS3_WSGI_ADDR
-ROUTER_HOMEDIR=$GFDOCKER_GFARMS3_ROUTER_HOMEDIR
-ROUTER_ADDR=$GFDOCKER_GFARMS3_ROUTER_ADDR
 MYPROXY_SERVER=$GFDOCKER_GFARMS3_MYPROXY_SERVER
 USERS=$GFDOCKER_GFARMS3_USERS
 CERT_DIR=$WORKDIR/cert
@@ -428,14 +430,13 @@ install_gfarm_s3() {
         --with-myproxy=/usr \
         --with-apache=/usr \
         --with-gunicorn=/usr/local \
-        --with-wsgi-homedir=$WSGI_HOMEDIR \
-        --with-wsgi-user=$WSGI_USER \
-        --with-wsgi-group=$WSGI_GROUP \
-        --with-wsgi-addr=$WSGI_ADDR \
-        --with-router-homedir=$ROUTER_HOMEDIR \
-        --with-router-addr=$ROUTER_ADDR \
-        --with-cache-basedir=$CACHE_BASEDIR \
-        --with-cache-size=$CACHE_SIZE \
+        --with-gfarm-s3-homedir=$GFARM_S3_HOMEDIR \
+        --with-gfarm-s3-user=$GFARM_S3_USERNAME \
+        --with-gfarm-s3-group=$GFARM_S3_GROUPNAME \
+        --with-webui-addr=$GFARM_S3_WEBUI_ADDR \
+        --with-router-addr=$GFARM_S3_ROUTER_ADDR \
+        --with-cache-basedir=$GFARM_S3_LOCALTMP \
+        --with-cache-size=$GFARM_S3_LOCALTMP_SIZE \
         --with-myproxy-server=$MYPROXY_SERVER \
         --with-gfarm-shared-dir=$SHARED_DIR \
         --with-minio-builddir=$MINIO_BUILDDIR
@@ -464,8 +465,8 @@ setup_nginx() {
 
 configure_gfarm_s3() {
     ## create cache directory for S3 multipart
-    ${SUDO} mkdir -p $CACHE_BASEDIR
-    ${SUDO} chmod 1777 $CACHE_BASEDIR
+    ${SUDO} mkdir -p $GFARM_S3_LOCALTMP
+    ${SUDO} chmod 1777 $GFARM_S3_LOCALTMP
 
     ## create shared directory on Gfarm
     gfmkdir -p ${SHARED_DIR#/}
@@ -485,7 +486,7 @@ configure_gfarm_s3() {
         local_user=${local_user#*:}
         access_key_id=${u##*:}
         ${SUDO} $GFARM_S3_PREFIX/bin/gfarm-s3-useradd $global_user $local_user $access_key_id
-        ${SUDO} usermod -a -G gfarms3 $local_user
+        ${SUDO} usermod -a -G ${GFARM_S3_GROUPNAME} $local_user
         shared_dir_user=${SHARED_DIR#/}/$local_user
         gfsudo gfmkdir -p $shared_dir_user
         gfsudo gfchmod 0755 $shared_dir_user
@@ -688,9 +689,10 @@ create_certificate
 ## deploy http server
 deploy_http_server
 
-## create user for wsgi
-${SUDO} groupadd $WSGI_GROUP || true
-id $WSGI_USER || ${SUDO} useradd -m $WSGI_USER -g $WSGI_GROUP -d $WSGI_HOMEDIR
+## create user for Gfarm S3 system
+${SUDO} groupadd $GFARM_S3_GROUPNAME || true
+id $GFARM_S3_USERNAME || \
+    ${SUDO} useradd -m $GFARM_S3_USERNAME -g $GFARM_S3_GROUPNAME -d $GFARM_S3_HOMEDIR
 
 ## install gfarm-s3
 install_gfarm_s3
