@@ -105,7 +105,7 @@ for h in hosts:
   {}:
     hostname: {}{}
     networks:
-      default:
+      gfarm_dev:
         ipv{}_address: {}
     <<: *common
 
@@ -114,7 +114,9 @@ for h in hosts:
 print('''\
 
 networks:
-  default:
+  gfarm_dev:
+    name: gfarm_dev
+    external: false
     ipam:
       config:
         - subnet: {}

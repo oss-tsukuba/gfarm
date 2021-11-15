@@ -50,12 +50,12 @@ for user in $users; do
 done
 
 GFDOCKER_COPY_SHARED_KEY=/usr/local/bin/gfdocker_copy_shared_key
-
-## generate script
+## generate script #################################################
 cat << EOS | sudo dd of="${GFDOCKER_COPY_SHARED_KEY}"
 #!/bin/sh
 
 set -eux
+# backup or restore gfarm_shared_key
 
 ALLHOSTS="${allhosts}"
 
@@ -79,10 +79,10 @@ for h in \${ALLHOSTS}; do
 done
 wait
 EOS
-
+###################################################
 sudo chmod +x ${GFDOCKER_COPY_SHARED_KEY}
 
-# keep ssh host keys only for client1
+# keep ssh host keys only for client1 host
 
 MNT=/mnt
 MNT_SSH_HOST_KEY_DIR=${MNT}/ssh_host_keys
@@ -185,24 +185,50 @@ for host in $clients; do
 done
 wait
 
-# backup for user1
-${GFDOCKER_COPY_SHARED_KEY}
+# copy current configuration files for external containers
+COPY_DIR=/mnt/COPY_DIR
+COPY_HOMES="${COPY_DIR}/HOMES"
 
-BACKUP_DIR=/mnt/user1
-BACKUP_GFARM2RC=${BACKUP_DIR}/gfarm2rc
-BACKUP_GFARM2CONF=${BACKUP_DIR}/gfarm2.conf
+# for external gfarm-s3-minio-web container
+S3_USERMAP="${COPY_DIR}/gfarm-s3-usermap.conf"
+S3_ACCESS_KEY_PREFIX="gfarm_s3_"
 
-GFARM2RC_REGEXP="^user config file *\: "
-GFARM2RC=$(gfstatus | grep "$GFARM2RC_REGEXP" | sed "s/$GFARM2RC_REGEXP//")
+echo "### <Gfarm Username>:<Local Username>:<S3 Accesskey ID>" | \
+sudo dd of="${S3_USERMAP}" > /dev/null 2>&1
+
+sudo mkdir -p "${COPY_HOMES}"
+for i in $(seq 1 $GFDOCKER_NUM_USERS); do
+  name="${GFDOCKER_USERNAME_PREFIX}${i}"
+  from_dir="/home/${name}"
+  to_dir="${COPY_HOMES}/${name}"
+  subject="/O=Grid/OU=GlobusTest/OU=GlobusSimpleCA/CN=${name}"
+
+  # add gfarm user (skip Gfarm admin user)
+  if [ "${name}" != "${GFDOCKER_USERNAME_PREFIX}1" ]; then
+    gfuser -c "${name}" "${name}" / "${subject}"
+  fi
+
+  # backup or restore gfarm_shared_key
+  sudo sudo -i -u "$name" ${GFDOCKER_COPY_SHARED_KEY}
+
+  # copy home directory
+  sudo rsync -av --exclude=gfarm --exclude gfarm2fs --exclude tmp \
+  "${from_dir}/" "${to_dir}/"
+
+  # add to S3_USERMAP
+  echo "${name}:${name}:${S3_ACCESS_KEY_PREFIX}${name}" | \
+  sudo dd conv=notrunc oflag=append of="${S3_USERMAP}" > /dev/null 2>&1
+done
+
+CERTIFICATES_DIR=/etc/grid-security/certificates
+COPY_CERTIFICATES_DIR="${COPY_DIR}/CERTS"
+sudo rsync -av --delete "${CERTIFICATES_DIR}/" "${COPY_CERTIFICATES_DIR}/"
+
 GFARM2CONF_REGEXP="^system config file: "
 GFARM2CONF=$(gfstatus | grep "$GFARM2CONF_REGEXP" | sed "s/$GFARM2CONF_REGEXP//")
+COPY_GFARM2CONF=${COPY_DIR}/gfarm2.conf
+sudo cp ${GFARM2CONF} ${COPY_GFARM2CONF}
 
-cp ${GFARM2RC} ${BACKUP_GFARM2RC}
-cp ${GFARM2CONF} ${BACKUP_GFARM2CONF}
-
-# backup for user2
-gfuser -c user2 user2 / /O=Grid/OU=GlobusTest/OU=GlobusSimpleCA/CN=user2
-${SUDO_USER2} ${GFDOCKER_COPY_SHARED_KEY}
 
 ### master gfmd
 GFMD1=${GFDOCKER_HOSTNAME_PREFIX_GFMD}1${GFDOCKER_HOSTNAME_SUFFIX}
@@ -266,12 +292,12 @@ EOF
 done
 rm -f $tmp_gfarmconf
 
-echo "GFDOCKER_PRJ_NAME=$GFDOCKER_PRJ_NAME: setup is now complete."
-date
-
 LOG=/var/log/messages
 SYSLOG=/var/log/syslog
 if [ -f $SYSLOG ]; then
    LOG=$SYSLOG
 fi
 sudo tail -1 $LOG
+
+date
+echo "GFDOCKER_PRJ_NAME=$GFDOCKER_PRJ_NAME: setup is now complete."
