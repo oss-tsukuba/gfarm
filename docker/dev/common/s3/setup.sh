@@ -357,7 +357,7 @@ server {
   }
 
   location /static/ {
-    alias /home/wsgi/static/;
+    alias ${GFARM_S3_HOMEDIR}/static/;
     autoindex off;
   }
 }
@@ -474,13 +474,14 @@ configure_gfarm_s3() {
 
     . ${GFARM_S3_PREFIX}/etc/gfarm-s3.conf
 
+    ${SUDO} truncate --size=0 "${GFARMS3_LOCAL_USER_MAP}"
     ## register users
     for u in $USERS; do
         # match whole line
-        if grep -q -x ${u} ${GFARMS3_LOCAL_USER_MAP}; then
-            echo "already exists: ${u}"
-            continue
-        fi
+        # if grep -q -x ${u} ${GFARMS3_LOCAL_USER_MAP}; then
+        #     echo "already exists: ${u}"
+        #     continue
+        # fi
         global_user=${u%%:*}
         local_user=${u%:*}
         local_user=${local_user#*:}
