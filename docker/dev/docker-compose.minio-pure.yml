@@ -6,9 +6,10 @@ version: '3.4'
 services:
   minio:
     image: minio/minio:latest
-    command: server /data
+    command: server /data --console-address ":9001"
     ports:
       - "9000:9000"
+      - "9001:9001"
     volumes:
       - data:/data
     secrets:
