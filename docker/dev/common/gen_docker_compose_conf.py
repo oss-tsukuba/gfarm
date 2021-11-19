@@ -17,6 +17,7 @@ hostname_suffix = environ['GFDOCKER_HOSTNAME_SUFFIX']
 
 hostport_s3_http = environ['GFDOCKER_HOSTPORT_S3_HTTP']
 hostport_s3_https = environ['GFDOCKER_HOSTPORT_S3_HTTPS']
+hostport_s3_direct = environ['GFDOCKER_HOSTPORT_S3_DIRECT']
 
 if ip_version == '4':
     nw = IPv4Network(subnet)
@@ -93,7 +94,11 @@ if hostport_s3_http and hostport_s3_https:
     client1_ports = '''
     ports:
       - {}:80
-      - {}:443'''.format(int(hostport_s3_http), int(hostport_s3_https))
+      - {}:443
+      - {}:51000'''.format(
+          int(hostport_s3_http),
+          int(hostport_s3_https),
+          int(hostport_s3_direct))
 else:
     client1_ports = ''
 

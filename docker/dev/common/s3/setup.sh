@@ -322,6 +322,7 @@ gen_nginx_conf() {
               -e "s;@SERVER_CERT@;$SERVER_CERT;" \
               -e "s;@SERVER_KEY@;$SERVER_KEY;" \
               -e "s;@MY_HOSTNAME@;$MY_HOSTNAME;" \
+	      -e "s;@GFARM_S3_HOMEDIR@;$GFARM_S3_HOMEDIR;" \
         | ${SUDO} dd of="$CONF"
 server {
   listen 80;
@@ -357,7 +358,7 @@ server {
   }
 
   location /static/ {
-    alias ${GFARM_S3_HOMEDIR}/static/;
+    alias @GFARM_S3_HOMEDIR@/static/;
     autoindex off;
   }
 }
@@ -507,9 +508,9 @@ configure_gfarm_s3() {
     esac
 
     ## start gfarm-s3 WebUI service (gunicorn)
-    ${SUDO} systemctl disable --now gunicorn.service
-    ${SUDO} systemctl enable --now gunicorn.service
-    ${SUDO} systemctl restart --now gunicorn.service
+    ${SUDO} systemctl disable --now gfarm-s3-webui.service
+    ${SUDO} systemctl enable --now gfarm-s3-webui.service
+    ${SUDO} systemctl restart --now gfarm-s3-webui.service
 
     ## start gfarm-s3 MinIO router service (gunicorn)
     ${SUDO} systemctl disable --now gfarm-s3-router.service

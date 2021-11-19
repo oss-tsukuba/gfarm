@@ -68,6 +68,7 @@ SUDO = sudo
 # using port numbers of host OS
 GFDOCKER_HOSTPORT_S3_HTTP = 18080
 GFDOCKER_HOSTPORT_S3_HTTPS = 18443
+GFDOCKER_HOSTPORT_S3_DIRECT = 18888
 
 # gfarm-s3 users
 GFDOCKER_GFARMS3_USERS = user1:user1:K4XcKzocrUhrnCAKrx2Z user2:user2:qzjjOwLjeWptTFUZVThs
