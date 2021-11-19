@@ -189,6 +189,8 @@ wait
 COPY_DIR=/mnt/COPY_DIR
 COPY_HOMES="${COPY_DIR}/HOMES"
 
+sudo mkdir -p "${COPY_HOMES}"
+
 # for external gfarm-s3-minio-web container
 S3_USERMAP="${COPY_DIR}/gfarm-s3-usermap.conf"
 S3_ACCESS_KEY_PREFIX="gfarm_s3_"
@@ -196,7 +198,6 @@ S3_ACCESS_KEY_PREFIX="gfarm_s3_"
 echo "### <Gfarm Username>:<Local Username>:<S3 Accesskey ID>" | \
 sudo dd of="${S3_USERMAP}" > /dev/null 2>&1
 
-sudo mkdir -p "${COPY_HOMES}"
 for i in $(seq 1 $GFDOCKER_NUM_USERS); do
   name="${GFDOCKER_USERNAME_PREFIX}${i}"
   from_dir="/home/${name}"
