@@ -568,7 +568,7 @@ centos8stream:
 	$(DOCKER_RUN) -it --rm 'quay.io/centos/centos:stream8' bash
 
 centos9stream:
-	$(DOCKER_RUN) -it --rm 'quay.io/centos/centos:stream9-development' bash
+	$(DOCKER_RUN) -it --rm 'quay.io/centos/centos:stream9' bash
 
 fedora33:
 	$(DOCKER_RUN) -it --rm 'fedora:33' bash
