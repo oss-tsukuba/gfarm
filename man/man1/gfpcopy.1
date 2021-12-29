@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: gfpcopy
-.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
-.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 27 Aug 2015
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 29 Dec 2021
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFPCOPY" "1" "27 Aug 2015" "Gfarm" "Gfarm"
+.TH "GFPCOPY" "1" "29 Dec 2021" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -31,7 +31,7 @@
 gfpcopy \- copy Gfarm files in parallel
 .SH "SYNOPSIS"
 .HP \w'\fBgfpcopy\fR\ 'u
-\fBgfpcopy\fR [\-nqvdpPU] [\-X\ \fIregexp\fR] [\-S\ \fIsource\-domainname\fR] [\-h\ \fIsource\-hostfile\fR] [\-D\ \fIdestination\-domainname\fR] [\-H\ \fIdestination\-hostfile\fR] [\-j\ \fInum\-of\-processes\fR] [\-J\ \fInum\-of\-processes\fR] [\-M\ \fIlimit\-byte\fR] [\-z\ \fIminimum\-byte\fR] [\-Z\ \fImaximum\-byte\fR] [\-w\ \fIway\-of\-scheduling\fR] [\-W\ \fIkilobytes\-for\-threshold\fR] [\-s\ \fIKB/s\-to\-simulate\fR] [\-F\ \fInum\-for\-readahead\fR] [\-b\ \fIbufsize\fR] [\-f] [\-e] [\-k] \fIsource\-path\fR \fIdestination\-path\fR
+\fBgfpcopy\fR [\-nqvdpPU] [\-X\ \fIregexp\fR] [\-S\ \fIsource\-domainname\fR] [\-h\ \fIsource\-hostfile\fR] [\-D\ \fIdestination\-domainname\fR] [\-H\ \fIdestination\-hostfile\fR] [\-j\ \fInum\-of\-processes\fR] [\-J\ \fInum\-of\-processes\fR] [\-M\ \fIlimit\-byte\fR] [\-z\ \fIminimum\-byte\fR] [\-Z\ \fImaximum\-byte\fR] [\-w\ \fIway\-of\-scheduling\fR] [\-W\ \fIkilobytes\-for\-threshold\fR] [\-s\ \fIKB/s\-to\-simulate\fR] [\-F\ \fInum\-for\-readahead\fR] [\-b\ \fIbufsize\fR] [\-f] [\-e] [\-k] [\-t\ \fInum\-of\-processes\fR] [\-T\ \fIminimum\-byte\fR] \fIsource\-path\fR \fIdestination\-path\fR
 .SH "DESCRIPTION"
 .PP
 \fBgfpcopy\fR
@@ -128,6 +128,20 @@ Skips existing files in order to execute gfpcopy simultaneously\&.
 \fB\-k\fR
 .RS 4
 Does not copy symbolic links\&.
+.RE
+.PP
+\fB\-t\fR \fInum\-of\-processes\fR
+.RS 4
+Specifies the minimum number of processes to copy each large file in parallel\&.
+.sp
+The default value is 2\&.
+.RE
+.PP
+\fB\-T\fR \fIminimum\-byte\fR
+.RS 4
+Specifies the minimum file size in bytes to copy each large file in parallel\&.
+.sp
+The default value is 1G (1GiB, 1073741824)\&.
 .RE
 .SH "COMMON OPTIONS"
 .PP
@@ -386,6 +400,7 @@ command near the metadata server\&. When you need to execute
 command far from the metadata server, increase the parallelism by the \-j and \-J options\&.
 .SH "SEE ALSO"
 .PP
+\fBgfcp\fR(1),
 \fBgfprep\fR(1),
 \fBgfreg\fR(1),
 \fBgfexport\fR(1),
