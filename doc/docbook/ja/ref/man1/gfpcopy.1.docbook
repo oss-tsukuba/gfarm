@@ -6,7 +6,7 @@
 
 <refentry id="gfpcopy.1">
 
-<refentryinfo><date>27 Aug 2015</date></refentryinfo>
+<refentryinfo><date>29 Dec 2021</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfpcopy</refentrytitle>
@@ -41,6 +41,8 @@
   <arg choice="opt" rep="norepeat">-b <replaceable>bufsize</replaceable></arg>
   <arg choice="opt" rep="norepeat">-e</arg>
   <arg choice="opt" rep="norepeat">-k</arg>
+  <arg choice="opt" rep="norepeat">-t <replaceable>num-of-processes</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-T <replaceable>minimum-byte</replaceable></arg>
   <arg choice="plain" rep="norepeat"><replaceable>source-path</replaceable></arg>
   <arg choice="plain" rep="norepeat"><replaceable>destination-path</replaceable></arg>
 </cmdsynopsis>
@@ -222,6 +224,30 @@ gfpcopy を複数同時に実行するために、コピー先にファイルが
 <listitem>
 <para>
 シンボリックリンクをコピーしません。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-t</option> <parameter moreinfo="none">num-of-processes</parameter></term>
+<listitem>
+<para>
+大きいファイルを個別に並列コピーする場合の並列数を指定します。
+</para>
+<para>
+デフォルト値は 2 です。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-T</option> <parameter moreinfo="none">minimum-byte</parameter></term>
+<listitem>
+<para>
+大きいファイルを個別に並列コピーする場合の最小サイズをバイト単位で指定します。
+</para>
+<para>
+デフォルトは 1G (1GiB, 1073741824) です。
 </para>
 </listitem>
 </varlistentry>
@@ -600,6 +626,9 @@ $ gfpcopy file /tmp/dir
 
 <refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
+  <citerefentry>
+  <refentrytitle>gfcp</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>,
   <citerefentry>
   <refentrytitle>gfprep</refentrytitle><manvolnum>1</manvolnum>
   </citerefentry>,
