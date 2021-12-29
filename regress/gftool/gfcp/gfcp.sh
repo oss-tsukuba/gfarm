@@ -11,10 +11,20 @@ GFCP="gfcp -c"
 
 setup_test
 
+get_mode_gfarm()
+{
+    gfls -l a | awk '{print $1}'
+}
+
+get_mode_local()
+{
+    gfls -l a | awk '{print $1}'
+}
+
 test_write_to_gfarm_j1()
 {
     gfrm -f $gfile_out
-    # with -t
+    # with -t (range_test once)
     $GFCP -t -j 1 file:$lfile1 $gfile_out
 }
 
@@ -27,7 +37,23 @@ test_write_to_local()
 test_write_to_gfarm()
 {
     gfrm -f $gfile_out
-    $GFCP -t -j 1 $lfile2 $gfile_out
+    $GFCP $lfile2 $gfile_out
+}
+
+test_write_to_local_readonly()
+{
+    rm -f $lfile_out
+    gfchmod 400 $gfile1
+    $GFCP $gfile1 $lfile_out
+    [ $(get_mode_gfarm $lfile_out) = "-r--------" ]
+}
+
+test_write_to_gfarm_readonly()
+{
+    gfrm -f $gfile_out
+    chmod 400 $lfile2
+    $GFCP $lfile2 $gfile_out
+    [ $(get_mode_gfarm $gfile_out) = "-r--------" ]
 }
 
 test_write_to_local_0byte()
@@ -79,6 +105,8 @@ test_same_gfarm_file()
 test_write_to_gfarm_j1
 test_write_to_local
 test_write_to_gfarm
+test_write_to_local_readonly
+test_write_to_gfarm_readonly
 test_write_to_local_0byte
 test_write_to_gfarm_0byte
 test_overwrite_to_local
