@@ -527,8 +527,9 @@ gfpconcat_child_copy_parts(struct gfpconcat_option *opt, int child_id)
 	}
 
 	/* Do not use O_TRUNC */
+	/* 0200 means writable for all child processes */
 	e = gfpconcat_open(opt->tmp_url, O_CREAT | O_WRONLY,
-	    opt->mode & 0777 & ~0022, &dst_fp);
+	    (opt->mode | 0200) & 0777 & ~0022, &dst_fp);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfmsg_error_e(e, "%s: open", gfurl_url(opt->tmp_url));
 		goto terminate;
@@ -893,6 +894,12 @@ end:
 	return (result);
 }
 
+static int
+is_writable(int mode)
+{
+	return (mode & 0200);
+}
+
 /*
  * public functions
  */
@@ -1200,6 +1207,17 @@ copied:
 			     + time_end.tv_usec));
 			printf("compare_time: %lld.%06d sec.\n",
 			    (long long)time_end.tv_sec, (int)time_end.tv_usec);
+		}
+	}
+	if (!is_writable(opt->mode)) {
+		gfmsg_debug("chmod(%o): %s",
+		    opt->mode, gfurl_url(opt->out_url));
+		e = gfurl_chmod(opt->out_url, opt->mode & 0777 & ~0022);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gfmsg_error_e(e, "cannot change mode(%o): %s",
+			    opt->mode, gfurl_url(opt->out_url));
+			rv = EXIT_FAILURE;
+			goto end;
 		}
 	}
 	rv = EXIT_SUCCESS;
