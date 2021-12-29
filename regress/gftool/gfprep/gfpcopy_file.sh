@@ -1,5 +1,7 @@
 #!/bin/sh
 
+ADD_OPT="$1"
+
 . ./regress.conf
 
 GFPREP_DIR=`dirname $0`
@@ -19,7 +21,7 @@ fi
 test_copy() {
   SIZE=$1
   filename=COPYFILE
-  OPT="-b 65536 -f -d"
+  OPT="-b 65536 -f -d ${ADD_OPT}"
   lfile=$local_dir1/$filename
   gfile=$gf_dir1/$filename
   if dd if=/dev/urandom of=$lfile bs=$SIZE count=1 > /dev/null; then

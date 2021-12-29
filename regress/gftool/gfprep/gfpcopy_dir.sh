@@ -1,5 +1,7 @@
 #!/bin/sh
 
+OPT="$1"
+
 . ./regress.conf
 
 GFPREP_DIR=`dirname $0`
@@ -45,7 +47,7 @@ check_local_entries() {
   fi
 }
 
-OPT=""
+
 
 if $GFPCOPY $OPT gfarm:$gf_dir1 file:$local_dir1; then
   :

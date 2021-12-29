@@ -63,14 +63,18 @@ struct gfprep_option {
 	int check_loadavg;	/* not -B */
 	int check_disk_avail;	/* not -U */
 	int openfile_cost;	/* -C */
-	int update_hostinfo_interval; 	/* -I */
+	int update_hostinfo_interval;	/* -I */
+	int paracopy_n_para;	/* -t */
+	gfarm_off_t paracopy_minimum_size;	/* -T */
 };
 
 /* default values */
 static struct gfprep_option opt = {
 	.check_loadavg = 1,	/* enable */
 	.check_disk_avail = 1,	/* enable */
-	.update_hostinfo_interval = 300 /* sec. (5 min.) */
+	.update_hostinfo_interval = 300,	/* sec. (5 min.) */
+	.paracopy_n_para = 2,
+	.paracopy_minimum_size = 1024 * 1024 * 1024,	/* 1GiB */
 	/* others = 0 */
 };
 
@@ -111,8 +115,14 @@ gfpcopy_usage()
 "\t[-e (skip existing files\n"
 "\t     in order to execute multiple gfpcopy simultaneously)]\n"
 "\t[-k (skip symlink)]\n"
+"\t[-t <#parallel(to copy each large file in parallel)(default: %d)>]\n"
+"\t[-T <#byte(K|M|G|T)(minimum size to copy each large file in parallel)\n"
+"\t    (default: %lld)>]\n"
 "\t<src_url(gfarm:... or file:...) or local-path>\n"
-"\t<dst_directory(gfarm:... or file:... or hpss:...) or local-path>\n");
+"\t<dst_directory(gfarm:... or file:... or hpss:...) or local-path>\n",
+		opt.paracopy_n_para,
+		(long long)opt.paracopy_minimum_size
+		);
 }
 
 static void
@@ -144,7 +154,6 @@ gfprep_usage_common(int error)
 "\t[-M <#byte(K|M|G|T)(total copied size)(default: unlimited)>]\n"
 "\t[-z <#byte(K|M|G|T)(minimum file size)(default: unlimited)>]\n"
 "\t[-Z <#byte(K|M|G|T)(maximum file size)(default: unlimited)>]\n"
-/* "\t[-R <#ratio (throughput: local=remote*ratio)(for -w greedy)>]\n" */
 "\t[-F <#dirents(readahead)>]\n",
 		program_name,
 		n_para, GFPREP_PARALLEL_DIRTREE, opt.update_hostinfo_interval
@@ -2762,7 +2771,6 @@ main(int argc, char *argv[])
 	int opt_remove_source = 0; /* 1 for -m, 0 for -mm */
 	gfarm_int64_t opt_max_copy_size = -1; /* -M */
 	int opt_remove = 0;  /* -x */
-	int opt_ratio = 1; /* -R */
 	int opt_limited_src = 0; /* -L */
 	int opt_copy_bufsize = 64 * 1024; /* -b, default=64KiB */
 	int opt_dirtree_n_para = -1; /* -J */
@@ -2785,21 +2793,38 @@ main(int argc, char *argv[])
 	gfmsg_fatal_e(e, "gfarm_list_init");
 
 	while ((ch = getopt(argc, argv,
-	    "N:h:j:w:W:s:S:D:H:R:M:b:J:F:C:c:LekmnpPqvdfI:BUlxX:z:Z:?"))
+	    "b:Bc:C:dD:efF:h:H:I:j:J:klLmM:nN:pPqs:S:t:T:Uvw:W:xX:z:Z:?"))
 	    != -1) {
 		switch (ch) {
-		case 'w':
-			opt_way = optarg;
+		case 'b': /* gfpcopy */
+			opt_copy_bufsize = strtol(optarg, NULL, 0);
 			break;
-		case 'W':
-			opt_sched_threshold_size
-				= strtol(optarg, NULL, 0) * 1024;
+		case 'B':
+			opt.check_loadavg = 0;
 			break;
-		case 'S':
-			opt_src_domain = optarg;
+		case 'c': /* hidden option */
+			/* concurrency per gfsd instead of ncpu */
+			opt.max_rw = strtol(optarg, NULL, 0);
+			break;
+		case 'C': /* hidden option: for -w greedy */
+			opt.openfile_cost = strtol(optarg, NULL, 0);
+			if (opt.openfile_cost < 0)
+				opt.openfile_cost = 0;
+			break;
+		case 'd':
+			opt.debug = 1;
 			break;
 		case 'D':
 			opt_dst_domain = optarg;
+			break;
+		case 'e': /* gfpcopy */
+			opt_skip_existing = 1;
+			break;
+		case 'f': /* gfpcopy */
+			opt_force_copy = 1;
+			break;
+		case 'F':
+			opt_dirtree_n_fifo = strtol(optarg, NULL, 0);
 			break;
 		case 'h':
 			opt_src_hostfile = optarg;
@@ -2807,66 +2832,23 @@ main(int argc, char *argv[])
 		case 'H':
 			opt_dst_hostfile = optarg;
 			break;
-		case 'L':
-			opt_limited_src = 1;
+		case 'I':
+			opt.update_hostinfo_interval = strtol(optarg, NULL, 0);
 			break;
 		case 'j':
 			opt_n_para = strtol(optarg, NULL, 0);
 			break;
-		case 's':
-			opt_simulate_KBs = strtoll(optarg, NULL, 0);
-			break;
-		case 'n':
-			opt_simulate_KBs = 1000000000000LL; /* 1PB/s */
-			break;
-		case 'p':
-			opt.performance = 1;
-			break;
-		case 'P':
-			opt.performance = 1;
-			opt.performance_each = 1;
-			break;
-		case 'q':
-			opt.quiet = 1; /* shut up warnings */
-			break;
-		case 'v':
-			opt.verbose = 1; /* print more information */
-			break;
-		case 'd':
-			opt.debug = 1;
-			break;
-		case 'R': /* hidden option: function not implemented */
-			opt_ratio = strtol(optarg, NULL, 0);
-			break;
 		case 'J':
 			opt_dirtree_n_para = strtol(optarg, NULL, 0);
 			break;
-		case 'F':
-			opt_dirtree_n_fifo = strtol(optarg, NULL, 0);
-			break;
-		case 'I':
-			opt.update_hostinfo_interval = strtol(optarg, NULL, 0);
-			break;
-		case 'B':
-			opt.check_loadavg = 0;
-			break;
-		case 'U':
-			opt.check_disk_avail = 0;
+		case 'k': /* gfpcopy */
+			opt_skip_symlink = 1;
 			break;
 		case 'l': /* hidden option: for debug */
 			opt_list_only = 1;
 			break;
-		case 'C': /* hidden option: for -w greedy */
-			opt.openfile_cost = strtol(optarg, NULL, 0);
-			if (opt.openfile_cost < 0)
-				opt.openfile_cost = 0;
-			break;
-		case 'c': /* hidden option */
-			/* concurrency per gfsd instead of ncpu */
-			opt.max_rw = strtol(optarg, NULL, 0);
-			break;
-		case 'N': /* gfprep */
-			opt_n_desire = strtol(optarg, NULL, 0);
+		case 'L':
+			opt_limited_src = 1;
 			break;
 		case 'm': /* gfprep */
 			if (opt_migrate == 0)
@@ -2884,17 +2866,51 @@ main(int argc, char *argv[])
 				exit(EXIT_FAILURE);
 			}
 			break;
-		case 'f': /* gfpcopy */
-			opt_force_copy = 1;
+		case 'n':
+			opt_simulate_KBs = 1000000000000LL; /* 1PB/s */
 			break;
-		case 'b': /* gfpcopy */
-			opt_copy_bufsize = strtol(optarg, NULL, 0);
+		case 'N': /* gfprep */
+			opt_n_desire = strtol(optarg, NULL, 0);
 			break;
-		case 'e': /* gfpcopy */
-			opt_skip_existing = 1;
+		case 'p':
+			opt.performance = 1;
 			break;
-		case 'k': /* gfpcopy */
-			opt_skip_symlink = 1;
+		case 'P':
+			opt.performance = 1;
+			opt.performance_each = 1;
+			break;
+		case 'q':
+			opt.quiet = 1; /* shut up warnings */
+			break;
+		case 's':
+			opt_simulate_KBs = strtoll(optarg, NULL, 0);
+			break;
+		case 'S':
+			opt_src_domain = optarg;
+			break;
+		case 't':
+			opt.paracopy_n_para = strtol(optarg, NULL, 0);
+			break;
+		case 'T':
+			e = gfarm_humanize_number_to_int64(
+			    &opt.paracopy_minimum_size, optarg);
+			if (e != GFARM_ERR_NO_ERROR) {
+				gfmsg_error("-T %s: invalid number", optarg);
+				exit(EXIT_FAILURE);
+			}
+			break;
+		case 'U':
+			opt.check_disk_avail = 0;
+			break;
+		case 'v':
+			opt.verbose = 1; /* print more information */
+			break;
+		case 'w':
+			opt_way = optarg;
+			break;
+		case 'W':
+			opt_sched_threshold_size
+				= strtol(optarg, NULL, 0) * 1024;
 			break;
 		case 'x': /* gfprep */
 			opt_remove = 1;
@@ -3184,8 +3200,12 @@ main(int argc, char *argv[])
 
 	/* fork() before gfarm_initialize() and pthread_create() */
 	e = gfarm_pfunc_init_fork(
-	    &pfunc_handle, opt_n_para, 1, opt_simulate_KBs, opt_copy_bufsize,
-	    opt_skip_existing, pfunc_cb_start, pfunc_cb_end, pfunc_cb_free);
+	    &pfunc_handle,
+	    opt.quiet, opt.verbose, opt.debug,
+	    opt_n_para, 1,
+	    opt_simulate_KBs, opt_copy_bufsize,
+	    opt_skip_existing, opt.paracopy_n_para, opt.paracopy_minimum_size,
+	    pfunc_cb_start, pfunc_cb_end, pfunc_cb_free);
 	gfmsg_fatal_e(e, "gfarm_pfunc_init_fork");
 
 	e = gfarm_dirtree_init_fork(&dirtree_handle, src,
@@ -4000,11 +4020,6 @@ next_entry:
 		gfmsg_fatal_e(e, "gfprep_connections_flat");
 		gfprep_hash_host_to_nodes_print("FLAT", hash_host_to_nodes);
 		gfprep_connections_print("FLAT", connections, n_connections);
-
-		/* replicate files before execution to flat Connections */
-		if (opt_ratio > 1)
-			gfmsg_fatal_e(GFARM_ERR_FUNCTION_NOT_IMPLEMENTED,
-				       "-R option");
 
 		if (opt.performance) {
 			gettimeofday(&sched_end, NULL);

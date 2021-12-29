@@ -257,6 +257,7 @@ gfpara_init(gfpara_t **handlep, int n_procs,
 			close(pipe_out[0]);
 			close(pipe_stderr[0]);
 			close(0);
+			/* disable stdout */
 			fd = open("/dev/null", O_RDONLY);
 			dup2(fd, 1);
 			close(1);

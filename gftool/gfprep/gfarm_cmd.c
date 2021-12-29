@@ -14,7 +14,7 @@
 #include <pthread.h>
 
 pid_t
-gfarm_popen3(char *const cmd_args[], int *fd_in, int *fd_out, int *fd_err)
+gfarm_cmd_popen3(char *const cmd_args[], int *fd_in, int *fd_out, int *fd_err)
 {
 	int p_stdin[2], p_stdout[2], p_stderr[2];
 	pid_t pid;
@@ -161,7 +161,7 @@ gfarm_cmd_exec(char *const args[], int (*func_stdin)(int fd, void *arg),
 	pthread_t t;
 	struct cmd_out out;
 
-	pid = gfarm_popen3(args, &cmd_in, &cmd_out, &cmd_err);
+	pid = gfarm_cmd_popen3(args, &cmd_in, &cmd_out, &cmd_err);
 	if (pid == -1)
 		return (-1);
 
@@ -172,20 +172,29 @@ gfarm_cmd_exec(char *const args[], int (*func_stdin)(int fd, void *arg),
 	eno = pthread_create(&t, NULL, print_stdout_stderr, &out);
 	if (eno != 0) {
 		fprintf(stderr, "pthread_create: %s", strerror(eno));
-		return (eno);
+		retv = eno;
+		goto end;
 	}
 
 	signal(SIGPIPE, SIG_IGN);
-	retv = func_stdin(cmd_in, func_stdin_arg);
+	if (func_stdin != NULL) {
+		retv = func_stdin(cmd_in, func_stdin_arg);
+	} else {
+		retv = 0;
+	}
 
 	pthread_join(t, NULL);
-
-	if (waitpid(pid, &status, 0) > 0) {
-		if (retv != 0)
-			return (retv);
-		else
-			return (WEXITSTATUS(status));
+	if (waitpid(pid, &status, 0) < 0) {
+		perror("waitpid");
+		retv = -1;
+		goto end;
 	}
-	perror("waitpid");
-	return (-1);
+	if (retv == 0) {
+		retv = WEXITSTATUS(status);
+	}
+end:
+	close(cmd_in);
+	close(cmd_out);
+	close(cmd_err);
+	return (retv);
 }
