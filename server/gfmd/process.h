@@ -10,7 +10,11 @@ struct process *process_lookup(gfarm_pid_t);
 gfarm_error_t process_new_generation_wait(struct peer *, int,
 	gfarm_error_t (*)(struct peer *, void *, int *), void *, const char *);
 gfarm_error_t process_new_generation_done(struct process *, struct peer *,
-	int, gfarm_int32_t, const char *);
+	int, enum inode_close_mode, gfarm_int32_t, gfarm_off_t,
+	struct gfarm_timespec *, struct gfarm_timespec *, const char *);
+void process_new_generation_by_fd_abort(struct process *, struct peer *,
+	int, gfarm_error_t, const char *);
+
 
 void process_attach_peer(struct process *, struct peer *);
 void process_detach_peer(struct process *, struct peer *, const char *);
@@ -120,7 +124,9 @@ gfarm_error_t process_close_file(struct process *, struct peer *, int, char **,
 	const char *);
 gfarm_error_t process_close_file_read(struct process *, struct peer *, int,
 	struct gfarm_timespec *, const char *);
+enum inode_close_mode;
 gfarm_error_t process_close_file_write(struct process *, struct peer *, int,
+	enum inode_close_mode,
 	gfarm_off_t, struct gfarm_timespec *, struct gfarm_timespec *,
 	gfarm_int32_t *, gfarm_ino_t *, gfarm_int64_t *, gfarm_int64_t *,
 	char **, const char *);

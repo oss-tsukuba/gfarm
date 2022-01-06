@@ -3195,17 +3195,20 @@ gfm_server_close_read(struct peer *peer, int from_client, int skip)
 	return (gfm_server_put_reply(peer, diag, e, ""));
 }
 
-struct close_v2_4_resume_arg {
+struct close_v2_4_or_later_resume_arg {
 	int fd;
+	enum inode_close_mode close_mode;
 	gfarm_off_t size;
-	struct gfarm_timespec atime, mtime;
+	struct gfarm_timespec *atime, *mtime;
+	struct gfarm_timespec atime_val, mtime_val;
 };
 
 gfarm_error_t
-close_write_v2_4_resume(struct peer *peer, void *closure, int *suspendedp)
+close_write_v2_4_or_later_resume(struct peer *peer, void *closure,
+	int *suspendedp)
 {
 	gfarm_error_t e_ret, e_rpc;
-	struct close_v2_4_resume_arg *arg = closure;
+	struct close_v2_4_or_later_resume_arg *arg = closure;
 	struct host *spool_host;
 	struct process *process;
 	int transaction = 0;
@@ -3253,8 +3256,8 @@ close_write_v2_4_resume(struct peer *peer, void *closure, int *suspendedp)
 		 * closing must be done regardless of the result of db_begin().
 		 * because not closing may cause descriptor leak.
 		 */
-		e_rpc = process_close_file_write(
-		    process, peer, arg->fd, arg->size, &arg->atime, &arg->mtime,
+		e_rpc = process_close_file_write(process, peer, arg->fd,
+		    arg->close_mode, arg->size, arg->atime, arg->mtime,
 		    &flags, &inum, &old_gen, &new_gen, &trace_log, diag);
 		if (transaction)
 			db_end(diag);
@@ -3263,7 +3266,7 @@ close_write_v2_4_resume(struct peer *peer, void *closure, int *suspendedp)
 			e_rpc = peer_fdpair_close_current(peer);
 		} else if (e_rpc == GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE) {
 			if ((e_rpc = process_new_generation_wait(peer, arg->fd,
-			    close_write_v2_4_resume, arg, diag)) ==
+			    close_write_v2_4_or_later_resume, arg, diag)) ==
 			    GFARM_ERR_NO_ERROR) {
 				*suspendedp = 1;
 				giant_unlock();
@@ -3300,7 +3303,7 @@ close_write_v2_4_resume(struct peer *peer, void *closure, int *suspendedp)
 /* trace_log is malloc(3)ed string, thus caller should free(3) the memory. */
 gfarm_error_t
 gfm_server_close_write_common(const char *diag,
-	struct peer *peer, int from_client,
+	struct peer *peer, int from_client, enum inode_close_mode close_mode,
 	gfarm_off_t size,
 	struct gfarm_timespec *atime, struct gfarm_timespec *mtime,
 	gfarm_int32_t *flagsp,
@@ -3312,7 +3315,7 @@ gfm_server_close_write_common(const char *diag,
 	struct process *process;
 	int transaction = 0;
 
-	struct close_v2_4_resume_arg *arg;
+	struct close_v2_4_or_later_resume_arg *arg;
 
 	if (from_client) { /* from gfsd only */
 		gflog_debug(GFARM_MSG_1001944, "operation is not permitted");
@@ -3355,8 +3358,8 @@ gfm_server_close_write_common(const char *diag,
 		 * closing must be done regardless of the result of db_begin().
 		 * because not closing may cause descriptor leak.
 		 */
-		e = process_close_file_write(process, peer, fd, size,
-		    atime, mtime,
+		e = process_close_file_write(process, peer, fd, close_mode,
+		    size, atime, mtime,
 		    flagsp, inump, old_genp, new_genp, trace_logp, diag);
 		if (transaction)
 			db_end(diag);
@@ -3369,12 +3372,24 @@ gfm_server_close_write_common(const char *diag,
 				e = GFARM_ERR_NO_MEMORY;
 			} else {
 				arg->fd = fd;
+				arg->close_mode = close_mode;
 				arg->size = size;
-				arg->atime = *atime;
-				arg->mtime = *mtime;
+				if (close_mode == INODE_CLOSE_V2_4) {
+					arg->atime_val = *atime;
+					arg->mtime_val = *mtime;
+					arg->atime = &arg->atime_val;
+					arg->mtime = &arg->mtime_val;
+				} else if (close_mode == INODE_CLOSE_V2_8) {
+					arg->atime = NULL;
+					arg->mtime = NULL;
+				} else { /* shouldn't happen */
+					gflog_fatal(GFARM_MSG_UNFIXED,
+					    "invalid close_mode %d",
+					    close_mode);
+				}
 				if ((e = process_new_generation_wait(peer, fd,
-				    close_write_v2_4_resume, arg, diag)) ==
-				    GFARM_ERR_NO_ERROR) {
+				    close_write_v2_4_or_later_resume,
+				    arg, diag)) == GFARM_ERR_NO_ERROR) {
 					return (GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE);
 				}
 			}
@@ -3400,8 +3415,9 @@ gfm_server_close_write(struct peer *peer, int from_client, int skip)
 		return (GFARM_ERR_NO_ERROR);
 	giant_lock();
 
-	e = gfm_server_close_write_common(diag, peer, from_client, size,
-	    &atime, &mtime, NULL, NULL, NULL, NULL, NULL);
+	e = gfm_server_close_write_common(diag, peer, from_client,
+	    INODE_CLOSE_V2_0,
+	    size, &atime, &mtime, NULL, NULL, NULL, NULL, NULL);
 
 	giant_unlock();
 	return (gfm_server_put_reply(peer, diag, e, ""));
@@ -3429,7 +3445,8 @@ gfm_server_close_write_v2_4(struct peer *peer, int from_client, int skip,
 		return (GFARM_ERR_NO_ERROR);
 	giant_lock();
 
-	e_rpc = gfm_server_close_write_common(diag, peer, from_client, size,
+	e_rpc = gfm_server_close_write_common(diag, peer, from_client,
+	    INODE_CLOSE_V2_4, size,
 	    &atime, &mtime, &flags, &inum, &old_gen, &new_gen, &trace_log);
 
 	giant_unlock();
@@ -3455,6 +3472,58 @@ gfm_server_close_write_v2_4(struct peer *peer, int from_client, int skip,
 		 * because network communication error may happen later.
 		 */
 		gflog_error(GFARM_MSG_1003482,
+		    "%s: inode %lld generation %lld -> %lld: %s", diag,
+		    (long long)inum, (long long)old_gen, (long long)new_gen,
+		    gfarm_error_string(e_ret));
+	}
+	return (e_ret);
+}
+
+gfarm_error_t
+gfm_server_close_write_v2_8(struct peer *peer, int from_client, int skip,
+	int *suspendedp)
+{
+	gfarm_error_t e_rpc, e_ret;
+	gfarm_int32_t flags;
+	gfarm_ino_t inum = 0;
+	gfarm_int64_t old_gen = 0, new_gen = 0;
+	char *trace_log;
+	static const char diag[] = "GFM_PROTO_CLOSE_WRITE_V2_8";
+
+	e_rpc = gfm_server_get_request(peer, diag, "");
+	if (e_rpc != GFARM_ERR_NO_ERROR)
+		return (e_rpc);
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+	giant_lock();
+
+	e_rpc = gfm_server_close_write_common(diag, peer, from_client,
+	    INODE_CLOSE_V2_8, 0,
+	    NULL, NULL, &flags, &inum, &old_gen, &new_gen, &trace_log);
+
+	giant_unlock();
+
+	if (e_rpc == GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE) {
+		*suspendedp = 1;
+		return (GFARM_ERR_NO_ERROR);
+	}
+
+	e_ret = gfm_server_put_reply(peer, diag, e_rpc, "ill",
+	    flags, old_gen, new_gen);
+
+	if (e_rpc == GFARM_ERR_NO_ERROR && gfarm_ctxp->file_trace &&
+	    (flags & GFM_PROTO_CLOSE_WRITE_GENERATION_UPDATE_NEEDED) != 0 &&
+	    trace_log != NULL) {
+		gflog_trace(GFARM_MSG_UNFIXED, "%s", trace_log);
+		free(trace_log);
+	}
+	if (e_rpc == GFARM_ERR_NO_ERROR && e_ret != GFARM_ERR_NO_ERROR) {
+		/*
+		 * There is severe race condition here (SourceForge #419),
+		 * but there is no guarantee that this error is logged.
+		 * because network communication error may happen later.
+		 */
+		gflog_error(GFARM_MSG_UNFIXED,
 		    "%s: inode %lld generation %lld -> %lld: %s", diag,
 		    (long long)inum, (long long)old_gen, (long long)new_gen,
 		    gfarm_error_string(e_ret));
@@ -3515,7 +3584,8 @@ gfm_server_fhclose_read(struct peer *peer, int from_client, int skip)
 }
 
 static gfarm_error_t
-fhclose_write(struct peer *peer, struct host *spool_host, struct inode *inode,
+fhclose_write(struct peer *peer, struct host *spool_host,
+	enum inode_close_mode close_mode, struct inode *inode,
 	gfarm_off_t size,
 	struct gfarm_timespec *atimep, struct gfarm_timespec *mtimep,
 	gfarm_int32_t *flagsp,
@@ -3529,6 +3599,15 @@ fhclose_write(struct peer *peer, struct host *spool_host, struct inode *inode,
 	gfarm_uint64_t cookie;
 
 	if (gfarm_read_only_mode()) {
+		struct gfarm_timespec mtime_val;
+
+		if (mtimep == NULL) {
+			mtime_val.tv_sec = 0;
+			mtime_val.tv_nsec = 0;
+		} else {
+			mtime_val.tv_sec = mtimep->tv_sec;
+			mtime_val.tv_nsec = mtimep->tv_nsec;
+		}
 		gflog_notice(GFARM_MSG_1005197,
 		    "%s (%s@%s) for inode %llu:%llu size %llu mtime:%llu.%09u "
 		    "during read_only",
@@ -3536,7 +3615,7 @@ fhclose_write(struct peer *peer, struct host *spool_host, struct inode *inode,
 		    (long long)inode_get_number(inode),
 		    (long long)inode_get_gen(inode),
 		    (long long)size,
-		    (long long)mtimep->tv_sec, (int)mtimep->tv_nsec);
+		    (long long)mtime_val.tv_sec, (int)mtime_val.tv_nsec);
 		/* this makes gfsd retry */
 		return (GFARM_ERR_READ_ONLY_FILE_SYSTEM);
 	}
@@ -3546,7 +3625,8 @@ fhclose_write(struct peer *peer, struct host *spool_host, struct inode *inode,
 
 	old_size = inode_get_size(inode);
 	/* closing must be done regardless of the result of db_begin(). */
-	e = inode_file_handle_update(inode, size, atimep, mtimep, spool_host,
+	e = inode_file_handle_update(inode, close_mode,
+	    size, atimep, mtimep, spool_host,
 	    old_genp, new_genp, &generation_updated, trace_logp, diag);
 	if (e == GFARM_ERR_NO_ERROR && generation_updated) {
 		flags = GFM_PROTO_CLOSE_WRITE_GENERATION_UPDATE_NEEDED;
@@ -3575,9 +3655,11 @@ fhclose_write(struct peer *peer, struct host *spool_host, struct inode *inode,
 
 
 struct fhclose_write_resume_arg {
+	enum inode_close_mode close_mode;
 	struct inode *inode;
 	gfarm_off_t size;
-	struct gfarm_timespec atime, mtime;
+	struct gfarm_timespec *atime, *mtime;
+	struct gfarm_timespec atime_val, mtime_val;
 	gfarm_int64_t old_gen; /* only for logging */
 };
 
@@ -3614,8 +3696,9 @@ fhclose_write_resume(struct peer *peer, void *closure, int *suspendedp)
 		}
 	} else {
 		old_gen = arg->old_gen;
-		e = fhclose_write(peer, spool_host, arg->inode, arg->size,
-		    &arg->atime, &arg->mtime,
+		e = fhclose_write(peer, spool_host,
+		    arg->close_mode, arg->inode, arg->size,
+		    arg->atime, arg->mtime,
 		    &flags, &old_gen, &new_gen, &cookie, &trace_log, diag);
 	}
 	free(arg);
@@ -3635,6 +3718,7 @@ fhclose_write_resume(struct peer *peer, void *closure, int *suspendedp)
 
 static gfarm_error_t
 gfm_server_fhclose_write_common(struct peer *peer, int from_client,
+	enum inode_close_mode close_mode,
 	gfarm_ino_t inum, gfarm_off_t size,
 	struct gfarm_timespec *atimep, struct gfarm_timespec *mtimep,
 	gfarm_int32_t *flagsp,
@@ -3670,10 +3754,21 @@ gfm_server_fhclose_write_common(struct peer *peer, int from_client,
 		if (arg == NULL) {
 			e = GFARM_ERR_NO_MEMORY;
 		} else {
+			arg->close_mode = close_mode;
 			arg->inode = inode;
 			arg->size = size;
-			arg->atime = *atimep;
-			arg->mtime = *mtimep;
+			if (close_mode == INODE_CLOSE_V2_4) {
+				arg->atime_val = *atimep;
+				arg->mtime_val = *mtimep;
+				arg->atime = &arg->atime_val;
+				arg->mtime = &arg->mtime_val;
+			} else if (close_mode == INODE_CLOSE_V2_8) {
+				arg->atime = NULL;
+				arg->mtime = NULL;
+			} else { /* shouldn't happen */
+				gflog_fatal(GFARM_MSG_UNFIXED,
+				    "invalid close_mode %d", close_mode);
+			}
 			arg->old_gen = *old_genp; /* for logging */
 			if ((e = inode_new_generation_wait(inode, peer,
 			    fhclose_write_resume, arg)) ==
@@ -3684,7 +3779,7 @@ gfm_server_fhclose_write_common(struct peer *peer, int from_client,
 			}
 		}
 	} else {
-		e = fhclose_write(peer, spool_host, inode, size,
+		e = fhclose_write(peer, spool_host, close_mode, inode, size,
 		    atimep, mtimep,
 		    flagsp, old_genp, new_genp, cookiep,
 		    &trace_log, diag);
@@ -3723,7 +3818,32 @@ gfm_server_fhclose_write(struct peer *peer, int from_client, int skip,
 		return (GFARM_ERR_NO_ERROR);
 
 	e = gfm_server_fhclose_write_common(
-	    peer, from_client, inum, size, &atime, &mtime,
+	    peer, from_client, INODE_CLOSE_V2_4, inum, size, &atime, &mtime,
+	    &flags, &old_gen, &new_gen, &cookie, suspendedp, diag);
+
+	return (gfm_server_put_reply(peer, diag, e, "illl",
+	    flags, old_gen, new_gen, cookie));
+}
+
+gfarm_error_t
+gfm_server_fhclose_write_v2_8(struct peer *peer, int from_client, int skip,
+	int *suspendedp)
+{
+	gfarm_error_t e;
+	gfarm_ino_t inum;
+	gfarm_int64_t old_gen, new_gen = 0;
+	gfarm_int32_t flags = 0;
+	gfarm_uint64_t cookie = 0;
+	static const char diag[] = "GFM_PROTO_FHCLOSE_WRITE_V2_8";
+
+	e = gfm_server_get_request(peer, diag, "ll", &inum, &old_gen);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+
+	e = gfm_server_fhclose_write_common(
+	    peer, from_client, INODE_CLOSE_V2_8, inum, 0, NULL, NULL,
 	    &flags, &old_gen, &new_gen, &cookie, suspendedp, diag);
 
 	return (gfm_server_put_reply(peer, diag, e, "illl",
@@ -3766,31 +3886,26 @@ gfm_server_fhclose_write_cksum(struct peer *peer, int from_client, int skip,
 	 */
 	free(cksum_type);
 	e = gfm_server_fhclose_write_common(
-	    peer, from_client, inum, size, &atime, &mtime,
+	    peer, from_client, INODE_CLOSE_V2_4, inum, size, &atime, &mtime,
 	    &flags, &old_gen, &new_gen, &cookie, suspendedp, diag);
 
 	return (gfm_server_put_reply(peer, diag, e, "illl",
 	    flags, old_gen, new_gen, cookie));
 }
 
-gfarm_error_t
-gfm_server_generation_updated(struct peer *peer, int from_client, int skip)
+static gfarm_error_t
+generation_updated_common(struct peer *peer, int from_client,
+	enum inode_close_mode close_mode, gfarm_int32_t result,
+	gfarm_off_t size,
+	struct gfarm_timespec *atime, struct gfarm_timespec *mtime,
+	const char *diag)
 {
 	gfarm_error_t e;
-	gfarm_int32_t fd, result;
+	gfarm_int32_t fd;
 	struct host *spool_host;
 	struct process *process;
 	struct inode *inode;
-	static const char diag[] = "GFM_PROTO_GENERATION_UPDATED";
 
-	e = gfm_server_get_request(peer, diag, "i", &result);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1002265, "%s request failed: %s",
-		    diag, gfarm_error_string(e));
-		return (e);
-	}
-	if (skip)
-		return (GFARM_ERR_NO_ERROR);
 	giant_lock();
 
 	/* callees of process_new_generation_done() handle read_only */
@@ -3816,8 +3931,9 @@ gfm_server_generation_updated(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1003483,
 		    "%s: process_get_file_inode() failed: %s",
 		    diag, gfarm_error_string(e));
-	} else if ((e = process_new_generation_done(process, peer, fd, result,
-	    diag)) != GFARM_ERR_NO_ERROR) {
+	} else if ((e = process_new_generation_done(process, peer, fd,
+	    close_mode, result, size, atime, mtime, diag))
+	    != GFARM_ERR_NO_ERROR) {
 		gflog_warning(GFARM_MSG_1002270,
 		    "%s: host %s, fd %d: new generation wakeup(%s): %s\n",
 		    diag, host_name(spool_host), fd,
@@ -3832,25 +3948,17 @@ gfm_server_generation_updated(struct peer *peer, int from_client, int skip)
 		    host_name(spool_host), fd,
 		    gfarm_error_string(result));
 	}
-
-	giant_unlock();
-	return (gfm_server_put_reply(peer, diag, e, ""));
+	return (e);
 }
 
 gfarm_error_t
-gfm_server_generation_updated_by_cookie(struct peer *peer, int from_client,
-    int skip)
+gfm_server_generation_updated(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
-	gfarm_uint64_t cookie;
 	gfarm_int32_t result;
-	struct host *spool_host;
-	struct inode *inode;
-	gfarm_off_t new_size, old_size;
-	int read_only, transaction = 0;
-	static const char diag[] = "GFM_PROTO_GENERATION_UPDATED_BY_COOKIE";
+	static const char diag[] = "GFM_PROTO_GENERATION_UPDATED";
 
-	e = gfm_server_get_request(peer, diag, "li", &cookie, &result);
+	e = gfm_server_get_request(peer, diag, "i", &result);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002265, "%s request failed: %s",
 		    diag, gfarm_error_string(e));
@@ -3858,7 +3966,56 @@ gfm_server_generation_updated_by_cookie(struct peer *peer, int from_client,
 	}
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
+
+	e = generation_updated_common(peer, from_client, INODE_CLOSE_V2_4,
+	    result, 0, NULL, NULL, diag);
+
+	giant_unlock();
+	return (gfm_server_put_reply(peer, diag, e, ""));
+}
+
+gfarm_error_t
+gfm_server_generation_updated_v2_8(
+	struct peer *peer, int from_client, int skip)
+{
+	gfarm_error_t e;
+	gfarm_int32_t result;
+	gfarm_off_t size;
+	struct gfarm_timespec atime, mtime;
+	static const char diag[] = "GFM_PROTO_GENERATION_UPDATED_V2_8";
+
+	e = gfm_server_get_request(peer, diag, "illili", &result, &size,
+	    &atime.tv_sec, &atime.tv_nsec, &mtime.tv_sec, &mtime.tv_nsec);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s request failed: %s",
+		    diag, gfarm_error_string(e));
+		return (e);
+	}
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+
+	e = generation_updated_common(peer, from_client, INODE_CLOSE_V2_8,
+	    result, size, &atime, &mtime, diag);
+
+	giant_unlock();
+	return (gfm_server_put_reply(peer, diag, e, ""));
+}
+
+static gfarm_error_t
+generation_updated_by_cookie_common(struct peer *peer, int from_client,
+	enum inode_close_mode close_mode,
+	gfarm_uint64_t cookie, gfarm_int32_t result, gfarm_off_t size,
+	struct gfarm_timespec *atime, struct gfarm_timespec *mtime,
+	const char *diag)
+{
+	gfarm_error_t e;
+	struct host *spool_host;
+	struct inode *inode;
+	gfarm_off_t new_size, old_size;
+	int read_only, transaction = 0;
+
 	giant_lock();
+
 	read_only = gfarm_read_only_mode();
 
 	if (from_client) { /* from gfsd only */
@@ -3900,13 +4057,28 @@ gfm_server_generation_updated_by_cookie(struct peer *peer, int from_client,
 		    "%s: unknown cookie %lld", diag, (long long)cookie);
 		e = GFARM_ERR_BAD_COOKIE;
 	} else {
-		new_size = inode_get_size(inode);
+		if (close_mode == INODE_CLOSE_V2_4) {
+			new_size = inode_get_size(inode);
+			if (result == GFARM_ERR_CONFLICT_DETECTED)
+				size = old_size;
+			else
+				size = new_size;
+		} else if (close_mode == INODE_CLOSE_V2_8) {
+			new_size = size;
+			old_size = inode_get_size(inode);
+			/* always use new_size even if CONFLICT_DETECTED */
+		} else { /* shouldn't happen */
+			new_size = 0;
+			old_size = 0;
+			gflog_fatal(GFARM_MSG_UNFIXED,
+			    "invalid close_mode %d", close_mode);
+		}
 
 		if (!read_only && db_begin(diag) == GFARM_ERR_NO_ERROR)
 			transaction = 1;
 		e = inode_new_generation_by_cookie_finish(
-		    inode, result == GFARM_ERR_CONFLICT_DETECTED ?
-		    old_size : new_size, cookie, peer, result);
+		    inode, peer, cookie, close_mode, result,
+		    size, atime, mtime, user_name(peer_get_user(peer)));
 		if (transaction)
 			db_end(diag);
 
@@ -3944,6 +4116,55 @@ gfm_server_generation_updated_by_cookie(struct peer *peer, int from_client,
 	}
 
 	giant_unlock();
+	return (e);
+}
+
+gfarm_error_t
+gfm_server_generation_updated_by_cookie(struct peer *peer, int from_client,
+    int skip)
+{
+	gfarm_error_t e;
+	gfarm_uint64_t cookie;
+	gfarm_int32_t result;
+	static const char diag[] = "GFM_PROTO_GENERATION_UPDATED_BY_COOKIE";
+
+	e = gfm_server_get_request(peer, diag, "li", &cookie, &result);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_1002265, "%s request failed: %s",
+		    diag, gfarm_error_string(e));
+		return (e);
+	}
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+	e = generation_updated_by_cookie_common(peer, from_client,
+	    INODE_CLOSE_V2_4, cookie, result, 0, NULL, NULL, diag);
+	return (gfm_server_put_reply(peer, diag, e, ""));
+}
+
+gfarm_error_t
+gfm_server_generation_updated_by_cookie_v2_8(
+	struct peer *peer, int from_client, int skip)
+{
+	gfarm_error_t e;
+	gfarm_uint64_t cookie;
+	gfarm_int32_t result;
+	gfarm_off_t size;
+	struct gfarm_timespec atime, mtime;
+	static const char diag[] =
+		"GFM_PROTO_GENERATION_UPDATED_BY_COOKIE_V2_8";
+
+	e = gfm_server_get_request(peer, diag, "lillili", &cookie, &result,
+	    &size,
+	    &atime.tv_sec, &atime.tv_nsec, &mtime.tv_sec, &mtime.tv_nsec);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_1002265, "%s request failed: %s",
+		    diag, gfarm_error_string(e));
+		return (e);
+	}
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+	e = generation_updated_by_cookie_common(peer, from_client,
+	    INODE_CLOSE_V2_8, cookie, result, size, &atime, &mtime, diag);
 	return (gfm_server_put_reply(peer, diag, e, ""));
 }
 
