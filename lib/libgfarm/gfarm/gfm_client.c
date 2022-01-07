@@ -3607,8 +3607,8 @@ gfarm_error_t
 gfm_client_fhclose_write_v2_8_request(struct gfm_connection *gfm_server,
 	gfarm_ino_t inode, gfarm_uint64_t gen)
 {
-	return (gfm_client_rpc_request(gfm_server, GFM_PROTO_FHCLOSE_WRITE,
-	    "ll", inode, gen));
+	return (gfm_client_rpc_request(gfm_server,
+	    GFM_PROTO_FHCLOSE_WRITE_V2_8, "ll", inode, gen));
 }
 
 gfarm_error_t
@@ -3644,7 +3644,7 @@ gfm_client_generation_updated_v2_8_request(struct gfm_connection *gfm_server,
 
 {
 	return (gfm_client_rpc_request(gfm_server,
-	    GFM_PROTO_GENERATION_UPDATED, "illili",
+	    GFM_PROTO_GENERATION_UPDATED_V2_8, "illili",
 	    errcode, size, atime_sec, atime_nsec, mtime_sec, mtime_nsec));
 }
 
@@ -3679,7 +3679,8 @@ gfm_client_generation_updated_by_cookie_v2_8_request(
 	gfarm_int64_t mtime_sec, gfarm_int32_t mtime_nsec)
 {
 	return (gfm_client_rpc_request(gfm_server,
-	    GFM_PROTO_GENERATION_UPDATED_BY_COOKIE, "lillili", cookie, errcode,
+	    GFM_PROTO_GENERATION_UPDATED_BY_COOKIE_V2_8, "lillili",
+	    cookie, errcode,
 	    size, atime_sec, atime_nsec, mtime_sec, mtime_nsec));
 }
 

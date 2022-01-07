@@ -2652,7 +2652,15 @@ update_local_file_generation(struct file_entry *fe, gfarm_int64_t old_gen,
 			    (unsigned long long)old_gen,
 			    (unsigned long long)new_gen,
 			    new, strerror(save_errno));
-			e = gfarm_errno_to_error(save_errno);
+			/*
+			 * gfmd treats ENOENT as a kind of fatal error,
+			 * but ENOENT here is not fatal.
+			 * So we assign a different error code
+			 */
+			if (save_errno == ENOENT)
+				e = GFARM_ERR_NO_SUCH_OBJECT;
+			else
+				e = gfarm_errno_to_error(save_errno);
 		}
 		if (fstat(fe->local_fd, &old_st) != -1) {
 			old_avail = 1;
@@ -2707,11 +2715,17 @@ update_local_file_generation(struct file_entry *fe, gfarm_int64_t old_gen,
 		}
 		fe->new_gen = new_gen; /* rename(2) succeeded, at least */
 
-		/* another process might modify these values */
-		file_entry_set_atime(fe,
-		    st->st_atime, gfarm_stat_atime_nsec(st));
-		file_entry_set_mtime(fe,
-		    st->st_mtime, gfarm_stat_mtime_nsec(st));
+		if (st != NULL) {
+			/*
+			 * update file_table, because
+			 * another process might modify these values
+			 */
+			file_entry_set_size(fe, st->st_size);
+			file_entry_set_atime(fe,
+			    st->st_atime, gfarm_stat_atime_nsec(st));
+			file_entry_set_mtime(fe,
+			    st->st_mtime, gfarm_stat_mtime_nsec(st));
+		}
 	}
 	free(old);
 	free(new);
