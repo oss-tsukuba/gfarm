@@ -1,3 +1,5 @@
+enum inode_close_mode { INODE_CLOSE_V2_0, INODE_CLOSE_V2_4, INODE_CLOSE_V2_8 };
+
 void inode_init(void);
 void inode_initial_entry(void);
 void dir_entry_init(void);
@@ -86,9 +88,13 @@ void inode_new_generation_by_fd_start(struct inode *, struct peer *);
 gfarm_error_t inode_new_generation_by_cookie_start(
 	struct inode *, struct peer *, gfarm_uint64_t);
 gfarm_error_t inode_new_generation_by_fd_finish(
-	struct inode *, struct peer *, gfarm_error_t);
+	struct inode *, struct peer *, enum inode_close_mode, gfarm_error_t,
+	int, char *,
+	gfarm_off_t, struct gfarm_timespec *, struct gfarm_timespec *,
+	char *, const char *);
 gfarm_error_t inode_new_generation_by_cookie_finish(struct inode *,
-	gfarm_off_t, gfarm_uint64_t, struct peer *, gfarm_error_t);
+	struct peer *, gfarm_uint64_t, enum inode_close_mode, gfarm_error_t,
+	gfarm_off_t, struct gfarm_timespec *, struct gfarm_timespec *, char *);
 gfarm_error_t inode_new_generation_wait(struct inode *, struct peer *,
 	gfarm_error_t (*)(struct peer *, void *, int *), void *);
 
@@ -161,10 +167,10 @@ gfarm_error_t inode_fhclose_read(struct inode *, struct gfarm_timespec *);
 void inode_add_ref_spool_writers(struct inode *);
 void inode_del_ref_spool_writers(struct inode *);
 void inode_check_pending_replication(struct file_opening *);
-int inode_file_update(struct file_opening *,
-	gfarm_off_t, struct gfarm_timespec *, struct gfarm_timespec *, int,
+int inode_file_update(struct file_opening *, enum inode_close_mode,
+	gfarm_off_t, struct gfarm_timespec *, struct gfarm_timespec *,
 	gfarm_int64_t *, gfarm_int64_t *, char **, const char *);
-gfarm_error_t inode_file_handle_update(struct inode *,
+gfarm_error_t inode_file_handle_update(struct inode *, enum inode_close_mode,
 	gfarm_off_t, struct gfarm_timespec *, struct gfarm_timespec *,
 	struct host *, gfarm_int64_t *, gfarm_int64_t *, int *, char **,
 	const char *);

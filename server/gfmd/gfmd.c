@@ -370,11 +370,19 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 		e = gfm_server_close_write_v2_4(peer, from_client, skip,
 		    suspendedp);
 		break;
+	case GFM_PROTO_CLOSE_WRITE_V2_8:
+		e = gfm_server_close_write_v2_8(peer, from_client, skip,
+		    suspendedp);
+		break;
 	case GFM_PROTO_FHCLOSE_READ:
 		e = gfm_server_fhclose_read(peer, from_client, skip);
 		break;
 	case GFM_PROTO_FHCLOSE_WRITE:
 		e = gfm_server_fhclose_write(peer, from_client, skip,
+		    suspendedp);
+		break;
+	case GFM_PROTO_FHCLOSE_WRITE_V2_8:
+		e = gfm_server_fhclose_write_v2_8(peer, from_client, skip,
 		    suspendedp);
 		break;
 	case GFM_PROTO_FHCLOSE_WRITE_CKSUM:
@@ -384,8 +392,16 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 	case GFM_PROTO_GENERATION_UPDATED:
 		e = gfm_server_generation_updated(peer, from_client, skip);
 		break;
+	case GFM_PROTO_GENERATION_UPDATED_V2_8:
+		e = gfm_server_generation_updated_v2_8(peer, from_client,
+		    skip);
+		break;
 	case GFM_PROTO_GENERATION_UPDATED_BY_COOKIE:
 		e = gfm_server_generation_updated_by_cookie(peer,
+		    from_client, skip);
+		break;
+	case GFM_PROTO_GENERATION_UPDATED_BY_COOKIE_V2_8:
+		e = gfm_server_generation_updated_by_cookie_v2_8(peer,
 		    from_client, skip);
 		break;
 	case GFM_PROTO_LOCK:

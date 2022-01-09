@@ -21,11 +21,16 @@ gfarm_error_t gfm_server_close_getgen(struct peer *, int, int);
 gfarm_error_t gfm_server_close_read(struct peer *, int, int);
 gfarm_error_t gfm_server_close_write(struct peer *, int, int);
 gfarm_error_t gfm_server_close_write_v2_4(struct peer *, int, int, int *);
+gfarm_error_t gfm_server_close_write_v2_8(struct peer *, int, int, int *);
 gfarm_error_t gfm_server_fhclose_read(struct peer *, int, int);
 gfarm_error_t gfm_server_fhclose_write(struct peer *, int, int, int *);
+gfarm_error_t gfm_server_fhclose_write_v2_8(struct peer *, int, int, int *);
 gfarm_error_t gfm_server_fhclose_write_cksum(struct peer *, int, int, int *);
 gfarm_error_t gfm_server_generation_updated(struct peer *, int, int);
+gfarm_error_t gfm_server_generation_updated_v2_8(struct peer *, int, int);
 gfarm_error_t gfm_server_generation_updated_by_cookie(struct peer *, int, int);
+gfarm_error_t gfm_server_generation_updated_by_cookie_v2_8(
+	struct peer *, int, int);
 gfarm_error_t gfm_server_verify_type(struct peer *, int, int);
 gfarm_error_t gfm_server_verify_type_not(struct peer *, int, int);
 gfarm_error_t gfm_server_revoke_gfsd_access(struct peer *, int, int);

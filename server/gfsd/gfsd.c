@@ -2593,10 +2593,7 @@ gfarm_error_t
 close_request(struct file_entry *fe)
 {
 	if (fe->flags & FILE_FLAG_WRITTEN) {
-		return (gfm_client_close_write_v2_4_request(gfm_server,
-		    fe->size,
-		    (gfarm_int64_t)fe->atime, (gfarm_int32_t)fe->atimensec,
-		    (gfarm_int64_t)fe->mtime, (gfarm_int32_t)fe->mtimensec));
+		return (gfm_client_close_write_v2_8_request(gfm_server));
 	} else if (fe->flags & FILE_FLAG_READ) {
 		return (gfm_client_close_read_request(gfm_server,
 		    (gfarm_int64_t)fe->atime, (gfarm_int32_t)fe->atimensec));
@@ -2609,10 +2606,8 @@ gfarm_error_t
 fhclose_request(struct file_entry *fe)
 {
 	if (fe->flags & FILE_FLAG_WRITTEN) {
-		return (gfm_client_fhclose_write_request(gfm_server,
-		    fe->ino, fe->gen, fe->size,
-		    (gfarm_int64_t)fe->atime, (gfarm_int32_t)fe->atimensec,
-		    (gfarm_int64_t)fe->mtime, (gfarm_int32_t)fe->mtimensec));
+		return (gfm_client_fhclose_write_v2_8_request(gfm_server,
+		    fe->ino, fe->gen));
 	} else if (fe->flags & FILE_FLAG_READ) {
 		return (gfm_client_fhclose_read_request(gfm_server,
 		    fe->ino, fe->gen,
@@ -2626,10 +2621,11 @@ gfarm_error_t
 update_local_file_generation(struct file_entry *fe, gfarm_int64_t old_gen,
     gfarm_int64_t new_gen, const char *conflict_message)
 {
-	gfarm_error_t e;
+	gfarm_error_t e = GFARM_ERR_INTERNAL_ERROR;
 	int save_errno;
 	char *old, *new;
-	struct stat old_st, new_st;
+	struct stat old_st, new_st, *st;
+	int old_avail = 0, new_avail = 0;
 
 	gfsd_local_path2(fe->ino, old_gen, "close_write: old", &old,
 	    fe->ino, new_gen, "close_write: new", &new);
@@ -2644,7 +2640,9 @@ update_local_file_generation(struct file_entry *fe, gfarm_int64_t old_gen,
 		    strerror(save_errno));
 		e = gfarm_errno_to_error(save_errno);
 	} else {
-		if (stat(new, &new_st) == -1) {
+		if (stat(new, &new_st) != -1) {
+			new_avail = 1;
+		} else {
 			save_errno = errno;
 			gflog_error(GFARM_MSG_1004131,
 			    "inode %llu:%llu: new generation %llu -> %llu: "
@@ -2654,8 +2652,19 @@ update_local_file_generation(struct file_entry *fe, gfarm_int64_t old_gen,
 			    (unsigned long long)old_gen,
 			    (unsigned long long)new_gen,
 			    new, strerror(save_errno));
-			e = gfarm_errno_to_error(save_errno);
-		} else if (fstat(fe->local_fd, &old_st) == -1) {
+			/*
+			 * gfmd treats ENOENT as a kind of fatal error,
+			 * but ENOENT here is not fatal.
+			 * So we assign a different error code
+			 */
+			if (save_errno == ENOENT)
+				e = GFARM_ERR_NO_SUCH_OBJECT;
+			else
+				e = gfarm_errno_to_error(save_errno);
+		}
+		if (fstat(fe->local_fd, &old_st) != -1) {
+			old_avail = 1;
+		} else {
 			save_errno = errno;
 			gflog_error(GFARM_MSG_1004132,
 			    "inode %llu:%llu: new generation %llu -> %llu: "
@@ -2665,7 +2674,18 @@ update_local_file_generation(struct file_entry *fe, gfarm_int64_t old_gen,
 			    (unsigned long long)old_gen,
 			    (unsigned long long)new_gen,
 			    new, strerror(save_errno));
-			e = gfarm_errno_to_error(save_errno);
+			if (new_avail)
+				e = gfarm_errno_to_error(save_errno);
+		}
+		if (!new_avail || !old_avail) {
+			if (new_avail) {
+				st = &new_st;
+			} else if (old_avail) {
+				st = &old_st;
+			} else {
+				st = NULL;
+			}
+			/* `e' must be already set */
 		} else if (new_st.st_ino != old_st.st_ino) {
 			gflog_error(GFARM_MSG_1004133,
 			    "inode %llu:%llu: new generation %llu -> %llu: "
@@ -2677,9 +2697,11 @@ update_local_file_generation(struct file_entry *fe, gfarm_int64_t old_gen,
 			    (unsigned long long)old_st.st_ino,
 			    (unsigned long long)new_st.st_ino,
 			    conflict_message);
+			st = &new_st;
 			/* rename(2) and {f,}stat(2) never return this error */
 			e = GFARM_ERR_CONFLICT_DETECTED;
 		} else {
+			st = &new_st;
 			e = GFARM_ERR_NO_ERROR;
 			if (gfarm_write_verify) {
 				/*
@@ -2692,6 +2714,18 @@ update_local_file_generation(struct file_entry *fe, gfarm_int64_t old_gen,
 			}
 		}
 		fe->new_gen = new_gen; /* rename(2) succeeded, at least */
+
+		if (st != NULL) {
+			/*
+			 * update file_table, because
+			 * another process might modify these values
+			 */
+			file_entry_set_size(fe, st->st_size);
+			file_entry_set_atime(fe,
+			    st->st_atime, gfarm_stat_atime_nsec(st));
+			file_entry_set_mtime(fe,
+			    st->st_mtime, gfarm_stat_mtime_nsec(st));
+		}
 	}
 	free(old);
 	free(new);
@@ -2707,7 +2741,7 @@ close_result(struct file_entry *fe, gfarm_int32_t *gen_update_result_p)
 	gfarm_int64_t old_gen, new_gen;
 
 	if (fe->flags & FILE_FLAG_WRITTEN) {
-		e = gfm_client_close_write_v2_4_result(gfm_server,
+		e = gfm_client_close_write_v2_8_result(gfm_server,
 		    &flags, &old_gen, &new_gen);
 		if (e == GFARM_ERR_NO_ERROR &&
 		    (flags & GFM_PROTO_CLOSE_WRITE_GENERATION_UPDATE_NEEDED))
@@ -2736,7 +2770,7 @@ fhclose_result(struct file_entry *fe, gfarm_uint64_t *cookie_p,
 	*gen_update_result_p = -1;
 	*cookie_p = 0;
 	if (fe->flags & FILE_FLAG_WRITTEN) {
-		e = gfm_client_fhclose_write_result(gfm_server,
+		e = gfm_client_fhclose_write_v2_8_result(gfm_server,
 		    &flags, &old_gen, &new_gen, cookie_p);
 		if (e == GFARM_ERR_NO_ERROR &&
 		    (flags & GFM_PROTO_CLOSE_WRITE_GENERATION_UPDATE_NEEDED))
@@ -3066,8 +3100,10 @@ close_fd(struct gfp_xdr *client, gfarm_int32_t fd, struct file_entry *fe,
 			gflog_error(GFARM_MSG_1003784,
 			    "%s cksum_set request: %s",
 			    diag, gfarm_error_string(e2));
-		else if ((e2 = gfm_client_generation_updated_request(
-		    gfm_server, gen_update_result)) != GFARM_ERR_NO_ERROR)
+		else if ((e2 = gfm_client_generation_updated_v2_8_request(
+		    gfm_server, gen_update_result, fe->size,
+		    fe->atime, fe->atimensec, fe->mtime, fe->mtimensec))
+		    != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_1002301,
 			    "%s generation_updated request: %s",
 			    diag, gfarm_error_string(e2));
@@ -3085,7 +3121,7 @@ close_fd(struct gfp_xdr *client, gfarm_int32_t fd, struct file_entry *fe,
 			gflog_error(GFARM_MSG_1003785,
 			    "%s cksum_set result: %s",
 			    diag, gfarm_error_string(e2));
-		else if ((e2 = gfm_client_generation_updated_result(
+		else if ((e2 = gfm_client_generation_updated_v2_8_result(
 		    gfm_server)) != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_1002302,
 			    "%s generation_updated result: %s",
@@ -3148,13 +3184,15 @@ fhclose_fd(struct gfp_xdr *client, struct file_entry *fe, const char *diag)
 			}
 		}
 	} else if (gen_update_result != -1) {
-		if ((e2 = gfm_client_generation_updated_by_cookie_request(
-		    gfm_server, cookie, gen_update_result))
+		if ((e2 = gfm_client_generation_updated_by_cookie_v2_8_request(
+		    gfm_server, cookie, gen_update_result, fe->size,
+		    fe->atime, fe->atimensec, fe->mtime, fe->mtimensec))
 		    != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_1003346,
 			    "%s: generation_updated_by_cookie request: %s",
 			    diag, gfarm_error_string(e2));
-		else if ((e2 = gfm_client_generation_updated_by_cookie_result(
+		else if (
+		    (e2 = gfm_client_generation_updated_by_cookie_v2_8_result(
 		    gfm_server)) != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_1003347,
 			    "%s: generation_updated_by_cookie result: %s",

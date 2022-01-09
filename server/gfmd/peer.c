@@ -184,7 +184,7 @@ struct peer {
 	void *findxmlattrctx;
 
 	/* only one pending GFM_PROTO_GENERATION_UPDATED per peer is allowed */
-	struct inode *pending_new_generation;
+	int pending_new_generation_fd;
 	/* GFM_PROTO_GENERATION_UPDATED_BY_COOKIE */
 	GFARM_HCIRCLEQ_HEAD(pending_new_generation_by_cookie)
 	    pending_new_generation_cookies;
@@ -711,11 +711,10 @@ peer_init(int max_peers)
 		peer->fd_saved = -1;
 		peer->flags = 0;
 		peer->findxmlattrctx = NULL;
-		peer->pending_new_generation = NULL;
 		peer->u.client.jobs = NULL;
 
 		/* generation update, or generation update by cookie */
-		peer->pending_new_generation = NULL;
+		peer->pending_new_generation_fd = -1;
 		GFARM_HCIRCLEQ_INIT(peer->pending_new_generation_cookies,
 		    cookie_link);
 
@@ -827,7 +826,7 @@ peer_alloc0(int fd, struct peer **peerp, struct gfp_xdr *conn)
 	peer->u.client.jobs = NULL;
 
 	/* generation update, or generation update by cookie */
-	peer->pending_new_generation = NULL;
+	peer->pending_new_generation_fd = -1;
 	GFARM_HCIRCLEQ_INIT(peer->pending_new_generation_cookies, cookie_link);
 
 	if (peer->iostatp == NULL)
@@ -1338,17 +1337,24 @@ peer_get_mdhost(struct peer *peer)
 }
 
 /* NOTE: caller of this function should acquire giant_lock as well */
-void
-peer_set_pending_new_generation_by_fd(struct peer *peer, struct inode *inode)
+int
+peer_get_pending_new_generation_by_fd(struct peer *peer)
 {
-	peer->pending_new_generation = inode;
+	return (peer->pending_new_generation_fd);
+}
+
+/* NOTE: caller of this function should acquire giant_lock as well */
+void
+peer_set_pending_new_generation_by_fd(struct peer *peer, int fd)
+{
+	peer->pending_new_generation_fd = fd;
 }
 
 /* NOTE: caller of this function should acquire giant_lock as well */
 void
 peer_reset_pending_new_generation_by_fd(struct peer *peer)
 {
-	peer->pending_new_generation = NULL;
+	peer->pending_new_generation_fd = -1;
 }
 
 /*
@@ -1356,22 +1362,26 @@ peer_reset_pending_new_generation_by_fd(struct peer *peer)
  * - caller of this function should acquire giant_lock as well
  * - caller of this function should NOT call db_begin()/db_end() around this
  */
-static void
+void
 peer_unset_pending_new_generation_by_fd(
 	struct peer *peer, gfarm_error_t reason)
 {
-	struct inode *inode = peer->pending_new_generation;
+	int fd = peer->pending_new_generation_fd;
+	static const char diag[] = "peer_unset_pending_new_generation_by_fd";
 
-	if (inode != NULL) {
-		gflog_error(GFARM_MSG_1004009,
+	if (fd == -1)
+		return;
+
+	if (peer->process == NULL) {
+		gflog_error(GFARM_MSG_UNFIXED,
 		    "gfsd connection is lost during GFM_PROTO_CLOSE_WRITE: "
-		    "inode %lld:%lld may be lost. (new size:%lld)",
-		    (long long)inode_get_number(inode),
-		    (long long)inode_get_gen(inode),
-		    (long long)inode_get_size(inode));
-		inode_new_generation_by_fd_finish(inode, peer, reason);
-		peer->pending_new_generation = NULL;
+		    "fd %d, host %s, but process is not set: %s",
+		    fd, peer_get_hostname(peer), gfarm_error_string(reason));
+		peer->pending_new_generation_fd = -1;
+		return;
 	}
+	process_new_generation_by_fd_abort(peer->process, peer, fd, reason,
+	    diag);
 }
 
 /* NOTE: caller of this function should acquire giant_lock as well */
@@ -1475,7 +1485,9 @@ peer_unset_pending_new_generation_by_cookie(
 		 * Perhaps cookie->old_size is right, though.
 		 */
 		inode_new_generation_by_cookie_finish(
-		    inode, inode_get_size(inode), cookie->id, peer, reason);
+		    inode, peer, cookie->id, INODE_CLOSE_V2_4, reason,
+		    inode_get_size(inode), NULL, NULL,
+		    user_name(peer_get_user(peer)));
 		GFARM_HCIRCLEQ_REMOVE(cookie, cookie_link);
 		free(cookie);
 	}
