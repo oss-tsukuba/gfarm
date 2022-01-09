@@ -229,10 +229,6 @@ gfarm_error_t gfm_client_generation_updated_by_cookie_v2_8_result(
 	struct gfm_connection *);
 gfarm_error_t gfm_client_verify_type_request(struct gfm_connection *,
 	gfarm_int32_t);
-gfarm_error_t gfm_client_generation_updated_by_cookie_result(
-	struct gfm_connection *);
-gfarm_error_t gfm_client_verify_type_request(struct gfm_connection *,
-	gfarm_int32_t);
 gfarm_error_t gfm_client_verify_type_result(struct gfm_connection *);
 gfarm_error_t gfm_client_verify_type_not_request(struct gfm_connection *,
 	gfarm_int32_t);
