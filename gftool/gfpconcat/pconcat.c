@@ -1117,7 +1117,7 @@ gfpconcat_main(struct gfpconcat_option *opt)
 		gfarm_strings_free_deeply(opt->n_part, opt->parts);
 	}
 
-	if (opt->total_size == 0) {
+	if (opt->total_size <= 0) {
 		e = gfpconcat_create_empty_file(opt->tmp_url, opt->mode);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gfmsg_error_e(e, "cannot create empty file: %s",
@@ -1128,8 +1128,18 @@ gfpconcat_main(struct gfpconcat_option *opt)
 		}
 		goto copied;
 	}
-	if (opt->n_para == 1
-	    || opt->total_size / opt->n_para <= opt->minimum_size) {
+	/* assert(opt->total_size > 0); */
+	if (opt->n_para < 1) {
+		opt->n_para = 1;
+	}
+	if (opt->minimum_size <= 0) {
+		if (opt->n_para > opt->total_size) {
+			opt->n_para = opt->total_size;
+		}
+	} else if (opt->total_size / opt->n_para < opt->minimum_size) {
+		opt->n_para = opt->total_size / opt->minimum_size;
+	}
+	if (opt->n_para <= 1) {
 		int child_id = 1;
 
 		gfmsg_debug("using single child process");
