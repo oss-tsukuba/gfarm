@@ -4,7 +4,6 @@ DOCBOOK = \
 	gfchmod.1 \
 	gfchown.1 \
 	gfcksum.1 \
-	gfcp.1 \
 	gfdf.1 \
 	gfdirquota.1 \
 	gfedquota.1 \
@@ -21,7 +20,6 @@ DOCBOOK = \
 	gfmkdir.1 \
 	gfmv.1 \
 	gfncopy.1 \
-	gfpconcat.1 \
 	gfpcopy.1 \
 	gfprep.1 \
 	gfquota.1 \

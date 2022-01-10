@@ -369,7 +369,6 @@ fi
 %{man_prefix}/man1/gfchmod.1*
 %{man_prefix}/man1/gfchown.1*
 %{man_prefix}/man1/gfcksum.1*
-%{man_prefix}/man1/gfcp.1*
 %{man_prefix}/man1/gfdf.1*
 %{man_prefix}/man1/gfdirquota.1*
 %{man_prefix}/man1/gfedquota.1*
@@ -399,7 +398,6 @@ fi
 %{man_prefix}/man1/gfmkdir.1*
 %{man_prefix}/man1/gfmv.1*
 %{man_prefix}/man1/gfncopy.1*
-%{man_prefix}/man1/gfpconcat.1*
 %{man_prefix}/man1/gfpcopy.1*
 %{man_prefix}/man1/gfprep.1*
 %if %{gfarm_v2_not_yet}
@@ -559,7 +557,6 @@ fi
 %{man_prefix}/ja/man1/gfchmod.1*
 %{man_prefix}/ja/man1/gfchown.1*
 %{man_prefix}/ja/man1/gfcksum.1*
-%{man_prefix}/ja/man1/gfcp.1*
 %{man_prefix}/ja/man1/gfdf.1*
 %{man_prefix}/ja/man1/gfdirquota.1*
 %{man_prefix}/ja/man1/gfedquota.1*
@@ -589,7 +586,6 @@ fi
 %{man_prefix}/ja/man1/gfmkdir.1*
 %{man_prefix}/ja/man1/gfmv.1*
 %{man_prefix}/ja/man1/gfncopy.1*
-%{man_prefix}/ja/man1/gfpconcat.1*
 %{man_prefix}/ja/man1/gfpcopy.1*
 %{man_prefix}/ja/man1/gfprep.1*
 %if %{gfarm_v2_not_yet}
@@ -728,7 +724,6 @@ fi
 %{html_prefix}/en/ref/man1/gfchmod.1.html
 %{html_prefix}/en/ref/man1/gfchown.1.html
 %{html_prefix}/en/ref/man1/gfcksum.1.html
-%{html_prefix}/en/ref/man1/gfcp.1.html
 %{html_prefix}/en/ref/man1/gfdf.1.html
 %{html_prefix}/en/ref/man1/gfdirquota.1.html
 %{html_prefix}/en/ref/man1/gfedquota.1.html
@@ -758,7 +753,6 @@ fi
 %{html_prefix}/en/ref/man1/gfmkdir.1.html
 %{html_prefix}/en/ref/man1/gfmv.1.html
 %{html_prefix}/en/ref/man1/gfncopy.1.html
-%{html_prefix}/en/ref/man1/gfpconcat.1.html
 %{html_prefix}/en/ref/man1/gfpcopy.1.html
 %{html_prefix}/en/ref/man1/gfprep.1.html
 %if %{gfarm_v2_not_yet}
@@ -925,7 +919,6 @@ fi
 %{html_prefix}/ja/ref/man1/gfchmod.1.html
 %{html_prefix}/ja/ref/man1/gfchown.1.html
 %{html_prefix}/ja/ref/man1/gfcksum.1.html
-%{html_prefix}/ja/ref/man1/gfcp.1.html
 %{html_prefix}/ja/ref/man1/gfdf.1.html
 %{html_prefix}/ja/ref/man1/gfdirquota.1.html
 %{html_prefix}/ja/ref/man1/gfedquota.1.html
@@ -955,7 +948,6 @@ fi
 %{html_prefix}/ja/ref/man1/gfmkdir.1.html
 %{html_prefix}/ja/ref/man1/gfmv.1.html
 %{html_prefix}/ja/ref/man1/gfncopy.1.html
-%{html_prefix}/ja/ref/man1/gfpconcat.1.html
 %{html_prefix}/ja/ref/man1/gfpcopy.1.html
 %{html_prefix}/ja/ref/man1/gfprep.1.html
 %if %{gfarm_v2_not_yet}
@@ -1151,7 +1143,6 @@ fi
 %{prefix}/bin/gfchmod
 %{prefix}/bin/gfchown
 %{prefix}/bin/gfcksum
-%{prefix}/bin/gfcp
 %{prefix}/bin/gfdf
 %{prefix}/bin/gfdirpath
 %{prefix}/bin/gfdirquota
@@ -1176,7 +1167,6 @@ fi
 %{prefix}/bin/gfmkdir
 %{prefix}/bin/gfmv
 %{prefix}/bin/gfncopy
-%{prefix}/bin/gfpconcat
 %{prefix}/bin/gfpcopy
 %{prefix}/bin/gfprep
 %{prefix}/bin/gfpcopy-test.sh
