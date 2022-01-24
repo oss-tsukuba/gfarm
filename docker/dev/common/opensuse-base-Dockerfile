@@ -21,12 +21,12 @@ RUN zypper install -y \
 
 RUN systemctl enable sshd
 
-# postgresql12(default) does not have pg_config.
 RUN zypper install -y \
-    openssl-devel \
-    postgresql10-devel \
-    postgresql10 \
-    postgresql-server \
+    libopenssl-devel \
+    postgresql13 \
+    postgresql13-devel \
+    postgresql13-server \
+    postgresql13-server-devel \
     fuse \
     fuse-devel \
     libacl-devel \
