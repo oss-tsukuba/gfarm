@@ -14,13 +14,29 @@
 
 char *program_name = "gfwhoami";
 
-#ifdef HAVE_GSI
-#define GFWHOAMI_NO_ARG_OPTIONS	"vh"
-#define GFWHOAMI_GETOPT_ARG	"P:hv?"
+#ifdef HAVE_KERBEROS
+#define GFWHOAMI_KERBEROS_OPTION	"k"
+#define GFWHOAMI_KERBEROS_GETOPT_ARG	"k"
 #else
-#define GFWHOAMI_NO_ARG_OPTIONS	"h"
-#define GFWHOAMI_GETOPT_ARG	"P:h?"
+#define GFWHOAMI_KERBEROS_OPTION	""
+#define GFWHOAMI_KERBEROS_GETOPT_ARG	""
 #endif
+#ifdef HAVE_GSI
+#define GFWHOAMI_GSI_OPTION	"v"
+#define GFWHOAMI_GSI_GETOPT_ARG	"v"
+#else
+#define GFWHOAMI_GSI_OPTION	""
+#define GFWHOAMI_GSI_GETOPT_ARG	""
+#endif
+
+
+#define GFWHOAMI_NO_ARG_OPTIONS	"h" \
+				GFWHOAMI_KERBEROS_OPTION \
+				GFWHOAMI_GSI_OPTION
+#define GFWHOAMI_GETOPT_ARG	"P:h" \
+				GFWHOAMI_KERBEROS_GETOPT_ARG \
+				GFWHOAMI_GSI_GETOPT_ARG \
+				"?"
 
 void
 usage(void)
@@ -38,6 +54,9 @@ main(int argc, char **argv)
 	int c;
 	const char *path = ".";
 	char *user, *realpath = NULL;
+#ifdef HAVE_KERBEROS
+	int kerberos_flag = 0;
+#endif
 #ifdef HAVE_GSI
 	int verbose_flag = 0;
 #endif
@@ -57,6 +76,11 @@ main(int argc, char **argv)
 		case 'P':
 			path = optarg;
 			break;
+#ifdef HAVE_KERBEROS
+		case 'k':
+			kerberos_flag = 1;
+			break;
+#endif
 #ifdef HAVE_GSI
 		case 'v':
 			verbose_flag = 1;
@@ -88,6 +112,10 @@ main(int argc, char **argv)
 		printf(" %s", gfarm_gsi_client_cred_name());
 #endif
 	printf("\n");
+#ifdef HAVE_KERBEROS
+	if (kerberos_flag)
+		printf("%s\n", gfarm_kerberos_client_cred_name());
+#endif
 
 	e = gfarm_terminate();
 	if (e != GFARM_ERR_NO_ERROR) {

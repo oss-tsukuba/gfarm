@@ -91,6 +91,16 @@ static const struct gfarm_auth_client_method {
 	  gfarm_auth_request_gsi_multiplexed,
 	  gfarm_auth_result_gsi_multiplexed },
 #endif /* HAVE_GSI */
+#ifdef HAVE_KERBEROS
+	{ GFARM_AUTH_METHOD_KERBEROS_AUTH,
+	  gfarm_auth_request_kerberos_auth,
+	  gfarm_auth_request_kerberos_auth_multiplexed,
+	  gfarm_auth_result_kerberos_auth_multiplexed },
+	{ GFARM_AUTH_METHOD_KERBEROS,
+	  gfarm_auth_request_kerberos,
+	  gfarm_auth_request_kerberos_multiplexed,
+	  gfarm_auth_result_kerberos_multiplexed },
+#endif /* HAVE_KERBEROS */
 	{ GFARM_AUTH_METHOD_NONE,	  NULL, NULL, NULL }	/* sentinel */
 };
 

@@ -7,7 +7,7 @@
 
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
-#include "gfarm_gsi.h"
+#include "gfsl_gss.h"
 #include "misc.h"
 
 #include "scarg.h"

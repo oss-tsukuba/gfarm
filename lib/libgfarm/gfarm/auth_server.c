@@ -69,6 +69,13 @@ gfarm_error_t (*gfarm_authorization_table[])(struct gfp_xdr *,
 	gfarm_authorize_panic,
 				/* GFARM_AUTH_METHOD_TLS_CLIENT_CERTIFICATE */
 #endif
+#ifdef HAVE_KERBEROS
+	gfarm_authorize_kerberos,	/* GFARM_AUTH_METHOD_KERBEROS */
+	gfarm_authorize_kerberos_auth,	/* GFARM_AUTH_METHOD_KERBEROS_AUTH */
+#else
+	gfarm_authorize_panic,		/* GFARM_AUTH_METHOD_KERBEROS */
+	gfarm_authorize_panic,		/* GFARM_AUTH_METHOD_KERBEROS_AUTH */
+#endif
 };
 
 static gfarm_error_t

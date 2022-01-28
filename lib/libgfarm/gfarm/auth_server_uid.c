@@ -53,6 +53,13 @@ gfarm_error_t (*gfarm_auth_uid_to_global_username_table[])(
  gfarm_auth_uid_to_global_username_panic,
 				   /*GFARM_AUTH_METHOD_TLS_CLIENT_CERTIFICATE*/
 #endif
+#ifdef HAVE_KERBEROS
+ gfarm_auth_uid_to_global_username_gsi,		/*GFARM_AUTH_METHOD_KERBEROS*/
+ gfarm_auth_uid_to_global_username_gsi,	    /*GFARM_AUTH_METHOD_KERBEROS_AUTH*/
+#else
+ gfarm_auth_uid_to_global_username_panic,	/*GFARM_AUTH_METHOD_KERBEROS*/
+ gfarm_auth_uid_to_global_username_panic,   /*GFARM_AUTH_METHOD_KERBEROS_AUTH*/
+#endif
 };
 
 static gfarm_error_t
@@ -66,7 +73,7 @@ gfarm_auth_uid_to_global_username_panic(void *closure,
 	return (GFARM_ERR_PROTOCOL);
 }
 
-#if defined(HAVE_GSI) || defined(HAVE_TLS_1_3)
+#if defined(HAVE_GSS) || defined(HAVE_TLS_1_3)
 
 static gfarm_error_t
 gfarm_auth_uid_to_global_username_by_dn(void *closure,

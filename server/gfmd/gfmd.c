@@ -945,7 +945,10 @@ resumer(void *arg)
 	return (NULL);
 }
 
-/* only called in case of gfarm_auth_id_type == GFARM_AUTH_ID_TYPE_USER */
+/*
+ * only called in case of gfarm_auth_id_type == GFARM_AUTH_ID_TYPE_USER,
+ * unless auth_method == GFARM_AUTH_METHOD_TLS_CLIENT_CERTIFICATE
+ */
 gfarm_error_t
 auth_uid_to_global_username(void *closure,
 	enum gfarm_auth_method auth_method,
@@ -1017,7 +1020,7 @@ auth_uid_to_global_username(void *closure,
 		return (GFARM_ERR_AUTHENTICATION);
 
 	giant_lock();
-	if (GFARM_IS_AUTH_GSI(auth_method) ||
+	if (GFARM_IS_AUTH_GSS(auth_method) ||
 	    GFARM_IS_AUTH_TLS_CLIENT_CERTIFICATE(auth_method)) {
 		/* auth_user_id is a DN */
 		u = user_lookup_gsi_dn(auth_user_id);

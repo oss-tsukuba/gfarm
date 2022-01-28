@@ -89,11 +89,17 @@
 /* Grid Security Infrastructure exists */
 #undef HAVE_GSI
 
+/* Generic Security Standard API exists */
+#undef HAVE_GSS
+
 /* support InfiniBand RDMA between client and gfsd */
 #undef HAVE_INFINIBAND
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
+
+/* Kerberos exists */
+#undef HAVE_KERBEROS
 
 /* LDAP library exists */
 #undef HAVE_LDAP

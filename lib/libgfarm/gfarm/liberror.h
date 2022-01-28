@@ -90,10 +90,10 @@ enum gfarm_errmsg {
 	/* refered only from gfarm/auth_server.c */
 	GFARM_ERRMSG_AUTH_SHAREDSECRET_MD5_CONTINUE,
 
-	/* refered only from gfarm/auth_client_gsi.c */
-	GFARM_ERRMSG_GSI_CREDENTIAL_INITIALIZATION_FAILED,
-	GFARM_ERRMSG_GSI_INITIALIZATION_FAILED,
-	GFARM_ERRMSG_CANNOT_INITIATE_GSI_CONNECTION,
+	/* refered only from gfarm/auth_client_gss.c */
+	GFARM_ERRMSG_GSS_CREDENTIAL_INITIALIZATION_FAILED,
+	GFARM_ERRMSG_GSS_INITIALIZATION_FAILED,
+	GFARM_ERRMSG_CANNOT_INITIATE_GSS_CONNECTION,
 	GFARM_ERRMSG_CANNOT_ACQUIRE_CLIENT_CRED,
 
 	/* refered only from gfarm/auth_config.c */
@@ -119,7 +119,7 @@ enum gfarm_errmsg {
 	/* OBSOLETE: should be able to be removed, but kept for safety */
 	GFARM_ERRMSG_NO_FILESYSTEM_NODE_OBSOLETE,
 
-	/* refered only from gfarm/auth_common_gsi.c */
+	/* refered only from gfarm/auth_common_gss.c */
 	GFARM_ERRMSG_CRED_TYPE_DEFAULT_INVALID_CRED_NAME,
 	GFARM_ERRMSG_CRED_TYPE_DEFAULT_INVALID_CRED_SERVICE,
 	GFARM_ERRMSG_CRED_TYPE_DEFAULT_INTERNAL_ERROR,

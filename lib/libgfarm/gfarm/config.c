@@ -806,7 +806,7 @@ gfarm_get_global_username_by_host(const char *hostname, int port, char **userp)
 		free(global_user);
 		return (e);
 	}
-	if (GFARM_IS_AUTH_GSI(
+	if (GFARM_IS_AUTH_GSS(
 	    gfm_client_connection_auth_method(gfm_server))) {
 		user = gfm_client_username(gfm_server);
 		if (user == NULL) {

@@ -1,8 +1,9 @@
 struct gfp_xdr;
+struct gfarm_gss;
 struct gfarmSecSession;
 struct gfarm_iobuffer;
 
-gfarm_error_t gfp_xdr_set_secsession(struct gfp_xdr *,
+gfarm_error_t gfp_xdr_set_secsession(struct gfp_xdr *, struct gfarm_gss *,
 	struct gfarmSecSession *, gss_cred_id_t, char *);
 void gfp_xdr_reset_secsession(struct gfp_xdr *);
 char *gfp_xdr_secsession_initiator_dn(struct gfp_xdr *);

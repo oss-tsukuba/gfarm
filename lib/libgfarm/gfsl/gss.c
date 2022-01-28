@@ -12,9 +12,9 @@
 #include <pwd.h>
 #include <gssapi.h>
 
-#ifdef HAVE_LIBGSSAPI_KRB5
-#include <gssapi/gssapi_ext.h>
-#endif
+//#ifdef HAVE_LIBGSSAPI_KRB5
+//#include <gssapi/gssapi_ext.h>
+//#endif
 
 #include <gfarm/gflog.h>
 #include <gfarm/error.h>
@@ -26,7 +26,7 @@
 #include "tcputil.h"
 
 #include "gfsl_config.h"
-#include "gfarm_gsi.h"
+#include "gfsl_gss.h"
 #if GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS
 #include "gfarm_auth.h"
 #endif
@@ -142,14 +142,14 @@ gfarmGssPrintStatus(char **list, const char *diag)
 }
 
 void
-gfarmGssPrintMajorStatus(OM_uint32 majStat)
+gfarmGssPrintMajorStatus(gfarm_OM_uint32 majStat)
 {
     gfarmGssPrintStatus(gfarmGssCrackMajorStatus(majStat), "Major");
 }
 
 
 void
-gfarmGssPrintMinorStatus(OM_uint32 minStat)
+gfarmGssPrintMinorStatus(gfarm_OM_uint32 minStat)
 {
     gfarmGssPrintStatus(gfarmGssCrackMinorStatus(minStat), "Minor");
 }
@@ -216,7 +216,7 @@ gfarmGssImportName(gss_name_t *namePtr, void *nameValue, size_t nameLength,
 
 int
 gfarmGssImportNameOfHostBasedService(gss_name_t *namePtr, char *service,
-    char *hostname, OM_uint32 *majStatPtr, OM_uint32 *minStatPtr)
+    char *hostname, gfarm_OM_uint32 *majStatPtr, gfarm_OM_uint32 *minStatPtr)
 {
     OM_uint32 majStat;
     OM_uint32 minStat;
@@ -252,7 +252,7 @@ gfarmGssImportNameOfHostBasedService(gss_name_t *namePtr, char *service,
 
 int
 gfarmGssImportNameOfHost(gss_name_t *namePtr, char *hostname,
-    OM_uint32 *majStatPtr, OM_uint32 *minStatPtr)
+    gfarm_OM_uint32 *majStatPtr, gfarm_OM_uint32 *minStatPtr)
 {
     return gfarmGssImportNameOfHostBasedService(namePtr, "host", hostname,
 						majStatPtr, minStatPtr);
@@ -260,8 +260,8 @@ gfarmGssImportNameOfHost(gss_name_t *namePtr, char *hostname,
 
 
 int
-gfarmGssDeleteName(gss_name_t *namePtr, OM_uint32 *majStatPtr,
-    OM_uint32 *minStatPtr)
+gfarmGssDeleteName(gss_name_t *namePtr, gfarm_OM_uint32 *majStatPtr,
+    gfarm_OM_uint32 *minStatPtr)
 {
     OM_uint32 majStat;
     OM_uint32 minStat;
@@ -301,7 +301,7 @@ gfarmGssDuplicateName(gss_name_t *outputNamePtr, const gss_name_t inputName,
 
 int
 gfarmGssNewCredentialName(gss_name_t *outputNamePtr, gss_cred_id_t cred,
-    OM_uint32 *majStatPtr, OM_uint32 *minStatPtr)
+    gfarm_OM_uint32 *majStatPtr, gfarm_OM_uint32 *minStatPtr)
 {
     OM_uint32 majStat;
     OM_uint32 minStat;
@@ -334,8 +334,9 @@ gfarmGssNewCredentialName(gss_name_t *outputNamePtr, gss_cred_id_t cred,
 
 
 char *
-gfarmGssNewDisplayName(const gss_name_t inputName, OM_uint32 *majStatPtr,
-    OM_uint32 *minStatPtr, gss_OID *outputNameTypePtr)
+gfarmGssNewDisplayName(const gss_name_t inputName,
+    gfarm_OM_uint32 *majStatPtr, gfarm_OM_uint32 *minStatPtr,
+    gss_OID *outputNameTypePtr)
 {
     OM_uint32 majStat;
     OM_uint32 minStat, minStat2;
@@ -379,7 +380,8 @@ gfarmGssNewDisplayName(const gss_name_t inputName, OM_uint32 *majStatPtr,
 int
 gfarmGssAcquireCredential(gss_cred_id_t *credPtr,
     const gss_name_t desiredName, gss_cred_usage_t credUsage,
-    OM_uint32 *majStatPtr, OM_uint32 *minStatPtr, gss_name_t *credNamePtr)
+    gfarm_OM_uint32 *majStatPtr, gfarm_OM_uint32 *minStatPtr,
+    gss_name_t *credNamePtr)
 {
     OM_uint32 majStat = 0;
     OM_uint32 minStat = 0;
@@ -477,8 +479,8 @@ gfarmGssAcquireCredential(gss_cred_id_t *credPtr,
 
 
 int
-gfarmGssDeleteCredential(gss_cred_id_t *credPtr, OM_uint32 *majStatPtr,
-    OM_uint32 *minStatPtr)
+gfarmGssDeleteCredential(gss_cred_id_t *credPtr, gfarm_OM_uint32 *majStatPtr,
+    gfarm_OM_uint32 *minStatPtr)
 {
     OM_uint32 majStat = 0;
     OM_uint32 minStat = 0;

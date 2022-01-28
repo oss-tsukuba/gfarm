@@ -41,7 +41,7 @@
 #ifndef GSS_C_GLOBUS_LIMITED_PROXY_MANY_FLAG
 #define GSS_C_GLOBUS_LIMITED_PROXY_MANY_FLAG 0
 #endif
-#ifdef HAVE_LIBGSSAPI_KRB5
+#ifndef GSS_C_GLOBUS_LIMITED_DELEG_PROXY_FLAG
 #define GSS_C_GLOBUS_LIMITED_DELEG_PROXY_FLAG 0 /* XXX */
 #endif
 /* allow to delegate a limited proxy */

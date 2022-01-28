@@ -377,6 +377,10 @@ main(int argc, char *argv[])
 	cred = gfarm_gsi_client_cred_name();
 	print_msg("credential name", cred ? cred : "no credential");
 #endif
+#ifdef HAVE_KERBEROS
+	cred = gfarm_kerberos_client_cred_name();
+	print_msg("principal name", cred ? cred : "no principal");
+#endif
 	/* gfmd */
 	puts("");
 	ms = gfm_client_connection_get_real_server(gfm_server);
