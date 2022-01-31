@@ -147,6 +147,7 @@ static const char *errcode_string[GFARM_ERR_NUMBER] = {
 	"invalid credential",
 	"no filesystem node",
 	"directory quota exists",
+	"TLS runtime error",
 };
 
 static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {
@@ -284,6 +285,13 @@ static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {
 
 	/* refered only from gfarm/config.c */
 	"invalid digest type",
+
+	/* refered only from gfarm/tls_funcs.h */
+	"TLS private key file permission too widely open.",
+	"TLS private key file about to be opened by others.",
+	"TLS private key read failure.",
+	"TLS invalid cipher.",
+	"TLS certificate verification failure.",
 };
 
 /*

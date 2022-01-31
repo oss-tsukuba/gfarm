@@ -72,9 +72,6 @@ gfp_xdr_set(struct gfp_xdr *conn,
 	}
 }
 
-#define GFP_XDR_NEW_RECV	1
-#define GFP_XDR_NEW_SEND	2
-
 gfarm_error_t
 gfp_xdr_new(struct gfp_iobuffer_ops *ops, void *cookie, int fd,
 	int flags, struct gfp_xdr **connp)
@@ -198,7 +195,14 @@ int
 gfp_xdr_recv_is_ready(struct gfp_xdr *conn)
 {
 	return (!gfarm_iobuffer_empty(conn->recvbuffer) ||
-		gfarm_iobuffer_is_eof(conn->recvbuffer));
+		gfarm_iobuffer_is_eof(conn->recvbuffer) ||
+		(*conn->iob_ops->recv_is_ready)(conn->cookie));
+}
+
+int
+gfp_xdr_recv_is_ready_call(void *closure)
+{
+	return (gfp_xdr_recv_is_ready(closure));
 }
 
 int

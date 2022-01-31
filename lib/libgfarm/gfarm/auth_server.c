@@ -34,13 +34,15 @@
 
 static gfarm_error_t gfarm_authorize_panic(struct gfp_xdr *, int,
 	char *, char *,
-	gfarm_error_t (*)(void *, enum gfarm_auth_method, const char *,
+	gfarm_error_t (*)(void *,
+	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
 	    char **), void *,
 	enum gfarm_auth_id_type *, char **);
 
 gfarm_error_t (*gfarm_authorization_table[])(struct gfp_xdr *, int,
 	char *, char *,
-	gfarm_error_t (*)(void *, enum gfarm_auth_method, const char *,
+	gfarm_error_t (*)(void *,
+	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
 	    char **), void *,
 	enum gfarm_auth_id_type *, char **) = {
 	/*
@@ -56,13 +58,25 @@ gfarm_error_t (*gfarm_authorization_table[])(struct gfp_xdr *, int,
 	gfarm_authorize_panic,		/* GFARM_AUTH_METHOD_GSI */
 	gfarm_authorize_panic,		/* GFARM_AUTH_METHOD_GSI_AUTH */
 #endif
+#ifdef HAVE_TLS_1_3
+	gfarm_authorize_tls_sharedsecret,
+				/* GFARM_AUTH_METHOD_TLS_SHAREDSECRET */
+	gfarm_authorize_tls_client_certificate,
+				/* GFARM_AUTH_METHOD_TLS_CLIENT_CERTIFICATE */
+#else
+	gfarm_authorize_panic,
+				/* GFARM_AUTH_METHOD_TLS_SHAREDSECRET */
+	gfarm_authorize_panic,
+				/* GFARM_AUTH_METHOD_TLS_CLIENT_CERTIFICATE */
+#endif
 };
 
 static gfarm_error_t
 gfarm_authorize_panic(struct gfp_xdr *conn, int switch_to,
 	char *service_tag, char *hostname,
 	gfarm_error_t (*auth_uid_to_global_user)(void *,
-	    enum gfarm_auth_method, const char *, char **), void *closure,
+	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
+	    char **), void *closure,
 	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
 {
 	gflog_fatal(GFARM_MSG_1000021,
@@ -401,10 +415,12 @@ gfarm_auth_sharedsecret_response(struct gfp_xdr *conn,
 }
 
 gfarm_error_t
-gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
+gfarm_authorize_sharedsecret_common(struct gfp_xdr *conn, int switch_to,
 	char *service_tag, char *hostname,
 	gfarm_error_t (*auth_uid_to_global_user)(void *,
-	    enum gfarm_auth_method, const char *, char **), void *closure,
+	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
+	    char **), void *closure,
+	const char *auth_method_name,
 	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
 {
 	gfarm_error_t e;
@@ -417,13 +433,15 @@ gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
 
 	e = gfp_xdr_recv(conn, 0, &eof, "s", &global_username);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_info(GFARM_MSG_1003585,
-		    "%s: authorize_sharedsecret: reading username", hostname);
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "%s: authorize %s: reading username",
+		    hostname, auth_method_name);
 		return (e);
 	}
 	if (eof) {
-		gflog_info(GFARM_MSG_1003586,
-		    "%s: authorize_sharedsecret: unexpected EOF", hostname);
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "%s: authorize %s: unexpected EOF",
+		    hostname, auth_method_name);
 		return (GFARM_ERR_PROTOCOL);
 	}
 
@@ -440,12 +458,14 @@ gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
 		 */
 		peer_type = GFARM_AUTH_ID_TYPE_USER;
 		e = (*auth_uid_to_global_user)(closure,
-		    GFARM_AUTH_METHOD_SHAREDSECRET, global_username, NULL);
+		    GFARM_AUTH_METHOD_SHAREDSECRET, peer_type,
+		    global_username, NULL);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_notice(GFARM_MSG_1000040,
-			    "(%s@%s) authorize_sharedsecret: "
+			gflog_notice(GFARM_MSG_UNFIXED,
+			    "(%s@%s) authorize %s: "
 			    "the global username isn't registered in gfmd: %s",
-			    global_username, hostname, gfarm_error_string(e));
+			    global_username, hostname, auth_method_name,
+			    gfarm_error_string(e));
 			if (e == GFARM_ERR_NO_MEMORY)
 				error = GFARM_AUTH_ERROR_RESOURCE_UNAVAILABLE;
 			else if (e == GFARM_ERR_PROTOCOL)
@@ -460,11 +480,12 @@ gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
 		e = gfarm_global_to_local_username_by_url(GFARM_PATH_ROOT,
 		    global_username, &local_username);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_1000041,
-			    "(%s@%s) authorize_sharedsecret: "
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "(%s@%s) authorize %s: "
 			    "cannot map global username into local username: "
 			    "%s",
-			    global_username, hostname, gfarm_error_string(e));
+			    global_username, hostname, auth_method_name,
+			    gfarm_error_string(e));
 			/* no memory, or configuration error */
 			error = GFARM_AUTH_ERROR_RESOURCE_UNAVAILABLE;
 		}
@@ -476,18 +497,19 @@ gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
 	} else {
 		GFARM_MALLOC_ARRAY(buf, gfarm_ctxp->getpw_r_bufsz);
 		if (buf == NULL) {
-			gflog_error(GFARM_MSG_1000042,
-			    "(%s@%s) %s: authorize_sharedsecret: %s",
-			    global_username, hostname, local_username,
-			    gfarm_error_string(e));
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "(%s@%s) %s: authorize %s: %s",
+			    global_username, hostname, auth_method_name,
+			    local_username, gfarm_error_string(e));
 			pwd = NULL;
 			error = GFARM_AUTH_ERROR_RESOURCE_UNAVAILABLE;
 		} else if (getpwnam_r(local_username, &pwbuf, buf,
 		    gfarm_ctxp->getpw_r_bufsz, &pwd) != 0 || pwd == NULL) {
-			gflog_notice(GFARM_MSG_1000043,
-			    "(%s@%s) %s: authorize_sharedsecret: "
+			gflog_notice(GFARM_MSG_UNFIXED,
+			    "(%s@%s) %s: authorize %s: "
 			    "local account doesn't exist",
-			    global_username, hostname, local_username);
+			    global_username, hostname, auth_method_name,
+			    local_username);
 			pwd = NULL;
 			error = GFARM_AUTH_ERROR_INVALID_CREDENTIAL;
 		}
@@ -509,17 +531,17 @@ gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
 	assert(local_username != NULL);
 
 	/* succeed, do logging */
-	gflog_notice(GFARM_MSG_1000044,
-	    "(%s@%s) authenticated: auth=sharedsecret local_user=%s",
-	    global_username, hostname, local_username);
+	gflog_notice(GFARM_MSG_UNFIXED,
+	    "(%s@%s) authenticated: auth=%s local_user=%s",
+	    global_username, hostname, auth_method_name, local_username);
 
 	if (switch_to) {
 		GFARM_MALLOC_ARRAY(aux,
 		    strlen(global_username) + 1 + strlen(hostname) + 1);
 		if (aux == NULL) {
-			gflog_error(GFARM_MSG_1000045,
-			    "(%s@%s) authorize_sharedsecret: %s",
-			    global_username, hostname,
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "(%s@%s) authorize %s: %s",
+			    global_username, hostname, auth_method_name,
 			    gfarm_error_string(GFARM_ERR_NO_MEMORY));
 			free(local_username);
 			free(global_username);
@@ -530,9 +552,10 @@ gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
 		sprintf(aux, "%s@%s", global_username, hostname);
 		gflog_set_auxiliary_info(aux);
 
-		gflog_info(GFARM_MSG_1004525,
-		    "(%s@%s) %s: authorize_sharedsecret: trying setuid...",
-		    global_username, hostname, local_username);
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "(%s@%s) %s: authorize %s: trying setuid...",
+		    global_username, hostname, local_username,
+		    auth_method_name);
 		/*
 		 * because the name returned by getlogin() is
 		 * an attribute of a session on 4.4BSD derived OSs,
@@ -574,6 +597,19 @@ gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
 	return (GFARM_ERR_NO_ERROR);
 }
 
+gfarm_error_t
+gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
+	char *service_tag, char *hostname,
+	gfarm_error_t (*auth_uid_to_global_user)(void *,
+	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
+	    char **), void *closure,
+	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
+{
+	return (gfarm_authorize_sharedsecret_common(conn, switch_to,
+	    service_tag, hostname, auth_uid_to_global_user, closure,
+	    "sharedsecret", peer_typep, global_usernamep));
+}
+
 /*
  * the `switch_to' flag has the following side effects:
  *	- gfarm_authorize() isn't thread safe.
@@ -596,7 +632,8 @@ gfarm_authorize(struct gfp_xdr *conn,
 	int switch_to, char *service_tag,
 	char *hostname, struct sockaddr *addr,
 	gfarm_error_t (*auth_uid_to_global_user)(void *,
-	    enum gfarm_auth_method, const char *, char **), void *closure,
+	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
+	    char **), void *closure,
 	enum gfarm_auth_id_type *peer_typep, char **global_usernamep,
 	enum gfarm_auth_method *auth_methodp)
 {
