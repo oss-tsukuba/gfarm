@@ -52,6 +52,12 @@ static const struct gfarm_context_module_entry module_entries[] = {
 		gfarm_auth_common_gsi_static_term
 	},
 #endif
+#ifdef HAVE_KERBEROS
+	{
+		gfarm_auth_common_kerberos_static_init,
+		gfarm_auth_common_kerberos_static_term
+	},
+#endif
 	{
 		gfarm_auth_client_static_init,
 		gfarm_auth_client_static_term

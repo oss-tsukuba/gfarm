@@ -23,6 +23,8 @@ enum gfarm_auth_method {
 	GFARM_AUTH_METHOD_GSI_AUTH,
 	GFARM_AUTH_METHOD_TLS_SHAREDSECRET,
 	GFARM_AUTH_METHOD_TLS_CLIENT_CERTIFICATE,
+	GFARM_AUTH_METHOD_KERBEROS,
+	GFARM_AUTH_METHOD_KERBEROS_AUTH,
 
 	GFARM_AUTH_METHOD_NUMBER
 };
@@ -69,15 +71,19 @@ enum gfarm_auth_sharedsecret_request {
 #define GFARM_AUTH_SHARED_KEY_BASENAME	".gfarm_shared_key"
 #define GFARM_AUTH_SHARED_KEY_PRINTNAME	"~/" GFARM_AUTH_SHARED_KEY_BASENAME
 
-/* GSI */
-gfarm_error_t gfarm_gsi_server_initialize(void);
-void gfarm_gsi_server_finalize(void);
-gfarm_error_t gfarm_gsi_client_initialize(void);
-void gfarm_gsi_client_finalize(void);
+/* GSS */
+struct gfarm_gss;
+gfarm_error_t gfarm_gss_server_initialize(struct gfarm_gss *);
+gfarm_error_t gfarm_gss_client_initialize(struct gfarm_gss *);
 
-#define GFARM_IS_AUTH_GSI(auth) \
+#define GFARM_IS_AUTH_GSS(auth) \
 	(((auth) == GFARM_AUTH_METHOD_GSI) || \
-	 ((auth) == GFARM_AUTH_METHOD_GSI_AUTH))
+	 ((auth) == GFARM_AUTH_METHOD_GSI_AUTH) || \
+	 ((auth) == GFARM_AUTH_METHOD_KERBEROS) || \
+	 ((auth) == GFARM_AUTH_METHOD_KERBEROS_AUTH))
+#define GFARM_IS_AUTH_KERBEROS(auth) \
+	 ((auth) == GFARM_AUTH_METHOD_KERBEROS) || \
+	 ((auth) == GFARM_AUTH_METHOD_KERBEROS_AUTH))
 #define GFARM_IS_AUTH_TLS_CLIENT_CERTIFICATE(auth) \
 	((auth) == GFARM_AUTH_METHOD_TLS_CLIENT_CERTIFICATE)
 
@@ -89,7 +95,6 @@ enum gfarm_auth_tls_client_certificate_request {
 	GFARM_AUTH_TLS_CLIENT_CERTIFICATE_GIVEUP,
 	GFARM_AUTH_TLS_CLIENT_CERTIFICATE_CLIENT_TYPE
 };
-
 
 /* auth_client */
 
@@ -109,7 +114,7 @@ gfarm_error_t gfarm_auth_request_multiplexed(struct gfarm_eventqueue *,
 	void (*)(void *), void *, struct gfarm_auth_request_state **);
 gfarm_error_t gfarm_auth_result_multiplexed(struct gfarm_auth_request_state *,
 	enum gfarm_auth_method *);
-gfarm_error_t gfarm_authorize(struct gfp_xdr *, int, char *,
+gfarm_error_t gfarm_authorize_wo_setuid(struct gfp_xdr *, char *,
 	char *, struct sockaddr *,
 	gfarm_error_t (*)(void *,
 	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
@@ -180,6 +185,26 @@ gfarm_error_t gfarm_auth_request_sharedsecret_multiplexed(
 	const char *, struct passwd *, int, void (*)(void *), void *, void **);
 gfarm_error_t gfarm_auth_result_sharedsecret_multiplexed(void *);
 
+/* auth_client_gss */
+gfarm_error_t gfarm_auth_request_gss(struct gfp_xdr *, struct gfarm_gss *,
+	const char *, const char *, enum gfarm_auth_id_type, const char *,
+	struct passwd *);
+gfarm_error_t gfarm_auth_request_gss_multiplexed(struct gfarm_eventqueue *,
+	struct gfp_xdr *, struct gfarm_gss *,
+	const char *, const char *, enum gfarm_auth_id_type,
+	const char *, struct passwd *, int, void (*)(void *), void *, void **);
+gfarm_error_t gfarm_auth_result_gss_multiplexed(void *);
+
+/* auth_client_gss_auth */
+gfarm_error_t gfarm_auth_request_gss_auth(struct gfp_xdr *, struct gfarm_gss *,
+	const char *, const char *, enum gfarm_auth_id_type, const char *,
+	struct passwd *);
+gfarm_error_t gfarm_auth_request_gss_auth_multiplexed(
+	struct gfarm_eventqueue *, struct gfp_xdr *, struct gfarm_gss *,
+	const char *, const char *, enum gfarm_auth_id_type,
+	const char *, struct passwd *, int, void (*)(void *), void *, void **);
+gfarm_error_t gfarm_auth_result_gss_auth_multiplexed(void *);
+
 /* auth_client_gsi */
 gfarm_error_t gfarm_auth_request_gsi(struct gfp_xdr *,
 	const char *, const char *, enum gfarm_auth_id_type, const char *,
@@ -200,6 +225,28 @@ gfarm_error_t gfarm_auth_request_gsi_auth_multiplexed(
 	struct gfp_xdr *, const char *, const char *, enum gfarm_auth_id_type,
 	const char *, struct passwd *, int, void (*)(void *), void *, void **);
 gfarm_error_t gfarm_auth_result_gsi_auth_multiplexed(void *);
+
+/* auth_client_kerberos */
+gfarm_error_t gfarm_auth_request_kerberos(struct gfp_xdr *,
+	const char *, const char *, enum gfarm_auth_id_type, const char *,
+	struct passwd *);
+gfarm_error_t gfarm_auth_request_kerberos_multiplexed(
+	struct gfarm_eventqueue *,
+	struct gfp_xdr *, const char *, const char *, enum gfarm_auth_id_type,
+	const char *, struct passwd *, int, void (*)(void *), void *, void **);
+gfarm_error_t gfarm_auth_result_kerberos_multiplexed(void *);
+
+char *gfarm_kerberos_client_cred_name(void);
+
+/* auth_client_kerberos_auth */
+gfarm_error_t gfarm_auth_request_kerberos_auth(struct gfp_xdr *,
+	const char *, const char *, enum gfarm_auth_id_type, const char *,
+	struct passwd *);
+gfarm_error_t gfarm_auth_request_kerberos_auth_multiplexed(
+	struct gfarm_eventqueue *,
+	struct gfp_xdr *, const char *, const char *, enum gfarm_auth_id_type,
+	const char *, struct passwd *, int, void (*)(void *), void *, void **);
+gfarm_error_t gfarm_auth_result_kerberos_auth_multiplexed(void *);
 
 /* auth_client_tls_sharedsecret */
 gfarm_error_t gfarm_auth_request_tls_sharedsecret(struct gfp_xdr *,
@@ -225,27 +272,57 @@ gfarm_error_t gfarm_auth_result_tls_client_certificate_multiplexed(void *);
 
 /* auth_server_sharedsecret */
 gfarm_error_t gfarm_authorize_sharedsecret_common(struct gfp_xdr *,
-	int, char *, char *,
+	char *, char *,
 	gfarm_error_t (*)(void *,
 	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
 	    char **), void *,
 	const char *, enum gfarm_auth_id_type *, char **);
 gfarm_error_t gfarm_authorize_sharedsecret(struct gfp_xdr *,
-	int, char *, char *,
+	char *, char *,
+	gfarm_error_t (*)(void *,
+	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
+	    char **), void *,
+	enum gfarm_auth_id_type *, char **);
+
+/* auth_server_gss */
+gfarm_error_t gfarm_authorize_gss(struct gfp_xdr *, struct gfarm_gss *,
+	char *, char *, enum gfarm_auth_method auth_method, 
+	gfarm_error_t (*)(void *,
+	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
+	    char **), void *,
+	enum gfarm_auth_id_type *, char **);
+
+/* auth_server_gss_auth */
+gfarm_error_t gfarm_authorize_gss_auth(struct gfp_xdr *, struct gfarm_gss *,
+	char *, char *, enum gfarm_auth_method auth_method,
 	gfarm_error_t (*)(void *,
 	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
 	    char **), void *,
 	enum gfarm_auth_id_type *, char **);
 
 /* auth_server_gsi */
-gfarm_error_t gfarm_authorize_gsi(struct gfp_xdr *, int, char *, char *,
+gfarm_error_t gfarm_authorize_gsi(struct gfp_xdr *, char *, char *,
 	gfarm_error_t (*)(void *,
 	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
 	    char **), void *,
 	enum gfarm_auth_id_type *, char **);
 
 /* auth_server_gsi_auth */
-gfarm_error_t gfarm_authorize_gsi_auth(struct gfp_xdr *, int, char *, char *,
+gfarm_error_t gfarm_authorize_gsi_auth(struct gfp_xdr *, char *, char *,
+	gfarm_error_t (*)(void *,
+	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
+	    char **), void *,
+	enum gfarm_auth_id_type *, char **);
+
+/* auth_server_kerberos */
+gfarm_error_t gfarm_authorize_kerberos(struct gfp_xdr *, char *, char *,
+	gfarm_error_t (*)(void *,
+	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
+	    char **), void *,
+	enum gfarm_auth_id_type *, char **);
+
+/* auth_server_kerberos_auth */
+gfarm_error_t gfarm_authorize_kerberos_auth(struct gfp_xdr *, char *, char *,
 	gfarm_error_t (*)(void *,
 	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
 	    char **), void *,
@@ -253,7 +330,7 @@ gfarm_error_t gfarm_authorize_gsi_auth(struct gfp_xdr *, int, char *, char *,
 
 /* auth_server_tls_sharedsecret */
 gfarm_error_t gfarm_authorize_tls_sharedsecret(struct gfp_xdr *,
-	int, char *, char *,
+	char *, char *,
 	gfarm_error_t (*)(void *,
 	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
 	    char **), void *,
@@ -261,13 +338,13 @@ gfarm_error_t gfarm_authorize_tls_sharedsecret(struct gfp_xdr *,
 
 /* auth_server_tls_client_certificate */
 gfarm_error_t gfarm_authorize_tls_client_certificate(struct gfp_xdr *,
-	int, char *, char *,
+	char *, char *,
 	gfarm_error_t (*)(void *,
 	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
 	    char **), void *,
 	enum gfarm_auth_id_type *, char **);
 
 
-/* gsi_auth_error */
-void gfarm_auth_set_gsi_auth_error(int);
-gfarm_error_t gfarm_auth_check_gsi_auth_error(void);
+/* gss_auth_error */
+void gfarm_auth_set_gss_cred_failed(struct gfarm_gss *);
+gfarm_error_t gfarm_auth_check_gss_cred_failed(void);

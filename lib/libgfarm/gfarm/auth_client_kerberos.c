@@ -6,12 +6,12 @@
 #include "gfarm_gss.h"
 
 gfarm_error_t
-gfarm_auth_request_gsi(struct gfp_xdr *conn,
+gfarm_auth_request_kerberos(struct gfp_xdr *conn,
 	const char *service_tag, const char *hostname,
 	enum gfarm_auth_id_type self_type, const char *user,
 	struct passwd *pwd)
 {
-	struct gfarm_gss *gss = gfarm_gss_gsi();
+	struct gfarm_gss *gss = gfarm_gss_kerberos();
 
 	if (gss == NULL)
 		return (GFARM_ERR_INTERNAL_ERROR);
@@ -20,11 +20,12 @@ gfarm_auth_request_gsi(struct gfp_xdr *conn,
 }
 
 /*
- * multiplexed version of gfarm_auth_request_gsi() for parallel authentication
+ * multiplexed version of gfarm_auth_request_kerberos()
+ * for parallel authentication
  */
 
 gfarm_error_t
-gfarm_auth_request_gsi_multiplexed(struct gfarm_eventqueue *q,
+gfarm_auth_request_kerberos_multiplexed(struct gfarm_eventqueue *q,
 	struct gfp_xdr *conn,
 	const char *service_tag, const char *hostname,
 	enum gfarm_auth_id_type self_type, const char *user,
@@ -32,7 +33,7 @@ gfarm_auth_request_gsi_multiplexed(struct gfarm_eventqueue *q,
 	void (*continuation)(void *), void *closure,
 	void **statepp)
 {
-	struct gfarm_gss *gss = gfarm_gss_gsi();
+	struct gfarm_gss *gss = gfarm_gss_kerberos();
 
 	if (gss == NULL)
 		return (GFARM_ERR_INTERNAL_ERROR);
@@ -42,22 +43,22 @@ gfarm_auth_request_gsi_multiplexed(struct gfarm_eventqueue *q,
 }
 
 gfarm_error_t
-gfarm_auth_result_gsi_multiplexed(void *sp)
+gfarm_auth_result_kerberos_multiplexed(void *sp)
 {
 	return (gfarm_auth_result_gss_multiplexed(sp));
 }
 
 /*
- * "gsi_auth" method
+ * "kerberos_auth" method
  */
 
 gfarm_error_t
-gfarm_auth_request_gsi_auth(struct gfp_xdr *conn,
+gfarm_auth_request_kerberos_auth(struct gfp_xdr *conn,
 	const char *service_tag, const char *hostname,
 	enum gfarm_auth_id_type self_type, const char *user,
 	struct passwd *pwd)
 {
-	struct gfarm_gss *gss = gfarm_gss_gsi();
+	struct gfarm_gss *gss = gfarm_gss_kerberos();
 
 	if (gss == NULL)
 		return (GFARM_ERR_INTERNAL_ERROR);
@@ -66,7 +67,7 @@ gfarm_auth_request_gsi_auth(struct gfp_xdr *conn,
 }
 
 gfarm_error_t
-gfarm_auth_request_gsi_auth_multiplexed(struct gfarm_eventqueue *q,
+gfarm_auth_request_kerberos_auth_multiplexed(struct gfarm_eventqueue *q,
 	struct gfp_xdr *conn,
 	const char *service_tag, const char *hostname,
 	enum gfarm_auth_id_type self_type, const char *user,
@@ -74,7 +75,7 @@ gfarm_auth_request_gsi_auth_multiplexed(struct gfarm_eventqueue *q,
 	void (*continuation)(void *), void *closure,
 	void **statepp)
 {
-	struct gfarm_gss *gss = gfarm_gss_gsi();
+	struct gfarm_gss *gss = gfarm_gss_kerberos();
 
 	if (gss == NULL)
 		return (GFARM_ERR_INTERNAL_ERROR);
@@ -84,7 +85,7 @@ gfarm_auth_request_gsi_auth_multiplexed(struct gfarm_eventqueue *q,
 }
 
 gfarm_error_t
-gfarm_auth_result_gsi_auth_multiplexed(void *sp)
+gfarm_auth_result_kerberos_auth_multiplexed(void *sp)
 {
 	return (gfarm_auth_result_gss_auth_multiplexed(sp));
 }

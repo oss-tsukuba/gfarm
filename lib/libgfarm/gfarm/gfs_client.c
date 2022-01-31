@@ -408,9 +408,9 @@ gfs_client_connection_alloc(const char *canonical_hostname,
 	struct gfs_connection *gfs_server;
 	int connection_in_progress, sock = -1, is_local = 0;
 
-#ifdef HAVE_GSI
+#ifdef HAVE_GSS
 	/* prevent to connect servers with expired client credential */
-	e = gfarm_auth_check_gsi_auth_error();
+	e = gfarm_auth_check_gss_cred_failed();
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 #endif

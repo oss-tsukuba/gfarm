@@ -89,11 +89,17 @@
 /* Grid Security Infrastructure exists */
 #undef HAVE_GSI
 
+/* Generic Security Standard API exists */
+#undef HAVE_GSS
+
 /* support InfiniBand RDMA between client and gfsd */
 #undef HAVE_INFINIBAND
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
+
+/* Kerberos exists */
+#undef HAVE_KERBEROS
 
 /* LDAP library exists */
 #undef HAVE_LDAP
@@ -124,6 +130,9 @@
 
 /* Define to 1 if you have the `gen' library (-lgen). */
 #undef HAVE_LIBGEN
+
+/* Define to 1 if you have the `gssapi_krb5' library (-lgssapi_krb5). */
+#undef HAVE_LIBGSSAPI_KRB5
 
 /* Define to 1 if you have the `nsl' library (-lnsl). */
 #undef HAVE_LIBNSL

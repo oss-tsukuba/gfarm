@@ -171,8 +171,6 @@ int gfarm_spool_root_len[GFARM_SPOOL_ROOT_NUM];
 int gfarm_spool_root_num;
 static int gfarm_spool_root_len_max;
 
-struct gfp_xdr *credential_exported = NULL;
-
 #define IOSTAT_PATH_NAME_MAX 16
 static struct gfarm_iostat_spec iostat_spec[] =  {
 	{ "rcount", GFARM_IOSTAT_TYPE_TOTAL },
@@ -299,10 +297,6 @@ cleanup(int sighandler)
 			    (long)write_verify_controller_gfsd_pid);
 		cleanup_iostat(sighandler);
 	}
-
-	if (credential_exported != NULL)
-		gfp_xdr_delete_credential(credential_exported, sighandler);
-	credential_exported = NULL;
 
 	if (!sighandler) {
 		/* It's not safe to do the following operation in sighandler */
@@ -5692,7 +5686,7 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 		    client_name, gfarm_error_string(e));
 	}
 
-	e = gfarm_authorize(client, 0, GFS_SERVICE_TAG,
+	e = gfarm_authorize_wo_setuid(client, GFS_SERVICE_TAG,
 	    client_name, client_addr,
 	    gfarm_auth_uid_to_global_username, gfm_server,
 	    &peer_type, &username, &auth_method);

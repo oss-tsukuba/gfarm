@@ -38,7 +38,7 @@
 #include "thrsubr.h"
 
 #ifdef HAVE_GSI
-#include "gfarm_secure_session.h"
+#include "gfsl_secure_session.h"
 #endif
 
 #include "context.h"
@@ -545,9 +545,9 @@ gfm_client_connection0(struct gfp_cached_connection *cache_entry,
 	struct timeval timeout;
 #endif /* __KERNEL__ */
 
-#ifdef HAVE_GSI
+#ifdef HAVE_GSS
 	/* prevent to connect servers with expired client credential */
-	e = gfarm_auth_check_gsi_auth_error();
+	e = gfarm_auth_check_gss_cred_failed();
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 #endif
@@ -866,7 +866,7 @@ gfm_client_connection_and_process_acquire(const char *hostname, int port,
 #ifndef HAVE_GSI
 			break;
 #else /* HAVE_GSI */
-			if (!GFARM_IS_AUTH_GSI(gfm_server->auth_method) ||
+			if (!GFARM_IS_AUTH_GSS(gfm_server->auth_method) ||
 			    /* obtain global username */
 			    (e = gfarm_set_global_user_by_gsi(gfm_server)) ==
 			    GFARM_ERR_NO_ERROR) {

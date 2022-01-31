@@ -1,5 +1,5 @@
 /*
- * iobuffer operation: GSI communication: GFSL / Globus GSS API / OpenSSL
+ * iobuffer operation / GFSL / GSS API of Globus GSI or Kerberos
  */
 
 #include <stdio.h>
@@ -22,7 +22,8 @@
 
 #include "gfutil.h"
 
-#include "gfarm_secure_session.h"
+#include "gfsl_secure_session.h"
+#include "gss.h"
 
 #include "context.h"
 #include "liberror.h"
@@ -33,14 +34,14 @@
 #include "config.h"
 
 /*
- * for "gsi" method
+ * for "gsi" or "kerberos" method
  */
 
 struct io_gfsl {
+	struct gfarm_gss *gss;
 	gfarmSecSession *session;
 	gss_cred_id_t cred_to_be_freed; /* cred which will be freed at close */
 	char *initiator_dn;
-	gfarmExportedCredential *exported_credential;
 
 	/* for read */
 	char *buffer;
@@ -67,7 +68,7 @@ gfarm_iobuffer_read_session_x(struct gfarm_iobuffer *b, void *cookie, int fd,
 		if (flag & O_NONBLOCK)
 			fcntl(fd, F_SETFL, flag & ~O_NONBLOCK);
 
-		rv = gfarmSecSessionReceiveInt8(io->session,
+		rv = io->gss->gfarmSecSessionReceiveInt8(io->session,
 		    &io->buffer, &io->residual, msec);
 
 		if (flag & O_NONBLOCK)
@@ -127,7 +128,7 @@ gfarm_iobuffer_write_secsession_x(struct gfarm_iobuffer *b,
 	if (flag & O_NONBLOCK)
 		fcntl(fd, F_SETFL, flag & ~O_NONBLOCK);
 
-	rv = gfarmSecSessionSendInt8(io->session, data, length, msec);
+	rv = io->gss->gfarmSecSessionSendInt8(io->session, data, length, msec);
 
 	if (flag & O_NONBLOCK)
 		fcntl(fd, F_SETFL, flag);
@@ -162,16 +163,16 @@ free_secsession(struct io_gfsl *io)
 {
 	OM_uint32 e_major, e_minor;
 
-	gfarmSecSessionTerminate(io->session);
+	io->gss->gfarmSecSessionTerminate(io->session);
 
 	if (io->cred_to_be_freed != GSS_C_NO_CREDENTIAL &&
-	    gfarmGssDeleteCredential(&io->cred_to_be_freed,
+	    io->gss->gfarmGssDeleteCredential(&io->cred_to_be_freed,
 	    &e_major, &e_minor) < 0 &&
 	    gflog_auth_get_verbose()) {
 		gflog_error(GFARM_MSG_1000725,
 		    "Can't free my credential because of:");
-		gfarmGssPrintMajorStatus(e_major);
-		gfarmGssPrintMinorStatus(e_minor);
+		io->gss->gfarmGssPrintMajorStatus(e_major);
+		io->gss->gfarmGssPrintMinorStatus(e_minor);
 	}
 	free(io->initiator_dn);
 	free(io->buffer);
@@ -207,44 +208,6 @@ gfp_iobuffer_shutdown_secsession_op(void *cookie, int fd)
 	return (e);
 }
 
-gfarm_error_t
-gfp_iobuffer_export_credential_secsession_op(void *cookie)
-{
-	struct io_gfsl *io = cookie;
-	OM_uint32 e_major;
-	gss_cred_id_t cred;
-
-	cred = gfarmSecSessionGetDelegatedCredential(io->session);
-	if (cred == GSS_C_NO_CREDENTIAL)
-		return (GFARM_ERRMSG_GSI_DELEGATED_CREDENTIAL_NOT_EXIST);
-	io->exported_credential = gfarmGssExportCredential(cred, &e_major);
-	if (io->exported_credential == NULL)
-		return (GFARM_ERRMSG_GSI_DELEGATED_CREDENTIAL_CANNOT_EXPORT);
-	return (GFARM_ERR_NO_ERROR);
-}
-
-gfarm_error_t
-gfp_iobuffer_delete_credential_secsession_op(void *cookie, int sighandler)
-{
-	struct io_gfsl *io = cookie;
-
-	if (io->exported_credential == NULL)
-		return (GFARM_ERR_NO_ERROR);
-	gfarmGssDeleteExportedCredential(io->exported_credential, sighandler);
-	io->exported_credential = NULL;
-	return (GFARM_ERR_NO_ERROR);
-}
-
-char *
-gfp_iobuffer_env_for_credential_secsession_op(void *cookie)
-{
-	struct io_gfsl *io = cookie;
-
-	if (io->exported_credential == NULL)
-		return (NULL);
-	return (gfarmGssEnvForExportedCredential(io->exported_credential));
-}
-
 int
 gfp_iobuffer_recv_is_ready_secssion_op(void *cookie)
 {
@@ -255,9 +218,6 @@ gfp_iobuffer_recv_is_ready_secssion_op(void *cookie)
 struct gfp_iobuffer_ops gfp_xdr_secsession_iobuffer_ops = {
 	gfp_iobuffer_close_secsession_op,
 	gfp_iobuffer_shutdown_secsession_op,
-	gfp_iobuffer_export_credential_secsession_op,
-	gfp_iobuffer_delete_credential_secsession_op,
-	gfp_iobuffer_env_for_credential_secsession_op,
 	gfp_iobuffer_recv_is_ready_secssion_op,
 	gfarm_iobuffer_read_timeout_secsession_op,
 	gfarm_iobuffer_read_notimeout_secsession_op,
@@ -266,7 +226,7 @@ struct gfp_iobuffer_ops gfp_xdr_secsession_iobuffer_ops = {
 };
 
 gfarm_error_t
-gfp_xdr_set_secsession(struct gfp_xdr *conn,
+gfp_xdr_set_secsession(struct gfp_xdr *conn, struct gfarm_gss *gss,
 	gfarmSecSession *secsession, gss_cred_id_t cred_to_be_freed, char *dn)
 {
 	struct io_gfsl *io;
@@ -278,10 +238,10 @@ gfp_xdr_set_secsession(struct gfp_xdr *conn,
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
 	}
+	io->gss = gss;
 	io->session = secsession;
 	io->cred_to_be_freed = cred_to_be_freed;
 	io->initiator_dn = dn;
-	io->exported_credential = NULL;
 	io->buffer = NULL;
 	io->p = io->residual = 0;
 	gfp_xdr_set(conn, &gfp_xdr_secsession_iobuffer_ops,
@@ -327,15 +287,12 @@ gfarm_iobuffer_write_close_secsession_op(struct gfarm_iobuffer *b,
 #endif /* currently not used */
 
 /*
- * for "gsi_auth" method
+ * for "gsi_auth" or "kerberos_auth" method
  */
 
 static struct gfp_iobuffer_ops gfp_xdr_insecure_gsi_session_iobuffer_ops = {
 	gfp_iobuffer_close_secsession_op,
 	gfp_iobuffer_shutdown_secsession_op,
-	gfp_iobuffer_export_credential_secsession_op,
-	gfp_iobuffer_delete_credential_secsession_op,
-	gfp_iobuffer_env_for_credential_secsession_op,
 	gfp_iobuffer_recv_is_ready_secssion_op,
 	/* NOTE: the following assumes that these functions don't use cookie */
 	gfarm_iobuffer_blocking_read_timeout_fd_op,

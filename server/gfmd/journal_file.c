@@ -1144,25 +1144,6 @@ journal_shutdown_fd_op(void *cookie, int fd)
 	return (GFARM_ERR_NO_ERROR);
 }
 
-static gfarm_error_t
-journal_export_credential_fd_op(void *cookie)
-{
-	/* it's already exported, or no way to export it. */
-	return (GFARM_ERR_NO_ERROR);
-}
-
-static gfarm_error_t
-journal_delete_credential_fd_op(void *cookie, int sighandler)
-{
-	return (GFARM_ERR_NO_ERROR);
-}
-
-static char *
-journal_env_for_credential_fd_op(void *cookie)
-{
-	return (NULL);
-}
-
 static int
 journal_recv_is_ready_op(void *cookie)
 {
@@ -1293,9 +1274,6 @@ error:
 static struct gfp_iobuffer_ops journal_iobuffer_ops = {
 	journal_close_fd_op,
 	journal_shutdown_fd_op,
-	journal_export_credential_fd_op,
-	journal_delete_credential_fd_op,
-	journal_env_for_credential_fd_op,
 	journal_recv_is_ready_op,
 	journal_blocking_read_op,
 	journal_blocking_read_op,

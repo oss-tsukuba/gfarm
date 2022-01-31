@@ -66,7 +66,10 @@ struct gfarm_context {
 	struct gfarm_auth_config_static *auth_config_static;
 	struct gfarm_auth_common_static *auth_common_static;
 #ifdef HAVE_GSI
-	struct gfarm_auth_common_gsi_static *auth_common_gsi_static;
+	struct gfarm_auth_gss_client_cred *auth_common_gsi_static;
+#endif /* HAVE_GSI */
+#ifdef HAVE_KERBEROS
+	struct gfarm_auth_gss_client_cred *auth_common_kerberos_static;
 #endif /* HAVE_GSI */
 	struct gfarm_auth_client_static *auth_client_static;
 	struct gfarm_schedule_static *schedule_static;
@@ -130,6 +133,8 @@ void          gfarm_auth_common_static_term(struct gfarm_context *);
 
 gfarm_error_t gfarm_auth_common_gsi_static_init(struct gfarm_context *);
 void          gfarm_auth_common_gsi_static_term(struct gfarm_context *);
+gfarm_error_t gfarm_auth_common_kerberos_static_init(struct gfarm_context *);
+void          gfarm_auth_common_kerberos_static_term(struct gfarm_context *);
 
 gfarm_error_t gfarm_auth_client_static_init(struct gfarm_context *);
 void          gfarm_auth_client_static_term(struct gfarm_context *);

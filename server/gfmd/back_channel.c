@@ -760,8 +760,9 @@ static void *
 back_channel_main(void *arg)
 {
 	return (gfm_server_channel_main(arg,
-		async_back_channel_protocol_switch,
+		async_back_channel_protocol_switch
 #ifdef COMPAT_GFARM_2_3
+		,
 		sync_back_channel_free,
 		sync_back_channel_service
 #endif

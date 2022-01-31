@@ -674,6 +674,16 @@ globus_gssapi_libs
 globus_includes
 globus_location
 globus_flavor
+kerberos_targets
+kerberos_cflags
+kerberos_objs
+kerberos_srcs
+kerberos_gssapi_libs
+kerberos_includes
+gss_targets
+gss_cflags
+gss_objs
+gss_srcs
 openssl_libs
 openssl_includes
 pthread_targets
@@ -785,6 +795,7 @@ with_sysroot
 enable_libtool_lock
 with_pthread
 with_openssl
+enable_kerberos
 with_globus_static
 with_globus_flavor
 with_globus_libdir
@@ -1432,6 +1443,7 @@ Optional Features:
   --enable-fast-install[=PKGS]
                           optimize for fast installation [default=yes]
   --disable-libtool-lock  avoid locking (might break parallel builds)
+  --enable-kerberos       enable Kerberos authentication [default=disable]
   --enable-voms           enable VOMS synchronization feature
                           [default=disable]
   --enable-xmlattr        support XML extended attributes and XPath search
@@ -12021,6 +12033,121 @@ fi
 
 
 ###
+### common part for kerberos and globus (i.e. gssapi)
+###
+
+gss_srcs=
+gss_objs=
+gss_cflags=
+gss_targets=
+
+
+
+
+
+
+
+###
+### --enable-kerberos
+###
+
+# Check whether --enable-kerberos was given.
+if test "${enable_kerberos+set}" = set; then :
+  enableval=$enable_kerberos; if test x"${enable_kerberos}" = x"yes"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for gss_init_sec_context in -lgssapi_krb5" >&5
+$as_echo_n "checking for gss_init_sec_context in -lgssapi_krb5... " >&6; }
+if ${ac_cv_lib_gssapi_krb5_gss_init_sec_context+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lgssapi_krb5  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char gss_init_sec_context ();
+int
+main ()
+{
+return gss_init_sec_context ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_gssapi_krb5_gss_init_sec_context=yes
+else
+  ac_cv_lib_gssapi_krb5_gss_init_sec_context=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_gssapi_krb5_gss_init_sec_context" >&5
+$as_echo "$ac_cv_lib_gssapi_krb5_gss_init_sec_context" >&6; }
+if test "x$ac_cv_lib_gssapi_krb5_gss_init_sec_context" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBGSSAPI_KRB5 1
+_ACEOF
+
+  LIBS="-lgssapi_krb5 $LIBS"
+
+fi
+
+  if test x"${ac_cv_lib_gssapi_krb5_gss_init_sec_context}" = x"yes"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking Kerberos library available" >&5
+$as_echo_n "checking Kerberos library available... " >&6; }
+  else
+    enable_kerberos=no
+  fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ${enable_kerberos}" >&5
+$as_echo "${enable_kerberos}" >&6; }
+fi
+fi
+
+
+if test x"${enable_kerberos}" = x"yes"; then
+  kerberos_includes= # assumes standard include path, for now
+  kerberos_gssapi_libs=-lgssapi_krb5
+
+  kerberos_srcs='${KERBEROS_SRCS}'
+  kerberos_objs='${KERBEROS_OBJS}'
+  kerberos_cflags='${KERBEROS_CFLAGS}'
+  kerberos_targets='${KERBEROS_TARGETS}'
+
+$as_echo "#define HAVE_KERBEROS 1" >>confdefs.h
+
+
+  gss_srcs='${GSS_SRCS}'
+  gss_objs='${GSS_OBJS}'
+  gss_cflags='${GSS_CFLAGS}'
+  gss_targets='${GSS_TARGETS}'
+
+$as_echo "#define HAVE_GSS 1" >>confdefs.h
+
+else
+  kerberos_includes=
+  kerberos_gssapi_libs=
+
+  kerberos_srcs=
+  kerberos_objs=
+  kerberos_cflags=
+  kerberos_targets=
+fi
+
+
+
+
+
+
+
+
+###
 ### --with-globus=GLOBUS_ROOT --with-globus-flavor=FLAVOR -with-globus-static
 ###
 
@@ -12064,7 +12191,8 @@ $as_echo_n "checking globus... " >&6; }
 
 # Check whether --with-globus was given.
 if test "${with_globus+set}" = set; then :
-  withval=$with_globus; globus_location="${withval}"
+  withval=$with_globus;
+ globus_location="${withval}"
  case "${globus_location}" in yes) globus_location=${GLOBUS_LOCATION};; esac
 
  # try pkg-config first
@@ -12205,29 +12333,43 @@ $as_echo "using globus static library: no" >&6; };;
    fi
  fi # End of Grid Packaging Tools (GPT)
 
- # for conditional compilation which depends on whether globus is enabled or not
- globus_srcs='${GLOBUS_SRCS}'
- globus_objs='${GLOBUS_OBJS}'
- globus_cflags='${GLOBUS_CFLAGS}'
- globus_targets='${GLOBUS_TARGETS}'
-
-
-$as_echo "#define HAVE_GSI 1" >>confdefs.h
-
+ enable_globus=yes
 
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
 $as_echo "disabled" >&6; }
+
+ enable_globus=no
+
  globus_location=
  globus_includes=
  globus_gssapi_libs=
 
- # for conditional compilation which depends on whether globus is enabled or not
- globus_srcs=
- globus_objs=
- globus_cflags=
- globus_targets=
+fi
 
+
+# for conditional compilation which depends on whether globus is enabled or not
+if test x"${enable_globus}" = x"yes"; then
+  globus_srcs='${GLOBUS_SRCS}'
+  globus_objs='${GLOBUS_OBJS}'
+  globus_cflags='${GLOBUS_CFLAGS}'
+  globus_targets='${GLOBUS_TARGETS}'
+
+$as_echo "#define HAVE_GSI 1" >>confdefs.h
+
+
+  gss_srcs='${GSS_SRCS}'
+  gss_objs='${GSS_OBJS}'
+  gss_cflags='${GSS_CFLAGS}'
+  gss_targets='${GSS_TARGETS}'
+
+$as_echo "#define HAVE_GSS 1" >>confdefs.h
+
+else
+  globus_srcs=
+  globus_objs=
+  globus_cflags=
+  globus_targets=
 fi
 
 

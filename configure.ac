@@ -245,6 +245,69 @@ AC_SUBST(openssl_includes)
 AC_SUBST(openssl_libs)
 
 ###
+### common part for kerberos and globus (i.e. gssapi)
+###
+
+gss_srcs=
+gss_objs=
+gss_cflags=
+gss_targets=
+
+AC_SUBST(gss_srcs)
+AC_SUBST(gss_objs)
+AC_SUBST(gss_cflags)
+AC_SUBST(gss_targets)
+
+
+###
+### --enable-kerberos
+###
+
+AC_ARG_ENABLE(kerberos,
+AS_HELP_STRING([--enable-kerberos],[enable Kerberos authentication [default=disable]]),
+[if test x"${enable_kerberos}" = x"yes"; then
+  AC_CHECK_LIB(gssapi_krb5, gss_init_sec_context)
+  if test x"${ac_cv_lib_gssapi_krb5_gss_init_sec_context}" = x"yes"; then
+    AC_MSG_CHECKING(Kerberos library available)
+  else
+    enable_kerberos=no
+  fi
+  AC_MSG_RESULT(${enable_kerberos})
+fi], [])
+
+if test x"${enable_kerberos}" = x"yes"; then
+  kerberos_includes= # assumes standard include path, for now
+  kerberos_gssapi_libs=-lgssapi_krb5
+
+  kerberos_srcs='${KERBEROS_SRCS}'
+  kerberos_objs='${KERBEROS_OBJS}'
+  kerberos_cflags='${KERBEROS_CFLAGS}'
+  kerberos_targets='${KERBEROS_TARGETS}'
+  AC_DEFINE(HAVE_KERBEROS, 1, [Kerberos exists])
+
+  gss_srcs='${GSS_SRCS}'
+  gss_objs='${GSS_OBJS}'
+  gss_cflags='${GSS_CFLAGS}'
+  gss_targets='${GSS_TARGETS}'
+  AC_DEFINE(HAVE_GSS, 1, [Generic Security Standard API exists])
+else
+  kerberos_includes=
+  kerberos_gssapi_libs=
+
+  kerberos_srcs=
+  kerberos_objs=
+  kerberos_cflags=
+  kerberos_targets=
+fi
+
+AC_SUBST(kerberos_includes)
+AC_SUBST(kerberos_gssapi_libs)
+AC_SUBST(kerberos_srcs)
+AC_SUBST(kerberos_objs)
+AC_SUBST(kerberos_cflags)
+AC_SUBST(kerberos_targets)
+
+###
 ### --with-globus=GLOBUS_ROOT --with-globus-flavor=FLAVOR -with-globus-static
 ###
 
@@ -278,7 +341,8 @@ AC_MSG_CHECKING([globus])
 AC_ARG_WITH(globus,
 [  --with-globus=GLOBUS_ROOT	globus root directory
 				[[default=disable]]],
-[globus_location="${withval}"
+[
+ globus_location="${withval}"
  case "${globus_location}" in yes) globus_location=${GLOBUS_LOCATION};; esac
 
  # try pkg-config first
@@ -407,25 +471,37 @@ AC_ARG_WITH(globus,
    fi
  fi # End of Grid Packaging Tools (GPT)
 
- # for conditional compilation which depends on whether globus is enabled or not
- globus_srcs='${GLOBUS_SRCS}'
- globus_objs='${GLOBUS_OBJS}'
- globus_cflags='${GLOBUS_CFLAGS}'
- globus_targets='${GLOBUS_TARGETS}'
-
- AC_DEFINE(HAVE_GSI, 1, [Grid Security Infrastructure exists])
+ enable_globus=yes
 ],
 [AC_MSG_RESULT([disabled])
+
+ enable_globus=no
+
  globus_location=
  globus_includes=
  globus_gssapi_libs=
-
- # for conditional compilation which depends on whether globus is enabled or not
- globus_srcs=
- globus_objs=
- globus_cflags=
- globus_targets=
 ])
+
+# for conditional compilation which depends on whether globus is enabled or not
+if test x"${enable_globus}" = x"yes"; then
+  globus_srcs='${GLOBUS_SRCS}'
+  globus_objs='${GLOBUS_OBJS}'
+  globus_cflags='${GLOBUS_CFLAGS}'
+  globus_targets='${GLOBUS_TARGETS}'
+  AC_DEFINE(HAVE_GSI, 1, [Grid Security Infrastructure exists])
+
+  gss_srcs='${GSS_SRCS}'
+  gss_objs='${GSS_OBJS}'
+  gss_cflags='${GSS_CFLAGS}'
+  gss_targets='${GSS_TARGETS}'
+  AC_DEFINE(HAVE_GSS, 1, [Generic Security Standard API exists])
+else
+  globus_srcs=
+  globus_objs=
+  globus_cflags=
+  globus_targets=
+fi
+
 
 AC_SUBST(globus_location)
 AC_SUBST(globus_includes)

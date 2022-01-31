@@ -15,7 +15,7 @@
  * auth_server_tls_sharedsecret
  */
 gfarm_error_t
-gfarm_authorize_tls_sharedsecret(struct gfp_xdr *conn, int switch_to,
+gfarm_authorize_tls_sharedsecret(struct gfp_xdr *conn,
 	char *service_tag, char *hostname,
 	gfarm_error_t (*auth_uid_to_global_user)(void *,
 	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
@@ -32,7 +32,7 @@ gfarm_authorize_tls_sharedsecret(struct gfp_xdr *conn, int switch_to,
 		return (e);
 	}
 	e = gfarm_authorize_sharedsecret_common(
-	    conn, switch_to, service_tag, hostname, auth_uid_to_global_user,
+	    conn, service_tag, hostname, auth_uid_to_global_user,
 	    closure, "tls_sharedsecret", peer_typep, global_usernamep);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfp_xdr_tls_reset(conn); /* is this case graceful? */
@@ -44,7 +44,7 @@ gfarm_authorize_tls_sharedsecret(struct gfp_xdr *conn, int switch_to,
  * auth_server_tls_client_certificate
  */
 gfarm_error_t gfarm_authorize_tls_client_certificate(
-	struct gfp_xdr *conn, int switch_to,
+	struct gfp_xdr *conn,
 	char *service_tag, char *hostname,
 	gfarm_error_t (*auth_uid_to_global_user)(void *,
 	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
@@ -126,14 +126,6 @@ gfarm_error_t gfarm_authorize_tls_client_certificate(
 			result = GFARM_AUTH_ERROR_RESOURCE_UNAVAILABLE;
 		else
 			result = GFARM_AUTH_ERROR_DENIED;
-
-		if (result == GFARM_AUTH_ERROR_NO_ERROR && switch_to) {
-			gflog_warning(GFARM_MSG_UNFIXED,
-			    "(%s@%s): user privilege switching is "
-			    "not supported in auth tls_client_certificate",
-			    global_username, hostname);
-			result = GFARM_AUTH_ERROR_NOT_SUPPORTED;
-		}
 	}
 	e2 = gfp_xdr_send(conn, "i", result);
 	if (e2 == GFARM_ERR_NO_ERROR)

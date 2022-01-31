@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
+#include <time.h>
 
 #include <gssapi.h>
 
@@ -18,7 +19,7 @@
 
 #include "tcputil.h"
 
-#include "gfarm_secure_session.h"
+#include "gfsl_secure_session.h"
 #include "gfarm_auth.h"
 
 #include "scarg.h"

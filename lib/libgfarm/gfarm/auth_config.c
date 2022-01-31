@@ -5,20 +5,19 @@
 #include <limits.h>
 #include <errno.h>
 
-#include <gfarm/gfarm_config.h>
+#include <gfarm/gfarm.h>
 
-#ifdef HAVE_GSI
+#ifdef HAVE_GSS
 #include <gssapi.h>
 #endif
 
-#include <gfarm/gflog.h>
-#include <gfarm/error.h>
-#include <gfarm/gfarm_misc.h>
-
 #include "gfutil.h"
 
-#ifdef HAVE_GSI
-#include "gfarm_gsi.h"
+#ifdef HAVE_GSS
+#include "gfsl_gss.h"
+#include "gfsl_secure_session.h"
+#include "gfarm_gss.h"
+#include "gss.h"
 #endif
 
 #include "context.h"
@@ -45,6 +44,10 @@ struct gfarm_auth_method_name_value {
 	  GFARM_AUTH_METHOD_GSI },
 	{ 'g', "gsi_auth",
 	  GFARM_AUTH_METHOD_GSI_AUTH },
+	{ 'K', "kerberos",
+	  GFARM_AUTH_METHOD_KERBEROS },
+	{ 'k', "kerberos_auth",
+	  GFARM_AUTH_METHOD_KERBEROS_AUTH },
 };
 
 enum gfarm_auth_config_command { GFARM_AUTH_ENABLE, GFARM_AUTH_DISABLE };
@@ -73,8 +76,8 @@ struct gfarm_auth_config_static {
 	struct gfarm_auth_config **auth_config_mark;
 	struct gfarm_auth_cred_config *auth_server_cred_config_list;
 
-	/* authentication status */
-	int gsi_auth_error;
+	/* authentication credential expired?, and which was the protocol? */
+	struct gfarm_gss *gss_cred_failed;
 };
 
 gfarm_error_t
@@ -90,7 +93,7 @@ gfarm_auth_config_static_init(struct gfarm_context *ctxp)
 	s->auth_config_last = &s->auth_config_list;
 	s->auth_config_mark = &s->auth_config_list;
 	s->auth_server_cred_config_list = NULL;
-	s->gsi_auth_error = 0;
+	s->gss_cred_failed = NULL;
 
 	ctxp->auth_config_static = s;
 	return (GFARM_ERR_NO_ERROR);
@@ -276,18 +279,60 @@ gfarm_auth_method_get_enabled_by_name_addr(
 	return (enabled);
 }
 
+static int
+gfarm_auth_gss_credential_available(struct gfarm_gss *gss)
+{
+#ifdef HAVE_GSS
+	if (gss->gfarmGssAcquireCredential(
+	    NULL, GSS_C_NO_NAME, GSS_C_INITIATE, NULL, NULL, NULL) < 0) {
+		return (0);
+	}
+	return (1);
+#else
+	return (0);
+#endif
+}
+
+#ifdef HAVE_GSS
+
+/* NOTE: it's OK to pass NULL as gss */
+static gfarm_error_t
+gfarm_auth_method_protocol_available(struct gfarm_gss *gss)
+{
+	if (gss == NULL)
+		return (GFARM_ERR_PROTOCOL_NOT_AVAILABLE);
+	if (gfarm_auth_gss_credential_available(gss))
+		return (GFARM_ERR_NO_ERROR);
+
+	/*
+	 * do not overwrite staticp->gss_cred_failed,
+	 * because maybe staticp->gss_cred_failed != gss
+	 */
+	if (staticp->gss_cred_failed == NULL)
+		gfarm_auth_set_gss_cred_failed(gss);
+
+	return (GFARM_ERR_INVALID_CREDENTIAL);
+}
+
+#endif
+
 gfarm_error_t
 gfarm_auth_method_gsi_available(void)
 {
 #ifdef HAVE_GSI
-	if (gfarmGssAcquireCredential(NULL, GSS_C_NO_NAME, GSS_C_INITIATE,
-		NULL, NULL, NULL) < 0) {
-		gfarm_auth_set_gsi_auth_error(1);
-		return (GFARM_ERR_INVALID_CREDENTIAL);
-	}
-	return (GFARM_ERR_NO_ERROR);
+	return (gfarm_auth_method_protocol_available(gfarm_gss_gsi()));
 #else
-	return (GFARM_ERRMSG_AUTH_METHOD_NOT_AVAILABLE_FOR_THE_HOST);
+	return (GFARM_ERR_PROTOCOL_NOT_SUPPORTED);
+#endif
+}
+
+gfarm_error_t
+gfarm_auth_method_kerberos_available(void)
+{
+#ifdef HAVE_KERBEROS
+	return (gfarm_auth_method_protocol_available(gfarm_gss_kerberos()));
+#else
+	return (GFARM_ERR_PROTOCOL_NOT_SUPPORTED);
 #endif
 }
 
@@ -304,39 +349,47 @@ gfarm_auth_method_get_available(void)
 	    i++) {
 		switch (i) {
 		case GFARM_AUTH_METHOD_GSI_OLD: /* obsolete */
-			break;
-#ifndef HAVE_GSI
+			continue; /* not available */
 		case GFARM_AUTH_METHOD_GSI:
-			break;
 		case GFARM_AUTH_METHOD_GSI_AUTH:
-			break;
+#ifdef HAVE_GSI
+			if (gfarm_gss_gsi() != NULL)
+				break; /* available */
 #endif
+			continue; /* not available */
+		case GFARM_AUTH_METHOD_KERBEROS:
+		case GFARM_AUTH_METHOD_KERBEROS_AUTH:
+#ifdef HAVE_KERBEROS
+			if (gfarm_gss_kerberos() != NULL)
+				break; /* available */
+#endif
+			continue; /* not available */
 		default:
-			methods |= 1 << i;
-			break;
+			break; /* available */
 		}
+		methods |= 1 << i;
 	}
 	return (methods);
 }
 
 void
-gfarm_auth_set_gsi_auth_error(int s)
+gfarm_auth_set_gss_cred_failed(struct gfarm_gss *gss)
 {
-	staticp->gsi_auth_error = s;
+	staticp->gss_cred_failed = gss;
 }
 
+/* to prevent to connect servers with expired client credential */
 gfarm_error_t
-gfarm_auth_check_gsi_auth_error(void)
+gfarm_auth_check_gss_cred_failed(void)
 {
-	gfarm_error_t e = GFARM_ERR_NO_ERROR;
-
-	if (staticp->gsi_auth_error) {
-		e = gfarm_auth_method_gsi_available();
-		if (e != GFARM_ERR_NO_ERROR)
-			return (e);
+	if (staticp->gss_cred_failed != NULL) {
+		if (!gfarm_auth_gss_credential_available(
+		    staticp->gss_cred_failed)) {
+			return (GFARM_ERR_INVALID_CREDENTIAL);
+		}
 	}
-	gfarm_auth_set_gsi_auth_error(0);
-	return (e);
+	gfarm_auth_set_gss_cred_failed(NULL);
+	return (GFARM_ERR_NO_ERROR);
 }
 
 /*

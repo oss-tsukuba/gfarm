@@ -1,5 +1,6 @@
 #include <pthread.h>
 #include <assert.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -29,7 +30,7 @@
 #include "thrsubr.h"
 
 #include "tcputil.h"
-#include "gfarm_secure_session.h"
+#include "gfsl_secure_session.h"
 #include "misc.h"
 
 /* #define SS_DEBUG */
@@ -719,7 +720,7 @@ gfarmSecSessionInitializeAcceptor(char *configFile, char *usermapFile,
 
 int
 gfarmSecSessionInitializeInitiator(char *configFile, char *usermapFile,
-    OM_uint32 *majStatPtr, OM_uint32 *minStatPtr)
+    gfarm_OM_uint32 *majStatPtr, gfarm_OM_uint32 *minStatPtr)
 {
     int ret = 1;
     OM_uint32 majStat = GSS_S_COMPLETE;
@@ -780,7 +781,8 @@ gfarmSecSessionInitializeInitiator(char *configFile, char *usermapFile,
 
 int
 gfarmSecSessionInitializeBoth(char *iConfigFile, char *aConfigFile,
-    char *usermapFile, OM_uint32 *majStatPtr, OM_uint32 *minStatPtr)
+    char *usermapFile,
+    gfarm_OM_uint32 *majStatPtr, gfarm_OM_uint32 *minStatPtr)
 {
     int ret = 1;
     OM_uint32 majStat = GSS_S_COMPLETE;
@@ -800,6 +802,14 @@ gfarmSecSessionInitializeBoth(char *iConfigFile, char *aConfigFile,
      * 	This implementation depends on gssapi_ssleay of Globus. With
      *	other GSSAPI implementation, a major change could be needed.
      */
+
+#ifdef HAVE_LIBGSSAPI_KRB5
+    if (initiatorInitialized && !acceptorInitialized == 0) {
+	gfarmSecSessionFinalizeInitiator();
+    } else if (!initiatorInitialized  && acceptorInitialized) {
+	gfarmSecSessionFinalizeAcceptor();
+    }
+#endif
 
     gfarm_mutex_lock(&initiator_mutex, diag, initiatorDiag);
     gfarm_mutex_lock(&acceptor_mutex, diag, acceptorDiag);
@@ -917,8 +927,8 @@ gfarmSecSessionFinalizeBoth(void)
 
 gfarmSecSession *
 gfarmSecSessionAccept(int fd, gss_cred_id_t cred,
-    gfarmSecSessionOption *ssOptPtr, int *gsiErrNoPtr, OM_uint32 *majStatPtr,
-    OM_uint32 *minStatPtr)
+    gfarmSecSessionOption *ssOptPtr, int *gsiErrNoPtr,
+    gfarm_OM_uint32 *majStatPtr, OM_uint32 *minStatPtr)
 {
     gfarmSecSession *ret = NULL;
     gfarmSecSessionOption canOpt = GFARM_SS_DEFAULT_OPTION;
@@ -1290,8 +1300,9 @@ secSessionInitiate(int fd, const gss_name_t acceptorName,
 
 gfarmSecSession *
 gfarmSecSessionInitiate(int fd, const gss_name_t acceptorName,
-    gss_cred_id_t cred, OM_uint32 reqFlag, gfarmSecSessionOption *ssOptPtr,
-    int *gsiErrNoPtr, OM_uint32 *majStatPtr, OM_uint32 *minStatPtr)
+    gss_cred_id_t cred, gfarm_OM_uint32 reqFlag,
+    gfarmSecSessionOption *ssOptPtr, int *gsiErrNoPtr,
+    gfarm_OM_uint32 *majStatPtr, gfarm_OM_uint32 *minStatPtr)
 {
     return secSessionInitiate(fd, acceptorName, cred, reqFlag, ssOptPtr,
 			      gsiErrNoPtr, majStatPtr, minStatPtr, 0);
@@ -2201,9 +2212,9 @@ secSessionInitiateResult(struct gfarmSecSessionInitiateState *state,
 
 struct gfarmSecSessionInitiateState *
 gfarmSecSessionInitiateRequest(struct gfarm_eventqueue *q, int fd,
-    const gss_name_t acceptorName, gss_cred_id_t cred, OM_uint32 reqFlag,
+    const gss_name_t acceptorName, gss_cred_id_t cred, gfarm_OM_uint32 reqFlag,
     gfarmSecSessionOption *ssOptPtr, void (*continuation) (void *),
-    void *closure, OM_uint32 *majStatPtr, OM_uint32 *minStatPtr)
+    void *closure, gfarm_OM_uint32 *majStatPtr, gfarm_OM_uint32 *minStatPtr)
 {
     return secSessionInitiateRequest(q, fd, acceptorName, cred, reqFlag,
 				     ssOptPtr,
@@ -2213,7 +2224,7 @@ gfarmSecSessionInitiateRequest(struct gfarm_eventqueue *q, int fd,
 
 gfarmSecSession *
 gfarmSecSessionInitiateResult(struct gfarmSecSessionInitiateState *state,
-    OM_uint32 *majStatPtr, OM_uint32 *minStatPtr)
+    gfarm_OM_uint32 *majStatPtr, gfarm_OM_uint32 *minStatPtr)
 {
     return secSessionInitiateResult(state, majStatPtr, minStatPtr);
 }
