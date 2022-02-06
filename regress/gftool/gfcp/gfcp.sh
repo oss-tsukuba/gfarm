@@ -13,12 +13,12 @@ setup_test
 
 get_mode_gfarm()
 {
-    gfls -l a | awk '{print $1}'
+    gfls -l ${1} | awk '{print $1}'
 }
 
 get_mode_local()
 {
-    gfls -l a | awk '{print $1}'
+    ls -l ${1} | awk '{print $1}'
 }
 
 test_write_to_gfarm_j1()
@@ -45,7 +45,7 @@ test_write_to_local_readonly()
     rm -f $lfile_out
     gfchmod 400 $gfile1
     $GFCP $gfile1 $lfile_out
-    [ $(get_mode_gfarm $lfile_out) = "-r--------" ]
+    [ $(get_mode_local $lfile_out) = "-r--------" ]
 }
 
 test_write_to_gfarm_readonly()
