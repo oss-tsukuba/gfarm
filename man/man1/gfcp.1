@@ -2,12 +2,12 @@
 .\"     Title: gfcp
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 18 Oct 2021
+.\"      Date: 7 Feb 2022
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFCP" "1" "18 Oct 2021" "Gfarm" "Gfarm"
+.TH "GFCP" "1" "7 Feb 2022" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -31,7 +31,7 @@
 gfcp \- copy a file in parallel
 .SH "SYNOPSIS"
 .HP \w'\fBgfcp\fR\ 'u
-\fBgfcp\fR [\-fpqvd] [\-h\ \fIfilesystem\-node\fR] [\-j\ \fInum\-of\-processes\fR] [\-m\ \fIminimum\-bytes\fR] \-o\ \fIdestination\-file\fR \fIsource\-file\fR...
+\fBgfcp\fR [\-fpqvd] [\-h\ \fIfilesystem\-node\fR] [\-j\ \fInum\-of\-processes\fR] [\-m\ \fIminimum\-bytes\fR] \fIsource\-file\fR \fIdestination\-file\fR
 .SH "DESCRIPTION"
 .PP
 \fBgfcp\fR
@@ -92,15 +92,6 @@ Overwrites existing file\&.
 explicitly specifies the file system node to be stored\&.
 .RE
 .PP
-\fB\-i\fR \fIinput\-listfile\fR
-.RS 4
-Specifies a file which describes input files instead of
-\fIsource\-file\fR
-arguments\&. The
-\fIinput\-listfile\fR
-consists of an input URL on each line\&.
-.RE
-.PP
 \fB\-j\fR \fInum\-of\-processes\fR
 .RS 4
 Specifies the number of processes to copy\&. The source files are splited evenly, and they will be assigned to each process\&.
@@ -112,7 +103,7 @@ in gfarm2\&.conf\&. (see man gfarm2\&.conf)
 .PP
 \fB\-m\fR \fIminimum\-bytes\fR
 .RS 4
-Specifies the minimum size (byte) per a process to copy in parallel\&. When the size assigned to a process is equal or smaller than \-m, single process is used to copy (not copied in parallel)\&. The default value is 0 byte (always copied in parallel)\&.
+Specifies the minimum size (byte) per a process to copy in parallel\&. The default value is 1048576 bytes\&.
 .RE
 .PP
 \fB\-p\fR

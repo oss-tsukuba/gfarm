@@ -12,7 +12,7 @@
 </div>
 <div class="refsynopsisdiv">
 <a name="synopsis"></a><h2>Synopsis</h2>
-<div class="cmdsynopsis"><p><code class="command">gfcp</code>  [-fpqvd] [-h <em class="replaceable"><code>filesystem-node</code></em>] [-j <em class="replaceable"><code>num-of-processes</code></em>] [-m <em class="replaceable"><code>minimum-bytes</code></em>]  -o <em class="replaceable"><code>destination-file</code></em>   <em class="replaceable"><code>source-file</code></em>... </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfcp</code>  [-fpqvd] [-h <em class="replaceable"><code>filesystem-node</code></em>] [-j <em class="replaceable"><code>num-of-processes</code></em>] [-m <em class="replaceable"><code>minimum-bytes</code></em>]  <em class="replaceable"><code>source-file</code></em>   <em class="replaceable"><code>destination-file</code></em> </p></div>
 </div>
 <div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
@@ -88,13 +88,6 @@ Overwrites existing file.
 <dd><p>
 explicitly specifies the file system node to be stored.
 </p></dd>
-<dt><span class="term"><code class="option">-i</code> <em class="parameter"><code>input-listfile</code></em></span></dt>
-<dd><p>
-Specifies a file which describes input files instead
-of <em class="parameter"><code>source-file</code></em> arguments.
-The <em class="parameter"><code>input-listfile</code></em> consists of
-an input URL on each line.
-</p></dd>
 <dt><span class="term"><code class="option">-j</code> <em class="parameter"><code>num-of-processes</code></em></span></dt>
 <dd>
 <p>
@@ -110,10 +103,7 @@ gfarm2.conf. (see man gfarm2.conf)
 <dt><span class="term"><code class="option">-m</code> <em class="parameter"><code>minimum-bytes</code></em></span></dt>
 <dd><p>
 Specifies the minimum size (byte) per a process to copy in parallel.
-When the size assigned to a process is equal or smaller than -m,
-single process is used to copy (not copied in parallel).
-
-The default value is 0 byte (always copied in parallel).
+The default value is 1048576 bytes.
 </p></dd>
 <dt><span class="term"><code class="option">-p</code></span></dt>
 <dd><p>
