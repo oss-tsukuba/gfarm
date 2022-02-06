@@ -37,10 +37,12 @@ GFARM_S3_PREFIX=/usr/local
 GFARM_S3_USERNAME=_gfarm_s3
 GFARM_S3_GROUPNAME=${GFARM_S3_USERNAME}
 GFARM_S3_HOMEDIR=/home/${GFARM_S3_USERNAME}
-GFARM_S3_LOCALTMP=/mnt/minio_tmp
-GFARM_S3_LOCALTMP_SIZE=1024
+GFARM_S3_LOCALTMP_DIR=/mnt/minio_tmp
+GFARM_S3_LOCALTMP_SIZE_MB=1024
 GFARM_S3_WEBUI_ADDR=127.0.0.1:8000
 GFARM_S3_ROUTER_ADDR=127.0.0.1:8001
+
+GSI_PROXY_HOURS=1024
 
 # from config.mk
 FRONT_WEBSERVER=$GFDOCKER_GFARMS3_FRONT_WEBSERVER
@@ -51,6 +53,9 @@ CERT_DIR=$WORKDIR/cert
 
 MY_HOSTNAME=$(hostname)
 MY_IPADDR=$(dig $MY_HOSTNAME +short)
+
+#TODO config.mk
+CSRF_TRUSTED_ORIGINS=https://client1.local:18443,http://client1.local:18080
 
 install_package_for_centos() {
     ${SUDO} yum update -y
@@ -85,20 +90,23 @@ install_package_for_ubuntu() {
             #   to be installed
             ${SUDO} apt-get install -y \
                     nodejs-dev node-gyp libssl1.0-dev
+            # install old npm to install new npm
+            ${SUDO} apt-get install -y npm
+            # old version
+            /usr/bin/npm --version || true  # may fail when re-installing
+            # install new npm (LTS version) with n
+            ${SUDO} npm install -g n
+            ${SUDO} n lts
+            # new version
+            /usr/local/bin/npm --version
+            # remove old version
+            ${SUDO} apt-get remove -y nodejs npm
+            ${SUDO} apt-get autoremove -y
+            ;;
+        *)
+            ${SUDO} apt-get install -y npm
             ;;
     esac
-    # install old npm to install new npm
-    ${SUDO} apt-get install -y npm
-    # old version
-    /usr/bin/npm --version || true  # may fail when re-installing
-    # install new npm (LTS version) with n
-    ${SUDO} npm install -g n
-    ${SUDO} n lts
-    # new version
-    /usr/local/bin/npm --version
-    # remove old version
-    ${SUDO} apt-get remove -y nodejs npm
-    ${SUDO} apt-get autoremove -y
 
     ${SUDO} apt-get install -y \
         uuid \
@@ -140,7 +148,7 @@ install_package() {
 install_prerequisites() {
     install_package
 
-    ${SUDO} python3 -m pip install -q Django
+    ${SUDO} python3 -m pip install -q 'Django<=4'
     ${SUDO} python3 -m pip install -q gunicorn
 
     ## for test.py
@@ -322,53 +330,33 @@ gen_nginx_conf() {
               -e "s;@SERVER_CERT@;$SERVER_CERT;" \
               -e "s;@SERVER_KEY@;$SERVER_KEY;" \
               -e "s;@MY_HOSTNAME@;$MY_HOSTNAME;" \
-	      -e "s;@GFARM_S3_HOMEDIR@;$GFARM_S3_HOMEDIR;" \
         | ${SUDO} dd of="$CONF"
-server {
-  listen 80;
-  listen [::]:80;
+listen 80;
+listen [::]:80;
 
-  listen 443 ssl;
-  listen [::]:443 ssl;
+listen 443 ssl;
+listen [::]:443 ssl;
 
-  ssl_certificate @SERVER_CERT@;
-  ssl_certificate_key @SERVER_KEY@;
+ssl_certificate @SERVER_CERT@;
+ssl_certificate_key @SERVER_KEY@;
 
-  root @HTTPD_DocumentRoot@;
-  index index.html index.htm;
+root @HTTPD_DocumentRoot@;
+index index.html index.htm;
 
-  server_name @MY_HOSTNAME@;
-
-  client_max_body_size 16m;
-
-  location / {
-    proxy_set_header Host $http_host;
-    proxy_set_header X-Forwarded-Host $host:$server_port;
-    proxy_set_header X-Forwarded-Server $host;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-
-    if ($http_authorization ~ "AWS4-HMAC-SHA256.*") {
-      proxy_pass http://127.0.0.1:8001;
-      break;
-    }
-  }
-
-  location /gfarm/ {
-    proxy_pass http://127.0.0.1:8000;
-  }
-
-  location /static/ {
-    alias @GFARM_S3_HOMEDIR@/static/;
-    autoindex off;
-  }
-}
+server_name @MY_HOSTNAME@;
 EOF
 }
+
+NGINX_SITE_CONF=${GFARM_S3_PREFIX}/etc/nginx-gfarm-s3-site.conf
+
+
+NGINX_INCLUDE_CONF_STR="include ${GFARM_S3_PREFIX}/etc/nginx-gfarm-s3.conf;"
 
 deploy_nginx_for_centos() {
     NGINX_GFARM_CONF=/etc/nginx/conf.d/gfarm.conf
 
-    gen_nginx_conf "$NGINX_GFARM_CONF"
+    echo "${NGINX_INCLUDE_CONF_STR}" | ${SUDO} dd of="${NGINX_GFARM_CONF}"
+    gen_nginx_conf "${NGINX_SITE_CONF}"
 }
 
 deploy_nginx_for_ubuntu() {
@@ -378,8 +366,9 @@ deploy_nginx_for_ubuntu() {
     NGINX_GFARM_ENABLED="$NGINX_SITE_ENABLED/gfarm"
     NGINX_DEFAULT_ENABLED="$NGINX_SITE_ENABLED/default"
 
-    gen_nginx_conf "$NGINX_GFARM_AVAILABLE"
+    gen_nginx_conf "${NGINX_SITE_CONF}"
 
+    echo "${NGINX_INCLUDE_CONF_STR}" | ${SUDO} dd of="$NGINX_GFARM_AVAILABLE"
     ${SUDO} ln -f -s "$NGINX_GFARM_AVAILABLE" "$NGINX_GFARM_ENABLED"
     ${SUDO} rm -f "$NGINX_DEFAULT_ENABLED"
 }
@@ -422,28 +411,62 @@ deploy_http_server() {
     fi
 }
 
+GFARM_S3_WEBUI_THREADS=2
+GFARM_S3_WEBUI_WORKERS=1
+GFARM_S3_ROUTER_THREADS=2
+GFARM_S3_ROUTER_WORKERS=1
+GFARM_S3_WEBUI_BASE_URL="gfarm_s3/"
+
 install_gfarm_s3() {
     cd $WORKDIR/gfarm-s3-minio-web
+    GSI_PROXY_HOURS=${GSI_PROXY_HOURS} \
+    MYPROXY_SERVER=${MYPROXY_SERVER} \
+    GFARM_S3_HOMEDIR=${GFARM_S3_HOMEDIR} \
+    GFARM_S3_USERNAME=${GFARM_S3_USERNAME} \
+    GFARM_S3_GROUPNAME=${GFARM_S3_GROUPNAME} \
+    GFARM_S3_WEBUI_ADDR=${GFARM_S3_WEBUI_ADDR} \
+    GFARM_S3_ROUTER_ADDR=${GFARM_S3_ROUTER_ADDR} \
+    GFARM_S3_WEBUI_THREADS=${GFARM_S3_WEBUI_THREADS} \
+    GFARM_S3_WEBUI_WORKERS=${GFARM_S3_WEBUI_WORKERS} \
+    GFARM_S3_ROUTER_THREADS=${GFARM_S3_ROUTER_THREADS} \
+    GFARM_S3_ROUTER_WORKERS=${GFARM_S3_ROUTER_WORKERS} \
+    GFARM_S3_SHARED_DIR=${SHARED_DIR} \
+    GFARM_S3_LOCALTMP_DIR=${GFARM_S3_LOCALTMP_DIR} \
+    GFARM_S3_LOCALTMP_SIZE_MB=${GFARM_S3_LOCALTMP_SIZE_MB} \
+    GFARM_S3_WEBUI_BASE_URL=${GFARM_S3_WEBUI_BASE_URL} \
+    GO_BUILDDIR=${MINIO_BUILDDIR} \
     ./configure \
         --prefix=$GFARM_S3_PREFIX \
         --with-gfarm=$WITH_GFARM \
         --with-globus=/usr \
         --with-myproxy=/usr \
-        --with-apache=/usr \
-        --with-gunicorn=/usr/local \
-        --with-gfarm-s3-homedir=$GFARM_S3_HOMEDIR \
-        --with-gfarm-s3-user=$GFARM_S3_USERNAME \
-        --with-gfarm-s3-group=$GFARM_S3_GROUPNAME \
-        --with-webui-addr=$GFARM_S3_WEBUI_ADDR \
-        --with-router-addr=$GFARM_S3_ROUTER_ADDR \
-        --with-cache-basedir=$GFARM_S3_LOCALTMP \
-        --with-cache-size=$GFARM_S3_LOCALTMP_SIZE \
-        --with-myproxy-server=$MYPROXY_SERVER \
-        --with-gfarm-shared-dir=$SHARED_DIR \
-        --with-minio-builddir=$MINIO_BUILDDIR
+        --with-gunicorn=/usr/local
     make
     ${SUDO} make install
     cd -
+
+    # generate DJANGO_SECRET_KEY
+    DJANGO_SECRET_KEY_FILE=${GFARM_S3_LOCALTMP_DIR}/django_secret_key.txt
+    if [ ! -s ${DJANGO_SECRET_KEY_FILE} ]; then
+        python3 -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())" | ${SUDO} dd of="${DJANGO_SECRET_KEY_FILE}"
+        ${SUDO} chmod 400 "${DJANGO_SECRET_KEY_FILE}"
+        ${SUDO} chown ${GFARM_S3_USERNAME}:root "${DJANGO_SECRET_KEY_FILE}"
+    fi
+
+    # edit addtional configurations
+    CONF_OVERWRITE=${GFARM_S3_PREFIX}/etc/gfarm-s3-overwrite.conf
+    cat <<EOF | ${SUDO} dd of="${CONF_OVERWRITE}"
+#GFARM_S3_LOG_LEVEL=debug
+GFARM_S3_LOG_OUTPUT=syslog
+
+DJANGO_DEBUG=True
+#ALLOWED_HOSTS=
+# required by Django 4 or later
+CSRF_TRUSTED_ORIGINS=${CSRF_TRUSTED_ORIGINS}
+GFARM_S3_LOGIN_CHALLENGE_LOG=${GFARM_S3_LOCALTMP_DIR}/error_addr.log
+DJANGO_SECRET_KEY_FILE=${DJANGO_SECRET_KEY_FILE}
+EOF
+
 }
 
 setup_apache() {
@@ -466,14 +489,14 @@ setup_nginx() {
 
 configure_gfarm_s3() {
     ## create cache directory for S3 multipart
-    ${SUDO} mkdir -p $GFARM_S3_LOCALTMP
-    ${SUDO} chmod 1777 $GFARM_S3_LOCALTMP
+    ${SUDO} mkdir -p $GFARM_S3_LOCALTMP_DIR
+    ${SUDO} chmod 1777 $GFARM_S3_LOCALTMP_DIR
 
     ## create shared directory on Gfarm
     gfmkdir -p ${SHARED_DIR#/}
     gfchmod 0755 ${SHARED_DIR#/}
 
-    . ${GFARM_S3_PREFIX}/etc/gfarm-s3.conf
+    eval $(gfarm-s3-readconf)
 
     ${SUDO} truncate --size=0 "${GFARMS3_LOCAL_USER_MAP}"
     ## register users
@@ -676,7 +699,7 @@ ${SUDO} chown -R user1 $MINIO_WEB_WORK_SRCDIR/
 
 ## update only
 if [ $GFDOCKER_GFARMS3_UPDATE_ONLY -eq 1 ]; then
-    install_gfarm_s3
+    time install_gfarm_s3
     exit 0
 fi
 
@@ -697,7 +720,7 @@ id $GFARM_S3_USERNAME || \
     ${SUDO} useradd -m $GFARM_S3_USERNAME -g $GFARM_S3_GROUPNAME -d $GFARM_S3_HOMEDIR
 
 ## install gfarm-s3
-install_gfarm_s3
+time install_gfarm_s3
 
 ## gfarm-s3-settings
 configure_gfarm_s3
