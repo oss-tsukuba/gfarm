@@ -26,12 +26,13 @@ gfpconcat_usage(int exit_on_error, struct gfpconcat_option *opt)
 "\t[-f (overwrite existing file)]\n"
 "\t[-h <destination hostname>]\n"
 "\t[-j <#parallel(to copy parts)(connections)(default: %d)>]\n"
-"\t[-m <minimum data size per a child process for parallel copying>]\n"
+"\t[-m <minimum data size per a child process for parallel copying\n"
+"\t     (default: %lld)>\n"
 "\t[-p (report performance)]\n"
 "\t[-i <list file of input URLs> (instead of input-file arguments)]\n"
 "\t-o <output file(gfarm:... or file:...) (required)>\n"
 "\tinput-file(gfarm:... or file:...)...\n"
-		, opt->program_name, opt->n_para);
+		, opt->program_name, opt->n_para, (long long)opt->minimum_size);
 	if (exit_on_error) {
 		exit(EXIT_FAILURE);
 	}

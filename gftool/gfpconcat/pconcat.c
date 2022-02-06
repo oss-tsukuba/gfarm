@@ -927,7 +927,7 @@ gfpconcat_init(int argc, char **argv, char *program_name,
 	opt->dst_host = NULL;		/* -h */
 	opt->input_list = NULL;	/* -i */
 	opt->n_para = 2;		/* -j */
-	opt->minimum_size = 0;		/* -m */
+	opt->minimum_size = 1024 * 1024;		/* -m */
 	opt->out_file = NULL;		/* -o */
 	opt->performance = 0;		/* -p */
 	opt->quiet = 0;		/* -q */
