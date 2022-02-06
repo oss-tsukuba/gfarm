@@ -6,7 +6,7 @@
 
 <refentry id="gfpconcat.1">
 
-<refentryinfo><date>28 Aug 2021</date></refentryinfo>
+<refentryinfo><date>7 Feb 2022</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfpconcat</refentrytitle>
@@ -26,6 +26,7 @@
   <arg choice="opt" rep="norepeat">-h <replaceable>filesystem-node</replaceable></arg>
   <arg choice="opt" rep="norepeat">-j <replaceable>num-of-processes</replaceable></arg>
   <arg choice="opt" rep="norepeat">-m <replaceable>minimum-bytes</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-i <replaceable>input-listfile</replaceable></arg>
   <arg choice="plain" rep="norepeat">-o <replaceable>destination-file</replaceable></arg>
   <arg choice="plain" rep="repeat"><replaceable>source-file</replaceable></arg>
 </cmdsynopsis>
@@ -49,7 +50,7 @@ concatinated in that order.
 <para>
 <parameter moreinfo="none">destination-file</parameter>
 is a destination file to copy.
-When a destination file exists, the file will be overwritten.
+When a destination file exists, the file will not be overwritten.
 </para>
 
 </refsect1>
@@ -188,10 +189,7 @@ gfarm2.conf. (see man gfarm2.conf)
 <listitem>
 <para>
 Specifies the minimum size (byte) per a process to copy in parallel.
-When the size assigned to a process is equal or smaller than -m,
-single process is used to copy (not copied in parallel).
-
-The default value is 0 byte (always copied in parallel).
+The default value is 1048576 bytes.
 </para>
 </listitem>
 </varlistentry>

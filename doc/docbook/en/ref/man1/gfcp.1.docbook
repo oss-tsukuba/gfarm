@@ -6,7 +6,7 @@
 
 <refentry id="gfcp.1">
 
-<refentryinfo><date>18 Oct 2021</date></refentryinfo>
+<refentryinfo><date>7 Feb 2022</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfcp</refentrytitle>
@@ -26,8 +26,8 @@
   <arg choice="opt" rep="norepeat">-h <replaceable>filesystem-node</replaceable></arg>
   <arg choice="opt" rep="norepeat">-j <replaceable>num-of-processes</replaceable></arg>
   <arg choice="opt" rep="norepeat">-m <replaceable>minimum-bytes</replaceable></arg>
-  <arg choice="plain" rep="norepeat">-o <replaceable>destination-file</replaceable></arg>
-  <arg choice="plain" rep="repeat"><replaceable>source-file</replaceable></arg>
+  <arg choice="plain" rep="norepeat"><replaceable>source-file</replaceable></arg>
+  <arg choice="plain" rep="norepeat"><replaceable>destination-file</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
@@ -157,18 +157,6 @@ explicitly specifies the file system node to be stored.
 </varlistentry>
 
 <varlistentry>
-<term><option>-i</option> <parameter moreinfo="none">input-listfile</parameter></term>
-<listitem>
-<para>
-Specifies a file which describes input files instead
-of <parameter moreinfo="none">source-file</parameter> arguments.
-The <parameter moreinfo="none">input-listfile</parameter> consists of
-an input URL on each line.
-</para>
-</listitem>
-</varlistentry>
-
-<varlistentry>
 <term><option>-j</option> <parameter moreinfo="none">num-of-processes</parameter></term>
 <listitem>
 <para>
@@ -188,10 +176,7 @@ gfarm2.conf. (see man gfarm2.conf)
 <listitem>
 <para>
 Specifies the minimum size (byte) per a process to copy in parallel.
-When the size assigned to a process is equal or smaller than -m,
-single process is used to copy (not copied in parallel).
-
-The default value is 0 byte (always copied in parallel).
+The default value is 1048576 bytes.
 </para>
 </listitem>
 </varlistentry>
