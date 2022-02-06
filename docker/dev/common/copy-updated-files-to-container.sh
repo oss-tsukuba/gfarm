@@ -49,8 +49,8 @@ rsync_fromto() {
     TO="$2"
 
     cd "$BASEDIR"
-    $COMPOSE exec -u "$USERNAME" "$FROM" bash -c "rsync -a ${GFARM_WORKDIR}/ ${TO}:${GFARM_WORKDIR}/"
-    $COMPOSE exec -u "$USERNAME" "$FROM" bash -c "rsync -a ${GFARM2FS_WORKDIR}/ ${TO}:${GFARM2FS_WORKDIR}/"
+    $COMPOSE exec -T -u "$USERNAME" "$FROM" bash -c "rsync -a ${GFARM_WORKDIR}/ ${TO}:${GFARM_WORKDIR}/"
+    $COMPOSE exec -T -u "$USERNAME" "$FROM" bash -c "rsync -a ${GFARM2FS_WORKDIR}/ ${TO}:${GFARM2FS_WORKDIR}/"
     echo "synchronized: $TO"
 }
 
