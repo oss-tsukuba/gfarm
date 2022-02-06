@@ -1220,7 +1220,7 @@ copied:
 		}
 		gfmsg_debug("chmod(%o): %s",
 		    opt->mode, gfurl_url(opt->out_url));
-		e = gfurl_chmod(opt->out_url, opt->mode);
+		e = gfurl_chmod(opt->out_url, opt->orig_mode);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gfmsg_error_e(e, "cannot change mode(%o): %s",
 			    opt->mode, gfurl_url(opt->out_url));
