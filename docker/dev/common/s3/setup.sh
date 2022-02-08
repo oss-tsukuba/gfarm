@@ -67,9 +67,9 @@ install_package_for_centos() {
         nodejs
 
     case $FRONT_WEBSERVER in
-        apache)
-            ${SUDO} yum install -y httpd mod_ssl
-            ;;
+        # apache)
+        #     ${SUDO} yum install -y httpd mod_ssl
+        #     ;;
         nginx)
             ${SUDO} yum install -y nginx
             ;;
@@ -119,9 +119,9 @@ install_package_for_ubuntu() {
     ${SUDO} apt-get install -y curl
 
     case $FRONT_WEBSERVER in
-        apache)
-            ${SUDO} apt-get install -y apache2
-            ;;
+        # apache)
+        #     ${SUDO} apt-get install -y apache2
+        #     ;;
         nginx)
             ${SUDO} apt-get install -y nginx
             ;;
@@ -211,116 +211,116 @@ create_certificate() {
     fi
 }
 
-deploy_apache_for_centos() {
-    cat <<'EOF' \
-        | sed -e "s;@SERVER_CERT@;$SERVER_CERT;" \
-              -e "s;@SERVER_KEY@;$SERVER_KEY;" \
-              -e "s;@HTTPD_COMMON_CONF@;$HTTPD_COMMON_CONF;" \
-              -e "s;@MY_HOSTNAME@;$MY_HOSTNAME;" \
-        | ${SUDO} dd of="$HTTPD_CONF"
-ServerName @MY_HOSTNAME@
-<VirtualHost *:80>
-	Include @HTTPD_COMMON_CONF@
-</VirtualHost>
+# deploy_apache_for_centos() {
+#     cat <<'EOF' \
+#         | sed -e "s;@SERVER_CERT@;$SERVER_CERT;" \
+#               -e "s;@SERVER_KEY@;$SERVER_KEY;" \
+#               -e "s;@HTTPD_COMMON_CONF@;$HTTPD_COMMON_CONF;" \
+#               -e "s;@MY_HOSTNAME@;$MY_HOSTNAME;" \
+#         | ${SUDO} dd of="$HTTPD_CONF"
+# ServerName @MY_HOSTNAME@
+# <VirtualHost *:80>
+# 	Include @HTTPD_COMMON_CONF@
+# </VirtualHost>
 
-<VirtualHost *:443>
-	SSLEngine on
-	SSLCertificateFile @SERVER_CERT@
-	SSLCertificateKeyFile @SERVER_KEY@
-	Include @HTTPD_COMMON_CONF@
-</VirtualHost>
-EOF
+# <VirtualHost *:443>
+# 	SSLEngine on
+# 	SSLCertificateFile @SERVER_CERT@
+# 	SSLCertificateKeyFile @SERVER_KEY@
+# 	Include @HTTPD_COMMON_CONF@
+# </VirtualHost>
+# EOF
 
-    cat <<EOF | ${SUDO} dd of=$HTTPD_COMMON_CONF
-DocumentRoot $HTTPD_DocumentRoot
-ServerAdmin root@localhost
-CustomLog logs/access_log common
-ErrorLog logs/error_log
+#     cat <<EOF | ${SUDO} dd of=$HTTPD_COMMON_CONF
+# DocumentRoot $HTTPD_DocumentRoot
+# ServerAdmin root@localhost
+# CustomLog logs/access_log common
+# ErrorLog logs/error_log
 
-<Directory "$HTTPD_DocumentRoot">
-	AllowOverride FileInfo AuthConfig Limit Indexes
-	Options MultiViews Indexes SymLinksIfOwnerMatch Includes
-	AllowOverride All
-	Require all granted
-</Directory>
-EOF
+# <Directory "$HTTPD_DocumentRoot">
+# 	AllowOverride FileInfo AuthConfig Limit Indexes
+# 	Options MultiViews Indexes SymLinksIfOwnerMatch Includes
+# 	AllowOverride All
+# 	Require all granted
+# </Directory>
+# EOF
 
-    ## for debug (do not apply following settings on service host)
-    ${SUDO} chmod og+rX /var/log/httpd
-}
+#     ## for debug (do not apply following settings on service host)
+#     ${SUDO} chmod og+rX /var/log/httpd
+# }
 
-deploy_apache_for_ubuntu() {
-    cat <<'EOF' \
-        | sed -e "s;@SERVER_CERT@;$SERVER_CERT;" \
-            -e "s;@SERVER_KEY@;$SERVER_KEY;" \
-            -e "s;@HTTPD_COMMON_CONF@;$HTTPD_COMMON_CONF;" \
-            -e "s;@MY_HOSTNAME@;$MY_HOSTNAME;" \
-        | ${SUDO} dd of=$HTTPD_CONF
-ServerName @MY_HOSTNAME@
-<VirtualHost *:80>
-	Include @HTTPD_COMMON_CONF@
-</VirtualHost>
+# deploy_apache_for_ubuntu() {
+#     cat <<'EOF' \
+#         | sed -e "s;@SERVER_CERT@;$SERVER_CERT;" \
+#             -e "s;@SERVER_KEY@;$SERVER_KEY;" \
+#             -e "s;@HTTPD_COMMON_CONF@;$HTTPD_COMMON_CONF;" \
+#             -e "s;@MY_HOSTNAME@;$MY_HOSTNAME;" \
+#         | ${SUDO} dd of=$HTTPD_CONF
+# ServerName @MY_HOSTNAME@
+# <VirtualHost *:80>
+# 	Include @HTTPD_COMMON_CONF@
+# </VirtualHost>
 
-<VirtualHost *:443>
-	SSLEngine on
-	SSLCertificateFile @SERVER_CERT@
-	SSLCertificateKeyFile @SERVER_KEY@
-	Include @HTTPD_COMMON_CONF@
-</VirtualHost>
-EOF
+# <VirtualHost *:443>
+# 	SSLEngine on
+# 	SSLCertificateFile @SERVER_CERT@
+# 	SSLCertificateKeyFile @SERVER_KEY@
+# 	Include @HTTPD_COMMON_CONF@
+# </VirtualHost>
+# EOF
 
-    cat <<EOF | ${SUDO} dd of="$HTTPD_COMMON_CONF"
-DocumentRoot $HTTPD_DocumentRoot
-ServerAdmin root@localhost
-CustomLog /var/log/apache2/access_log common
-ErrorLog /var/log/apache2/error_log
+#     cat <<EOF | ${SUDO} dd of="$HTTPD_COMMON_CONF"
+# DocumentRoot $HTTPD_DocumentRoot
+# ServerAdmin root@localhost
+# CustomLog /var/log/apache2/access_log common
+# ErrorLog /var/log/apache2/error_log
 
-<Directory "$HTTPD_DocumentRoot">
-	AllowOverride FileInfo AuthConfig Limit Indexes
-	Options MultiViews Indexes SymLinksIfOwnerMatch Includes
-	AllowOverride All
-	Require all granted
-</Directory>
-EOF
+# <Directory "$HTTPD_DocumentRoot">
+# 	AllowOverride FileInfo AuthConfig Limit Indexes
+# 	Options MultiViews Indexes SymLinksIfOwnerMatch Includes
+# 	AllowOverride All
+# 	Require all granted
+# </Directory>
+# EOF
 
-    HTTPD_UNIT_DROPIN=/etc/systemd/system/apache2.d
-    HTTPD_COMMON_ENV=$HTTPD_UNIT_DROPIN/env.conf
-    ${SUDO} mkdir -p $HTTPD_UNIT_DROPIN
-    ${SUDO} cat <<EOF | ${SUDO} dd of=$HTTPD_COMMON_ENV
-Environment="APACHE_RUN_USER=www-data APACHE_RUN_GROUP=www-data APACHE_PID_FILE=/var/run/apache2/apache2.pid APACHE_RUN_DIR=/var/run/apache2 APACHE_LOCK_DIR=/var/lock/apache2 APACHE_LOG_DIR=/var/log/apache2 LANG=C"
-EOF
-    ${SUDO} systemctl daemon-reload
+#     HTTPD_UNIT_DROPIN=/etc/systemd/system/apache2.d
+#     HTTPD_COMMON_ENV=$HTTPD_UNIT_DROPIN/env.conf
+#     ${SUDO} mkdir -p $HTTPD_UNIT_DROPIN
+#     ${SUDO} cat <<EOF | ${SUDO} dd of=$HTTPD_COMMON_ENV
+# Environment="APACHE_RUN_USER=www-data APACHE_RUN_GROUP=www-data APACHE_PID_FILE=/var/run/apache2/apache2.pid APACHE_RUN_DIR=/var/run/apache2 APACHE_LOCK_DIR=/var/lock/apache2 APACHE_LOG_DIR=/var/log/apache2 LANG=C"
+# EOF
+#     ${SUDO} systemctl daemon-reload
 
-    ${SUDO} a2ensite `basename $HTTPD_CONF`
-    ${SUDO} a2dissite 000-default
-    ${SUDO} a2enmod ssl
-    ${SUDO} a2enmod rewrite
-    ${SUDO} a2enmod proxy
-    ${SUDO} a2enmod proxy_http
-    ${SUDO} systemctl restart $HTTPD_UNIT_NAME
-}
+#     ${SUDO} a2ensite `basename $HTTPD_CONF`
+#     ${SUDO} a2dissite 000-default
+#     ${SUDO} a2enmod ssl
+#     ${SUDO} a2enmod rewrite
+#     ${SUDO} a2enmod proxy
+#     ${SUDO} a2enmod proxy_http
+#     ${SUDO} systemctl restart $HTTPD_UNIT_NAME
+# }
 
-deploy_apache() {
-    case $GFDOCKER_PRJ_NAME in
-        centos*-*)
-            HTTPD_UNIT_NAME=httpd
-            HTTPD_CONF=/etc/httpd/conf.d/myserver.conf
-            HTTPD_COMMON_CONF=/etc/httpd/conf.d/myserver-common.conf
-            deploy_apache_for_centos
-            ;;
-        ubuntu*-*)
-            HTTPD_UNIT_NAME=apache2
-            HTTPD_CONF=/etc/apache2/sites-available/myserver.conf
-            HTTPD_COMMON_CONF=/etc/apache2/sites-available/myserver-common.conf
-            deploy_apache_for_ubuntu
-            ;;
-        *)
-            exit 1
-            ;;
-    esac
+# deploy_apache() {
+#     case $GFDOCKER_PRJ_NAME in
+#         centos*-*)
+#             HTTPD_UNIT_NAME=httpd
+#             HTTPD_CONF=/etc/httpd/conf.d/myserver.conf
+#             HTTPD_COMMON_CONF=/etc/httpd/conf.d/myserver-common.conf
+#             deploy_apache_for_centos
+#             ;;
+#         ubuntu*-*)
+#             HTTPD_UNIT_NAME=apache2
+#             HTTPD_CONF=/etc/apache2/sites-available/myserver.conf
+#             HTTPD_COMMON_CONF=/etc/apache2/sites-available/myserver-common.conf
+#             deploy_apache_for_ubuntu
+#             ;;
+#         *)
+#             exit 1
+#             ;;
+#     esac
 
-    ${SUDO} systemctl enable $HTTPD_UNIT_NAME
-}
+#     ${SUDO} systemctl enable $HTTPD_UNIT_NAME
+# }
 
 gen_nginx_conf() {
     CONF="$1"
@@ -393,9 +393,9 @@ deploy_http_server() {
     INDEX_HTML="${HTTPD_DocumentRoot}/index.html"
 
     case $FRONT_WEBSERVER in
-        apache)
-            deploy_apache
-            ;;
+        # apache)
+        #     deploy_apache
+        #     ;;
         nginx)
             deploy_nginx
             ;;
@@ -469,19 +469,19 @@ EOF
 
 }
 
-setup_apache() {
-    ## edit HTTPD's configfile (i.e. myserver-common.conf)
-    tmpfile=$(mktemp /tmp/XXXXXX) || exit 1
-    (cat $HTTPD_COMMON_CONF
-    cat $WORKDIR/gfarm-s3-minio-web/etc/apache-gfarm-s3.conf
-    ) >$tmpfile
-    ${SUDO} cp $WORKDIR/gfarm-s3-minio-web/etc/e403.html $HTTPD_DocumentRoot/e403.html
-    ${SUDO} chown --reference=$HTTPD_COMMON_CONF $tmpfile
-    ${SUDO} chgrp --reference=$HTTPD_COMMON_CONF $tmpfile
-    ${SUDO} chmod --reference=$HTTPD_COMMON_CONF $tmpfile
-    ${SUDO} mv $tmpfile $HTTPD_COMMON_CONF
-    ${SUDO} systemctl restart $HTTPD_UNIT_NAME
-}
+# setup_apache() {
+#     ## edit HTTPD's configfile (i.e. myserver-common.conf)
+#     tmpfile=$(mktemp /tmp/XXXXXX) || exit 1
+#     (cat $HTTPD_COMMON_CONF
+#     cat $WORKDIR/gfarm-s3-minio-web/etc/apache-gfarm-s3.conf
+#     ) >$tmpfile
+#     ${SUDO} cp $WORKDIR/gfarm-s3-minio-web/etc/e403.html $HTTPD_DocumentRoot/e403.html
+#     ${SUDO} chown --reference=$HTTPD_COMMON_CONF $tmpfile
+#     ${SUDO} chgrp --reference=$HTTPD_COMMON_CONF $tmpfile
+#     ${SUDO} chmod --reference=$HTTPD_COMMON_CONF $tmpfile
+#     ${SUDO} mv $tmpfile $HTTPD_COMMON_CONF
+#     ${SUDO} systemctl restart $HTTPD_UNIT_NAME
+# }
 
 setup_nginx() {
     ${SUDO} systemctl restart nginx
@@ -519,9 +519,9 @@ configure_gfarm_s3() {
     done
 
     case $FRONT_WEBSERVER in
-        apache)
-            setup_apache
-            ;;
+        # apache)
+        #     setup_apache
+        #     ;;
         nginx)
             setup_nginx
             ;;
