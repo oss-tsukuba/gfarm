@@ -1,7 +1,11 @@
+#!/bin/bash
+
 set -o xtrace
 set -o errexit
 set -o nounset
 set -o pipefail
+
+shopt -s extglob
 
 GFDOCKER_GFARMS3_UPDATE_ONLY=${GFDOCKER_GFARMS3_UPDATE_ONLY:-0}
 
@@ -56,6 +60,8 @@ MY_IPADDR=$(dig $MY_HOSTNAME +short)
 
 #TODO config.mk
 CSRF_TRUSTED_ORIGINS=https://client1.local:18443,http://client1.local:18080
+
+DISTRO_FAMILY_RHEL="+(centos*-*|rockylinux*-*|almalinux*-*)"
 
 install_package_for_centos() {
     ${SUDO} yum update -y
@@ -133,13 +139,14 @@ install_package_for_ubuntu() {
 
 install_package() {
     case $GFDOCKER_PRJ_NAME in
-        centos*-*)
+        ${DISTRO_FAMILY_RHEL})
             install_package_for_centos
             ;;
         ubuntu*-*)
             install_package_for_ubuntu
             ;;
         *)
+            echo "unsupported"
             exit 1
             ;;
     esac
@@ -169,7 +176,7 @@ create_certificate() {
     openssl x509 -req -in server.csr -out server.crt -days 365 -CAkey ca.key -CA ca.crt -CAcreateserial -extfile san.txt
 
     case $GFDOCKER_PRJ_NAME in
-        centos*-*)
+        ${DISTRO_FAMILY_RHEL})
             SYSTEM_CERT_DIR=/usr/share/pki/ca-trust-source/anchors
             GFARM_CA_CERT_DIR=$SYSTEM_CERT_DIR
             SYSTEM_CERT_UPDATE=update-ca-trust
@@ -375,7 +382,7 @@ deploy_nginx_for_ubuntu() {
 
 deploy_nginx() {
     case $GFDOCKER_PRJ_NAME in
-        centos*-*)
+        ${DISTRO_FAMILY_RHEL})
             deploy_nginx_for_centos
             ;;
         ubuntu*-*)
@@ -566,7 +573,7 @@ install_s3cmd() {
     # XXX TODO define in Dockerfile
     ## install s3cmd
     case $GFDOCKER_PRJ_NAME in
-        centos*-*)
+        ${DISTRO_FAMILY_RHEL})
             ${SUDO} yum install -y s3cmd
             ;;
         ubuntu*-*)
@@ -587,7 +594,7 @@ install_goofys_dep_package_for_ubuntu() {
 
 install_goofys() {
     case $GFDOCKER_PRJ_NAME in
-        centos*-*)
+        ${DISTRO_FAMILY_RHEL})
             install_goofys_dep_package_for_centos
             ;;
         ubuntu*-*)
@@ -638,7 +645,7 @@ install_s3fs_dep_package_for_ubuntu() {
 
 install_s3fs() {
     case $GFDOCKER_PRJ_NAME in
-        centos*-*)
+        ${DISTRO_FAMILY_RHEL})
             install_s3fs_dep_package_for_centos
             ;;
         ubuntu*-*)
