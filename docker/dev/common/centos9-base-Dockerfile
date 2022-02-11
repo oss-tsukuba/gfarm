@@ -5,11 +5,7 @@ FROM quay.io/centos/centos:stream9
 ARG TZ
 ENV TZ=${TZ}
 
-#ARG LANG
-#ENV LANG=${LANG}
-
-RUN rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial \
-    && dnf -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm \
+RUN dnf -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm \
     && dnf -y update \
     && dnf -y groupinstall "Development Tools" \
     && dnf -y install \
