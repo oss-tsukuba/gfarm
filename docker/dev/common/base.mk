@@ -69,6 +69,8 @@ endif
 
 IMAGE_BASENAME = gfarm-dev
 
+STOP_TIMEOUT = 3
+
 DOCKER = $(SUDO) $(DOCKER_CMD)
 
 GFDOCKER_PRJ_NAME_FULL=gfarm-$(GFDOCKER_PRJ_NAME)
@@ -225,7 +227,7 @@ build-nocache:
 	$(build_nocache)
 
 define down
-	$(COMPOSE) down --volumes --remove-orphans \
+	$(COMPOSE) down --volumes --remove-orphans -t $(STOP_TIMEOUT) \
 		&& rm -f $(TOP)/docker/dev/.shadow.config.mk
 endef
 
@@ -305,7 +307,7 @@ start:
 	$(COMPOSE) start
 
 stop:
-	$(COMPOSE) stop
+	$(COMPOSE) stop -t $(STOP_TIMEOUT)
 
 define shell_user
 $(CONTSHELL) $(CONTSHELL_ARGS)
