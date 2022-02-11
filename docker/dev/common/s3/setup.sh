@@ -65,7 +65,10 @@ DISTRO_FAMILY_RHEL="+(centos*-*|rockylinux*-*|almalinux*-*)"
 
 install_package_for_centos() {
     ${SUDO} yum update -y
+
+    # procps-ng : ps command
     ${SUDO} yum install -y \
+        procps-ng \
         uuid \
         myproxy \
         python3-devel \
@@ -157,6 +160,9 @@ install_prerequisites() {
 
     ${SUDO} python3 -m pip install -q 'Django<=4'
     ${SUDO} python3 -m pip install -q gunicorn
+
+    ## ModuleNotFoundError: No module named 'tzdata' on centos9
+    ${SUDO} pip3 install tzdata
 
     ## for test.py
     ${SUDO} python3 -m pip install -q boto3
@@ -461,8 +467,8 @@ install_gfarm_s3() {
     fi
 
     # edit addtional configurations
-    CONF_OVERWRITE=${GFARM_S3_PREFIX}/etc/gfarm-s3-overwrite.conf
-    cat <<EOF | ${SUDO} dd of="${CONF_OVERWRITE}"
+    CONF_OVERRIDE=${GFARM_S3_PREFIX}/etc/gfarm-s3-override.conf
+    cat <<EOF | ${SUDO} dd of="${CONF_OVERRIDE}"
 #GFARM_S3_LOG_LEVEL=debug
 GFARM_S3_LOG_OUTPUT=syslog
 
@@ -627,10 +633,12 @@ install_s3fs_dep_package_for_centos() {
     ${SUDO} yum install -y \
         automake \
         gcc-c++ \
-        fuse-devel \
         openssl-devel \
         libcurl-devel \
         libxml2-devel
+
+    # centos9 fails.
+    ${SUDO} yum install -y fuse-devel || true
 }
 
 install_s3fs_dep_package_for_ubuntu() {
@@ -657,11 +665,18 @@ install_s3fs() {
 
     S3FS_URL=https://github.com/s3fs-fuse/s3fs-fuse.git
     [ -d $WORKDIR/s3fs-fuse ] || (cd $WORKDIR && git clone --depth 1 ${S3FS_URL})
-    (cd $WORKDIR/s3fs-fuse && \
-    ./autogen.sh && \
-    ./configure --prefix=/usr && \
-    make -j && \
-    ${SUDO} make install)
+
+    LOCAL_LIB_PKG_CONFIG_PATH="/usr/local/lib/pkgconfig"
+    LOCAL_LIB_FUSE_PC="${LOCAL_LIB_PKG_CONFIG_PATH}/fuse.pc"
+    if [ -f "${LOCAL_LIB_FUSE_PC}" ]; then
+        PKG_CONFIG_PATH="${LOCAL_LIB_PKG_CONFIG_PATH}"
+        export PKG_CONFIG_PATH
+    fi
+    cd $WORKDIR/s3fs-fuse
+    ./autogen.sh
+    ./configure --prefix=/usr
+    make -j
+    ${SUDO} make install
 }
 
 #cleanup() {
