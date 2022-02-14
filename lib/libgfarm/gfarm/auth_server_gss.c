@@ -105,7 +105,7 @@ gfarm_authorize_gss_common0(struct gfp_xdr *conn, struct gfarm_gss *gss,
 			return (e);
 		}
 		rv = gss->gfarmGssAcquireCredential(&cred,
-		    desired_name, GSS_C_BOTH,
+		    desired_name, GSS_C_ACCEPT,
 		    &e_major, &e_minor, NULL);
 		if (desired_name != GSS_C_NO_NAME)
 			gss->gfarmGssDeleteName(&desired_name, NULL, NULL);
