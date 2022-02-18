@@ -304,14 +304,14 @@ group_name(struct group *g)
 }
 
 char *
-group_ternant_name(struct group *g)
+group_tenant_name(struct group *g)
 {
 	return (g != NULL && group_is_valid(g) ?
 	    g->groupname : REMOVED_GROUP_NAME);
 }
 
 char *
-group_name_in_ternant(struct group *g, struct process *p)
+group_name_in_tenant(struct group *g, struct process *p)
 {
 	if (g == NULL || !group_is_valid(g))
 		return (REMOVED_GROUP_NAME);
