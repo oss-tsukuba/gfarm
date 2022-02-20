@@ -150,7 +150,7 @@ group_enter(char *groupname, struct group **gpp)
 			return (GFARM_ERR_NO_ERROR);
 		} else {
 			gflog_debug(GFARM_MSG_1001515,
-			    "\"%s\" group already exists", group_name(g));
+			    "\"%s\" group already exists", group_tenant_name(g));
 			return (GFARM_ERR_ALREADY_EXISTS);
 		}
 	}
@@ -194,7 +194,7 @@ group_enter(char *groupname, struct group **gpp)
 	}
 	if (!created) {
 		gflog_debug(GFARM_MSG_1001518,
-		    "\"%s\" group already exists", group_name(g));
+		    "\"%s\" group already exists", group_tenant_name(g));
 		free(g);
 		return (GFARM_ERR_ALREADY_EXISTS);
 	}
@@ -452,7 +452,7 @@ group_add_user(struct group *g, const char *username)
 	if (user_in_group(u, g)) {
 		gflog_debug(GFARM_MSG_1001523,
 		    "\"%s\" is already a member in \"%s\"",
-		    username, group_name(g));
+		    username, group_tenant_name(g));
 		return (GFARM_ERR_ALREADY_EXISTS);
 	}
 	return (grpassign_add(u, g));
@@ -471,12 +471,12 @@ group_add_user_and_record(struct group *g, const char *username)
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_info(GFARM_MSG_1000244,
 		    "failed to add user %s to group %s: %s",
-		    username, group_name(g), gfarm_error_string(e));
+		    username, group_tenant_name(g), gfarm_error_string(e));
 		return;
 	}
 
 	gflog_info(GFARM_MSG_1000245,
-	    "added user %s to group %s", username, group_name(g));
+	    "added user %s to group %s", username, group_tenant_name(g));
 	gi.groupname = group_name(g);
 	n = 0;
 	for (ga = g->users.user_next; ga != &g->users; ga = ga->user_next)

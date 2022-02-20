@@ -369,7 +369,7 @@ replica_check_fix(struct replication_info *info)
 		    "replica_check: %lld:%lld:%s: "
 		    "opened in write mode, ignored",
 		    (long long)info->inum, (long long)info->gen,
-		    user_name(inode_get_user(inode)));
+		    user_tenant_name(inode_get_user(inode)));
 		return (GFARM_ERR_NO_ERROR); /* ignore */
 	}
 
@@ -379,7 +379,7 @@ replica_check_fix(struct replication_info *info)
 		gflog_error(GFARM_MSG_1003692,
 		    "replica_check: %lld:%lld:%s: replica_hosts: %s",
 		    (long long)info->inum, (long long)info->gen,
-		    user_name(inode_get_user(inode)), gfarm_error_string(e));
+		    user_tenant_name(inode_get_user(inode)), gfarm_error_string(e));
 		return (e); /* retry */
 	}
 	if (n_existing == 0) {
@@ -390,7 +390,7 @@ replica_check_fix(struct replication_info *info)
 		gflog_error(GFARM_MSG_1003624,
 		    "replica_check: %lld:%lld:%s: lost all replicas",
 		    (long long)info->inum, (long long)info->gen,
-		    user_name(inode_get_user(inode)));
+		    user_tenant_name(inode_get_user(inode)));
 		return (GFARM_ERR_NO_ERROR); /* error, ignore */
 	}
 
@@ -402,7 +402,7 @@ replica_check_fix(struct replication_info *info)
 		gflog_error(GFARM_MSG_1003628,
 		    "replica_check: %lld:%lld:%s: replica_list: %s",
 		    (long long)info->inum, (long long)info->gen,
-		    user_name(inode_get_user(inode)), gfarm_error_string(e));
+		    user_tenant_name(inode_get_user(inode)), gfarm_error_string(e));
 		return (e); /* retry */
 	}
 
