@@ -416,7 +416,7 @@ quota_dir_settable(struct inode *inode, struct dirset *ds,
 	if (!user_is_root(user)) {
 		gflog_debug(GFARM_MSG_1004657,
 		    "%s: %s specified non-empty dir %lld:%lld",
-		    diag, user_name(user),
+		    diag, user_tenant_name(user),
 		    (long long)inode_get_number(inode),
 		    (long long)inode_get_gen(inode));
 		return (GFARM_ERR_DIRECTORY_NOT_EMPTY);
@@ -424,7 +424,7 @@ quota_dir_settable(struct inode *inode, struct dirset *ds,
 		/* nested quota_dir, or has a hardlink to outside of the dir */
 		gflog_debug(GFARM_MSG_1004658,
 		    "%s: %s specified prohibited dir %lld:%lld",
-		    diag, user_name(user),
+		    diag, user_tenant_name(user),
 		    (long long)inode_get_number(inode),
 		    (long long)inode_get_gen(inode));
 		return (GFARM_ERR_OPERATION_NOT_SUPPORTED);

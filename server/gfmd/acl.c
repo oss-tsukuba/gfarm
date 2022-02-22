@@ -68,7 +68,7 @@ acl_convert_for_setxattr_internal(
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_notice(GFARM_MSG_1002855,
 				    "gfs_acl_check() failed by %s: %s",
-				     user_name(inode_get_user(inode)),
+				     user_tenant_name(inode_get_user(inode)),
 				    gfs_acl_error(acl_check_err));
 			gfs_acl_free(acl);
 			return (e);

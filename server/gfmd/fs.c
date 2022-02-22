@@ -1674,7 +1674,7 @@ gfm_server_cksum_set(struct peer *peer, int from_client, int skip)
 	      GFARM_ERR_NO_ERROR))) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		gflog_debug(GFARM_MSG_1003802, "user can set cksum: (%s) %s",
-		    user_name(user), gfarm_error_string(e));
+		    user_tenant_name(user), gfarm_error_string(e));
 	} else if (strlen(cksum_type) > GFM_PROTO_CKSUM_TYPE_MAXLEN ||
 	    cksum_len > GFM_PROTO_CKSUM_MAXLEN) {
 		gflog_debug(GFARM_MSG_1003480,
@@ -4217,7 +4217,8 @@ gfm_server_config_get(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		gflog_debug(GFARM_MSG_1004361,
 		    "%s(%s): user %s does not belong to gfarmadm: %s",
-		    diag, name, user == NULL ? "(null)" : user_name(user),
+		    diag, name,
+		    user == NULL ? "(null)" : user_tenant_name(user),
 		    gfarm_error_string(e));
 	} else {
 		e = gfarm_config_copyout(type, &storage);
@@ -4292,7 +4293,8 @@ gfm_server_config_set(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		gflog_debug(GFARM_MSG_1004469,
 		    "%s(%s): user %s does not belong to gfarmadm: %s",
-		    diag, name, user == NULL ? "(null)" : user_name(user),
+		    diag, name,
+		    user == NULL ? "(null)" : user_tenant_name(user),
 		    gfarm_error_string(e));
 	} else if ((e = gfarm_config_type_by_name_for_metadb(name, &type))
 	    != GFARM_ERR_NO_ERROR) {
