@@ -150,7 +150,8 @@ group_enter(char *groupname, struct group **gpp)
 			return (GFARM_ERR_NO_ERROR);
 		} else {
 			gflog_debug(GFARM_MSG_1001515,
-			    "\"%s\" group already exists", group_tenant_name(g));
+			    "\"%s\" group already exists",
+			    group_tenant_name(g));
 			return (GFARM_ERR_ALREADY_EXISTS);
 		}
 	}

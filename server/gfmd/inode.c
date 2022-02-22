@@ -1169,7 +1169,8 @@ inode_schedule_replication_within_scope(
 		    "%s: %lld:%lld:%s: will be fixed, increase=%d/desire=%d",
 		    diag, (long long)inode_get_number(inode),
 		    (long long)inode_get_gen(inode),
-		    user_tenant_name(inode_get_user(inode)), n_success, n_desired);
+		    user_tenant_name(inode_get_user(inode)),
+		    n_success, n_desired);
 
 	return (save_e);
 }

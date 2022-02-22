@@ -882,7 +882,8 @@ quota_dir_reply(void *closure, struct quota_dir *qd)
 		gflog_error(GFARM_MSG_1004697,
 		    "quota_dir %lld in dirset %s:%s does not exist",
 		    (long long)inum,
-		    user_tenant_name_even_invalid(c->ds->user), c->ds->dirsetname);
+		    user_tenant_name_even_invalid(c->ds->user),
+		    c->ds->dirsetname);
 		e = GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY;
 	} else if ((e = inode_getdirpath(inode, c->process, &pathname))
 	    != GFARM_ERR_NO_ERROR) {
