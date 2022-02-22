@@ -18,7 +18,7 @@ get_mode_gfarm()
 
 get_mode_local()
 {
-    ls -l ${1} | awk '{print $1}'
+    stat --format %A ${1}
 }
 
 test_write_to_gfarm_j1()
