@@ -73,6 +73,7 @@ install_package_for_centos() {
         myproxy \
         python3-devel \
         python3-pip \
+        npm \
         nodejs
 
     case $FRONT_WEBSERVER in
@@ -431,6 +432,10 @@ GFARM_S3_ROUTER_WORKERS=1
 GFARM_S3_WEBUI_BASE_URL="gfarm_s3/"
 
 install_gfarm_s3() {
+    ## create cache directory for S3 multipart
+    ${SUDO} mkdir -p $GFARM_S3_LOCALTMP_DIR
+    ${SUDO} chmod 1777 $GFARM_S3_LOCALTMP_DIR
+
     cd $WORKDIR/gfarm-s3-minio-web
     GSI_PROXY_HOURS=${GSI_PROXY_HOURS} \
     MYPROXY_SERVER=${MYPROXY_SERVER} \
@@ -501,10 +506,6 @@ setup_nginx() {
 }
 
 configure_gfarm_s3() {
-    ## create cache directory for S3 multipart
-    ${SUDO} mkdir -p $GFARM_S3_LOCALTMP_DIR
-    ${SUDO} chmod 1777 $GFARM_S3_LOCALTMP_DIR
-
     ## create shared directory on Gfarm
     gfmkdir -p ${SHARED_DIR#/}
     gfchmod 0755 ${SHARED_DIR#/}
