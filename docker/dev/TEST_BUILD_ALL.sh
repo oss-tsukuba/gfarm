@@ -5,6 +5,7 @@ centos7/src
 centos7/pkg
 centos8/src
 centos8/pkg
+centos9/src
 almalinux8/src
 almalinux8/pkg
 rockylinux8/src
