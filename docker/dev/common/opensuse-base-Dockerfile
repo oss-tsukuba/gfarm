@@ -5,9 +5,6 @@ FROM opensuse/leap
 ARG TZ
 ENV TZ=${TZ}
 
-#ARG LANG
-#ENV LANG=${LANG}
-
 RUN zypper install -y \
     sudo \
     openssh \
@@ -17,11 +14,9 @@ RUN zypper install -y \
     rpm-build \
     wget \
     rsync \
-    git
-
-RUN systemctl enable sshd
-
-RUN zypper install -y \
+    git \
+    && systemctl enable sshd \
+    && zypper install -y \
     libopenssl-devel \
     postgresql13 \
     postgresql13-devel \
@@ -31,10 +26,8 @@ RUN zypper install -y \
     fuse-devel \
     libacl-devel \
     ruby \
-    libtool
-
-# Grid Community Toolkit (Globus Tool Kit)
-RUN zypper addrepo \
+    libtool \
+    && zypper addrepo \
     https://download.opensuse.org/repositories/home:frank_scheiner:gct/openSUSE_Leap_15.2/home:frank_scheiner:gct.repo \
     && zypper --non-interactive --no-gpg-checks refresh \
     && zypper install -y \
@@ -42,21 +35,17 @@ RUN zypper addrepo \
     globus-simple-ca \
     globus-gsi-cert-utils-progs \
     globus-proxy-utils \
-    && globus-version
-
-# for debug
-RUN zypper mr -e repo-debug
-
-RUN zypper install -y \
+    gsi-openssh \
+    myproxy \
+    && globus-version \
+    && zypper mr -e repo-debug \
+    && zypper install -y \
     telnet ncat ldns iproute2 net-tools bind-utils tcpdump \
     gdb valgrind strace inotify-tools \
     man man-pages man-pages-ja \
-    nano emacs-nox vim less which
-
-RUN zypper install -y \
-    libfuse2-debuginfo
-
-RUN sed -i 's@^Defaults secure_path="/usr/sbin:@Defaults secure_path="/usr/local/bin:/usr/sbin:@' /etc/sudoers
+    nano emacs-nox vim less which \
+    libfuse2-debuginfo \
+    && sed -i 's@^Defaults secure_path="/usr/sbin:@Defaults secure_path="/usr/local/bin:/usr/sbin:@' /etc/sudoers
 
 
 # System independent (see setup-univ.sh)
