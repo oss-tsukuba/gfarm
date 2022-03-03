@@ -170,7 +170,13 @@ for i in $(seq 1 "$GFDOCKER_NUM_USERS"); do
 
   USER_SBJ=$(grid-cert-info -subject -file "${globus_dir}/usercert.pem")
   echo "${USER_SBJ} ${user}" >> "$GRID_MAPFILE"
+  tls_dir="/home/${user}/.gfarm"
+  ln -s ".globus" "$tls_dir"
 done
+
+# for TLS
+mkdir -p /etc/pki/tls/certs
+ln -s /etc/grid-security/certificates /etc/pki/tls/certs/gfarm
 
 # make ${GFDOCKER_USERNAME_PREFIX}1 accesible to root@...
 root_dotssh=/root/.ssh
