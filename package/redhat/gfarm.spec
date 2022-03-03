@@ -1,7 +1,7 @@
 # Part 1 data definition
 %define pkg	gfarm
 %if %{undefined ver}
-%define ver	2.7.19
+%define ver	2.8.0
 %endif
 %if %{undefined rel}
 %define rel	1
@@ -42,6 +42,7 @@
 #
 
 %define globus %(echo "${GFARM_CONFIGURE_OPTION}" | grep -e --with-globus > /dev/null && echo 1 || echo 0)
+%define kerberos %(echo "${GFARM_CONFIGURE_OPTION}" | grep -e --enable-kerberos > /dev/null && echo 1 || echo 0)
 
 %if %{undefined pkg_suffix}
 %if %{globus}
@@ -1132,6 +1133,14 @@ fi
 %defattr(-,root,root)
 %{lib_prefix}/libgfarm.so.1
 %{lib_prefix}/libgfarm.so.1.0.0
+%if %{globus}
+%{lib_prefix}/libgfsl_gsi.so.1
+%{lib_prefix}/libgfsl_gsi.so.1.0.0
+%endif
+%if %{kerberos}
+%{lib_prefix}/libgfsl_kerberos.so.1
+%{lib_prefix}/libgfsl_kerberos.so.1.0.0
+%endif
 %{lib_prefix}/libgfperf.so.1
 %{lib_prefix}/libgfperf.so.1.0.0
 %dir %{lib_prefix}/pkgconfig
@@ -1359,6 +1368,16 @@ fi
 %{lib_prefix}/libgfarm.a
 %{lib_prefix}/libgfarm.la
 %{lib_prefix}/libgfarm.so
+%if %{globus}
+%{lib_prefix}/libgfsl_gsi.a
+%{lib_prefix}/libgfsl_gsi.la
+%{lib_prefix}/libgfsl_gsi.so
+%endif
+%if %{kerberos}
+%{lib_prefix}/libgfsl_kerberos.a
+%{lib_prefix}/libgfsl_kerberos.la
+%{lib_prefix}/libgfsl_kerberos.so
+%endif
 %{lib_prefix}/libgfperf.a
 %{lib_prefix}/libgfperf.la
 %{lib_prefix}/libgfperf.so

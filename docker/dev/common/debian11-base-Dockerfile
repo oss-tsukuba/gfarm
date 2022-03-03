@@ -5,9 +5,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 
 ARG TZ
 ENV TZ=${TZ}
-
 ARG LANG
-#ENV LANG=${LANG}
 
 RUN apt-get update \
     && apt-get -y upgrade \
@@ -33,27 +31,22 @@ RUN apt-get update \
     globus-simple-ca \
     globus-gsi-cert-utils-progs \
     globus-proxy-utils \
-    && globus-version
-
-RUN sed -i -E "s/# (${LANG})/\1/" /etc/locale.gen \
+    && globus-version \
+    && sed -i -E "s/# (${LANG})/\1/" /etc/locale.gen \
     && locale-gen \
-    && update-locale LANG=${LANG}
-
-# for debug
-RUN apt-get update \
+    && update-locale LANG=${LANG} \
     && apt-get -y install \
     ncat ldnsutils iproute2 net-tools bind9utils telnet tcpdump \
     manpages manpages-ja man-db \
     gdb valgrind strace inotify-tools \
-    vim nano emacs-nox less
-
-RUN apt-get -y install software-properties-common \
+    vim nano emacs-nox less \
+    && apt-get -y install software-properties-common \
     && add-apt-repository 'deb http://debug.mirrors.debian.org/debian-debug/ bullseye-debug main'\
     && apt-get update \
     && apt-get -y install \
-    libfuse2-dbgsym
+    libfuse2-dbgsym \
+    && systemctl disable unattended-upgrades
 
-RUN sudo systemctl disable unattended-upgrades
 
 # System independent (see setup-univ.sh)
 
