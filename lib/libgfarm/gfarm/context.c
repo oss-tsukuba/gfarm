@@ -1,6 +1,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <gfarm/gfarm.h>
 
@@ -113,6 +114,16 @@ static const struct gfarm_context_module_entry module_entries[] = {
 	},
 };
 
+static char *
+gfarm_getenv_dup(const char *name)
+{
+	char *val = getenv(name);
+
+	if (val == NULL)
+		return (NULL);
+	return (strdup(val));
+}
+
 gfarm_error_t
 gfarm_context_init(void)
 {
@@ -178,9 +189,9 @@ gfarm_context_init(void)
 	ctxp->tls_ca_certificate_path = NULL;
 	ctxp->tls_ca_revocation_path = NULL;
 	ctxp->tls_ca_peer_verify_chain_path = NULL;
-	ctxp->tls_certificate_file = NULL;
+	ctxp->tls_certificate_file = gfarm_getenv_dup("X509_USER_CERT");
 	ctxp->tls_certificate_chain_file = NULL;
-	ctxp->tls_key_file = NULL;
+	ctxp->tls_key_file = gfarm_getenv_dup("X509_USER_KEY");
 	ctxp->tls_key_update = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->tls_build_chain_local = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->tls_allow_no_crl = GFARM_CONFIG_MISC_DEFAULT;
