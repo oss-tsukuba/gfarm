@@ -330,10 +330,10 @@ while [ $# -gt 0 ] ; do
 		;;
 	  -a) shift; [ $# -ge 1 ] || usage
 		case $1 in
-		sharedsecret|gsi_auth|gsi)
+		sharedsecret|tls_sharedsecret|tls_client_certificate|gsi_auth|gsi)
 			AUTH_TYPE=$1;;
 		*)
-			echo >&2 "$PROGNAME: the argument of -a option must be sharedsecret, gsi_auth or gsi."
+			echo >&2 "$PROGNAME: the argument of -a option must be sharedsecret, tls_sharedsecret, tls_client_certificate, gsi_auth or gsi."
 			exit 1;;
 		esac
 		;;
@@ -654,7 +654,7 @@ mkcnf "$GFARM_CONF"	replace "$config_dir/gfarm.conf.in"
 
 # for GSI authentication  (a service certificate is used)
 case $AUTH_TYPE in
-gsi_auth|gsi)
+tls_sharedsecret|tls_client_certificate|gsi_auth|gsi)
 	echo "spool_server_cred_type host" >> $GFARM_CONF
 	echo "spool_server_cred_service gfsd" >> $GFARM_CONF
 	;;
