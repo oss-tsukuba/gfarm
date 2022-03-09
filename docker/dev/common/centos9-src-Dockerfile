@@ -1,4 +1,4 @@
-FROM gfarm-dev:centos9stream-base
+FROM gfarm-dev:centos9-base
 
 # System independent
 ARG GFDOCKER_NUM_JOBS

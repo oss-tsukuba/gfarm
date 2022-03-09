@@ -94,7 +94,7 @@ if [ ! -d $MNT_SSH_HOST_KEY_DIR ]; then
 fi
 for f in $(echo $MNT_SSH_HOST_KEY_DIR/ssh_host_*_key); do
   if [ -f "$f" ]; then
-    sudo cp -p "$f" $SSH_HOST_KEY_DIR/
+    sudo cp -pf "$f" $SSH_HOST_KEY_DIR/
     sudo chmod 400 $SSH_HOST_KEY_DIR/$(basename "$f")
   fi
 done

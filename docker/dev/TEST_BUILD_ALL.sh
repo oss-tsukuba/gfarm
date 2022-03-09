@@ -31,17 +31,17 @@ cleanup() {
 trap_sigs='1 2 15'
 trap 'cleanup; exit 1' $trap_sigs
 
-REULT_NAME=0
+RESULT_NAME=0
 for name in ${LIST}; do
     (cd ${BASEDIR}/${name} && time make reborn)
     RESULT=$?
     (cd ${BASEDIR}/${name} && make down)
-    REULT_NAME=$name
+    RESULT_NAME=$name
     [ $RESULT -eq 0 ] || break
 done
 
-cleanup
 if [ $RESULT -eq 0 ]; then
+    cleanup
     echo "All successful"
 else
     echo "Failed in ${RESULT_NAME}"
