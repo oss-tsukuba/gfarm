@@ -3327,6 +3327,7 @@ main(int argc, char *argv[])
 			}
 			this_hash_all_dst = hash_all_dst;
 		}
+retry_hash_dst:
 		e = gfprep_filter_hostinfohash(
 			gfurl_url(dst), this_hash_all_dst,
 			&hash_dst, hash_dstname, opt_dst_domain,
@@ -3337,10 +3338,22 @@ main(int argc, char *argv[])
 		gfmsg_fatal_e(e,
 		    "gfprep_hostinfohash_to_array for destination");
 		if (n_array_dst == 0) {
-			gfmsg_error(
-			    "no available node for destination "
-			    "(wrong -S/-h/-D/-H or write_target_domain ?)");
-			exit(EXIT_FAILURE);
+			if (opt_dst_domain == NULL) {
+				gfmsg_error(
+				    "no available node for destination "
+				    "(wrong -S/-h/-D/-H or "
+				    "write_target_domain ?)");
+				exit(EXIT_FAILURE);
+			}
+			if (hash_dst) {
+				gfarm_hash_table_free(hash_dst);
+				hash_dst = NULL;
+			}
+			free(array_dst);
+			array_dst = NULL;
+			free(opt_dst_domain);
+			opt_dst_domain = NULL; /* to select from all */
+			goto retry_hash_dst;
 		}
 	} else {
 		hash_all_dst = NULL;
