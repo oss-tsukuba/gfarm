@@ -330,10 +330,10 @@ while [ $# -gt 0 ] ; do
 		;;
 	  -a) shift; [ $# -ge 1 ] || usage
 		case $1 in
-		sharedsecret|tls_sharedsecret|tls_client_certificate|gsi_auth|gsi)
+		sharedsecret|tls_sharedsecret|tls_client_certificate|gsi_auth|gsi|kerberos_auth|kerberos)
 			AUTH_TYPE=$1;;
 		*)
-			echo >&2 "$PROGNAME: the argument of -a option must be sharedsecret, tls_sharedsecret, tls_client_certificate, gsi_auth or gsi."
+			echo >&2 "$PROGNAME: the argument of -a option must be sharedsecret, tls_sharedsecret, tls_client_certificate, gsi_auth, gsi, kerberos_auth or kerberos."
 			exit 1;;
 		esac
 		;;
@@ -652,22 +652,26 @@ mkcnf_gfmd_sysdep
 # create configuration files
 mkcnf "$GFARM_CONF"	replace "$config_dir/gfarm.conf.in"
 
-# for GSI authentication  (a service certificate is used)
+mkcnf "$GFMD_CONF"	replace "$config_dir/gfarm.conf-$BACKEND_TYPE.in"
+chmod 600 "$GFMD_CONF"
+# for TLS/GSI/Kerberos authentication
+if [ X"$METADATA_ADMIN_USER_GSI_DN" != X ]; then
+	echo "admin_user_gsi_dn \"$METADATA_ADMIN_USER_GSI_DN\"" >> $GFMD_CONF
+fi
+
+# for TLS/GSI/Kerberos authentication  (a service certificate is used)
 case $AUTH_TYPE in
-tls_sharedsecret|tls_client_certificate|gsi_auth|gsi)
+tls_sharedsecret|tls_client_certificate|gsi_auth|gsi|kerberos_auth|kerberos)
+	echo "" >> $GFMD_CONF
+	echo "spool_server_cred_type host" >> $GFMD_CONF
 	echo "spool_server_cred_type host" >> $GFARM_CONF
+	echo "spool_server_cred_service gfsd" >> $GFMD_CONF
 	echo "spool_server_cred_service gfsd" >> $GFARM_CONF
+	echo "" >> $GFMD_CONF
 	;;
 *)
 	;;
 esac
-
-mkcnf "$GFMD_CONF"	replace "$config_dir/gfarm.conf-$BACKEND_TYPE.in"
-chmod 600 "$GFMD_CONF"
-# for GSI authentication
-if [ X"$METADATA_ADMIN_USER_GSI_DN" != X ]; then
-	echo "admin_user_gsi_dn \"$METADATA_ADMIN_USER_GSI_DN\"" >> $GFMD_CONF
-fi
 
 # for replication
 echo "metadb_replication $METADATA_REPLICATION_ED" >> $GFMD_CONF
