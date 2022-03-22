@@ -300,7 +300,7 @@ group_tenant_enter(char *groupname, struct group **gpp)
 			/* never reaches here, but for defensive programming */
 			e = GFARM_ERR_ALREADY_EXISTS;
 		}
-	} 
+	}
 	if (*group_hashtab_ref_in_tenant == NULL ||
 	    e != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_UNFIXED,
@@ -1073,7 +1073,6 @@ group_info_add_tenant(struct gfarm_group_info *gi, struct tenant *tenant,
 /* do the user+tenant exist? and isn't there any duplication in user+tenant? */
 gfarm_error_t
 group_user_tenant_check(struct gfarm_group_info *gi, const char *diag)
-	
 {
 	int i, j;
 	struct user *u, **ulist;
@@ -1149,7 +1148,7 @@ gfm_server_group_info_set(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s): %s",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    gfarm_error_string(e));
-        } else if (!(is_super_admin = user_is_super_admin(user)) &&
+	} else if (!(is_super_admin = user_is_super_admin(user)) &&
 	    strchr(gi.groupname, GFARM_TENANT_DELIMITER) != NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		gflog_debug(GFARM_MSG_UNFIXED,
@@ -1368,7 +1367,7 @@ gfm_server_group_info_remove(struct peer *peer, int from_client, int skip)
 		    "should not be deleted",
 		    diag, groupname);
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-        } else if (!(is_super_admin = user_is_super_admin(user)) &&
+	} else if (!(is_super_admin = user_is_super_admin(user)) &&
 	    strchr(groupname, GFARM_TENANT_DELIMITER) != NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		gflog_debug(GFARM_MSG_UNFIXED,

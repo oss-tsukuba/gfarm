@@ -623,7 +623,7 @@ gfarm_alloc_name_in_tenant(const char *name)
 	GFARM_MALLOC_ARRAY(s, len + 1);
 	memcpy(s, name, len);
 	s[len] = '\0';
-	return (s);		
+	return (s);
 }
 
 /* the return value of the following function should be free(3)ed */

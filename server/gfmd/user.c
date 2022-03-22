@@ -341,7 +341,7 @@ user_tenant_enter(struct gfarm_user_info *ui, struct user **upp)
 			/* never reaches here, but for defensive programming */
 			e = GFARM_ERR_ALREADY_EXISTS;
 		}
-	} 
+	}
 	if (*user_hashtab_ref_in_tenant == NULL ||
 	    e != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_UNFIXED,
@@ -1214,7 +1214,7 @@ gfm_server_user_info_get_by_gsi_dn(
 		/* peer_get_user(peer) is not NULL if from_client */
 		e = gfm_server_put_reply(peer, diag, e, "ssss",
 		    name_with_tenant ?
-		    ui->username : user_name_in_tenant(u, process), 
+		    ui->username : user_name_in_tenant(u, process),
 		    ui->realname, ui->homedir, ui->gsi_dn);
 	}
 	giant_unlock();
@@ -1282,7 +1282,7 @@ gfm_server_user_info_set(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s): %s",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    gfarm_error_string(e));
-        } else if (!(is_super_admin = user_is_super_admin(user)) &&
+	} else if (!(is_super_admin = user_is_super_admin(user)) &&
 	    strchr(ui.username, GFARM_TENANT_DELIMITER) != NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		gflog_debug(GFARM_MSG_UNFIXED,
@@ -1499,7 +1499,7 @@ gfm_server_user_info_remove(struct peer *peer, int from_client, int skip)
 		gflog_error(GFARM_MSG_UNFIXED, "%s (%s@%s): no tenant: %s",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    gfarm_error_string(e));
-        } else if (!(is_super_admin = user_is_super_admin(user)) &&
+	} else if (!(is_super_admin = user_is_super_admin(user)) &&
 	    strchr(username, GFARM_TENANT_DELIMITER) != NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		gflog_debug(GFARM_MSG_UNFIXED,

@@ -1195,7 +1195,7 @@ findxmlattr_add_selfpath(struct inode *inode,
 	struct tenant *tenant, struct user *user,
 	char *path, struct inum_path_array *array)
 {
-	if (!is_find_target(inode, tenant, user)){
+	if (!is_find_target(inode, tenant, user)) {
 		return GFARM_ERR_NO_ERROR;
 	}
 	if (array->check_ckpath) {

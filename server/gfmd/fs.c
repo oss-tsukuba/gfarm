@@ -1543,14 +1543,14 @@ gfm_server_fchown(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1001840,
 			"process_get_file_inode() failed: %s",
 			gfarm_error_string(e));
-        } else if (!(is_super_admin = user_is_super_admin(user)) &&
+	} else if (!(is_super_admin = user_is_super_admin(user)) &&
 	    strchr(username, GFARM_TENANT_DELIMITER) != NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "%s (%s@%s) '%s': '+' is not allowed as user name",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    username);
-        } else if (!is_super_admin &&
+	} else if (!is_super_admin &&
 	    strchr(groupname, GFARM_TENANT_DELIMITER) != NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		gflog_debug(GFARM_MSG_UNFIXED,

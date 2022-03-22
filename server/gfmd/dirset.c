@@ -527,7 +527,7 @@ dirset_user_lookup(const char *username, struct peer *peer, struct user **up,
 			GFARM_ERR_OPERATION_NOT_PERMITTED);
 
 	*up = u;
-	return (GFARM_ERR_NO_ERROR);	
+	return (GFARM_ERR_NO_ERROR);
 }
 
 static gfarm_error_t
