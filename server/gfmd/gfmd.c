@@ -56,6 +56,7 @@
 #include "mdcluster.h"
 #include "user.h"
 #include "group.h"
+#include "tenant.h"
 #include "peer.h"
 #include "inode.h"
 #include "file_copy.h"
@@ -960,7 +961,7 @@ auth_uid_to_global_username(void *closure,
 	if (GFARM_IS_AUTH_GSI(auth_method)) { /* auth_user_id is a DN */
 		u = user_lookup_gsi_dn(auth_user_id);
 	} else { /* auth_user_id is a gfarm global user name */
-		u = user_lookup(auth_user_id);
+		u = user_tenant_lookup(auth_user_id);
 	}
 	giant_unlock();
 
@@ -1779,6 +1780,7 @@ gfmd_modules_init_default(int table_size)
 	if (gfarm_get_metadb_replication_enabled())
 		gfmdc_init();
 	/* directory service */
+	tenant_init();
 	host_init();
 	user_init();
 	group_init();

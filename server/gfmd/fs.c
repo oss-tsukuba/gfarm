@@ -1055,7 +1055,9 @@ gfm_server_revoke_gfsd_access(struct peer *peer, int from_client, int skip)
 }
 
 static gfarm_error_t
-inode_get_stat(struct inode *inode, struct gfs_stat *st)
+inode_get_stat(
+	struct inode *inode, int name_with_tenant, struct process *process,
+	struct gfs_stat *st)
 {
 	static const char diag[] = "inode_get_stat";
 
@@ -1063,8 +1065,12 @@ inode_get_stat(struct inode *inode, struct gfs_stat *st)
 	st->st_gen = inode_get_gen(inode);
 	st->st_mode = inode_get_mode(inode);
 	st->st_nlink = inode_get_nlink(inode);
-	st->st_user = strdup_log(user_name(inode_get_user(inode)), diag);
-	st->st_group = strdup_log(group_name(inode_get_group(inode)), diag);
+	st->st_user = strdup_log(name_with_tenant ?
+	    user_tenant_name(inode_get_user(inode)) :
+	    user_name_in_tenant(inode_get_user(inode), process), diag);
+	st->st_group = strdup_log(name_with_tenant ?
+	    group_tenant_name(inode_get_group(inode)) :
+	    group_name_in_tenant(inode_get_group(inode), process), diag);
 	st->st_size = inode_get_size(inode);
 	if (inode_is_file(inode))
 		st->st_ncopy = inode_get_ncopy(inode);
@@ -1119,7 +1125,9 @@ gfm_server_fstat(struct peer *peer, int from_client, int skip)
 			gfarm_error_string(e));
 	} else if ((e = process_get_file_inode(process, peer, fd, &inode, diag)
 	    ) == GFARM_ERR_NO_ERROR)
-		e = inode_get_stat(inode, &st);
+		/* peer_get_user(peer) is not NULL if from_client */
+		e = inode_get_stat(inode,
+		    user_is_super_admin(peer_get_user(peer)), process, &st);
 
 	giant_unlock();
 	e2 = gfm_server_put_reply(peer, diag, e, "llilsslllilili",
@@ -1236,7 +1244,8 @@ gfm_server_fgetattrplus(struct peer *peer, int from_client, int skip)
 	} else if ((e_rpc = process_get_file_inode(process, peer, fd, &inode,
 	    diag)) != GFARM_ERR_NO_ERROR) {
 		/* nothing to do */
-	} else if ((e_rpc = inode_get_stat(inode, &st)) !=
+	} else if ((e_rpc = inode_get_stat(inode,
+	    user_is_super_admin(peer_get_user(peer)), process, &st)) !=
 	    GFARM_ERR_NO_ERROR) {
 	} else {
 		/* inode is already opened as fd */
@@ -1281,7 +1290,7 @@ gfm_server_fgetattrplus(struct peer *peer, int from_client, int skip)
 
 acl_convert:
 			e_rpc = acl_convert_for_getxattr(
-				inode, px->name, &px->value, &px->size);
+			    inode, px->name, &px->value, &px->size);
 			if (e_rpc != GFARM_ERR_NO_ERROR) {
 				gflog_warning(GFARM_MSG_1002852,
 				 "acl_convert_for_getxattr() failed: %s",
@@ -1484,9 +1493,11 @@ gfm_server_fchown(struct peer *peer, int from_client, int skip)
 	gfarm_int32_t fd;
 	struct host *spool_host = NULL;
 	struct process *process;
+	struct tenant *tenant;
 	struct user *user, *new_user = NULL;
 	struct group *new_group = NULL;
 	struct inode *inode;
+	int is_super_admin;
 	static const char diag[] = "GFM_PROTO_FCHOWN";
 
 	e = gfm_server_get_request(peer, diag, "ss",
@@ -1512,6 +1523,11 @@ gfm_server_fchown(struct peer *peer, int from_client, int skip)
 			"operation is not permitted: peer_get_process() "
 			"failed");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if ((tenant = process_get_tenant(process)) == NULL) {
+		e = GFARM_ERR_INTERNAL_ERROR;
+		gflog_error(GFARM_MSG_UNFIXED, "%s (%s@%s): no tenant: %s",
+		    diag, peer_get_username(peer), peer_get_hostname(peer),
+		    gfarm_error_string(e));
 	} else if ((user = process_get_user(process)) == NULL) {
 		gflog_debug(GFARM_MSG_1001838,
 			"operation is not permitted: process_get_user() "
@@ -1527,12 +1543,30 @@ gfm_server_fchown(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1001840,
 			"process_get_file_inode() failed: %s",
 			gfarm_error_string(e));
+        } else if (!(is_super_admin = user_is_super_admin(user)) &&
+	    strchr(username, GFARM_TENANT_DELIMITER) != NULL) {
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s (%s@%s) '%s': '+' is not allowed as user name",
+		    diag, peer_get_username(peer), peer_get_hostname(peer),
+		    username);
+        } else if (!is_super_admin &&
+	    strchr(groupname, GFARM_TENANT_DELIMITER) != NULL) {
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s (%s@%s) '%s': '+' is not allowed as group name",
+		    diag, peer_get_username(peer), peer_get_hostname(peer),
+		    groupname);
 	} else if (*username != '\0' &&
-	    (new_user = user_lookup(username)) == NULL) {
+	    (new_user = (is_super_admin ?
+	    user_tenant_lookup(username) :
+	    user_lookup_in_tenant(username, tenant))) == NULL) {
 		gflog_debug(GFARM_MSG_1001841, "user is not found");
 		e = GFARM_ERR_NO_SUCH_USER;
 	} else if (*groupname != '\0' &&
-	    (new_group = group_lookup(groupname)) == NULL) {
+	    (new_group = (is_super_admin ?
+	    group_tenant_lookup(groupname) :
+	    group_lookup_in_tenant(groupname, tenant))) == NULL) {
 		gflog_debug(GFARM_MSG_1001842, "group is not found");
 		e = GFARM_ERR_NO_SUCH_GROUP;
 	} else if (new_user != NULL && !user_is_root_for_inode(user, inode) &&
@@ -2407,7 +2441,8 @@ static gfarm_error_t
 fs_dir_get(struct peer *peer, int from_client,
 	gfarm_int32_t *np, struct process **processp, gfarm_int32_t *fdp,
 	struct inode **inodep, int *dir_is_rootp,
-	Dir *dirp, DirCursor *cursorp, const char *diag)
+	Dir *dirp, DirCursor *cursorp, int *name_with_tenant_p,
+	const char *diag)
 {
 	gfarm_error_t e;
 	gfarm_int32_t n = *np;
@@ -2477,6 +2512,8 @@ fs_dir_get(struct peer *peer, int from_client,
 		    && inode_get_gen(inode) == process_get_root_igen(process);
 		*dirp = dir;
 		/* *cursorp = *cursorp; */
+		/* peer_get_user(peer) is not NULL if from_client */
+		*name_with_tenant_p = user_is_super_admin(peer_get_user(peer));
 		return (GFARM_ERR_NO_ERROR);
 	}
 }
@@ -2535,7 +2572,7 @@ gfm_server_getdirents(struct peer *peer, int from_client, int skip)
 	gfarm_int32_t fd, n, i;
 	struct process *process;
 	struct inode *inode, *entry_inode;
-	int dir_is_root;
+	int dir_is_root, name_with_tenant;
 	Dir dir;
 	DirCursor cursor;
 	struct dir_result_rec {
@@ -2553,7 +2590,8 @@ gfm_server_getdirents(struct peer *peer, int from_client, int skip)
 	giant_lock();
 
 	if ((e_rpc = fs_dir_get(peer, from_client, &n, &process, &fd, &inode,
-	    &dir_is_root, &dir, &cursor, diag)) != GFARM_ERR_NO_ERROR) {
+	    &dir_is_root, &dir, &cursor, &name_with_tenant, diag))
+	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001920, "fs_dir_get() failed: %s",
 			gfarm_error_string(e_rpc));
 	} else if (n > 0 && GFARM_MALLOC_ARRAY(p,  n) == NULL) {
@@ -2617,7 +2655,7 @@ gfm_server_getdirentsplus(struct peer *peer, int from_client, int skip)
 	gfarm_int32_t fd, n, i;
 	struct process *process;
 	struct inode *inode, *entry_inode;
-	int dir_is_root;
+	int dir_is_root, name_with_tenant;
 	Dir dir;
 	DirCursor cursor;
 	struct dir_result_rec {
@@ -2634,7 +2672,7 @@ gfm_server_getdirentsplus(struct peer *peer, int from_client, int skip)
 	giant_lock();
 
 	if ((e_rpc = fs_dir_get(peer, from_client, &n, &process, &fd,
-	    &inode, &dir_is_root, &dir, &cursor, diag))
+	    &inode, &dir_is_root, &dir, &cursor, &name_with_tenant, diag))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001923, "fs_dir_get() failed: %s",
 		    gfarm_error_string(e_rpc));
@@ -2653,7 +2691,8 @@ gfm_server_getdirentsplus(struct peer *peer, int from_client, int skip)
 					gfarm_error_string(e_rpc));
 				break;
 			}
-			if ((e_rpc = inode_get_stat(entry_inode, &p[i].st)) !=
+			if ((e_rpc = inode_get_stat(entry_inode,
+			    name_with_tenant, process, &p[i].st)) !=
 			    GFARM_ERR_NO_ERROR) {
 				free(p[i].name);
 				gflog_debug(GFARM_MSG_1001926,
@@ -2719,7 +2758,7 @@ gfm_server_getdirentsplusxattr(struct peer *peer, int from_client, int skip)
 	char **attrpatterns;
 	struct process *process;
 	struct inode *inode, *entry_inode;
-	int dir_is_root;
+	int dir_is_root, name_with_tenant;
 	Dir dir;
 	DirCursor cursor;
 	struct dir_result_rec {
@@ -2749,7 +2788,7 @@ gfm_server_getdirentsplusxattr(struct peer *peer, int from_client, int skip)
 	if (attrpatterns == NULL) {
 		e_rpc = GFARM_ERR_NO_MEMORY;
 	} else if ((e_rpc = fs_dir_get(peer, from_client, &n, &process, &fd,
-	    &inode, &dir_is_root, &dir, &cursor, diag))
+	    &inode, &dir_is_root, &dir, &cursor, &name_with_tenant, diag))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002504, "fs_dir_get() failed: %s",
 		    gfarm_error_string(e_rpc));
@@ -2768,7 +2807,8 @@ gfm_server_getdirentsplusxattr(struct peer *peer, int from_client, int skip)
 				    gfarm_error_string(e_rpc));
 				break;
 			}
-			if ((e_rpc = inode_get_stat(entry_inode, &p[i].st)) !=
+			if ((e_rpc = inode_get_stat(entry_inode,
+			    name_with_tenant, process, &p[i].st)) !=
 			    GFARM_ERR_NO_ERROR) {
 				free(p[i].name);
 				gflog_debug(GFARM_MSG_1002507,
@@ -4213,7 +4253,7 @@ gfm_server_config_get(struct peer *peer, int from_client, int skip)
 		    diag, name, gfarm_config_type_get_format(type), fmt,
 		    gfarm_error_string(e));
 	} else if (gfarm_config_type_is_privileged_to_get(type) &&
-	    from_client && (user == NULL || !user_is_admin(user))) {
+	    from_client && (user == NULL || !user_is_super_admin(user))) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		gflog_debug(GFARM_MSG_1004361,
 		    "%s(%s): user %s does not belong to gfarmadm: %s",
@@ -4288,7 +4328,7 @@ gfm_server_config_set(struct peer *peer, int from_client, int skip)
 
 	giant_lock();
 
-	if (!from_client || user == NULL || !user_is_admin(user)) {
+	if (!from_client || user == NULL || !user_is_super_admin(user)) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		gflog_debug(GFARM_MSG_1004469,
 		    "%s(%s): user %s does not belong to gfarmadm: %s",

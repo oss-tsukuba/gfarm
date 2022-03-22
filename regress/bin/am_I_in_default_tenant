@@ -1,0 +1,3 @@
+#!/bin/sh
+
+gfstat / | awk '$1 == "Inode:" { if ($2 == "2") exit(0); else exit(1); }'

@@ -129,13 +129,13 @@ db_journal_apply_user_add(gfarm_uint64_t seqnum, struct gfarm_user_info *ui)
 {
 	gfarm_error_t e;
 
-	if (user_lookup(ui->username) != NULL) {
+	if (user_tenant_lookup(ui->username) != NULL) {
 		e = GFARM_ERR_ALREADY_EXISTS;
 		gflog_error(GFARM_MSG_1003206,
 		    "seqnum=%llu username=%s : %s",
 		    (unsigned long long)seqnum,
 		    ui->username, gfarm_error_string(e));
-	} else if ((e = user_enter(ui, NULL)) != GFARM_ERR_NO_ERROR)
+	} else if ((e = user_tenant_enter(ui, NULL)) != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1003207,
 		    "seqnum=%llu username=%s : %s",
 		    (unsigned long long)seqnum,
@@ -153,7 +153,7 @@ db_journal_apply_user_modify(gfarm_uint64_t seqnum,
 	struct user *u;
 	struct gfarm_user_info *ui = &m->ui;
 
-	if ((u = user_lookup(ui->username)) == NULL) {
+	if ((u = user_tenant_lookup(ui->username)) == NULL) {
 		e = GFARM_ERR_NO_SUCH_USER;
 		gflog_error(GFARM_MSG_1003208,
 		    "seqnum=%llu username=%s : %s",
@@ -170,7 +170,7 @@ db_journal_apply_user_remove(gfarm_uint64_t seqnum, char *username)
 {
 	gfarm_error_t e;
 
-	if ((e = user_remove_in_cache(username)) != GFARM_ERR_NO_ERROR)
+	if ((e = user_tenant_remove_in_cache(username)) != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1003209,
 		    "seqnum=%llu username=%s : %s",
 		    (unsigned long long)seqnum,
@@ -185,14 +185,15 @@ static gfarm_error_t
 db_journal_apply_group_add(gfarm_uint64_t seqnum, struct gfarm_group_info *gi)
 {
 	gfarm_error_t e;
+	static const char diag[] = "db_journal_apply_group_add";
 
-	if (group_lookup(gi->groupname) != NULL) {
+	if (group_tenant_lookup(gi->groupname) != NULL) {
 		e = GFARM_ERR_ALREADY_EXISTS;
 		gflog_error(GFARM_MSG_1003210,
 		    "seqnum=%llu groupname=%s : %s",
 		    (unsigned long long)seqnum,
 		    gi->groupname, gfarm_error_string(e));
-	} else if ((e = group_user_check(gi, "db_journal_apply_group_add"))
+	} else if ((e = group_user_tenant_check(gi, diag))
 	    != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1003211,
 		    "seqnum=%llu groupname=%s : %s",
@@ -217,13 +218,14 @@ db_journal_apply_group_modify(gfarm_uint64_t seqnum,
 	struct gfarm_group_info *gi = &arg->gi;
 	const char *diag = "db_journal_apply_group_modify";
 
-	if ((g = group_lookup(gi->groupname)) == NULL) {
+	if ((g = group_tenant_lookup(gi->groupname)) == NULL) {
 		e = GFARM_ERR_NO_SUCH_GROUP;
 		gflog_error(GFARM_MSG_1003213,
 		    "seqnum=%llu groupname=%s : %s",
 		    (unsigned long long)seqnum,
 		    gi->groupname, gfarm_error_string(e));
-	} else if ((e = group_user_check(gi, diag)) != GFARM_ERR_NO_ERROR)
+	} else if ((e = group_user_tenant_check(gi, diag))
+	    != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1003214,
 		    "seqnum=%llu groupname=%s : %s",
 		    (unsigned long long)seqnum,
@@ -238,7 +240,7 @@ db_journal_apply_group_remove(gfarm_uint64_t seqnum, char *groupname)
 {
 	gfarm_error_t e;
 
-	if ((e = group_remove_in_cache(groupname))
+	if ((e = group_tenant_remove_in_cache(groupname))
 	    != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1003215,
 		    "seqnum=%llu groupname=%s : %s",
@@ -808,7 +810,7 @@ db_journal_apply_quota_dirset_add(gfarm_uint64_t seqnum,
 	struct user *u;
 	struct dirset *ds;
 
-	u = user_lookup(arg->dirset.username);
+	u = user_tenant_lookup(arg->dirset.username);
 	if (u == NULL)
 		return (GFARM_ERR_NO_SUCH_USER);
 
@@ -827,7 +829,7 @@ db_journal_apply_quota_dirset_modify(gfarm_uint64_t seqnum,
 	struct user *u;
 	struct dirset *ds;
 
-	u = user_lookup(arg->dirset.username);
+	u = user_tenant_lookup(arg->dirset.username);
 	if (u == NULL)
 		return (GFARM_ERR_NO_SUCH_USER);
 
@@ -845,7 +847,7 @@ db_journal_apply_quota_dirset_remove(gfarm_uint64_t seqnum,
 {
 	struct user *u;
 
-	u = user_lookup(arg->username);
+	u = user_tenant_lookup(arg->username);
 	if (u == NULL)
 		return (GFARM_ERR_NO_SUCH_USER);
 
@@ -862,7 +864,7 @@ db_journal_apply_quota_dir_add(gfarm_uint64_t seqnum,
 	struct user *u;
 	struct dirset *ds;
 
-	u = user_lookup(arg->dirset.username);
+	u = user_tenant_lookup(arg->dirset.username);
 	if (u == NULL)
 		return (GFARM_ERR_NO_SUCH_USER);
 

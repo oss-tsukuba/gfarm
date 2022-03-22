@@ -1,6 +1,7 @@
 #include <pthread.h>
 
 #include <errno.h>
+#include <stdio.h>
 #include <assert.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -445,6 +446,59 @@ strdup_log(const char *s, const char *diag)
 		gflog_error(GFARM_MSG_1002358,
 		    "%s: strdup(%s): no memory", diag, s);
 	return (d);
+}
+
+char *
+alloc_name_with_tenant(const char *name, const char *tenant_name,
+	const char *diag)
+{
+	size_t sz;
+	int overflow = 0;
+	char *name_with_tenant;
+
+	if (tenant_name[0] == '\0')
+		return (strdup_log(name, diag));
+
+	/* NOTE: strlen(existing_string) + 2 never overflows */
+	sz = gfarm_size_add(&overflow, strlen(name) + 2, strlen(tenant_name));
+	if (overflow) {
+		gflog_error(GFARM_MSG_UNFIXED, "%s: overflow for name %s%c%s",
+		    diag, name, GFARM_TENANT_DELIMITER, tenant_name);
+		return (NULL);
+	}
+	GFARM_MALLOC_ARRAY(name_with_tenant, sz);
+	if (name_with_tenant == NULL) {
+		gflog_error(GFARM_MSG_UNFIXED, "%s: no memory for name %s%c%s",
+		    diag, name, GFARM_TENANT_DELIMITER, tenant_name);
+		return (NULL);
+	}
+	snprintf(name_with_tenant, sz, "%s%c%s",
+	    name, GFARM_TENANT_DELIMITER, tenant_name);
+	return (name_with_tenant);
+}
+
+char *
+alloc_name_without_tenant(const char *name, const char *diag)
+{
+	char *delim = strchr(name, GFARM_TENANT_DELIMITER);
+	size_t len;
+	char *name_without_tenant;
+
+	if (delim == NULL)
+		return (strdup_log(name, diag));
+
+	len = delim - name;
+	/* "len + 1" shouldn't overflow */
+	GFARM_MALLOC_ARRAY(name_without_tenant, len + 1);
+	if (name_without_tenant == NULL) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: no memory to allocate name %s without %s",
+		    diag, name, delim);
+		return (NULL);
+	}
+	memcpy(name_without_tenant, name, len);
+	name_without_tenant[len] = '\0';
+	return (name_without_tenant);
 }
 
 int

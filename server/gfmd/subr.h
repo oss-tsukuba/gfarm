@@ -18,6 +18,8 @@ gfarm_error_t gfarm_pthread_set_priority_minimum(const char *);
 
 char *strdup_ck(const char *, const char *);
 char *strdup_log(const char *, const char *);
+char *alloc_name_with_tenant(const char *, const char *, const char *);
+char *alloc_name_without_tenant(const char *, const char *);
 
 int accmode_to_op(gfarm_uint32_t);
 const char *accmode_to_string(gfarm_uint32_t);

@@ -11,7 +11,7 @@ port2=8888
 arch2=newarchname
 ncpu2=32
 
-if $regress/bin/am_I_gfarmadm; then
+if $regress/bin/am_I_gfarm_super_adm; then
     :
 else
     exit $exit_unsupported

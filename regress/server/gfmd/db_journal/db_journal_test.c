@@ -18,6 +18,7 @@
 /* #include "thrsubr.h" */ /* already included in db_journal.c */
 
 #include "crc32.h"
+#include "tenant.h"
 #include "user.h"
 #include "group.h"
 #include "mdhost.h"
@@ -2276,8 +2277,8 @@ t_apply_user_add(void)
 	struct gfarm_user_info ui;
 	struct user *u;
 
-	TEST_ASSERT_B("user_lookup",
-	    (user_lookup(username) == NULL));
+	TEST_ASSERT_B("user_tenant_lookup",
+	    (user_tenant_lookup(username) == NULL));
 	memset(&ui, 0, sizeof(ui));
 	ui.username = assert_strdup(username);
 	ui.realname = assert_strdup(realname);
@@ -2285,9 +2286,9 @@ t_apply_user_add(void)
 	    db_journal_apply_ops.user_add(0, &ui));
 	gfarm_user_info_free(&ui);
 	TEST_ASSERT_B("user_lookup",
-	    (u = user_lookup(username)) != NULL);
-	TEST_ASSERT_S("user_name",
-	    username, user_name(u));
+	    (u = user_tenant_lookup(username)) != NULL);
+	TEST_ASSERT_S("user_tenant_name",
+	    username, user_tenant_name(u));
 	TEST_ASSERT_S("user_realname",
 	    realname, user_realname(u));
 }
@@ -2310,10 +2311,10 @@ t_apply_user_modify(void)
 	TEST_ASSERT_NOERR("user_modify",
 	    db_journal_apply_ops.user_modify(0, &m));
 	gfarm_user_info_free(&m.ui);
-	TEST_ASSERT_B("user_lookup",
-	    (u = user_lookup(username)) != NULL);
-	TEST_ASSERT_S("user_name",
-	    username, user_name(u));
+	TEST_ASSERT_B("user_tenant_lookup",
+	    (u = user_tenant_lookup(username)) != NULL);
+	TEST_ASSERT_S("user_tenant_name",
+	    username, user_tenant_name(u));
 	TEST_ASSERT_S("user_realname",
 	    realname, user_realname(u));
 }
@@ -2327,8 +2328,8 @@ t_apply_user_remove(void)
 	TEST_ASSERT_NOERR("user_remove",
 	    db_journal_apply_ops.user_remove(0, (char *)username));
 	/* invalid user cannot be acquired. */
-	TEST_ASSERT_B("user_lookup",
-	    (u = user_lookup(username)) == NULL);
+	TEST_ASSERT_B("user_tenant_lookup",
+	    (u = user_tenant_lookup(username)) == NULL);
 }
 
 #define T_APPLY_GROUP_NAME "group1"
@@ -2350,8 +2351,8 @@ t_apply_group_add(void)
 	TEST_ASSERT_NOERR("user_add",
 	    db_journal_apply_ops.user_add(0, &ui));
 	gfarm_user_info_free(&ui);
-	TEST_ASSERT_B("user_lookup",
-	    (u = user_lookup(username)) != NULL);
+	TEST_ASSERT_B("user_tenant_lookup",
+	    (u = user_tenant_lookup(username)) != NULL);
 
 	/* add group1 */
 	memset(&gi, 0, sizeof(gi));
@@ -2359,15 +2360,15 @@ t_apply_group_add(void)
 	gi.nusers = 1;
 	gi.usernames = t_make_strary1(T_APPLY_USER_NAME);
 
-	TEST_ASSERT_B("group_lookup",
-	    group_lookup(groupname) == NULL);
+	TEST_ASSERT_B("group_tenant_lookup",
+	    group_tenant_lookup(groupname) == NULL);
 	TEST_ASSERT_NOERR("group_add",
 	    db_journal_apply_ops.group_add(0, &gi));
 	gfarm_group_info_free(&gi);
-	TEST_ASSERT_B("group_lookup",
-	    (g = group_lookup(groupname)) != NULL);
-	TEST_ASSERT_S("group_name",
-	    groupname, group_name(g));
+	TEST_ASSERT_B("group_tenant_lookup",
+	    (g = group_tenant_lookup(groupname)) != NULL);
+	TEST_ASSERT_S("group_tenant_name",
+	    groupname, group_tenant_name(g));
 	TEST_ASSERT_B("user_in_group",
 	    user_in_group(u, g));
 }
@@ -2382,10 +2383,10 @@ t_apply_group_modify(void)
 	struct user *u;
 
 	/* user1 and group1 is created in t_apply_group_add */
-	TEST_ASSERT_B("user_lookup",
-	    (u = user_lookup(username)) != NULL);
-	TEST_ASSERT_B("group_lookup",
-	    (g = group_lookup(groupname)) != NULL);
+	TEST_ASSERT_B("user_tenant_lookup",
+	    (u = user_tenant_lookup(username)) != NULL);
+	TEST_ASSERT_B("group_tenant_lookup",
+	    (g = group_tenant_lookup(groupname)) != NULL);
 
 	memset(&m, 0, sizeof(m));
 	m.gi.groupname = assert_strdup(groupname);
@@ -2409,8 +2410,8 @@ t_apply_group_remove(void)
 	const char *groupname = T_APPLY_GROUP_NAME;
 	struct group *g;
 
-	TEST_ASSERT_B("group_lookup",
-	    (g = group_lookup(groupname)) != NULL);
+	TEST_ASSERT_B("group_tenant_lookup",
+	    (g = group_tenant_lookup(groupname)) != NULL);
 	TEST_ASSERT_NOERR("group_remove",
 	    db_journal_apply_ops.group_remove(0, (char *)groupname));
 	TEST_ASSERT_B("group_is_invalidated",
@@ -2449,8 +2450,8 @@ t_add_test_user(const char *username)
 	TEST_ASSERT_NOERR("user_add",
 	    db_journal_apply_ops.user_add(0, &ui));
 	gfarm_user_info_free(&ui);
-	TEST_ASSERT_B("user_lookup",
-	    (u = user_lookup(username)) != NULL);
+	TEST_ASSERT_B("user_tenant_lookup",
+	    (u = user_tenant_lookup(username)) != NULL);
 	return (u);
 }
 
@@ -2499,8 +2500,8 @@ t_add_test_group(const char *groupname)
 	TEST_ASSERT_NOERR("group_add",
 	    db_journal_apply_ops.group_add(0, &gi));
 	gfarm_group_info_free(&gi);
-	TEST_ASSERT_B("group_lookup",
-	    (g = group_lookup(groupname)) != NULL);
+	TEST_ASSERT_B("group_tenant_lookup",
+	    (g = group_tenant_lookup(groupname)) != NULL);
 	return (g);
 }
 
@@ -3283,15 +3284,15 @@ t_apply_quota_modify(void)
 	struct group *g;
 	struct quota *q, *qu, *qg;
 
-	TEST_ASSERT_B("user_lookup",
-	    (u = user_lookup(T_APPLY_QUOTA_USER_NAME)) != NULL);
+	TEST_ASSERT_B("user_tenant_lookup",
+	    (u = user_tenant_lookup(T_APPLY_QUOTA_USER_NAME)) != NULL);
 	TEST_ASSERT_B("user_quota",
 	    (qu = user_quota(u)) != NULL);
 	TEST_ASSERT_I("on_db",
 	    1, qu->on_db);
 
-	TEST_ASSERT_B("group_lookup",
-	    (g = group_lookup(T_APPLY_QUOTA_GROUP_NAME)) != NULL);
+	TEST_ASSERT_B("group_tenant_lookup",
+	    (g = group_tenant_lookup(T_APPLY_QUOTA_GROUP_NAME)) != NULL);
 	TEST_ASSERT_B("group_quota",
 	    (qg = group_quota(g)) != NULL);
 	TEST_ASSERT_I("on_db",
@@ -3380,15 +3381,15 @@ t_apply_quota_remove(void)
 	struct group *g;
 	struct quota *qu, *qg;
 
-	TEST_ASSERT_B("user_lookup",
-	    (u = user_lookup(T_APPLY_QUOTA_USER_NAME)) != NULL);
+	TEST_ASSERT_B("user_tenant_lookup",
+	    (u = user_tenant_lookup(T_APPLY_QUOTA_USER_NAME)) != NULL);
 	TEST_ASSERT_B("user_quota",
 	    (qu = user_quota(u)) != NULL);
 	TEST_ASSERT_I("on_db",
 	    1, qu->on_db);
 
-	TEST_ASSERT_B("group_lookup",
-	    (g = group_lookup(T_APPLY_QUOTA_GROUP_NAME)) != NULL);
+	TEST_ASSERT_B("group_tenant_lookup",
+	    (g = group_tenant_lookup(T_APPLY_QUOTA_GROUP_NAME)) != NULL);
 	TEST_ASSERT_B("group_quota",
 	    (qg = group_quota(g)) != NULL);
 	TEST_ASSERT_I("on_db",
@@ -3583,6 +3584,7 @@ t_apply(void)
 
 	db_use(&empty_ops);
 	mdhost_init();
+	tenant_init();
 	host_init();
 	user_init();
 	group_init();

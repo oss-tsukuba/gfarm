@@ -7,7 +7,7 @@ host=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 port=9999
 arch=tmparchname
 
-if $regress/bin/am_I_gfarmadm; then
+if $regress/bin/am_I_gfarm_super_adm; then
     :
 else
     exit $exit_unsupported

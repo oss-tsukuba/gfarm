@@ -79,10 +79,12 @@ gftool/gfhostgroup/gfhostgroup-r.sh
 gftool/gfuser/gfuser-c.sh
 gftool/gfuser/gfuser-c.real.toolong.sh
 gftool/gfuser/gfuser-c.home.toolong.sh
+gftool/gfuser/gfuser-c.tenant-delimiter.sh
 gftool/gfuser/gfuser-m.sh
 gftool/gfuser/gfuser-m.gsi_dn.toolong.sh
 gftool/gfuser/gfuser-m.self.realname.sh
 gftool/gfuser/gfuser.not-exist.sh
+gftool/gfgroup/gfgroup-c.tenant-delimiter.sh
 gftool/gfgroup/gfgroup.not-exist.sh
 gftool/gfgroup/gfgroup.0-nusers.sh
 gftool/gfjournal/bad_record_crc1.sh

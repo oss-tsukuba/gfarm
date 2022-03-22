@@ -7,7 +7,7 @@ port=9999
 # 129 characters (GFARM_HOST_ARCHITECTURE_NAME_MAX in gfm_proto.h)
 arch=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
-if $regress/bin/am_I_gfarmadm; then
+if $regress/bin/am_I_gfarm_super_adm; then
     :
 else
     exit $exit_unsupported

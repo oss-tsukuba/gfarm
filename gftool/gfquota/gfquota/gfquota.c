@@ -306,7 +306,7 @@ main(int argc, char **argv)
 	switch (mode) {
 	case OPT_DIRSET:
 		if (*name == '\0')
-			name = gfm_client_username(gfm_server);
+			name = gfm_client_username_in_tenant(gfm_server);
 		e = gfm_client_quota_dirset_get(gfm_server,
 		    name, dirsetname, &limit_info, &usage_info, &grace_info,
 		    &flags);

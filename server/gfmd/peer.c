@@ -889,7 +889,7 @@ peer_authorized(struct peer *peer,
 
 	switch (id_type) {
 	case GFARM_AUTH_ID_TYPE_USER:
-		peer->user = user_lookup(username);
+		peer->user = user_tenant_lookup(username);
 		if (peer->user != NULL) {
 			free(username);
 			peer->username = NULL;

@@ -149,7 +149,8 @@ gfarm_url_parse_metadb(const char **pathp,
 	if (gfm_serverp == NULL) {
 		e = GFARM_ERR_NO_ERROR;
 		goto end;
-	} else if ((e = gfarm_get_global_username_by_host_for_connection_cache(
+	} else if (
+	    (e = gfarm_get_global_username_by_host_for_connection_cache(
 	    hostname, port, &user)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002587,
 		    "gfarm_get_global_username_by_host_for_connection_cache: "

@@ -36,6 +36,7 @@
 #include "subr.h"
 #include "inum_string_list.h"
 #include "db_access.h"
+#include "tenant.h"
 #include "host.h"
 #include "user.h"
 #include "group.h"
@@ -2226,13 +2227,13 @@ inode_set_gen_in_cache(struct inode *inode, gfarm_uint64_t gen)
 static void
 inode_set_user_by_name(struct inode *inode, const char *username)
 {
-	inode->i_user = user_lookup_or_enter_invalid(username);
+	inode->i_user = user_tenant_lookup_or_enter_invalid(username);
 }
 
 static void
 inode_set_group_by_name(struct inode *inode, const char *groupname)
 {
-	inode->i_group = group_lookup_or_enter_invalid(groupname);
+	inode->i_group = group_tenant_lookup_or_enter_invalid(groupname);
 }
 
 void
@@ -2803,7 +2804,8 @@ inode_new_generation_wait(struct inode *inode, struct peer *peer,
 			GFARM_ERR_NO_ERROR : GFARM_ERR_PERMISSION_DENIED)
 
 gfarm_error_t
-inode_access(struct inode *inode, struct user *user, int op)
+inode_access(struct inode *inode, struct tenant *tenant, struct user *user,
+	int op)
 {
 	gfarm_error_t e;
 	gfarm_mode_t mask = 0;
@@ -2826,7 +2828,7 @@ inode_access(struct inode *inode, struct user *user, int op)
 	if (user_is_root_for_inode(user, inode))
 		return (GFARM_ERR_NO_ERROR);
 
-	e = acl_access(inode, user, op);
+	e = acl_access(inode, tenant, user, op);
 	if (e != GFARM_ERR_NO_SUCH_OBJECT) {
 		if (e != GFARM_ERR_NO_ERROR)
 			gflog_debug(GFARM_MSG_1002801,
@@ -2856,22 +2858,23 @@ inode_access(struct inode *inode, struct user *user, int op)
 }
 
 static int
-inode_access_flags(struct inode *inode, struct user *user)
+inode_access_flags(struct inode *inode,
+	struct tenant *tenant, struct user *user)
 {
 	char flags = 0;
 
-	if (inode_access(inode, user, GFS_R_OK) == GFARM_ERR_NO_ERROR)
+	if (inode_access(inode, tenant, user, GFS_R_OK) == GFARM_ERR_NO_ERROR)
 		flags |= GFS_R_OK;
-	if (inode_access(inode, user, GFS_W_OK) == GFARM_ERR_NO_ERROR)
+	if (inode_access(inode, tenant, user, GFS_W_OK) == GFARM_ERR_NO_ERROR)
 		flags |= GFS_W_OK;
-	if (inode_access(inode, user, GFS_X_OK) == GFARM_ERR_NO_ERROR)
+	if (inode_access(inode, tenant, user, GFS_X_OK) == GFARM_ERR_NO_ERROR)
 		flags |= GFS_X_OK;
 	return (flags);
 }
 
 static gfarm_error_t
-xattr_list_set_by_inode_access(struct xattr_list *entry,
-	const char *name, struct inode *inode, struct user *user,
+xattr_list_set_by_inode_access(struct xattr_list *entry, const char *name,
+	struct inode *inode, struct tenant *tenant, struct user *user,
 	const char *diag)
 {
 	size_t size = 1;
@@ -2880,7 +2883,7 @@ xattr_list_set_by_inode_access(struct xattr_list *entry,
 	GFARM_MALLOC_ARRAY(value, size);
 	if (value == NULL)
 		return (GFARM_ERR_NO_MEMORY);
-	*value = inode_access_flags(inode, user);
+	*value = inode_access_flags(inode, tenant, user);
 	if (name != NULL)
 		entry->name = strdup_log(name, diag);
 	else
@@ -2915,8 +2918,8 @@ inode_db_init(struct inode *inode)
 	st.st_gen = inode->i_gen;
 	st.st_mode = inode->i_mode;
 	st.st_nlink = inode->i_nlink;
-	st.st_user = user_name_even_invalid(inode->i_user);
-	st.st_group = group_name_even_invalid(inode->i_group);
+	st.st_user = user_tenant_name_even_invalid(inode->i_user);
+	st.st_group = group_tenant_name_even_invalid(inode->i_group);
 	st.st_size = inode->i_size;
 	st.st_ncopy = 0;
 	st.st_atimespec = inode->i_atimespec;
@@ -2981,7 +2984,8 @@ enum gfarm_inode_lookup_op {
  */
 static gfarm_error_t
 inode_lookup_basename(struct inode *parent, const char *name, int len,
-	int expected_type, enum gfarm_inode_lookup_op op, struct user *user,
+	int expected_type, enum gfarm_inode_lookup_op op,
+	struct tenant *tenant, struct user *user,
 	gfarm_mode_t new_mode, char *symlink_src,
 	struct inode **inp, int *createdp)
 {
@@ -3037,7 +3041,7 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 
 		assert(op == INODE_REMOVE);
 		/* GFS_X_OK is already checked by inode_lookup_relative() */
-		if ((e = inode_access(parent, user, GFS_W_OK)) !=
+		if ((e = inode_access(parent, tenant, user, GFS_W_OK)) !=
 		    GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1001731,
 				"inode_access() failed: %s",
@@ -3101,7 +3105,8 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 			*createdp = 0;
 		return (GFARM_ERR_NO_ERROR);
 	}
-	if ((e = inode_access(parent, user, GFS_W_OK)) != GFARM_ERR_NO_ERROR) {
+	if ((e = inode_access(parent, tenant, user, GFS_W_OK))
+	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001734, "inode_access() failed: %s",
 			gfarm_error_string(e));
 		dir_remove_entry(parent->u.c.s.d.entries, name, len);
@@ -3181,7 +3186,7 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 	dir_entry_set_inode(entry, n);
 	inode_modified(parent);
 
-	e = xattr_inherit(parent, n,
+	e = xattr_inherit(parent, n, tenant,
 	    &acl_def, &acl_def_size,
 	    &acl_acc, &acl_acc_size,
 	    &new_mode_from_default_acl, &mode_updated,
@@ -3303,7 +3308,8 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
  */
 static gfarm_error_t
 inode_lookup_relative_internal(struct inode *n, const char *name,
-	int expected_type, enum gfarm_inode_lookup_op op, struct user *user,
+	int expected_type, enum gfarm_inode_lookup_op op,
+	struct tenant *tenant, struct user *user,
 	gfarm_mode_t new_mode, char *symlink_src,
 	struct inode **inp, int *createdp)
 {
@@ -3319,7 +3325,8 @@ inode_lookup_relative_internal(struct inode *n, const char *name,
 			"inode is not directory");
 		return (GFARM_ERR_NOT_A_DIRECTORY);
 	}
-	if ((e = inode_access(n, user, GFS_X_OK)) != GFARM_ERR_NO_ERROR) {
+	if ((e = inode_access(n, tenant, user, GFS_X_OK))
+	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001738,
 			"inode_access() failed: %s",
 			gfarm_error_string(e));
@@ -3328,7 +3335,8 @@ inode_lookup_relative_internal(struct inode *n, const char *name,
 	if (op == INODE_LINK)
 		nn = *inp;
 	e = inode_lookup_basename(n, name, len,
-	    expected_type, op, user, new_mode, symlink_src, &nn, createdp);
+	    expected_type, op, tenant, user, new_mode, symlink_src,
+	    &nn, createdp);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001739,
 			"inode_lookup_basename() failed: %s",
@@ -3386,6 +3394,7 @@ inode_lookup_relative(struct inode *n, const char *name,
 	}
 
 	return (inode_lookup_relative_internal(n, name, expected_type, op,
+	    process_get_tenant(process),
 	    process_get_user(process), new_mode, symlink_src, inp, createdp));
 }
 
@@ -3408,7 +3417,8 @@ inode_lookup_root(struct process *process, int op, struct inode **inp)
 		    (long long)inode->i_gen);
 		return (GFARM_ERR_STALE_FILE_HANDLE); /* directory removed */
 	}
-	e = inode_access(inode, process_get_user(process), op);
+	e = inode_access(inode,
+	    process_get_tenant(process), process_get_user(process), op);
 	if (e == GFARM_ERR_NO_ERROR)
 		*inp = inode;
 	return (e);
@@ -3425,7 +3435,8 @@ inode_lookup_parent(struct inode *base, struct process *process, int op,
 	struct dirset *tdirset;
 
 	if (e == GFARM_ERR_NO_ERROR &&
-	    (e = inode_access(inode, user, op)) == GFARM_ERR_NO_ERROR) {
+	    (e = inode_access(inode, process_get_tenant(process), user, op))
+	    == GFARM_ERR_NO_ERROR) {
 
 		/* do not allow write-open anyway */
 		if ((op & GFS_W_OK) != 0) {
@@ -3481,7 +3492,7 @@ inode_lookup_for_open(struct inode *base, const char *name,
 		return (GFARM_ERR_IS_A_DIRECTORY);
 	}
 
-	e = inode_access(inode, user, op);
+	e = inode_access(inode, process_get_tenant(process), user, op);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
@@ -3529,7 +3540,7 @@ inode_lookup_by_name(struct inode *base, const char *name,
 	 * this inode_access() always succeeds with current ACL feature,
 	 * but perhaps may fail with some ACL extension in future?
 	 */
-	e = inode_access(inode, user, 0);
+	e = inode_access(inode, process_get_tenant(process), user, 0);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
@@ -3543,21 +3554,22 @@ inode_lookup_user_root(struct user *u, struct inode **inodep)
 	gfarm_error_t e;
 	/* do not check inode_access() here */
 	struct inode *root_inode = inode_lookup(ROOT_INUMBER);
-	char *tenant_name;
 
-	if (user_needs_chroot(u) &&
-	    (tenant_name = user_get_tenant_name(u))[0] != '\0') {
+	if (user_needs_chroot(u)) {
+		const char *tenant_name = user_get_tenant_name(u);
 		struct inode *tenant_base_inode, *tenant_root_inode;
 
 		e = inode_lookup_relative_internal(
 		    root_inode, TENANT_BASE_NAME,
-		    GFS_DT_DIR, INODE_LOOKUP, &filesystem_superuser, 0, NULL,
+		    GFS_DT_DIR, INODE_LOOKUP,
+		    tenant_default(), &filesystem_superuser, 0, NULL,
 		    &tenant_base_inode, NULL);
 		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
 		e = inode_lookup_relative_internal(
 		    tenant_base_inode, tenant_name,
-		    GFS_DT_DIR, INODE_LOOKUP, &filesystem_superuser, 0, NULL,
+		    GFS_DT_DIR, INODE_LOOKUP,
+		    tenant_default(), &filesystem_superuser, 0, NULL,
 		    &tenant_root_inode, NULL);
 		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
@@ -3589,13 +3601,14 @@ inode_lookup_lost_found(void)
 		gflog_error(GFARM_MSG_1002480, "no root directory");
 		return (NULL);
 	}
-	admin = user_lookup_including_invalid(ADMIN_USER_NAME);
+	admin = user_tenant_lookup_including_invalid(ADMIN_USER_NAME);
 	if (admin == NULL) {
 		gflog_error(GFARM_MSG_1002481, "no admin user");
 		return (NULL);
 	}
 	e = inode_lookup_relative_internal(root, lost_found, GFS_DT_DIR,
-	    INODE_CREATE, admin, 0700, NULL, &inode, &created);
+	    INODE_CREATE, tenant_default(), admin, 0700, NULL,
+	    &inode, &created);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1002482, "no /%s directory", lost_found);
 		return (NULL);
@@ -3626,7 +3639,8 @@ inode_create_file(struct inode *base, char *name,
 
 	if (e == GFARM_ERR_NO_ERROR) {
 		if (!created)
-			e = inode_access(inode, user, op);
+			e = inode_access(inode,
+			    process_get_tenant(process), user, op);
 		if (e == GFARM_ERR_NO_ERROR) {
 			*inp = inode;
 			*createdp = created;
@@ -3678,7 +3692,7 @@ inode_create_link_internal(struct inode *base, const char *name,
 	struct user *user, struct inode *inode)
 {
 	return (inode_lookup_relative_internal(base, name, GFS_DT_UNKNOWN,
-	    INODE_LINK, user, 0, NULL, &inode, NULL));
+	    INODE_LINK, tenant_default(), user, 0, NULL, &inode, NULL));
 }
 
 static gfarm_error_t
@@ -3887,7 +3901,7 @@ inode_link_to_lost_found(struct inode *inode)
 	base = inode_lookup_lost_found();
 	if (base == NULL)
 		return (GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY);
-	admin = user_lookup_including_invalid(ADMIN_USER_NAME);
+	admin = user_tenant_lookup_including_invalid(ADMIN_USER_NAME);
 	if (admin == NULL)
 		return (GFARM_ERR_NO_SUCH_USER);
 
@@ -3928,7 +3942,7 @@ inode_create_file_in_lost_found(
 	lf = inode_lookup_lost_found();
 	if (lf == NULL)
 		return (GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY);
-	admin = user_lookup_including_invalid(ADMIN_USER_NAME);
+	admin = user_tenant_lookup_including_invalid(ADMIN_USER_NAME);
 	if (admin == NULL)
 		return (GFARM_ERR_NO_SUCH_USER);
 
@@ -4509,8 +4523,8 @@ inode_rename(
 	}
 
 	/* can remove src? */
-	if ((e = inode_access(sdir, user, GFS_X_OK|GFS_W_OK)) !=
-	    GFARM_ERR_NO_ERROR) {
+	if ((e = inode_access(sdir, process_get_tenant(process), user,
+	    GFS_X_OK|GFS_W_OK)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001743,
 			"inode_access() failed: %s",
 			gfarm_error_string(e));
@@ -4591,14 +4605,14 @@ inode_rename(
 
 		if (inode_is_dir(src)) {
 			/*
-			 * use user_is_root() instead of
+			 * use user_is_super_root() instead of
 			 * user_is_root_for_inode() here,
 			 * because dirquota_root_adjust may take giant_lock
 			 * too long period,
 			 * and only real gfarmroot is allowed to do such thing
 			 * usually during maintenance.
 			 */
-			if (!user_is_root(process_get_user(process))) {
+			if (!user_is_super_root(process_get_user(process))) {
 				/*
 				 * We don't return GFARM_ERR_CROSS_DEVICE_LINK,
 				 * to avoid mv(1) from automatically doing
@@ -5377,6 +5391,7 @@ inode_getdirpath(struct inode *inode, struct process *process, char **namep)
 	gfarm_error_t e;
 	struct inode *parent, *dei;
 	int ok;
+	struct tenant *tenant = process_get_tenant(process);
 	struct user *user = process_get_user(process);
 	struct inode *root;
 	Dir dir;
@@ -5411,7 +5426,7 @@ inode_getdirpath(struct inode *inode, struct process *process, char **namep)
 				gfarm_error_string(e));
 			goto error_exit;
 		}
-		e = inode_access(parent, user, GFS_R_OK|GFS_X_OK);
+		e = inode_access(parent, tenant, user, GFS_R_OK|GFS_X_OK);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1001758,
 				"inode_access() failed: %s",
@@ -6684,7 +6699,7 @@ inode_remove_replica_incomplete(struct inode *inode, struct host *spool_host,
 }
 
 gfarm_error_t
-inode_prepare_to_replicate(struct inode *inode, struct user *user,
+inode_prepare_to_replicate(struct inode *inode, struct process *process,
 	struct host *src, struct host *dst, gfarm_int32_t flags,
 	struct file_replicating **file_replicating_p)
 {
@@ -6702,7 +6717,9 @@ inode_prepare_to_replicate(struct inode *inode, struct user *user,
 		return (e);
 
 	/* have enough privilege? i.e. can read the file? */
-	if ((e = inode_access(inode, user, GFS_R_OK)) != GFARM_ERR_NO_ERROR)
+	if ((e = inode_access(inode,
+	    process_get_tenant(process), process_get_user(process), GFS_R_OK))
+	    != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (!inode_has_replica(inode, src))
 		return (GFARM_ERR_NO_SUCH_OBJECT);
@@ -8222,7 +8239,7 @@ inode_xattr_get_cache_with_process(struct inode *inode, int xmlMode,
 			    tdirset == TDIRSET_IS_NOT_SET)
 				return (GFARM_ERR_NO_SUCH_OBJECT);
 			e = xattr_list_set_by_dirset(&l,
-			    GFARM_EA_DIRECTORY_QUOTA, tdirset, diag);
+			    GFARM_EA_DIRECTORY_QUOTA, tdirset, process, diag);
 			if (e != GFARM_ERR_NO_ERROR)
 				return (e);
 			*cached_valuep = l.value;
@@ -8231,10 +8248,11 @@ inode_xattr_get_cache_with_process(struct inode *inode, int xmlMode,
 			return (GFARM_ERR_NO_ERROR);
 		} else if (process &&
 			   strcmp(attrname, GFARM_EA_EFFECTIVE_PERM) == 0) {
+			struct tenant *tenant = process_get_tenant(process);
 			struct user *user = process_get_user(process);
 
 			e = xattr_list_set_by_inode_access(
-			    &l, NULL, inode, user, diag);
+			    &l, NULL, inode, tenant, user, diag);
 			if (e != GFARM_ERR_NO_ERROR)
 				return (e);
 			*cached_valuep = l.value;
@@ -8311,6 +8329,7 @@ inode_xattr_list_get_cached_by_patterns(gfarm_ino_t inum,
 	struct xattr_list **listp, size_t *np)
 {
 	struct inode *inode;
+	struct tenant *tenant = process_get_tenant(process);
 	struct user *user = process_get_user(process);
 	size_t nxattrs;
 	struct xattr_list *list;
@@ -8368,7 +8387,7 @@ inode_xattr_list_get_cached_by_patterns(gfarm_ino_t inum,
 	i = 0;
 	if (directory_quota) { /* only true if dirset is set */
 		if (xattr_list_set_by_dirset(&list[i],
-		    GFARM_EA_DIRECTORY_QUOTA, dirset, diag)
+		    GFARM_EA_DIRECTORY_QUOTA, dirset, process, diag)
 		    != GFARM_ERR_NO_ERROR)
 			nxattrs = i;
 		else
@@ -8376,7 +8395,7 @@ inode_xattr_list_get_cached_by_patterns(gfarm_ino_t inum,
 	}
 	if (effective_perm) {
 		if (xattr_list_set_by_inode_access(&list[i],
-		    GFARM_EA_EFFECTIVE_PERM, inode, user, diag)
+		    GFARM_EA_EFFECTIVE_PERM, inode, tenant, user, diag)
 		    != GFARM_ERR_NO_ERROR)
 			nxattrs = i;
 		else

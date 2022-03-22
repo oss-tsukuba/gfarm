@@ -43,6 +43,7 @@ enum gfarm_auth_method gfm_client_connection_auth_method(
 int gfm_client_is_connection_valid(struct gfm_connection *);
 const char *gfm_client_hostname(struct gfm_connection *);
 const char *gfm_client_username(struct gfm_connection *);
+const char *gfm_client_username_in_tenant(struct gfm_connection *);
 int gfm_client_port(struct gfm_connection *);
 gfarm_error_t gfm_client_source_port(struct gfm_connection *gfm_server, int *);
 #ifdef HAVE_GSI

@@ -44,7 +44,7 @@ dirset_add_to(const char *username, const char *dirsetname, const char *dir)
 			free(realpath);
 			return (e);
 		}
-		username = gfm_client_username(gfm_server);
+		username = gfm_client_username_in_tenant(gfm_server);
 	}
 
 	e = gfs_dirquota_add(dir, username, dirsetname);
@@ -362,7 +362,8 @@ main(int argc, char **argv)
 		if (opt_all_user)
 			opt_username = ALL_USERS;
 		else
-			opt_username = gfm_client_username(gfm_server);
+			opt_username =
+			    gfm_client_username_in_tenant(gfm_server);
 	}
 
 	switch (op_mode) {

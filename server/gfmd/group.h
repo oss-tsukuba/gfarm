@@ -19,30 +19,35 @@ struct group_assignment {
 extern char ADMIN_GROUP_NAME[]; /* can modify host/user/group info of gfarm */
 extern char ROOT_GROUP_NAME[]; /* can modify any data/metadata in gfarmfs */
 
-struct group *group_lookup_including_invalid(const char *);
-struct group *group_lookup_or_enter_invalid(const char *);
-struct group *group_lookup(const char *);
+struct group *group_tenant_lookup_including_invalid(const char *);
+struct group *group_tenant_lookup(const char *);
+struct group *group_tenant_lookup_or_enter_invalid(const char *);
+struct group *group_lookup_in_tenant_including_invalid(
+	const char *, struct tenant *);
+struct group *group_lookup_in_tenant(const char *, struct tenant *);
 gfarm_error_t grpassign_add(struct user *, struct group *);
 void grpassign_remove(struct group_assignment *);
 char *group_name(struct group *);
-char *group_name_even_invalid(struct group *);
-char *group_tenant_name(struct group *);
 char *group_tenant_name_even_invalid(struct group *);
-char *group_name_in_tenant(struct group *, struct process *);
+char *group_tenant_name(struct group *);
 char *group_name_in_tenant_even_invalid(struct group *, struct process *);
-char *group_get_tenant_name(struct group *);
+char *group_name_in_tenant(struct group *, struct process *);
+const char *group_get_tenant_name(struct group *);
 int group_is_invalid(struct group *);
 int group_is_valid(struct group *);
 
 #define GROUP_FOREARCH_FLAG_INCLUDING_INVALID	0
 #define GROUP_FOREARCH_FLAG_VALID_ONLY		1
-void group_foreach(void *, void (*)(void *, struct group *), int);
+void group_foreach_in_all_tenants(
+	void *, void (*)(void *, struct group *), int);
+void group_foreach_in_tenant(void *, void (*)(void *, struct group *),
+	struct tenant *, int);
 
 struct gfarm_group_info;
 gfarm_error_t group_info_add(struct gfarm_group_info *);
-gfarm_error_t group_user_check(struct gfarm_group_info *, const char *);
+gfarm_error_t group_user_tenant_check(struct gfarm_group_info *, const char *);
 void group_modify(struct group *, struct gfarm_group_info *, const char *);
-gfarm_error_t group_remove_in_cache(const char *);
+gfarm_error_t group_tenant_remove_in_cache(const char *);
 
 struct quota;
 struct quota *group_quota(struct group *);
@@ -58,8 +63,3 @@ gfarm_error_t gfm_server_group_info_remove(struct peer *, int, int);
 gfarm_error_t gfm_server_group_info_add_users(struct peer *, int, int);
 gfarm_error_t gfm_server_group_info_remove_users(struct peer *, int, int);
 gfarm_error_t gfm_server_group_names_get_by_users(struct peer *, int, int);
-
-
-/* exported for a use from a private extension */
-gfarm_error_t group_info_remove_default(const char *, const char *);
-extern gfarm_error_t (*group_info_remove)(const char *, const char *);

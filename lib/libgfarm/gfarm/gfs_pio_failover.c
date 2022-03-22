@@ -334,7 +334,8 @@ failover0(struct gfm_connection *gfm_server, const char *host0, int port,
 			    "%s", gfarm_error_string(e));
 			goto error_all;
 		}
-		if ((user = strdup(gfm_client_username(gfm_server))) ==  NULL) {
+		if ((user = strdup(gfm_client_username(gfm_server)))
+		    ==  NULL) {
 			e = GFARM_ERR_NO_MEMORY;
 			gflog_debug(GFARM_MSG_1003389,
 			    "%s", gfarm_error_string(e));

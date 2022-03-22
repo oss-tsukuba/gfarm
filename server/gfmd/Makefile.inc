@@ -10,6 +10,7 @@ GFMD_COMMON_SRCS = \
 	$(GFMD_SRCDIR)/db_access.c \
 	$(GFMD_SRCDIR)/db_journal_apply.c \
 	$(GFMD_SRCDIR)/db_none.c \
+	$(GFMD_SRCDIR)/tenant.c \
 	$(GFMD_SRCDIR)/user.c \
 	$(GFMD_SRCDIR)/group.c \
 	$(GFMD_SRCDIR)/abstract_host.c \
@@ -46,6 +47,7 @@ GFMD_COMMON_OBJS = \
 	$(GFMD_BUILDDIR)/db_access.o \
 	$(GFMD_BUILDDIR)/db_journal_apply.o \
 	$(GFMD_BUILDDIR)/db_none.o \
+	$(GFMD_BUILDDIR)/tenant.o \
 	$(GFMD_BUILDDIR)/user.o \
 	$(GFMD_BUILDDIR)/group.o \
 	$(GFMD_BUILDDIR)/abstract_host.o \
@@ -100,6 +102,7 @@ DEPGFMDINC = \
 	$(GFMD_SRCDIR)/db_ops.h \
 	$(GFMD_SRCDIR)/db_journal.h \
 	$(GFMD_SRCDIR)/db_journal_apply.h \
+	$(GFMD_SRCDIR)/tenant.h \
 	$(GFMD_SRCDIR)/user.h \
 	$(GFMD_SRCDIR)/group.h \
 	$(GFMD_SRCDIR)/abstract_host.h \

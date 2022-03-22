@@ -10,6 +10,7 @@ gfarm_uint64_t inode_total_num(void);
 
 struct inode;
 
+struct tenant;
 struct host;
 struct user;
 struct group;
@@ -93,7 +94,8 @@ gfarm_error_t inode_new_generation_wait(struct inode *, struct peer *,
 	gfarm_error_t (*)(struct peer *, void *, int *), void *);
 
 
-gfarm_error_t inode_access(struct inode *, struct user *, int);
+gfarm_error_t inode_access(struct inode *, struct tenant *, struct user *,
+	int);
 
 gfarm_ino_t inode_root_number();
 gfarm_ino_t inode_table_current_size();
@@ -211,7 +213,7 @@ gfarm_int64_t file_replicating_get_gen(struct file_replicating *);
 gfarm_error_t inode_replicated(struct file_replicating *,
 	gfarm_int32_t, gfarm_int32_t, gfarm_off_t,
 	int, gfarm_int32_t, char *, size_t, char *, gfarm_int32_t);
-gfarm_error_t inode_prepare_to_replicate(struct inode *, struct user *,
+gfarm_error_t inode_prepare_to_replicate(struct inode *, struct process *,
 	struct host *, struct host *, gfarm_int32_t,
 	struct file_replicating **);
 void inode_replication_get_cksum_mode(struct inode *, struct host *,

@@ -610,6 +610,22 @@ map_local_to_global(const char *from, const char *global_user,
 	return (NULL);
 }
 
+char *
+gfarm_alloc_name_in_tenant(const char *name)
+{
+	char *s, *p = strchr(name, GFARM_TENANT_DELIMITER);
+	size_t len;
+
+	if (p == NULL)
+		return (strdup(name));
+
+	len = p - name;
+	GFARM_MALLOC_ARRAY(s, len + 1);
+	memcpy(s, name, len);
+	s[len] = '\0';
+	return (s);		
+}
+
 /* the return value of the following function should be free(3)ed */
 gfarm_error_t
 gfarm_local_to_global_username_by_host(const char *hostname, int port,
@@ -750,6 +766,24 @@ gfarm_get_global_username_by_url(const char *url, char **userp)
 	free(hostname);
 	return (e);
 }
+
+gfarm_error_t
+gfarm_get_global_username_in_tenant_by_url(const char *url, char **userp)
+{
+	gfarm_error_t e;
+	char *username, *s;
+
+	if ((e = gfarm_get_global_username_by_url(url, &username))
+	    != GFARM_ERR_NO_ERROR)
+		return (e);
+	s = gfarm_alloc_name_in_tenant(username);
+	free(username);
+	if (s == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	*userp = s;
+	return (GFARM_ERR_NO_ERROR);
+}
+
 
 gfarm_error_t
 gfarm_get_global_username_by_host_for_connection_cache(

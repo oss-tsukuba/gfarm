@@ -1386,7 +1386,7 @@ metadb_server_check_write_access(struct peer *peer, int from_client,
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	struct user *user = peer_get_user(peer);
 
-	if (!from_client || user == NULL || !user_is_admin(user)) {
+	if (!from_client || user == NULL || !user_is_super_admin(user)) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		gflog_debug(GFARM_MSG_1002951,
 		    "%s: %s", diag, gfarm_error_string(e));

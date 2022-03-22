@@ -71,6 +71,7 @@ struct gfm_connection {
 
 	struct gfp_xdr *conn;
 	enum gfarm_auth_method auth_method;
+	char *username_in_tenant;
 
 	/* parallel process signatures */
 	gfarm_pid_t pid;
@@ -171,6 +172,12 @@ const char *
 gfm_client_username(struct gfm_connection *gfm_server)
 {
 	return (gfp_cached_connection_username(gfm_server->cache_entry));
+}
+
+const char *
+gfm_client_username_in_tenant(struct gfm_connection *gfm_server)
+{
+	return (gfm_server->username_in_tenant);
 }
 
 #ifdef HAVE_GSI
@@ -533,6 +540,7 @@ gfm_client_connection0(struct gfp_cached_connection *cache_entry,
 	struct gfm_connection *gfm_server;
 	int port, sock;
 	const char *hostname, *user;
+	char *username_in_tenant;
 	struct gfarm_metadb_server *ms = NULL;
 	struct pollfd *pfds = NULL;
 	struct addrinfo *res = NULL;
@@ -554,14 +562,19 @@ gfm_client_connection0(struct gfp_cached_connection *cache_entry,
 	hostname = gfp_cached_connection_hostname(cache_entry);
 	port = gfp_cached_connection_port(cache_entry);
 	user = gfp_cached_connection_username(cache_entry);
+	username_in_tenant = gfarm_alloc_name_in_tenant(user);
+	if (username_in_tenant == NULL)
+		return (GFARM_ERR_NO_MEMORY);
 #ifndef __KERNEL__	/* connect_op */
 	/* connect_op is
 	 *   gfm_client_connect_single or
 	 *   gfm_client_connect_multiple
 	 */
 	if ((e = connect_op(hostname, port, source_ip, &cis, &pfds, &nfd))
-	    != GFARM_ERR_NO_ERROR)
+	    != GFARM_ERR_NO_ERROR) {
+		free(username_in_tenant);
 		return (e);
+	}
 	gettimeofday(&timeout, NULL);
 	timeout.tv_sec += GFM_CLIENT_CONNECT_TIMEOUT;
 	sock = -1;
@@ -636,6 +649,7 @@ gfm_client_connection0(struct gfp_cached_connection *cache_entry,
 		int err;
 		if ((err = gfsk_gfmd_connect(hostname, port, source_ip,
 			user, &sock)) != 0){
+			free(username_in_tenant);
 			return (gfarm_errno_to_error(err > 0 ? err : -err));
 		}
 	}
@@ -703,6 +717,7 @@ gfm_client_connection0(struct gfp_cached_connection *cache_entry,
 #endif
 #endif /* __KERNEL__ */
 	gfm_server->cache_entry = cache_entry;
+	gfm_server->username_in_tenant = username_in_tenant;
 	gfm_server->pid = 0;
 	gfm_server->real_server = ms != NULL ? ms :
 		gfarm_filesystem_get_metadb_server_first(fs);
@@ -957,6 +972,7 @@ gfm_client_connection_dispose(void *connection_data)
 		e = gfp_xdr_free(gfm_server->conn);
 
 	gfp_uncached_connection_dispose(gfm_server->cache_entry);
+	free(gfm_server->username_in_tenant);
 	free(gfm_server);
 	return (e);
 }
@@ -5066,7 +5082,7 @@ gfarm_user_job_register(struct gfm_connection *gfm_server,
 
 	gfarm_job_info_clear(&job_info, 1);
 	job_info.total_nodes = nusers;
-	job_info.user = gfm_client_username(gfm_server);
+	job_info.user = gfm_client_username_in_tenant(gfm_server);
 	job_info.job_type = job_type;
 	/* XXX FIXME should check gfm failover */
 	e = gfm_host_get_canonical_self_name(gfm_server,

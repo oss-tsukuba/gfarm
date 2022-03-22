@@ -1304,7 +1304,7 @@ gfm_server_replica_check_ctrl(struct peer *peer, int from_client, int skip)
 
 	giant_lock();
 	if (!from_client || (user = peer_get_user(peer)) == NULL ||
-	    !user_is_admin(user)) {
+	    !user_is_super_admin(user)) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		gflog_debug(GFARM_MSG_1003759, "%s", gfarm_error_string(e));
 	} else {
@@ -1392,7 +1392,7 @@ gfm_server_replica_check_status(struct peer *peer, int from_client, int skip)
 
 	giant_lock();
 	if (!from_client || (user = peer_get_user(peer)) == NULL ||
-	    !user_is_admin(user)) {
+	    !user_is_super_admin(user)) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		gflog_debug(GFARM_MSG_1005041, "%s", gfarm_error_string(e));
 	} else {

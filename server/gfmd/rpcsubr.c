@@ -18,6 +18,7 @@
 
 #include "subr.h"
 #include "rpcsubr.h"
+#include "user.h"
 #include "peer.h"
 
 gfarm_error_t
@@ -95,4 +96,39 @@ gfm_server_put_reply(struct peer *peer, const char *diag,
 	/* do not call gfp_xdr_flush() here for a compound protocol */
 
 	return (ecode);
+}
+
+gfarm_error_t
+rpc_name_with_tenant(struct peer *peer, int from_client,
+	int *name_with_tenant_p, struct process **pp, const char *diag)
+{
+	gfarm_error_t e;
+	struct user *peer_user;
+	struct process *process;
+
+	if (!from_client) {
+		*name_with_tenant_p = 1;
+		*pp = NULL;
+		return (GFARM_ERR_NO_ERROR);
+	}
+
+	peer_user = peer_get_user(peer); /* not NULL if from_client */
+	if (peer_user == NULL) {
+		e = GFARM_ERR_INTERNAL_ERROR;
+		gflog_error(GFARM_MSG_UNFIXED, "%s (@%s) no user: %s",
+		    diag, peer_get_hostname(peer), gfarm_error_string(e));
+		return (e);
+	}
+
+	process = peer_get_process(peer);
+	if (process == NULL) {
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s): no process",
+		    diag, peer_get_username(peer), peer_get_hostname(peer));
+		return (e);
+	}
+
+	*name_with_tenant_p = user_is_super_admin(peer_user);
+	*pp = process;
+	return (GFARM_ERR_NO_ERROR);
 }

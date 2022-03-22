@@ -229,7 +229,7 @@ main(int argc, char **argv)
 		gfarm_quota_set_info_to_limit_info(&qi, &li);
 		e = gfm_client_quota_dirset_set(gfm_server,
 		    username != NULL ? username :
-		    gfm_client_username(gfm_server),
+		    gfm_client_username_in_tenant(gfm_server),
 		    dirsetname, &li);
 	} else
 		usage();

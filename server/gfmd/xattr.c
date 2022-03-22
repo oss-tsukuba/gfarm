@@ -71,13 +71,14 @@ xattr_inherit_common(struct inode *parent, struct inode *child,
 /* for inode_lookup_basename() */
 gfarm_error_t
 xattr_inherit(struct inode *parent, struct inode *child,
+	struct tenant *tenant,
 	void **acl_def_p, size_t *acl_def_size_p,
 	void **acl_acc_p, size_t *acl_acc_size_p,
 	gfarm_mode_t *new_modep, int *mode_updated,
 	void **root_user_p, size_t *root_user_size_p,
 	void **root_group_p, size_t *root_group_size_p)
 {
-	gfarm_error_t e = acl_inherit_default_acl(parent, child,
+	gfarm_error_t e = acl_inherit_default_acl(parent, child, tenant,
 	    acl_def_p, acl_def_size_p, acl_acc_p, acl_acc_size_p,
 	    new_modep, mode_updated);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -125,13 +126,14 @@ user_is_owner_or_root(struct inode *inode, struct user *user)
 #define XATTR_OP_REMOVE	4
 
 static gfarm_error_t
-xattr_access(int xmlMode, struct inode *inode, struct user *user,
+xattr_access(int xmlMode, struct inode *inode,
+	struct tenant *tenant, struct user *user,
 	     const char *attrname, int op_inode, int op_xattr)
 {
 	if (xmlMode) { /* any attrname */
 		if (inode_is_symlink(inode))
 			goto symlink;
-		return (inode_access(inode, user, op_inode));
+		return (inode_access(inode, tenant, user, op_inode));
 	}
 
 	if (strncmp(attrname, GFARM_EA_PREFIX, GFARM_EA_PREFIX_LEN) == 0) {
@@ -168,7 +170,7 @@ xattr_access(int xmlMode, struct inode *inode, struct user *user,
 		   strlen(attrname) >= 6) {
 		if (inode_is_symlink(inode))
 			goto symlink;
-		return (inode_access(inode, user, op_inode));
+		return (inode_access(inode, tenant, user, op_inode));
 	} else if (strncmp("system.", attrname, 7) == 0) {
 		/* workaround for gfarm2fs_fix_acl */
 		if (op_xattr == XATTR_OP_SET)
@@ -315,9 +317,34 @@ xattr_check_replica_spec(
 	}
 }
 
+static int
+xattr_check_root_ea(struct inode *inode, const char *attrname,
+	void **valuep, size_t *sizep, struct peer *peer, gfarm_error_t *ep,
+	const char *diag)
+{
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+
+	*ep = GFARM_ERR_NO_ERROR;
+
+	if (strcmp(attrname, GFARM_ROOT_EA_USER) != 0 &&
+	    strcmp(attrname, GFARM_ROOT_EA_GROUP) != 0)
+		return (0);
+
+	if (memchr(*valuep, GFARM_TENANT_DELIMITER, *sizep) != NULL) {
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "%s (%s@%s) tried to set xattr %s to '%.*s'",
+		    diag, peer_get_username(peer), peer_get_hostname(peer),
+		    attrname, (int)*sizep, *(char **)valuep);
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	}
+	*ep = e;
+	return (1);
+}
+
+
 static gfarm_error_t
 xattr_check_acl(
-	struct inode *inode, char *attrname,
+	struct inode *inode, struct tenant *tenant, char *attrname,
 	void **valuep, size_t *sizep,
 	gfarm_mode_t *new_modep, int *mode_updatedp, int *need_to_update_db)
 {
@@ -333,7 +360,7 @@ xattr_check_acl(
 		return (GFARM_ERR_NO_ERROR);
 	}
 
-	e = acl_convert_for_setxattr(inode, acltype, valuep, sizep,
+	e = acl_convert_for_setxattr(inode, tenant, acltype, valuep, sizep,
 	    new_modep, mode_updatedp);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1003033,
@@ -368,9 +395,10 @@ xattr_check_acl(
 }
 
 static gfarm_error_t
-xattr_set(int xmlMode, struct inode *inode,
-	 char *attrname, void **valuep, size_t *sizep, int flags,
-	 struct db_waitctx *waitctx, int *addattr)
+xattr_set(int xmlMode, struct peer *peer, struct tenant *tenant,
+	struct inode *inode,
+	char *attrname, void **valuep, size_t *sizep, int flags,
+	struct db_waitctx *waitctx, int *addattr, const char *diag)
 {
 	gfarm_error_t e;
 	int have_replica_spec, change_replica_spec = 0, need_to_update_db;
@@ -419,9 +447,18 @@ xattr_set(int xmlMode, struct inode *inode,
 			if (!change_replica_spec) /* not add/modify */
 				return (GFARM_ERR_NO_ERROR);
 			/* else: need to update xattr */
+		} else if (xattr_check_root_ea(inode, attrname, valuep, sizep,
+		    peer, &e, diag)) {
+			if (e != GFARM_ERR_NO_ERROR) {
+				gflog_debug(GFARM_MSG_UNFIXED,
+				    "xattr_check_root_ea(): %s",
+				    gfarm_error_string(e));
+				return (e);
+			}
+			/* else: need to update xattr */
 		} else {
 			e = xattr_check_acl(
-			    inode, attrname, valuep, sizep, &new_mode,
+			    inode, tenant, attrname, valuep, sizep, &new_mode,
 			    &mode_updated, &need_to_update_db);
 			if (e != GFARM_ERR_NO_ERROR)
 				return (e);
@@ -491,6 +528,7 @@ gfm_server_setxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 	void *value = NULL;
 	int flags, transaction = 0;
 	struct process *process;
+	struct tenant *tenant;
 	gfarm_int32_t fd;
 	struct inode *inode;
 	struct db_waitctx ctx, *waitctx;
@@ -529,10 +567,19 @@ gfm_server_setxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 
 	db_waitctx_init(waitctx);
 	giant_lock();
-	if ((process = peer_get_process(peer)) == NULL) {
+	if (!from_client) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: from gfsd %s", diag, peer_get_hostname(peer));
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if ((process = peer_get_process(peer)) == NULL) {
 		gflog_debug(GFARM_MSG_1002073,
 			"peer_get_process() failed");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if ((tenant = process_get_tenant(process)) == NULL) {
+		e = GFARM_ERR_INTERNAL_ERROR;
+		gflog_error(GFARM_MSG_UNFIXED, "%s (%s@%s): no tenant: %s",
+		    diag, peer_get_username(peer), peer_get_hostname(peer),
+		    gfarm_error_string(e));
 	} else if ((e = peer_fdpair_get_current(peer, &fd)) !=
 	    GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002074,
@@ -543,9 +590,9 @@ gfm_server_setxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 		gflog_debug(GFARM_MSG_1002075,
 			"process_get_file_inode() failed: %s",
 			gfarm_error_string(e));
-	} else if ((e = xattr_access(xmlMode, inode, process_get_user(process),
-				     attrname, GFS_W_OK, XATTR_OP_SET))
-		   != GFARM_ERR_NO_ERROR) {
+	} else if ((e = xattr_access(xmlMode, inode,
+	    process_get_tenant(process), process_get_user(process),
+	    attrname, GFS_W_OK, XATTR_OP_SET)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1003035,
 			    "xattr_access() failed: %s",
 			    gfarm_error_string(e));
@@ -560,8 +607,9 @@ gfm_server_setxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 		if (db_begin(diag) == GFARM_ERR_NO_ERROR)
 			transaction = 1;
 		/* value may be changed */
-		e = xattr_set(xmlMode, inode, attrname, &value, &size,
-		    flags, waitctx, &addattr);
+		e = xattr_set(xmlMode, peer, tenant,
+		    inode, attrname, &value, &size,
+		    flags, waitctx, &addattr, diag);
 		if (transaction)
 			db_end(diag);
 	}
@@ -637,9 +685,9 @@ gfm_server_getxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 		gflog_debug(GFARM_MSG_1002083,
 			"process_get_file_inode() failed: %s",
 			gfarm_error_string(e));
-	} else if ((e = xattr_access(xmlMode, inode, process_get_user(process),
-				     attrname, GFS_R_OK, XATTR_OP_GET))
-		   != GFARM_ERR_NO_ERROR) {
+	} else if ((e = xattr_access(xmlMode, inode,
+	    process_get_tenant(process), process_get_user(process),
+	    attrname, GFS_R_OK, XATTR_OP_GET)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1003036,
 			"xattr_access() failed: %s",
 			gfarm_error_string(e));
@@ -720,8 +768,9 @@ gfm_server_listxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 		gflog_debug(GFARM_MSG_1002087,
 			"process_get_file_inode() failed: %s",
 			gfarm_error_string(e));
-	} else if ((e = inode_access(inode, process_get_user(process),
-			GFS_R_OK)) != GFARM_ERR_NO_ERROR) {
+	} else if ((e = inode_access(inode,
+	    process_get_tenant(process), process_get_user(process), GFS_R_OK))
+	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002088,
 			"inode_access() failed: %s",
 			gfarm_error_string(e));
@@ -809,9 +858,9 @@ gfm_server_removexattr(struct peer *peer, int from_client, int skip,
 		gflog_debug(GFARM_MSG_1002094,
 			"process_get_file_inode() failed: %s",
 			gfarm_error_string(e));
-	} else if ((e = xattr_access(xmlMode, inode, process_get_user(process),
-				     attrname, GFS_W_OK, XATTR_OP_REMOVE))
-		   != GFARM_ERR_NO_ERROR) {
+	} else if ((e = xattr_access(xmlMode, inode,
+	    process_get_tenant(process), process_get_user(process),
+	    attrname, GFS_W_OK, XATTR_OP_REMOVE)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1003038,
 			"xattr_access() failed: %s",
 			gfarm_error_string(e));
@@ -1134,18 +1183,19 @@ findxmlattr_set_restart_path(struct inum_path_array *array,
 }
 
 static int
-is_find_target(struct inode *inode, struct user *user)
+is_find_target(struct inode *inode, struct tenant *tenant, struct user *user)
 {
 	return inode_xattr_has_xmlattrs(inode)
-		&& (inode_access(inode, user, GFS_R_OK)
+		&& (inode_access(inode, tenant, user, GFS_R_OK)
 			== GFARM_ERR_NO_ERROR);
 }
 
 static gfarm_error_t
-findxmlattr_add_selfpath(struct inode *inode, struct user *user,
+findxmlattr_add_selfpath(struct inode *inode,
+	struct tenant *tenant, struct user *user,
 	char *path, struct inum_path_array *array)
 {
-	if (!is_find_target(inode, user)){
+	if (!is_find_target(inode, tenant, user)){
 		return GFARM_ERR_NO_ERROR;
 	}
 	if (array->check_ckpath) {
@@ -1186,7 +1236,8 @@ make_subpath(char *parent_path, char *name, int namelen)
 }
 
 static gfarm_error_t
-findxmlattr_add_subpaths(struct inode *inode, struct user *user,
+findxmlattr_add_subpaths(struct inode *inode,
+	struct tenant *tenant, struct user *user,
 	char *path, int curdepth, const int maxdepth,
 	struct inum_path_array *array)
 {
@@ -1203,7 +1254,7 @@ findxmlattr_add_subpaths(struct inode *inode, struct user *user,
 	dir = inode_get_dir(inode);
 	if (dir == NULL)
 		return GFARM_ERR_NO_ERROR;
-	if (inode_access(inode, user, GFS_X_OK) != GFARM_ERR_NO_ERROR)
+	if (inode_access(inode, tenant, user, GFS_X_OK) != GFARM_ERR_NO_ERROR)
 		return GFARM_ERR_NO_ERROR;
 
 	if ((array->check_ckpath) && (curdepth < array->ckpathdepth)) {
@@ -1229,7 +1280,7 @@ findxmlattr_add_subpaths(struct inode *inode, struct user *user,
 			continue;
 		entry_inode = dir_entry_get_inode(entry);
 		is_dir = inode_is_dir(entry_inode);
-		is_tgt = (!skip && is_find_target(entry_inode, user));
+		is_tgt = (!skip && is_find_target(entry_inode, tenant, user));
 		skip = 0;
 		if (!is_dir && !is_tgt)
 			continue;
@@ -1245,7 +1296,7 @@ findxmlattr_add_subpaths(struct inode *inode, struct user *user,
 			e = inum_path_array_add(array,
 					inode_get_number(entry_inode), subpath);
 		if (is_dir && (e == GFARM_ERR_NO_ERROR)) {
-			e = findxmlattr_add_subpaths(entry_inode, user,
+			e = findxmlattr_add_subpaths(entry_inode, tenant, user,
 				subpath, curdepth + 1, maxdepth, array);
 		}
 		if (!is_tgt)
@@ -1257,7 +1308,8 @@ findxmlattr_add_subpaths(struct inode *inode, struct user *user,
 }
 
 static gfarm_error_t
-findxmlattr_make_patharray(struct inode *inode, struct user *user,
+findxmlattr_make_patharray(struct inode *inode,
+	struct tenant *tenant, struct user *user,
 	const int maxdepth, struct inum_path_array *array)
 {
 	gfarm_error_t e;
@@ -1267,11 +1319,11 @@ findxmlattr_make_patharray(struct inode *inode, struct user *user,
 	if (toppath == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
-	e = findxmlattr_add_selfpath(inode, user, toppath, array);
+	e = findxmlattr_add_selfpath(inode, tenant, user, toppath, array);
 
 	if ((e == GFARM_ERR_NO_ERROR) && inode_is_dir(inode)) {
 		e = findxmlattr_add_subpaths(
-			inode, user, toppath, 0, maxdepth, array);
+			inode, tenant, user, toppath, 0, maxdepth, array);
 	}
 	if (array->entries[0].path != toppath)
 		free(toppath);
@@ -1412,8 +1464,9 @@ findxmlxattr_restart(struct peer *peer, struct inode *inode,
 	}
 
 	giant_lock();
-	e = findxmlattr_make_patharray(inode, user,
-		ctxp->depth, array);
+	e = findxmlattr_make_patharray(inode,
+	    process_get_tenant(process), user,
+	    ctxp->depth, array);
 	giant_unlock();
 
 	findxmlattr_dbq_wait_all(array, ctxp);
@@ -1440,6 +1493,7 @@ findxmlattr(struct peer *peer, struct inode *inode,
 {
 	gfarm_error_t e;
 	struct process *process = peer_get_process(peer);
+	struct tenant *tenant = process_get_tenant(process);
 	struct user *user = process_get_user(process);
 	struct inum_path_array *array = NULL;
 
@@ -1455,7 +1509,7 @@ findxmlattr(struct peer *peer, struct inode *inode,
 			gflog_debug(GFARM_MSG_1002108,
 				"inum_path_array_alloc() failed");
 		} else {
-			e = findxmlattr_make_patharray(inode, user,
+			e = findxmlattr_make_patharray(inode, tenant, user,
 				ctxp->depth, array);
 		}
 		giant_unlock();
