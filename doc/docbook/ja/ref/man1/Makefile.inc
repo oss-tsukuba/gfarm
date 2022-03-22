@@ -20,7 +20,6 @@ DOCBOOK = \
 	gfmkdir.1 \
 	gfmv.1 \
 	gfncopy.1 \
-	gfpconcat.1 \
 	gfpcopy.1 \
 	gfprep.1 \
 	gfquota.1 \

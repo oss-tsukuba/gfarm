@@ -2,7 +2,7 @@
 
 set -eu
 
-NAME="minio"
+NAME="nextcloud-pure"
 . ./_COMPOSE-COMMON.sh
 
 ${COMPOSE} $@

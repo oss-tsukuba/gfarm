@@ -521,7 +521,7 @@ gfpconcat_child_copy_parts(struct gfpconcat_option *opt, int child_id)
 
 		if (opt->n_para >= 2) {
 			/* disable client_digest_check */
-			gfarm_ctxp->client_digest_check = 0; /* XXX FIXME */
+			gfarm_set_client_digest_check(0);
 			gfmsg_debug("disable client_digest_check");
 		}
 	}

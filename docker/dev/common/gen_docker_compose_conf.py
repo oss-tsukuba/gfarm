@@ -13,9 +13,11 @@ start_host_addr = int(environ['GFDOCKER_START_HOST_ADDR'])
 hostname_prefix_gfmd = environ['GFDOCKER_HOSTNAME_PREFIX_GFMD']
 hostname_prefix_gfsd = environ['GFDOCKER_HOSTNAME_PREFIX_GFSD']
 hostname_prefix_client = environ['GFDOCKER_HOSTNAME_PREFIX_CLIENT']
+hostname_suffix = environ['GFDOCKER_HOSTNAME_SUFFIX']
 
 hostport_s3_http = environ['GFDOCKER_HOSTPORT_S3_HTTP']
 hostport_s3_https = environ['GFDOCKER_HOSTPORT_S3_HTTPS']
+hostport_s3_direct = environ['GFDOCKER_HOSTPORT_S3_DIRECT']
 
 if ip_version == '4':
     nw = IPv4Network(subnet)
@@ -25,8 +27,9 @@ else:
     sys.exit('invalid syntax: GFDOCKER_IP_VERSION')
 
 class ContainerHost:
-    def __init__(self, hostname, ipaddr):
-        self.hostname = hostname
+    def __init__(self, name, ipaddr):
+        self.name = name
+        self.hostname = name + hostname_suffix
         self.ipaddr = ipaddr
 
 hi = nw.hosts()
@@ -66,7 +69,6 @@ x-common:
   volumes:
     - ./mnt:/mnt:rw
     - /sys/fs/cgroup:/sys/fs/cgroup:ro
-    - /run
   security_opt:
     - seccomp:unconfined
     - apparmor:unconfined
@@ -74,13 +76,14 @@ x-common:
     - SYS_ADMIN
     - SYS_PTRACE
   devices:
-    - /dev/fuse
+    - /dev/fuse:/dev/fuse
   privileged: false
   extra_hosts:
 ''', end='')
 
 for h in hosts:
     print("    - {}:{}".format(h.hostname, str(h.ipaddr)))
+    print("    - {}:{}".format(h.name, str(h.ipaddr)))
 
 print('''\
 
@@ -88,30 +91,37 @@ services:
 ''', end='')
 
 if hostport_s3_http and hostport_s3_https:
-    client1_ports = '''    ports:
+    client1_ports = '''
+    ports:
       - {}:80
-      - {}:443'''.format(int(hostport_s3_http), int(hostport_s3_https))
+      - {}:443
+      - {}:51000'''.format(
+          int(hostport_s3_http),
+          int(hostport_s3_https),
+          int(hostport_s3_direct))
 else:
     client1_ports = ''
 
 for h in hosts:
     ports = '';
-    if h.hostname == 'client1':
+    if h.name == 'client1':
         ports = client1_ports
     print('''\
   {}:
-    hostname: {}
-{}
+    hostname: {}{}
     networks:
-      default:
+      gfarm_dev:
         ipv{}_address: {}
     <<: *common
-'''.format(h.hostname, h.hostname, ports, ip_version, str(h.ipaddr)), end='')
+
+'''.format(h.name, h.hostname, ports, ip_version, str(h.ipaddr)), end='')
 
 print('''\
 
 networks:
-  default:
+  gfarm_dev:
+    name: gfarm_dev
+    external: false
     ipam:
       config:
         - subnet: {}

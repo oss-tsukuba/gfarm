@@ -11,9 +11,14 @@ set -eu
 : $GFDOCKER_HOSTNAME_PREFIX_GFMD
 : $GFDOCKER_HOSTNAME_PREFIX_GFSD
 : $GFDOCKER_HOSTNAME_PREFIX_CLIENT
+: $GFDOCKER_HOSTNAME_SUFFIX
 : $GFDOCKER_AUTH_TYPE
 : $GFDOCKER_GFMD_JOURNAL_DIR
 : $GFDOCKER_PRJ_NAME
+
+### SEE ALSO: setup-univ.env
+#ADMIN_DN="/O=Grid/OU=GlobusTest/OU=GlobusSimpleCA/CN=${GFDOCKER_PRIMARY_USER}"
+ADMIN_DN="/O=Gfarm/OU=GfarmDev/OU=GfarmCA/CN=${GFDOCKER_PRIMARY_USER}"
 
 gen_gfservicerc() {
   cat <<EOF
@@ -31,8 +36,8 @@ EOF
 ##
 ## gfmd ${i}
 ##
-gfmd${i}=${gfmd}
-${gfmd}_CONFIG_GFARM_OPTIONS="-r -j ${GFDOCKER_GFMD_JOURNAL_DIR} -X -A \$LOGNAME -h \$gfmd${i} -a ${GFDOCKER_AUTH_TYPE} -D /O=Grid/OU=GlobusTest/OU=GlobusSimpleCA/CN=${GFDOCKER_PRIMARY_USER}"
+gfmd${i}=${gfmd}${GFDOCKER_HOSTNAME_SUFFIX}
+${gfmd}_CONFIG_GFARM_OPTIONS="-r -j ${GFDOCKER_GFMD_JOURNAL_DIR} -X -A \$LOGNAME -h \$gfmd${i} -a ${GFDOCKER_AUTH_TYPE} -D ${ADMIN_DN}"
 gfmd${i}_AUTH_TYPE=sharedsecret
 EOF
   done
@@ -45,8 +50,8 @@ EOF
 ##
 ## gfsd ${i}
 ##
-gfsd${i}=${gfsd}
-gfsd${i}_CONFIG_GFSD_OPTIONS="-h \$gfsd${i} -l \$gfsd${i} -a docker"
+gfsd${i}=${gfsd}${GFDOCKER_HOSTNAME_SUFFIX}
+gfsd${i}_CONFIG_GFSD_OPTIONS="-h \$gfsd${i} -l \$gfsd${i} -a ${GFDOCKER_PRJ_NAME}"
 gfsd${i}_AUTH_TYPE=sharedsecret
 EOF
   done
@@ -59,7 +64,7 @@ EOF
 ##
 ## client ${i}
 ##
-client${i}=${client}
+client${i}=${client}${GFDOCKER_HOSTNAME_SUFFIX}
 client${i}_AUTH_TYPE=sharedsecret
 EOF
   done

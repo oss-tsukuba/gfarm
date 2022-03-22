@@ -5,25 +5,17 @@ FROM centos:7
 ARG TZ
 ENV TZ=${TZ}
 
-#ARG LANG
-#ENV LANG=${LANG}
-
-RUN sed -i -e '/override_install_langs/s/$/,ja_JP.utf8/g' /etc/yum.conf
-RUN sed -i -e '/tsflags=nodocs/s/^/#/' /etc/yum.conf
-
-RUN yum -y update \
-    && yum -y reinstall glibc-common
-
-RUN yum -y update \
+RUN sed -i -e '/override_install_langs/s/$/,ja_JP.utf8/g' /etc/yum.conf \
+    && sed -i -e '/tsflags=nodocs/s/^/#/' /etc/yum.conf \
+    && yum -y update \
+    && yum -y reinstall glibc-common \
     && yum -y install \
     sudo \
     openssh-server \
     rsyslog \
     rsync \
     langpacks-ja \
-    && yum -y groupinstall "Development Tools"
-
-RUN yum -y update \
+    && yum -y groupinstall "Development Tools" \
     && yum -y install \
     epel-release \
     openssl-devel \
@@ -33,30 +25,24 @@ RUN yum -y update \
     fuse \
     fuse-devel \
     libacl-devel \
-    ruby
-
-RUN yum -y update \
+    ruby \
     && yum -y --enablerepo=epel install \
     globus-gssapi-gsi-devel \
     globus-simple-ca \
     globus-gsi-cert-utils-progs \
     globus-proxy-utils \
-    && globus-version
-
-## for debug
-RUN yum -y update \
+    myproxy \
+    gsi-openssh-clients \
+    && globus-version \
     && yum -y install \
     docbook-utils docbook-style-xsl libxslt \
     nc ldns iproute2 net-tools bind-utils telnet tcpdump \
     gdb valgrind strace inotify-tools \
     man man-pages man-pages-ja man-db which \
-    nano emacs-nox less
-
-RUN yum -y update \
+    nano emacs-nox less \
     && debuginfo-install -y \
-    fuse-libs
-
-RUN sed -i 's@^Defaults    secure_path = /sbin:/bin:/usr/sbin:/usr/bin$@Defaults    secure_path = /usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin@' /etc/sudoers
+    fuse-libs \
+    && sed -i 's@^Defaults    secure_path = /sbin:/bin:/usr/sbin:/usr/bin$@Defaults    secure_path = /usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin@' /etc/sudoers
 
 
 # System independent (see setup-univ.sh)
@@ -68,6 +54,8 @@ ARG GFDOCKER_NUM_GFSDS
 ARG GFDOCKER_NUM_USERS
 ARG GFDOCKER_HOSTNAME_PREFIX_GFMD
 ARG GFDOCKER_HOSTNAME_PREFIX_GFSD
+ARG GFDOCKER_HOSTNAME_SUFFIX
+ARG GFDOCKER_USE_SAN_FOR_GFSD
 COPY . /tmp/gfarm
 COPY gfarm2fs /tmp/gfarm2fs
 RUN "/tmp/gfarm/docker/dev/common/setup-univ.sh"

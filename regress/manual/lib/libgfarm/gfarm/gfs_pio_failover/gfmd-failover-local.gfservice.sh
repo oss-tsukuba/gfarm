@@ -4,13 +4,15 @@ set -eu
 
 GFSERVICE=${GFSERVICE-"gfservice"}
 TIMEOUT=${TIMEOUT-"30"}
-GFSERVICE_CONF=${GFSERVICE_CONF-""}
+GFSERVICE_CONF=${GFSERVICE_CONF-"$HOME/.gfservice"}
+GFSERVICE_OPT="-f $GFSERVICE_CONF"
 
-if [ X$GFSERVICE_CONF != X ]; then
-    GFSERVICE_OPT="-f $GFSERVICE_CONF"
-else
-    GFSERVICE_OPT=""
-fi
+convert_gfservice_name()
+{
+    hostname=$1
+    egrep 'gfmd[0-9]*\=' "$GFSERVICE_CONF" |
+        awk -F = '$2 == "'"$hostname"'" {print $1}'
+}
 
 get_master()
 {
@@ -73,7 +75,8 @@ restart_gfmd()
             fi
         done
         if [ $skip -ne 1 ]; then
-            $GFSERVICE $GFSERVICE_OPT -t $TIMEOUT restart-gfmd $gfmd
+            name=`convert_gfservice_name $gfmd`
+            $GFSERVICE $GFSERVICE_OPT -t $TIMEOUT restart-gfmd $name
         fi
     done
 }
@@ -87,21 +90,24 @@ if [ -z "$SLAVE" ]; then
     SLAVE=`choose_sync_slave`
 fi
 
+MASTER_NAME=`convert_gfservice_name $MASTER`
+SLAVE_NAME=`convert_gfservice_name $SLAVE`
+
 MASTER_CLUSTER=`get_cluster $MASTER`
 SLAVE_CLUSTER=`get_cluster $SLAVE`
 
 ### XXX If "stop-gfmd" is not executed, gfmd will freeze.
-$GFSERVICE $GFSERVICE_OPT -t $TIMEOUT stop-gfmd $SLAVE
+$GFSERVICE $GFSERVICE_OPT -t $TIMEOUT stop-gfmd $SLAVE_NAME
 gfmdhost -m -C ${MASTER_CLUSTER} $SLAVE
-$GFSERVICE $GFSERVICE_OPT -t $TIMEOUT start-gfmd $SLAVE
+$GFSERVICE $GFSERVICE_OPT -t $TIMEOUT start-gfmd $SLAVE_NAME
 wait_for_sync_one $SLAVE
 
-$GFSERVICE $GFSERVICE_OPT -t $TIMEOUT stop-gfmd $MASTER
+$GFSERVICE $GFSERVICE_OPT -t $TIMEOUT stop-gfmd $MASTER_NAME
 
 ### set "metadb_server_force_slave enable" to gfmd.conf
-$GFSERVICE $GFSERVICE_OPT promote-gfmd $SLAVE
+$GFSERVICE $GFSERVICE_OPT promote-gfmd $SLAVE_NAME
 
-$GFSERVICE $GFSERVICE_OPT -t $TIMEOUT start-gfmd-slave $MASTER
+$GFSERVICE $GFSERVICE_OPT -t $TIMEOUT start-gfmd-slave $MASTER_NAME
 
 ### set async
 gfmdhost -m -C ${SLAVE_CLUSTER} $MASTER

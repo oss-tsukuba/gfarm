@@ -13,7 +13,6 @@ SUBDIRS = \
 	gfchmod \
 	gfchown \
 	gfcksum \
-	gfcp \
 	gfdf \
 	gfdump \
 	gfexport \
@@ -35,7 +34,6 @@ SUBDIRS = \
 	gfmv \
 	gfncopy \
 	gfpath \
-	gfpconcat \
 	gfprep \
 	gfquota \
 	gfreg \

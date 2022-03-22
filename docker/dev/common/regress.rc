@@ -1,14 +1,24 @@
 set -xu
 
+: $GFDOCKER_PRJ_NAME
 : $GFDOCKER_PRIMARY_USER
 : $GFDOCKER_HOSTNAME_PREFIX_GFSD
+: $GFDOCKER_HOSTNAME_SUFFIX
 
 GFARM_SRCDIR=~/gfarm
 RUN_REGRESS=$GFARM_SRCDIR/docker/dev/common/run_regress.sh
 
+HOST_SHARE_DIR=/mnt
+DATETIME=$(date +%Y%m%d%H%M)
+LOG_PREFIX=${DATETIME}.${GFDOCKER_PRJ_NAME}
+LOG_DIR=${HOST_SHARE_DIR}/regress-results
+
+sudo mkdir -p ${LOG_DIR}
+sudo chmod 1777 ${LOG_DIR}
+
 cd $GFARM_SRCDIR/regress
 gfmkdir -p /tmp
-gfchmod 777 /tmp
+gfchmod 1777 /tmp
 
 LOG_REMOTE_NONROOT=log.wo_root.remote
 LOG_LOCAL_ROOT=log.w_root.local
@@ -17,7 +27,7 @@ bin/am_I_gfarmroot
 is_gfarmroot=$?
 
 me=$GFDOCKER_PRIMARY_USER
-gfsdhost=${GFDOCKER_HOSTNAME_PREFIX_GFSD}1
+gfsdhost=${GFDOCKER_HOSTNAME_PREFIX_GFSD}1${GFDOCKER_HOSTNAME_SUFFIX}
 
 GFARM_TEST_CKSUM_MISMATCH=/tmp/cksum_mismatch
 
@@ -63,3 +73,9 @@ restore
 scp $gfsdhost:$GFARM_SRCDIR/regress/$LOG_LOCAL_ROOT .
 ./addup.sh -v $LOG_REMOTE_NONROOT $LOG_LOCAL_ROOT
 ./addup.sh $LOG_REMOTE_NONROOT $LOG_LOCAL_ROOT
+res=$?
+
+cp $LOG_REMOTE_NONROOT ${LOG_DIR}/${LOG_PREFIX}.${LOG_REMOTE_NONROOT}
+cp $LOG_LOCAL_ROOT ${LOG_DIR}/${LOG_PREFIX}.${LOG_LOCAL_ROOT}
+
+exit $res

@@ -1,13 +1,13 @@
 '\" t
-.\"     Title: gfpconcat
+.\"     Title: gfcp
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 28 Aug 2021
+.\"      Date: 18 Oct 2021
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFPCONCAT" "1" "28 Aug 2021" "Gfarm" "Gfarm"
+.TH "GFCP" "1" "18 Oct 2021" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -28,14 +28,14 @@
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
 .SH "NAME"
-gfpconcat \- concatenate files in parallel
+gfcp \- copy a file in parallel
 .SH "SYNOPSIS"
-.HP \w'\fBgfpconcat\fR\ 'u
-\fBgfpconcat\fR [\-fpqvd] [\-h\ \fIfilesystem\-node\fR] [\-i\ \fIinput\-listfile\fR] [\-j\ \fInum\-of\-processes\fR] [\-m\ \fIminimum\-bytes\fR] \-o\ \fIdestination\-file\fR \fIsource\-file\fR...
+.HP \w'\fBgfcp\fR\ 'u
+\fBgfcp\fR [\-fpqvd] [\-h\ \fIfilesystem\-node\fR] [\-j\ \fInum\-of\-processes\fR] [\-m\ \fIminimum\-bytes\fR] \-o\ \fIdestination\-file\fR \fIsource\-file\fR...
 .SH "DESCRIPTION"
 .PP
-\fBgfpconcat\fR
-copies a single file or multiple files to a single file in parallel\&.
+\fBgfcp\fR
+copies a single file to a single file in parallel\&.
 .PP
 \fIsource\-file\fR
 is a source file to copy\&. When multiple source files are specified, they will be concatinated in that order\&.
@@ -142,12 +142,13 @@ Displays a list of command options\&.
 .SH "NOTES"
 .PP
 When a file is created in Gfarm and the file is written in parallel or randomly, checksum for the file will not be calculated and not added\&. Therefore, when
-\fBgfpconcat\fR
+\fBgfcp\fR
 is used, checksum will not be added to the file\&. Once the file is read sequentially or replicas for the file are created, checksum will be added to the file\&. Or, when
 \fIwrite_verify\fR
 of gfmd\&.conf (see man gfarm2\&.conf) is "enable", checksum is added to the file after a while after copying by
-\fBgfpconcat\fR\&.
+\fBgfcp\fR\&.
 .SH "SEE ALSO"
 .PP
+\fBgfpconcat\fR(1),
 \fBgfcksum\fR(1),
 \fBgfarm2.conf\fR(5)

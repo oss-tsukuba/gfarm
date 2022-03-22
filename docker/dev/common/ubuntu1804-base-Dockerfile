@@ -6,15 +6,11 @@ ARG DEBIAN_FRONTEND=noninteractive
 ARG TZ
 ENV TZ=${TZ}
 
-#ARG LANG
-#ENV LANG=${LANG}
-
 ## speedup in Japan
-RUN sed -i 's@archive.ubuntu.com@ftp.riken.go.jp/Linux@g' /etc/apt/sources.list
+#RUN sed -i 's@archive.ubuntu.com@ftp.riken.go.jp/Linux@g' /etc/apt/sources.list
 
-RUN yes | unminimize
-
-RUN apt-get update \
+RUN yes | unminimize \
+    && apt-get update \
     && apt-get -y upgrade \
     && apt-get -y install \
     systemd \
@@ -40,25 +36,20 @@ RUN apt-get update \
     globus-simple-ca \
     globus-gsi-cert-utils-progs \
     globus-proxy-utils \
-    && globus-version
-
-# for debug
-RUN apt-get update \
+    && globus-version \
     && apt-get -y install \
     netcat ldnsutils iproute2 net-tools bind9utils telnet tcpdump \
     manpages manpages-ja man-db \
     gdb valgrind strace inotify-tools \
-    vim nano emacs-nox less
-
-RUN apt-get update \
+    vim nano emacs-nox less \
     && apt-key adv --keyserver keyserver.ubuntu.com --recv-key C8CAB6595FDFF622 \
     && apt-get -y install software-properties-common \
     && add-apt-repository http://ddebs.ubuntu.com \
     && apt-get -y install \
     libfuse2-dbgsym \
-    valgrind-dbg
+    valgrind-dbg \
+    && sudo systemctl disable unattended-upgrades
 
-RUN sudo systemctl disable unattended-upgrades
 
 # System independent (see setup-univ.sh)
 
@@ -69,6 +60,8 @@ ARG GFDOCKER_NUM_GFSDS
 ARG GFDOCKER_NUM_USERS
 ARG GFDOCKER_HOSTNAME_PREFIX_GFMD
 ARG GFDOCKER_HOSTNAME_PREFIX_GFSD
+ARG GFDOCKER_HOSTNAME_SUFFIX
+ARG GFDOCKER_USE_SAN_FOR_GFSD
 COPY . /tmp/gfarm
 COPY gfarm2fs /tmp/gfarm2fs
 RUN "/tmp/gfarm/docker/dev/common/setup-univ.sh"

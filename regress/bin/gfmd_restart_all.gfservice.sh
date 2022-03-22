@@ -1,7 +1,7 @@
 #! /bin/sh
 
 # e.g.
-mdhosts="$(gfmdhost)"
+mdhosts="$(egrep gfmd[0-9]*\= ~/.gfservice | cut -d = -f 1)"
 IFS='
 '
 for h in $mdhosts; do

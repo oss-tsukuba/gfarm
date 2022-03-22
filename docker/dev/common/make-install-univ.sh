@@ -22,7 +22,7 @@ fi
 su - "$GFDOCKER_PRIMARY_USER" -c " \
   cd ~/gfarm \
     && (test -f Makefile && make distclean || true) \
-    && eval \"${CFLAGS_ARGS}\" ./configure --with-globus --enable-xmlattr \
+    && eval \"${CFLAGS_ARGS}\" ./configure --with-globus=/usr --enable-xmlattr \
     && make -j '${GFDOCKER_NUM_JOBS}' \
 " \
   && cd "/home/${GFDOCKER_PRIMARY_USER}/gfarm" \

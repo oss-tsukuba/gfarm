@@ -1492,6 +1492,12 @@ gfarm_get_client_file_bufsize(void)
 	return (gfarm_ctxp->client_file_bufsize);
 }
 
+void
+gfarm_set_client_digest_check(int enable)
+{
+	gfarm_ctxp->client_digest_check = enable;
+}
+
 enum gfarm_spool_check_level
 gfarm_spool_check_level_get(void)
 {

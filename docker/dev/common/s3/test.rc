@@ -12,7 +12,6 @@ mkdir -p $WORK
 
 if [ ! -e $WORK/gfarm-s3-minio-web ]; then
 (cd $WORK && git clone https://github.com/oss-tsukuba/gfarm-s3-minio-web.git)
-(cd $WORK/gfarm-s3-minio-web && git checkout develop)
 fi
 
 unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY

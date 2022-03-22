@@ -24,7 +24,7 @@ cd $REGRESS_DIR/manual/lib/libgfarm/gfarm/gfs_pio_failover
 cp gfmd-failover-local.gfservice.sh gfmd-failover-local.sh
 make
 gfmkdir -p /tmp
-gfchmod 777 /tmp
+gfchmod 1777 /tmp
 ./test-all.sh auto
 RESULT=$?
 restore

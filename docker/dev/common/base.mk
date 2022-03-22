@@ -50,14 +50,18 @@ DOCKER_BUILD_FLAGS = \
 		--build-arg GFDOCKER_NUM_GFSDS='$(GFDOCKER_NUM_GFSDS)' \
 		--build-arg GFDOCKER_NUM_USERS='$(GFDOCKER_NUM_USERS)' \
 		--build-arg GFDOCKER_HOSTNAME_PREFIX_GFMD='$(GFDOCKER_HOSTNAME_PREFIX_GFMD)' \
-		--build-arg GFDOCKER_HOSTNAME_PREFIX_GFSD='$(GFDOCKER_HOSTNAME_PREFIX_GFSD)'
+		--build-arg GFDOCKER_HOSTNAME_PREFIX_GFSD='$(GFDOCKER_HOSTNAME_PREFIX_GFSD)' \
+		--build-arg GFDOCKER_HOSTNAME_SUFFIX='$(GFDOCKER_HOSTNAME_SUFFIX)' \
+		--build-arg GFDOCKER_USE_SAN_FOR_GFSD='$(GFDOCKER_USE_SAN_FOR_GFSD)'
 
 ifdef GFDOCKER_ENABLE_PROXY
 DOCKER_BUILD_FLAGS += \
 		--build-arg http_proxy='$(PROXY_URL)' \
 		--build-arg https_proxy='$(PROXY_URL)' \
+		--build-arg no_proxy='$(GFDOCKER_NO_PROXY)' \
 		--build-arg HTTP_PROXY='$(PROXY_URL)' \
 		--build-arg HTTPS_PROXY='$(PROXY_URL)' \
+		--build-arg NO_PROXY='$(GFDOCKER_NO_PROXY)' \
 		--build-arg GFDOCKER_PROXY_HOST='$(GFDOCKER_PROXY_HOST)' \
 		--build-arg GFDOCKER_PROXY_PORT='$(GFDOCKER_PROXY_PORT)' \
 		--build-arg GFDOCKER_ENABLE_PROXY='$(GFDOCKER_ENABLE_PROXY)'
@@ -65,9 +69,14 @@ endif
 
 IMAGE_BASENAME = gfarm-dev
 
-DOCKER = $(SUDO) docker
-COMPOSE = $(SUDO) COMPOSE_PROJECT_NAME=gfarm-$(GFDOCKER_PRJ_NAME) \
-	GFDOCKER_PRJ_NAME=$(GFDOCKER_PRJ_NAME) docker-compose
+STOP_TIMEOUT = 3
+
+DOCKER = $(SUDO) $(DOCKER_CMD)
+
+GFDOCKER_PRJ_NAME_FULL=gfarm-$(GFDOCKER_PRJ_NAME)
+
+COMPOSE = $(SUDO) COMPOSE_PROJECT_NAME=$(GFDOCKER_PRJ_NAME_FULL) \
+	GFDOCKER_PRJ_NAME=$(GFDOCKER_PRJ_NAME) $(DOCKER_COMPOSE_CMD)
 CONTSHELL_FLAGS = \
 		--env TZ='$(TZ)' \
 		--env LANG='$(LANG)' \
@@ -82,20 +91,28 @@ CONTSHELL_FLAGS = \
 		--env GFDOCKER_NUM_USERS='$(GFDOCKER_NUM_USERS)' \
 		--env GFDOCKER_HOSTNAME_PREFIX_GFMD='$(GFDOCKER_HOSTNAME_PREFIX_GFMD)' \
 		--env GFDOCKER_HOSTNAME_PREFIX_GFSD='$(GFDOCKER_HOSTNAME_PREFIX_GFSD)' \
-		--env GFDOCKER_HOSTNAME_PREFIX_CLIENT='$(GFDOCKER_HOSTNAME_PREFIX_CLIENT)'
+		--env GFDOCKER_HOSTNAME_PREFIX_CLIENT='$(GFDOCKER_HOSTNAME_PREFIX_CLIENT)' \
+		--env GFDOCKER_HOSTNAME_SUFFIX='$(GFDOCKER_HOSTNAME_SUFFIX)'
 
 ifdef GFDOCKER_ENABLE_PROXY
 CONTSHELL_FLAGS += \
 		--env http_proxy='$(PROXY_URL)' \
 		--env https_proxy='$(PROXY_URL)' \
+		--env no_proxy='$(GFDOCKER_NO_PROXY)' \
 		--env HTTP_PROXY='$(PROXY_URL)' \
-		--env HTTPS_PROXY='$(PROXY_URL)'
+		--env HTTPS_PROXY='$(PROXY_URL)' \
+		--env NO_PROXY='$(GFDOCKER_NO_PROXY)'
 endif
+
+# ifeq ($(GFDOCKER_USE_SAN_FOR_GFSD), 1)
+# CONTSHELL_FLAGS += --env GLOBUS_GSSAPI_NAME_COMPATIBILITY=HYBRID
+# endif
 
 CONTSHELL_COMMON = $(COMPOSE) exec $(CONTSHELL_FLAGS) \
 	-u '$(GFDOCKER_PRIMARY_USER)'
 CONTEXEC = $(CONTSHELL_COMMON) '$(PRIMARY_CLIENT_CONTAINER)'
 CONTEXEC_GFMD1 = $(CONTSHELL_COMMON) gfmd1
+### "bash -l" to load /etc/profile.d/gfarm.sh
 CONTSHELL = $(CONTSHELL_COMMON) '$(PRIMARY_CLIENT_CONTAINER)' bash
 CONTSHELL_GFMD1 = $(CONTSHELL_COMMON) gfmd1 bash
 
@@ -194,13 +211,13 @@ fi
 endef
 
 define build
-DOCKER_BUILD_FLAGS2=""; \
-$(build_switch)
+	DOCKER_BUILD_FLAGS2=""; \
+	$(build_switch)
 endef
 
 define build_nocache
-DOCKER_BUILD_FLAGS2="--no-cache"; \
-$(build_switch)
+	DOCKER_BUILD_FLAGS2="--no-cache"; \
+	$(build_switch)
 endef
 
 build:
@@ -210,14 +227,15 @@ build-nocache:
 	$(build_nocache)
 
 define down
-$(COMPOSE) down && rm -f $(TOP)/docker/dev/.shadow.config.mk
+	$(COMPOSE) down --volumes --remove-orphans -t $(STOP_TIMEOUT) \
+		&& rm -f $(TOP)/docker/dev/.shadow.config.mk
 endef
 
 down:
 	$(down)
 
 define prune
-$(DOCKER) system prune -f
+	$(DOCKER) system prune -f
 endef
 
 prune:
@@ -241,8 +259,10 @@ TOP='$(TOP)' \
 	GFDOCKER_HOSTNAME_PREFIX_GFMD='$(GFDOCKER_HOSTNAME_PREFIX_GFMD)' \
 	GFDOCKER_HOSTNAME_PREFIX_GFSD='$(GFDOCKER_HOSTNAME_PREFIX_GFSD)' \
 	GFDOCKER_HOSTNAME_PREFIX_CLIENT='$(GFDOCKER_HOSTNAME_PREFIX_CLIENT)' \
+	GFDOCKER_HOSTNAME_SUFFIX='$(GFDOCKER_HOSTNAME_SUFFIX)' \
 	GFDOCKER_HOSTPORT_S3_HTTP='$(GFDOCKER_HOSTPORT_S3_HTTP)' \
 	GFDOCKER_HOSTPORT_S3_HTTPS='$(GFDOCKER_HOSTPORT_S3_HTTPS)' \
+	GFDOCKER_HOSTPORT_S3_DIRECT='$(GFDOCKER_HOSTPORT_S3_DIRECT)' \
 	GFDOCKER_AUTH_TYPE='$(GFDOCKER_AUTH_TYPE)' \
 	GFDOCKER_GFMD_JOURNAL_DIR='$(GFDOCKER_GFMD_JOURNAL_DIR)' \
 	GFDOCKER_PRJ_NAME='$(GFDOCKER_PRJ_NAME)' \
@@ -287,7 +307,7 @@ start:
 	$(COMPOSE) start
 
 stop:
-	$(COMPOSE) stop
+	$(COMPOSE) stop -t $(STOP_TIMEOUT)
 
 define shell_user
 $(CONTSHELL) $(CONTSHELL_ARGS)
@@ -300,9 +320,7 @@ shell:
 shell-user: shell
 
 shell-root:
-	echo "*** Please use sudo on shell-suer instead of shell-root ***"
-#	$(check_config)
-#	$(COMPOSE) exec '$(PRIMARY_CLIENT_CONTAINER)' bash $(CONTSHELL_ARGS)
+	echo "*** Please use sudo on shell-user ***"
 
 shell-gfmd1:
 	$(check_config)
@@ -360,7 +378,7 @@ hpci-setup:
 	$(hpcisetup)
 
 define s3setup
-$(CONTSHELL) -c '. ~/gfarm/docker/dev/common/s3/setup.rc'
+$(CONTSHELL) $(SCRIPTS)/s3/setup.sh
 endef
 
 # define s3uninstall
@@ -373,8 +391,8 @@ s3setup: CONTSHELL_FLAGS += $(GFDOCKER_GFARMS3_ENV)
 
 s3update:
 	$(s3setup)
-s3update: CONTSHELL_FLAGS += --env GFDOCKER_GFARMS3_UPDATE_ONLY=1
-s3update: CONTSHELL_FLAGS += $(GFDOCKER_GFARMS3_ENV)
+s3update: CONTSHELL_FLAGS += $(GFDOCKER_GFARMS3_ENV) \
+	--env GFDOCKER_GFARMS3_UPDATE_ONLY=1
 
 # s3uninstall:
 # 	$(s3setup)
@@ -417,6 +435,84 @@ gridftp-setup:
 
 gridftp-test:
 	$(CONTSHELL) -c '. ~/gfarm/docker/dev/common/gridftp-test.rc'
+
+
+NEXTCLOUD_GFARM_SRC = $(ROOTDIR)/mnt/work/nextcloud-gfarm
+NEXTCLOUD_GFARM_CONF = $(ROOTDIR)/common/nextcloud
+
+COMPOSE_NEXTCLOUD = $(COMPOSE) \
+	-f $(TOP)/docker/dev/docker-compose.yml \
+	-f $(NEXTCLOUD_GFARM_SRC)/docker-compose.yml \
+	-f $(NEXTCLOUD_GFARM_CONF)/docker-compose.nextcloud-gfarm.override.yml
+
+down-with-nextcloud:
+	$(COMPOSE_NEXTCLOUD) down --volumes --remove-orphans
+	$(down)
+
+nextcloud-backup:
+	@if $(DOCKER) ps --filter status=running --filter name=$(GFDOCKER_PRJ_NAME_FULL)_nextcloud_1 | grep -q nextcloud; \
+	then $(COMPOSE_NEXTCLOUD) exec -u www-data nextcloud /backup.sh; \
+	else echo "skip nextcloud-backup"; \
+	fi
+
+nextcloud-rm:
+	$(MAKE) nextcloud-backup
+	$(COMPOSE_NEXTCLOUD) rm --force --stop -v mariadb nextcloud
+
+nextcloud-rm-data:
+	$(MAKE) nextcloud-rm
+	$(DOCKER) volume rm --force \
+	$(GFDOCKER_PRJ_NAME_FULL)_db \
+	$(GFDOCKER_PRJ_NAME_FULL)_log \
+	$(GFDOCKER_PRJ_NAME_FULL)_nextcloud
+
+nextcloud-recreate:
+	$(MAKE) nextcloud-rm
+	$(COMPOSE_NEXTCLOUD) build $(DOCKER_BUILD_FLAGS) nextcloud
+	$(COMPOSE_NEXTCLOUD) up -d nextcloud
+
+nextcloud-reborn:
+	$(MAKE) nextcloud-rm-data
+	$(COMPOSE_NEXTCLOUD) build $(DOCKER_BUILD_FLAGS) nextcloud
+	$(COMPOSE_NEXTCLOUD) up -d nextcloud
+
+nextcloud-reborn-nocache:
+	$(MAKE) nextcloud-rm-data
+	$(COMPOSE_NEXTCLOUD) build $(DOCKER_BUILD_FLAGS) --no-cache nextcloud
+	$(COMPOSE_NEXTCLOUD) up -d nextcloud
+
+nextcloud-restart:
+	$(MAKE) nextcloud-stop
+	$(MAKE) nextcloud-start
+
+nextcloud-start:
+	$(COMPOSE_NEXTCLOUD) start mariadb nextcloud
+
+nextcloud-stop:
+	$(MAKE) nextcloud-backup
+	$(COMPOSE_NEXTCLOUD) stop mariadb nextcloud
+
+nextcloud-ps:
+	$(COMPOSE_NEXTCLOUD) ps
+
+nextcloud-logs:
+	$(COMPOSE_NEXTCLOUD) logs
+
+nextcloud-logs-less:
+	$(COMPOSE_NEXTCLOUD) logs --no-color | less
+
+nextcloud-logs-f:
+	$(COMPOSE_NEXTCLOUD) logs --follow
+
+nextcloud-shell:
+	$(COMPOSE_NEXTCLOUD) exec -u www-data nextcloud /bin/bash
+
+nextcloud-shell-root:
+	$(COMPOSE_NEXTCLOUD) exec nextcloud /bin/bash
+
+nextcloud-mariadb-shell:
+	$(COMPOSE_NEXTCLOUD) exec mariadb /bin/bash
+
 
 define test_fo
 $(CONTSHELL) -c '. ~/gfarm/docker/dev/common/test-fo.rc'
@@ -472,7 +568,7 @@ centos8stream:
 	$(DOCKER_RUN) -it --rm 'quay.io/centos/centos:stream8' bash
 
 centos9stream:
-	$(DOCKER_RUN) -it --rm 'quay.io/centos/centos:stream9-development' bash
+	$(DOCKER_RUN) -it --rm 'quay.io/centos/centos:stream9' bash
 
 fedora33:
 	$(DOCKER_RUN) -it --rm 'fedora:33' bash
