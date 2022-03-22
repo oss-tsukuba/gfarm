@@ -139,7 +139,7 @@ quota_softlimit_exceed_user(struct quota *q, struct user *u)
 		if (e != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_1004505,
 			    "db_quota_user_set(%s): %s",
-			    user_name(u), gfarm_error_string(e));
+			    user_tenant_name(u), gfarm_error_string(e));
 	}
 }
 
@@ -155,7 +155,7 @@ quota_softlimit_exceed_group(struct quota *q, struct group *g)
 		if (e != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_1004506,
 			    "db_quota_group_set(%s): %s",
-			    group_name(g), gfarm_error_string(e));
+			    group_tenant_name(g), gfarm_error_string(e));
 	}
 }
 
@@ -712,8 +712,8 @@ quota_update_file_add(struct inode *inode, struct dirset *tdirset)
 		char *username, *groupname;
 		inum = inode_get_number(inode);
 		gen = inode_get_gen(inode);
-		username = user_name(u);
-		groupname = group_name(g);
+		username = user_tenant_name(u);
+		groupname = group_tenant_name(g);
 		gflog_debug(GFARM_MSG_1000416,
 			    "<quota_add> ino=%lld(gen=%lld): "
 			    "size=%lld,ncopy=%lld,user=%s,group=%s",
@@ -1076,13 +1076,13 @@ quota_limit_check(struct user *u, struct group *g, struct dirset *tdirset,
 	if (u && is_exceeded(&now, user_quota(u),
 	    num_file_creating, num_replica_adding, size)) {
 		gflog_debug(GFARM_MSG_1002051,
-			 "user_quota(%s) exceeded", user_name(u));
+			 "user_quota(%s) exceeded", user_tenant_name(u));
 		return (GFARM_ERR_DISK_QUOTA_EXCEEDED);
 	}
 	if (g && is_exceeded(&now, group_quota(g),
 	    num_file_creating, num_replica_adding, size)) {
 		gflog_debug(GFARM_MSG_1002052,
-			 "group_quota(%s) exceeded", group_name(g));
+			 "group_quota(%s) exceeded", group_tenant_name(g));
 		return (GFARM_ERR_DISK_QUOTA_EXCEEDED);
 	}
 	if (tdirset != TDIRSET_IS_UNKNOWN && tdirset != TDIRSET_IS_NOT_SET &&

@@ -1101,7 +1101,7 @@ inode_schedule_replication_within_scope(
 			    " %s", diag,
 			    (long long)inode_get_number(inode),
 			    (long long)inode_get_gen(inode),
-			    user_name(inode_get_user(inode)),
+			    user_tenant_name(inode_get_user(inode)),
 			    host_name(dst),
 			    gfarm_error_string(e));
 		} else if (e == GFARM_ERR_DISK_QUOTA_EXCEEDED) {
@@ -1111,7 +1111,7 @@ inode_schedule_replication_within_scope(
 			    " %s", diag,
 			    (long long)inode_get_number(inode),
 			    (long long)inode_get_gen(inode),
-			    user_name(inode_get_user(inode)),
+			    user_tenant_name(inode_get_user(inode)),
 			    host_name(dst),
 			    gfarm_error_string(e));
 			save_e = e;
@@ -1123,7 +1123,7 @@ inode_schedule_replication_within_scope(
 			    " %s", diag,
 			    (long long)inode_get_number(inode),
 			    (long long)inode_get_gen(inode),
-			    user_name(inode_get_user(inode)),
+			    user_tenant_name(inode_get_user(inode)),
 			    host_name(dst),
 			    gfarm_error_string(e));
 
@@ -1163,14 +1163,15 @@ inode_schedule_replication_within_scope(
 		    "increase=%d/before=%d/desire=%d", diag,
 		    (long long)inode_get_number(inode),
 		    (long long)inode_get_gen(inode),
-		    user_name(inode_get_user(inode)),
+		    user_tenant_name(inode_get_user(inode)),
 		    n_success, n_valid, n_desired);
 	else
 		gflog_reduced_debug(GFARM_MSG_1003695, &rep_fixed_state,
 		    "%s: %lld:%lld:%s: will be fixed, increase=%d/desire=%d",
 		    diag, (long long)inode_get_number(inode),
 		    (long long)inode_get_gen(inode),
-		    user_name(inode_get_user(inode)), n_success, n_desired);
+		    user_tenant_name(inode_get_user(inode)),
+		    n_success, n_desired);
 
 	return (save_e);
 }
@@ -2284,8 +2285,8 @@ inode_set_owner(struct inode *inode, struct user *user, struct group *group)
 		gflog_debug(GFARM_MSG_1004338,
 		    "inode=%lld, quota_limit_check(%s, %s, 1, %lld, %lld): %s",
 		    (long long)inode_get_number(inode),
-		    user ? user_name(user) : "NULL",
-		    group ? group_name(group) : "NULL",
+		    user ? user_tenant_name(user) : "NULL",
+		    group ? group_tenant_name(group) : "NULL",
 		    (long long)ncopy,
 		    (long long)inode_get_size(inode),
 		    gfarm_error_string(e));
@@ -2953,7 +2954,7 @@ is_removable_in_sticky_dir(struct inode *dir, struct inode *entry,
 		    "dir %lld:%lld name %.*s user %s", diag,
 		    (long long)inode_get_number(dir),
 		    (long long)inode_get_gen(dir),
-		    len, name, user_name(user));
+		    len, name, user_tenant_name(user));
 		return (0);
 	}
 }
