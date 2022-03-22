@@ -118,7 +118,9 @@ gftool/gfpath/path_dir.sh
 gftool/gfpath/url_dir.sh
 gftool/gfpath/url_base.sh
 gftool/gfprep/gfpcopy_dir.sh
+gftool/gfprep/gfpcopy_dir_by_gfcp.sh
 gftool/gfprep/gfpcopy_file.sh
+gftool/gfprep/gfpcopy_file_by_gfcp.sh
 gftool/gfprep/gfpcopy_no_target.sh
 gftool/gfprep/gfpcopy_overwrite.sh
 gftool/gfprep/gfprep_m.sh

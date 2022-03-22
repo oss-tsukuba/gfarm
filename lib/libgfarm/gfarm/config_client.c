@@ -32,6 +32,66 @@
 
 #include "gfs_rdma.h"
 
+gfarm_error_t
+gfarm_config_pathname_for_client(const char *name, const char *diag,
+	char **pathnamep)
+{
+	gfarm_error_t e;
+	int overflow = 0;
+	char *home;
+	char *pathname;
+	size_t len;
+
+	/*
+	 * result of gfarm_get_local_homedir() should not be trusted.
+	 * (maybe forged)
+	 */
+	home = gfarm_get_local_homedir();
+
+	len = gfarm_size_add(&overflow, strlen(home), strlen(name));
+	len = gfarm_size_add(&overflow, len, 2); /* '/' + '\0' */
+	if (overflow) {
+		e = GFARM_ERR_VALUE_TOO_LARGE_TO_BE_STORED_IN_DATA_TYPE;
+		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s/%s): %s",
+		    diag, home, name, gfarm_error_string(e));
+		return (e);
+	}
+	GFARM_MALLOC_ARRAY(pathname, strlen(home) + 1 + strlen(name) + 1);
+	if (pathname == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s/%s): %s",
+		    diag, home, name, gfarm_error_string(e));
+		return (e);
+	}
+	sprintf(pathname, "%s/%s", home, name);
+	*pathnamep = pathname;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+gfarm_config_set_default_for_client(void)
+{
+	gfarm_error_t e;
+
+	if (gfarm_ctxp->tls_certificate_file == NULL) {
+		e = gfarm_config_pathname_for_client(
+		    GFARM_TLS_CERTIFICATE_FILE_DEFAULT_FOR_CLIENT,
+		    "client TLS certficate file",
+		    &gfarm_ctxp->tls_certificate_file);
+		if (e != GFARM_ERR_NO_ERROR)
+			return (e);
+	}
+	if (gfarm_ctxp->tls_key_file == NULL) {
+		e = gfarm_config_pathname_for_client(
+		    GFARM_TLS_KEY_FILE_DEFAULT_FOR_CLIENT,
+		    "client TLS key file",
+		    &gfarm_ctxp->tls_key_file);
+		if (e != GFARM_ERR_NO_ERROR)
+			return (e);
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
 /*
  * the following function is for client,
  * server/daemon process shouldn't call it.
@@ -42,30 +102,17 @@ gfarm_error_t
 gfarm_config_read(void)
 {
 	gfarm_error_t e;
-	char *home;
 	FILE *config;
 	int lineno, user_config_errno, rc_need_free;
-	static const char gfarm_client_rc[] = GFARM_CLIENT_RC;
 	char *rc, *config_file = gfarm_config_get_filename();
 
 	rc_need_free = 0;
 	rc = getenv("GFARM_CONFIG_FILE");
 	if (rc == NULL) {
-		/*
-		 * result of gfarm_get_local_homedir() should not be trusted.
-		 * (maybe forged)
-		 */
-		home = gfarm_get_local_homedir();
-
-		GFARM_MALLOC_ARRAY(rc,
-		    strlen(home) + 1 + sizeof(gfarm_client_rc));
-		if (rc == NULL) {
-			e = GFARM_ERR_NO_MEMORY;
-			gflog_debug(GFARM_MSG_1000980,
-			    "gfarm_config_read: %s", gfarm_error_string(e));
+		e = gfarm_config_pathname_for_client(
+		    GFARM_CLIENT_RC, "gfarm config file", &rc);
+		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
-		}
-		sprintf(rc, "%s/%s", home, gfarm_client_rc);
 		rc_need_free = 1;
 	}
 	if ((config = fopen(rc, "r")) == NULL) {
@@ -102,8 +149,11 @@ gfarm_config_read(void)
 
 	gfarm_config_set_default_ports();
 	gfarm_config_set_default_misc();
+	e = gfarm_config_set_default_for_client();
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
 
-	return (GFARM_ERR_NO_ERROR);
+	return (gfarm_config_sanity_check());
 }
 
 #ifndef __KERNEL__	/* gfarm_initialize :: kernel spec */

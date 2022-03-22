@@ -32,15 +32,17 @@
 #include "gfs_proto.h" /* for GFSD_USERNAME, XXX layering violation */
 #include "gfm_proto.h" /* for GFSM_USERNAME, XXX layering violation */
 
-static gfarm_error_t gfarm_authorize_panic(struct gfp_xdr *, int,
+static gfarm_error_t gfarm_authorize_panic(struct gfp_xdr *,
 	char *, char *,
-	gfarm_error_t (*)(void *, enum gfarm_auth_method, const char *,
+	gfarm_error_t (*)(void *,
+	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
 	    char **), void *,
 	enum gfarm_auth_id_type *, char **);
 
-gfarm_error_t (*gfarm_authorization_table[])(struct gfp_xdr *, int,
+gfarm_error_t (*gfarm_authorization_table[])(struct gfp_xdr *,
 	char *, char *,
-	gfarm_error_t (*)(void *, enum gfarm_auth_method, const char *,
+	gfarm_error_t (*)(void *,
+	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
 	    char **), void *,
 	enum gfarm_auth_id_type *, char **) = {
 	/*
@@ -56,13 +58,32 @@ gfarm_error_t (*gfarm_authorization_table[])(struct gfp_xdr *, int,
 	gfarm_authorize_panic,		/* GFARM_AUTH_METHOD_GSI */
 	gfarm_authorize_panic,		/* GFARM_AUTH_METHOD_GSI_AUTH */
 #endif
+#ifdef HAVE_TLS_1_3
+	gfarm_authorize_tls_sharedsecret,
+				/* GFARM_AUTH_METHOD_TLS_SHAREDSECRET */
+	gfarm_authorize_tls_client_certificate,
+				/* GFARM_AUTH_METHOD_TLS_CLIENT_CERTIFICATE */
+#else
+	gfarm_authorize_panic,
+				/* GFARM_AUTH_METHOD_TLS_SHAREDSECRET */
+	gfarm_authorize_panic,
+				/* GFARM_AUTH_METHOD_TLS_CLIENT_CERTIFICATE */
+#endif
+#ifdef HAVE_KERBEROS
+	gfarm_authorize_kerberos,	/* GFARM_AUTH_METHOD_KERBEROS */
+	gfarm_authorize_kerberos_auth,	/* GFARM_AUTH_METHOD_KERBEROS_AUTH */
+#else
+	gfarm_authorize_panic,		/* GFARM_AUTH_METHOD_KERBEROS */
+	gfarm_authorize_panic,		/* GFARM_AUTH_METHOD_KERBEROS_AUTH */
+#endif
 };
 
 static gfarm_error_t
-gfarm_authorize_panic(struct gfp_xdr *conn, int switch_to,
+gfarm_authorize_panic(struct gfp_xdr *conn,
 	char *service_tag, char *hostname,
 	gfarm_error_t (*auth_uid_to_global_user)(void *,
-	    enum gfarm_auth_method, const char *, char **), void *closure,
+	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
+	    char **), void *closure,
 	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
 {
 	gflog_fatal(GFARM_MSG_1000021,
@@ -401,29 +422,32 @@ gfarm_auth_sharedsecret_response(struct gfp_xdr *conn,
 }
 
 gfarm_error_t
-gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
+gfarm_authorize_sharedsecret_common(struct gfp_xdr *conn,
 	char *service_tag, char *hostname,
 	gfarm_error_t (*auth_uid_to_global_user)(void *,
-	    enum gfarm_auth_method, const char *, char **), void *closure,
+	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
+	    char **), void *closure,
+	const char *auth_method_name,
 	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
 {
 	gfarm_error_t e;
-	char *global_username, *local_username, *aux, *buf = NULL;
+	char *global_username, *local_username, *buf = NULL;
 	int eof;
 	enum gfarm_auth_id_type peer_type;
 	enum gfarm_auth_error error = GFARM_AUTH_ERROR_DENIED; /* to be safe */
 	struct passwd pwbuf, *pwd;
-	int is_root = 0;
 
 	e = gfp_xdr_recv(conn, 0, &eof, "s", &global_username);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_info(GFARM_MSG_1003585,
-		    "%s: authorize_sharedsecret: reading username", hostname);
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "%s: authorize %s: reading username",
+		    hostname, auth_method_name);
 		return (e);
 	}
 	if (eof) {
-		gflog_info(GFARM_MSG_1003586,
-		    "%s: authorize_sharedsecret: unexpected EOF", hostname);
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "%s: authorize %s: unexpected EOF",
+		    hostname, auth_method_name);
 		return (GFARM_ERR_PROTOCOL);
 	}
 
@@ -440,12 +464,14 @@ gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
 		 */
 		peer_type = GFARM_AUTH_ID_TYPE_USER;
 		e = (*auth_uid_to_global_user)(closure,
-		    GFARM_AUTH_METHOD_SHAREDSECRET, global_username, NULL);
+		    GFARM_AUTH_METHOD_SHAREDSECRET, peer_type,
+		    global_username, NULL);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_notice(GFARM_MSG_1000040,
-			    "(%s@%s) authorize_sharedsecret: "
+			gflog_notice(GFARM_MSG_UNFIXED,
+			    "(%s@%s) authorize %s: "
 			    "the global username isn't registered in gfmd: %s",
-			    global_username, hostname, gfarm_error_string(e));
+			    global_username, hostname, auth_method_name,
+			    gfarm_error_string(e));
 			if (e == GFARM_ERR_NO_MEMORY)
 				error = GFARM_AUTH_ERROR_RESOURCE_UNAVAILABLE;
 			else if (e == GFARM_ERR_PROTOCOL)
@@ -460,11 +486,12 @@ gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
 		e = gfarm_global_to_local_username_by_url(GFARM_PATH_ROOT,
 		    global_username, &local_username);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_1000041,
-			    "(%s@%s) authorize_sharedsecret: "
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "(%s@%s) authorize %s: "
 			    "cannot map global username into local username: "
 			    "%s",
-			    global_username, hostname, gfarm_error_string(e));
+			    global_username, hostname, auth_method_name,
+			    gfarm_error_string(e));
 			/* no memory, or configuration error */
 			error = GFARM_AUTH_ERROR_RESOURCE_UNAVAILABLE;
 		}
@@ -476,18 +503,19 @@ gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
 	} else {
 		GFARM_MALLOC_ARRAY(buf, gfarm_ctxp->getpw_r_bufsz);
 		if (buf == NULL) {
-			gflog_error(GFARM_MSG_1000042,
-			    "(%s@%s) %s: authorize_sharedsecret: %s",
-			    global_username, hostname, local_username,
-			    gfarm_error_string(e));
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "(%s@%s) %s: authorize %s: %s",
+			    global_username, hostname, auth_method_name,
+			    local_username, gfarm_error_string(e));
 			pwd = NULL;
 			error = GFARM_AUTH_ERROR_RESOURCE_UNAVAILABLE;
 		} else if (getpwnam_r(local_username, &pwbuf, buf,
 		    gfarm_ctxp->getpw_r_bufsz, &pwd) != 0 || pwd == NULL) {
-			gflog_notice(GFARM_MSG_1000043,
-			    "(%s@%s) %s: authorize_sharedsecret: "
+			gflog_notice(GFARM_MSG_UNFIXED,
+			    "(%s@%s) %s: authorize %s: "
 			    "local account doesn't exist",
-			    global_username, hostname, local_username);
+			    global_username, hostname, auth_method_name,
+			    local_username);
 			pwd = NULL;
 			error = GFARM_AUTH_ERROR_INVALID_CREDENTIAL;
 		}
@@ -509,59 +537,10 @@ gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
 	assert(local_username != NULL);
 
 	/* succeed, do logging */
-	gflog_notice(GFARM_MSG_1000044,
-	    "(%s@%s) authenticated: auth=sharedsecret local_user=%s",
-	    global_username, hostname, local_username);
+	gflog_notice(GFARM_MSG_UNFIXED,
+	    "(%s@%s) authenticated: auth=%s local_user=%s",
+	    global_username, hostname, auth_method_name, local_username);
 
-	if (switch_to) {
-		GFARM_MALLOC_ARRAY(aux,
-		    strlen(global_username) + 1 + strlen(hostname) + 1);
-		if (aux == NULL) {
-			gflog_error(GFARM_MSG_1000045,
-			    "(%s@%s) authorize_sharedsecret: %s",
-			    global_username, hostname,
-			    gfarm_error_string(GFARM_ERR_NO_MEMORY));
-			free(local_username);
-			free(global_username);
-			if (buf != NULL)
-				free(buf);
-			return (GFARM_ERR_NO_MEMORY);
-		}
-		sprintf(aux, "%s@%s", global_username, hostname);
-		gflog_set_auxiliary_info(aux);
-
-		gflog_info(GFARM_MSG_1004525,
-		    "(%s@%s) %s: authorize_sharedsecret: trying setuid...",
-		    global_username, hostname, local_username);
-		/*
-		 * because the name returned by getlogin() is
-		 * an attribute of a session on 4.4BSD derived OSs,
-		 * we should create new session before calling
-		 * setlogin().
-		 */
-		if (seteuid(0) == 0) /* make sure to have root privilege */
-			is_root = 1;
-		if (setsid() == -1)
-			gflog_debug_errno(GFARM_MSG_1002346, "setsid()");
-#ifdef HAVE_SETLOGIN
-		if (setlogin(pwd->pw_name) == -1 && is_root)
-			gflog_warning_errno(GFARM_MSG_1002347,
-			    "setlogin(%s)", pwd->pw_name);
-#endif
-		if (initgroups(pwd->pw_name, pwd->pw_gid) == -1 && is_root)
-			gflog_error_errno(GFARM_MSG_1002348,
-			    "initgroups(%s, %d)",
-			    pwd->pw_name, (int)pwd->pw_gid);
-		if (setgid(pwd->pw_gid) == -1 && is_root)
-			gflog_error_errno(GFARM_MSG_1002349,
-			    "setgid(%d)", (int)pwd->pw_gid);
-		if (setuid(pwd->pw_uid) == -1 && is_root)
-			gflog_error_errno(GFARM_MSG_1002350,
-			    "setuid(%d)", (int)pwd->pw_uid);
-
-		gfarm_set_local_username(local_username);
-		gfarm_set_local_homedir(pwd->pw_dir);
-	}
 	free(local_username);
 	if (peer_typep != NULL)
 		*peer_typep = peer_type;
@@ -574,29 +553,30 @@ gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
 	return (GFARM_ERR_NO_ERROR);
 }
 
+gfarm_error_t
+gfarm_authorize_sharedsecret(struct gfp_xdr *conn,
+	char *service_tag, char *hostname,
+	gfarm_error_t (*auth_uid_to_global_user)(void *,
+	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
+	    char **), void *closure,
+	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
+{
+	return (gfarm_authorize_sharedsecret_common(conn,
+	    service_tag, hostname, auth_uid_to_global_user, closure,
+	    "sharedsecret", peer_typep, global_usernamep));
+}
+
 /*
- * the `switch_to' flag has the following side effects:
- *	- gfarm_authorize() isn't thread safe.
- *      - the privilege of this program will switch to the authenticated user.
- *      - gflog_set_auxiliary_info("user@hostname") will be called.
- *        thus, the caller of gfarm_authorize() must call the following later:
- *              char *aux = gflog_get_auxiliary_info();
- *              gflog_get_auxiliary_info(NULL);
- *              free(aux);
- *      - gfarm_get_local_username(), gfarm_get_local_homedir() and
- *        gfarm_get_global_username() become available.
- *
  * note that the user's account is not always necessary on this host,
- * if the `switch_to' flag isn't set. but also note that some
- * authentication methods (e.g. "sharedsecret") require the user's
- * local account anyway even if the `switch_to' isn't set.
+ * but also note that some authentication methods (e.g. "sharedsecret")
+ * require the user's local account.
  */
 gfarm_error_t
-gfarm_authorize(struct gfp_xdr *conn,
-	int switch_to, char *service_tag,
+gfarm_authorize_wo_setuid(struct gfp_xdr *conn, char *service_tag,
 	char *hostname, struct sockaddr *addr,
 	gfarm_error_t (*auth_uid_to_global_user)(void *,
-	    enum gfarm_auth_method, const char *, char **), void *closure,
+	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
+	    char **), void *closure,
 	enum gfarm_auth_id_type *peer_typep, char **global_usernamep,
 	enum gfarm_auth_method *auth_methodp)
 {
@@ -708,7 +688,7 @@ gfarm_authorize(struct gfp_xdr *conn,
 			return (e);
 		}
 
-		e = (*gfarm_authorization_table[method])(conn, switch_to,
+		e = (*gfarm_authorization_table[method])(conn,
 		    service_tag, hostname, auth_uid_to_global_user, closure,
 		    peer_typep, global_usernamep);
 		if (e != GFARM_ERR_PROTOCOL_NOT_SUPPORTED &&

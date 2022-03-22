@@ -2,12 +2,12 @@
 .\"     Title: gfpconcat
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 28 Aug 2021
+.\"      Date: 7 Feb 2022
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFPCONCAT" "1" "28 Aug 2021" "Gfarm" "Gfarm"
+.TH "GFPCONCAT" "1" "7 Feb 2022" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -31,7 +31,7 @@
 gfpconcat \- concatenate files in parallel
 .SH "SYNOPSIS"
 .HP \w'\fBgfpconcat\fR\ 'u
-\fBgfpconcat\fR [\-fpqvd] [\-h\ \fIfilesystem\-node\fR] [\-i\ \fIinput\-listfile\fR] [\-j\ \fInum\-of\-processes\fR] [\-m\ \fIminimum\-bytes\fR] \-o\ \fIdestination\-file\fR \fIsource\-file\fR...
+\fBgfpconcat\fR [\-fpqvd] [\-h\ \fIfilesystem\-node\fR] [\-j\ \fInum\-of\-processes\fR] [\-m\ \fIminimum\-bytes\fR] [\-i\ \fIinput\-listfile\fR] \-o\ \fIdestination\-file\fR \fIsource\-file\fR...
 .SH "DESCRIPTION"
 .PP
 \fBgfpconcat\fR
@@ -112,7 +112,7 @@ in gfarm2\&.conf\&. (see man gfarm2\&.conf)
 .PP
 \fB\-m\fR \fIminimum\-bytes\fR
 .RS 4
-Specifies the minimum size (byte) per a process to copy in parallel\&. When the size assigned to a process is equal or smaller than \-m, single process is used to copy (not copied in parallel)\&. The default value is 0 byte (always copied in parallel)\&.
+Specifies the minimum size (byte) per a process to copy in parallel\&. The default value is 1048576 bytes\&.
 .RE
 .PP
 \fB\-p\fR

@@ -1,3 +1,5 @@
+#include <gfarm/gfarm_config.h>
+
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,6 +12,10 @@
 #include <pwd.h>
 #include <gssapi.h>
 
+//#ifdef HAVE_LIBGSSAPI_KRB5
+//#include <gssapi/gssapi_ext.h>
+//#endif
+
 #include <gfarm/gflog.h>
 #include <gfarm/error.h>
 
@@ -20,7 +26,7 @@
 #include "tcputil.h"
 
 #include "gfsl_config.h"
-#include "gfarm_gsi.h"
+#include "gfsl_gss.h"
 #if GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS
 #include "gfarm_auth.h"
 #endif
@@ -136,14 +142,14 @@ gfarmGssPrintStatus(char **list, const char *diag)
 }
 
 void
-gfarmGssPrintMajorStatus(OM_uint32 majStat)
+gfarmGssPrintMajorStatus(gfarm_OM_uint32 majStat)
 {
     gfarmGssPrintStatus(gfarmGssCrackMajorStatus(majStat), "Major");
 }
 
 
 void
-gfarmGssPrintMinorStatus(OM_uint32 minStat)
+gfarmGssPrintMinorStatus(gfarm_OM_uint32 minStat)
 {
     gfarmGssPrintStatus(gfarmGssCrackMinorStatus(minStat), "Minor");
 }
@@ -210,7 +216,7 @@ gfarmGssImportName(gss_name_t *namePtr, void *nameValue, size_t nameLength,
 
 int
 gfarmGssImportNameOfHostBasedService(gss_name_t *namePtr, char *service,
-    char *hostname, OM_uint32 *majStatPtr, OM_uint32 *minStatPtr)
+    char *hostname, gfarm_OM_uint32 *majStatPtr, gfarm_OM_uint32 *minStatPtr)
 {
     OM_uint32 majStat;
     OM_uint32 minStat;
@@ -246,7 +252,7 @@ gfarmGssImportNameOfHostBasedService(gss_name_t *namePtr, char *service,
 
 int
 gfarmGssImportNameOfHost(gss_name_t *namePtr, char *hostname,
-    OM_uint32 *majStatPtr, OM_uint32 *minStatPtr)
+    gfarm_OM_uint32 *majStatPtr, gfarm_OM_uint32 *minStatPtr)
 {
     return gfarmGssImportNameOfHostBasedService(namePtr, "host", hostname,
 						majStatPtr, minStatPtr);
@@ -254,8 +260,8 @@ gfarmGssImportNameOfHost(gss_name_t *namePtr, char *hostname,
 
 
 int
-gfarmGssDeleteName(gss_name_t *namePtr, OM_uint32 *majStatPtr,
-    OM_uint32 *minStatPtr)
+gfarmGssDeleteName(gss_name_t *namePtr, gfarm_OM_uint32 *majStatPtr,
+    gfarm_OM_uint32 *minStatPtr)
 {
     OM_uint32 majStat;
     OM_uint32 minStat;
@@ -295,7 +301,7 @@ gfarmGssDuplicateName(gss_name_t *outputNamePtr, const gss_name_t inputName,
 
 int
 gfarmGssNewCredentialName(gss_name_t *outputNamePtr, gss_cred_id_t cred,
-    OM_uint32 *majStatPtr, OM_uint32 *minStatPtr)
+    gfarm_OM_uint32 *majStatPtr, gfarm_OM_uint32 *minStatPtr)
 {
     OM_uint32 majStat;
     OM_uint32 minStat;
@@ -328,8 +334,9 @@ gfarmGssNewCredentialName(gss_name_t *outputNamePtr, gss_cred_id_t cred,
 
 
 char *
-gfarmGssNewDisplayName(const gss_name_t inputName, OM_uint32 *majStatPtr,
-    OM_uint32 *minStatPtr, gss_OID *outputNameTypePtr)
+gfarmGssNewDisplayName(const gss_name_t inputName,
+    gfarm_OM_uint32 *majStatPtr, gfarm_OM_uint32 *minStatPtr,
+    gss_OID *outputNameTypePtr)
 {
     OM_uint32 majStat;
     OM_uint32 minStat, minStat2;
@@ -373,7 +380,8 @@ gfarmGssNewDisplayName(const gss_name_t inputName, OM_uint32 *majStatPtr,
 int
 gfarmGssAcquireCredential(gss_cred_id_t *credPtr,
     const gss_name_t desiredName, gss_cred_usage_t credUsage,
-    OM_uint32 *majStatPtr, OM_uint32 *minStatPtr, gss_name_t *credNamePtr)
+    gfarm_OM_uint32 *majStatPtr, gfarm_OM_uint32 *minStatPtr,
+    gss_name_t *credNamePtr)
 {
     OM_uint32 majStat = 0;
     OM_uint32 minStat = 0;
@@ -471,8 +479,8 @@ gfarmGssAcquireCredential(gss_cred_id_t *credPtr,
 
 
 int
-gfarmGssDeleteCredential(gss_cred_id_t *credPtr, OM_uint32 *majStatPtr,
-    OM_uint32 *minStatPtr)
+gfarmGssDeleteCredential(gss_cred_id_t *credPtr, gfarm_OM_uint32 *majStatPtr,
+    gfarm_OM_uint32 *minStatPtr)
 {
     OM_uint32 majStat = 0;
     OM_uint32 minStat = 0;
@@ -1039,115 +1047,6 @@ gfarmGssReceive(int fd, gss_ctx_id_t sCtx, int timeoutMsec,
     return ret;
 }
 
-#if GFARM_GSS_EXPORT_CRED_ENABLED
-
-struct gfarmExportedCredential {
-    char *env;
-    char *filename;
-};
-
-gfarmExportedCredential *
-gfarmGssExportCredential(gss_cred_id_t cred, OM_uint32 *statPtr)
-{
-    gfarmExportedCredential *exportedCred = NULL;
-    OM_uint32 majStat = 0;
-    OM_uint32 minStat = 0;
-    gss_buffer_desc buf = GSS_C_EMPTY_BUFFER;
-    char *exported, *filename, *env;
-    static char exported_name[] = "X509_USER_DELEG_PROXY=";
-    static char env_name[] = "X509_USER_PROXY=";
-    static char file_prefix[] = "FILE:";
-    static const char diag[] = "gfarmGssExportCredential";
-
-    /*
-     * NOTE: this code may be called from a client,
-     * see the comment in gfarmGssNewCredentialName() about this issue.
-     */
-    gfarm_privilege_lock(diag);
-    majStat = gss_export_cred(&minStat, cred, GSS_C_NO_OID, 1, &buf);
-    gfarm_privilege_unlock(diag);
-    if (GSS_ERROR(majStat))
-	goto Done;
-
-    exported = buf.value;
-    for (filename = exported; *filename != '\0'; filename++)
-	if (!isalnum(*(unsigned char *)filename) && *filename != '_')
-	    break;
-    if (*filename != '=') { /* not an environment variable */
-	majStat = GSS_S_UNAVAILABLE;
-	goto Done;
-    }
-    filename++;
-    if (memcmp(exported, exported_name, sizeof(exported_name) - 1) == 0) {
-	GFARM_MALLOC_ARRAY(env, sizeof(env_name) + strlen(filename));
-	if (env == NULL) {
-	    majStat = GSS_S_FAILURE;
-	    goto Done;
-	}
-	memcpy(env, env_name, sizeof(env_name) - 1);
-	strcpy(env + sizeof(env_name) - 1, filename);
-	filename = env + sizeof(env_name) - 1;
-    } else {
-	env = strdup(exported);
-	if (env == NULL) {
-	    majStat = GSS_S_FAILURE;
-	    goto Done;
-	}
-	filename = env + (filename - exported);
-    }
-    if (memcmp(filename, file_prefix, sizeof(file_prefix) - 1) == 0)
-	filename += sizeof(file_prefix) - 1;
-
-    GFARM_MALLOC(exportedCred);
-    if (exportedCred == NULL) {
-	free(env);
-	majStat = GSS_S_FAILURE;
-	goto Done;
-    }
-    exportedCred->env = env;
-    exportedCred->filename = access(filename, R_OK) == 0 ? filename : NULL;
-
-    Done:
-    gss_release_buffer(&minStat, &buf);
-    if (statPtr != NULL)
-	*statPtr = majStat;
-
-    if (GSS_ERROR(majStat)) {
-	gflog_debug(GFARM_MSG_1000800,
-		"failed to export credential (%u)(%u)",
-		 majStat, minStat);
-    }
-
-    return exportedCred;
-}
-
-char *
-gfarmGssEnvForExportedCredential(gfarmExportedCredential *exportedCred)
-{
-    return exportedCred->env;
-}
-
-void
-gfarmGssDeleteExportedCredential(gfarmExportedCredential *exportedCred,
-    int sigHandler)
-{
-    static const char diag[] = "gfarmGssDeleteExportedCredential";
-
-    if (exportedCred->filename != NULL) {
-	gfarm_privilege_lock(diag);
-	unlink(exportedCred->filename);
-	gfarm_privilege_unlock(diag);
-    }
-
-    if (sigHandler) /* It's not safe to do the following operation */
-	    return;
-
-    free(exportedCred->env);
-    free(exportedCred);
-}
-
-#endif /* GFARM_GSS_EXPORT_CRED_ENABLED */
-
 /*
  * multiplexed version of gfarmGssInitiateSecurityContext()
  */
@@ -1354,7 +1253,7 @@ gfarmGssInitiateSecurityContextRequest(struct gfarm_eventqueue *q, int fd,
     state->minStat = GFSL_DEFAULT_MINOR_ERROR;
 
     state->writable =
-	gfarm_fd_event_alloc(GFARM_EVENT_WRITE, fd,
+	gfarm_fd_event_alloc(GFARM_EVENT_WRITE, fd, NULL, NULL,
 			     gfarmGssInitiateSecurityContextSendToken,
 			     state);
     if (state->writable == NULL) {
@@ -1369,10 +1268,9 @@ gfarmGssInitiateSecurityContextRequest(struct gfarm_eventqueue *q, int fd,
      * GFARM_EVENT_READ flag and a timer_event) here, because
      * it's possible that both event handlers are called at once.
      */
-    state->readable =
-	gfarm_fd_event_alloc(GFARM_EVENT_READ|GFARM_EVENT_TIMEOUT, fd,
-			     gfarmGssInitiateSecurityContextReceiveToken,
-			     state);
+    state->readable = gfarm_fd_event_alloc(
+	GFARM_EVENT_READ|GFARM_EVENT_TIMEOUT, fd, NULL, NULL,
+	gfarmGssInitiateSecurityContextReceiveToken, state);
     if (state->readable == NULL) {
 	gflog_auth_error(GFARM_MSG_1000628,
 	    "gfarmGssInitiateSecurityContextRequest(): "

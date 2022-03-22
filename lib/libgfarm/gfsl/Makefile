@@ -11,17 +11,23 @@ include $(top_srcdir)/makes/var.mk
 ###
 
 CFLAGS = $(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) -I$(GFSL_SRCDIR) \
-	$(globus_includes) \
+	$(GSSAPI_INCLUDES) \
 	-DGFARM_INSTALL_ETC_DIR='"$(sysconfdir)"' \
-	-DGLOBUS_FAKE_GSS_C_NT_USER=0 # see gsi.c
+	-DGLOBUS_FAKE_GSS_C_NT_USER=0 # see gss.c
+LDLIBS = $(GSSAPI_LIBS) $(openssl_libs) $(LIBS)
 
 ### for library
 
-LIBRARY = libgfsl.la
-LIBRARY_RESULT = # do not install
+# shared object version
+LTLDFLAGS = $(LTFLAGS_SHARELIB_IN) $(libdir)
+LT_CURRENT=1
+LT_REVISION=0
+LT_AGE=0
 
-SRCS = gsi.c tcputil.c auth.c session.c misc.c
-OBJS = gsi.lo tcputil.lo auth.lo session.lo misc.lo
+LIBRARY = libgfsl_$(GSSAPI_TYPE).la
+
+SRCS = gss.c tcputil.c auth.c session.c misc.c
+OBJS = gss.lo tcputil.lo auth.lo session.lo misc.lo
 
 ### for programs
 
@@ -36,7 +42,7 @@ SCOBJS = scarg.o scsub.o
 SCOBJS2 = scarg.o
 PROG_DEPLIBS = $(LIBRARY) ../gfutil/libgfutil.la
 PROG_LDLIBS = $(COMMON_LDFLAGS) $(PROG_DEPLIBS) \
-	$(globus_gssapi_libs) $(openssl_libs) $(LIBS)
+	$(GSSAPI_LIBS) $(openssl_libs) $(LIBS)
 
 ###
 ### rules
@@ -45,6 +51,9 @@ PROG_LDLIBS = $(COMMON_LDFLAGS) $(PROG_DEPLIBS) \
 all: $(LIBRARY)
 
 program: $(PROGRAMS)
+
+test:
+	echo "VPATH=<$(VPATH)>"
 
 ### for library
 
@@ -56,8 +65,8 @@ include $(top_srcdir)/makes/gflog.mk
 # dependencies
 auth.lo: $(GFUTIL_SRCDIR)/hash.h $(GFUTIL_SRCDIR)/gfutil.h
 auth.lo: gfsl_config.h misc.h
-gsi.lo: $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/gfutil.h
-gsi.lo: gfsl_config.h tcputil.h
+gss.lo: $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/gfutil.h
+gss.lo: gfsl_config.h tcputil.h
 misc.lo: gfsl_config.h $(top_builddir)/makes/config.mk # $(GFARM_INSTALL_ETC_DIR) -> $(sysconfdir)
 session.lo: $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/gfutil.h
 session.lo: tcputil.h misc.h
@@ -65,10 +74,10 @@ tcputil.lo: $(GFUTIL_SRCDIR)/gfnetdb.h $(GFUTIL_SRCDIR)/gfutil.h tcputil.h
 
 server.o server2.o client.o client2.o: $(GFUTIL_SRCDIR)/gfutil.h \
     $(INC_SRCDIR)/gfarm_misc.h tcputil.h \
-    gfsl_config.h gfarm_gsi.h gfarm_secure_session.h misc.h scarg.h
+    gfsl_config.h gfsl_gss.h gfsl_secure_session.h misc.h scarg.h
 server.o server2.o: gfarm_auth.h
-scarg.o: $(INC_SRCDIR)/gfarm_misc.h gfarm_gsi.h misc.h scarg.h
-scsub.o: gfarm_secure_session.h gfarm_auth.h scarg.h \
+scarg.o: $(INC_SRCDIR)/gfarm_misc.h gfsl_gss.h misc.h scarg.h
+scsub.o: gfsl_secure_session.h gfarm_auth.h scarg.h \
     $(INC_SRCDIR)/gfarm_misc.h tcputil.h
 
 ### for programs

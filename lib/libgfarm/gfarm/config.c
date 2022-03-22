@@ -100,7 +100,9 @@ gfarm_config_static_init(struct gfarm_context *ctxp)
 		return (GFARM_ERR_NO_MEMORY);
 
 	s->config_file = GFARM_CONFIG;
+
 	s->shared_key_file = NULL;
+
 	gfarm_stringlist_init(&s->xattr_cache_list);
 	s->local_ug_maps_tab = NULL;
 	s->local_username = NULL;
@@ -126,6 +128,7 @@ gfarm_config_static_term(struct gfarm_context *ctxp)
 		return;
 
 	free(s->shared_key_file);
+
 	gfarm_stringlist_free_deeply(&s->xattr_cache_list);
 	local_ug_maps_tab_free();
 	free(s->local_username);
@@ -837,7 +840,7 @@ gfarm_get_global_username_by_host(const char *hostname, int port, char **userp)
 		free(global_user);
 		return (e);
 	}
-	if (GFARM_IS_AUTH_GSI(
+	if (GFARM_IS_AUTH_GSS(
 	    gfm_client_connection_auth_method(gfm_server))) {
 		user = gfm_client_username(gfm_server);
 		if (user == NULL) {
@@ -1019,6 +1022,9 @@ char *gfarm_postgresql_conninfo = NULL;
 
 /* LocalFS dependent */
 char *gfarm_localfs_datadir = NULL;
+
+/* auth TLS dependent */
+#define GFARM_TLS_PROXY_CERTIFICATE_DEFAULT	1	/* enable */
 
 /* IO statistics */
 char *gfarm_iostat_gfmd_path;
@@ -3426,6 +3432,35 @@ parse_one_line(const char *s, char *p,
 
 	} else if (strcmp(s, o = "shared_key_file") == 0) {
 		e = parse_set_var(p, &staticp->shared_key_file);
+
+	} else if (strcmp(s, o = "tls_cipher_suite") == 0) {
+		e = parse_set_var(p, &gfarm_ctxp->tls_cipher_suite);
+	} else if (strcmp(s, o = "tls_ca_certificate_path") == 0) {
+		e = parse_set_var(p, &gfarm_ctxp->tls_ca_certificate_path);
+	} else if (strcmp(s, o = "tls_ca_revocation_path") == 0) {
+		e = parse_set_var(p, &gfarm_ctxp->tls_ca_revocation_path);
+	} else if (strcmp(s, o = "tls_ca_peer_verify_chain_path") == 0) {
+		e = parse_set_var(p,
+		    &gfarm_ctxp->tls_ca_peer_verify_chain_path);
+	} else if (strcmp(s, o = "tls_certificate_file") == 0) {
+		e = parse_set_var(p, &gfarm_ctxp->tls_certificate_file);
+	} else if (strcmp(s, o = "tls_certificate_chain_file") == 0) {
+		e = parse_set_var(p, &gfarm_ctxp->tls_certificate_chain_file);
+	} else if (strcmp(s, o = "tls_key_file") == 0) {
+		e = parse_set_var(p, &gfarm_ctxp->tls_key_file);
+	} else if (strcmp(s, o = "tls_key_update") == 0) {
+		e = parse_set_misc_enabled(p, &gfarm_ctxp->tls_key_update);
+
+	} else if (strcmp(s, o = "tls_build_chain_local") == 0) {
+		e = parse_set_misc_enabled(p,
+		    &gfarm_ctxp->tls_build_chain_local);
+	} else if (strcmp(s, o = "tls_allow_no_crl") == 0) {
+		e = parse_set_misc_enabled(p,
+		    &gfarm_ctxp->tls_allow_no_crl);
+	} else if (strcmp(s, o = "tls_proxy_certificate") == 0) {
+		e = parse_set_misc_enabled(p,
+		    &gfarm_ctxp->tls_proxy_certificate);
+
 	} else if (strcmp(s, o = "auth") == 0) {
 		e = parse_auth_arguments(p, position, &o);
 #if 0 /* not yet in gfarm v2 */
@@ -3885,6 +3920,29 @@ gfarm_config_set_default_misc(void)
 		gfarm_metadb_server_back_channel_sndbuf_limit =
 		    GFARM_BACK_CHANNEL_SOCKBUF_LIMIT_DEFAULT;
 
+	/* GFARM_TLS_CIPHER_SUITE_DEFAULT is NULL */
+	if (gfarm_ctxp->tls_ca_certificate_path == NULL)
+		gfarm_ctxp->tls_ca_certificate_path =
+		    strdup(GFARM_TLS_CA_CERTIFICATE_PATH_DEFAULT);
+	if (gfarm_ctxp->tls_ca_revocation_path == NULL)
+		gfarm_ctxp->tls_ca_revocation_path =
+		    strdup(GFARM_TLS_CA_REVOCATION_PATH_DEFAULT);
+	if (gfarm_ctxp->tls_ca_peer_verify_chain_path == NULL)
+		gfarm_ctxp->tls_ca_peer_verify_chain_path =
+		    strdup(GFARM_TLS_CA_PEER_VERIFY_CHAIN_PATH_DEFAULT);
+	/* GFARM_TLS_CERTIFICATE_CHAIN_FILE_DEFAULT is NULL */
+	if (gfarm_ctxp->tls_key_update == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_ctxp->tls_key_update = GFARM_TLS_KEY_UPDATE_DEFAULT;
+	if (gfarm_ctxp->tls_build_chain_local == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_ctxp->tls_build_chain_local =
+		    GFARM_TLS_BUILD_CHAIN_LOCAL_DEFAULT;
+	if (gfarm_ctxp->tls_allow_no_crl == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_ctxp->tls_allow_no_crl =
+		    GFARM_TLS_ALLOW_NO_CRL_DEFAULT;
+	if (gfarm_ctxp->tls_proxy_certificate == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_ctxp->tls_proxy_certificate =
+		    GFARM_TLS_PROXY_CERTIFICATE_DEFAULT;
+
 	if (gfarm_ctxp->log_level == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->log_level = GFARM_DEFAULT_PRIORITY_LEVEL_TO_LOG;
 	gflog_set_priority_level(gfarm_ctxp->log_level);
@@ -4139,6 +4197,18 @@ gfarm_config_set_default_misc(void)
 		gfarm_replicainfo_enabled = GFARM_REPLICAINFO_ENABLED_DEFAULT;
 
 	gfarm_config_set_default_metadb_server();
+}
+
+gfarm_error_t
+gfarm_config_sanity_check(void)
+{
+	if (gfarm_ctxp->tls_ca_certificate_path == NULL ||
+	    gfarm_ctxp->tls_ca_revocation_path == NULL ||
+	    gfarm_ctxp->tls_ca_peer_verify_chain_path == NULL ||
+	    gfarm_ctxp->tls_key_file == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	return (GFARM_ERR_NO_ERROR);
 }
 
 /*

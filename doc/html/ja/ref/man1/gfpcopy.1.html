@@ -2,7 +2,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfpcopy</title>
-<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
 <a name="gfpcopy.1"></a><div class="titlepage"></div>
@@ -12,7 +12,7 @@
 </div>
 <div class="refsynopsisdiv">
 <a name="synopsis"></a><h2>Synopsis</h2>
-<div class="cmdsynopsis"><p><code class="command">gfpcopy</code>  [-nqvdpPU] [-X <em class="replaceable"><code>regexp</code></em>] [-S <em class="replaceable"><code>source-domainname</code></em>] [-h <em class="replaceable"><code>source-hostfile</code></em>] [-D <em class="replaceable"><code>destination-domainname</code></em>] [-H <em class="replaceable"><code>destination-hostfile</code></em>] [-j <em class="replaceable"><code>num-of-processes</code></em>] [-J <em class="replaceable"><code>num-of-processes</code></em>] [-M <em class="replaceable"><code>total-byte</code></em>] [-z <em class="replaceable"><code>minimum-byte</code></em>] [-Z <em class="replaceable"><code>maximum-byte</code></em>] [-w <em class="replaceable"><code>way-of-scheduling</code></em>] [-W <em class="replaceable"><code>kilobytes-for-threshold</code></em>] [-s <em class="replaceable"><code>KB/s-to-simulate</code></em>] [-F <em class="replaceable"><code>num-for-readahead</code></em>] [-f] [-b <em class="replaceable"><code>bufsize</code></em>] [-e] [-k]  <em class="replaceable"><code>source-path</code></em>   <em class="replaceable"><code>destination-path</code></em> </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfpcopy</code>  [-nqvdpPU] [-X <em class="replaceable"><code>regexp</code></em>] [-S <em class="replaceable"><code>source-domainname</code></em>] [-h <em class="replaceable"><code>source-hostfile</code></em>] [-D <em class="replaceable"><code>destination-domainname</code></em>] [-H <em class="replaceable"><code>destination-hostfile</code></em>] [-j <em class="replaceable"><code>num-of-processes</code></em>] [-J <em class="replaceable"><code>num-of-processes</code></em>] [-M <em class="replaceable"><code>total-byte</code></em>] [-z <em class="replaceable"><code>minimum-byte</code></em>] [-Z <em class="replaceable"><code>maximum-byte</code></em>] [-w <em class="replaceable"><code>way-of-scheduling</code></em>] [-W <em class="replaceable"><code>kilobytes-for-threshold</code></em>] [-s <em class="replaceable"><code>KB/s-to-simulate</code></em>] [-F <em class="replaceable"><code>num-for-readahead</code></em>] [-f] [-b <em class="replaceable"><code>bufsize</code></em>] [-e] [-k] [-t <em class="replaceable"><code>num-of-processes</code></em>] [-T <em class="replaceable"><code>minimum-byte</code></em>]  <em class="replaceable"><code>source-path</code></em>   <em class="replaceable"><code>destination-path</code></em> </p></div>
 </div>
 <div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
@@ -134,6 +134,24 @@ gfpcopy を複数同時に実行するために、コピー先にファイルが
 <dd><p>
 シンボリックリンクをコピーしません。
 </p></dd>
+<dt><span class="term"><code class="option">-t</code> <em class="parameter"><code>num-of-processes</code></em></span></dt>
+<dd>
+<p>
+大きいファイルを個別に並列コピーする場合の並列数を指定します。
+</p>
+<p>
+デフォルト値は 2 です。
+</p>
+</dd>
+<dt><span class="term"><code class="option">-T</code> <em class="parameter"><code>minimum-byte</code></em></span></dt>
+<dd>
+<p>
+大きいファイルを個別に並列コピーする場合の最小サイズをバイト単位で指定します。
+</p>
+<p>
+デフォルトは 1G (1GiB, 1073741824) です。
+</p>
+</dd>
 </dl></div>
 </div>
 <div class="refsect1">
@@ -407,6 +425,7 @@ $ gfpcopy file /tmp/dir<br>
 <div class="refsect1">
 <a name="see-also"></a><h2>SEE ALSO</h2>
 <p>
+  <span class="citerefentry"><span class="refentrytitle">gfcp</span>(1)</span>,
   <span class="citerefentry"><span class="refentrytitle">gfprep</span>(1)</span>,
   <span class="citerefentry"><span class="refentrytitle">gfreg</span>(1)</span>,
   <span class="citerefentry"><span class="refentrytitle">gfexport</span>(1)</span>,

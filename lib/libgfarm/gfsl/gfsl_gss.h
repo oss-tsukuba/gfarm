@@ -1,8 +1,15 @@
-#ifndef _GFARM_GSI_H_
-#define _GFARM_GSI_H_
+#ifndef _GFSL_GSI_H_
+#define _GFSL_GSI_H_
 
-/* only available on GFARM_GSS_EXPORT_CRED_ENABLED case */
-typedef struct gfarmExportedCredential gfarmExportedCredential;
+#include <stdint.h>
+
+/*
+ * Kerberos gssapi.h uses uint32_t, and
+ * Globus gssapi.h uses uint_least32_t,
+ * thus we use larger type for functions called from libgfarm/gfarm layer
+ * to call both libraries via dlopen(3)/dlsym(3).
+ */
+typedef uint_least32_t gfarm_OM_uint32;
 
 /*
  * Prototype
@@ -10,8 +17,8 @@ typedef struct gfarmExportedCredential gfarmExportedCredential;
 extern char **	gfarmGssCrackMajorStatus(OM_uint32 majStat);
 extern char **	gfarmGssCrackMinorStatus(OM_uint32 minStat);
 extern void	gfarmGssFreeCrackedStatus(char **strPtr);
-extern void	gfarmGssPrintMajorStatus(OM_uint32 majStat);
-extern void	gfarmGssPrintMinorStatus(OM_uint32 minStat);
+extern void	gfarmGssPrintMajorStatus(gfarm_OM_uint32 majStat);
+extern void	gfarmGssPrintMinorStatus(gfarm_OM_uint32 minStat);
 
 extern int	gfarmGssSendToken(int fd, gss_buffer_t gsBuf, int timeoutMsec);
 extern int	gfarmGssReceiveToken(int fd, gss_buffer_t gsBuf,
@@ -110,14 +117,4 @@ extern int	gfarmGssInitiateSecurityContextResult(
 			OM_uint32 *majStatPtr, OM_uint32 *minStatPtr,
 			gss_name_t *remoteNamePtr);
 
-/* only available on GFARM_GSS_EXPORT_CRED_ENABLED case */
-extern gfarmExportedCredential *
-		gfarmGssExportCredential(gss_cred_id_t cred,
-					 OM_uint32 *statPtr);
-extern char *	gfarmGssEnvForExportedCredential(
-			gfarmExportedCredential *exportedCred);
-extern void	gfarmGssDeleteExportedCredential(
-			gfarmExportedCredential *exportedCred,
-			int sigHandler);
-
-#endif /* _GFARM_GSI_H_ */
+#endif /* _GFSL_GSI_H_ */

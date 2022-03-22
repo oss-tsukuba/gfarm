@@ -140,6 +140,9 @@ for host in $gfmds; do
 set -eux
 ln '/etc/grid-security/${host}cert.pem' /etc/grid-security/hostcert.pem
 ln '/etc/grid-security/${host}key.pem' /etc/grid-security/hostkey.pem
+mkdir -p /etc/pki/tls/private
+ln -s /etc/grid-security/hostcert.pem /etc/pki/tls/certs/gfmd.crt
+ln -s /etc/grid-security/hostkey.pem /etc/pki/tls/private/gfmd.key
 EOF
 done
 
@@ -157,24 +160,36 @@ wait
 
 gfservice -k -d config-all
 
+tls_available=false
+if gfstatus 2>/dev/null | grep '^client auth tls ' | grep ': available'; then
+  tls_available=true
+fi
 
 for host in $gfmds; do
-  (gfservice set-gfmd-conf "$host" digest md5 \
-  && gfservice set-gfmd-conf "$host" metadb_server_heartbeat_interval 10 \
-  && gfservice set-gfmd-conf "$host" 'auth enable gsi' '*' \
-  && gfservice set-gfmd-conf "$host" write_verify enable \
-  && gfservice set-gfmd-conf "$host" write_verify_interval 600 \
-  && gfservice restart-gfmd "$host" \
+  (gfservice set-gfmd-conf "$host" digest md5 &&
+   gfservice set-gfmd-conf "$host" metadb_server_heartbeat_interval 10 &&
+   gfservice set-gfmd-conf "$host" 'auth enable gsi' '*' &&
+   if $tls_available; then
+     gfservice set-gfmd-conf "$host" 'auth enable tls_sharedsecret' '*' &&
+     gfservice set-gfmd-conf "$host" 'auth enable tls_client_certificate' '*'
+   fi &&
+   gfservice set-gfmd-conf "$host" write_verify enable &&
+   gfservice set-gfmd-conf "$host" write_verify_interval 600 &&
+   gfservice restart-gfmd "$host" 
   ) &
 done
 #wait
 
 for host in $gfsds; do
-  (gfservice set-gfarm-conf "$host" client_digest_check enable \
-  && gfservice set-gfarm-conf "$host" spool_digest_error_check disable \
-  && gfservice set-gfarm-conf "$host" 'auth enable gsi' '*' \
-  && gfservice restart-gfsd "$host" \
-  && ssh "$host" sudo systemctl enable "gfsd-${host}${GFDOCKER_HOSTNAME_SUFFIX}" \
+  (gfservice set-gfarm-conf "$host" client_digest_check enable &&
+   gfservice set-gfarm-conf "$host" spool_digest_error_check disable &&
+   gfservice set-gfarm-conf "$host" 'auth enable gsi' '*' &&
+   if $tls_available; then
+     gfservice set-gfarm-conf "$host" 'auth enable tls_sharedsecret' '*' &&
+     gfservice set-gfarm-conf "$host" 'auth enable tls_client_certificate' '*'
+   fi &&
+   gfservice restart-gfsd "$host" &&
+   ssh "$host" sudo systemctl enable "gfsd-${host}${GFDOCKER_HOSTNAME_SUFFIX}"
   ) &
 done
 #wait
@@ -269,27 +284,26 @@ test_auth() {
   [ $num_gfsched -eq $GFDOCKER_NUM_GFSDS ] || exit 1
 }
 
+auth_trial=
+if $tls_available; then
+  auth_trial="${auth_trial} tls_sharedsecret tls_client_certificate"
+fi
+
 tmp_gfarmconf=$(mktemp)
-for authtype in sharedsecret gsi_auth gsi; do
-  if [ $authtype = sharedsecret ]; then
-    cat <<EOF  > $tmp_gfarmconf
-auth enable sharedsecret *
-auth disable gsi_auth *
-auth disable gsi *
+for authtype in sharedsecret gsi_auth gsi $auth_trial; do
+  auth_sharedsecret=disable
+  auth_gsi=disable
+  auth_gsi_auth=disable
+  auth_tls_sharedsecret=disable
+  auth_tls_client_certificate=disable
+  eval "auth_${authtype}=enable"
+  cat <<EOF  > $tmp_gfarmconf
+    auth ${auth_sharedsecret} sharedsecret *
+    auth ${auth_gsi_auth} gsi_auth *
+    auth ${auth_gsi} gsi *
+    auth ${auth_tls_sharedsecret} tls_sharedsecret *
+    auth ${auth_tls_client_certificate} tls_client_certificate *
 EOF
-  elif [ $authtype = gsi_auth ]; then
-    cat <<EOF  > $tmp_gfarmconf
-auth disable sharedsecret *
-auth enable gsi_auth *
-auth disable gsi *
-EOF
-  elif [ $authtype = gsi ]; then
-    cat <<EOF  > $tmp_gfarmconf
-auth disable sharedsecret *
-auth disable gsi_auth *
-auth enable gsi *
-EOF
-  fi
   GFARM_CONFIG_FILE=$tmp_gfarmconf test_auth $authtype
 done
 rm -f $tmp_gfarmconf

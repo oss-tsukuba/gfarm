@@ -1,8 +1,8 @@
-#ifndef _GFARM_SECURE_SESSION_H_
-#define _GFARM_SECURE_SESSION_H_
+#ifndef _GFSL_SECURE_SESSION_H_
+#define _GFSL_SECURE_SESSION_H_
 
 #include "gfsl_config.h"
-#include "gfarm_gsi.h"
+#include "gfsl_gss.h"
 #include "gfarm_auth.h"
 
 /*
@@ -258,4 +258,4 @@ extern gfarmSecSession *gfarmSecSessionInitiateResult(struct gfarmSecSessionInit
 						      OM_uint32 *majStatPtr,
 						      OM_uint32 *minStatPtr);
 
-#endif /* _GFARM_SECURE_SESSION_H_ */
+#endif /* _GFSL_SECURE_SESSION_H_ */

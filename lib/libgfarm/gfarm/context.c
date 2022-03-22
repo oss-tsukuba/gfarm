@@ -1,6 +1,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <gfarm/gfarm.h>
 
@@ -50,6 +51,12 @@ static const struct gfarm_context_module_entry module_entries[] = {
 	{
 		gfarm_auth_common_gsi_static_init,
 		gfarm_auth_common_gsi_static_term
+	},
+#endif
+#ifdef HAVE_KERBEROS
+	{
+		gfarm_auth_common_kerberos_static_init,
+		gfarm_auth_common_kerberos_static_term
 	},
 #endif
 	{
@@ -107,6 +114,16 @@ static const struct gfarm_context_module_entry module_entries[] = {
 	},
 };
 
+static char *
+gfarm_getenv_dup(const char *name)
+{
+	char *val = getenv(name);
+
+	if (val == NULL)
+		return (NULL);
+	return (strdup(val));
+}
+
 gfarm_error_t
 gfarm_context_init(void)
 {
@@ -158,6 +175,7 @@ gfarm_context_init(void)
 	ctxp->network_receive_timeout = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->network_send_timeout = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->file_trace = GFARM_CONFIG_MISC_DEFAULT;
+
 	ctxp->ib_rdma = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->rdma_min_size = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->rdma_port = 0;
@@ -166,6 +184,19 @@ gfarm_context_init(void)
 	ctxp->rdma_mr_reg_mode = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->rdma_mr_reg_static_min_size = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->rdma_mr_reg_static_max_size = GFARM_CONFIG_MISC_DEFAULT;
+
+	ctxp->tls_cipher_suite = NULL;
+	ctxp->tls_ca_certificate_path = NULL;
+	ctxp->tls_ca_revocation_path = NULL;
+	ctxp->tls_ca_peer_verify_chain_path = NULL;
+	ctxp->tls_certificate_file = gfarm_getenv_dup("X509_USER_CERT");
+	ctxp->tls_certificate_chain_file = NULL;
+	ctxp->tls_key_file = gfarm_getenv_dup("X509_USER_KEY");
+	ctxp->tls_key_update = GFARM_CONFIG_MISC_DEFAULT;
+	ctxp->tls_build_chain_local = GFARM_CONFIG_MISC_DEFAULT;
+	ctxp->tls_allow_no_crl = GFARM_CONFIG_MISC_DEFAULT;
+	ctxp->tls_proxy_certificate = GFARM_CONFIG_MISC_DEFAULT;
+
 	ctxp->on_demand_replication = 0;
 	ctxp->call_rpc_instead_syscall = 0;
 	ctxp->fatal_action = GFARM_CONFIG_MISC_DEFAULT;
@@ -198,11 +229,19 @@ gfarm_context_term(void)
 
 	for (i = 0; i < GFARM_ARRAY_LENGTH(module_entries); i++)
 		(module_entries[i].term)(gfarm_ctxp);
+
 	free(gfarm_ctxp->metadb_server_name);
 	free(gfarm_ctxp->metadb_admin_user);
 	free(gfarm_ctxp->metadb_admin_user_gsi_dn);
 	free(gfarm_ctxp->schedule_write_target_domain);
-	free(gfarm_ctxp);
 
+	free(gfarm_ctxp->tls_cipher_suite);
+	free(gfarm_ctxp->tls_ca_certificate_path);
+	free(gfarm_ctxp->tls_ca_revocation_path);
+	free(gfarm_ctxp->tls_ca_peer_verify_chain_path);
+	free(gfarm_ctxp->tls_certificate_file);
+	free(gfarm_ctxp->tls_certificate_chain_file);
+
+	free(gfarm_ctxp);
 	gfarm_ctxp = NULL;
 }

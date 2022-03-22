@@ -77,9 +77,12 @@ void gfarm_set_client_digest_check(int);
  * authentication
  */
 gfarm_error_t gfarm_auth_method_gsi_available(void);
+gfarm_error_t gfarm_auth_method_kerberos_available(void);
 char *gfarm_gsi_client_cred_name(void);
+char *gfarm_kerberos_client_cred_name(void);
 #ifdef GFARM_USE_GSSAPI
 void gfarm_gsi_client_cred_set(gss_cred_id_t);
+void gfarm_kerberos_client_cred_set(gss_cred_id_t);
 #endif
 
 /*

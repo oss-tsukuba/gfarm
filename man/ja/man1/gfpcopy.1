@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: gfpcopy
-.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
-.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 27 Aug 2015
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 29 Dec 2021
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFPCOPY" "1" "27 Aug 2015" "Gfarm" "Gfarm"
+.TH "GFPCOPY" "1" "29 Dec 2021" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -31,7 +31,7 @@
 gfpcopy \- ファイルを並列にコピーする
 .SH "SYNOPSIS"
 .HP \w'\fBgfpcopy\fR\ 'u
-\fBgfpcopy\fR [\-nqvdpPU] [\-X\ \fIregexp\fR] [\-S\ \fIsource\-domainname\fR] [\-h\ \fIsource\-hostfile\fR] [\-D\ \fIdestination\-domainname\fR] [\-H\ \fIdestination\-hostfile\fR] [\-j\ \fInum\-of\-processes\fR] [\-J\ \fInum\-of\-processes\fR] [\-M\ \fItotal\-byte\fR] [\-z\ \fIminimum\-byte\fR] [\-Z\ \fImaximum\-byte\fR] [\-w\ \fIway\-of\-scheduling\fR] [\-W\ \fIkilobytes\-for\-threshold\fR] [\-s\ \fIKB/s\-to\-simulate\fR] [\-F\ \fInum\-for\-readahead\fR] [\-f] [\-b\ \fIbufsize\fR] [\-e] [\-k] \fIsource\-path\fR \fIdestination\-path\fR
+\fBgfpcopy\fR [\-nqvdpPU] [\-X\ \fIregexp\fR] [\-S\ \fIsource\-domainname\fR] [\-h\ \fIsource\-hostfile\fR] [\-D\ \fIdestination\-domainname\fR] [\-H\ \fIdestination\-hostfile\fR] [\-j\ \fInum\-of\-processes\fR] [\-J\ \fInum\-of\-processes\fR] [\-M\ \fItotal\-byte\fR] [\-z\ \fIminimum\-byte\fR] [\-Z\ \fImaximum\-byte\fR] [\-w\ \fIway\-of\-scheduling\fR] [\-W\ \fIkilobytes\-for\-threshold\fR] [\-s\ \fIKB/s\-to\-simulate\fR] [\-F\ \fInum\-for\-readahead\fR] [\-f] [\-b\ \fIbufsize\fR] [\-e] [\-k] [\-t\ \fInum\-of\-processes\fR] [\-T\ \fIminimum\-byte\fR] \fIsource\-path\fR \fIdestination\-path\fR
 .SH "DESCRIPTION"
 .PP
 \fBgfpcopy\fR
@@ -121,6 +121,20 @@ gfpcopy を複数同時に実行するために、コピー先にファイルが
 \fB\-k\fR
 .RS 4
 シンボリックリンクをコピーしません。
+.RE
+.PP
+\fB\-t\fR \fInum\-of\-processes\fR
+.RS 4
+大きいファイルを個別に並列コピーする場合の並列数を指定します。
+.sp
+デフォルト値は 2 です。
+.RE
+.PP
+\fB\-T\fR \fIminimum\-byte\fR
+.RS 4
+大きいファイルを個別に並列コピーする場合の最小サイズをバイト単位で指定します。
+.sp
+デフォルトは 1G (1GiB, 1073741824) です。
 .RE
 .SH "COMMON OPTIONS"
 .PP
@@ -373,6 +387,7 @@ $ gfpcopy file /tmp/dir
 の動作が遅くなりま す。そのような場合には、\-j または \-J オプションに大きな値を指定すると、 性能が改善するかもしれません。
 .SH "SEE ALSO"
 .PP
+\fBgfcp\fR(1),
 \fBgfprep\fR(1),
 \fBgfreg\fR(1),
 \fBgfexport\fR(1),

@@ -16,11 +16,11 @@ LIBRARY = libgfarm.la
 CFLAGS = $(COMMON_CFLAGS)
 LDLIBS = $(globus_gssapi_libs) $(openssl_libs) $(LIBS)
 
-GLOBUS_TARGETS = gfsl
-SUBDIRS = gfutil $(globus_targets) gfarm 
+GLOBUS_TARGETS = gfsl_gsi
+KERBEROS_TARGETS = gfsl_kerberos
+SUBDIRS = gfutil $(globus_targets) $(kerberos_targets) gfarm
 
-GLOBUS_OBJS = gfsl/libgfsl.la
-OBJS =	gfutil/libgfutil.la $(globus_objs) gfarm/libgfarmcore.la
+OBJS =	gfutil/libgfutil.la gfarm/libgfarmcore.la
 
 all: subdir-all $(LIBRARY)
 

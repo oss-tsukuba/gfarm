@@ -147,6 +147,7 @@ static const char *errcode_string[GFARM_ERR_NUMBER] = {
 	"invalid credential",
 	"no filesystem node",
 	"directory quota exists",
+	"TLS runtime error",
 };
 
 static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {
@@ -234,18 +235,18 @@ static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {
 	/* refered only from gfarm/auth_server.c */
 	"gfarm_auth_sharedsecret_md5_response: key mismatch, continue",
 
-	/* refered only from gfarm/auth_client_gsi.c */
-	"GSI credential initialization failed",
-	"GSI initialization failed",
-	"cannot initiate GSI connection",
-	"cannot acquire client-side GSI credential",
+	/* refered only from gfarm/auth_client_gss.c */
+	"GSS credential initialization failed",
+	"GSS initialization failed",
+	"cannot initiate GSS connection",
+	"cannot acquire client-side GSS credential",
 
 	/* refered only from gfarm/auth_config.c */
 	"unknown cred_type",
 
 	/* refered only from gfarm/io_gfsl.c */
-	"GSI delegated credential doesn't exist",
-	"cannot export GSI delegated credential",
+	"GSI delegated credential doesn't exist",	/* obsolete */
+	"cannot export GSI delegated credential",	/* obsolete */
 
 	/* refered only from gfarm/gfs_client.c */
 	"gfsd aborted",
@@ -263,7 +264,7 @@ static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {
 	/* OBSOLETE: should be able to be removed, but kept for safety */
 	"no filesystem node (obsolete)",
 
-	/* refered only from gfarm/auth_common_gsi.c */
+	/* refered only from gfarm/auth_common_gss.c */
 	"cred_type is not set, but cred_name is set",
 	"cred_type is not set, but cred_service is set",
 	"internal error: missing GSS_C_NO_CREDENTIAL check",
@@ -284,6 +285,13 @@ static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {
 
 	/* refered only from gfarm/config.c */
 	"invalid digest type",
+
+	/* refered only from gfarm/tls_funcs.h */
+	"TLS private key file permission too widely open.",
+	"TLS private key file about to be opened by others.",
+	"TLS private key read failure.",
+	"TLS invalid cipher.",
+	"TLS certificate verification failure.",
 };
 
 /*

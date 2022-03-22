@@ -51,7 +51,7 @@ DEPNSEXECLIB = $(top_builddir)/ns/nslib/libnsexec.la
 # gfsl
 
 GFSL_SRCDIR = $(top_srcdir)/lib/libgfarm/gfsl
-DEPGFSLINC = $(GFSL_SRCDIR)/gfarm_auth.h $(GFSL_SRCDIR)/gfarm_gsi.h $(GFSL_SRCDIR)/gfarm_secure_session.h
+DEPGFSLINC = $(GFSL_SRCDIR)/gfarm_auth.h $(GFSL_SRCDIR)/gfsl_gss.h $(GFSL_SRCDIR)/gfsl_secure_session.h
 
 # libgfarm internal interface
 

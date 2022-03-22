@@ -34,6 +34,8 @@
 #define RETRY_MAX        3
 #define RETRY_SLEEP_TIME 1 /* second */
 
+static char no_host[] = "";
+
 static mode_t mask;
 
 struct gfarm_pfunc {
@@ -42,12 +44,15 @@ struct gfarm_pfunc {
 	void (*cb_start)(void *);
 	void (*cb_end)(enum pfunc_result, void *);
 	void (*cb_free)(void *);
+	int quiet, verbose, debug;
 	int queue_size;
 	gfarm_int64_t simulate_KBs;
 	char *copy_buf;
 	int started;
 	int copy_bufsize;
 	int skip_existing;
+	int paracopy_n_para;
+	gfarm_off_t paracopy_minimum_size;
 	int is_end;
 	pthread_mutex_t is_end_mutex;
 };
@@ -569,7 +574,7 @@ local_to_hpss(int cmd_in, void *arg)
 }
 
 static int
-pfunc_copy_to_hpss(gfarm_pfunc_t *handle, FILE *to_parent,
+pfunc_copy_to_hpss(gfarm_pfunc_t *handle,
 	const char *src_url, char *src_host, const char *dst_url)
 {
 	gfarm_error_t e;
@@ -600,7 +605,7 @@ pfunc_copy_to_hpss(gfarm_pfunc_t *handle, FILE *to_parent,
 	arg.handle = handle;
 	arg.fp = &src_fp;
 	if (src_fp.gfarm) {
-		if (src_st.size > 0 && strcmp(src_host, "") != 0) {
+		if (src_st.size > 0 && strcmp(src_host, no_host) != 0) {
 			/* XXX FIXME: INTERNAL FUNCTION SHOULD NOT BE USED */
 			e = gfs_pio_internal_set_view_section(
 			    src_fp.gfarm, src_host);
@@ -629,10 +634,73 @@ end:
 	return (result);
 }
 
+static int
+pfunc_copy_by_gfcp(gfarm_pfunc_t *handle,
+	const char *src_url, char *src_host, gfarm_off_t src_size,
+	const char *dst_url, char *dst_host)
+{
+	int result = PFUNC_RESULT_OK, retv;
+	char *src_url_uc = (char *)src_url; /* UNCONST */
+	char *dst_url_uc = (char *)dst_url; /* UNCONST */
+	char n_para_str[32];
+	char *gfcp_args[32];
+	int i;
+	static char arg_gfcp[] = "gfcp";
+	static char arg_q[] = "-q";
+	static char arg_v[] = "-v";
+	static char arg_d[] = "-d";
+	static char arg_f[] = "-f";
+	static char arg_j[] = "-j";
+	static char arg_h[] = "-h";
+
+	i = 0;
+	gfcp_args[i++] = arg_gfcp;
+	if (handle->quiet) {
+		gfcp_args[i++] = arg_q;
+	}
+	if (handle->verbose) {
+		gfcp_args[i++] = arg_v;
+	}
+	if (handle->debug) {
+		gfcp_args[i++] = arg_d;
+		fprintf(stderr, "DEBUG: use gfcp, size=%lld: %s\n",
+		    (long long)src_size, src_url);
+	}
+	gfcp_args[i++] = arg_f;
+	gfcp_args[i++] = arg_j;
+	sprintf(n_para_str, "%d", handle->paracopy_n_para);
+	gfcp_args[i++] = n_para_str;
+	if (strcmp(dst_host, no_host) != 0) {
+		gfcp_args[i++] = arg_h;
+		gfcp_args[i++] = dst_host;
+	}
+	gfcp_args[i++] = src_url_uc;
+	gfcp_args[i++] = dst_url_uc;
+	gfcp_args[i++] = NULL;
+
+	if (handle->debug) {
+		int j;
+
+		fprintf(stderr, "DEBUG: gfcp_args: ");
+		for (j = 0; j < i; j++) {
+			fprintf(stderr, "%s ", gfcp_args[j]);
+		}
+		fprintf(stderr, "\n");
+	}
+
+	retv = gfarm_cmd_exec(gfcp_args, NULL, NULL, 0, 1);
+	if (retv != 0) {
+		fprintf(stderr, "ERROR: copy failed: gfcp(%s, %s)\n",
+		    src_url, dst_url);
+		result = PFUNC_RESULT_NG;
+	}
+	return (result);
+}
+
 static const char tmp_url_suffix[] = "__tmp_gfpcopy__";
 
 static int
-pfunc_copy_to_gfarm_or_local(gfarm_pfunc_t *handle, FILE *to_parent,
+pfunc_copy_to_gfarm_or_local(gfarm_pfunc_t *handle,
 	const char *src_url, char *src_host, int src_port, gfarm_off_t src_size,
 	const char *dst_url, char *dst_host, int dst_port, int check_disk_avail)
 {
@@ -642,6 +710,39 @@ pfunc_copy_to_gfarm_or_local(gfarm_pfunc_t *handle, FILE *to_parent,
 	struct pfunc_file src_fp, dst_fp;
 	struct pfunc_stat src_st;
 	int flags;
+	int src_is_gfarm = (src_port > 0);
+	int dst_is_gfarm = (dst_port > 0);
+	int src_host_is_specified = (strcmp(src_host, no_host) != 0);
+	int dst_host_is_specified = (strcmp(dst_host, no_host) != 0);
+
+	if (check_disk_avail && dst_host_is_specified) {
+		e = pfunc_check_disk_avail(
+		    dst_url, dst_host, dst_port, src_size);
+		if (e != GFARM_ERR_NO_ERROR) {
+			fprintf(stderr,
+				"ERROR: copy failed: checking disk_avail: "
+				"%s (%s:%d): %s\n",
+				dst_url, dst_host, dst_port,
+				gfarm_error_string(e));
+			result = PFUNC_RESULT_NG;
+			goto end;
+		}
+	}
+
+	/* copy each large file in parallel (not local_to_local) */
+	if ((src_is_gfarm || dst_is_gfarm)
+	    && src_size >= handle->paracopy_minimum_size)  {
+		return (pfunc_copy_by_gfcp(handle,
+		    src_url, src_host, src_size,
+		    dst_url, dst_host));
+	}
+	if (handle->debug) {
+		fprintf(stderr,
+		    "DEBUG: not use gfcp: src_size=%lld >= "
+		    "paracopy_minimum_size=%lld\n",
+		    (long long)src_size,
+		    (long long)handle->paracopy_minimum_size);
+	}
 
 	retv = gfurl_asprintf(&tmp_url, "%s%s", dst_url, tmp_url_suffix);
 	if (retv == -1) {
@@ -652,19 +753,6 @@ pfunc_copy_to_gfarm_or_local(gfarm_pfunc_t *handle, FILE *to_parent,
 		goto end;
 	}
 
-	if (check_disk_avail && dst_port > 0) { /* dst is gfarm */
-		e = pfunc_check_disk_avail(
-		    dst_url, dst_host, dst_port, src_size);
-		if (e != GFARM_ERR_NO_ERROR) {
-			fprintf(stderr,
-				"ERROR: copy failed: checking disk_avail: "
-				"%s (%s:%d, %s:%d): %s\n",
-				src_url, src_host, src_port,
-				dst_host, dst_port, gfarm_error_string(e));
-			result = PFUNC_RESULT_NG;
-			goto end;
-		}
-	}
 	e = pfunc_open(src_url, O_RDONLY, 0, &src_fp);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "ERROR: copy failed: open(%s): %s\n",
@@ -723,7 +811,8 @@ pfunc_copy_to_gfarm_or_local(gfarm_pfunc_t *handle, FILE *to_parent,
 		goto end;
 	}
 
-	if (src_st.size > 0 && src_fp.gfarm && strcmp(src_host, "") != 0) {
+	if (src_st.size > 0
+	    && src_fp.gfarm && src_host_is_specified) {
 		/* XXX FIXME: INTERNAL FUNCTION SHOULD NOT BE USED */
 		e = gfs_pio_internal_set_view_section(src_fp.gfarm, src_host);
 		if (e != GFARM_ERR_NO_ERROR) {
@@ -733,7 +822,8 @@ pfunc_copy_to_gfarm_or_local(gfarm_pfunc_t *handle, FILE *to_parent,
 			gfs_pio_clearerr(src_fp.gfarm);
 		}
 	}
-	if (src_st.size > 0 && dst_fp.gfarm && strcmp(dst_host, "") != 0) {
+	if (src_st.size > 0
+	    && dst_fp.gfarm && dst_host_is_specified) {
 		/* XXX FIXME: INTERNAL FUNCTION SHOULD NOT BE USED */
 		e = gfs_pio_internal_set_view_section(dst_fp.gfarm, dst_host);
 		if (e != GFARM_ERR_NO_ERROR) {
@@ -801,7 +891,7 @@ pfunc_copy_main(gfarm_pfunc_t *handle, int pfunc_mode,
 		FILE *from_parent, FILE *to_parent)
 {
 	int result, retry;
-	char *src_url, *dst_url, *src_host, *dst_host;
+	char *src_url, *dst_url, *src_host, *dst_host, *s, *d;
 	int src_port, dst_port;
 	gfarm_off_t src_size;
 	int check_disk_avail;
@@ -823,14 +913,16 @@ pfunc_copy_main(gfarm_pfunc_t *handle, int pfunc_mode,
 	}
 
 	retry = 0;
+	s = src_host;
+	d = dst_host;
 	for (;;) {
 		if (gfurl_path_is_hpss(dst_url))
-			result = pfunc_copy_to_hpss(handle, to_parent,
-			    src_url, src_host, dst_url);
+			result = pfunc_copy_to_hpss(handle,
+			    src_url, s, dst_url);
 		else
-			result = pfunc_copy_to_gfarm_or_local(handle, to_parent,
-			    src_url, src_host, src_port, src_size,
-			    dst_url, dst_host, dst_port, check_disk_avail);
+			result = pfunc_copy_to_gfarm_or_local(handle,
+			    src_url, s, src_port, src_size,
+			    dst_url, d, dst_port, check_disk_avail);
 		if (result == PFUNC_RESULT_NG_NOT_RETRY) {
 			result = PFUNC_RESULT_NG;
 			break;
@@ -838,6 +930,9 @@ pfunc_copy_main(gfarm_pfunc_t *handle, int pfunc_mode,
 		if (result != PFUNC_RESULT_NG || retry >= RETRY_MAX)
 			break;
 		retry++;
+		s = no_host;
+		d = no_host;
+		check_disk_avail = 0;
 		fprintf(stderr, "INFO: retry copying (%d of %d): %s\n",
 		    retry, RETRY_MAX, src_url);
 		sleep(RETRY_SLEEP_TIME);
@@ -1101,8 +1196,11 @@ pfunc_end(void *param)
 /* Do not call this function after gfarm_initialize() or pthread_create() */
 gfarm_error_t
 gfarm_pfunc_init_fork(
-	gfarm_pfunc_t **handlep, int n_parallel, int queue_size,
+	gfarm_pfunc_t **handlep,
+	int quiet, int verbose, int debug,
+	int n_parallel, int queue_size,
 	gfarm_int64_t simulate_KBs, int copy_bufsize, int skip_existing,
+	int paracopy_n_para, gfarm_off_t paracopy_minimum_size,
 	void (*cb_start)(void *), void (*cb_end)(enum pfunc_result, void *),
 	void (*cb_free)(void *))
 {
@@ -1117,11 +1215,16 @@ gfarm_pfunc_init_fork(
 		free(buf);
 		return (GFARM_ERR_NO_MEMORY);
 	}
+	handle->quiet = quiet;
+	handle->verbose = verbose;
+	handle->debug = debug;
 	handle->queue_size = queue_size;
 	handle->simulate_KBs = simulate_KBs;
 	handle->copy_buf = buf;
 	handle->copy_bufsize = copy_bufsize;
 	handle->skip_existing = skip_existing;
+	handle->paracopy_n_para = paracopy_n_para;
+	handle->paracopy_minimum_size = paracopy_minimum_size;
 	handle->cb_start = cb_start;
 	handle->cb_end = cb_end;
 	handle->cb_free = cb_free;
@@ -1260,8 +1363,6 @@ gfarm_pfunc_remove_replica(
 	gfarm_pfunc_cmd_add(pfunc_handle, &cmd);
 	return (GFARM_ERR_NO_ERROR);
 }
-
-static const char no_host[] = "";
 
 /* NOTE: src_host and dst_host is not free()ed (see pfunc_entry_free()) */
 gfarm_error_t

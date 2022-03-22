@@ -38,7 +38,7 @@
 #include "thrsubr.h"
 
 #ifdef HAVE_GSI
-#include "gfarm_secure_session.h"
+#include "gfsl_secure_session.h"
 #endif
 
 #include "context.h"
@@ -553,9 +553,9 @@ gfm_client_connection0(struct gfp_cached_connection *cache_entry,
 	struct timeval timeout;
 #endif /* __KERNEL__ */
 
-#ifdef HAVE_GSI
+#ifdef HAVE_GSS
 	/* prevent to connect servers with expired client credential */
-	e = gfarm_auth_check_gsi_auth_error();
+	e = gfarm_auth_check_gss_cred_failed();
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 #endif
@@ -881,7 +881,7 @@ gfm_client_connection_and_process_acquire(const char *hostname, int port,
 #ifndef HAVE_GSI
 			break;
 #else /* HAVE_GSI */
-			if (!GFARM_IS_AUTH_GSI(gfm_server->auth_method) ||
+			if (!GFARM_IS_AUTH_GSS(gfm_server->auth_method) ||
 			    /* obtain global username */
 			    (e = gfarm_set_global_user_by_gsi(gfm_server)) ==
 			    GFARM_ERR_NO_ERROR) {
@@ -3568,6 +3568,22 @@ gfm_client_close_write_v2_4_result(struct gfm_connection *gfm_server,
 }
 
 gfarm_error_t
+gfm_client_close_write_v2_8_request(struct gfm_connection *gfm_server)
+{
+	return (gfm_client_rpc_request(gfm_server,
+	    GFM_PROTO_CLOSE_WRITE_V2_8, ""));
+}
+
+gfarm_error_t
+gfm_client_close_write_v2_8_result(struct gfm_connection *gfm_server,
+	gfarm_int32_t *flagsp,
+	gfarm_int64_t *old_igenp, gfarm_int64_t *new_igenp)
+{
+	return (gfm_client_rpc_result(gfm_server, 0, "ill",
+	    flagsp, old_igenp, new_igenp));
+}
+
+gfarm_error_t
 gfm_client_fhclose_read_request(struct gfm_connection *gfm_server,
 	gfarm_ino_t inode, gfarm_uint64_t gen,
 	gfarm_int64_t atime_sec, gfarm_int32_t atime_nsec)
@@ -3604,6 +3620,24 @@ gfm_client_fhclose_write_result(struct gfm_connection *gfm_server,
 }
 
 gfarm_error_t
+gfm_client_fhclose_write_v2_8_request(struct gfm_connection *gfm_server,
+	gfarm_ino_t inode, gfarm_uint64_t gen)
+{
+	return (gfm_client_rpc_request(gfm_server,
+	    GFM_PROTO_FHCLOSE_WRITE_V2_8, "ll", inode, gen));
+}
+
+gfarm_error_t
+gfm_client_fhclose_write_v2_8_result(struct gfm_connection *gfm_server,
+	gfarm_int32_t *flagsp,
+	gfarm_int64_t *old_igenp, gfarm_int64_t *new_igenp,
+	gfarm_uint64_t *cookiep)
+{
+	return (gfm_client_rpc_result(gfm_server, 0, "illl",
+	    flagsp, old_igenp, new_igenp, cookiep));
+}
+
+gfarm_error_t
 gfm_client_generation_updated_request(struct gfm_connection *gfm_server,
 	gfarm_int32_t errcode)
 {
@@ -3613,6 +3647,25 @@ gfm_client_generation_updated_request(struct gfm_connection *gfm_server,
 
 gfarm_error_t
 gfm_client_generation_updated_result(struct gfm_connection *gfm_server)
+{
+	return (gfm_client_rpc_result(gfm_server, 0, ""));
+}
+
+gfarm_error_t
+gfm_client_generation_updated_v2_8_request(struct gfm_connection *gfm_server,
+	gfarm_int32_t errcode,
+	gfarm_off_t size,
+	gfarm_int64_t atime_sec, gfarm_int32_t atime_nsec,
+	gfarm_int64_t mtime_sec, gfarm_int32_t mtime_nsec)
+
+{
+	return (gfm_client_rpc_request(gfm_server,
+	    GFM_PROTO_GENERATION_UPDATED_V2_8, "illili",
+	    errcode, size, atime_sec, atime_nsec, mtime_sec, mtime_nsec));
+}
+
+gfarm_error_t
+gfm_client_generation_updated_v2_8_result(struct gfm_connection *gfm_server)
 {
 	return (gfm_client_rpc_result(gfm_server, 0, ""));
 }
@@ -3628,6 +3681,27 @@ gfm_client_generation_updated_by_cookie_request(
 
 gfarm_error_t
 gfm_client_generation_updated_by_cookie_result(
+	struct gfm_connection *gfm_server)
+{
+	return (gfm_client_rpc_result(gfm_server, 0, ""));
+}
+
+gfarm_error_t
+gfm_client_generation_updated_by_cookie_v2_8_request(
+	struct gfm_connection *gfm_server, gfarm_uint64_t cookie,
+	gfarm_int32_t errcode,
+	gfarm_off_t size,
+	gfarm_int64_t atime_sec, gfarm_int32_t atime_nsec,
+	gfarm_int64_t mtime_sec, gfarm_int32_t mtime_nsec)
+{
+	return (gfm_client_rpc_request(gfm_server,
+	    GFM_PROTO_GENERATION_UPDATED_BY_COOKIE_V2_8, "lillili",
+	    cookie, errcode,
+	    size, atime_sec, atime_nsec, mtime_sec, mtime_nsec));
+}
+
+gfarm_error_t
+gfm_client_generation_updated_by_cookie_v2_8_result(
 	struct gfm_connection *gfm_server)
 {
 	return (gfm_client_rpc_result(gfm_server, 0, ""));

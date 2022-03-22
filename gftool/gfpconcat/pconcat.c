@@ -463,8 +463,7 @@ gfpconcat_create_empty_file(GFURL url, int mode)
 	gfarm_error_t e;
 	struct gfpconcat_file fp;
 
-	e = gfpconcat_open(url, O_CREAT | O_WRONLY | O_TRUNC,
-	    mode & 0777 & ~0022, &fp);
+	e = gfpconcat_open(url, O_CREAT | O_WRONLY | O_TRUNC, mode, &fp);
 	if (e == GFARM_ERR_NO_ERROR) {
 		e = gfpconcat_close(&fp);
 	}
@@ -526,9 +525,9 @@ gfpconcat_child_copy_parts(struct gfpconcat_option *opt, int child_id)
 		}
 	}
 
-	/* Do not use O_TRUNC */
+	/* Do not use O_TRUNC to copy in parallel */
 	e = gfpconcat_open(opt->tmp_url, O_CREAT | O_WRONLY,
-	    opt->mode & 0777 & ~0022, &dst_fp);
+	    opt->mode, &dst_fp);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfmsg_error_e(e, "%s: open", gfurl_url(opt->tmp_url));
 		goto terminate;
@@ -928,7 +927,7 @@ gfpconcat_init(int argc, char **argv, char *program_name,
 	opt->dst_host = NULL;		/* -h */
 	opt->input_list = NULL;	/* -i */
 	opt->n_para = 2;		/* -j */
-	opt->minimum_size = 0;		/* -m */
+	opt->minimum_size = 1024 * 1024;		/* -m */
 	opt->out_file = NULL;		/* -o */
 	opt->performance = 0;		/* -p */
 	opt->quiet = 0;		/* -q */
@@ -947,6 +946,7 @@ gfpconcat_init(int argc, char **argv, char *program_name,
 	opt->out_exist = 0;
 	opt->part_list = NULL;
 	opt->n_part = 0;
+	opt->orig_mode = 0;
 	opt->mode = 0;
 	opt->total_size = 0;
 	opt->gfarm_initialized = 0;
@@ -1104,7 +1104,9 @@ gfpconcat_main(struct gfpconcat_option *opt)
 
 		p->size = (off_t)st.size;
 		if (i == 0) {  /* use first mode */
-			opt->mode = st.mode;
+			opt->orig_mode = st.mode & 0777 & ~0022;
+			/* 0600 means readable and writable */
+			opt->mode = opt->orig_mode | 0600;
 		}
 
 		opt->total_size += p->size;
@@ -1115,7 +1117,7 @@ gfpconcat_main(struct gfpconcat_option *opt)
 		gfarm_strings_free_deeply(opt->n_part, opt->parts);
 	}
 
-	if (opt->total_size == 0) {
+	if (opt->total_size <= 0) {
 		e = gfpconcat_create_empty_file(opt->tmp_url, opt->mode);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gfmsg_error_e(e, "cannot create empty file: %s",
@@ -1126,8 +1128,18 @@ gfpconcat_main(struct gfpconcat_option *opt)
 		}
 		goto copied;
 	}
-	if (opt->n_para == 1
-	    || opt->total_size / opt->n_para <= opt->minimum_size) {
+	/* assert(opt->total_size > 0); */
+	if (opt->n_para < 1) {
+		opt->n_para = 1;
+	}
+	if (opt->minimum_size <= 0) {
+		if (opt->n_para > opt->total_size) {
+			opt->n_para = opt->total_size;
+		}
+	} else if (opt->total_size / opt->n_para < opt->minimum_size) {
+		opt->n_para = opt->total_size / opt->minimum_size;
+	}
+	if (opt->n_para <= 1) {
 		int child_id = 1;
 
 		gfmsg_debug("using single child process");
@@ -1200,6 +1212,20 @@ copied:
 			     + time_end.tv_usec));
 			printf("compare_time: %lld.%06d sec.\n",
 			    (long long)time_end.tv_sec, (int)time_end.tv_usec);
+		}
+	}
+	if (opt->orig_mode != opt->mode) {
+		if (gfurl_is_gfarm(opt->out_url)) {
+			gfpconcat_gfarm_initialize(opt);
+		}
+		gfmsg_debug("chmod(%o): %s",
+		    opt->mode, gfurl_url(opt->out_url));
+		e = gfurl_chmod(opt->out_url, opt->orig_mode);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gfmsg_error_e(e, "cannot change mode(%o): %s",
+			    opt->mode, gfurl_url(opt->out_url));
+			rv = EXIT_FAILURE;
+			goto end;
 		}
 	}
 	rv = EXIT_SUCCESS;

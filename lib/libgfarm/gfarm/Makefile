@@ -16,11 +16,25 @@ PUBLIC_OBJS  =
 LIBRARY = libgfarmcore.la
 LIBRARY_RESULT = # do not install
 
-GLOBUS_SRCS = auth_client_gsi.c auth_common_gsi.c \
-	auth_server_gsi.c auth_server_uid_gsi.c io_gfsl.c
-GLOBUS_OBJS = auth_client_gsi.lo auth_common_gsi.lo \
-	auth_server_gsi.lo auth_server_uid_gsi.lo io_gfsl.lo
-GLOBUS_CFLAGS = -I$(GFSL_SRCDIR) $(globus_includes)
+GSS_SRCS = gss.c auth_client_gss.c auth_common_gss.c \
+	auth_server_gss.c io_gfsl.c
+GSS_OBJS = gss.lo auth_client_gss.lo auth_common_gss.lo \
+	auth_server_gss.lo io_gfsl.lo
+GSS_CFLAGS = -I$(GFSL_SRCDIR) $(globus_cflags) $(kerberos_cflags)
+
+GLOBUS_SRCS = auth_client_gsi.c auth_server_gsi.c
+GLOBUS_OBJS = auth_client_gsi.lo auth_server_gsi.lo
+GLOBUS_CFLAGS = -I$(GFSL_SRCDIR) $(globus_includes) \
+	-DLIBGFSL_GSI='"$(libdir)/libgfsl_gsi.so"'
+
+KERBEROS_SRCS = auth_client_kerberos.c auth_server_kerberos.c
+KERBEROS_OBJS = auth_client_kerberos.lo auth_server_kerberos.lo
+KERBEROS_CFLAGS = -I$(GFSL_SRCDIR) \
+	-DLIBGFSL_KERBEROS='"$(libdir)/libgfsl_kerberos.so"'
+
+
+TLS_SRCS = auth_client_tls.c  auth_server_tls.c  io_tls.c
+TLS_OBJS = auth_client_tls.lo auth_server_tls.lo io_tls.lo
 
 SRCS = \
 	context.c \
@@ -103,7 +117,10 @@ SRCS = \
 	url.c \
 	repattr.c \
 	iostat.c \
+	$(gss_srcs) \
 	$(globus_srcs) \
+	$(kerberos_srcs) \
+	$(tls_srcs) \
 	$(optional_srcs)
 
 #	$(ldap_srcs) $(postgresql_srcs)
@@ -189,14 +206,17 @@ OBJS = \
 	url.lo \
 	repattr.lo \
 	iostat.lo \
+	$(gss_objs) \
 	$(globus_objs) \
+	$(kerberos_objs) \
+	$(tls_objs) \
 	$(optional_objs)
 
 #	$(ldap_objs) $(postgresql_objs)
 
 CFLAGS = $(pthread_includes) \
 	$(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR) -I$(srcdir) \
-	$(globus_cflags) $(metadb_client_includes) $(openssl_includes) \
+	$(gss_cflags) $(metadb_client_includes) $(openssl_includes) \
 	$(optional_cflags) $(rdma_includes) \
 	-DGFARM_CONFIG='"$(sysconfdir)/gfarm2.conf"'
 
@@ -206,17 +226,24 @@ include $(top_srcdir)/makes/lib.mk
 include $(top_srcdir)/makes/gflog.mk
 
 $(OBJS): $(DEPGFARMINC)
+$(GSS_OBJS): $(DEPGFSLINC)
 $(GLOBUS_OBJS): $(DEPGFSLINC)
+$(KERBEROS_OBJS): $(DEPGFSLINC)
 auth_client.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/gfevent.h context.h liberror.h gfp_xdr.h auth.h
-auth_client_gsi.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/gfevent.h $(GFSL_SRCDIR)/gfarm_secure_session.h $(GFSL_SRCDIR)/gfarm_auth.h liberror.h gfp_xdr.h io_fd.h io_gfsl.h auth.h auth_gsi.h gfs_proto.h
+auth_client_kerberos.lo: auth.h gss.h
+auth_client_gsi.lo: auth.h gss.h
+auth_client_gss.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/gfevent.h $(GFSL_SRCDIR)/gfsl_secure_session.h $(GFSL_SRCDIR)/gfarm_auth.h liberror.h gfp_xdr.h io_fd.h io_gfsl.h auth.h auth_gss.h gfs_proto.h
+auth_client_tls.lo: context.h gfp_xdr.h io_tls.h auth.h
 auth_common.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/thrsubr.h context.h liberror.h auth.h
-auth_common_gsi.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/thrsubr.h $ $(GFSL_SRCDIR)/gfarm_secure_session.h $(GFSL_SRCDIR)/gfarm_auth.h context.h liberror.h gfpath.h auth.h auth_gsi.h
+auth_common_gss.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/thrsubr.h $ $(GFSL_SRCDIR)/gfsl_secure_session.h $(GFSL_SRCDIR)/gfarm_auth.h context.h liberror.h gfpath.h auth.h auth_gss.h
 auth_config.lo: context.h liberror.h hostspec.h auth.h
 auth_server.lo: $(GFUTIL_SRCDIR)/gfutil.h context.h liberror.h hostspec.h auth.h gfp_xdr.h gfs_proto.h gfm_proto.h
-auth_server_gsi.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFSL_SRCDIR)/gfarm_secure_session.h $(GFSL_SRCDIR)/gfarm_auth.h liberror.h gfp_xdr.h io_fd.h io_gfsl.h auth.h auth_gsi.h gfs_proto.h
-auth_server_uid.lo: $(GFUTIL_SRCDIR)/gfutil.h auth.h gfm_client.h
-auth_server_uid_gsi.lo: $(GFUTIL_SRCDIR)/gfutil.h auth.h gfm_client.h
+auth_server_kerberos.lo: auth.h gss.h
+auth_server_gsi.lo: auth.h gss.h
+auth_server_gss.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFSL_SRCDIR)/gfsl_secure_session.h $(GFSL_SRCDIR)/gfarm_auth.h liberror.h gfp_xdr.h io_fd.h io_gfsl.h auth.h auth_gss.h gfs_proto.h
+auth_server_uid.lo: $(GFUTIL_SRCDIR)/gfutil.h auth.h gfs_proto.h gfm_proto.h gfm_client.h gfm_client.h metadb_server.h
 config.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/hash.h $(GFUTIL_SRCDIR)/lru_cache.h context.h liberror.h patmatch.h hostspec.h param.h sockopt.h host.h auth.h gfpath.h config.h gfm_proto.h gfs_proto.h gfs_profile.h gfm_client.h lookup.h metadb_server.h filesystem.h conn_hash.h conn_cache.h humanize_number.h $(top_builddir)/makes/config.mk # $(GFARM_CONFIG) -> $(sysconfdir)
+auth_server_tls.lo: context.h gfp_xdr.h io_tls.h auth.h gfm_proto.h gfs_proto.h
 config_openssl.lo: config_openssl.h
 config_client.lo: $(GFUTIL_SRCDIR)/timer.h $(GFUTIL_SRCDIR)/gfutil.h context.h liberror.h gfs_profile.h host.h auth.h gfpath.h config.h config_openssl.h gfm_client.h gfs_proto.h gfs_client.h lookup.h filesystem.h metadb_server.h schedule.h gfs_rdma.h
 config_server.lo: $(GFUTIL_SRCDIR)/gfutil.h context.h liberror.h auth.h gfpath.h config.h config_openssl.h
@@ -273,12 +300,13 @@ gfs_acl.lo: $(GFUTIL_SRCDIR)/gfutil.h
 gfarm_foreach.lo: gfarm_foreach.h
 gfarm_path.lo: gfarm_path.h
 glob.lo: $(GFUTIL_SRCDIR)/gfutil.h liberror.h patmatch.h
+gss.lo: $(GFSL_SRCDIR)/gfsl_secure_session.h $(GFSL_SRCDIR)/gfarm_auth.h gfarm_gss.h gss.h
 humanize_number.lo:
 host.lo: $(GFUTIL_SRCDIR)/gfnetdb.h context.h hostspec.h gfm_client.h host.h
 hostspec.lo: $(GFUTIL_SRCDIR)/gfnetdb.h liberror.h hostspec.h
 import_help.lo: liberror.h
 io_fd.lo: context.h iobuffer.h gfp_xdr.h io_fd.h config.h
-io_gfsl.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFSL_SRCDIR)/gfarm_secure_session.h context.h liberror.h iobuffer.h gfp_xdr.h io_fd.h io_gfsl.h config.h
+io_gfsl.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFSL_SRCDIR)/gfsl_secure_session.h context.h liberror.h iobuffer.h gfp_xdr.h io_fd.h io_gfsl.h config.h
 iobuffer.lo: iobuffer.h crc32.h
 liberror.lo: $(GFUTIL_SRCDIR)/gfutil.h liberror.h gfpath.h
 lookup.lo: $(GFUTIL_SRCDIR)/gfutil.h context.h config.h gfm_client.h lookup.h gfs_failover.h
@@ -293,5 +321,6 @@ stringlist.lo:
 timespec.lo: timespec.h
 url.lo: $(GFUTIL_SRCDIR)/queue.h config.h gfs_pio.h
 gfs_rdma.lo: gfs_rdma.h
+io_tls.lo: tls_headers.h tls_instances.h tls_funcs.h context.h gfp_xdr.h io_tls.h
 
 include $(optional_rule)

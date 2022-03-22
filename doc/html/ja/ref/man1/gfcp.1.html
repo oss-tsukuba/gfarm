@@ -98,11 +98,9 @@ gfarm2fs を経由せずに Gfarm へコピーします。
 </dd>
 <dt><span class="term"><code class="option">-m</code> <em class="parameter"><code>minimum-bytes</code></em></span></dt>
 <dd><p>
-並列コピーする場合に、1 プロセス当たりに割り当てる最小データサイズを
+並列コピーする場合に、1 プロセスに割り当てる最小データサイズを
 バイト数で指定します。
-1 プロセス当たりのサイズがこのサイズよりも小さい場合は、
-1 プロセスでコピーします (並列コピーしません)。
-デフォルトは 0 バイト (常に並列コピーする) です。
+デフォルトは 1048576 バイトです。
 </p></dd>
 <dt><span class="term"><code class="option">-p</code></span></dt>
 <dd><p>
@@ -147,6 +145,7 @@ Gfarm 上にファイルを 1つ作成する際に、並列に書き込んだり
 <div class="refsect1">
 <a name="see-also"></a><h2>SEE ALSO</h2>
 <p>
+  <span class="citerefentry"><span class="refentrytitle">gfpcopy</span>(1)</span>,
   <span class="citerefentry"><span class="refentrytitle">gfpconcat</span>(1)</span>,
   <span class="citerefentry"><span class="refentrytitle">gfcksum</span>(1)</span>,
   <span class="citerefentry"><span class="refentrytitle">gfarm2.conf</span>(5)</span>

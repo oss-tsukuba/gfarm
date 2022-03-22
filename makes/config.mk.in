@@ -74,6 +74,11 @@ pthread_targets = @pthread_targets@
 openssl_includes = @openssl_includes@
 openssl_libs = @openssl_libs@
 
+gss_srcs = @gss_srcs@
+gss_objs = @gss_objs@
+gss_cflags = @gss_cflags@
+gss_targets = @gss_targets@
+
 globus_flavor = @globus_flavor@
 globus_location = @globus_location@
 globus_includes = @globus_includes@
@@ -83,6 +88,14 @@ globus_srcs = @globus_srcs@
 globus_objs = @globus_objs@
 globus_cflags = @globus_cflags@
 globus_targets = @globus_targets@
+
+kerberos_includes = @kerberos_includes@
+kerberos_gssapi_libs = @kerberos_gssapi_libs@
+# for conditional compilation which depends on whether kerberos is enabled or not
+kerberos_srcs = @kerberos_srcs@
+kerberos_objs = @kerberos_objs@
+kerberos_cflags = @kerberos_cflags@
+kerberos_targets = @kerberos_targets@
 
 # for conditional compilation related to syscall hooking library
 gfshook_srcs = @gfshook_srcs@
@@ -118,6 +131,9 @@ postgresql_targets = @postgresql_targets@
 
 rdma_includes = @rdma_includes@
 rdma_libs = @rdma_libs@
+
+tls_srcs = @tls_srcs@
+tls_objs = @tls_objs@
 
 # build lib/gfs_hook/sysdep/$(gfs_hook_sysdep_subdir)
 gfs_hook_sysdep_subdir = @gfs_hook_sysdep_subdir@

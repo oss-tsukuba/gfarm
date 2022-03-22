@@ -692,7 +692,10 @@ process_new_generation_wait(struct peer *peer, int fd,
 
 gfarm_error_t
 process_new_generation_done(struct process *process, struct peer *peer, int fd,
-	gfarm_int32_t result, const char *diag)
+	enum inode_close_mode close_mode, gfarm_int32_t result,
+	gfarm_off_t size,
+	struct gfarm_timespec *atime, struct gfarm_timespec *mtime,
+	const char *diag)
 {
 	struct file_opening *fo;
 	gfarm_mode_t mode;
@@ -705,7 +708,10 @@ process_new_generation_done(struct process *process, struct peer *peer, int fd,
 		    (long long)process->pid, fd, gfarm_error_string(e));
 		return (e);
 	} else if ((e = inode_new_generation_by_fd_finish(fo->inode, peer,
-	    result)) == GFARM_ERR_NO_ERROR) {
+	    close_mode, result, fo->u.f.replica_spec.desired_number,
+	    fo->u.f.replica_spec.repattr, size, atime, mtime,
+	    user_tenant_name(process_get_user(process)), diag))
+	    == GFARM_ERR_NO_ERROR) {
 
 		/* resume deferred operaton: close the file */
 		peer_reset_pending_new_generation_by_fd(peer);
@@ -726,6 +732,37 @@ process_new_generation_done(struct process *process, struct peer *peer, int fd,
 		}
 	}
 	return (e);
+}
+
+void
+process_new_generation_by_fd_abort(struct process *process, struct peer *peer,
+	int fd, gfarm_error_t reason, const char *diag)
+{
+	struct file_opening *fo;
+	gfarm_error_t e = process_get_file_opening(process, peer, fd,
+	    &fo, diag);
+
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: gfsd connection to %s is lost (%s) "
+		    "during GFM_PROTO_CLOSE_WRITE: "
+		    "fd %d: %s",
+		    diag, peer_get_hostname(peer), gfarm_error_string(reason),
+		    fd, gfarm_error_string(e));
+		return;
+	}
+
+	e = process_new_generation_done(process, peer, fd,
+	    INODE_CLOSE_V2_4, reason, 0, NULL, NULL, diag);
+
+	gflog_error(GFARM_MSG_UNFIXED,
+	    "%s: gfsd connection to %s is lost (%s) "
+	    "during GFM_PROTO_CLOSE_WRITE: "
+	    "inode %lld:%lld may be lost. (size:%lld): %s",
+	    diag, peer_get_hostname(peer), gfarm_error_string(reason),
+	    (long long)inode_get_number(fo->inode),
+	    (long long)inode_get_gen(fo->inode),
+	    (long long)inode_get_size(fo->inode), gfarm_error_string(e));
 }
 
 gfarm_error_t
@@ -1037,8 +1074,14 @@ process_close_or_abort_file(struct process *process, struct peer *peer, int fd,
 				    (long long)inode_get_number(fo->inode),
 				    (long long)inode_get_gen(fo->inode));
 			}
-			inode_del_ref_spool_writers(fo->inode);
-			inode_check_pending_replication(fo);
+			if (peer_get_pending_new_generation_by_fd(peer)
+			    == fd) {
+				peer_unset_pending_new_generation_by_fd(peer,
+				    GFARM_ERR_NO_SUCH_PROCESS);
+			} else {
+				inode_del_ref_spool_writers(fo->inode);
+				inode_check_pending_replication(fo);
+			}
 		}
 		if (fo->opener != NULL) {
 			/*
@@ -1124,14 +1167,19 @@ process_close_file_read(struct process *process, struct peer *peer, int fd,
 }
 
 /*
- * if called from GFM_PROTO_CLOSE_WRITE_4:
+ * if inode_close_mode == INODE_CLOSE_V2_0, i.e. GFM_PROTO_CLOSE_WRITE:
+ *	atime and mtime are all not NULL,
  *	flagsp, inump, old_genp, new_genp, trace_logp are all NULL.
- * if called from GFM_PROTO_CLOSE_WRITE_V2_4
+ * if inode_close_mode == INODE_CLOSE_V2_4, i.e. GFM_PROTO_CLOSE_WRITE_V2_4
+ *	atime and mtime are all not NULL,
+ *	flagsp, inump, old_genp, new_genp, trace_logp are all not NULL.
+ * if inode_close_mode == INODE_CLOSE_V2_8, i.e. GFM_PROTO_CLOSE_WRITE_V2_8
+ *	size == 0, atime and mtime are all NULL,
  *	flagsp, inump, old_genp, new_genp, trace_logp are all not NULL.
  */
 gfarm_error_t
 process_close_file_write(struct process *process, struct peer *peer, int fd,
-	gfarm_off_t size,
+	enum inode_close_mode close_mode, gfarm_off_t size,
 	struct gfarm_timespec *atime, struct gfarm_timespec *mtime,
 	gfarm_int32_t *flagsp, gfarm_ino_t *inump,
 	gfarm_int64_t *old_genp, gfarm_int64_t *new_genp, char **trace_logp,
@@ -1142,7 +1190,6 @@ process_close_file_write(struct process *process, struct peer *peer, int fd,
 	gfarm_error_t e = process_get_file_opening(process, peer, fd,
 	    &fo, diag);
 	gfarm_int32_t flags = 0;
-	int is_v2_4 = (flagsp != NULL);
 
 	/*
 	 * NOTE: gfsd uses CLOSE_FILE_WRITE protocol only if the file is
@@ -1165,7 +1212,8 @@ process_close_file_write(struct process *process, struct peer *peer, int fd,
 			"bad file descriptor");
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	}
-	if (is_v2_4 && inode_new_generation_is_pending(fo->inode)) {
+	if (close_mode != INODE_CLOSE_V2_0 &&
+	    inode_new_generation_is_pending(fo->inode)) {
 		gflog_debug(GFARM_MSG_1002241,
 		    "%s: new_generation pending %lld:%lld", diag,
 		    (long long)inode_get_number(fo->inode),
@@ -1173,21 +1221,27 @@ process_close_file_write(struct process *process, struct peer *peer, int fd,
 		return (GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE);
 	}
 
-	inode_del_ref_spool_writers(fo->inode);
-	if ((is_v2_4 || inode_is_updated(fo->inode, mtime)) &&
-
-	    /*
-	     * GFARM_FILE_CREATE_REPLICA flag means to create and add a
-	     * file replica by gfs_pio_write if this file already has file
-	     * replicas.  GFARM_ERR_ALREADY_EXISTS error means this is the
-	     * first one and this file has only one replica.  If it is
-	     * not, do not change the status.
-	     */
-	    ((fo->flag & GFARM_FILE_CREATE_REPLICA) == 0 ||
+	if ((close_mode == INODE_CLOSE_V2_0 &&
+	     !inode_is_updated(fo->inode, mtime))) {
+		inode_del_ref_spool_writers(fo->inode);
+	} else if ((fo->flag & GFARM_FILE_CREATE_REPLICA) != 0 &&
 	    inode_add_replica(fo->inode, fo->u.f.spool_host, 1)
-	    == GFARM_ERR_ALREADY_EXISTS) &&
-	    inode_file_update(fo, size, atime, mtime, is_v2_4,
+	    != GFARM_ERR_ALREADY_EXISTS) {
+		/*
+		 * GFARM_FILE_CREATE_REPLICA flag means to create and add a
+		 * file replica by gfs_pio_write if this file already has file
+		 * replicas.  GFARM_ERR_ALREADY_EXISTS error means this is the
+		 * first one and this file has only one replica.  If it is
+		 * not, do not change the status.
+		 */
+		inode_del_ref_spool_writers(fo->inode);
+	} else if (inode_file_update(fo, close_mode, size, atime, mtime,
 	    old_genp, new_genp, trace_logp, diag)) {
+		/*
+		 * if generation update is needed,
+		 * del_ref is postponed until the generation_updated RPC.
+		 * otherwise inode_file_update() internally do del_ref.
+		 */
 		flags = GFM_PROTO_CLOSE_WRITE_GENERATION_UPDATE_NEEDED;
 	}
 
@@ -1197,7 +1251,7 @@ process_close_file_write(struct process *process, struct peer *peer, int fd,
 	if ((flags & GFM_PROTO_CLOSE_WRITE_GENERATION_UPDATE_NEEDED) != 0) {
 		/* defer file close for GFM_PROTO_GENERATION_UPDATED */
 		inode_new_generation_by_fd_start(fo->inode, peer);
-		peer_set_pending_new_generation_by_fd(peer, fo->inode);
+		peer_set_pending_new_generation_by_fd(peer, fd);
 	} else if (fo->opener != peer && fo->opener != NULL) {
 		/* closing REOPENed file, but the client is still opening */
 		fo->u.f.spool_opener = NULL;

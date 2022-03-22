@@ -2658,13 +2658,21 @@ inode_new_generation_finish_event_post(struct inode *inode)
 	ia->u.f.event_waiters = NULL;
 }
 
+static void inode_metadata_update(struct inode *, gfarm_off_t,
+	struct gfarm_timespec *, struct gfarm_timespec *);
+static void inode_generation_updated(struct inode *,
+	struct host *, int, char *, const char *);
+
 gfarm_error_t
 inode_new_generation_by_fd_finish(struct inode *inode, struct peer *peer,
-	gfarm_error_t result)
+	enum inode_close_mode close_mode, gfarm_error_t result,
+	int desired_replica_number, char *repattr,
+	gfarm_off_t size,
+	struct gfarm_timespec *atime, struct gfarm_timespec *mtime,
+	char *username, const char *diag)
 {
 	gfarm_error_t e;
 	struct inode_activity *ia;
-	static const char diag[] = "inode_new_generation_by_fd_finish";
 
 	if ((e = inode_new_generation_finish_precondition(inode, diag)) !=
 	    GFARM_ERR_NO_ERROR)
@@ -2685,6 +2693,40 @@ inode_new_generation_by_fd_finish(struct inode *inode, struct peer *peer,
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
 
+	if (close_mode == INODE_CLOSE_V2_8) {
+		if (gfarm_read_only_mode()) {
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "inode %llu:%llu host %s user %s "
+			    "gfmd became read_only during generation update, "
+			    "metadata update size %llu is lost",
+			    (long long)inode_get_number(inode),
+			    (long long)inode_get_gen(inode),
+			    peer_get_hostname(peer),
+			    username, (long long)size);
+		} else {
+			inode_metadata_update(inode, size, atime, mtime);
+		}
+	}
+	inode_del_ref_spool_writers(inode);
+	/*
+	 * XXX
+	 * if result != GFARM_ERR_NO_ERROR,
+	 * maybe it's better to keep old replica in update_replicas()?
+	 */
+	if (gfarm_read_only_mode()) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "inode %llu:%llu host %s user %s "
+		    "gfmd became read_only during generation update, "
+		    "replica status update is lost",
+		    (long long)inode_get_number(inode),
+		    (long long)inode_get_gen(inode),
+		    peer_get_hostname(peer),
+		    username);
+	} else {
+		inode_generation_updated(inode, peer_get_host(peer),
+		    desired_replica_number, repattr, diag);
+	}
+
 	inode_new_generation_finish_event_post(inode);
 	assert(ia->openings.opening_next != &ia->openings);
 
@@ -2697,9 +2739,12 @@ inode_new_generation_by_fd_finish(struct inode *inode, struct peer *peer,
  * - caller of this function SHOULD call db_begin()/db_end() around this
  */
 gfarm_error_t
-inode_new_generation_by_cookie_finish(
-	struct inode *inode, gfarm_off_t size, gfarm_uint64_t cookie,
-	struct peer *peer, gfarm_error_t result)
+inode_new_generation_by_cookie_finish(struct inode *inode,
+	struct peer *peer, gfarm_uint64_t cookie,
+	enum inode_close_mode close_mode, gfarm_error_t result,
+	gfarm_off_t size,
+	struct gfarm_timespec *atime, struct gfarm_timespec *mtime,
+	char *username)
 {
 	gfarm_error_t e;
 	struct inode_activity *ia;
@@ -2735,20 +2780,59 @@ inode_new_generation_by_cookie_finish(
 		dirset_add_ref(tdirset);
 	inum = inode_get_number(inode);
 
-	if (size != inode_get_size(inode)) {
+	if (close_mode == INODE_CLOSE_V2_4) {
+		if (size != inode_get_size(inode)) {
+			if (gfarm_read_only_mode()) {
+				gflog_warning(GFARM_MSG_1005165,
+				    "GFM_PROTO_GENERATION_UPDATED_BY_COOKIE: "
+				    "inode %llu:%llu conflict detected, "
+				    "but reverting size %llu to %llu skipped "
+				    "due to read_only",
+				    (long long)inode_get_number(inode),
+				    (long long)inode_get_gen(inode),
+				    (long long)inode_get_size(inode),
+				    (long long)size);
+			} else {
+				inode_set_size(inode, tdirset, size);
+			}
+		}
+	} else if (close_mode == INODE_CLOSE_V2_8) {
 		if (gfarm_read_only_mode()) {
-			gflog_warning(GFARM_MSG_1005165,
-			    "GFM_PROTO_GENERATION_UPDATED_BY_COOKIE: "
-			    "inode %llu:%llu conflict detected, "
-			    "but reverting size %llu to %llu skipped "
-			    "due to read_only",
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "GFM_PROTO_GENERATION_UPDATED_BY_COOKIE_V2_8: "
+			    "inode %llu:%llu host %s user %s: "
+			    "gfmd became read_only during generation update, "
+			    "metadata update size %llu is lost",
 			    (long long)inode_get_number(inode),
 			    (long long)inode_get_gen(inode),
-			    (long long)inode_get_size(inode), (long long)size);
+			    peer_get_hostname(peer),
+			    username, (long long)size);
 		} else {
-			inode_set_size(inode, tdirset, size);
+			inode_metadata_update(inode, size, atime, mtime);
 		}
+	} else { /* shouldn't happen */
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "invalid close_mode %d", close_mode);
 	}
+	/*
+	 * XXX
+	 * if result != GFARM_ERR_NO_ERROR,
+	 * maybe it's better to keep old replica in update_replicas()?
+	 */
+	if (gfarm_read_only_mode()) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "inode %llu:%llu host %s user %s: "
+		    "gfmd became read_only during generation update, "
+		    "replica status update is lost",
+		    (long long)inode_get_number(inode),
+		    (long long)inode_get_gen(inode),
+		    peer_get_hostname(peer), username);
+	} else {
+		inode_generation_updated(inode, peer_get_host(peer),
+		    /* desired_file_number is unknown */ 1,
+		    /* repattr is unknown */ NULL, diag);
+	}
+
 	if (inode_activity_free_try(inode))
 		inode_remove_try(inode, tdirset);
 
@@ -5028,7 +5112,8 @@ inode_close_read(struct file_opening *fo, struct gfarm_timespec *atime,
 			    (long long)inode_get_number(inode),
 			    (long long)inode_get_gen(inode));
 		} else {
-			inode_file_update(fo, 0, atime, &inode->i_mtimespec, 0,
+			inode_file_update(fo, INODE_CLOSE_V2_0, 0,
+			    atime, &inode->i_mtimespec,
 			    NULL, NULL, trace_logp, diag);
 		}
 	} else {
@@ -5128,31 +5213,18 @@ inode_check_pending_replication(struct file_opening *fo)
 	}
 }
 
-/*
- * returns TRUE, if generation number is updated.
- *
- * spool_host may be NULL, if GFARM_FILE_TRUNC_PENDING.
- */
-static int
-inode_file_update_common(struct inode *inode, gfarm_off_t size,
-	struct gfarm_timespec *atime, struct gfarm_timespec *mtime,
-	int want_gen_update,
-	struct host *spool_host, int desired_replica_number, char *repattr,
-	gfarm_int64_t *old_genp, gfarm_int64_t *new_genp,
-	char **trace_logp, const char *diag)
+static void
+inode_metadata_update(struct inode *inode, gfarm_off_t size,
+	struct gfarm_timespec *atime, struct gfarm_timespec *mtime)
 {
 	struct inode_activity *ia = inode->u.c.activity;
 	struct dirset *tdirset = inode_get_tdirset(inode);
-	gfarm_int64_t old_gen;
-	int generation_updated = 0;
-	int start_replication = 0;
-	struct timeval tv;
-	char tmp_str[4096];
 
 	inode_set_size(inode, tdirset, size);
 	if (tdirset == TDIRSET_IS_UNKNOWN) {
 		gflog_notice(GFARM_MSG_1004680,
-		    "inode %lld: unknown dirset, scheduling quota_check",
+		    "inode %lld: unknown dirset, "
+		    "scheduling quota_check",
 		    (long long)inode_get_number(inode));
 		dirquota_check_schedule();
 	}
@@ -5165,10 +5237,55 @@ inode_file_update_common(struct inode *inode, gfarm_off_t size,
 		if (ia != NULL)
 			ia->u.f.last_update = *mtime;
 	}
+}
+
+/*
+ * returns TRUE, if generation number is updated.
+ *
+ * spool_host may be NULL, if GFARM_FILE_TRUNC_PENDING.
+ *
+ * if inode_close_mode == INODE_CLOSE_V2_0, i.e. GFM_PROTO_CLOSE_WRITE:
+ *	atime and mtime are all not NULL,
+ *	old_genp, new_genp, trace_logp are all NULL.
+ * if inode_close_mode == INODE_CLOSE_V2_4, i.e. GFM_PROTO_CLOSE_WRITE_V2_4
+ *	atime and mtime are all not NULL,
+ *	old_genp, new_genp, trace_logp are all not NULL.
+ * if inode_close_mode == INODE_CLOSE_V2_8, i.e. GFM_PROTO_CLOSE_WRITE_V2_8
+ *	size == 0, atime and mtime are all NULL,
+ *	old_genp, new_genp, trace_logp are all not NULL.
+ */
+static int
+inode_file_update_common(struct inode *inode, enum inode_close_mode close_mode,
+	gfarm_off_t size,
+	struct gfarm_timespec *atime, struct gfarm_timespec *mtime,
+	struct host *spool_host, int desired_replica_number, char *repattr,
+	gfarm_int64_t *old_genp, gfarm_int64_t *new_genp,
+	char **trace_logp, const char *diag)
+{
+	gfarm_int64_t old_gen;
+	int generation_updated = 0;
+
+	if (close_mode < INODE_CLOSE_V2_8) {
+		/*
+		 * if the RPC is V2_8 or later,
+		 * the following will be done at generation_updated RPC
+		 */
+		inode_metadata_update(inode, size, atime, mtime);
+	}
 
 	old_gen = inode->i_gen;
 
-	if (spool_host == NULL || want_gen_update) {
+	if (close_mode == INODE_CLOSE_V2_0) {
+		/*
+		 * if the RPC is V2_4 or later,
+		 * the following will be done at generation_updated RPC
+		 */
+		update_replicas(inode, spool_host, old_gen,
+		    0, desired_replica_number, repattr, diag);
+	} else {
+		struct timeval tv;
+		char tmp_str[4096];
+
 		/* update generation number */
 		if (old_genp != NULL)
 			*old_genp = inode->i_gen;
@@ -5191,24 +5308,32 @@ inode_file_update_common(struct inode *inode, gfarm_off_t size,
 			    (long long int)inode->i_gen);
 			*trace_logp = strdup(tmp_str);
 		}
-
-		/* XXX provide an option not to start replication here? */
-
-		/* if there is no other writing process */
-		if (ia == NULL) {
-			start_replication = 1;
-		} else if (ia->u.f.spool_writers == 0) {
-			start_replication = 1;
-			ia->u.f.replication_pending = 0;
-		} else {
-			ia->u.f.replication_pending = 1;
-		}
 	}
 
-	update_replicas(inode, spool_host, old_gen,
-		start_replication, desired_replica_number, repattr, diag);
-
 	return (generation_updated);
+}
+
+static void
+inode_generation_updated(struct inode *inode,
+	struct host *spool_host, int desired_replica_number, char *repattr,
+	const char *diag)
+{
+	struct inode_activity *ia = inode->u.c.activity;
+	int start_replication = 0;
+
+	/* if there is no other writing process */
+	if (ia == NULL) {
+		start_replication = 1;
+	} else if (ia->u.f.spool_writers == 0) {
+		start_replication = 1;
+		ia->u.f.replication_pending = 0;
+	} else {
+		ia->u.f.replication_pending = 1;
+	}
+
+	/* old_gen must be current gen - 1 at generation_updated RPC */
+	update_replicas(inode, spool_host, inode->i_gen - 1,
+	    start_replication, desired_replica_number, repattr, diag);
 }
 
 /*
@@ -5217,9 +5342,9 @@ inode_file_update_common(struct inode *inode, gfarm_off_t size,
  * spool_host may be NULL, if GFARM_FILE_TRUNC_PENDING.
  */
 int
-inode_file_update(struct file_opening *fo, gfarm_off_t size,
+inode_file_update(struct file_opening *fo, enum inode_close_mode close_mode,
+	gfarm_off_t size,
 	struct gfarm_timespec *atime, struct gfarm_timespec *mtime,
-	int want_gen_update,
 	gfarm_int64_t *old_genp, gfarm_int64_t *new_genp,
 	char **trace_logp, const char *diag)
 {
@@ -5229,8 +5354,16 @@ inode_file_update(struct file_opening *fo, gfarm_off_t size,
 	inode_cksum_invalidate(fo);
 	inode_cksum_remove(inode);
 
-	if ((updated = inode_file_update_common(inode, size, atime, mtime,
-	    want_gen_update, fo->u.f.spool_host,
+	if (close_mode == INODE_CLOSE_V2_0) {
+		/*
+		 * if the RPC is V2_4 or later,
+		 * the following will be done at generation_updated RPC
+		 */
+		inode_del_ref_spool_writers(inode);
+	}
+
+	if ((updated = inode_file_update_common(inode, close_mode,
+	    size, atime, mtime, fo->u.f.spool_host,
 	    fo->u.f.replica_spec.desired_number, fo->u.f.replica_spec.repattr,
 	    old_genp, (gfarm_int64_t *)&fo->gen, trace_logp, diag))) {
 		if (new_genp)
@@ -5241,7 +5374,8 @@ inode_file_update(struct file_opening *fo, gfarm_off_t size,
 
 /* returns TRUE, if generation number is updated. */
 gfarm_error_t
-inode_file_handle_update(struct inode *inode, gfarm_off_t size,
+inode_file_handle_update(struct inode *inode, enum inode_close_mode close_mode,
+	gfarm_off_t size,
 	struct gfarm_timespec *atime, struct gfarm_timespec *mtime,
 	struct host *spool_host,
 	gfarm_int64_t *old_genp, gfarm_int64_t *new_genp, int *gen_updatedp,
@@ -5277,8 +5411,8 @@ inode_file_handle_update(struct inode *inode, gfarm_off_t size,
 	inode_cksum_remove(inode);
 
 	/* replica_check will fix the unknown desired_file_number and repattr */
-	*gen_updatedp = inode_file_update_common(inode,
-	    size, atime, mtime, 1, spool_host,
+	*gen_updatedp = inode_file_update_common(inode, close_mode,
+	    size, atime, mtime, spool_host,
 	    /* desired_file_number is unknown */ 1,
 	    /* repattr is unknown */ NULL,
 	    old_genp, new_genp, trace_logp, diag);

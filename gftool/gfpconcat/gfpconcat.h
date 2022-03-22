@@ -28,6 +28,7 @@ struct gfpconcat_option {
 	struct gfpconcat_part *part_list;
 	int n_part;
 	char **parts;
+	int orig_mode;
 	int mode;
 	off_t total_size;
 	int gfarm_initialized;

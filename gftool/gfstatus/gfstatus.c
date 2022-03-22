@@ -354,6 +354,20 @@ main(int argc, char *argv[])
 	print_msg("client version    ", gfarm_version());
 	print_user_config_file("user config file  ");
 	print_msg("system config file", gfarm_config_get_filename());
+	print_msg("client auth gsi   ",
+#ifdef HAVE_GSI
+		  "available"
+#else
+		  "not available"
+#endif
+	    );
+	print_msg("client auth tls   ",
+#ifdef HAVE_TLS_1_3
+		  "available"
+#else
+		  "not available"
+#endif
+	    );
 
 	puts("");
 	print_msg("hostname          ", gfarm_host_get_self_name());
@@ -376,6 +390,10 @@ main(int argc, char *argv[])
 #ifdef HAVE_GSI
 	cred = gfarm_gsi_client_cred_name();
 	print_msg("credential name", cred ? cred : "no credential");
+#endif
+#ifdef HAVE_KERBEROS
+	cred = gfarm_kerberos_client_cred_name();
+	print_msg("principal name", cred ? cred : "no principal");
 #endif
 	/* gfmd */
 	puts("");

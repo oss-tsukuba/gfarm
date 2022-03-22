@@ -67,10 +67,12 @@ struct mdhost;
 struct mdhost *peer_get_mdhost(struct peer *);
 
 struct inode;
-void peer_set_pending_new_generation_by_fd(struct peer *, struct inode *);
+int peer_get_pending_new_generation_by_fd(struct peer *);
+void peer_set_pending_new_generation_by_fd(struct peer *, int);
 void peer_reset_pending_new_generation_by_fd(struct peer *);
 gfarm_error_t peer_add_pending_new_generation_by_cookie(
 	struct peer *, struct inode *, gfarm_off_t, gfarm_uint64_t *);
+void peer_unset_pending_new_generation_by_fd(struct peer *, gfarm_error_t);
 struct inode *peer_get_pending_new_generation_by_cookie(
 	struct peer *, gfarm_uint64_t);
 int peer_remove_pending_new_generation_by_cookie(struct peer *, gfarm_uint64_t,

@@ -2,12 +2,12 @@
 .\"     Title: gfpconcat
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 28 Aug 2021
+.\"      Date: 7 Feb 2022
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFPCONCAT" "1" "28 Aug 2021" "Gfarm" "Gfarm"
+.TH "GFPCONCAT" "1" "7 Feb 2022" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -31,7 +31,7 @@
 gfpconcat \- 複数ファイルを結合しながら並列にコピーする
 .SH "SYNOPSIS"
 .HP \w'\fBgfpconcat\fR\ 'u
-\fBgfpconcat\fR [\-fpqvd] [\-h\ \fIfilesystem\-node\fR] [\-i\ \fIinput\-listfile\fR] [\-j\ \fInum\-of\-processes\fR] [\-m\ \fIminimum\-bytes\fR] \-o\ \fIdestination\-file\fR \fIsource\-file\fR...
+\fBgfpconcat\fR [\-fpqvd] [\-h\ \fIfilesystem\-node\fR] [\-j\ \fInum\-of\-processes\fR] [\-m\ \fIminimum\-bytes\fR] [\-i\ \fIinput\-listfile\fR] \-o\ \fIdestination\-file\fR \fIsource\-file\fR...
 .SH "DESCRIPTION"
 .PP
 \fBgfpconcat\fR
@@ -108,7 +108,7 @@ Gfarm URL で指定します。
 .PP
 \fB\-m\fR \fIminimum\-bytes\fR
 .RS 4
-並列コピーする場合に、1 プロセス当たりに割り当てる最小データサイズを バイト数で指定します。 1 プロセス当たりのサイズがこのサイズよりも小さい場合は、 1 プロセスでコピーします (並列コピーしません)。 デフォルトは 0 バイト (常に並列コピーする) です。
+並列コピーする場合に、1 プロセスに割り当てる最小データサイズを バイト数で指定します。 デフォルトは 1048576 バイトです。
 .RE
 .PP
 \fB\-p\fR
@@ -145,6 +145,5 @@ Gfarm 上にファイルを 1つ作成する際に、並列に書き込んだり
 でファイル作成後にしばらく経つと チェックサムが付加されます。 詳細は gfarm2\&.conf のマニュアルを参照してください。
 .SH "SEE ALSO"
 .PP
-\fBgfcp\fR(1),
 \fBgfcksum\fR(1),
 \fBgfarm2.conf\fR(5)

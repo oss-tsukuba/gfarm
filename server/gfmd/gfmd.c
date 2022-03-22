@@ -371,11 +371,19 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 		e = gfm_server_close_write_v2_4(peer, from_client, skip,
 		    suspendedp);
 		break;
+	case GFM_PROTO_CLOSE_WRITE_V2_8:
+		e = gfm_server_close_write_v2_8(peer, from_client, skip,
+		    suspendedp);
+		break;
 	case GFM_PROTO_FHCLOSE_READ:
 		e = gfm_server_fhclose_read(peer, from_client, skip);
 		break;
 	case GFM_PROTO_FHCLOSE_WRITE:
 		e = gfm_server_fhclose_write(peer, from_client, skip,
+		    suspendedp);
+		break;
+	case GFM_PROTO_FHCLOSE_WRITE_V2_8:
+		e = gfm_server_fhclose_write_v2_8(peer, from_client, skip,
 		    suspendedp);
 		break;
 	case GFM_PROTO_FHCLOSE_WRITE_CKSUM:
@@ -385,8 +393,16 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 	case GFM_PROTO_GENERATION_UPDATED:
 		e = gfm_server_generation_updated(peer, from_client, skip);
 		break;
+	case GFM_PROTO_GENERATION_UPDATED_V2_8:
+		e = gfm_server_generation_updated_v2_8(peer, from_client,
+		    skip);
+		break;
 	case GFM_PROTO_GENERATION_UPDATED_BY_COOKIE:
 		e = gfm_server_generation_updated_by_cookie(peer,
+		    from_client, skip);
+		break;
+	case GFM_PROTO_GENERATION_UPDATED_BY_COOKIE_V2_8:
+		e = gfm_server_generation_updated_by_cookie_v2_8(peer,
 		    from_client, skip);
 		break;
 	case GFM_PROTO_LOCK:
@@ -946,19 +962,84 @@ resumer(void *arg)
 	return (NULL);
 }
 
-/* only called in case of gfarm_auth_id_type == GFARM_AUTH_ID_TYPE_USER */
+/*
+ * only called in case of gfarm_auth_id_type == GFARM_AUTH_ID_TYPE_USER,
+ * unless auth_method == GFARM_AUTH_METHOD_TLS_CLIENT_CERTIFICATE
+ */
 gfarm_error_t
 auth_uid_to_global_username(void *closure,
 	enum gfarm_auth_method auth_method,
+	enum gfarm_auth_id_type auth_user_id_type,
 	const char *auth_user_id,
 	char **global_usernamep)
 {
+	gfarm_error_t e;
 	char *global_username;
 	struct user *u;
 	static const char diag[] = "auth_uid_to_global_username";
 
+	if (GFARM_IS_AUTH_TLS_CLIENT_CERTIFICATE(auth_method)) {
+		char *hostname;
+		struct host *h;
+		struct mdhost *m;
+
+		switch (auth_user_id_type) {
+		case GFARM_AUTH_ID_TYPE_USER:
+			break;
+		case GFARM_AUTH_ID_TYPE_SPOOL_HOST:
+			e = gfarm_x509_cn_get_hostname(auth_user_id_type,
+			    auth_user_id, &hostname);
+			if (e != GFARM_ERR_NO_ERROR)
+				return (GFARM_ERR_AUTHENTICATION);
+			giant_lock();
+			h = host_lookup(hostname);
+			giant_unlock();
+			if (h == NULL) {
+				gflog_info(GFARM_MSG_UNFIXED,
+				    "unknown gfsd <%s>", hostname);
+				free(hostname);
+				return (GFARM_ERR_AUTHENTICATION);
+			}
+			if (global_usernamep == NULL)
+				free(hostname);
+			else
+				*global_usernamep = hostname;
+			return (GFARM_ERR_NO_ERROR);
+		case GFARM_AUTH_ID_TYPE_METADATA_HOST:
+			e = gfarm_x509_cn_get_hostname(auth_user_id_type,
+			    auth_user_id, &hostname);
+			if (e != GFARM_ERR_NO_ERROR)
+				return (GFARM_ERR_AUTHENTICATION);
+			giant_lock();
+			m = mdhost_lookup(hostname);
+			giant_unlock();
+			if (m == NULL) {
+				gflog_info(GFARM_MSG_UNFIXED,
+				    "unknown gfmd <%s>", hostname);
+				free(hostname);
+				return (GFARM_ERR_AUTHENTICATION);
+			}
+			if (global_usernamep == NULL)
+				free(hostname);
+			else
+				*global_usernamep = hostname;
+			return (GFARM_ERR_NO_ERROR);
+		default:
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "auth_uid_to_global_username(id_type:%d, id:%s): "
+			    "unexpected call",
+			    auth_user_id_type, auth_user_id);
+			return (GFARM_ERR_AUTHENTICATION);
+		}
+	}
+
+	if (auth_user_id_type != GFARM_AUTH_ID_TYPE_USER)
+		return (GFARM_ERR_AUTHENTICATION);
+
 	giant_lock();
-	if (GFARM_IS_AUTH_GSI(auth_method)) { /* auth_user_id is a DN */
+	if (GFARM_IS_AUTH_GSS(auth_method) ||
+	    GFARM_IS_AUTH_TLS_CLIENT_CERTIFICATE(auth_method)) {
+		/* auth_user_id is a DN */
 		u = user_lookup_gsi_dn(auth_user_id);
 	} else { /* auth_user_id is a gfarm global user name */
 		u = user_tenant_lookup(auth_user_id);
@@ -970,8 +1051,8 @@ auth_uid_to_global_username(void *closure,
 		 * do not return GFARM_ERR_NO_SUCH_USER
 		 * to prevent information leak
 		 */
-		gflog_debug(GFARM_MSG_1001483,
-			"lookup for user failed");
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "unknown user id <%s>", auth_user_id);
 		return (GFARM_ERR_AUTHENTICATION);
 	}
 	if (global_usernamep == NULL)
@@ -1028,7 +1109,7 @@ peer_authorize(struct peer *peer)
 		if (hostname == NULL)
 			return (GFARM_ERR_NO_MEMORY);
 	}
-	e = gfarm_authorize(peer_get_conn(peer), 0, GFM_SERVICE_TAG,
+	e = gfarm_authorize_wo_setuid(peer_get_conn(peer), GFM_SERVICE_TAG,
 	    hostname, &addr, auth_uid_to_global_username, NULL,
 	    &id_type, &username, &auth_method);
 	if (e == GFARM_ERR_NO_ERROR) {
@@ -1915,7 +1996,7 @@ main(int argc, char **argv)
 	gfarm_metadb_version_major = gfarm_version_major();
 	gfarm_metadb_version_minor = gfarm_version_minor();
 	gfarm_metadb_version_teeny = gfarm_version_teeny();
-	e = gfarm_server_initialize(config_file, &argc, &argv);
+	e = gfarm_server_initialize_for_gfmd(config_file, &argc, &argv);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001486,
 			"gfarm_server_initialize() failed: %s",
