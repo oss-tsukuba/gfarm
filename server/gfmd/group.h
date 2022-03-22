@@ -27,7 +27,6 @@ struct group *group_lookup_in_tenant_including_invalid(
 struct group *group_lookup_in_tenant(const char *, struct tenant *);
 gfarm_error_t grpassign_add(struct user *, struct group *);
 void grpassign_remove(struct group_assignment *);
-char *group_name(struct group *);
 char *group_tenant_name_even_invalid(struct group *);
 char *group_tenant_name(struct group *);
 char *group_name_in_tenant_even_invalid(struct group *, struct process *);

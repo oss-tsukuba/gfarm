@@ -2298,7 +2298,8 @@ inode_set_owner(struct inode *inode, struct user *user, struct group *group)
 	if (change_user) {
 		inode->i_user = user;
 
-		e = db_inode_user_modify(inode->i_number, user_name(user));
+		e = db_inode_user_modify(inode->i_number,
+		    user_tenant_name(user));
 		if (e != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_1000306,
 			    "db_inode_user_modify(%lld): %s",
@@ -2308,7 +2309,8 @@ inode_set_owner(struct inode *inode, struct user *user, struct group *group)
 	if (change_group) {
 		inode->i_group = group;
 
-		e = db_inode_group_modify(inode->i_number, group_name(group));
+		e = db_inode_group_modify(inode->i_number,
+		    group_tenant_name(group));
 		if (e != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_1000307,
 			    "db_inode_group_modify(%lld): %s",

@@ -298,7 +298,7 @@ replica_check_remove_replicas(struct inode *inode,
 			REDUCED_INFO(GFARM_MSG_1004273, &remove_ok_state,
 			    "replica_check: %lld:%lld:%s@%s: removed",
 			    (long long)info->inum, (long long)info->gen,
-			    user_name(inode_get_user(inode)),
+			    user_tenant_name(inode_get_user(inode)),
 			    host_name(srcs[i]));
 			remove_num_total++;
 			remove_size_total += inode_get_size(inode);
@@ -416,7 +416,7 @@ replica_check_fix(struct replication_info *info)
 		REDUCED_WARN(GFARM_MSG_1004274, &hosts_down_state,
 		    "replica_check: %lld:%lld:%s: no available replica",
 		    (long long)info->inum, (long long)info->gen,
-		    user_name(inode_get_user(inode)));
+		    user_tenant_name(inode_get_user(inode)));
 		return (GFARM_ERR_NO_ERROR); /* ignore */
 	}
 

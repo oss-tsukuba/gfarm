@@ -2112,7 +2112,7 @@ gfm_server_process_fd_info(struct peer *peer, int from_client, int skip)
 				e = gfp_xdr_send(peer_get_conn(peer),
 				    "sliillilsisiil",
 				    user_is_super_admin(user) ?
-				    user_name(fdi->user) :
+				    user_tenant_name(fdi->user) :
 				    user_name_in_tenant(fdi->user, process),
 				    (gfarm_uint64_t)fdi->pid, fdi->fd,
 				    (gfarm_uint32_t)fdi->mode,

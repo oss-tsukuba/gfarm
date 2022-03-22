@@ -246,7 +246,7 @@ quota_update_usage_user(void *closure, struct user *u)
 	struct quota *q = user_quota(u);
 	struct gfarm_quota_subject_info *usage_tmp = user_usage_tmp(u);
 
-	usage_to_quota(usage_tmp, q, "user", user_name(u));
+	usage_to_quota(usage_tmp, q, "user", user_tenant_name(u));
 	quota_softlimit_exceed_user(q, u);
 
 #if 0 /* this is OK since gfarm-2.7.17 */
@@ -266,7 +266,7 @@ quota_update_usage_group(void *closure, struct group *g)
 	struct quota *q = group_quota(g);
 	struct gfarm_quota_subject_info *usage_tmp = group_usage_tmp(g);
 
-	usage_to_quota(usage_tmp, q, "group", group_name(g));
+	usage_to_quota(usage_tmp, q, "group", group_tenant_name(g));
 	quota_softlimit_exceed_group(q, g);
 
 #if 0 /* this is OK since gfarm-2.7.17 */
@@ -1729,10 +1729,10 @@ quota_get_common(struct peer *peer, int from_client, int skip, int is_group)
 		if (strcmp(name, "") == 0) {
 			user = peer_user; /* permit not-admin */
 			free(name);
-			name = strdup_log(user_name(peer_user), diag);
+			name = strdup_log(user_tenant_name(peer_user), diag);
 			if (name == NULL)
 				e = GFARM_ERR_NO_MEMORY;
-		} else if (strcmp(name, user_name(peer_user)) == 0)
+		} else if (strcmp(name, user_tenant_name(peer_user)) == 0)
 			user = peer_user; /* permit not-admin */
 		else if (!user_is_tenant_admin(peer_user, tenant))
 			e = GFARM_ERR_OPERATION_NOT_PERMITTED;

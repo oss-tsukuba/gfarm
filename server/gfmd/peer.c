@@ -1292,7 +1292,8 @@ peer_get_auth_id_type(struct peer *peer)
 char *
 peer_get_username(struct peer *peer)
 {
-	return (peer->user != NULL ? user_name(peer->user) : peer->username);
+	return (peer->user != NULL ?
+	    user_tenant_name(peer->user) : peer->username);
 }
 
 const char *

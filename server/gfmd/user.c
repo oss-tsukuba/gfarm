@@ -522,14 +522,6 @@ user_tenant_lookup_or_enter_invalid(const char *username)
 }
 
 char *
-user_name(struct user *u)
-{
-	/* FIXME: MultiTenancy */
-	return (u != NULL && user_is_valid(u) ?
-	    u->ui.username : REMOVED_USER_NAME);
-}
-
-char *
 user_tenant_name_even_invalid(struct user *u)
 {
 	return (u != NULL ? u->ui.username : REMOVED_USER_NAME);

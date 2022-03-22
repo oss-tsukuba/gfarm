@@ -976,7 +976,7 @@ auth_uid_to_global_username(void *closure,
 	}
 	if (global_usernamep == NULL)
 		return (GFARM_ERR_NO_ERROR);
-	global_username = strdup_log(user_name(u), diag);
+	global_username = strdup_log(user_tenant_name(u), diag);
 	if (global_username == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	*global_usernamep = global_username;

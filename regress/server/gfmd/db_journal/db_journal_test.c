@@ -2521,8 +2521,8 @@ t_apply_inode_add(void)
 	st.st_gen = 1;
 	st.st_mode = GFARM_S_IFREG|GFARM_S_ALLPERM;
 	st.st_nlink = 0;
-	st.st_user = assert_strdup(user_name(u));
-	st.st_group = assert_strdup(group_name(g));
+	st.st_user = assert_strdup(user_tenant_name(u));
+	st.st_group = assert_strdup(group_tenant_name(g));
 	st.st_size = 123;
 	atm.tv_sec = 111;
 	atm.tv_nsec = 222;
@@ -2574,8 +2574,8 @@ t_apply_inode_modify(void)
 	st.st_gen = 2;
 	st.st_mode = GFARM_S_IFREG|0755;
 	st.st_nlink = 0;
-	st.st_user = assert_strdup(user_name(u));
-	st.st_group = assert_strdup(group_name(g));
+	st.st_user = assert_strdup(user_tenant_name(u));
+	st.st_group = assert_strdup(group_tenant_name(g));
 	st.st_size = 1123;
 	atm.tv_sec = 1111;
 	atm.tv_nsec = 1222;
@@ -2696,12 +2696,12 @@ t_apply_inode_user_modify(void)
 
 	u = t_add_test_user("inode_user3");
 	m.inum = T_APPLY_INODE_FILE_INUM;
-	m.string = assert_strdup(user_name(u));
+	m.string = assert_strdup(user_tenant_name(u));
 
 	TEST_ASSERT_B("inode_lookup",
 	    (i = inode_lookup(m.inum)) != NULL);
 	TEST_ASSERT_B("current st_user",
-	    strcmp(m.string, user_name(inode_get_user(i))) != 0);
+	    strcmp(m.string, user_tenant_name(inode_get_user(i))) != 0);
 	TEST_ASSERT_NOERR("inode_user_modify",
 	    db_journal_apply_ops.inode_user_modify(0, &m));
 	TEST_ASSERT_B("st_user",
@@ -2717,12 +2717,12 @@ t_apply_inode_group_modify(void)
 
 	u = t_add_test_group("inode_group3");
 	m.inum = T_APPLY_INODE_FILE_INUM;
-	m.string = assert_strdup(group_name(u));
+	m.string = assert_strdup(group_tenant_name(u));
 
 	TEST_ASSERT_B("inode_lookup",
 	    (i = inode_lookup(m.inum)) != NULL);
 	TEST_ASSERT_B("current st_group",
-	    strcmp(m.string, group_name(inode_get_group(i))) != 0);
+	    strcmp(m.string, group_tenant_name(inode_get_group(i))) != 0);
 	TEST_ASSERT_NOERR("inode_group_modify",
 	    db_journal_apply_ops.inode_group_modify(0, &m));
 	TEST_ASSERT_B("st_group",
@@ -3200,7 +3200,7 @@ t_apply_quota_add(void)
 	u = t_add_test_user(T_APPLY_QUOTA_USER_NAME);
 	g = t_add_test_group(T_APPLY_QUOTA_GROUP_NAME);
 	memset(&m, 0, sizeof(m));
-	m.name = assert_strdup(user_name(u));
+	m.name = assert_strdup(user_tenant_name(u));
 	m.is_group = 0;
 	q = &m.quota;
 	q->on_db = 1;
@@ -3263,7 +3263,7 @@ t_apply_quota_add(void)
 	TEST_ASSERT_L("phy_num_hard",
 	    111, qu->phy_num_hard);
 
-	m.name = assert_strdup(group_name(g));
+	m.name = assert_strdup(group_tenant_name(g));
 	m.is_group = 1;
 
 	TEST_ASSERT_NOERR("quota_add",
@@ -3299,7 +3299,7 @@ t_apply_quota_modify(void)
 	    1, qg->on_db);
 
 	memset(&m, 0, sizeof(m));
-	m.name = assert_strdup(user_name(u));
+	m.name = assert_strdup(user_tenant_name(u));
 	m.is_group = 0;
 	q = &m.quota;
 	q->on_db = 1;
@@ -3360,7 +3360,7 @@ t_apply_quota_modify(void)
 	TEST_ASSERT_L("phy_num_hard",
 	    1111, qu->phy_num_hard);
 
-	m.name = assert_strdup(group_name(g));
+	m.name = assert_strdup(group_tenant_name(g));
 	m.is_group = 1;
 
 	TEST_ASSERT_NOERR("quota_modify",
@@ -3396,7 +3396,7 @@ t_apply_quota_remove(void)
 	    1, qg->on_db);
 
 	memset(&m, 0, sizeof(m));
-	m.name = assert_strdup(user_name(u));
+	m.name = assert_strdup(user_tenant_name(u));
 	m.is_group = 0;
 
 	TEST_ASSERT_NOERR("quota_remove",
@@ -3404,7 +3404,7 @@ t_apply_quota_remove(void)
 	TEST_ASSERT_I("on_db",
 	    0, qu->on_db);
 
-	m.name = assert_strdup(group_name(g));
+	m.name = assert_strdup(group_tenant_name(g));
 	m.is_group = 1;
 
 	TEST_ASSERT_NOERR("quota_remove",

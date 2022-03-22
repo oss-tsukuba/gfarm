@@ -464,14 +464,6 @@ group_tenant_lookup_or_enter_invalid(const char *groupname)
 }
 
 char *
-group_name(struct group *g)
-{
-	/* FIXME: MultiTenancy */
-	return (g != NULL && group_is_valid(g) ?
-	    g->groupname : REMOVED_GROUP_NAME);
-}
-
-char *
 group_tenant_name_even_invalid(struct group *g)
 {
 	return (g != NULL ? g->groupname : REMOVED_GROUP_NAME);
@@ -659,7 +651,7 @@ group_add_user_and_record(struct group *g, const char *username)
 
 	gflog_info(GFARM_MSG_1000245,
 	    "added user %s to group %s", username, group_tenant_name(g));
-	gi.groupname = group_name(g);
+	gi.groupname = group_tenant_name(g);
 	n = 0;
 	for (ga = g->users.user_next; ga != &g->users; ga = ga->user_next)
 		if (user_is_valid(ga->u))
