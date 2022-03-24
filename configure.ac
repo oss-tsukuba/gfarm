@@ -944,7 +944,7 @@ else
     *) postgresql_includes="-I${postgresql_include_dir}" ;;
     esac
     case ${postgresql_lib_dir} in
-    /usr/lib) postgresql_libs="-lpq" ;;
+    /usr/lib|/usr/lib/*) postgresql_libs="-lpq" ;;
     *) postgresql_libs="-R${postgresql_lib_dir} -L${postgresql_lib_dir} -lpq" ;;
     esac
   else
