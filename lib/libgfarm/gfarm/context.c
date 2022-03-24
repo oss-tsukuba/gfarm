@@ -241,6 +241,7 @@ gfarm_context_term(void)
 	free(gfarm_ctxp->tls_ca_peer_verify_chain_path);
 	free(gfarm_ctxp->tls_certificate_file);
 	free(gfarm_ctxp->tls_certificate_chain_file);
+	free(gfarm_ctxp->tls_key_file);
 
 	free(gfarm_ctxp);
 	gfarm_ctxp = NULL;
