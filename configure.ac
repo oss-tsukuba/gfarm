@@ -260,20 +260,27 @@ AC_SUBST(gss_targets)
 
 
 ###
-### --enable-kerberos
+### --disable-kerberos
 ###
 
 AC_ARG_ENABLE(kerberos,
-AS_HELP_STRING([--enable-kerberos],[enable Kerberos authentication [default=disable]]),
-[if test x"${enable_kerberos}" = x"yes"; then
+AS_HELP_STRING([--disable-kerberos],[disable Kerberos authentication [default=enable]]), [], [])
+
+if test x"${enable_kerberos}" != x"no"; then
   AC_CHECK_LIB(gssapi_krb5, gss_init_sec_context)
+  AC_MSG_CHECKING(Kerberos library available)
   if test x"${ac_cv_lib_gssapi_krb5_gss_init_sec_context}" = x"yes"; then
-    AC_MSG_CHECKING(Kerberos library available)
+    AC_MSG_RESULT([yes])
+    enable_kerberos=yes
   else
+    AC_MSG_RESULT([no])
+    if test "x${enable_kerberos}" = "xyes"; then
+      AC_MSG_ERROR([cannot enable Kerberos support.])
+      exit 1
+    fi
     enable_kerberos=no
   fi
-  AC_MSG_RESULT(${enable_kerberos})
-fi], [])
+fi
 
 if test x"${enable_kerberos}" = x"yes"; then
   kerberos_includes= # assumes standard include path, for now
@@ -1501,7 +1508,7 @@ else
 fi
 
 ##
-## TLS support
+## --disable-tls13: TLS 1.3 support
 ##
 tls_srcs=
 tls_objs=

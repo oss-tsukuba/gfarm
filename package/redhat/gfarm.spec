@@ -42,7 +42,7 @@
 #
 
 %define globus %(echo "${GFARM_CONFIGURE_OPTION}" | grep -e --with-globus > /dev/null && echo 1 || echo 0)
-%define kerberos %(echo "${GFARM_CONFIGURE_OPTION}" | grep -e --enable-kerberos > /dev/null && echo 1 || echo 0)
+%define kerberos %(if echo "${GFARM_CONFIGURE_OPTION}" | grep -e --disable-kerberos > /dev/null; then echo 0; elif ls /usr/lib*/libgssapi_krb5.* > /dev/null 2>&1; then echo 1; else echo 0; fi)
 
 %if %{undefined pkg_suffix}
 %if %{globus}

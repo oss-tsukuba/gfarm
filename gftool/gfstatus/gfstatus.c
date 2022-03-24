@@ -274,7 +274,7 @@ main(int argc, char *argv[])
 	const char *path = ".";
 	struct gfm_connection *gfm_server = NULL;
 	struct gfarm_metadb_server *ms;
-#ifdef HAVE_GSI
+#if defined(HAVE_GSI) || defined(HAVE_KERBEROS)
 	char *cred;
 #endif
 
@@ -351,18 +351,25 @@ main(int argc, char *argv[])
 		exit(e == GFARM_ERR_NO_ERROR ? 0 : 1);
 	}
 
-	print_msg("client version    ", gfarm_version());
-	print_user_config_file("user config file  ");
-	print_msg("system config file", gfarm_config_get_filename());
-	print_msg("client auth gsi   ",
+	print_msg("client version      ", gfarm_version());
+	print_user_config_file("user config file    ");
+	print_msg("system config file  ", gfarm_config_get_filename());
+	print_msg("client auth gsi     ",
 #ifdef HAVE_GSI
 		  "available"
 #else
 		  "not available"
 #endif
 	    );
-	print_msg("client auth tls   ",
+	print_msg("client auth tls     ",
 #ifdef HAVE_TLS_1_3
+		  "available"
+#else
+		  "not available"
+#endif
+	    );
+	print_msg("client auth kerberos",
+#ifdef HAVE_KERBEROS
 		  "available"
 #else
 		  "not available"
@@ -393,7 +400,7 @@ main(int argc, char *argv[])
 #endif
 #ifdef HAVE_KERBEROS
 	cred = gfarm_kerberos_client_cred_name();
-	print_msg("principal name", cred ? cred : "no principal");
+	print_msg(" principal name", cred ? cred : "no principal");
 #endif
 	/* gfmd */
 	puts("");

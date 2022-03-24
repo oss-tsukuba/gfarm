@@ -18,7 +18,7 @@ static gfarm_error_t gfarm_auth_uid_to_global_username_panic(
 	void *, enum gfarm_auth_id_type, const char *, char **);
 static gfarm_error_t gfarm_auth_uid_to_global_username_sharedsecret(
 	void *, enum gfarm_auth_id_type, const char *, char **);
-#ifdef HAVE_GSI
+#if defined(HAVE_GSI) || defined(HAVE_KERBEROS)
 static gfarm_error_t gfarm_auth_uid_to_global_username_gsi(
 	void *, enum gfarm_auth_id_type, const char *, char **);
 #endif
@@ -112,7 +112,7 @@ gfarm_auth_uid_to_global_username_by_dn(void *closure,
 
 #endif /* defined(HAVE_GSI) || defined(HAVE_TLS_1_3) */
 
-#ifdef HAVE_GSI
+#if defined(HAVE_GSI) || defined(HAVE_KERBEROS)
 
 static gfarm_error_t
 gfarm_auth_uid_to_global_username_gsi(void *closure,
@@ -130,7 +130,7 @@ gfarm_auth_uid_to_global_username_gsi(void *closure,
 	    closure, auth_user_id, global_usernamep));
 }
 
-#endif /* HAVE_GSI */
+#endif /* defined(HAVE_GSI) || defined(HAVE_KERBEROS) */
 
 gfarm_error_t
 gfarm_x509_cn_get_service_hostname(
