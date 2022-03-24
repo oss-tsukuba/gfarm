@@ -1,3 +1,12 @@
+Release note for Gfarm 2.7.20
+=============================
+
+[2022.3.24]
+
+Updated feature
+* support ARM platform
+* gfpcopy - select from all available hosts if no host available in write_target_domain
+
 Release note for Gfarm 2.7.19
 =============================
 
