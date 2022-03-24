@@ -41,8 +41,7 @@ else
 		do
 			shell="$dir/$sh"
 			if ( [ -f "$shell" ] || [ -f "$shell.exe" ] ) &&
-				"$shell" -c 'shellfunc() { exit 0; };
-					shellfunc' 2>/dev/null
+				"$shell" -c 'shellfunc() { exit 0; }; shellfunc' 2>/dev/null
 			then
 				BOURNE_SHELL="$shell" exec "$shell" "$0" \
 					--re-invoked ${1+"$@"}
