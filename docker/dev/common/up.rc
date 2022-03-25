@@ -241,7 +241,7 @@ CERTIFICATES_DIR=/etc/grid-security/certificates
 COPY_CERTIFICATES_DIR="${COPY_DIR}/CERTS"
 sudo rsync -av --delete "${CERTIFICATES_DIR}/" "${COPY_CERTIFICATES_DIR}/"
 
-GFARM2CONF_REGEXP="^system config file: "
+GFARM2CONF_REGEXP="^system config file *: "
 GFARM2CONF=$(gfstatus | grep "$GFARM2CONF_REGEXP" | sed "s/$GFARM2CONF_REGEXP//")
 COPY_GFARM2CONF=${COPY_DIR}/gfarm2.conf
 sudo cp ${GFARM2CONF} ${COPY_GFARM2CONF}
