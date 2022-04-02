@@ -8,6 +8,7 @@
 #include "tls_headers.h"
 #include "tls_instances.h"
 #include "tls_funcs.h"
+#include "io_fd.h"
 
 /*
  * Gfarm iobuffer iops
@@ -272,6 +273,33 @@ gfp_xdr_tls_peer_dn_common_name(struct gfp_xdr *conn)
 	return (tls_session_peer_cn(
 			((struct tls_session_ctx_struct *)
 			(gfp_xdr_cookie(conn)))));
+}
+
+/*
+ * for "sasl_auth" method
+ */
+
+static struct gfp_iobuffer_ops gfp_xdr_insecure_tls_session_iobuffer_ops = {
+	tls_iobufop_close,
+	tls_iobufop_shutdown,
+	tls_iobufop_recv_is_ready,
+	/* NOTE: the following assumes that these functions don't use cookie */
+	gfarm_iobuffer_blocking_read_timeout_fd_op,
+	gfarm_iobuffer_blocking_read_notimeout_fd_op,
+	gfarm_iobuffer_blocking_write_timeout_socket_op,
+	gfarm_iobuffer_blocking_write_notimeout_socket_op,
+};
+
+/*
+ * downgrade from a TLS connection which is created by gfp_xdr_tls_alloc()
+ * to a fd connection.
+ */
+
+void
+gfp_xdr_downgrade_from_tls_to_fd(struct gfp_xdr *conn)
+{
+	gfp_xdr_set(conn, &gfp_xdr_insecure_tls_session_iobuffer_ops,
+	    gfp_xdr_cookie(conn), gfp_xdr_fd(conn));
 }
 
 #endif /* HAVE_TLS_1_3 */

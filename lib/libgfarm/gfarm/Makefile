@@ -32,9 +32,11 @@ KERBEROS_OBJS = auth_client_kerberos.lo auth_server_kerberos.lo
 KERBEROS_CFLAGS = -I$(GFSL_SRCDIR) \
 	-DLIBGFSL_KERBEROS='"$(libdir)/libgfsl_kerberos.so"'
 
+CYRUS_SASL_SRCS = auth_client_sasl.c  auth_server_sasl.c  auth_common_sasl.c
+CYRUS_SASL_OBJS = auth_client_sasl.lo auth_server_sasl.lo auth_common_sasl.lo
 
-TLS_SRCS = auth_client_tls.c  auth_server_tls.c  io_tls.c
-TLS_OBJS = auth_client_tls.lo auth_server_tls.lo io_tls.lo
+TLS_SRCS = auth_client_tls.c  auth_server_tls.c  io_tls.c  $(cyrus_sasl_srcs)
+TLS_OBJS = auth_client_tls.lo auth_server_tls.lo io_tls.lo $(cyrus_sasl_objs)
 
 SRCS = \
 	context.c \
@@ -229,6 +231,7 @@ $(OBJS): $(DEPGFARMINC)
 $(GSS_OBJS): $(DEPGFSLINC)
 $(GLOBUS_OBJS): $(DEPGFSLINC)
 $(KERBEROS_OBJS): $(DEPGFSLINC)
+$(CYRUS_SASL_OBJS): $(DEPGFSLINC)
 auth_client.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/gfevent.h context.h liberror.h gfp_xdr.h auth.h
 auth_client_kerberos.lo: auth.h gss.h
 auth_client_gsi.lo: auth.h gss.h

@@ -77,8 +77,8 @@ gfarm_error_t gfarm_authorize_tls_client_certificate(
 	if (req == GFARM_AUTH_TLS_CLIENT_CERTIFICATE_GIVEUP) {
 		/* server cert is invalid? raise alert */
 		gflog_warning(GFARM_MSG_UNFIXED,
-		    "my certificate is not accepted: %s",
-		    gfarm_error_string(arg));
+		    "%s: does not accept my certificate: %s",
+		    hostname, gfarm_error_string(arg));
 		gfp_xdr_tls_reset(conn); /* is this case graceful? */
 		return (GFARM_ERR_AUTHENTICATION);
 	} else if (req == GFARM_AUTH_TLS_CLIENT_CERTIFICATE_CLIENT_TYPE) {

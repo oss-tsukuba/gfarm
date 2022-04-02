@@ -76,6 +76,13 @@ gfarm_error_t (*gfarm_authorization_table[])(struct gfp_xdr *,
 	gfarm_authorize_panic,		/* GFARM_AUTH_METHOD_KERBEROS */
 	gfarm_authorize_panic,		/* GFARM_AUTH_METHOD_KERBEROS_AUTH */
 #endif
+#if defined(HAVE_CYRUS_SASL) && defined(HAVE_TLS_1_3)
+	gfarm_authorize_sasl,		/* GFARM_AUTH_METHOD_SASL */
+	gfarm_authorize_sasl_auth,	/* GFARM_AUTH_METHOD_SASL_AUTH */
+#else
+	gfarm_authorize_panic,		/* GFARM_AUTH_METHOD_SASL */
+	gfarm_authorize_panic,		/* GFARM_AUTH_METHOD_SASL_AUTH */
+#endif
 };
 
 static gfarm_error_t
@@ -596,7 +603,7 @@ gfarm_authorize_wo_setuid(struct gfp_xdr *conn, char *service_tag,
 		gflog_info(GFARM_MSG_1000046,
 		    "%s: refusing access", hostname);
 	} else {
-		methods &= gfarm_auth_method_get_available();
+		methods &= gfarm_auth_server_method_get_available();
 		if (methods == 0)
 			gflog_error(GFARM_MSG_1000047,
 			    "%s: auth-method not configured",

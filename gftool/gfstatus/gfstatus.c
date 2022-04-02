@@ -375,6 +375,13 @@ main(int argc, char *argv[])
 		  "not available"
 #endif
 	    );
+	print_msg("client auth sasl    ",
+#if defined(HAVE_CYRUS_SASL) && defined(HAVE_TLS_1_3)
+		  "available"
+#else
+		  "not available"
+#endif
+	    );
 
 	puts("");
 	print_msg("hostname          ", gfarm_host_get_self_name());

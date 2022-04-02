@@ -60,6 +60,13 @@ gfarm_error_t (*gfarm_auth_uid_to_global_username_table[])(
  gfarm_auth_uid_to_global_username_panic,	/*GFARM_AUTH_METHOD_KERBEROS*/
  gfarm_auth_uid_to_global_username_panic,   /*GFARM_AUTH_METHOD_KERBEROS_AUTH*/
 #endif
+#if defined(HAVE_CYRUS_SASL) && defined(HAVE_TLS_1_3)
+ gfarm_auth_uid_to_global_username_sharedsecret, /*GFARM_AUTH_METHOD_SASL*/
+ gfarm_auth_uid_to_global_username_sharedsecret,/*GFARM_AUTH_METHOD_SASL_AUTH*/
+#else
+ gfarm_auth_uid_to_global_username_panic,	/*GFARM_AUTH_METHOD_KERBEROS*/
+ gfarm_auth_uid_to_global_username_panic,   /*GFARM_AUTH_METHOD_KERBEROS_AUTH*/
+#endif
 };
 
 static gfarm_error_t

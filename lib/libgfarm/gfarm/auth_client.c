@@ -91,6 +91,16 @@ static const struct gfarm_auth_client_method {
 	  gfarm_auth_request_gsi_multiplexed,
 	  gfarm_auth_result_gsi_multiplexed },
 #endif /* HAVE_GSI */
+#if defined(HAVE_CYRUS_SASL) && defined(HAVE_TLS_1_3)
+	{ GFARM_AUTH_METHOD_SASL_AUTH,
+	  gfarm_auth_request_sasl_auth,
+	  gfarm_auth_request_sasl_auth_multiplexed,
+	  gfarm_auth_result_sasl_auth_multiplexed },
+	{ GFARM_AUTH_METHOD_SASL,
+	  gfarm_auth_request_sasl,
+	  gfarm_auth_request_sasl_multiplexed,
+	  gfarm_auth_result_sasl_multiplexed },
+#endif /* defined(HAVE_CYRUS_SASL) && defined(HAVE_TLS_1_3) */
 #ifdef HAVE_KERBEROS
 	{ GFARM_AUTH_METHOD_KERBEROS_AUTH,
 	  gfarm_auth_request_kerberos_auth,
@@ -101,6 +111,7 @@ static const struct gfarm_auth_client_method {
 	  gfarm_auth_request_kerberos_multiplexed,
 	  gfarm_auth_result_kerberos_multiplexed },
 #endif /* HAVE_KERBEROS */
+
 	{ GFARM_AUTH_METHOD_NONE,	  NULL, NULL, NULL }	/* sentinel */
 };
 
@@ -323,7 +334,7 @@ gfarm_auth_request(struct gfp_xdr *conn,
 		    name);
 		return (GFARM_ERRMSG_AUTH_METHOD_NOT_AVAILABLE_FOR_THE_HOST);
 	}
-	methods &= gfarm_auth_method_get_available();
+	methods &= gfarm_auth_client_method_get_available();
 	if (methods == 0) {
 		gflog_debug(GFARM_MSG_1001042,
 			"No usable auth method configured");
@@ -1080,7 +1091,7 @@ gfarm_auth_request_multiplexed(struct gfarm_eventqueue *q,
 			name);
 		return (GFARM_ERRMSG_AUTH_METHOD_NOT_AVAILABLE_FOR_THE_HOST);
 	}
-	methods &= gfarm_auth_method_get_available();
+	methods &= gfarm_auth_client_method_get_available();
 	if (methods == 0) {
 		gflog_debug(GFARM_MSG_1001069,
 			"No usable auth method configured");

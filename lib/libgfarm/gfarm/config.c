@@ -3427,6 +3427,15 @@ parse_one_line(const char *s, char *p,
 		e = parse_set_misc_enabled(p,
 		    &gfarm_ctxp->tls_proxy_certificate);
 
+	} else if (strcmp(s, o = "sasl_mechanisms") == 0) {
+		e = parse_set_var(p, &gfarm_ctxp->sasl_mechanisms);
+	} else if (strcmp(s, o = "sasl_realm") == 0) {
+		e = parse_set_var(p, &gfarm_ctxp->sasl_realm);
+	} else if (strcmp(s, o = "sasl_user") == 0) {
+		e = parse_set_var(p, &gfarm_ctxp->sasl_user);
+	} else if (strcmp(s, o = "sasl_password") == 0) {
+		e = parse_set_var(p, &gfarm_ctxp->sasl_password);
+
 	} else if (strcmp(s, o = "auth") == 0) {
 		e = parse_auth_arguments(p, position, &o);
 #if 0 /* not yet in gfarm v2 */

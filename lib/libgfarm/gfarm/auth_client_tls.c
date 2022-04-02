@@ -13,8 +13,8 @@
 #include "io_tls.h"
 #include "auth.h"
 
-static gfarm_error_t
-server_cert_is_ok(struct gfp_xdr *conn, const char *service_tag,
+gfarm_error_t
+gfarm_tls_server_cert_is_ok(struct gfp_xdr *conn, const char *service_tag,
 	const char *hostname)
 {
 	gfarm_error_t e;
@@ -58,13 +58,14 @@ gfarm_auth_request_tls_sharedsecret(struct gfp_xdr *conn,
 	struct passwd *pwd)
 {
 	gfarm_error_t e;
+
 	e = gfp_xdr_tls_alloc(conn, gfp_xdr_fd(conn), GFP_XDR_TLS_INITIATE);
 	if (e != GFARM_ERR_NO_ERROR) {
 		/* is this case graceful? */
 		return (e);
 	}
 
-	e = server_cert_is_ok(conn, service_tag, hostname);
+	e = gfarm_tls_server_cert_is_ok(conn, service_tag, hostname);
 
 	e = gfarm_auth_request_sharedsecret_common(
 	    conn, service_tag, hostname, self_type, user, pwd,
@@ -167,7 +168,7 @@ gfarm_auth_request_tls_client_certificate(struct gfp_xdr *conn,
 		return (e);
 	}
 
-	e = server_cert_is_ok(conn, service_tag, hostname);
+	e = gfarm_tls_server_cert_is_ok(conn, service_tag, hostname);
 	if (e == GFARM_ERR_NO_ERROR) {
 		req = GFARM_AUTH_TLS_CLIENT_CERTIFICATE_CLIENT_TYPE;
 		arg = self_type;
@@ -295,7 +296,7 @@ gfarm_auth_request_tls_client_certificate_multiplexed(
 		return (e);
 	}
 
-	e = server_cert_is_ok(conn, service_tag, hostname);
+	e = gfarm_tls_server_cert_is_ok(conn, service_tag, hostname);
 	if (e == GFARM_ERR_NO_ERROR) {
 		req = GFARM_AUTH_TLS_CLIENT_CERTIFICATE_CLIENT_TYPE;
 		arg = self_type;

@@ -302,9 +302,8 @@ static struct gfp_iobuffer_ops gfp_xdr_insecure_gsi_session_iobuffer_ops = {
 };
 
 /*
- * downgrade
- * from a "gsi" connection which is created by gfp_xdr_set_secsession()
- * to a "gsi_auth" connection.
+ * downgrade from a "gsi"/"kerberos" connection which is created
+ * by gfp_xdr_set_secsession() to a "gsi_auth"/"kerberos_auth" connection.
  */
 
 void

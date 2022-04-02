@@ -59,6 +59,12 @@ static const struct gfarm_context_module_entry module_entries[] = {
 		gfarm_auth_common_kerberos_static_term
 	},
 #endif
+#if defined(HAVE_CYRUS_SASL) && defined(HAVE_TLS_1_3)
+	{
+		gfarm_auth_client_sasl_static_init,
+		gfarm_auth_client_sasl_static_term
+	},
+#endif
 	{
 		gfarm_auth_client_static_init,
 		gfarm_auth_client_static_term
@@ -197,6 +203,11 @@ gfarm_context_init(void)
 	ctxp->tls_allow_no_crl = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->tls_proxy_certificate = GFARM_CONFIG_MISC_DEFAULT;
 
+	ctxp->sasl_mechanisms = NULL;
+	ctxp->sasl_realm = NULL;
+	ctxp->sasl_user = NULL;
+	ctxp->sasl_password = NULL;
+
 	ctxp->on_demand_replication = 0;
 	ctxp->call_rpc_instead_syscall = 0;
 	ctxp->fatal_action = GFARM_CONFIG_MISC_DEFAULT;
@@ -242,6 +253,11 @@ gfarm_context_term(void)
 	free(gfarm_ctxp->tls_certificate_file);
 	free(gfarm_ctxp->tls_certificate_chain_file);
 	free(gfarm_ctxp->tls_key_file);
+
+	free(gfarm_ctxp->sasl_mechanisms);
+	free(gfarm_ctxp->sasl_realm);
+	free(gfarm_ctxp->sasl_user);
+	free(gfarm_ctxp->sasl_password);
 
 	free(gfarm_ctxp);
 	gfarm_ctxp = NULL;

@@ -521,6 +521,55 @@ AC_SUBST(globus_cflags)
 AC_SUBST(globus_targets)
 
 ###
+### --disable-cyrus-sasl
+###
+
+AC_ARG_ENABLE(cyrus-sasl,
+AS_HELP_STRING([--disable-cyrus-sasl],[disable Cyrus SASL [default=enable]]), [], [])
+
+if test x"${enable_cyrus_sasl}" != x"no"; then
+  AC_CHECK_LIB(sasl2, sasl_client_init)
+  AC_MSG_CHECKING(Cyrus SASL library available)
+  if test x"${ac_cv_lib_sasl2_sasl_client_init}" = x"yes"; then
+    AC_MSG_RESULT([yes])
+    enable_cyrus_sasl=yes
+  else
+    AC_MSG_RESULT([no])
+    if test "x${enable_cyrus_sasl}" = "xyes"; then
+      AC_MSG_ERROR([cannot enable SASL support.])
+      exit 1
+    fi
+    enable_cyrus_sasl=no
+  fi
+fi
+
+if test x"${enable_cyrus_sasl}" = x"yes"; then
+  cyrus_sasl_includes= # assumes standard include path, for now
+  cyrus_sasl_libs=-lsasl2
+
+  cyrus_sasl_srcs='${CYRUS_SASL_SRCS}'
+  cyrus_sasl_objs='${CYRUS_SASL_OBJS}'
+  cyrus_sasl_cflags='${CYRUS_SASL_CFLAGS}'
+  cyrus_sasl_targets='${CYRUS_SASL_TARGETS}'
+  AC_DEFINE(HAVE_CYRUS_SASL, 1, [Cyrus SASL exists])
+else
+  cyrus_sasl_includes=
+  cyrus_sasl_libs=
+
+  cyrus_sasl_srcs=
+  cyrus_sasl_objs=
+  cyrus_sasl_cflags=
+  cyrus_sasl_targets=
+fi
+
+AC_SUBST(cyrus_sasl_includes)
+AC_SUBST(cyrus_sasl_libs)
+AC_SUBST(cyrus_sasl_srcs)
+AC_SUBST(cyrus_sasl_objs)
+AC_SUBST(cyrus_sasl_cflags)
+AC_SUBST(cyrus_sasl_targets)
+
+###
 ### --without-mtsafe-netdb ... are getaddrinfo(3) and getnameinfo(3) MT-Safe?
 ###
 

@@ -6,6 +6,7 @@ void gfarm_iobuffer_write_close_fd_op(struct gfarm_iobuffer *, void *, int);
 #endif
 
 /* gfp_xdr operation */
+struct gfarm_iobuffer;
 struct gfp_xdr;
 
 gfarm_error_t gfp_xdr_new_socket(int, struct gfp_xdr **);
