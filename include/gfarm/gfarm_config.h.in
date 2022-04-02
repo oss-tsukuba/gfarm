@@ -32,6 +32,9 @@
 /* Define to 1 if you have the <crypt.h> header file. */
 #undef HAVE_CRYPT_H
 
+/* Cyrus SASL exists */
+#undef HAVE_CYRUS_SASL
+
 /* Define to 1 if you have the `daemon_symbols' function. */
 #undef HAVE_DAEMON_SYMBOLS
 
@@ -142,6 +145,9 @@
 
 /* Define to 1 if you have the `rt' library (-lrt). */
 #undef HAVE_LIBRT
+
+/* Define to 1 if you have the `sasl2' library (-lsasl2). */
+#undef HAVE_LIBSASL2
 
 /* Define to 1 if you have the `socket' library (-lsocket). */
 #undef HAVE_LIBSOCKET

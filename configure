@@ -666,6 +666,12 @@ largefile_ldflags
 largefile_cflags
 rdma_libs
 rdma_includes
+cyrus_sasl_targets
+cyrus_sasl_cflags
+cyrus_sasl_objs
+cyrus_sasl_srcs
+cyrus_sasl_libs
+cyrus_sasl_includes
 globus_targets
 globus_cflags
 globus_objs
@@ -800,6 +806,7 @@ with_globus_static
 with_globus_flavor
 with_globus_libdir
 with_globus
+enable_cyrus_sasl
 with_mtsafe_netdb
 with_infiniband
 with_openldap
@@ -1444,6 +1451,7 @@ Optional Features:
                           optimize for fast installation [default=yes]
   --disable-libtool-lock  avoid locking (might break parallel builds)
   --disable-kerberos      disable Kerberos authentication [default=enable]
+  --disable-cyrus-sasl    disable Cyrus SASL [default=enable]
   --enable-voms           enable VOMS synchronization feature
                           [default=disable]
   --enable-xmlattr        support XML extended attributes and XPath search
@@ -12388,6 +12396,107 @@ fi
 
 
 # for conditional compilation which depends on whether globus is enabled or not
+
+
+
+
+
+###
+### --disable-cyrus-sasl
+###
+
+# Check whether --enable-cyrus-sasl was given.
+if test "${enable_cyrus_sasl+set}" = set; then :
+  enableval=$enable_cyrus_sasl;
+fi
+
+
+if test x"${enable_cyrus_sasl}" != x"no"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sasl_client_init in -lsasl2" >&5
+$as_echo_n "checking for sasl_client_init in -lsasl2... " >&6; }
+if ${ac_cv_lib_sasl2_sasl_client_init+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lsasl2  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char sasl_client_init ();
+int
+main ()
+{
+return sasl_client_init ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_sasl2_sasl_client_init=yes
+else
+  ac_cv_lib_sasl2_sasl_client_init=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_sasl2_sasl_client_init" >&5
+$as_echo "$ac_cv_lib_sasl2_sasl_client_init" >&6; }
+if test "x$ac_cv_lib_sasl2_sasl_client_init" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBSASL2 1
+_ACEOF
+
+  LIBS="-lsasl2 $LIBS"
+
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking Cyrus SASL library available" >&5
+$as_echo_n "checking Cyrus SASL library available... " >&6; }
+  if test x"${ac_cv_lib_sasl2_sasl_client_init}" = x"yes"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+    enable_cyrus_sasl=yes
+  else
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+    if test "x${enable_cyrus_sasl}" = "xyes"; then
+      as_fn_error $? "cannot enable SASL support." "$LINENO" 5
+      exit 1
+    fi
+    enable_cyrus_sasl=no
+  fi
+fi
+
+if test x"${enable_cyrus_sasl}" = x"yes"; then
+  cyrus_sasl_includes= # assumes standard include path, for now
+  cyrus_sasl_libs=-lsasl2
+
+  cyrus_sasl_srcs='${CYRUS_SASL_SRCS}'
+  cyrus_sasl_objs='${CYRUS_SASL_OBJS}'
+  cyrus_sasl_cflags='${CYRUS_SASL_CFLAGS}'
+  cyrus_sasl_targets='${CYRUS_SASL_TARGETS}'
+
+$as_echo "#define HAVE_CYRUS_SASL 1" >>confdefs.h
+
+else
+  cyrus_sasl_includes=
+  cyrus_sasl_libs=
+
+  cyrus_sasl_srcs=
+  cyrus_sasl_objs=
+  cyrus_sasl_cflags=
+  cyrus_sasl_targets=
+fi
+
+
+
 
 
 
