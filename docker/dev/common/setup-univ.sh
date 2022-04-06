@@ -248,3 +248,21 @@ EOF
 
 chmod +x ${CLEAR_NOLOGIN_SCRIPT}
 systemctl enable ${CLEAR_NOLOGIN}
+
+
+### setup autofs
+cat <<EOF | sudo dd of=/etc/auto.gfarm
+ROOT -fstype=gfarm2fs,allow_other,default_permissions,username=${user1} :/home/${user1}/.gfarm2rc
+* -fstype=gfarm2fs,allow_root,username=& :/home/&/.gfarm2rc
+EOF
+
+cat <<EOF | sudo dd oflag=append conv=notrunc of=/etc/auto.master
+/gfarm /etc/auto.gfarm
+EOF
+
+cat <<EOF | sudo dd oflag=append conv=notrunc of=/etc/fuse.conf
+user_allow_other
+EOF
+
+mkdir /gfarm
+systemctl enable autofs

@@ -18,6 +18,7 @@ RUN dnf -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.n
     postgresql-devel \
     postgresql \
     postgresql-server \
+    autofs \
     libacl-devel \
     ruby \
     perl-bignum \

@@ -25,6 +25,7 @@ RUN apt-get update \
     postgresql-client \
     libfuse-dev \
     fuse \
+    autofs \
     libacl1-dev \
     ruby \
     git \

@@ -1,4 +1,4 @@
-set -eux
+set -eux -o pipefail
 
 : $GFDOCKER_PRJ_NAME
 : $TZ
@@ -206,6 +206,8 @@ COPY_DIR=/mnt/COPY_DIR
 COPY_HOMES="${COPY_DIR}/HOMES"
 
 sudo mkdir -p "${COPY_HOMES}"
+gfsudo gfmkdir /home
+gfsudo gfchown gfarmadm /home
 
 # for external gfarm-s3-minio-web container
 S3_USERMAP="${COPY_DIR}/gfarm-s3-usermap.conf"
@@ -219,16 +221,19 @@ for i in $(seq 1 $GFDOCKER_NUM_USERS); do
   from_dir="/home/${name}"
   to_dir="${COPY_HOMES}/${name}"
   subject="/O=Grid/OU=GlobusTest/OU=GlobusSimpleCA/CN=${name}"
+  ghome_dir="/home/${name}"
 
   # add gfarm user (skip Gfarm admin user)
   if [ "${name}" != "${GFDOCKER_USERNAME_PREFIX}1" ]; then
-    gfuser -c "${name}" "${name}" / "${subject}"
+    gfuser -c "${name}" "${name}" "${ghome_dir}" "${subject}"
   fi
+  gfsudo gfmkdir "${ghome_dir}"
+  gfsudo gfchown "${name}" "${ghome_dir}"
 
   # backup or restore gfarm_shared_key
   sudo sudo -i -u "$name" ${GFDOCKER_COPY_SHARED_KEY}
 
-  # copy home directory
+  # copy home directory to COPY_HOMES
   sudo rsync -av --exclude=gfarm --exclude gfarm2fs --exclude tmp \
   "${from_dir}/" "${to_dir}/"
 
@@ -237,10 +242,17 @@ for i in $(seq 1 $GFDOCKER_NUM_USERS); do
   sudo dd conv=notrunc oflag=append of="${S3_USERMAP}" > /dev/null 2>&1
 done
 
+### check autofs
+SUPPORT_AUTOFS=1
+ls /gfarm/ROOT || SUPPORT_AUTOFS=0
+ls /gfarm/user1 || SUPPORT_AUTOFS=0
+
+### copy certificates
 CERTIFICATES_DIR=/etc/grid-security/certificates
 COPY_CERTIFICATES_DIR="${COPY_DIR}/CERTS"
 sudo rsync -av --delete "${CERTIFICATES_DIR}/" "${COPY_CERTIFICATES_DIR}/"
 
+### copy gfarm2.conf
 GFARM2CONF_REGEXP="^system config file *: "
 GFARM2CONF=$(gfstatus | grep "$GFARM2CONF_REGEXP" | sed "s/$GFARM2CONF_REGEXP//")
 COPY_GFARM2CONF=${COPY_DIR}/gfarm2.conf
@@ -308,12 +320,19 @@ EOF
 done
 rm -f $tmp_gfarmconf
 
-LOG=/var/log/messages
-SYSLOG=/var/log/syslog
-if [ -f $SYSLOG ]; then
-   LOG=$SYSLOG
+# LOG=/var/log/messages
+# SYSLOG=/var/log/syslog
+# if [ -f $SYSLOG ]; then
+#    LOG=$SYSLOG
+# fi
+# sudo tail -1 $LOG
+
+echo -n "GFDOCKER_PRJ_NAME=$GFDOCKER_PRJ_NAME: autofs (/gfarm/*) "
+if [ ${SUPPORT_AUTOFS} -eq 1 ]; then
+    echo "works."
+else
+    echo "does not work."
 fi
-sudo tail -1 $LOG
 
 date
 echo "GFDOCKER_PRJ_NAME=$GFDOCKER_PRJ_NAME: setup is now complete."

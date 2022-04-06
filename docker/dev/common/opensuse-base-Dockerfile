@@ -24,6 +24,7 @@ RUN zypper install -y \
     postgresql13-server-devel \
     fuse \
     fuse-devel \
+    autofs \
     libacl-devel \
     ruby \
     libtool \

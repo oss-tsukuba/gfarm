@@ -21,6 +21,7 @@ RUN dnf -y update \
     postgresql-server \
     fuse \
     fuse-devel \
+    autofs \
     libacl-devel \
     ruby \
     hostname \

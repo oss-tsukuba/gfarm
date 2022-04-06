@@ -36,3 +36,6 @@ su - "$GFDOCKER_PRIMARY_USER" -c " \
 " \
   && cd "/home/${GFDOCKER_PRIMARY_USER}/gfarm2fs" \
   && make -j install || exit 1
+
+# for autofs
+cp $(which mount.gfarm2fs) /sbin/
