@@ -65,7 +65,7 @@
 
 #define staticp	(gfarm_ctxp->config_static)
 
-#define MAX_CONFIG_LINE_LENGTH	1023
+#define MAX_CONFIG_LINE_LENGTH	4095
 
 struct gfarm_config_static {
 	char *config_file;
