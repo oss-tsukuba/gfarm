@@ -39,7 +39,6 @@ gfarm_gss_dlopen(const char *libname, const char *proto,
 		break; \
 	}
 
-
 	do {
 		SYM(gfarmGssPrintMajorStatus)
 		SYM(gfarmGssPrintMinorStatus)
@@ -114,7 +113,7 @@ static void
 libgfsl_kerberos_initialize(void)
 {
 	libgfsl_kerberos = gfarm_gss_dlopen(LIBGFSL_KERBEROS, "kerberos",
-    	    gfarm_kerberos_client_cred_get);
+	    gfarm_kerberos_client_cred_get);
 }
 
 struct gfarm_gss *

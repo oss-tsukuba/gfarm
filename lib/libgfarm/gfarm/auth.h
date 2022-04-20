@@ -77,13 +77,13 @@ gfarm_error_t gfarm_gss_server_initialize(struct gfarm_gss *);
 gfarm_error_t gfarm_gss_client_initialize(struct gfarm_gss *);
 
 #define GFARM_IS_AUTH_GSS(auth) \
-	(((auth) == GFARM_AUTH_METHOD_GSI) || \
-	 ((auth) == GFARM_AUTH_METHOD_GSI_AUTH) || \
-	 ((auth) == GFARM_AUTH_METHOD_KERBEROS) || \
-	 ((auth) == GFARM_AUTH_METHOD_KERBEROS_AUTH))
+	((auth) == GFARM_AUTH_METHOD_GSI || \
+	 (auth) == GFARM_AUTH_METHOD_GSI_AUTH || \
+	 (auth) == GFARM_AUTH_METHOD_KERBEROS || \
+	 (auth) == GFARM_AUTH_METHOD_KERBEROS_AUTH)
 #define GFARM_IS_AUTH_KERBEROS(auth) \
-	 ((auth) == GFARM_AUTH_METHOD_KERBEROS) || \
-	 ((auth) == GFARM_AUTH_METHOD_KERBEROS_AUTH))
+	((auth) == GFARM_AUTH_METHOD_KERBEROS || \
+	 (auth) == GFARM_AUTH_METHOD_KERBEROS_AUTH)
 #define GFARM_IS_AUTH_TLS_CLIENT_CERTIFICATE(auth) \
 	((auth) == GFARM_AUTH_METHOD_TLS_CLIENT_CERTIFICATE)
 
@@ -286,7 +286,7 @@ gfarm_error_t gfarm_authorize_sharedsecret(struct gfp_xdr *,
 
 /* auth_server_gss */
 gfarm_error_t gfarm_authorize_gss(struct gfp_xdr *, struct gfarm_gss *,
-	char *, char *, enum gfarm_auth_method auth_method, 
+	char *, char *, enum gfarm_auth_method auth_method,
 	gfarm_error_t (*)(void *,
 	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
 	    char **), void *,

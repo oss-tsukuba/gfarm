@@ -12,10 +12,6 @@
 #include <pwd.h>
 #include <gssapi.h>
 
-//#ifdef HAVE_LIBGSSAPI_KRB5
-//#include <gssapi/gssapi_ext.h>
-//#endif
-
 #include <gfarm/gflog.h>
 #include <gfarm/error.h>
 

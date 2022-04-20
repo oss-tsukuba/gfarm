@@ -175,7 +175,7 @@ for host in $gfmds; do
    fi &&
    gfservice set-gfmd-conf "$host" write_verify enable &&
    gfservice set-gfmd-conf "$host" write_verify_interval 600 &&
-   gfservice restart-gfmd "$host" 
+   gfservice restart-gfmd "$host"
   ) &
 done
 #wait

@@ -1325,7 +1325,7 @@ tls_add_extra_certs(SSL_CTX *ssl_ctx, const char *file, int *n_added)
 		char *bp = b;
 		bool do_dbg_msg = (gflog_get_priority_level() >= LOG_DEBUG) ?
 			true : false;
-	
+
 		if (n_added != NULL) {
 			*n_added = 0;
 		}
