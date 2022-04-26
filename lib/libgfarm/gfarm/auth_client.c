@@ -334,7 +334,7 @@ gfarm_auth_request(struct gfp_xdr *conn,
 		    name);
 		return (GFARM_ERRMSG_AUTH_METHOD_NOT_AVAILABLE_FOR_THE_HOST);
 	}
-	methods &= gfarm_auth_client_method_get_available();
+	methods &= gfarm_auth_client_method_get_available(self_type);
 	if (methods == 0) {
 		gflog_debug(GFARM_MSG_1001042,
 			"No usable auth method configured");
@@ -1091,7 +1091,7 @@ gfarm_auth_request_multiplexed(struct gfarm_eventqueue *q,
 			name);
 		return (GFARM_ERRMSG_AUTH_METHOD_NOT_AVAILABLE_FOR_THE_HOST);
 	}
-	methods &= gfarm_auth_client_method_get_available();
+	methods &= gfarm_auth_client_method_get_available(self_type);
 	if (methods == 0) {
 		gflog_debug(GFARM_MSG_1001069,
 			"No usable auth method configured");

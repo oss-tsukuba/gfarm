@@ -169,7 +169,7 @@ void gfarm_auth_config_set_mark(void);
 /* this i/f have to be changed, if we support more than 31 auth methods */
 gfarm_int32_t gfarm_auth_method_get_enabled_by_name_addr(
 	const char *, struct sockaddr *);
-gfarm_int32_t gfarm_auth_client_method_get_available(void);
+gfarm_int32_t gfarm_auth_client_method_get_available(enum gfarm_auth_id_type);
 gfarm_int32_t gfarm_auth_server_method_get_available(void);
 
 gfarm_error_t gfarm_auth_cred_type_parse(char *, enum gfarm_auth_cred_type *);

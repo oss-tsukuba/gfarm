@@ -352,7 +352,8 @@ gfarm_auth_method_sasl_available(void)
 }
 
 static gfarm_int32_t
-gfarm_auth_method_get_available(int is_server)
+gfarm_auth_method_get_available(int is_server,
+	enum gfarm_auth_id_type self_type)
 {
 	int i;
 	gfarm_int32_t methods;
@@ -382,10 +383,13 @@ gfarm_auth_method_get_available(int is_server)
 		case GFARM_AUTH_METHOD_SASL:
 		case GFARM_AUTH_METHOD_SASL_AUTH:
 #if defined(HAVE_CYRUS_SASL) && defined(HAVE_TLS_1_3)
-			if (is_server ?
-			    gfarm_auth_server_method_sasl_available() :
-			    gfarm_auth_client_method_sasl_available())
-				break; /* available */
+			if (is_server) {
+				if (gfarm_auth_server_method_sasl_available())
+					break; /* available */
+			} else if (self_type == GFARM_AUTH_ID_TYPE_USER) {
+				if (gfarm_auth_client_method_sasl_available())
+					break; /* available */
+			}
 #else
 			continue; /* not available */
 #endif
@@ -400,13 +404,14 @@ gfarm_auth_method_get_available(int is_server)
 gfarm_int32_t
 gfarm_auth_server_method_get_available(void)
 {
-	return (gfarm_auth_method_get_available(1));
+	return (
+	    gfarm_auth_method_get_available(1, GFARM_AUTH_ID_TYPE_UNKNOWN));
 }
 
 gfarm_int32_t
-gfarm_auth_client_method_get_available(void)
+gfarm_auth_client_method_get_available(enum gfarm_auth_id_type self_type)
 {
-	return (gfarm_auth_method_get_available(0));
+	return (gfarm_auth_method_get_available(0, self_type));
 }
 
 void
