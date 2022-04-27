@@ -879,6 +879,40 @@ gfm_server_user_info_get_by_gsi_dn(
 }
 
 gfarm_error_t
+gfm_server_user_info_get_my_own(
+	struct peer *peer, int from_client, int skip)
+{
+	gfarm_error_t e;
+	struct user *user = peer_get_user(peer);
+	struct gfarm_user_info *ui;
+	static const char diag[] = "GFM_PROTO_USER_INFO_GET_MY_OWN";
+
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+
+	/* XXX FIXME too long giant lock */
+	giant_lock();
+	if (!from_client) {
+		gflog_info(GFARM_MSG_UNFIXED, "%s: not from client (%s)",
+		    diag, user == NULL ? "(null)" : user_name(user));
+		e = gfm_server_put_reply(peer, diag,
+		    GFARM_ERR_OPERATION_NOT_PERMITTED, "");
+	} else if (user == NULL) {
+		/* shouldn't happen */
+		gflog_error(GFARM_MSG_UNFIXED, "%s: user is NULL", diag);
+		e = gfm_server_put_reply(peer, diag,
+			GFARM_ERR_INTERNAL_ERROR, "");
+	} else {
+		ui = &user->ui;
+		e = gfm_server_put_reply(peer, diag, GFARM_ERR_NO_ERROR,
+			"ssss", ui->username, ui->realname, ui->homedir,
+			ui->gsi_dn);
+	}
+	giant_unlock();
+	return (e);
+}
+
+gfarm_error_t
 user_info_verify(struct gfarm_user_info *ui, const char *diag)
 {
 	if (strlen(ui->username) > GFARM_LOGIN_NAME_MAX ||

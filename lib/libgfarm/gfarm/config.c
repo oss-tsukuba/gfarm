@@ -781,10 +781,8 @@ gfarm_get_global_username_by_host(const char *hostname, int port, char **userp)
 {
 	char *global_user;
 	gfarm_error_t e;
-#ifdef HAVE_GSI
 	struct gfm_connection *gfm_server;
 	const char *user;
-#endif
 
 	if (userp == NULL)
 		return (GFARM_ERR_NO_ERROR);
@@ -796,8 +794,8 @@ gfarm_get_global_username_by_host(const char *hostname, int port, char **userp)
 		    "failed: %s", gfarm_error_string(e));
 		return (e);
 	}
-#ifdef HAVE_GSI
-	/* global username can be specified by GSI DN in gfmd user database */
+
+	/* ask global username by GFM_PROTO_USER_INFO_GET_MY_OWN */
 	e = gfm_client_connection_and_process_acquire(hostname, port,
 	    global_user, &gfm_server);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -806,25 +804,22 @@ gfarm_get_global_username_by_host(const char *hostname, int port, char **userp)
 		free(global_user);
 		return (e);
 	}
-	if (GFARM_IS_AUTH_GSS(
-	    gfm_client_connection_auth_method(gfm_server))) {
-		user = gfm_client_username(gfm_server);
-		if (user == NULL) {
-			gflog_error(GFARM_MSG_1003443,
-			    "global username is not set");
-			e = GFARM_ERR_NO_SUCH_USER;
-		} else {
-			free(global_user);
-			global_user = strdup(user);
-			if (global_user == NULL) {
-				e = GFARM_ERR_NO_MEMORY;
-				gflog_error(GFARM_MSG_1003444,
-				    "%s", gfarm_error_string(e));
-			}
+	user = gfm_client_username(gfm_server);
+	if (user == NULL) {
+		gflog_error(GFARM_MSG_1003443,
+		    "global username is not set");
+		e = GFARM_ERR_NO_SUCH_USER;
+	} else {
+		free(global_user);
+		global_user = strdup(user);
+		if (global_user == NULL) {
+			e = GFARM_ERR_NO_MEMORY;
+			gflog_error(GFARM_MSG_1003444,
+			    "%s", gfarm_error_string(e));
 		}
 	}
 	gfm_client_connection_free(gfm_server);
-#endif
+
 	if (e == GFARM_ERR_NO_ERROR)
 		*userp = global_user;
 	else

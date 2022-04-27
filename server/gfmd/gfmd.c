@@ -206,6 +206,9 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 		e = gfm_server_user_info_get_by_gsi_dn(
 			peer, from_client, skip);
 		break;
+	case GFM_PROTO_USER_INFO_GET_MY_OWN:
+		e = gfm_server_user_info_get_my_own(peer, from_client, skip);
+		break;
 	case GFM_PROTO_GROUP_INFO_GET_ALL:
 		e = gfm_server_group_info_get_all(peer, from_client, skip);
 		break;

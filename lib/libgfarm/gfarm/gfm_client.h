@@ -111,6 +111,9 @@ gfarm_error_t gfm_client_user_info_get_by_names(struct gfm_connection *,
 	int, const char **, gfarm_error_t *, struct gfarm_user_info *);
 gfarm_error_t gfm_client_user_info_get_by_gsi_dn(struct gfm_connection *,
 	const char *, struct gfarm_user_info *);
+gfarm_error_t gfm_client_user_info_get_my_own_request(struct gfm_connection *);
+gfarm_error_t gfm_client_user_info_get_my_own_result(struct gfm_connection *,
+	struct gfarm_user_info *);
 gfarm_error_t gfm_client_user_info_set(struct gfm_connection *,
 	const struct gfarm_user_info *);
 gfarm_error_t gfm_client_user_info_modify(struct gfm_connection *,
@@ -517,8 +520,10 @@ gfarm_error_t gfm_client_replica_create_file_in_lost_found_result(
 	struct gfm_connection *, gfarm_ino_t *, gfarm_uint64_t *);
 
 /* process management */
-gfarm_error_t gfm_client_process_alloc(struct gfm_connection *,
-	gfarm_int32_t, const char *, size_t, gfarm_pid_t *);
+gfarm_error_t gfm_client_process_alloc_request(struct gfm_connection *,
+	gfarm_int32_t, const char *, size_t);
+gfarm_error_t gfm_client_process_alloc_result(struct gfm_connection *,
+	gfarm_pid_t *);
 gfarm_error_t gfm_client_process_alloc_child(struct gfm_connection *,
 	gfarm_int32_t, const char *, size_t, gfarm_pid_t,
 	gfarm_int32_t, const char *, size_t, gfarm_pid_t *);
