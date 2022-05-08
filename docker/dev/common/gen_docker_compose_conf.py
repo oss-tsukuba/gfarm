@@ -83,7 +83,8 @@ x-common:
 
 for h in hosts:
     print("    - {}:{}".format(h.hostname, str(h.ipaddr)))
-    print("    - {}:{}".format(h.name, str(h.ipaddr)))
+    if h.hostname != h.name:
+        print("    - {}:{}".format(h.name, str(h.ipaddr)))
 
 print('''\
 
