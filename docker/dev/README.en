@@ -6,39 +6,31 @@ Requirements
 - Docker
 - Docker Compose
 - sudo
-- cgroup v2: disabled
-- RAM : 4GB or more
-- The host OS is not used for other purposes
 
-Disable cgroup v2
-=================
+Restriction
+===========
+- Memory size should be larger than 4 GiB
 
-- Is enabled cgroup v2 ?
+- The host OS is assumed to be used exclusively because docker/dev requires
+  root privilege
 
-  $ mount | grep "cgroup2 on /sys/fs/cgroup type"; echo $?
-  0
+- cgroup v2 should be disabled
 
-  Zero means "cgroup v2 is enabled".
+  In a docker container, systemctl does not work with cgroup v2.  You can
+  check by the following command
 
-- Disable cgroup v2 when cgroup v2 is enabled.
+  $ mount | grep "cgroup2 on /sys/fs/cgroup type"; [ $? -eq 0 ] && echo cgroup2 enabled || echo cgroup2 disabled
 
-  add the following parameters to GRUB_CMDLINE_LINUX_DEFAULT
-  of /etc/default/grub :
-  - systemd.unified_cgroup_hierarchy=false
-  - systemd.legacy_systemd_cgroup_controller=false
+  To disable cgroup2, add "systemd.unified_cgroup_hierarchy=false
+  systemd.legacy_systemd_cgroup_controller=false" to GRUB_CMDLINE_LINUX_DEFAULT
+  in /etc/default/grub like
 
-  Example:
-    GRUB_CMDLINE_LINUX_DEFAULT="quiet systemd.unified_cgroup_hierarchy=false systemd.legacy_systemd_cgroup_controller=false"
+  GRUB_CMDLINE_LINUX_DEFAULT="quiet systemd.unified_cgroup_hierarchy=false systemd.legacy_systemd_cgroup_controller=false"
 
-- update and reboot
+  update and reboot
 
   $ sudo update-grub
   $ sudo reboot
-
-- Is enabled cgroup v2 ?
-
-  $ mount | grep "cgroup2 on /sys/fs/cgroup type"; echo $?
-  1
 
 Quick start on Ubuntu 18.04 host
 ================================
@@ -87,24 +79,25 @@ Quick start on Ubuntu 18.04 host
 
   $ sudo apt install make git
 
-4. Checkout gfarm2fs.
+4. Checkout gfarm and gfarm2fs.
 
-$ cd path/to/gfarm-src-top
-$ git clone git@github.com:oss-tsukuba/gfarm2fs.git
+  $ git clone git@github.com:oss-tsukuba/gfarm.git
+  $ cd gfarm
+  $ git clone git@github.com:oss-tsukuba/gfarm2fs.git
 
-5. Use Docker
+5. Execute docker containers
 
   $ cd docker/dev
-  $ editor config.mk
-  # override GFDOCKER_IP_VERSION, GFDOCKER_SUBNET, and GFDOCKER_START_HOST_ADDR
-  # from config-default.mk
-  $ cd dist/centos7/src  # when using source package on CentOS 7
-  # note: execute 'sudo' in Makefile
-  $ make help  # display usage.
-  $ make reborn  # up the containers.
-  $ make shell  # enter the container.
-  $ make regress  # execute regress.
-  $ make down  # down the containers.
+  $ cp config-default.mk config.mk
+  edit config.mk
+  $ cd dist/centos7/src
+  $ make help	# display usage.
+  $ make reborn	# up the containers.
+  $ make shell	# enter the container.
+  $ make regress # execute regress.
+  $ make down	# down the containers.
+
+  Note that you need to have a privilege to execute sudo
 
 Keep keys
 =========
