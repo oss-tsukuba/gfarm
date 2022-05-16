@@ -15,6 +15,7 @@ opensuse/src
 opensuse/pkg
 ubuntu1804/src
 ubuntu2004/src
+ubuntu2204/src
 debian10/src
 debian11/src
 "

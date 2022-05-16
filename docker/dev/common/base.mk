@@ -582,6 +582,9 @@ ubuntu1804:
 ubuntu2004:
 	$(DOCKER_RUN) -it --rm 'ubuntu:20.04' bash
 
+ubuntu2204:
+	$(DOCKER_RUN) -it --rm 'ubuntu:22.04' bash
+
 debian10:
 	$(DOCKER_RUN) -it --rm 'debian:buster' bash
 
