@@ -4,9 +4,9 @@ LANG = en_US.UTF-8
 
 DOCKER_CMD = docker
 ### Compose v1
-DOCKER_COMPOSE_CMD = docker-compose
+#DOCKER_COMPOSE_CMD = docker-compose
 ### Compose v2
-#DOCKER_COMPOSE_CMD = docker compose
+DOCKER_COMPOSE_CMD = docker compose
 
 #GFDOCKER_PROXY_HOST = 192.168.0.1
 #GFDOCKER_PROXY_PORT = 8080
