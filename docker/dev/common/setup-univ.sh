@@ -11,9 +11,8 @@
 # ARG GFDOCKER_HOSTNAME_PREFIX_GFSD
 # ARG GFDOCKER_HOSTNAME_SUFFIX
 # ARG GFDOCKER_USE_SAN_FOR_GFSD
-# COPY . /tmp/gfarm
-# COPY gfarm2fs /tmp/gfarm2fs
-# RUN "/tmp/gfarm/docker/dev/common/setup-univ.sh"
+# COPY --chown=1000:1000 . /work/gfarm
+# RUN "/work/gfarm/docker/dev/common/setup-univ.sh"
 
 set -eux
 
@@ -28,26 +27,23 @@ set -eux
 : $GFDOCKER_USE_SAN_FOR_GFSD
 
 MY_SHELL=/bin/bash
-USERADD="useradd -m -s "$MY_SHELL" -U"
+USERADD="useradd -m -s "$MY_SHELL" -U -K UID_MIN=1000 -K GID_MIN=1000"
 ca_key_pass=PASSWORD
 GRID_MAPFILE=/etc/grid-security/grid-mapfile
 PRIMARY_HOME=/home/${GFDOCKER_PRIMARY_USER}
-gfarm_src_path="${PRIMARY_HOME}/gfarm"
+gfarm_src_path="/work/gfarm"
 
-# pin UID for user1
+# pin starting UID for user1
 for i in $(seq 1 "$GFDOCKER_NUM_USERS"); do
   $USERADD "${GFDOCKER_USERNAME_PREFIX}${i}";
 done
 
+ln -s ${gfarm_src_path} ${PRIMARY_HOME}/gfarm
+ln -s ${gfarm_src_path}/gfarm2fs ${PRIMARY_HOME}/gfarm2fs
+
 for u in _gfarmmd _gfarmfs; do
   $USERADD "$u"
 done
-
-# "chown -R" is slow.
-rsync -a --chown=${GFDOCKER_PRIMARY_USER}:${GFDOCKER_PRIMARY_USER} \
-      /tmp/gfarm/ "${PRIMARY_HOME}"/gfarm
-rsync -a --chown=${GFDOCKER_PRIMARY_USER}:${GFDOCKER_PRIMARY_USER} \
-      /tmp/gfarm2fs/ "${PRIMARY_HOME}"/gfarm2fs
 
 # for grid-cert-request
 VARADM=/var/adm

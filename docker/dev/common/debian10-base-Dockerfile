@@ -60,8 +60,7 @@ ARG GFDOCKER_HOSTNAME_PREFIX_GFMD
 ARG GFDOCKER_HOSTNAME_PREFIX_GFSD
 ARG GFDOCKER_HOSTNAME_SUFFIX
 ARG GFDOCKER_USE_SAN_FOR_GFSD
-COPY . /tmp/gfarm
-COPY gfarm2fs /tmp/gfarm2fs
-RUN "/tmp/gfarm/docker/dev/common/setup-univ.sh"
+COPY --chown=1000:1000 . /work/gfarm
+RUN "/work/gfarm/docker/dev/common/setup-univ.sh"
 
 CMD ["/sbin/init"]
