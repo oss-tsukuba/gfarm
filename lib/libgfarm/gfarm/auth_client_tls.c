@@ -25,7 +25,7 @@ server_cert_is_ok(struct gfp_xdr *conn, const char *service_tag,
 		gflog_auth_warning(GFARM_MSG_UNFIXED,
 		    "%s: missing hostname in TLS server certificate",
 		    hostname);
-		return (GFARM_ERR_UNKNOWN_HOST);
+		return (GFARM_ERR_HOSTNAME_MISMATCH);
 	} else if ((e = gfarm_x509_cn_get_service_hostname(
 	    service_tag, peer_cn, &peer_hostname)) != GFARM_ERR_NO_ERROR) {
 		/* server cert is invalid? raise alert */
@@ -33,7 +33,7 @@ server_cert_is_ok(struct gfp_xdr *conn, const char *service_tag,
 		    "%s: '%s' service is expected "
 		    "in TLS server certificate <%s>",
 		    hostname, service_tag, peer_cn);
-		return (GFARM_ERR_UNKNOWN_HOST);
+		return (GFARM_ERR_HOSTNAME_MISMATCH);
 	}
 
 	if (strcasecmp(peer_hostname, hostname) != 0) {
@@ -42,7 +42,7 @@ server_cert_is_ok(struct gfp_xdr *conn, const char *service_tag,
 		    "%s: %s service - host '%s' is expected but '%s' "
 		    "in TLS server certificate <%s>",
 		    hostname, service_tag, hostname, peer_hostname, peer_cn);
-		e = GFARM_ERR_UNKNOWN_HOST;
+		e = GFARM_ERR_HOSTNAME_MISMATCH;
 	} else {
 		e = GFARM_ERR_NO_ERROR;
 	}
@@ -194,7 +194,7 @@ gfarm_auth_request_tls_client_certificate(struct gfp_xdr *conn,
 	if (req != GFARM_AUTH_TLS_CLIENT_CERTIFICATE_CLIENT_TYPE) {
 		/* giveup, due to server cert problem */
 		gfp_xdr_tls_reset(conn); /* is this case graceful? */
-		return (GFARM_ERR_UNKNOWN_HOST);
+		return (GFARM_ERR_HOSTNAME_MISMATCH);
 	}
 
 	if ((e = gfp_xdr_recv(conn, 1, &eof, "i", &result))
@@ -326,7 +326,7 @@ gfarm_auth_request_tls_client_certificate_multiplexed(
 		/* giveup, due to server cert problem */
 		free(state);
 		gfp_xdr_tls_reset(conn); /* is this case graceful? */
-		return (GFARM_ERR_UNKNOWN_HOST);
+		return (GFARM_ERR_HOSTNAME_MISMATCH);
 	}
 
 	/*

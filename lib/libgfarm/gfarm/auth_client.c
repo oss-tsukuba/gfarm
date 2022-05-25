@@ -143,7 +143,7 @@ gfarm_auth_request_sharedsecret_common(struct gfp_xdr *conn,
 	do {
 		if (!server_is_ok) {
 			/* just send GFARM_AUTH_SHAREDSECRET_GIVEUP */
-			e_save = GFARM_ERR_UNKNOWN_HOST;
+			e_save = GFARM_ERR_HOSTNAME_MISMATCH;
 			break;
 		}
 
@@ -267,7 +267,7 @@ gfarm_auth_request_sharedsecret_common(struct gfp_xdr *conn,
 			"access to %s failed: %s",
 			GFARM_AUTH_SHARED_KEY_PRINTNAME,
 			gfarm_error_string(e_save));
-		/* if !server_is_ok, this returns GFARM_ERR_UNKNOWN_HOST */
+		/* if !server_is_ok, this returns GFARM_ERR_HOSTNAME_MISMATCH */
 		return (e_save);
 	}
 	switch (error) {
@@ -500,7 +500,7 @@ gfarm_auth_request_sharedsecret_receive_fin(int events, int fd,
 	if (state->error != GFARM_ERR_NO_ERROR)
 		;
 	else if (state->error_save != GFARM_ERR_NO_ERROR) {
-		/* if !server_is_ok, this sets GFARM_ERR_UNKNOWN_HOST */
+		/* if !server_is_ok, this sets GFARM_ERR_HOSTNAME_MISMATCH */
 		state->error = state->error_save;
 	} else {
 		switch (state->proto_error) {
@@ -736,7 +736,7 @@ gfarm_auth_request_sharedsecret_send_keytype(int events, int fd,
 
 	if (!state->server_is_ok) {
 		/* just send GFARM_AUTH_SHAREDSECRET_GIVEUP */
-		state->error_save = GFARM_ERR_UNKNOWN_HOST;
+		state->error_save = GFARM_ERR_HOSTNAME_MISMATCH;
 		gfarm_auth_request_sharedsecret_send_giveup(events, fd,
 		    closure, t);
 		return;
