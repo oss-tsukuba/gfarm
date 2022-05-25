@@ -40,6 +40,14 @@ enum gfarm_auth_cred_type {
 
 #define GFARM_AUTH_METHOD_ALL	GFARM_AUTH_METHOD_NONE
 
+/* try next authentication method? */
+#define GFARM_AUTH_ERR_TRY_NEXT_METHOD(e) ( \
+	(e) == GFARM_ERR_PROTOCOL_NOT_SUPPORTED || \
+	(e) == GFARM_ERR_EXPIRED || \
+	(e) == GFARM_ERR_PERMISSION_DENIED || \
+	(e) == GFARM_ERR_UNKNOWN_HOST || \
+	(e) == GFARM_ERR_AUTHENTICATION )
+
 /*
  * GFARM_AUTH_METHOD_SHAREDSECRET dependent constants.
  * 	note that this is too weak authentication for the Internet.
@@ -179,6 +187,11 @@ gfarm_error_t gfarm_auth_request_sharedsecret_common(struct gfp_xdr *,
 gfarm_error_t gfarm_auth_request_sharedsecret(struct gfp_xdr *,
 	const char *, const char *, enum gfarm_auth_id_type, const char *,
 	struct passwd *);
+gfarm_error_t gfarm_auth_request_sharedsecret_common_multiplexed(
+	struct gfarm_eventqueue *,
+	struct gfp_xdr *, const char *, const char *, enum gfarm_auth_id_type,
+	const char *, struct passwd *, int, int,
+	void (*)(void *), void *, void **);
 gfarm_error_t gfarm_auth_request_sharedsecret_multiplexed(
 	struct gfarm_eventqueue *,
 	struct gfp_xdr *, const char *, const char *, enum gfarm_auth_id_type,
