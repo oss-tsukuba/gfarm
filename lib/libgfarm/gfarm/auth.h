@@ -46,7 +46,7 @@ enum gfarm_auth_cred_type {
 	(e) == GFARM_ERR_EXPIRED || \
 	(e) == GFARM_ERR_PERMISSION_DENIED || \
 	(e) == GFARM_ERR_UNKNOWN_HOST || \
-	(e) == GFARM_ERR_AUTHENTICATION )
+	(e) == GFARM_ERR_AUTHENTICATION)
 
 /*
  * GFARM_AUTH_METHOD_SHAREDSECRET dependent constants.
