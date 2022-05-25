@@ -9,6 +9,8 @@
 #include "tls_instances.h"
 #include "tls_funcs.h"
 
+#include "io_fd.h" /* for gfp_xdr_set_socket() */
+
 /*
  * Gfarm iobuffer iops
  */
@@ -242,12 +244,13 @@ gfp_xdr_tls_alloc(struct gfp_xdr *conn,	int fd, int flags)
 void
 gfp_xdr_tls_reset(struct gfp_xdr *conn)
 {
+	int fd = gfp_xdr_fd(conn);
 	struct tls_session_ctx_struct *ctx = gfp_xdr_cookie(conn);
 
 	(void)tls_session_shutdown(ctx);
 	tls_session_destroy_ctx(ctx);
 
-	gfp_xdr_set(conn, &gfp_xdr_tls_iobuf_ops, NULL, -1);
+	gfp_xdr_set_socket(conn, fd);
 }
 
 char *
