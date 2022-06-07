@@ -401,7 +401,7 @@ gfprep_filter_hostinfohash(const char *path,
 			   const char *include_domain,
 			   struct gfarm_hash_table *exclude_hash_hostname,
 			   const char *exclude_domain,
-			   int to_write)
+			   int to_write, int is_gfpcopy)
 {
 	int created;
 	struct gfarm_hash_entry *he;
@@ -437,7 +437,7 @@ gfprep_filter_hostinfohash(const char *path,
 		    gfprep_in_hostnamehash(exclude_hash_hostname,
 					   hi->hostname))
 			continue;
-		if (to_write) {
+		if (to_write && is_gfpcopy) {
 			if ((e = gfprep_check_loadavg(hi))
 			    != GFARM_ERR_NO_ERROR) {
 				continue;
@@ -3279,7 +3279,7 @@ main(int argc, char *argv[])
 		e = gfprep_filter_hostinfohash(
 		    gfurl_url(src), hash_all_src,
 		    &hash_src, hash_srcname, opt_src_domain,
-		    exclude_hash_dstname, exclude_dst_domain, 0);
+		    exclude_hash_dstname, exclude_dst_domain, 0, is_gfpcopy);
 		gfmsg_fatal_e(e, "gfprep_filter_hostinfohash for source");
 		/* count n_src_available only */
 		e = gfprep_hostinfohash_to_array(
@@ -3333,7 +3333,8 @@ retry_hash_dst:
 		e = gfprep_filter_hostinfohash(
 			gfurl_url(dst), this_hash_all_dst,
 			&hash_dst, hash_dstname, opt_dst_domain,
-			exclude_hash_srcname, exclude_src_domain, 1);
+			exclude_hash_srcname, exclude_src_domain,
+			1, is_gfpcopy);
 		gfmsg_fatal_e(e, "gfprep_filter_hostinfohash for destination");
 		e = gfprep_hostinfohash_to_array(
 		    gfurl_url(dst), &n_array_dst, &array_dst, hash_dst);
