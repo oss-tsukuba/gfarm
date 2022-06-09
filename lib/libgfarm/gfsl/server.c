@@ -25,7 +25,6 @@
 #include "tcputil.h"
 #include "gfsl_config.h"
 #include "gfsl_gss.h"
-#include "gfarm_auth.h"
 #include "gfsl_secure_session.h"
 #include "misc.h"
 

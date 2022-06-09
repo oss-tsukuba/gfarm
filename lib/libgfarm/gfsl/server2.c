@@ -23,7 +23,6 @@
 #include "tcputil.h"
 #include "gfsl_config.h"
 #include "gfsl_gss.h"
-#include "gfarm_auth.h"
 #include "gfsl_secure_session.h"
 #include "misc.h"
 
@@ -150,14 +149,6 @@ main(int argc, char **argv)
 	}
 	goto Done;
     }
-
-    if (gfarmSecSessionGetInitiatorInfo(ss0) !=
-	gfarmSecSessionGetInitiatorInfo(ss1)) {
-	fprintf(stderr, "1st initiator and 2nd initiator differ.\n");
-	goto Done;
-    }
-
-    gfarmSecSessionDedicate(ss0);
 
     ssList[0] = ss0;
     ssList[1] = ss1;

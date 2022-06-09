@@ -5,7 +5,6 @@
 
 #include <gfarm/gfarm.h>
 
-#include "gfarm_auth.h"
 #include "gfsl_secure_session.h"
 
 #include "auth.h"
@@ -58,20 +57,16 @@ gfarm_gss_dlopen(const char *libname, const char *proto,
 		SYM(gfarmSecSessionFinalizeInitiator)
 		SYM(gfarmSecSessionFinalizeBoth)
 
-		SYM(gfarmSecSessionReceiveInt8)
-		SYM(gfarmSecSessionSendInt8)
-
+		SYM(gfarmSecSessionAccept)
 		SYM(gfarmSecSessionInitiate)
 		SYM(gfarmSecSessionInitiateRequest)
 		SYM(gfarmSecSessionInitiateResult)
-		SYM(gfarmSecSessionAccept)
-		SYM(gfarmSecSessionGetInitiatorInfo)
 		SYM(gfarmSecSessionTerminate)
 
-		SYM(gfarmAuthGetDistName)
-		SYM(gfarmAuthGetLocalName)
-		SYM(gfarmAuthGetAuthEntryType)
-		SYM(gfarmAuthGetAuthEntryType)
+		SYM(gfarmSecSessionReceiveInt8)
+		SYM(gfarmSecSessionSendInt8)
+
+		SYM(gfarmSecSessionGetInitiatorDistName)
 
 		return (gss);
 	} while (0);

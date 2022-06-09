@@ -23,9 +23,6 @@
 
 #include "gfsl_config.h"
 #include "gfsl_gss.h"
-#if GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS
-#include "gfarm_auth.h"
-#endif
 
 static char **gssCrackStatus(OM_uint32 statValue, int statType);
 
@@ -159,37 +156,6 @@ gfarmGssImportName(gss_name_t *namePtr, void *nameValue, size_t nameLength,
     int ret = -1;
     gss_buffer_desc buf;
 
-#if GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS
-    if (nameType == GSS_C_NT_USER_NAME) {
-	char *user;
-	gfarmAuthEntry *aePtr;
-
-	GFARM_MALLOC_ARRAY(user, nameLength + 1);
-	if (user == NULL) {
-	    gflog_auth_error(GFARM_MSG_1000611,
-		"gfarmGssImportName(): no memory");
-	    majStat = GSS_S_FAILURE;
-	    minStat = GFSL_DEFAULT_MINOR_ERROR;
-	    goto Done;
-	}
-	memcpy(user, nameValue, nameLength);
-	user[nameLength] = '\0';
-	aePtr = gfarmAuthGetLocalUserEntry(user);
-	if (aePtr == NULL) {
-	    gflog_auth_error(GFARM_MSG_1000612, "%s: ERROR: cannot convert "
-			     "this user name to X.509 Distinguish name", user);
-	    free(user);
-	    majStat = GSS_S_FAILURE;
-	    minStat = GFSL_DEFAULT_MINOR_ERROR;
-	    goto Done;
-	}
-	free(user);
-	assert(aePtr->authType == GFARM_AUTH_USER);
-	nameValue = aePtr->distName;
-	nameLength = strlen(aePtr->distName);
-	nameType = GSS_C_NO_OID; /* mechanism specific */
-    }
-#endif /* GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS */
     buf.length = nameLength;
     buf.value = nameValue;
     majStat = gss_import_name(&minStat, &buf, nameType, namePtr);
@@ -197,9 +163,6 @@ gfarmGssImportName(gss_name_t *namePtr, void *nameValue, size_t nameLength,
 	ret = 1; /* OK */
     }
 
-#if GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS
-    Done:
-#endif /* GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS */
     if (majStatPtr != NULL) {
 	*majStatPtr = majStat;
     }

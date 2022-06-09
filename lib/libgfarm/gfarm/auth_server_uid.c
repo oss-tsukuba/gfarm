@@ -15,20 +15,24 @@
 #include "metadb_server.h"
 
 static gfarm_error_t gfarm_auth_uid_to_global_username_panic(
-	void *, enum gfarm_auth_id_type, const char *, char **);
+	void *, const char *, enum gfarm_auth_id_type *, char **);
 static gfarm_error_t gfarm_auth_uid_to_global_username_sharedsecret(
-	void *, enum gfarm_auth_id_type, const char *, char **);
+	void *, const char *, enum gfarm_auth_id_type *, char **);
 #if defined(HAVE_GSI) || defined(HAVE_KERBEROS)
 static gfarm_error_t gfarm_auth_uid_to_global_username_gsi(
-	void *, enum gfarm_auth_id_type, const char *, char **);
+	void *, const char *, enum gfarm_auth_id_type *, char **);
+#endif
+#ifdef HAVE_KERBEROS
+static gfarm_error_t gfarm_auth_uid_to_global_username_kerberos(
+	void *, const char *, enum gfarm_auth_id_type *, char **);
 #endif
 #ifdef HAVE_TLS_1_3
 static gfarm_error_t gfarm_auth_uid_to_global_username_tls_client_certificate(
-	void *, enum gfarm_auth_id_type, const char *, char **);
+	void *, const char *, enum gfarm_auth_id_type *, char **);
 #endif
 
 gfarm_error_t (*gfarm_auth_uid_to_global_username_table[])(
-	void *, enum gfarm_auth_id_type, const char *, char **) = {
+	void *, const char *, enum gfarm_auth_id_type *, char **) = {
 /*
  * This table entry should be ordered by enum gfarm_auth_method.
  */
@@ -54,8 +58,8 @@ gfarm_error_t (*gfarm_auth_uid_to_global_username_table[])(
 				   /*GFARM_AUTH_METHOD_TLS_CLIENT_CERTIFICATE*/
 #endif
 #ifdef HAVE_KERBEROS
- gfarm_auth_uid_to_global_username_gsi,		/*GFARM_AUTH_METHOD_KERBEROS*/
- gfarm_auth_uid_to_global_username_gsi,	    /*GFARM_AUTH_METHOD_KERBEROS_AUTH*/
+ gfarm_auth_uid_to_global_username_kerberos,/*GFARM_AUTH_METHOD_KERBEROS*/
+ gfarm_auth_uid_to_global_username_kerberos,/*GFARM_AUTH_METHOD_KERBEROS_AUTH*/
 #else
  gfarm_auth_uid_to_global_username_panic,	/*GFARM_AUTH_METHOD_KERBEROS*/
  gfarm_auth_uid_to_global_username_panic,   /*GFARM_AUTH_METHOD_KERBEROS_AUTH*/
@@ -64,7 +68,7 @@ gfarm_error_t (*gfarm_auth_uid_to_global_username_table[])(
 
 static gfarm_error_t
 gfarm_auth_uid_to_global_username_panic(void *closure,
-	enum gfarm_auth_id_type auth_user_id_type, const char *auth_user_id,
+	const char *auth_user_id, enum gfarm_auth_id_type *auth_user_id_typep,
 	char **global_usernamep)
 {
 	gflog_fatal(GFARM_MSG_1000055,
@@ -114,20 +118,17 @@ gfarm_auth_uid_to_global_username_by_dn(void *closure,
 
 #if defined(HAVE_GSI) || defined(HAVE_KERBEROS)
 
-static gfarm_error_t
-gfarm_auth_uid_to_global_username_gsi(void *closure,
-	enum gfarm_auth_id_type auth_user_id_type, const char *auth_user_id,
-	char **global_usernamep)
-{
-	if (auth_user_id_type != GFARM_AUTH_ID_TYPE_USER) {
-		gflog_warning(GFARM_MSG_UNFIXED,
-		    "auth_uid_to_global_username(id_type:%d, id:%s): "
-		    "unexpected call", auth_user_id_type, auth_user_id);
-		return (GFARM_ERR_NO_SUCH_USER);
-	}
+#define DEFAULT_HOSTBASED_SERVICE	"host"	/* default service */
 
-	return (gfarm_auth_uid_to_global_username_by_dn(
-	    closure, auth_user_id, global_usernamep));
+const char *
+gfarm_auth_server_cred_service_get_or_default(const char *service_tag)
+{
+	const char *serv_service;
+
+	serv_service = gfarm_auth_server_cred_service_get(service_tag);
+	if (serv_service != NULL)
+		return (serv_service);
+	return (DEFAULT_HOSTBASED_SERVICE);
 }
 
 #endif /* defined(HAVE_GSI) || defined(HAVE_KERBEROS) */
@@ -140,15 +141,15 @@ gfarm_x509_cn_get_service_hostname(
 	char *hostname, *s;
 	size_t serv_service_len;
 
-	serv_service = gfarm_auth_server_cred_service_get(service_tag);
-	if (serv_service == NULL)
-		serv_service = "host"; /* default configuration */
+	serv_service =
+	    gfarm_auth_server_cred_service_get_or_default(service_tag);
 	serv_service_len = strlen(serv_service);
 	if (strncmp(cn, serv_service, serv_service_len) == 0 &&
 	    cn[serv_service_len] == '/') {
 		/* has service in CN. e.g. "CN=gfsd/gfsd1.example.org" */
 		hostname = strdup(cn + serv_service_len + 1);
-	} else if (strcmp(serv_service, "host") == 0) {
+	} else if (strcmp(serv_service, DEFAULT_HOSTBASED_SERVICE) == 0 &&
+	    strchr(cn, '/') == NULL) {
 		/* "host/" prefix in CN can be omitted */
 		hostname = strdup(cn);
 	} else {
@@ -193,14 +194,260 @@ gfarm_x509_cn_get_hostname(
 	    service_tag, cn, hostnamep));
 }
 
+#ifdef HAVE_GSI
+
+gfarm_error_t
+gfarm_x509_get_cn(const char *x509_dn, char **cnp)
+{
+	static const char prefix[] = "/CN=";
+	size_t len;
+	const char *cn = strstr(x509_dn, prefix);
+	const char *s, *t;
+	char *c;
+
+	if (cn == NULL)
+		return (GFARM_ERR_NO_SUCH_OBJECT);
+	cn += sizeof(prefix) - 1;
+	for (s = cn; *s != '\0'; s++) {
+		if (*s == '/') {
+			/*
+			 * Is this next RDN (e.g. "/emailAddress=...") ?
+			 * Or part of this RDN (e.g. "/hostname" part of
+			 * " "CN=gfsd/hostname") ?
+			 */
+			for (t = s + 1;; t++) {
+				if (*t == '\0' || *t == '/') { /* this RDN */
+					s = t;
+					break;
+				}
+				if (*t == '=' || *t == '+') { /* next RDN */
+					break;
+				}
+			}
+			break; /* `s' points the end of CN */
+		}
+	}
+	len = s - cn;
+	GFARM_MALLOC_ARRAY(c, len + 1);
+	if (c == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	memcpy(c, cn, len);
+	c[len] = '\0';
+	*cnp = c;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+gfarm_auth_uid_to_global_username_gsi(void *closure,
+	const char *auth_user_id, enum gfarm_auth_id_type *auth_user_id_typep,
+	char **global_usernamep)
+{
+	struct gfm_connection *gfm_server = closure;
+	gfarm_error_t e, e2;
+	enum gfarm_auth_id_type auth_user_id_type = *auth_user_id_typep;
+	char *cn, *hostname;
+
+	if (auth_user_id_type != GFARM_AUTH_ID_TYPE_UNKNOWN) {
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "auth_uid_to_global_username(id_type:%d, id:%s): "
+		    "unexpected call", auth_user_id_type, auth_user_id);
+		return (GFARM_ERR_NO_SUCH_USER);
+	}
+
+	/* GFARM_AUTH_ID_TYPE_USER? */
+	e = gfarm_auth_uid_to_global_username_by_dn(
+	    closure, auth_user_id, global_usernamep);
+	if (e == GFARM_ERR_NO_ERROR) {
+		*auth_user_id_typep = GFARM_AUTH_ID_TYPE_USER;
+		return (GFARM_ERR_NO_ERROR);
+	}
+
+	e = gfarm_x509_get_cn(auth_user_id, &cn);
+	if (e != GFARM_ERR_NO_ERROR) {
+		return (e);
+	}
+
+	/* gfsd? */
+	e = gfarm_x509_cn_get_hostname(GFARM_AUTH_ID_TYPE_SPOOL_HOST, cn,
+	    &hostname);
+	if (e == GFARM_ERR_NO_ERROR) {
+		struct gfarm_host_info host;
+		const char *chost = hostname;
+
+		e = gfm_client_host_info_get_by_names(gfm_server, 1, &chost,
+		    &e2, &host);
+		if (e == GFARM_ERR_NO_ERROR)
+			e = e2;
+		if (e == GFARM_ERR_NO_ERROR) {
+			gfarm_host_info_free(&host);
+			*auth_user_id_typep = GFARM_AUTH_ID_TYPE_SPOOL_HOST;
+			if (global_usernamep == NULL)
+				free(hostname);
+			else
+				*global_usernamep = hostname;
+			return (e);
+		}
+	}
+
+	/* gfmd? */
+	e = gfarm_x509_cn_get_hostname(GFARM_AUTH_ID_TYPE_METADATA_HOST, cn,
+	    &hostname);
+	if (e == GFARM_ERR_NO_ERROR) {
+		struct gfarm_metadb_server mdhost;
+
+		e = gfm_client_metadb_server_get(gfm_server, hostname,
+		    &mdhost);
+		if (e == GFARM_ERR_NO_ERROR) {
+			gfarm_metadb_server_free(&mdhost);
+			*auth_user_id_typep = GFARM_AUTH_ID_TYPE_METADATA_HOST;
+			if (global_usernamep == NULL)
+				free(hostname);
+			else
+				*global_usernamep = hostname;
+			return (e);
+		}
+	}
+	free(hostname);
+	return (e);
+}
+
+#endif /* HAVE_GSI */
+
+#ifdef HAVE_KERBEROS
+
+gfarm_error_t
+gfarm_kerberos_principal_get_service_hostname(
+	const char *service_tag, const char *principal, char **hostnamep)
+{
+	const char *serv_service;
+	char *hostname, *at;
+	size_t serv_service_len, hlen;
+
+	serv_service =
+	    gfarm_auth_server_cred_service_get_or_default(service_tag);
+	serv_service_len = strlen(serv_service);
+	if (strncmp(principal, serv_service, serv_service_len) == 0 &&
+	    principal[serv_service_len] == '/') {
+		/*
+		 * has service in principal name.
+		 * e.g. "gfsd/gfsd1.example.org@example.org"
+		 */
+		principal += serv_service_len + 1;
+		at = strchr(principal, '@');
+		if (at == NULL)
+			hlen = strlen(principal);
+		else
+			hlen = at - principal;
+		GFARM_MALLOC_ARRAY(hostname, hlen);
+		if (hostname == NULL) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "service:%s, principal=\"%s\": no memory",
+			    serv_service, principal);
+			return (GFARM_ERR_NO_MEMORY);
+		}
+		memcpy(hostname, principal, hlen);
+		hostname[hlen] = '\0';
+		hostname = strdup(principal + serv_service_len + 1);
+	} else {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "service:%s, principal=\"%s\": service not match",
+		    serv_service, principal);
+		return (GFARM_ERR_NO_SUCH_OBJECT);
+	}
+
+	*hostnamep = hostname;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfarm_kerberos_principal_get_hostname(
+	enum gfarm_auth_id_type auth_id_type, const char *principal,
+	char **hostnamep)
+{
+	const char *service_tag;
+
+	switch (auth_id_type) {
+	case GFARM_AUTH_ID_TYPE_USER:
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	case GFARM_AUTH_ID_TYPE_SPOOL_HOST:
+		service_tag = GFS_SERVICE_TAG;
+		break;
+	case GFARM_AUTH_ID_TYPE_METADATA_HOST:
+		service_tag = GFM_SERVICE_TAG;
+		break;
+	default:
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	}
+
+	return (gfarm_kerberos_principal_get_service_hostname(
+	    service_tag, principal, hostnamep));
+}
+
+static gfarm_error_t
+gfarm_auth_uid_to_global_username_kerberos(void *closure,
+	const char *auth_user_id, enum gfarm_auth_id_type *auth_user_id_typep,
+	char **global_usernamep)
+{
+	struct gfm_connection *gfm_server = closure;
+	enum gfarm_auth_id_type auth_user_id_type = *auth_user_id_typep;
+	gfarm_error_t e, e2;
+	char *hostname;
+	const char *chost;
+	struct gfarm_host_info host;
+	struct gfarm_metadb_server mdhost;
+
+	switch (auth_user_id_type) {
+	case GFARM_AUTH_ID_TYPE_USER:
+		return (gfarm_auth_uid_to_global_username_by_dn(
+		    closure, auth_user_id, global_usernamep));
+	case GFARM_AUTH_ID_TYPE_SPOOL_HOST:
+		e = gfarm_kerberos_principal_get_hostname(auth_user_id_type,
+		    auth_user_id, &hostname);
+		if (e != GFARM_ERR_NO_ERROR)
+			return (e);
+		chost = hostname;
+		e = gfm_client_host_info_get_by_names(gfm_server, 1, &chost,
+		    &e2, &host);
+		if (e == GFARM_ERR_NO_ERROR)
+			e = e2;
+		if (e == GFARM_ERR_NO_ERROR)
+			gfarm_host_info_free(&host);
+		break;
+	case GFARM_AUTH_ID_TYPE_METADATA_HOST:
+		e = gfarm_kerberos_principal_get_hostname(auth_user_id_type,
+		    auth_user_id, &hostname);
+		if (e != GFARM_ERR_NO_ERROR)
+			return (e);
+		e = gfm_client_metadb_server_get(gfm_server, hostname,
+		    &mdhost);
+		if (e == GFARM_ERR_NO_ERROR)
+			gfarm_metadb_server_free(&mdhost);
+		break;
+	default:
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "auth_uid_to_global_username_kerberos(id_type:%d, id:%s): "
+		    "unexpected call", auth_user_id_type, auth_user_id);
+		return (GFARM_ERR_NO_SUCH_USER);
+	}
+	if (e != GFARM_ERR_NO_ERROR)
+		free(hostname);
+	else if (global_usernamep == NULL)
+		free(hostname);
+	else
+		*global_usernamep = hostname;
+	return (e);
+}
+#endif /* HAVE_KERBEROS */
+
 #ifdef HAVE_TLS_1_3
 
 static gfarm_error_t
 gfarm_auth_uid_to_global_username_tls_client_certificate(void *closure,
-	enum gfarm_auth_id_type auth_user_id_type, const char *auth_user_id,
+	const char *auth_user_id, enum gfarm_auth_id_type *auth_user_id_typep,
 	char **global_usernamep)
 {
 	struct gfm_connection *gfm_server = closure;
+	enum gfarm_auth_id_type auth_user_id_type = *auth_user_id_typep;
 	gfarm_error_t e, e2;
 	char *hostname;
 	const char *chost;
@@ -253,10 +500,11 @@ gfarm_auth_uid_to_global_username_tls_client_certificate(void *closure,
 
 static gfarm_error_t
 gfarm_auth_uid_to_global_username_sharedsecret(void *closure,
-	enum gfarm_auth_id_type auth_user_id_type, const char *auth_user_id,
+	const char *auth_user_id, enum gfarm_auth_id_type *auth_user_id_typep,
 	char **global_usernamep)
 {
 	struct gfm_connection *gfm_server = closure;
+	enum gfarm_auth_id_type auth_user_id_type = *auth_user_id_typep;
 	gfarm_error_t e, e2;
 	char *global_username;
 	struct gfarm_user_info ui;
@@ -303,12 +551,19 @@ gfarm_auth_uid_to_global_username_sharedsecret(void *closure,
 	return (GFARM_ERR_NO_ERROR);
 }
 
-/* only called in case of gfarm_auth_id_type == GFARM_AUTH_ID_TYPE_USER */
+/*
+ * if auth_method is gsi*, kerberos* or tls_client_certificate,
+ * gfarm_auth_id_type is GFARM_AUTH_ID_TYPE_{USER,SPOOL_HOST,METADATA_HOST},
+ * otherwise gfarm_auth_id_type must be GFARM_AUTH_ID_TYPE_USER.
+ *
+ * if auth_method is gfsl (i.e. gsi* or kerberos*),
+ * *gfarm_auth_id_typep is an output parameter, otherwise an input parameter.
+ */
 gfarm_error_t
 gfarm_auth_uid_to_global_username(void *closure,
 	enum gfarm_auth_method auth_method,
-	enum gfarm_auth_id_type auth_user_id_type,
 	const char *auth_user_id,
+	enum gfarm_auth_id_type *auth_user_id_typep,
 	char **global_usernamep)
 {
 	if (auth_method < GFARM_AUTH_METHOD_NONE ||
@@ -320,8 +575,8 @@ gfarm_auth_uid_to_global_username(void *closure,
 		    (int)GFARM_ARRAY_LENGTH(
 		    gfarm_auth_uid_to_global_username_table));
 		return (gfarm_auth_uid_to_global_username_panic(closure,
-		    auth_user_id_type, auth_user_id, global_usernamep));
+		    auth_user_id, auth_user_id_typep, global_usernamep));
 	}
 	return (gfarm_auth_uid_to_global_username_table[auth_method](
-	    closure, auth_user_id_type, auth_user_id, global_usernamep));
+	    closure, auth_user_id, auth_user_id_typep, global_usernamep));
 }

@@ -70,23 +70,6 @@ struct gfarm_gss {
 						    int *,
 						    gfarm_OM_uint32 *,
 						    gfarm_OM_uint32 *);
-	void (*gfarmSecSessionTerminate)(gfarmSecSession *);
-
-	gfarmAuthEntry *(*gfarmSecSessionGetInitiatorInfo)(gfarmSecSession *);
-
-	int (*gfarmSecSessionReceiveInt32)(gfarmSecSession *,
-					   gfarm_int32_t **,
-					   int *,
-					   int);
-	int (*gfarmSecSessionSendInt8)(gfarmSecSession *,
-				       gfarm_int8_t *,
-				       int,
-				       int);
-	int (*gfarmSecSessionReceiveInt8)(gfarmSecSession *,
-					  gfarm_int8_t **,
-					  int *,
-					  int);
-
 	struct gfarmSecSessionInitiateState *(*gfarmSecSessionInitiateRequest)(
 		struct gfarm_eventqueue *,
 		int,
@@ -102,8 +85,16 @@ struct gfarm_gss {
 		struct gfarmSecSessionInitiateState *,
 		gfarm_OM_uint32 *,
 		gfarm_OM_uint32 *);
+	void (*gfarmSecSessionTerminate)(gfarmSecSession *);
 
-	char *(*gfarmAuthGetDistName)(gfarmAuthEntry *);
-	char *(*gfarmAuthGetLocalName)(gfarmAuthEntry *);
-	int (*gfarmAuthGetAuthEntryType)(gfarmAuthEntry *aePtr);
+	int (*gfarmSecSessionReceiveInt8)(gfarmSecSession *,
+					  gfarm_int8_t **,
+					  int *,
+					  int);
+	int (*gfarmSecSessionSendInt8)(gfarmSecSession *,
+				       gfarm_int8_t *,
+				       int,
+				       int);
+
+	int (*gfarmSecSessionGetInitiatorDistName)(gfarmSecSession *, char **);
 };

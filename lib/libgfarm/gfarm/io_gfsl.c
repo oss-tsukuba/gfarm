@@ -253,11 +253,13 @@ gfp_xdr_set_secsession(struct gfp_xdr *conn, struct gfarm_gss *gss,
 void
 gfp_xdr_reset_secsession(struct gfp_xdr *conn)
 {
+	int fd = gfp_xdr_fd(conn);
 	struct io_gfsl *io = gfp_xdr_cookie(conn);
 
 	if (io != NULL)
 		free_secsession(io);
-	gfp_xdr_set(conn, &gfp_xdr_secsession_iobuffer_ops, NULL, -1);
+
+	gfp_xdr_set_socket(conn, fd);
 }
 
 char *

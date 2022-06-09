@@ -16,7 +16,6 @@
 #include "thrsubr.h"
 
 #include "gfsl_secure_session.h"
-#include "gfarm_auth.h"
 
 #include "gfarm_gss.h"
 #include "gss.h"

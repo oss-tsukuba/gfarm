@@ -26,8 +26,8 @@ LT_AGE=0
 
 LIBRARY = libgfsl_$(GSSAPI_TYPE).la
 
-SRCS = gss.c tcputil.c auth.c session.c misc.c
-OBJS = gss.lo tcputil.lo auth.lo session.lo misc.lo
+SRCS = gss.c tcputil.c session.c misc.c
+OBJS = gss.lo tcputil.lo session.lo misc.lo
 
 ### for programs
 
@@ -63,11 +63,9 @@ include $(top_srcdir)/makes/lib.mk
 include $(top_srcdir)/makes/gflog.mk
 
 # dependencies
-auth.lo: $(GFUTIL_SRCDIR)/hash.h $(GFUTIL_SRCDIR)/gfutil.h
-auth.lo: gfsl_config.h misc.h
 gss.lo: $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/gfutil.h
 gss.lo: gfsl_config.h tcputil.h
-misc.lo: gfsl_config.h $(top_builddir)/makes/config.mk # $(GFARM_INSTALL_ETC_DIR) -> $(sysconfdir)
+misc.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/thrsubr.h gfsl_config.h $(top_builddir)/makes/config.mk # $(GFARM_INSTALL_ETC_DIR) -> $(sysconfdir)
 session.lo: $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/gfutil.h
 session.lo: tcputil.h misc.h
 tcputil.lo: $(GFUTIL_SRCDIR)/gfnetdb.h $(GFUTIL_SRCDIR)/gfutil.h tcputil.h
@@ -75,9 +73,9 @@ tcputil.lo: $(GFUTIL_SRCDIR)/gfnetdb.h $(GFUTIL_SRCDIR)/gfutil.h tcputil.h
 server.o server2.o client.o client2.o: $(GFUTIL_SRCDIR)/gfutil.h \
     $(INC_SRCDIR)/gfarm_misc.h tcputil.h \
     gfsl_config.h gfsl_gss.h gfsl_secure_session.h misc.h scarg.h
-server.o server2.o: gfarm_auth.h
+server.o server2.o:
 scarg.o: $(INC_SRCDIR)/gfarm_misc.h gfsl_gss.h misc.h scarg.h
-scsub.o: gfsl_secure_session.h gfarm_auth.h scarg.h \
+scsub.o: gfsl_secure_session.h scarg.h \
     $(INC_SRCDIR)/gfarm_misc.h tcputil.h
 
 ### for programs

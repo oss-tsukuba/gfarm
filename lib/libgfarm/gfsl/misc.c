@@ -10,12 +10,15 @@
 #include <pthread.h>
 
 #include <gfarm/gfarm_config.h>
+#include <gfarm/error.h>
 #include <gfarm/gflog.h>
+#include <gfarm/gfarm_misc.h>
 
+#include "gfutil.h"
 #include "thrsubr.h"
 
 #include "gfsl_config.h"
-#include "gfarm_auth.h"
+#include "misc.h"
 
 
 int
@@ -146,6 +149,32 @@ gfarmGetToken(char *buf, char *tokens[], int max)
 static char *etc_dir = NULL;
 static pthread_mutex_t etc_dir_mutex = PTHREAD_MUTEX_INITIALIZER;
 static const char etc_dir_diag[] = "etc_dir";
+
+/* returned pointer should be free'ed */
+char *
+gfarmGetDefaultConfigPath(char *dir, char *file)
+{
+	char *path;
+
+	if (dir == NULL || file == NULL)
+		return (NULL);
+	GFARM_MALLOC_ARRAY(path, strlen(dir) + 1 + strlen(file) + 1);
+	if (path == NULL) {
+		gflog_error(GFARM_MSG_1004236, "no memory");
+		return (NULL);
+	}
+	sprintf(path, "%s/%s", dir, file);
+	return (path);
+}
+
+/* returned pointer should be free'ed */
+char *
+gfarmGetDefaultConfigFile(char *file)
+{
+	char *dir = gfarmGetEtcDir();
+
+	return (gfarmGetDefaultConfigPath(dir, file));
+}
 
 /* returned pointer should *not* be free'ed */
 char *

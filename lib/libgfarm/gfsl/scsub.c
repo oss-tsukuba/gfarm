@@ -20,7 +20,6 @@
 #include "tcputil.h"
 
 #include "gfsl_secure_session.h"
-#include "gfarm_auth.h"
 
 #include "scarg.h"
 
@@ -44,7 +43,6 @@ doServer(int fd, char *hostname, int port, gss_cred_id_t myCred,
     int dCheck = 0;
     int gsiErrNo;
     gfarm_int32_t *tmpBuf;
-    gfarmAuthEntry *aePtr = NULL;
     char *name;
 
     gfarmSecSession *initialSession =
@@ -64,20 +62,6 @@ doServer(int fd, char *hostname, int port, gss_cred_id_t myCred,
     name = newStringOfCredential(initialSession->cred);
     fprintf(stderr, "Accept => Acceptor: '%s'\n", name);
     free(name);
-    aePtr = gfarmSecSessionGetInitiatorInfo(initialSession);
-    fprintf(stderr, "Accept => Initiator: '%s' -> '%s'\n",
-	    aePtr->distName,
-	    (aePtr->authType == GFARM_AUTH_USER) ?
-	    aePtr->authData.userAuth.localName :
-	    aePtr->authData.hostAuth.FQDN);
-
-    if (gfarmSecSessionDedicate(initialSession) < 0) {
-	fprintf(stderr, "Can't dedicate to '%s'.\n",
-		(aePtr->authType == GFARM_AUTH_USER) ?
-		aePtr->authData.userAuth.localName :
-		aePtr->authData.hostAuth.FQDN);
-	goto Done;
-    }
 
     /*
      * Now, we can communicate securely.

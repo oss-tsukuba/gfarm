@@ -403,17 +403,13 @@ int	gfarmSecSessionGetInitiatorName(gfarmSecSession *ssPtr,
 	成功した場合 1 が返り、その他の場合、たとえば initiate した
 	session を使用すると -1 以下を返す。
 
-gfarmAuthEntry *	gfarmSecSessionGetInitiatorInfo(gfarmSecSession *ssPtr);
-	accept した session ssPtr から、対応する認可データベースエントリ
-	を得る。initiate した session を使用すると、NULL が返る。
-
-int			gfarmSecSessionDedicate(gfarmSecSession *ssPtr);
-	accept した session ssPtr に対応するローカルマシンのユーザのための
-	専用プロセスになるためのおまじない。
-		a. gfarmAuthMakeThisAlone() を呼び、余計な情報を解放する。
-		b. getuid() == 0 である場合、setgid(), setuid() する。
-	の処理が行われる。成功した場合 1 が返り、それ以外の場合 -1 以
-	下が返る。
+int	gfarmSecSessionGetInitiatorDistName(gfarmSecSession *ssPtr,
+					    char **distNamePtr);
+	accept した session ssPtr から、
+	initiator の distingushed Name を取得し、
+	*namePtr に返す。
+	成功した場合 1 が返り、その他の場合、たとえば initiate した
+	session を使用すると -1 以下を返す。
 
 int			gfarmSecSessionSendInt8(gfarmSecSession *ssPtr,
 						gfarm_int8_t *buf,

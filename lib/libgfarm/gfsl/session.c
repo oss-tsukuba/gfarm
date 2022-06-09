@@ -574,6 +574,7 @@ allocSecSession(int which)
 	}
 	case GFARM_SS_ACCEPTOR: {
 	    ret->iOaInfo.acceptor.initiatorName = GSS_C_NO_NAME;
+	    ret->iOaInfo.acceptor.initiatorDistName = NULL;
 	    ret->iOaInfo.acceptor.deleCred = GSS_C_NO_CREDENTIAL;
 	    break;
 	}
@@ -611,16 +612,10 @@ destroySecSession(gfarmSecSession *ssPtr)
 		if (ssPtr->iOaInfo.acceptor.initiatorName != GSS_C_NO_NAME)
 		    gfarmGssDeleteName(&ssPtr->iOaInfo.acceptor.initiatorName,
 				       NULL, NULL);
+		free(ssPtr->iOaInfo.acceptor.initiatorDistName);
 		if (ssPtr->iOaInfo.acceptor.deleCred != GSS_C_NO_CREDENTIAL)
 		    (void)gss_release_cred(&minStat,
 				&(ssPtr->iOaInfo.acceptor.deleCred));
-		if (ssPtr->iOaInfo.acceptor.mappedUser != NULL) {
-		    /*
-		     * ssPtr->iOaInfo.acceptor.mappedUser may be NULL,
-		     * if gfarmSecSessionAccept() aborts during initialization.
-		     */
-		    gfarmAuthFreeUserEntry(ssPtr->iOaInfo.acceptor.mappedUser);
-		}
 		break;
 	    default:
 		break;
@@ -689,18 +684,6 @@ gfarmSecSessionInitializeAcceptor(char *configFile, char *usermapFile,
 	    goto Done;
 	}
 
-	/*
-	 * Authorization init.
-	 */
-	if (gfarmAuthInitialize(usermapFile) < 0) {
-	    majStat = GSS_S_FAILURE;
-	    minStat = GFSL_DEFAULT_MINOR_ERROR;
-	    ret = -1;
-	    gflog_debug(GFARM_MSG_1000819, "gfarmAuthInitialize(%s) failed",
-		usermapFile);
-	    goto Done;
-	}
-
 	Done:
 	free(confFile);
 	if (ret == 1) {
@@ -746,20 +729,6 @@ gfarmSecSessionInitializeInitiator(char *configFile, char *usermapFile,
 		configFile);
 	    goto Done;
 	}
-
-#if GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS
-	/*
-	 * If GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS is true,
-	 * this information is need to initiate a conneciton to
-	 * an acceptor which name is GSS_C_NT_USER_NAME.
-	 */
-
-	/*
-	 * Authorization init.
-	 * It isn't fatal for an initiator, if this fails.
-	 */
-	(void)gfarmAuthInitialize(usermapFile);
-#endif /* GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS */
 
 	Done:
 	free(confFile);
@@ -850,18 +819,6 @@ gfarmSecSessionInitializeBoth(char *iConfigFile, char *aConfigFile,
 	    goto Done;
 	}
 
-	/*
-	 * Authorization init.
-	 */
-	if (gfarmAuthInitialize(usermapFile) < 0) {
-	    majStat = GSS_S_FAILURE;
-	    minStat = GFSL_DEFAULT_MINOR_ERROR;
-	    ret = -1;
-	    gflog_debug(GFARM_MSG_1000823, "gfarmAuthInitialize(%s) failed",
-		usermapFile);
-	    goto Done;
-	}
-
 	Done:
 	free(confFile);
 	if (ret == 1) {
@@ -902,7 +859,7 @@ gfarmSecSessionFinalizeAcceptor(void)
 
     gfarm_mutex_lock(&acceptor_mutex, diag, acceptorDiag);
     if (acceptorInitialized == 1) {
-	gfarmAuthFinalize();
+	/* call finalizer here if needed */
 	acceptorInitialized = 0;
     }
     gfarm_mutex_unlock(&acceptor_mutex, diag, acceptorDiag);
@@ -917,7 +874,7 @@ gfarmSecSessionFinalizeBoth(void)
     gfarm_mutex_lock(&initiator_mutex, diag, initiatorDiag);
     gfarm_mutex_lock(&acceptor_mutex, diag, acceptorDiag);
     if (initiatorInitialized == 1 && acceptorInitialized == 1) {
-	gfarmAuthFinalize();
+	/* call finalizer here if needed */
 	acceptorInitialized = 0;
 	initiatorInitialized = 0;
     }
@@ -932,7 +889,6 @@ gfarmSecSessionAccept(int fd, gss_cred_id_t cred,
 {
     gfarmSecSession *ret = NULL;
     gfarmSecSessionOption canOpt = GFARM_SS_DEFAULT_OPTION;
-    gfarmAuthEntry *entry = NULL;
 
     int rPort = 0;
     char *peerName = NULL;
@@ -1000,7 +956,7 @@ gfarmSecSessionAccept(int fd, gss_cred_id_t cred,
 	gflog_debug(GFARM_MSG_1000826,
 		"gfarmGssAcceptSecurityContext failed(%u)(%u)",
 		majStat, minStat);
-	goto Fail;
+	goto SendNack;
     }
     if (initiatorName == GSS_C_NO_NAME ||
 	(initiatorDistName =
@@ -1011,44 +967,19 @@ gfarmSecSessionAccept(int fd, gss_cred_id_t cred,
 	gflog_auth_error(GFARM_MSG_1000671,
 	    "gfarmSecSessionAccept(): no DN from initiator");
 	majStat = GSS_S_UNAUTHORIZED;
-	goto Fail;
+	goto SendNack;
     }
 
     /*
      * Phase 2: Authorization and send ACK/NACK
+     *
+     * Since Gfarm-2.8, gfarmAuthGetUserEntry() disappeared,
+     * and the user/host existence is checked by upper layer.
+     * But the ACK/NACK reply is still used to indicate other failures above.
      */
-    entry = gfarmAuthGetUserEntry(initiatorDistName);
-    if (entry == NULL) {
-	gflog_auth_notice(GFARM_MSG_1000672,
-	    "%s: not registered in mapfile", initiatorDistName);
-	majStat = GSS_S_UNAUTHORIZED;
-	goto SendNack;
-    } else {
-	int type = gfarmAuthGetAuthEntryType(entry);
-
-	if (type == GFARM_AUTH_USER) {
-	    /* Send ACK. */
-	    acknack = GFARM_SS_AUTH_ACK;
-	    (void)gfarmWriteInt32(fd, &acknack, 1,
-				  GFARM_GSS_AUTH_TIMEOUT_MSEC);
-	} else if (type == GFARM_AUTH_HOST) {
-	    /* check peer name is actually allowed */
-	    if (strcmp(peerName, gfarmAuthGetFQDN(entry)) == 0) {
-		/* Send ACK. */
-		acknack = GFARM_SS_AUTH_ACK;
-		(void)gfarmWriteInt32(fd, &acknack, 1,
-				      GFARM_GSS_AUTH_TIMEOUT_MSEC);
-	    } else {
-		gflog_auth_error(GFARM_MSG_1000673,
-		    "%s: hostname doesn't match: "
-		    "peer %s, expected %s", initiatorDistName, peerName,
-		    gfarmAuthGetFQDN(entry));
-		majStat = GSS_S_UNAUTHORIZED;
-		gfarmAuthFreeUserEntry(entry);
-		goto SendNack;
-	    }
-	}
-    }
+    /* Send ACK. */
+    acknack = GFARM_SS_AUTH_ACK;
+    (void)gfarmWriteInt32(fd, &acknack, 1, GFARM_GSS_AUTH_TIMEOUT_MSEC);
 
     /*
      * Phase 3: Negotiate configuration parameters
@@ -1060,7 +991,6 @@ gfarmSecSessionAccept(int fd, gss_cred_id_t cred,
 	gflog_debug(GFARM_MSG_1003855,
 		"negotiateConfigParam() failed (%s)(%u)(%u)",
 		strerror(gsiErrNo), majStat, minStat);
-	gfarmAuthFreeUserEntry(entry);
 	goto Fail;
     }
 #if 0
@@ -1077,8 +1007,8 @@ gfarmSecSessionAccept(int fd, gss_cred_id_t cred,
     ret->cred = cred;
     ret->sCtx = sCtx;
     ret->iOa = GFARM_SS_ACCEPTOR;
-    ret->iOaInfo.acceptor.mappedUser = entry;
     ret->iOaInfo.acceptor.initiatorName = initiatorName;
+    ret->iOaInfo.acceptor.initiatorDistName = initiatorDistName;
     ret->iOaInfo.acceptor.deleCred = deleCred;
     ret->qOp = qOp;
     ret->maxTransSize = maxTransSize;
@@ -1104,14 +1034,14 @@ Fail:
     if (initiatorName != GSS_C_NO_NAME) {
 	gfarmGssDeleteName(&initiatorName, NULL, NULL);
     }
+    if (initiatorDistName != NULL) {
+	(void)free(initiatorDistName);
+    }
     if (deleCred != GSS_C_NO_CREDENTIAL) {
 	gfarmGssDeleteCredential(&deleCred, NULL, NULL);
     }
 
     Done:
-    if (initiatorDistName != NULL) {
-	(void)free(initiatorDistName);
-    }
     if (gsiErrNoPtr != NULL) {
 	*gsiErrNoPtr = gsiErrNo;
     }
@@ -1126,7 +1056,8 @@ Fail:
 
 
 static gfarmSecSession *
-secSessionInitiate(int fd, const gss_name_t acceptorName,
+secSessionInitiate(int fd,
+    const gss_name_t acceptorName,
     gss_cred_id_t cred, OM_uint32 reqFlag, gfarmSecSessionOption *ssOptPtr,
     int *gsiErrNoPtr, OM_uint32 *majStatPtr, OM_uint32 *minStatPtr,
     int needClose)
@@ -1215,6 +1146,8 @@ secSessionInitiate(int fd, const gss_name_t acceptorName,
 
     /*
      * Phase 2: Receive authorization acknowledgement.
+     *
+     * Gfarm before 2.8 may reply GFARM_SS_AUTH_NACK
      */
     if (gfarmReadInt32(fd, &acknack, 1, GFARM_GSS_AUTH_TIMEOUT_MSEC) != 1) {
 	gsiErrNo = errno;
@@ -1360,57 +1293,14 @@ gfarmSecSessionGetInitiatorName(gfarmSecSession *ssPtr, gss_name_t *namePtr)
     return 1;
 }
 
-gfarmAuthEntry *
-gfarmSecSessionGetInitiatorInfo(gfarmSecSession *ssPtr)
+int
+gfarmSecSessionGetInitiatorDistName(gfarmSecSession *ssPtr, char **distNamePtr)
 {
     if (ssPtr->iOa == GFARM_SS_INITIATOR) {
-	return NULL;
+	return -1;
     }
-    return ssPtr->iOaInfo.acceptor.mappedUser;
-}
-
-int
-gfarmSecSessionDedicate(gfarmSecSession *ssPtr)
-{
-    int ret = -1;
-    gfarmAuthEntry *aePtr = gfarmSecSessionGetInitiatorInfo(ssPtr);
-
-    if (aePtr != NULL) {
-	gid_t gid = getgid();
-	uid_t uid = getuid();
-
-#if ! GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS
-	/*
-	 * If GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS is true,
-	 * this information is need to initiate a conneciton to
-	 * an acceptor which name is GSS_C_NT_USER_NAME.
-	 */
-	gfarmAuthMakeThisAlone(aePtr);
-#endif /* ! GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS */
-	if (uid == 0 && gfarmAuthGetAuthEntryType(aePtr) == GFARM_AUTH_USER) {
-	    if (gfarmAuthGetGid(aePtr) != gid) {
-		if ((ret = setgid(gfarmAuthGetGid(aePtr))) < 0) {
-		    ssPtr->gssLastStat = GSS_S_FAILURE;
-		    gflog_debug(GFARM_MSG_1000833, "setgid() failed");
-		    goto Done;
-		}
-	    }
-	    if (gfarmAuthGetUid(aePtr) != uid) {
-		if ((ret = setuid(gfarmAuthGetUid(aePtr))) < 0) {
-		    ssPtr->gssLastStat = GSS_S_FAILURE;
-		    gflog_debug(GFARM_MSG_1000834, "setuid() failed");
-		    goto Done;
-		}
-	    }
-	}
-	ret = 1;
-    } else {
-	ssPtr->gssLastStat = GSS_S_FAILURE;
-	gflog_debug(GFARM_MSG_1000835, "gfarmAuthEntry is NULL");
-    }
-
-    Done:
-    return ret;
+    *distNamePtr = ssPtr->iOaInfo.acceptor.initiatorDistName;
+    return 1;
 }
 
 int
@@ -1970,10 +1860,12 @@ secSessionInitiateReceiveAuthorizationAck(int events, int fd, void *closure,
 	assert(events == GFARM_EVENT_READ);
 	/*
 	 * Phase 2: Receive authorization acknowledgement.
+	 *
+	 * Gfarm before 2.8 may reply GFARM_SS_AUTH_NACK
 	 */
 	if (gfarmReadInt32(fd, &acknack, 1, GFARM_GSS_AUTH_TIMEOUT_MSEC) != 1) {
 	    gflog_auth_error(GFARM_MSG_1000689,
-	        "%s: acceptor does not answer authentication result",
+		"%s: acceptor does not answer authentication result",
 		state->acceptorDistName);
 	    state->majStat = GSS_S_UNAUTHORIZED;
 	} else if (acknack == GFARM_SS_AUTH_NACK) {
