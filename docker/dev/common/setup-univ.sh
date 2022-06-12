@@ -262,3 +262,7 @@ EOF
 
 mkdir /gfarm
 systemctl enable autofs
+
+### disable getty
+systemctl mask systemd-logind.service
+systemctl mask getty.target
