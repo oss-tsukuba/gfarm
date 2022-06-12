@@ -235,6 +235,7 @@ for i in $(seq 1 $GFDOCKER_NUM_USERS); do
 
   # copy home directory to COPY_HOMES
   sudo rsync -av --exclude=gfarm --exclude gfarm2fs --exclude tmp \
+  --exclude rpmbuild \
   "${from_dir}/" "${to_dir}/"
 
   # add to S3_USERMAP
