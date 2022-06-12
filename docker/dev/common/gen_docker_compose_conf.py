@@ -19,6 +19,8 @@ hostport_s3_http = environ['GFDOCKER_HOSTPORT_S3_HTTP']
 hostport_s3_https = environ['GFDOCKER_HOSTPORT_S3_HTTPS']
 hostport_s3_direct = environ['GFDOCKER_HOSTPORT_S3_DIRECT']
 
+is_cgroup_v2 = environ['IS_CGROUP_V2']
+
 if ip_version == '4':
     nw = IPv4Network(subnet)
 elif ip_version == '6':
@@ -56,6 +58,12 @@ for i in range(0, num_gfsds):
         next(hi)
     ))
 
+if is_cgroup_v2 == 'true':
+    disable_cgroupfs_mount = '#'
+    privileged = 'true'
+else:
+    disable_cgroupfs_mount = ''
+    privileged = 'false'
 
 print('''\
 # This file was automatically generated.
@@ -66,9 +74,12 @@ version: "3.4"
 x-common:
   &common
   image: gfarm-dev:${GFDOCKER_PRJ_NAME}
+''', end='')
+
+print('''\
   volumes:
     - ./mnt:/mnt:rw
-    - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    {}- /sys/fs/cgroup:/sys/fs/cgroup:ro
   security_opt:
     - seccomp:unconfined
     - apparmor:unconfined
@@ -77,9 +88,10 @@ x-common:
     - SYS_PTRACE
   devices:
     - /dev/fuse:/dev/fuse
-  privileged: false
+  privileged: {}
   extra_hosts:
-''', end='')
+'''.format(disable_cgroupfs_mount, privileged),
+      end='')
 
 for h in hosts:
     print("    - {}:{}".format(h.hostname, str(h.ipaddr)))

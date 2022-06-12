@@ -14,7 +14,7 @@ Restriction
 - The host OS is assumed to be used exclusively because docker/dev requires
   root privilege
 
-- cgroup v2 should be disabled
+- cgroup v2 should be disabled to build centos7 container
 
   In a docker container, systemctl does not work with cgroup v2.  You can
   check by the following command
