@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,11 +15,9 @@
 #include "gfm_client.h"
 #include "metadb_server.h"
 
-static gfarm_error_t gfarm_auth_uid_to_global_username_panic(
-	void *, const char *, enum gfarm_auth_id_type *, char **);
 static gfarm_error_t gfarm_auth_uid_to_global_username_sharedsecret(
 	void *, const char *, enum gfarm_auth_id_type *, char **);
-#if defined(HAVE_GSI) || defined(HAVE_KERBEROS)
+#ifdef HAVE_GSI
 static gfarm_error_t gfarm_auth_uid_to_global_username_gsi(
 	void *, const char *, enum gfarm_auth_id_type *, char **);
 #endif
@@ -66,7 +65,14 @@ gfarm_error_t (*gfarm_auth_uid_to_global_username_table[])(
 #endif
 };
 
-static gfarm_error_t
+/*
+ * this function is never called,
+ * because such auth_method is rejected by gfarm_auth_method_get_available()
+ * and the execution path of GFARM_AUTH_ERROR_DENIED
+ * in gfarm_authorize_wo_setuid() will be chosen.
+ * thus, calling gflog_fatal() is OK.
+ */
+gfarm_error_t
 gfarm_auth_uid_to_global_username_panic(void *closure,
 	const char *auth_user_id, enum gfarm_auth_id_type *auth_user_id_typep,
 	char **global_usernamep)
@@ -116,7 +122,7 @@ gfarm_auth_uid_to_global_username_by_dn(void *closure,
 
 #endif /* defined(HAVE_GSI) || defined(HAVE_TLS_1_3) */
 
-#if defined(HAVE_GSI) || defined(HAVE_KERBEROS)
+#if defined(HAVE_GSI) || defined(HAVE_KERBEROS) || defined(HAVE_TLS_1_3)
 
 #define DEFAULT_HOSTBASED_SERVICE	"host"	/* default service */
 
@@ -132,6 +138,8 @@ gfarm_auth_server_cred_service_get_or_default(const char *service_tag)
 }
 
 #endif /* defined(HAVE_GSI) || defined(HAVE_KERBEROS) */
+
+#if defined(HAVE_GSI) || defined(HAVE_TLS_1_3)
 
 gfarm_error_t
 gfarm_x509_cn_get_service_hostname(
@@ -193,6 +201,8 @@ gfarm_x509_cn_get_hostname(
 	return (gfarm_x509_cn_get_service_hostname(
 	    service_tag, cn, hostnamep));
 }
+
+#endif /* defined(HAVE_GSI) || defined(HAVE_TLS_1_3) */
 
 #ifdef HAVE_GSI
 
@@ -456,9 +466,11 @@ gfarm_auth_uid_to_global_username_tls_client_certificate(void *closure,
 
 	switch (auth_user_id_type) {
 	case GFARM_AUTH_ID_TYPE_USER:
+		/* auth_user_id is Distinguished Name */
 		return (gfarm_auth_uid_to_global_username_by_dn(
 		    closure, auth_user_id, global_usernamep));
 	case GFARM_AUTH_ID_TYPE_SPOOL_HOST:
+		/* auth_user_id is Common Name */
 		e = gfarm_x509_cn_get_hostname(auth_user_id_type, auth_user_id,
 		    &hostname);
 		if (e != GFARM_ERR_NO_ERROR)
@@ -472,6 +484,7 @@ gfarm_auth_uid_to_global_username_tls_client_certificate(void *closure,
 			gfarm_host_info_free(&host);
 		break;
 	case GFARM_AUTH_ID_TYPE_METADATA_HOST:
+		/* auth_user_id is Common Name */
 		e = gfarm_x509_cn_get_hostname(auth_user_id_type, auth_user_id,
 		    &hostname);
 		if (e != GFARM_ERR_NO_ERROR)
@@ -556,7 +569,7 @@ gfarm_auth_uid_to_global_username_sharedsecret(void *closure,
  * gfarm_auth_id_type is GFARM_AUTH_ID_TYPE_{USER,SPOOL_HOST,METADATA_HOST},
  * otherwise gfarm_auth_id_type must be GFARM_AUTH_ID_TYPE_USER.
  *
- * if auth_method is gfsl (i.e. gsi* or kerberos*),
+ * if auth_method is gsi*,
  * *gfarm_auth_id_typep is an output parameter, otherwise an input parameter.
  */
 gfarm_error_t
@@ -566,6 +579,9 @@ gfarm_auth_uid_to_global_username(void *closure,
 	enum gfarm_auth_id_type *auth_user_id_typep,
 	char **global_usernamep)
 {
+	assert(GFARM_ARRAY_LENGTH(gfarm_auth_uid_to_global_username_table)
+	    == GFARM_AUTH_METHOD_NUMBER);
+
 	if (auth_method < GFARM_AUTH_METHOD_NONE ||
 	    auth_method >=
 	    GFARM_ARRAY_LENGTH(gfarm_auth_uid_to_global_username_table)) {

@@ -143,8 +143,11 @@ gfarm_error_t gfarm_authorize_wo_setuid(struct gfp_xdr *, char *,
 gfarm_error_t gfarm_auth_uid_to_global_username(void *,
 	enum gfarm_auth_method, const char *,
 	enum gfarm_auth_id_type *, char **);
+gfarm_error_t gfarm_auth_uid_to_global_username_panic(void *,
+	const char *, enum gfarm_auth_id_type *, char **);
 
 /* helper for auth_uid_to_global_username for host-based authentication case */
+gfarm_error_t gfarm_x509_get_cn(const char *, char **);
 gfarm_error_t gfarm_x509_cn_get_hostname(
 	enum gfarm_auth_id_type, const char *, char **);
 gfarm_error_t gfarm_x509_cn_get_service_hostname(
