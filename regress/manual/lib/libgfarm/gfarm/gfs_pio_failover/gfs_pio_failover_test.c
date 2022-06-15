@@ -1,5 +1,3 @@
-#define _BSD_SOURCE /* usleep() in unistd.h */
-
 #include <errno.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -105,6 +103,16 @@ connection_failover(GFS_File gf, int idx)
 	msg("gf[%d]: stat: size=%ld user:group=%s:%s\n",
 	    idx, (long)gfst.st_size, gfst.st_user, gfst.st_group);
 	gfs_stat_free(&gfst);
+}
+
+static void
+short_sleep(void)
+{
+	struct timespec t;
+
+	t.tv_sec = 0;
+	t.tv_nsec = 300L * 1000L * 1000L;
+	nanosleep(&t, NULL);
 }
 
 static void
@@ -338,11 +346,12 @@ test_rename(const char **argv)
 	const char *path_base = argv[0];
 	GFS_File gf[1];
 	char *path, paths[1][PATH_MAX];
-	char to_path[PATH_MAX];
+#       define TO_STRING ".to"
+	char to_path[PATH_MAX + sizeof(TO_STRING)];
 
 	create_and_write_file(gf, paths, path_base, 1);
 	path = paths[0];
-	snprintf(to_path, sizeof to_path, "%s.to", path);
+	snprintf(to_path, sizeof to_path, "%s" TO_STRING, path);
 
 	wait_for_failover();
 
@@ -2167,7 +2176,7 @@ test_write_long_loop(const char **argv)
 				goto end;
 			}
 			msg("close: %s ok\n", path[i]);
-			usleep(300 * 1000);
+			short_sleep();
 		}
 		for (i = 0; i < files; ++i) {
 			msg("stat: %s\n", path[i]);
@@ -2311,7 +2320,7 @@ test_sendfile_long_loop(const char **argv)
 				goto end;
 			}
 			msg("close: %s ok\n", path[i]);
-			usleep(300 * 1000);
+			short_sleep();
 		}
 		for (i = 0; i < files; ++i) {
 			msg("gfs_stat: %s\n", path[i]);
