@@ -758,6 +758,9 @@ AC_MSG_RESULT([using \"${openssl_includes} ${openssl_libs}\"])
 # these functions disappeared since OpenSSL-1.1.0
 AC_CHECK_FUNCS(CRYPTO_set_locking_callback CRYPTO_set_id_callback)
 
+# new function since OpenSSL-3.0
+AC_CHECK_FUNCS(ERR_get_error_all)
+
 CPPFLAGS="$CPPFLAGS_SAVE"
 LIBS="$LIBS_SAVE"
 

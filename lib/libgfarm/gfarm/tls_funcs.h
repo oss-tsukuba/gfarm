@@ -491,24 +491,33 @@ tlslog_tls_message(int msg_no, int priority,
 	} else {
 		char msgbuf2[TLS_LOG_MSG_LEN * 3];
 		char tlsmsg[TLS_LOG_MSG_LEN];
-		const char *tls_file = NULL;
-		int tls_line = -1;
+		const char *tls_file, *tls_data;
+		int tls_line, tls_flags;
+#ifdef HAVE_ERR_GET_ERROR_ALL /* since OpenSSL-3.0 */
+		const char *tls_func;
 
-		/*
-		 * NOTE:
-		 *	OpenSSL 1.1.1 doesn't have ERR_get_error_all()
-		 *	but 3.0 does. To dig into 3.0 API, check
-		 *	Apache 2.4 source.
-		 */
-		err = ERR_get_error_line_data(&tls_file, &tls_line,
-			NULL, NULL);
-
+		err = ERR_get_error_all(&tls_file, &tls_line, &tls_func,
+			&tls_data, &tls_flags);
 		ERR_error_string_n(err, tlsmsg, sizeof(tlsmsg));
-
 		(void)snprintf(msgbuf2, sizeof(msgbuf2),
-			"%s: [OpenSSL error info: %s:%d: %s]",
-			msgbuf, tls_file, tls_line, tlsmsg);
+			"%s: [OpenSSL error info: %s:%d: %s%s%s%s%s]",
+			msgbuf, tls_file, tls_line,
+			tls_func,
+			tls_func[0] != '\0' ? ": " : "",
+			tlsmsg,
+			(tls_flags & ERR_TXT_STRING) != 0 ? ": " : "",
+			(tls_flags & ERR_TXT_STRING) != 0 ? tls_data : "");
+#else /* deprecated since OpenSSL-3.0 */
 
+		err = ERR_get_error_line_data(&tls_file, &tls_line,
+			&tls_data, &tls_flags);
+		ERR_error_string_n(err, tlsmsg, sizeof(tlsmsg));
+		(void)snprintf(msgbuf2, sizeof(msgbuf2),
+			"%s: [OpenSSL error info: %s:%d: %s%s%s]",
+			msgbuf, tls_file, tls_line, tlsmsg,
+			(tls_flags & ERR_TXT_STRING) != 0 ? ": " : "",
+			(tls_flags & ERR_TXT_STRING) != 0 ? tls_data : "");
+#endif
 		gflog_auth_message(msg_no, priority, file, line_no, func,
 			"%s", msgbuf2);
 	}
