@@ -50,6 +50,9 @@
 /* Define to 1 if epoll functions are implemented. */
 #undef HAVE_EPOLL
 
+/* Define to 1 if you have the `ERR_get_error_all' function. */
+#undef HAVE_ERR_GET_ERROR_ALL
+
 /* Define to 1 if you have the <execinfo.h> header file. */
 #undef HAVE_EXECINFO_H
 

@@ -13189,6 +13189,19 @@ fi
 done
 
 
+# new function since OpenSSL-3.0
+for ac_func in ERR_get_error_all
+do :
+  ac_fn_c_check_func "$LINENO" "ERR_get_error_all" "ac_cv_func_ERR_get_error_all"
+if test "x$ac_cv_func_ERR_get_error_all" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_ERR_GET_ERROR_ALL 1
+_ACEOF
+
+fi
+done
+
+
 CPPFLAGS="$CPPFLAGS_SAVE"
 LIBS="$LIBS_SAVE"
 
