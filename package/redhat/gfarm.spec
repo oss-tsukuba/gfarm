@@ -260,7 +260,6 @@ mkdir -p $RPM_BUILD_ROOT
 	--libdir=%{lib_prefix} \
 	--sysconfdir=%{sysconfdir} \
 	--with-postgresql=/usr \
-	--with-openssl=/usr \
 	${GFARM_CONFIGURE_OPTION}
 
 : ${GFARM_ENABLE_RPATH:=false}
