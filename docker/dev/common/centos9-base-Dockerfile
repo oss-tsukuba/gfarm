@@ -5,7 +5,7 @@ FROM quay.io/centos/centos:stream9
 ARG TZ
 ENV TZ=${TZ}
 
-RUN dnf -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm \
+RUN dnf -y install epel-release \
     && dnf -y update \
     && dnf -y groupinstall "Development Tools" \
     && dnf -y install \
@@ -15,6 +15,7 @@ RUN dnf -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.n
     rsync wget curl-minimal \
     langpacks-ja \
     openssl-devel \
+    krb5-devel \
     postgresql-devel \
     postgresql \
     postgresql-server \
@@ -29,31 +30,39 @@ RUN dnf -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.n
     man man-pages man-db which \
     nano emacs-nox less \
     'dnf-command(debuginfo-install)' \
-    && sed -i 's@^Defaults    secure_path = /sbin:/bin:/usr/sbin:/usr/bin$@Defaults    secure_path = /usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin@' /etc/sudoers \
-    && cd /root \
-    && GCT=gct-6.2.1629922860 \
-    && GCT_PKG=${GCT}.tar.gz \
-    && wget https://repo.gridcf.org/gct6/sources/${GCT_PKG} \
-    && tar xvf ${GCT_PKG} \
-    && cd ${GCT} \
-    && ./configure \
-       --sysconfdir=/etc \
-       --prefix=/usr/local \
-    && make -j globus_proxy_utils globus_gsi_cert_utils globus_gssapi_gsi globus_simple_ca gsi-openssh myproxy \
-    && make install \
-    && cd .. \
-    && git clone --depth 1 \
-       -b fuse-2.9.9 https://github.com/libfuse/libfuse.git \
-    && cd libfuse \
-    && ./makeconf.sh \
-    && sed -i -e 's/closefrom(/closefrom0(/g' util/ulockmgr_server.c \
-    && ./configure \
-    && make \
-    && make install
+    && dnf -y install --enablerepo=resilientstorage \
+    globus-gssapi-gsi-devel \
+    globus-simple-ca \
+    globus-gsi-cert-utils-progs \
+    globus-proxy-utils \
+    myproxy \
+    gsi-openssh-clients \
+    && dnf -y install --enablerepo=crb fuse-devel \
+    && sed -i 's@^Defaults    secure_path = /sbin:/bin:/usr/sbin:/usr/bin$@Defaults    secure_path = /usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin@' /etc/sudoers
+
+### from source package
+# RUN cd /root \
+#     && GCT=gct-6.2.1629922860 \
+#     && GCT_PKG=${GCT}.tar.gz \
+#     && wget https://repo.gridcf.org/gct6/sources/${GCT_PKG} \
+#     && tar xvf ${GCT_PKG} \
+#     && cd ${GCT} \
+#     && ./configure \
+#        --sysconfdir=/etc \
+#        --prefix=/usr/local \
+#     && make -j globus_proxy_utils globus_gsi_cert_utils globus_gssapi_gsi globus_simple_ca gsi-openssh myproxy \
+#     && make install \
+#     && cd .. \
+#     && git clone --depth 1 \
+#        -b fuse-2.9.9 https://github.com/libfuse/libfuse.git \
+#     && cd libfuse \
+#     && ./makeconf.sh \
+#     && sed -i -e 's/closefrom(/closefrom0(/g' util/ulockmgr_server.c \
+#     && ./configure \
+#     && make \
+#     && make install
 
 ### not found
-# fuse-devel (version 2.x)
-# globus-gssapi-gsi-devel (gct)
 # dnf debuginfo-install -y fuse-libs
 
 # System independent (see setup-univ.sh)

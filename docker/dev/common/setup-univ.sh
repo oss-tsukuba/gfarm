@@ -32,6 +32,7 @@ ca_key_pass=PASSWORD
 GRID_MAPFILE=/etc/grid-security/grid-mapfile
 PRIMARY_HOME=/home/${GFDOCKER_PRIMARY_USER}
 gfarm_src_path="/work/gfarm"
+gfarm2fs_src_path="${gfarm_src_path}/gfarm2fs"
 
 # pin starting UID for user1
 for i in $(seq 1 "$GFDOCKER_NUM_USERS"); do
@@ -39,7 +40,11 @@ for i in $(seq 1 "$GFDOCKER_NUM_USERS"); do
 done
 
 ln -s ${gfarm_src_path} ${PRIMARY_HOME}/gfarm
-ln -s ${gfarm_src_path}/gfarm2fs ${PRIMARY_HOME}/gfarm2fs
+ln -s ${gfarm2fs_src_path} ${PRIMARY_HOME}/gfarm2fs
+
+# remove untracked files
+(cd ${gfarm_src_path}; git clean -df) || true
+(cd ${gfarm2fs_src_path}; git clean -df) || true
 
 for u in _gfarmmd _gfarmfs; do
   $USERADD "$u"

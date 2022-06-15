@@ -28,6 +28,7 @@ RUN sed -i -e '/override_install_langs/s/$/,ja_JP.utf8/g' /etc/yum.conf \
     libacl-devel \
     ruby \
     && yum -y --enablerepo=epel install \
+    openssl11-devel \
     globus-gssapi-gsi-devel \
     globus-simple-ca \
     globus-gsi-cert-utils-progs \
@@ -45,6 +46,8 @@ RUN sed -i -e '/override_install_langs/s/$/,ja_JP.utf8/g' /etc/yum.conf \
     fuse-libs \
     && sed -i 's@^Defaults    secure_path = /sbin:/bin:/usr/sbin:/usr/bin$@Defaults    secure_path = /usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin@' /etc/sudoers
 
+
+ENV OPENSSL_PACKAGE_NAME="openssl11"
 
 # System independent (see setup-univ.sh)
 

@@ -8,6 +8,7 @@ LIST="
 centos8/src
 centos8/pkg
 centos9/src
+centos9/pkg
 almalinux8/src
 almalinux8/pkg
 rockylinux8/src
