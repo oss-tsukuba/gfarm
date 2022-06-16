@@ -28,5 +28,5 @@ cp -a ${name} rpmbuild/SOURCES/${name_ver}  # "mv" is too slow.
 
 rpmbuild -bs ${spec}
 srpm="rpmbuild/SRPMS/${name_ver}-*.src.rpm"
-GFARM_CONFIGURE_OPTION="--with-globus --enable-xmlattr --enable-xmlattr ${WITH_OPENSSL_OPT}" \
+GFARM_CONFIGURE_OPTION="--with-globus --enable-xmlattr ${WITH_OPENSSL_OPT}" \
   rpmbuild --rebuild ${srpm}
