@@ -15,6 +15,7 @@ RUN dnf -y install epel-release \
     rsync wget curl-minimal \
     langpacks-ja \
     openssl-devel \
+    krb5-devel \
     postgresql-devel \
     postgresql \
     postgresql-server \
