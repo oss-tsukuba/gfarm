@@ -7,7 +7,8 @@ set -eux
 cd
 
 name=gfarm
-spec=${name}/package/redhat/gfarm.spec
+srcdir=/work/gfarm
+spec=${srcdir}/package/redhat/gfarm.spec
 
 WITH_OPENSSL_OPT=
 if [ -n "${OPENSSL_PACKAGE_NAME}" ]; then
@@ -20,7 +21,7 @@ ver=$(grep "^%define ver" ${spec} | awk '{print $3}')
 
 name_ver=${name}-${ver}
 targz=${name_ver}.tar.gz
-cp -a ${name} rpmbuild/SOURCES/${name_ver}  # "mv" is too slow.
+cp -a ${srcdir} rpmbuild/SOURCES/${name_ver}
 
 (cd rpmbuild/SOURCES/ &&
   tar --exclude=.svn --exclude=.git --owner=root --group=root -zcvf \
