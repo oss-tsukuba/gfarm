@@ -230,10 +230,19 @@ AC_ARG_WITH(openssl,
 ],
 [with_openssl=openssl
 ])
-AC_MSG_RESULT([using \"${with_openssl}\"])
 
-openssl_libs="$(pkg-config --libs $with_openssl)"
-openssl_includes="$(pkg-config --cflags $with_openssl)"
+PKG_CHECK_MODULES(openssl, ${with_openssl}, [
+  AC_MSG_RESULT([using \"${with_openssl}\"])
+
+  openssl_libs=$openssl_LIBS
+  openssl_includes=$openssl_CFLAGS
+], [
+  AC_MSG_RESULT([try using OpenSSL in default path])
+
+  # if "pkg-config --cflags --libs openssl" does not work, try default
+  openssl_libs='-lssl -lcrypto'
+  openssl_includes=
+])
 
 AC_SUBST(openssl_includes)
 AC_SUBST(openssl_libs)
