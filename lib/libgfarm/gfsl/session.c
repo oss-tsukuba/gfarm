@@ -656,7 +656,7 @@ gfarmSecSessionPrintStatus(gfarmSecSession *ssPtr)
 
 
 int
-gfarmSecSessionInitializeAcceptor(char *configFile, char *usermapFile,
+gfarmSecSessionInitializeAcceptor(char *configFile,
     OM_uint32 *majStatPtr, OM_uint32 *minStatPtr)
 {
     int ret = 1;
@@ -702,7 +702,7 @@ gfarmSecSessionInitializeAcceptor(char *configFile, char *usermapFile,
 }
 
 int
-gfarmSecSessionInitializeInitiator(char *configFile, char *usermapFile,
+gfarmSecSessionInitializeInitiator(char *configFile,
     gfarm_OM_uint32 *majStatPtr, gfarm_OM_uint32 *minStatPtr)
 {
     int ret = 1;
@@ -750,7 +750,6 @@ gfarmSecSessionInitializeInitiator(char *configFile, char *usermapFile,
 
 int
 gfarmSecSessionInitializeBoth(char *iConfigFile, char *aConfigFile,
-    char *usermapFile,
     gfarm_OM_uint32 *majStatPtr, gfarm_OM_uint32 *minStatPtr)
 {
     int ret = 1;
@@ -772,13 +771,11 @@ gfarmSecSessionInitializeBoth(char *iConfigFile, char *aConfigFile,
      *	other GSSAPI implementation, a major change could be needed.
      */
 
-#ifdef HAVE_LIBGSSAPI_KRB5
-    if (initiatorInitialized && !acceptorInitialized == 0) {
+    if (initiatorInitialized && !acceptorInitialized) {
 	gfarmSecSessionFinalizeInitiator();
-    } else if (!initiatorInitialized  && acceptorInitialized) {
+    } else if (!initiatorInitialized && acceptorInitialized) {
 	gfarmSecSessionFinalizeAcceptor();
     }
-#endif
 
     gfarm_mutex_lock(&initiator_mutex, diag, initiatorDiag);
     gfarm_mutex_lock(&acceptor_mutex, diag, acceptorDiag);

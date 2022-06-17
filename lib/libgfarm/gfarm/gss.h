@@ -44,11 +44,9 @@ struct gfarm_gss {
 					gfarm_OM_uint32 *);
 
 	int (*gfarmSecSessionInitializeInitiator)(char *,
-						  char *,
 						  gfarm_OM_uint32 *,
 						  gfarm_OM_uint32 *);
 	int (*gfarmSecSessionInitializeBoth)(char *,
-					     char *,
 					     char *,
 					     gfarm_OM_uint32 *,
 					     gfarm_OM_uint32 *);

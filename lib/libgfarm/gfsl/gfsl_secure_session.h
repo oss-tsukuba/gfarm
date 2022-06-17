@@ -132,16 +132,13 @@ extern void	gfarmSecSessionFreeCrackedStatus(char **strPtr);
 extern void	gfarmSecSessionPrintStatus(gfarmSecSession *ssPtr);
 
 extern int	gfarmSecSessionInitializeAcceptor(char *configFile,
-						  char *usermapFile,
 						  OM_uint32 *majStatPtr,
   						  OM_uint32 *minStatPtr);
 extern int	gfarmSecSessionInitializeInitiator(char *configFile,
-						   char *usermapFile,
 						   OM_uint32 *majStatPtr,
 						   OM_uint32 *minStatPtr);
 extern int	gfarmSecSessionInitializeBoth(char *iConfigFile,
 					      char *aConfigFile,
-					      char *usermapFile,
 					      OM_uint32 *majstatPtr,
 					      OM_uint32 *minstatPtr);
 

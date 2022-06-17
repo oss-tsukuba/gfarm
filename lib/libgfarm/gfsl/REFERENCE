@@ -223,39 +223,7 @@ int	gfarmGssReceive(int fd, gss_ctx_id_t sCtx,
 	が返る。
 
 
-
-認可系
-
-int	gfarmAuthInitialize(char *usermapFile);
-	usermapFile で指定した DN -> UNIX uid への変換テーブルを用い、
-	認可データベースを初期化する。NULL もしくは "" が与えられた場
-	合、${GFARM_HOME}/etc/gfarm-usermap が使用される。正しく初期化
-	された場合には 1 が返り、その他の場合には -1 以下が返る。
-
-void	gfarmAuthFinalize(void);
-	gfarmAuthInitialize() で初期化された認可データベース全体を破棄する。
-
-gfarmAuthEntry *
-	gfarmAuthGetUserEntry(char *distUserName);
-	distUserName で指定された DN を持つエントリを認可データベース
-	から検索する。当該エントリが見つかった場合にはそのエントリを返
-	し、それ以外の場合には NULL を返す。
-
-void	gfarmAuthDestroyUserEntry(gfarmAuthEntry *aePtr);
-	aePtr で示されるエントリを破棄する。
-
-void	gfarmAuthMakeThisAlone(gfarmAuthEntry *laePtr);
-	認可データベース全体を破棄し、laePtr で示されるエントリの実体
-	のみを残す。setuid(0) なプロセスが setuid(0以外)した時に、余計
-	なものを見えなくするようにするため。
-	XXX
-		GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS が成り立って
-		いる場合は、認可データベースの破棄は行われない。
-		これは、initiator 側として動作する場合も、
-		認可データベースが必要なため。
-
 Session
-
 
 #define GFARM_SS_USE_ENCRYPTION		0x1
 #define GFARM_SS_USE_COMPRESSION	0x2
@@ -279,11 +247,10 @@ void	gfarmSecSessionPrintStatus(gfarmSecSession *ssPtr);
 	文字列としてログに出力する。
 
 int	gfarmSecSessionInitializeAcceptor(char *configFile,
-					  char *usermapFile,
 					  OM_uint32 *majStatPtr,
 					  OM_uint32 *minStatPtr);
-	通信パラメタ設定ファイル configFile, 変換テーブル usermapFile 
-	を用い、acceptor 側の session 生成環境を初期化する。正しく初期
+	通信パラメタ設定ファイル configFile を用い、
+	acceptor 側の session 生成環境を初期化する。正しく初期
 	化された場合には 1 が返り、その他の場合には -1 以下が返る。
 	*majStatPtr, *minStatPtr には、それぞれ GSSAPI	呼び出しの
 	major status, minor status が返る。
@@ -293,11 +260,10 @@ int	gfarmSecSessionInitializeAcceptor(char *configFile,
 	が使用される。
 
 int	gfarmSecSessionInitializeInitiator(char *configFile,
-					   char *usermapFile,
 					   OM_uint32 *majStatPtr,
 					   OM_uint32 *minStatPtr);
-	通信パラメタ設定ファイル configFile, 変換テーブル usermapFile 
-	を用い、initiator 側の session 生成環境を初期化する。正しく初期
+	通信パラメタ設定ファイル configFile を用い、
+	initiator 側の session 生成環境を初期化する。正しく初期
 	化された場合には 1 が返り、その他の場合には -1 以下が返る。
 	*majStatPtr, *minStatPtr には、それぞれ GSSAPI	呼び出しの
 	major status, minor status が返る。
@@ -308,12 +274,11 @@ int	gfarmSecSessionInitializeInitiator(char *configFile,
 
 int	gfarmSecSessionInitializeBoth(char *iConfigFile,
 				      char *aConfigFile,
-				      char *usermapFile,
 				      OM_uint32 *majstatPtr,
 				      OM_uint32 *minstatPtr);
 	initiator 側通信パラメタ設定ファイル iConfigFile, acceptor 側
-	通信パラメタ設定ファイル aConfigFile, 変換テーブル usermapFile 
-	を用い、initiator/acceptor 双方の動作を行わせる場合の session 
+	通信パラメタ設定ファイル aConfigFile を用い、
+	initiator/acceptor 双方の動作を行わせる場合の session 
 	生成環境を初期化する。正しく初期化された場合には 1 が返り、そ
 	の他の場合には -1 以下が返る。*majStatPtr, *minStatPtr には、
 	それぞれ GSSAPI	呼び出しの major status, minor status が返る。
