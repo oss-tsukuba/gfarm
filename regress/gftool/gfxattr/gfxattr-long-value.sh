@@ -36,8 +36,13 @@ if test $? -ne 0; then
     exit $exit_fail
 fi
 # wait to flush the extended attribute to the backend database
-sleep 2
-gfxattr -g -f ${attr_got} ${dir} ${attrname}
+TIMEOUT=20
+while [ $TIMEOUT -gt 0 ];
+do
+	gfxattr -g -f ${attr_got} ${dir} ${attrname} && break
+	sleep 1
+	TIMEOUT=$((TIMEOUT - 1))
+done
 diff -c ${attr_src} ${attr_got}
 if test $? -ne 0; then
     cleanup
