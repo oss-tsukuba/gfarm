@@ -223,14 +223,17 @@ AC_SUBST(pthread_targets)
 # sanity check for OpenSSL is deferred, because ${openssl_includes}
 # and ${openssl_lib} may be overrided by Globus autoconfiguration.
 
-PKG_CHECK_MODULES(openssl, openssl, [
-  openssl_libs=$openssl_LIBS
-  openssl_includes=$openssl_CFLAGS
-], [
-  # if "pkg-config --cflags --libs openssl" does not work, try default
-  openssl_libs='-lssl -lcrypto'
-  openssl_includes=
+AC_ARG_WITH(openssl,
+[  --with-openssl=OpenSSL_PKG	openssl package name
+				[[default=openssl]]],
+[with_openssl="${withval}"
+],
+[with_openssl=openssl
 ])
+AC_MSG_RESULT([using \"${with_openssl}\"])
+
+openssl_libs="$(pkg-config --libs $with_openssl)"
+openssl_includes="$(pkg-config --cflags $with_openssl)"
 
 AC_SUBST(openssl_includes)
 AC_SUBST(openssl_libs)
