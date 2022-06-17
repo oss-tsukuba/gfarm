@@ -80,6 +80,12 @@ if [ "$list3" != "" ]; then
 fi
 
 # get attr
+TIMEOUT=20
+while [ $TIMEOUT -gt 0 ]; do
+	gfxattr $xml_mode -g $gf_file $attrname1 && break
+	sleep 1
+	TIMEOUT=$((TIMEOUT - 1))
+done
 val1=`gfxattr $xml_mode -g $gf_file $attrname1`
 if [ "$?" != "0" ]; then :
 	clean_fail "gfxattr get#1 failed"
