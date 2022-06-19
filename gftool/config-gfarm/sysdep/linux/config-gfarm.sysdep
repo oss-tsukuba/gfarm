@@ -58,15 +58,14 @@ sysdep_defaults_systemd()
 	: ${RC_DIR:="/etc/systemd/system"}
 	: ${SLAPD_BDB_NCACHE:="1"} # 0/1: contiguous memory
 
-	[ -v RC_BACKEND_BASENAME ] &&
+	: ${RC_BACKEND_BASENAME:=}
 	: ${RC_BACKEND_IN="$config_dir/linux/$LINUX_RC_TYPE/$RC_BACKEND_BASENAME.service.in"}
 	: ${RC_GFMD_IN="$config_dir/linux/$LINUX_RC_TYPE/gfmd.service.in"}
 	: ${RC_GFSD_IN="$config_dir/linux/$LINUX_RC_TYPE/gfsd.service.in"}
 
-	[ -v RC_BACKEND_BASENAME ] &&
 	: ${RC_BACKEND="/etc/systemd/system/$RC_BACKEND_BASENAME.service"}
 	: ${RC_GFMD="/etc/systemd/system/gfmd.service"}
-	[ -v GFSD_SERVICE_NAME ] &&
+	: ${GFSD_SERVICE_NAME:=}
 	: ${RC_GFSD="/etc/systemd/system/$GFSD_SERVICE_NAME.service"}
 }
 
@@ -86,11 +85,10 @@ sysdep_defaults_generic()
 		;;
 	esac
 
-	if [ -v RC_BACKEND_BASENAME ]; then
-		: ${RC_BACKEND_IN="$config_dir/linux/$LINUX_RC_TYPE/$RC_BACKEND_BASENAME.in"}
-		[ -f "$RC_BACKEND_IN" ] ||
-			RC_BACKEND_IN="$config_dir/linux/default/$RC_BACKEND_BASENAME.in"
-	fi
+	: ${RC_BACKEND_BASENAME:=}
+	: ${RC_BACKEND_IN="$config_dir/linux/$LINUX_RC_TYPE/$RC_BACKEND_BASENAME.in"}
+	[ -f "$RC_BACKEND_IN" ] ||
+		RC_BACKEND_IN="$config_dir/linux/default/$RC_BACKEND_BASENAME.in"
 	: ${RC_GFMD_IN="$config_dir/linux/$LINUX_RC_TYPE/gfmd.in"}
 	[ -f "$RC_GFMD_IN" ] ||
 		RC_GFMD_IN="$config_dir/linux/default/gfmd.in"
