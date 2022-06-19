@@ -131,6 +131,10 @@ sanity()
 			echo "error: $METADATA_ADMIN_USER cannot be specified as a metadata admin user."
 			return 1
 			;;		
+		X)
+			echo "error: metadata admin user not specified.  Specify it by -A option"
+			return 1
+			;;
 		*)
 			;;
 	esac
