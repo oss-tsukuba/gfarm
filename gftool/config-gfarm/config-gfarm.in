@@ -555,7 +555,7 @@ s|@config_gfarm_rc_backend@|$RC_BACKEND|g
 s|@rc_backend_basename@|$RC_BACKEND_BASENAME|g
 s|@config_gfarm_gfmd_config@|$GFMD_CONF|g
 s|@config_gfarm_gfmd_failover_config@|$GFMD_FAILOVER_CONF|g
-s|@config_gfarm_gfmd_failover_agent_config@|$GFMD_FAILOVER_AGANT_CONF|g
+s|@config_gfarm_gfmd_failover_agent_config@|$GFMD_FAILOVER_AGENT_CONF|g
 s|@config_gfarm_gfarm_config@|$GFARM_CONF|g
 s|@config_gfarm_gfarm_config_dir@|$GFARM_CONF_DIR|g
 s|@config_gfarm_config_prefix@|$CONFIG_PREFIX|g
