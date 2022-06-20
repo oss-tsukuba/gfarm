@@ -44,7 +44,7 @@ RUN yes | unminimize \
     manpages manpages-ja man-db \
     gdb valgrind strace inotify-tools \
     vim nano emacs-nox less \
-    && apt-key adv --keyserver keyserver.ubuntu.com --recv-key C8CAB6595FDFF622 \
+    && apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-key C8CAB6595FDFF622 \
     && apt-get -y install software-properties-common \
     && add-apt-repository http://ddebs.ubuntu.com \
     && apt-get -y install \
