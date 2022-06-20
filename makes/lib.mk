@@ -26,6 +26,7 @@ lib-install: all
 		$(LTINSTALL_LIBRARY) $$i $(DESTDIR)$(libdir)/$$i; \
 		$(LTINSTALL_LIBRARY) $$i $(DESTDIR)$(libdir)/$$i; \
 	done
+	[ -w / ] && ldconfig
 
 lib-clean:
 	-$(LTCLEAN) $(OBJS) $(EXTRA_CLEAN_TARGETS)
