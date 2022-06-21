@@ -14,4 +14,4 @@ SUBDIRS = \
 include $(top_srcdir)/makes/subdir.mk
 
 post-install-hook:
-	[ -w / ] && ldconfig
+	[ -w / ] && ldconfig || :
