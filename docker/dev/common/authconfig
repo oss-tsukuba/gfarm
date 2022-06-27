@@ -209,7 +209,7 @@ case $# in
 		:
 	else
 		usage
-	fi		
+	fi
 	;;
 esac
 
