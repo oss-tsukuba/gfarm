@@ -12,7 +12,7 @@ if [ -n "${OPENSSL_PACKAGE_NAME}" ]; then
     WITH_OPENSSL_OPT="--with-openssl=${OPENSSL_PACKAGE_NAME}"
 fi
 
-rpm -ivh /home/${GFDOCKER_PRIMARY_USER}/rpmbuild/RPMS/x86_64/gfarm-*.rpm
+rpm -ivh /home/${GFDOCKER_PRIMARY_USER}/rpmbuild/RPMS/*/gfarm-*.rpm
 
 GFARM_OPT=" --with-globus --enable-xmlattr --enable-xmlattr ${WITH_OPENSSL_OPT}"
 
