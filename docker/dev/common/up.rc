@@ -14,6 +14,7 @@ set -eux -o pipefail
 : $GFDOCKER_HOSTNAME_PREFIX_CLIENT
 : $GFDOCKER_HOSTNAME_SUFFIX
 
+gfarm_src_path="/work/gfarm"
 SUDO_USER2="sudo sudo -i -u user2"
 
 gfmds=
@@ -165,6 +166,12 @@ if gfstatus 2>/dev/null | grep '^client auth tls ' | grep ': available'; then
   tls_available=true
 fi
 
+krb_available=false
+if gfstatus 2>/dev/null | grep '^client auth kerberos' | grep ': available'
+then
+  krb_available=true
+fi
+
 for host in $gfmds; do
   (gfservice set-gfmd-conf "$host" digest md5 &&
    gfservice set-gfmd-conf "$host" metadb_server_heartbeat_interval 10 &&
@@ -285,6 +292,29 @@ if [ $GFDOCKER_NUM_GFMDS -ge 3 ]; then
   gfservice start-gfmd ${GFMD_NAME}
 fi
 
+# create the following files:
+#	/mnt/conf/auth-gfmd.conf
+#	/mnt/conf/auth-gfsd.conf
+#	/mnt/conf/auth-client.conf
+conf_include_dir=/mnt/conf
+sudo mkdir -p "${conf_include_dir}"
+sudo chown "${GFDOCKER_PRIMARY_USER}" "${conf_include_dir}"
+authconfig -n all
+
+for host in $gfmds; do
+  ssh "$host" \
+    sudo "${gfarm_src_path}/docker/dev/common/authconfig-setup.sh" gfmd &
+done
+for host in $gfsds; do
+  ssh "$host" \
+    sudo "${gfarm_src_path}/docker/dev/common/authconfig-setup.sh" gfsd &
+done
+for host in $clients; do
+  ssh "$host" \
+    sudo "${gfarm_src_path}/docker/dev/common/authconfig-setup.sh" client &
+done
+wait
+
 set +x
 
 test_auth() {
@@ -301,25 +331,15 @@ auth_trial=
 if $tls_available; then
   auth_trial="${auth_trial} tls_sharedsecret tls_client_certificate"
 fi
+# FIXME: do not try kerberos for now, because "kadmin ktadd" sometimes fails
+# to generate $HOME/.keytab.  the reason of the failure is not known yet.
 
 tmp_gfarmconf=$(mktemp)
 for authtype in sharedsecret gsi_auth gsi $auth_trial; do
-  auth_sharedsecret=disable
-  auth_gsi=disable
-  auth_gsi_auth=disable
-  auth_tls_sharedsecret=disable
-  auth_tls_client_certificate=disable
-  eval "auth_${authtype}=enable"
-  cat <<EOF  > $tmp_gfarmconf
-    auth ${auth_sharedsecret} sharedsecret *
-    auth ${auth_gsi_auth} gsi_auth *
-    auth ${auth_gsi} gsi *
-    auth ${auth_tls_sharedsecret} tls_sharedsecret *
-    auth ${auth_tls_client_certificate} tls_client_certificate *
-EOF
-  GFARM_CONFIG_FILE=$tmp_gfarmconf test_auth $authtype
+  authconfig "${authtype}"
+  test_auth
 done
-rm -f $tmp_gfarmconf
+authconfig all
 
 # LOG=/var/log/messages
 # SYSLOG=/var/log/syslog

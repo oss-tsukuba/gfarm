@@ -35,6 +35,7 @@ RUN dnf -y update \
     myproxy \
     gsi-openssh-clients \
     && globus-version \
+    && dnf -y install krb5-libs krb5-devel krb5-server krb5-workstation \
     && dnf -y install \
     nc ldns iproute net-tools bind-utils telnet tcpdump \
     gdb strace valgrind inotify-tools libtsan procps-ng \

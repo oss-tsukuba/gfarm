@@ -136,6 +136,7 @@ help:
 	@echo '  make reborn'
 	@echo '  make start'
 	@echo '  make stop'
+	@echo '  make kerberos-setup'
 	@echo '  make shell'
 	@echo '  make shell-user'
 	@echo '  make shell-root'
@@ -428,6 +429,53 @@ endef
 
 s3test:
 	$(s3test)
+
+kerberos-setup:
+	$(CONTEXEC_GFMD1) $(SCRIPTS)/kerberos-setup-server.sh
+	for i in $$(seq 1 $(GFDOCKER_NUM_GFMDS)); do \
+	    h="$(GFDOCKER_HOSTNAME_PREFIX_GFMD)$${i}"; \
+	    $(CONTSHELL_COMMON) $${h} $(SCRIPTS)/kerberos-setup-host.sh gfmd; \
+	done
+	for i in $$(seq 1 $(GFDOCKER_NUM_GFSDS)); do \
+	    h="$(GFDOCKER_HOSTNAME_PREFIX_GFSD)$${i}"; \
+	    $(CONTSHELL_COMMON) $${h} $(SCRIPTS)/kerberos-setup-host.sh gfsd; \
+	done
+	for i in $$(seq 1 $(GFDOCKER_NUM_CLIENTS)); do \
+	    h="$(GFDOCKER_HOSTNAME_PREFIX_CLIENT)$${i}"; \
+	    $(CONTSHELL_COMMON) $${h} \
+	        $(SCRIPTS)/kerberos-setup-host.sh client; \
+	done
+
+# DO NOT USE THIS, currently this does not work.
+# on CentOS 8:
+#	kinit: Password incorrect while getting initial credentials
+kerberos-keytab-regen:
+	for i in $$(seq 1 $(GFDOCKER_NUM_CLIENTS)); do \
+	    h="$(GFDOCKER_HOSTNAME_PREFIX_CLIENT)$${i}"; \
+	    if $(CONTSHELL_COMMON) $${h} bash -c \
+	        'kinit -k -t "$(HOME_DIR)/.keytab" "$(GFDOCKER_PRIMARY_USER)" \
+	            2>&1 | grep "Password incorrect" >/dev/null'; \
+	        then \
+	            echo "NOTICE: regenerating $(HOME_DIR)/.keytab on $${h}"; \
+	            $(CONTSHELL_COMMON) $${h} \
+	                $(SCRIPTS)/kerberos-setup-host.sh client; \
+	        fi; \
+	done
+
+# DO NOT USE THIS, because currently kerberos-keytab-regen does not work.
+kerberos-kinit:
+	for i in $$(seq 1 $(GFDOCKER_NUM_CLIENTS)); do \
+	    h="$(GFDOCKER_HOSTNAME_PREFIX_CLIENT)$${i}"; \
+	    echo "on $${h}:"; \
+	    $(CONTSHELL_COMMON) $${h} \
+	        kinit -k -t "$(HOME_DIR)/.keytab" "$(GFDOCKER_PRIMARY_USER)"; \
+	done
+
+kerberos-kdestroy:
+	for i in $$(seq 1 $(GFDOCKER_NUM_CLIENTS)); do \
+	    h="$(GFDOCKER_HOSTNAME_PREFIX_CLIENT)$${i}"; \
+	    $(CONTSHELL_COMMON) $${h} kdestroy; \
+	done
 
 gridftp-setup:
 	$(CONTEXEC_GFMD1) $(SCRIPTS)/gridftp-setup-server.sh
