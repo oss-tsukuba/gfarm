@@ -227,7 +227,7 @@ for i in $(seq 1 $GFDOCKER_NUM_USERS); do
   name="${GFDOCKER_USERNAME_PREFIX}${i}"
   from_dir="/home/${name}"
   to_dir="${COPY_HOMES}/${name}"
-  subject="/O=Grid/OU=GlobusTest/OU=GlobusSimpleCA/CN=${name}"
+  subject="/O=Gfarm/OU=GfarmDev/OU=GfarmCA/CN=${name}"
   ghome_dir="/home/${name}"
 
   # add gfarm user (skip Gfarm admin user)
