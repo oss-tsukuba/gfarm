@@ -3203,7 +3203,7 @@ retry:
 		}
 
 	} else {
-		ret = ctx->last_gfarm_error_ = GFARM_ERR_INVALID_ARGUMENT;
+		ret = ctx->last_gfarm_error_ = GFARM_ERR_UNEXPECTED_EOF;
 	}
 
 done:
@@ -3280,7 +3280,7 @@ retry:
 		}
 
 	} else {
-		ret = ctx->last_gfarm_error_ = GFARM_ERR_INVALID_ARGUMENT;
+		ret = ctx->last_gfarm_error_ = GFARM_ERR_UNEXPECTED_EOF;
 	}
 
 done:

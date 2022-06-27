@@ -35,7 +35,7 @@ su - "$GFDOCKER_PRIMARY_USER" -c " \
     && make -j '${GFDOCKER_NUM_JOBS}' \
 " \
   && cd "/home/${GFDOCKER_PRIMARY_USER}/gfarm" \
-  && make -j install || exit 1
+  && make install || exit 1
 
 su - "$GFDOCKER_PRIMARY_USER" -c " \
   cd ~/gfarm2fs \
@@ -44,7 +44,7 @@ su - "$GFDOCKER_PRIMARY_USER" -c " \
     && make -j '${GFDOCKER_NUM_JOBS}' \
 " \
   && cd "/home/${GFDOCKER_PRIMARY_USER}/gfarm2fs" \
-  && make -j install || exit 1
+  && make install || exit 1
 
 # for autofs
 cp $(which mount.gfarm2fs) /sbin/
