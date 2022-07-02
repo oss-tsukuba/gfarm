@@ -202,6 +202,9 @@ su - "$GFDOCKER_PRIMARY_USER" -c " \
     done \
 "
 
+# install /usr/local/bin/hookconfig
+cp -p "${gfarm_src_path}/docker/dev/common/hookconfig" /usr/local/bin/
+
 ### for gfsd certificate ("CN=gfsd/... and subjectAltName")
 if [ ${GFDOCKER_USE_SAN_FOR_GFSD} -eq 1 ]; then
   NAME_COMPATIBILITY_ENV="GLOBUS_GSSAPI_NAME_COMPATIBILITY=HYBRID"

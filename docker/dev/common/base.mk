@@ -353,6 +353,41 @@ regress:
 	$(check_config)
 	$(regress)
 
+memcheck-gfmd memcheck-gfmd1 memcheck-gfmd2 memcheck-gfmd3 \
+memcheck-gfsd memcheck-gfsd1 memcheck-gfsd2 memcheck-gfsd3 memcheck-gfsd4:
+	$(check_config)
+	target=`echo "$@" | sed 's/.*-//'`; \
+	$(CONTSHELL) -c "hookconfig --$${target} memcheck"; \
+	$(regress); \
+	status=$$?; \
+	$(CONTSHELL) -c "hookconfig --$${target} no-hook"; \
+	exit $${status}
+
+helgrind-gfmd helgrind-gfmd1 helgrind-gfmd2 helgrind-gfmd3:
+	$(check_config)
+	target=`echo "$@" | sed 's/.*-//'`; \
+	$(CONTSHELL) -c "hookconfig --$${target} helgrind"; \
+	$(CONTSHELL) -c '~/gfarm/docker/dev/common/regress.rc 3'; \
+	status=$$?; \
+	$(CONTSHELL) -c "hookconfig --$${target} no-hook"; \
+	exit $${status}
+
+memcheck-gfarm2fs:
+	$(check_config)
+	$(CONTSHELL) -c 'hookconfig --gfarm2fs memcheck.not-child'
+	$(CONTSHELL) -c '~/gfarm/docker/dev/common/test_gfarm2fs.sh 1 3 '; \
+	status=$$?; \
+	$(CONTSHELL) -c 'hookconfig --gfarm2fs no-hook'; \
+	exit $${status}
+
+helgrind-gfarm2fs:
+	$(check_config)
+	$(CONTSHELL) -c 'hookconfig --gfarm2fs helgrind.not-child'
+	$(CONTSHELL) -c '~/gfarm/docker/dev/common/test_gfarm2fs.sh 3 3'; \
+	status=$$?; \
+	$(CONTSHELL) -c 'hookconfig --gfarm2fs no-hook'; \
+	exit $${status}
+
 GFDOCKER_GFARMS3_ENV = \
 	--env GFDOCKER_GFARMS3_FRONT_WEBSERVER='$(GFDOCKER_GFARMS3_FRONT_WEBSERVER)' \
 	--env GFDOCKER_GFARMS3_CACHE_BASEDIR='$(GFDOCKER_GFARMS3_CACHE_BASEDIR)' \
