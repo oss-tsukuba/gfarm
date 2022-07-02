@@ -211,6 +211,8 @@ su - "$GFDOCKER_PRIMARY_USER" -c " \
 
 # install /usr/local/bin/authconfig
 cp -p "${gfarm_src_path}/docker/dev/common/authconfig" /usr/local/bin/
+# install /usr/local/bin/hookconfig
+cp -p "${gfarm_src_path}/docker/dev/common/hookconfig" /usr/local/bin/
 
 ### for gfsd certificate ("CN=gfsd/... and subjectAltName")
 if [ ${GFDOCKER_USE_SAN_FOR_GFSD} -eq 1 ]; then

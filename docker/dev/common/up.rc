@@ -14,7 +14,10 @@ set -eux -o pipefail
 : $GFDOCKER_HOSTNAME_PREFIX_CLIENT
 : $GFDOCKER_HOSTNAME_SUFFIX
 
+PRIMARY_HOME=/home/${GFDOCKER_PRIMARY_USER}
+gfarm_src_path="${PRIMARY_HOME}/gfarm"
 gfarm_src_path="/work/gfarm"
+HOST_SHARE_DIR=/mnt
 SUDO_USER2="sudo sudo -i -u user2"
 
 gfmds=
@@ -314,6 +317,39 @@ for host in $clients; do
     sudo "${gfarm_src_path}/docker/dev/common/authconfig-setup.sh" client &
 done
 wait
+
+# create the hook files:
+hook_dir="${HOST_SHARE_DIR}/hook"
+memcheck_log_dir="${HOST_SHARE_DIR}/memcheck-results"
+helgrind_log_dir="${HOST_SHARE_DIR}/helgrind-results"
+sudo mkdir -p "${hook_dir}" "${memcheck_log_dir}" "${helgrind_log_dir}"
+sudo chown "${GFDOCKER_PRIMARY_USER}" "${hook_dir}"
+sudo chown "_gfarmfs":"${GFDOCKER_PRIMARY_USER}" \
+	"${memcheck_log_dir}" "${helgrind_log_dir}"
+sudo chmod ug+w "${memcheck_log_dir}" "${helgrind_log_dir}"
+
+for hook in no-hook memcheck memcheck.not-child helgrind helgrind.not-child; do
+  cp "${gfarm_src_path}/docker/dev/common/${hook}.hook" "${hook_dir}"
+done
+
+hookconfig --all no-hook
+
+# modify systemd unit files to add a hook
+for host in $gfmds; do
+  ssh -n "$host" sudo \
+    "${gfarm_src_path}/docker/dev/common/hookconfig-setup.sh" \
+    "${host}" "gfmd" &
+done
+
+for host in $gfsds; do
+  ssh -n "$host" sudo \
+    "${gfarm_src_path}/docker/dev/common/hookconfig-setup.sh" \
+    "${host}" "gfsd-${host}${GFDOCKER_HOSTNAME_SUFFIX}" &
+done
+wait
+
+# fix timing problem since the introduction of hookconfig
+sleep 1
 
 set +x
 

@@ -3,6 +3,7 @@
 GFARM_SRCDIR=$1
 LOGFILE=$2
 export GFARM_TEST_CKSUM_MISMATCH=$3
+parallel=$4
 
 cd $GFARM_SRCDIR/regress
 if ! [ -e bin/gfmd_restart_all ]; then
@@ -19,7 +20,10 @@ export LANG=C
 # gfmkdir -p gfarm://$GFARM_TEST_MDS3
 # gfmkdir -p gfarm://$GFARM_TEST_MDS4
 
-make check
+for i in $(seq 1 $parallel); do
+    make check &
+done
+wait
 result=$?
 cp -p log $LOGFILE
 exit $result

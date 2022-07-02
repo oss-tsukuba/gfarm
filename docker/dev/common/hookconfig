@@ -1,0 +1,170 @@
+#!/bin/sh
+
+progname=`basename $0`
+hook_dir=/mnt/hook
+hook_type_default=no-hook
+no_restart=false
+
+# default: --all no-hook
+for i in $(seq 1 ${GFDOCKER_NUM_GFMDS}); do
+	name="${GFDOCKER_HOSTNAME_PREFIX_GFMD}${i}"
+	eval "hook_${name}=${hook_type_default}"
+done
+for i in $(seq 1 ${GFDOCKER_NUM_GFSDS}); do
+	name="${GFDOCKER_HOSTNAME_PREFIX_GFSD}${i}"
+	eval "hook_${name}=${hook_type_default}"
+done
+hook_gfarm2fs="${hook_type_default}"
+
+usage()
+{
+	echo >&2 "Usage:	${progname} <option>..."
+	echo >&2 "options:"
+	echo >&2 "	--all <hook_type>"
+	echo >&2 "		this is abbreviation of" \
+				"--gfmd <hook_type>" \
+				"--gfsd <hook_type>" \
+				"--gfarm2fs <hook_type>"
+	echo >&2 "	--server <hook_type>"
+	echo >&2 "		this is abbreviation of" \
+				"--gfmd <hook_type>" \
+				"--gfsd <hook_type>"
+	echo >&2 "	--gfmd <hook_type>"
+	echo >&2 "		this is abbreviation of" \
+				"--gfmd1 <hook_type>" \
+				"--gfmd2 <hook_type>" \
+				"..."
+	echo >&2 "	--gfsd <hook_type>"
+	echo >&2 "		this is abbreviation of" \
+				"--gfsd1 <hook_type>" \
+				"--gfsd2 <hook_type>" \
+				"..."
+	echo >&2 "	--gfmd<n> <hook_type> (default: ${hook_type_default})"
+	echo >&2 "		e.g." \
+				"--gfmd1 <hook_type>" \
+				"--gfmd2 <hook_type>" \
+				"..."
+	echo >&2 "	--gfsd<n> <hook_type> (default: ${hook_type_default})"
+	echo >&2 "		e.g." \
+				"--gfsd1 <hook_type>" \
+				"--gfsd2 <hook_type>" \
+				"..."
+	echo >&2 "	--gfarm2fs <hook_type> (default: ${hook_type_default})"
+	echo >&2 "hook_type:"
+	echo >&2 "	no-hook"
+	echo >&2 "	memcheck"
+	echo >&2 "	memcheck.not-child"
+	echo >&2 "	helgrind"
+	echo >&2 "	helgrind.not-child"
+	exit 2
+}
+
+hook_type_check()
+{
+	hook_type="$*"
+	if [ ! -f "${hook_dir}/${hook_type}.hook" ]; then
+		echo >&2 "${progname}: unknown hook_type <${hook_type}>"
+		usage
+	fi
+}
+
+hook_specified=true
+while case $1 in
+	--no-restart)
+		no_restart=true
+		true;;
+	--all)
+		hook="${2?'missing argument in $1'}"
+		hook_type_check "${hook}"
+		for i in $(seq 1 ${GFDOCKER_NUM_GFMDS}); do
+			name="${GFDOCKER_HOSTNAME_PREFIX_GFMD}${i}"
+			eval "hook_${name}=${hook}"
+		done
+		for i in $(seq 1 ${GFDOCKER_NUM_GFSDS}); do
+			name="${GFDOCKER_HOSTNAME_PREFIX_GFSD}${i}"
+			eval "hook_${name}=${hook}"
+		done
+		hook_gfarm2fs=${hook}
+		hook_specified=true
+		shift; true;;
+	--server)
+		hook="${2?'missing argument in $1'}"
+		hook_type_check "${hook}"
+		for i in $(seq 1 ${GFDOCKER_NUM_GFMDS}); do
+			name="${GFDOCKER_HOSTNAME_PREFIX_GFMD}${i}"
+			eval "hook_${name}=${hook}"
+		done
+		for i in $(seq 1 ${GFDOCKER_NUM_GFSDS}); do
+			name="${GFDOCKER_HOSTNAME_PREFIX_GFSD}${i}"
+			eval "hook_${name}=${hook}"
+		done
+		hook_specified=true
+		shift; true;;
+	--gfmd)
+		hook="${2?'missing argument in $1'}"
+		hook_type_check "${hook}"
+		for i in $(seq 1 ${GFDOCKER_NUM_GFMDS}); do
+			name="${GFDOCKER_HOSTNAME_PREFIX_GFMD}${i}"
+			eval "hook_${name}=${hook}"
+		done
+		hook_specified=true
+		shift; true;;
+	--gfsd)
+		hook="${2?'missing argument in $1'}"
+		hook_type_check "${hook}"
+		for i in $(seq 1 ${GFDOCKER_NUM_GFSDS}); do
+			name="${GFDOCKER_HOSTNAME_PREFIX_GFSD}${i}"
+			eval "hook_${name}=${hook}"
+		done
+		hook_specified=true
+		shift; true;;
+	--gfmd*|--gfsd*|--gfarm2fs)
+		hook="${2?'missing argument in $1'}"
+		hook_type_check "${hook}"
+		name="`echo x$1 | sed 's/^x--//'`"
+		eval "hook_${name}=${hook}"
+		hook_specified=true
+		shift; true;;
+	-*)
+		echo >&2 "${progname}: unknown option $1"
+		usage;;
+	*)
+		false;;
+	esac
+do
+	shift
+done
+
+if ! "${hook_specified}"; then
+	usage
+fi
+
+for i in $(seq 1 ${GFDOCKER_NUM_GFMDS}); do
+	name="${GFDOCKER_HOSTNAME_PREFIX_GFMD}${i}"
+	host="${name}${GFDOCKER_HOSTNAME_SUFFIX}"
+	service="gfmd"
+	hook_type=`eval echo '${'"hook_${name}"'}'`
+	hook="${hook_dir}/${name}.hook"
+	rm -f "${hook}"
+	ln -s "${hook_type}.hook" "${hook}"
+	${no_restart} ||
+		ssh "${host}" -n sudo systemctl restart "${service}.service"
+done
+
+for i in $(seq 1 ${GFDOCKER_NUM_GFSDS}); do
+	name="${GFDOCKER_HOSTNAME_PREFIX_GFSD}${i}"
+	host="${name}${GFDOCKER_HOSTNAME_SUFFIX}"
+	service="gfsd-${host}"
+	hook_type=`eval echo '${'"hook_${name}"'}'`
+	hook="${hook_dir}/${name}.hook"
+	rm -f "${hook}"
+	ln -s "${hook_type}.hook" "${hook}"
+	${no_restart} ||
+		ssh "${host}" -n sudo systemctl restart "${service}.service"
+done
+
+name="gfarm2fs"
+hook_type="${hook_gfarm2fs}"
+hook="${hook_dir}/${name}.hook"
+rm -f "${hook}"
+ln -s "${hook_type}.hook" "${hook}"
