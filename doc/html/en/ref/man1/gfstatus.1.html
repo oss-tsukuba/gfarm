@@ -2,7 +2,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfstatus</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
 <a name="gfstatus.1"></a><div class="titlepage"></div>
@@ -12,7 +12,7 @@
 </div>
 <div class="refsynopsisdiv">
 <a name="synopsis"></a><h2>Synopsis</h2>
-<div class="cmdsynopsis"><p><code class="command">gfstatus</code>  [-P <em class="replaceable"><code>path</code></em>] [-d]</p></div>
+<div class="cmdsynopsis"><p><code class="command">gfstatus</code>  [-P <em class="replaceable"><code>path</code></em>] [-dS]</p></div>
 <div class="cmdsynopsis"><p><code class="command">gfstatus</code>  [-P <em class="replaceable"><code>path</code></em>] [ -d  |   -M ] [ -l  |   -L ]</p></div>
 <div class="cmdsynopsis"><p><code class="command">gfstatus</code>  [-P <em class="replaceable"><code>path</code></em>] [ -d  |   -M ]  <em class="replaceable"><code>configuration_name</code></em>... </p></div>
 <div class="cmdsynopsis"><p><code class="command">gfstatus</code>   -Mm  [-P <em class="replaceable"><code>path</code></em>] [-d]  <em class="replaceable"><code>configuration_directive</code></em>... </p></div>
@@ -89,6 +89,10 @@ Performs specified operation against gfmd.
 <dd><p>
 Specifies a path name to specify a metadata server instead of the root
 metadata server.
+</p></dd>
+<dt><span class="term"><code class="option">-S</code></span></dt>
+<dd><p>
+Displays settings determined statically at Gfarm compile time.
 </p></dd>
 <dt><span class="term"><code class="option">-V</code></span></dt>
 <dd><p>
