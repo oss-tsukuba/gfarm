@@ -59,7 +59,6 @@ auth_method_check()
 	*)	echo >&2 "${progname}: unknown auth_method <${auth_method}>"
 		usage;;
 	esac
-	echo "${auth_method}"
 }
 
 clear_auth_config()
@@ -144,7 +143,8 @@ while case $1 in
 	-n)	modify_gfuser=false
 		true;;
 	--all)
-		a=`auth_method_check ${2?"missing argument in $1"}`
+		a="${2?'missing argument in $1'}"
+		auth_method_check "$2"
 		client_gfmd=$a
 		client_gfsd=$a
 		gfmd_gfmd=$a
@@ -153,40 +153,47 @@ while case $1 in
 		auth_specified=true
 		shift; true;;
 	--client-server)
-		a=`auth_method_check ${2?"missing argument in $1"}`
+		a="${2?'missing argument in $1'}"
+		auth_method_check "$2"
 		client_gfmd=$a
 		client_gfsd=$a
 		auth_specified=true
 		shift; true;;
 	--server-server)
-		a=`auth_method_check ${2?"missing argument in $1"}`
+		a="${2?'missing argument in $1'}"
+		auth_method_check "$2"
 		gfmd_gfmd=$a
 		gfsd_gfmd=$a
 		gfsd_gfsd=$a
 		auth_specified=true
 		shift; true;;
 	--client-gfmd)
-		a=`auth_method_check ${2?"missing argument in $1"}`
+		a="${2?'missing argument in $1'}"
+		auth_method_check "$2"
 		client_gfmd=$a
 		auth_specified=true
 		shift; true;;
 	--client-gfsd)
-		a=`auth_method_check ${2?"missing argument in $1"}`
+		a="${2?'missing argument in $1'}"
+		auth_method_check "$2"
 		client_gfsd=$a
 		auth_specified=true
 		shift; true;;
 	--gfmd-gfmd)
-		a=`auth_method_check ${2?"missing argument in $1"}`
+		a="${2?'missing argument in $1'}"
+		auth_method_check "$2"
 		gfmd_gfmd=$a
 		auth_specified=true
 		shift; true;;
 	--gfsd-gfmd)
-		a=`auth_method_check ${2?"missing argument in $1"}`
+		a="${2?'missing argument in $1'}"
+		auth_method_check "$2"
 		gfsd_gfmd=$a
 		auth_specified=true
 		shift; true;;
 	--gfsd-gfsd)
-		a=`auth_method_check ${2?"missing argument in $1"}`
+		a="${2?'missing argument in $1'}"
+		auth_method_check "$2"
 		gfsd_gfsd=$a
 		auth_specified=true
 		shift; true;;
@@ -201,7 +208,8 @@ do
 done
 
 case $# in
-1)	a=`auth_method_check $1`
+1)	a="$1"
+	auth_method_check "$1"
 	client_gfmd=$a
 	client_gfsd=$a
 	;;
