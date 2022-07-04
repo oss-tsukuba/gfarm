@@ -22,7 +22,7 @@
 <cmdsynopsis sepchar=" ">
   <command moreinfo="none">gfstatus</command>
     <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
-    <arg choice="opt" rep="norepeat">-d</arg>
+    <arg choice="opt" rep="norepeat">-dS</arg>
  </cmdsynopsis>
 
 <cmdsynopsis sepchar=" ">
@@ -168,6 +168,15 @@ Performs specified operation against gfmd.
 <para>
 Specifies a path name to specify a metadata server instead of the root
 metadata server.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-S</option></term>
+<listitem>
+<para>
+Displays settings determined statically at Gfarm compile time.
 </para>
 </listitem>
 </varlistentry>

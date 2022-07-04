@@ -22,7 +22,7 @@
 <cmdsynopsis sepchar=" ">
   <command moreinfo="none">gfstatus</command>
     <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
-    <arg choice="opt" rep="norepeat">-d</arg>
+    <arg choice="opt" rep="norepeat">-dS</arg>
  </cmdsynopsis>
 
 <cmdsynopsis sepchar=" ">
@@ -163,6 +163,13 @@ gfmd 上のその設定を書き換えます．
 <para>
 指定したパス名により特定のメタデータサーバを指定します．
 </para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-S</option></term>
+<listitem>
+<para>Gfarm のコンパイル時に静的に決定される設定を表示します．</para>
 </listitem>
 </varlistentry>
 
