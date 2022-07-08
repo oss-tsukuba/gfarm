@@ -257,13 +257,14 @@ systemctl enable ${CLEAR_NOLOGIN}
 
 
 ### setup autofs
+GFARM2FS_OPT="auto_uid_min=40000,auto_uid_max=50000,auto_gid_min=40000,auto_gid_max=50000"
 cat <<EOF | sudo dd of=/etc/auto.gfarm
-ROOT -fstype=gfarm2fs,allow_other,default_permissions,username=${user1} :/home/${user1}/.gfarm2rc
-* -fstype=gfarm2fs,allow_root,username=& :/home/&/.gfarm2rc
+ROOT -fstype=gfarm2fs,${GFARM2FS_OPT},gfarmfs_root=/,allow_other,default_permissions,username=${user1} :/home/${user1}/.gfarm2rc
+* -fstype=gfarm2fs,${GFARM2FS_OPT},allow_root,username=& :/home/&/.gfarm2rc
 EOF
 
 cat <<EOF | sudo dd oflag=append conv=notrunc of=/etc/auto.master
-/gfarm /etc/auto.gfarm
+/gfarm /etc/auto.gfarm --debug
 EOF
 
 cat <<EOF | sudo dd oflag=append conv=notrunc of=/etc/fuse.conf

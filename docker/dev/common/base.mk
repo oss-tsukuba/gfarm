@@ -31,7 +31,10 @@ PROXY_URL = http://$(GFDOCKER_PROXY_HOST):$(GFDOCKER_PROXY_PORT)/
 GFDOCKER_USERNAME_PREFIX = user
 GFDOCKER_PRIMARY_USER = $(GFDOCKER_USERNAME_PREFIX)1
 PRIMARY_CLIENT_CONTAINER = $(GFDOCKER_HOSTNAME_PREFIX_CLIENT)1
-TOP = ../../../../..
+TOP = $(ROOTDIR)/../..
+
+#COMPOSE_YML = $(TOP)/docker/dev/docker-compose.yml
+COMPOSE_YML = $(ROOTDIR)/docker-compose.yml
 
 ifneq ($(GFDOCKER_NO_CACHE), 0)
 NO_CACHE = --no-cache
@@ -76,7 +79,8 @@ DOCKER = $(SUDO) $(DOCKER_CMD)
 GFDOCKER_PRJ_NAME_FULL=gfarm-$(GFDOCKER_PRJ_NAME)
 
 COMPOSE = $(SUDO) COMPOSE_PROJECT_NAME=$(GFDOCKER_PRJ_NAME_FULL) \
-	GFDOCKER_PRJ_NAME=$(GFDOCKER_PRJ_NAME) $(DOCKER_COMPOSE_CMD)
+	GFDOCKER_PRJ_NAME=$(GFDOCKER_PRJ_NAME) $(DOCKER_COMPOSE_CMD) \
+	-f $(COMPOSE_YML)
 CONTSHELL_FLAGS = \
 		--env TZ='$(TZ)' \
 		--env LANG='$(LANG)' \
@@ -228,9 +232,11 @@ build:
 build-nocache:
 	$(build_nocache)
 
+# --remove-orphans may not be suppported
 define down
-	$(COMPOSE) down --volumes --remove-orphans -t $(STOP_TIMEOUT) \
-		&& rm -f $(TOP)/docker/dev/.shadow.config.mk
+	($(COMPOSE) down --volumes --remove-orphans -t $(STOP_TIMEOUT) \
+	|| $(COMPOSE) down --volumes -t $(STOP_TIMEOUT) || true) \
+	&& rm -f $(TOP)/docker/dev/.shadow.config.mk
 endef
 
 down:
@@ -273,17 +279,21 @@ TOP='$(TOP)' \
 endef
 
 define up
+mkdir -p $(ROOTDIR)/mnt
+# readable for others
+chmod 755 $(ROOTDIR)/mnt
 $(COMPOSE) up -d --force-recreate\
   && $(CONTSHELL) -c '. ~/gfarm/docker/dev/common/up.rc'
 endef
 
 define reborn
-	if [ -f $(TOP)/docker/dev/docker-compose.yml ]; then \
+	if [ -f $(COMPOSE_YML) ]; then \
 		$(down); \
 	else \
 		echo 'warn: docker-compose does not exist.' 1>&2; \
 	fi
 	$(gen)
+	$(COMPOSE) ps
 	$(prune)
 	if [ $(USE_NOCACHE) -eq 1 ]; then \
 		$(build_nocache); \
@@ -525,7 +535,7 @@ NEXTCLOUD_GFARM_SRC = $(ROOTDIR)/mnt/work/nextcloud-gfarm
 NEXTCLOUD_GFARM_CONF = $(ROOTDIR)/common/nextcloud
 
 COMPOSE_NEXTCLOUD = $(COMPOSE) \
-	-f $(TOP)/docker/dev/docker-compose.yml \
+	-f $(COMPOSE_YML) \
 	-f $(NEXTCLOUD_GFARM_SRC)/docker-compose.yml \
 	-f $(NEXTCLOUD_GFARM_CONF)/docker-compose.nextcloud-gfarm.override.yml
 

@@ -59,11 +59,15 @@ for i in range(0, num_gfsds):
     ))
 
 if is_cgroup_v2 == 'true':
-    disable_cgroupfs_mount = '#'
     privileged = 'true'
+    disable_cgroupfs_mount = '#'
+    disable_security_opt = '#'
+    disable_capadd = '#'
 else:
-    disable_cgroupfs_mount = ''
     privileged = 'false'
+    disable_cgroupfs_mount = ''
+    disable_security_opt = ''
+    disable_capadd = ''
 
 print('''\
 # This file was automatically generated.
@@ -79,18 +83,21 @@ x-common:
 print('''\
   volumes:
     - ./mnt:/mnt:rw
-    {}- /sys/fs/cgroup:/sys/fs/cgroup:ro
-  security_opt:
-    - seccomp:unconfined
-    - apparmor:unconfined
-  cap_add:
-    - SYS_ADMIN
-    - SYS_PTRACE
+    {disable_cgroupfs_mount}- /sys/fs/cgroup:/sys/fs/cgroup:ro
+  {disable_security_opt}security_opt:
+  {disable_security_opt}  - seccomp:unconfined
+  {disable_security_opt}  - apparmor:unconfined
+  {disable_capadd}cap_add:
+  {disable_capadd}  - SYS_ADMIN
+  {disable_capadd}  - SYS_PTRACE
   devices:
     - /dev/fuse:/dev/fuse
-  privileged: {}
+  privileged: {privileged}
   extra_hosts:
-'''.format(disable_cgroupfs_mount, privileged),
+'''.format(disable_cgroupfs_mount=disable_cgroupfs_mount,
+           disable_security_opt=disable_security_opt,
+           disable_capadd=disable_capadd,
+           privileged=privileged),
       end='')
 
 for h in hosts:

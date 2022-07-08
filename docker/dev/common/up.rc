@@ -49,8 +49,8 @@ done
 
 ## create directories to keep keys
 for user in $users; do
-  sudo mkdir -p /mnt/${user}
-  sudo chown ${user} /mnt/${user}
+  sudo mkdir -p ${HOST_SHARE_DIR}/${user}
+  sudo chown ${user} ${HOST_SHARE_DIR}/${user}
 done
 
 GFDOCKER_COPY_SHARED_KEY=/usr/local/bin/gfdocker_copy_shared_key
@@ -63,7 +63,7 @@ set -eux
 
 ALLHOSTS="${allhosts}"
 
-BACKUP_KEY_DIR=/mnt/\$(whoami)
+BACKUP_KEY_DIR=${HOST_SHARE_DIR}/\$(whoami)
 BACKUP_KEY=\${BACKUP_KEY_DIR}/gfarm_shared_key
 KEY=~/.gfarm_shared_key
 PERIOD=315360000
@@ -88,9 +88,8 @@ sudo chmod +x ${GFDOCKER_COPY_SHARED_KEY}
 
 # keep ssh host keys only for client1 host
 
-MNT=/mnt
-MNT_SSH_HOST_KEY_DIR=${MNT}/ssh_host_keys
-MNT_SSH_AUTHORIZED_KEYS_FILE=${MNT}/ssh_authorized_keys
+MNT_SSH_HOST_KEY_DIR=${HOST_SHARE_DIR}/ssh_host_keys
+MNT_SSH_AUTHORIZED_KEYS_FILE=${HOST_SHARE_DIR}/ssh_authorized_keys
 SSH_HOST_KEY_DIR=/etc/ssh
 
 if [ ! -d $MNT_SSH_HOST_KEY_DIR ]; then
@@ -212,7 +211,7 @@ done
 wait
 
 # copy current configuration files for external containers
-COPY_DIR=/mnt/COPY_DIR
+COPY_DIR=${HOST_SHARE_DIR}/COPY_DIR
 COPY_HOMES="${COPY_DIR}/HOMES"
 
 sudo mkdir -p "${COPY_HOMES}"
@@ -299,7 +298,7 @@ fi
 #	/mnt/conf/auth-gfmd.conf
 #	/mnt/conf/auth-gfsd.conf
 #	/mnt/conf/auth-client.conf
-conf_include_dir=/mnt/conf
+conf_include_dir=${HOST_SHARE_DIR}/conf
 sudo mkdir -p "${conf_include_dir}"
 sudo chown "${GFDOCKER_PRIMARY_USER}" "${conf_include_dir}"
 authconfig -n all
