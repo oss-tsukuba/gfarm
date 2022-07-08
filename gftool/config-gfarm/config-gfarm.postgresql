@@ -462,7 +462,12 @@ _EOF_
 
 	case "$BACKEND_VERSION" in
 	[1-7].*|8.0)
-		createuser_option=;;
+	    # Don't ask the following question on PostgreSQL before 9.0
+	    #	Shall the new role be a superuser? (y/n)
+	    # but -A option for createuser is removed in PostgreSQL 13.0
+		createuser_option=-A;;
+	8.*)
+		createuser_option='--no-createrole -A';;
 	*)  # Don't ask the following question on PostgreSQL 8.1 or later:
 	    #    Shall the new role be allowed to create more new roles? (y/n) 
 		createuser_option=--no-createrole;;
