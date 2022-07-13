@@ -346,6 +346,7 @@ gfarm_auth_request_tls_client_certificate_multiplexed(
 		    gfarm_error_string(e));
 	} else if ((rv = gfarm_eventqueue_add_event(q, state->readable, NULL))
 	    != 0) {
+		e = gfarm_errno_to_error(rv);
 		/* XXX this is NOT graceful */
 		gflog_debug(GFARM_MSG_UNFIXED, "addition of event failed: %s",
 		    strerror(rv));
@@ -361,8 +362,12 @@ gfarm_auth_request_tls_client_certificate_multiplexed(
 		return (GFARM_ERR_NO_ERROR);
 	}
 
+	if (state->readable != NULL)
+		gfarm_event_free(state->readable);
+
 	/* is this case graceful? */
 	gfp_xdr_tls_reset(conn);
+	free(state);
 	return (e);
 }
 
@@ -372,6 +377,7 @@ gfarm_auth_result_tls_client_certificate_multiplexed(void *sp)
 	struct gfarm_auth_request_tls_client_certificate_state *state = sp;
 	gfarm_error_t e = state->error;
 
+	gfarm_event_free(state->readable);
 	if (e != GFARM_ERR_NO_ERROR) {
 		/* is this case graceful? */
 		gfp_xdr_tls_reset(state->conn);
@@ -379,4 +385,3 @@ gfarm_auth_result_tls_client_certificate_multiplexed(void *sp)
 	free(state);
 	return (e);
 }
-
