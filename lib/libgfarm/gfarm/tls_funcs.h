@@ -2173,17 +2173,18 @@ tls_session_create_ctx(struct tls_session_ctx_struct **ctxptr,
 		}
 	} else {
 		if (do_mutual_auth == true) {
-			if (likely(is_valid_string(ca_path) == true &&
-				(is_valid_string(cert_file) == true ||
-				is_valid_string(cert_chain_file) == true) &&
-				is_valid_string(prvkey_file) == true)) {
-				goto runtime_init;
-			} else if (likely(is_valid_string(ca_path) == true &&
-					is_valid_string(tmp_proxy_cert_file)
-					== true)) {
+			if (is_valid_string(ca_path) == true &&
+			    is_valid_string(tmp_proxy_cert_file) == true) {
+				free(cert_file);
+				free(prvkey_file);
 				cert_file = strdup(tmp_proxy_cert_file);
 				prvkey_file = strdup(tmp_proxy_cert_file);
 				do_proxy_auth = true;
+				goto runtime_init;
+			} else if (likely(is_valid_string(ca_path) == true &&
+				(is_valid_string(cert_file) == true ||
+				is_valid_string(cert_chain_file) == true) &&
+				is_valid_string(prvkey_file) == true)) {
 				goto runtime_init;
 			} else {
 				gflog_tls_error(GFARM_MSG_UNFIXED,
@@ -2596,6 +2597,8 @@ bailout:
 	free(ctxret);
 
 ok:
+	free(tmp_proxy_cert_file);
+
 	return (ret);
 
 #undef str_or_NULL
