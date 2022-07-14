@@ -1610,6 +1610,7 @@ tls_verify_callback_body(int ok, X509_STORE_CTX *sctx)
 					"flags, but Gfarm itself doesn't "
 					"allow the internal proxy use??");
 			}
+			PROXY_CERT_INFO_EXTENSION_free(pci);
 			goto done;
 		}
 
