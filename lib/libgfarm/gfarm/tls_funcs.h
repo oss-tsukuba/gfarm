@@ -1205,6 +1205,8 @@ tls_set_ca_path(SSL_CTX *ssl_ctx,
 					goto done;
 				} else if (ret == GFARM_ERR_NO_ERROR &&
 						ncerts == 0) {
+					sk_X509_NAME_pop_free(ca_list,
+						X509_NAME_free);
 					gflog_tls_warning(GFARM_MSG_UNFIXED,
 						"No cert file is "
 						"added as a valid cert under "
