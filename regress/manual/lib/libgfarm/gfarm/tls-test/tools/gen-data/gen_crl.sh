@@ -74,7 +74,7 @@ case ${CA_TYPE} in
         ;;
 esac
 
-pushd ${OUTPUT_DIR}
+cd ${OUTPUT_DIR}
 
 if [ ! -f ./crlnumber ]; then
     echo 00 > ./crlnumber
@@ -93,5 +93,3 @@ if [ $? -ne 0 ]; then
     puts_error "openssl gencrl: $?"
     exit 1
 fi
-
-popd

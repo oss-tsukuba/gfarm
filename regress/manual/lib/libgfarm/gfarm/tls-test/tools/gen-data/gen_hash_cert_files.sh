@@ -32,7 +32,7 @@ if [ -z "${DIR}" ]; then
     usage
 fi
 
-pushd ${DIR}
+cd ${DIR}
 
 ls *\.crt >/dev/null 2>&1
 if [ $? -eq 0 ]; then
@@ -43,5 +43,3 @@ ls *\.crl >/dev/null 2>&1
 if [ $? -eq 0 ]; then
     ls *\.crl | xargs -I {} sh -c 'ln -s {} "`openssl crl -hash -noout -in {}`.r0"'
 fi
-
-popd

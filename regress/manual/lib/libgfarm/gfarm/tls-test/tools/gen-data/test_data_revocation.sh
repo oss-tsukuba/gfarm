@@ -214,7 +214,8 @@ gen_hash() {
 
     DIRS="root inter_ca_1 inter_ca_2 inter_ca_3 server client1 client2 client3 client1_2 client1_2_3"
     for DIR in ${DIRS}; do
-        pushd "${OUTPUT}/crls/$DIR" > /dev/null
+        olddir="`pwd`"
+        cd "${OUTPUT}/crls/$DIR"
 
         ls *\.crl | xargs -I {} sh -c 'ln -s {} "`openssl crl -noout -hash < {}`.r0"'
         if [ $? -ne 0 ]; then
@@ -222,7 +223,7 @@ gen_hash() {
             return 1
         fi
 
-        popd > /dev/null
+        cd "${olddir}"
     done
 
     return 0
