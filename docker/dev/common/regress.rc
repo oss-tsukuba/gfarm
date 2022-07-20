@@ -5,6 +5,13 @@ set -xu
 : $GFDOCKER_HOSTNAME_PREFIX_GFSD
 : $GFDOCKER_HOSTNAME_SUFFIX
 
+case $# in
+0)	parallel=1;;
+1)	parallel=$1;;
+*)	echo >&2 "`basename $0`: incorrect number of arguments: $#"
+	exit 2;;
+esac
+
 GFARM_SRCDIR=~/gfarm
 RUN_REGRESS=$GFARM_SRCDIR/docker/dev/common/run_regress.sh
 
@@ -62,11 +69,11 @@ if [ $is_gfarmroot -eq 0 ]; then
     gfgroup -r -m gfarmroot $me
 fi
 # remote access and non-gfarmroot
-$RUN_REGRESS $GFARM_SRCDIR $LOG_REMOTE_NONROOT $GFARM_TEST_CKSUM_MISMATCH || true
+$RUN_REGRESS $GFARM_SRCDIR $LOG_REMOTE_NONROOT $GFARM_TEST_CKSUM_MISMATCH $parallel || true
 
 # local access and gfarmroot
 gfgroup -a -m gfarmroot $me
-ssh $gfsdhost $RUN_REGRESS $GFARM_SRCDIR $LOG_LOCAL_ROOT $GFARM_TEST_CKSUM_MISMATCH || true
+ssh $gfsdhost $RUN_REGRESS $GFARM_SRCDIR $LOG_LOCAL_ROOT $GFARM_TEST_CKSUM_MISMATCH $parallel || true
 
 restore
 
