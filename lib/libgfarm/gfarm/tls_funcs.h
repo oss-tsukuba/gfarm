@@ -2882,6 +2882,8 @@ tls_session_verify(struct tls_session_ctx_struct *ctx, bool *is_verified)
 			bool v = false;
 			int vres = -INT_MAX;
 
+			X509_free(p);
+			p = NULL;
 #define DN_FORMAT_ONELINE	(XN_FLAG_ONELINE & ~ASN1_STRFLGS_ESC_MSB)
 #define DN_FORMAT_RFC2253	(XN_FLAG_RFC2253 & ~ASN1_STRFLGS_ESC_MSB)
 			if (likely((ret = get_peer_dn(pn,
