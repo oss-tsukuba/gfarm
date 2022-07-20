@@ -178,7 +178,12 @@ cp_crls() {
 
     OUTPUT=${OUTPUT_DIR}/${TARGET}
 
-    mkdir -p "${OUTPUT}"/crls/{root,inter_ca_1,inter_ca_2,inter_ca_3,server,client1,client2,client3,client1_2,client1_2_3}
+    d="${OUTPUT}/crls"
+    mkdir -p "${d}/root" \
+	"${d}/inter_ca_1" "${d}/inter_ca_2" "${d}/inter_ca_3" \
+	"${d}/server" \
+	"${d}/client1" "${d}/client2" "${d}/client3" \
+	"${d}/client1_2" "${d}/client1_2_3"
     if [ $? -ne 0 ]; then
         puts_error "mkdir"
         return 1
