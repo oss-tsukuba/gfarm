@@ -1445,7 +1445,7 @@ gfs_client_vrpc_result(struct gfs_connection *gfs_server, int just,
 	return (GFARM_ERR_NO_ERROR);
 }
 
-gfarm_error_t
+static gfarm_error_t
 gfs_client_rpc_result_w_errcode(struct gfs_connection *gfs_server, int just,
 	gfarm_int32_t *errcodep, const char *format, ...)
 {
@@ -2691,6 +2691,7 @@ gfs_client_replica_recv_common(struct gfs_connection *gfs_server,
 			"gfs_request_client_rpc() failed: %s",
 			gfarm_error_string(e));
 		gfs_client_connection_unlock(gfs_server);
+		*src_errp = e;
 		return (e);
 	}
 
@@ -2699,6 +2700,7 @@ gfs_client_replica_recv_common(struct gfs_connection *gfs_server,
 	if (IS_CONNECTION_ERROR(e)) {
 		gfs_client_execute_hook_for_connection_error(gfs_server);
 		gfs_client_purge_from_cache(gfs_server);
+		*src_errp = e;
 	} else { /* read the rest, even if a local error happens */
 		if (cksum_protocol) {
 			e_rpc = gfs_client_rpc_result_w_errcode(gfs_server, 0,
@@ -2709,8 +2711,10 @@ gfs_client_replica_recv_common(struct gfs_connection *gfs_server,
 			e_rpc = gfs_client_rpc_result_w_errcode(gfs_server, 0,
 			    src_errp, "");
 		}
+		if (e_rpc != GFARM_ERR_NO_ERROR)
+			*src_errp = e_rpc;
 		if (e == GFARM_ERR_NO_ERROR)
-			e = e_rpc;
+			e = *src_errp;
 	}
 	gfs_client_connection_unlock(gfs_server);
 
@@ -2722,6 +2726,7 @@ gfs_client_replica_recv_common(struct gfs_connection *gfs_server,
 	return (e);
 }
 
+/* NOTE: must be src_errp != NULL && dst_errp != NULL */
 gfarm_error_t
 gfs_client_replica_recv_md(struct gfs_connection *gfs_server,
 	gfarm_int32_t *src_errp, gfarm_int32_t *dst_errp,
@@ -2732,6 +2737,7 @@ gfs_client_replica_recv_md(struct gfs_connection *gfs_server,
 	    local_fd, md_ctx, 0));
 }
 
+/* NOTE: must be src_errp != NULL && dst_errp != NULL */
 gfarm_error_t
 gfs_client_replica_recv_cksum_md(struct gfs_connection *gfs_server,
 	gfarm_int32_t *src_errp, gfarm_int32_t *dst_errp,
