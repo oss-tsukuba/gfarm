@@ -40,6 +40,7 @@ static struct tls_test_ctx_struct ttcs = {
 	-INT_MAX,
 	0,	/* No domain check. Mandatory to initialize properly 0 or 1 */
 	0,	/* No domain check. Mandatory to initialize properly 0 or 1 */
+	0,	/* security level 0, because tls_test generates 1024bit cert */
 	60,
 	60
 };

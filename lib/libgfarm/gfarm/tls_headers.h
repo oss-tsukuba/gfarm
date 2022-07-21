@@ -108,6 +108,7 @@ struct tls_test_ctx_struct {
 	int tls_key_update;		/* gfarm: bool, test: int */
 	int tls_build_chain_local;	/* bool */
 	int tls_allow_no_crl;		/* bool */
+	int tls_security_level;
 	int network_receive_timeout;
 	int network_send_timeout;
 };

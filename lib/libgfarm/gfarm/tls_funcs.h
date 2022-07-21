@@ -2250,6 +2250,12 @@ runtime_init:
 		int osst;
 		X509_VERIFY_PARAM *tmpvpm = NULL;
 
+		if (gfarm_ctxp->tls_security_level !=
+		    GFARM_CONFIG_MISC_DEFAULT) {
+			SSL_CTX_set_security_level(ssl_ctx,
+			    gfarm_ctxp->tls_security_level);
+		}
+
 		/*
 		 * Clear cert chain for our sanity.
 		 */
