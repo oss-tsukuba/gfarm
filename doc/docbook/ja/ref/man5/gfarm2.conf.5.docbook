@@ -1009,8 +1009,15 @@ PostgreSQLサーバーが動作しているホスト名を指定します。
 
 <para>第1引数の<parameter moreinfo="none">有効性</parameter>部には、<token>enable</token>ないし<token>disable</token>
 キーワードを指定します。
-第2引数の<parameter moreinfo="none">認証方法</parameter>部には、<token>gsi</token>、
-<token>gsi_auth</token>ないし<token>sharedsecret</token>
+第2引数の<parameter moreinfo="none">認証方法</parameter>部には、
+<token>sharedsecret</token>、
+<token>tls_sharedsecret</token>、
+<token>tls_client_certificate</token>、
+<token>gsi_auth</token>、
+<token>gsi</token>、
+<token>kerberos_auth</token>
+ないし
+<token>kerberos</token>
 キーワードを指定します。
 第3引数には、<parameter moreinfo="none">ホスト指定</parameter>を記述します。</para>
 
@@ -1024,8 +1031,15 @@ PostgreSQLサーバーが動作しているホスト名を指定します。
 双方ともで有効になっている認証方法のみが用いられます。</para>
 
 <para>認証方法が異なるものに関しては、指定の順序は意味がありません。
-複数の認証方法が候補となった場合、<token>sharedsecret</token>、
-<token>gsi_auth</token>、<token>gsi</token>認証の順序で試みます。</para>
+複数の認証方法が候補となった場合、
+<token>sharedsecret</token>、
+<token>tls_sharedsecret</token>、
+<token>tls_client_certificate</token>、
+<token>gsi_auth</token>、
+<token>gsi</token>
+<token>kerberos_auth</token>、
+<token>kerberos</token> 認証
+の順序で試みます。</para>
 
 <para>Gfarmのコンパイル時にglobusとのリンクを指定しなかった場合、
 GSIは利用できません。この場合、<token>gsi</token>および
@@ -3013,6 +3027,255 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 </listitem>
 </varlistentry>
 
+<varlistentry>
+<term><token>tls_cipher_suite</token> <parameter moreinfo="none">暗号スイート</parameter></term>
+<listitem>
+<para>
+TLS認証で利用する暗号スイートをコロンで区切って指定します。
+指定可能な値は
+<ulink url="https://www.openssl.org/docs/man1.1.1/man3/SSL_set_ciphersuites.html"/>
+を参照してください。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	tls_cipher_suite "TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256"
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>tls_ca_certificate_path</token> <parameter moreinfo="none">ディレクトリ</parameter></term>
+<listitem>
+<para>
+TLS認証で利用する認証局のCA証明書を置くディレクトリを指定します。
+このディレクトリへの証明書ファイルの設置方法は、以下の文書の <token>CApath</token> の項を参照してください。
+<ulink url="https://www.openssl.org/docs/man1.1.1/man3/SSL_CTX_load_verify_locations.html"/>
+</para>
+<para>
+デフォルト値は <filename class="directory">/etc/pki/tls/certs/gfarm</filename> です。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	tls_ca_certificate_path /etc/pki/tls/certs/gfarm
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>tls_ca_revocation_path</token> <parameter moreinfo="none">ディレクトリ</parameter></term>
+<listitem>
+<para>
+TLS認証で利用する認証局から提供されたCRLを置くディレクトリを指定します。
+</para>
+<para>
+デフォルト値は <filename class="directory">/etc/pki/tls/certs/gfarm</filename> です。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	tls_ca_revocation_path /etc/pki/tls/certs/gfarm
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>tls_ca_peer_verify_chain_path</token> <parameter moreinfo="none">ディレクトリ</parameter></term>
+<listitem>
+<para>
+TLS認証で、通信相手の提示する証明書に署名する中間証明書を限定したい場合に設定します。
+この設定がある場合、このディレクトリに置かれた以外の中間証明書は受け入れません。
+</para>
+<para>
+デフォルトは未設定です。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	tls_ca_peer_verify_chain_path /etc/pki/tls/certs/gfarm.chain
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>tls_certificate_file</token> <parameter moreinfo="none">ファイル名</parameter></term>
+<listitem>
+<para>
+TLS認証で自分自身を表す証明書のファイル名を指定します。
+</para>
+<para>
+環境変数 X509_USER_CERT が設定されている場合は、それがこのディレクティブよりも優先されます。
+</para>
+<para>
+さもなくば、クライアントの場合 ``<filename moreinfo="none">$HOME/.gfarm/usercert.pem</filename>''、
+gfmd の場合 ``<filename moreinfo="none">/etc/pki/tls/certs/gfmd.crt</filename>''、
+gfsd の場合 ``<filename moreinfo="none">/etc/pki/tls/certs/gfsd.crt</filename>''
+がデフォルト値となります。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	tls_certificate_file /etc/pki/tls/certs/myself.crt
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>tls_certificate_chain_file</token> <parameter moreinfo="none">ファイル名</parameter></term>
+<listitem>
+<para>
+TLS認証で自身の証明書に署名した中間認証局の証明書を置くファイル名を指定します。
+なお、中間証明書は必ずしも別ファイルに分離する必要はなく、
+<token>tls_certificate_file</token> で指定したファイルにまとめて記述することも可能です。
+</para>
+<para>
+デフォルトは未設定です。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	tls_certificate_chain_file /etc/pki/tls/certs/myself_intermediate.crt
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>tls_key_file</token> <parameter moreinfo="none">ファイル名</parameter></term>
+<listitem>
+<para>
+TLS認証で自身が利用する証明書に対応する秘密鍵のファイル名を指定します。
+</para>
+<para>
+環境変数 X509_USER_KEY が設定されている場合は、それがこのディレクティブよりも優先されます。
+</para>
+<para>
+さもなくば、クライアントの場合 ``<filename moreinfo="none">$HOME/.gfarm/userkey.pem</filename>''、
+gfmd の場合 ``<filename moreinfo="none">/etc/pki/tls/private/gfmd.key</filename>''、
+gfsd の場合 ``<filename moreinfo="none">/etc/pki/tls/private/gfsd.key</filename>''
+がデフォルト値となります。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	tls_certificate_key /etc/pki/tls/certs/myself.key
+</literallayout>
+</listitem>
+</varlistentry>
+
+<!--
+
+<varlistentry>
+<term><token>tls_dn_type</token> <parameter moreinfo="none">dn_type</parameter></term>
+<listitem>
+<para>
+tls_client_certificate 認証において、gfuser メタデータベースの GSI DN 欄に記載する DN の形式を指定します。
+指定可能な<parameter moreinfo="none">dn_type</parameter>としては以下があります。
+
+</para>
+  <variablelist>
+    <varlistentry>
+      <term>gsi</term>
+      <listitem>
+      <para>GSI認証で使われているのと同様な「/O=Company/OU=Division/CN=Name」といった形式です。</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>rfc2253</term>
+      <listitem>
+      <para>RFC2253で定義されいる「CN=Name, OU=Division, O=Company」のような形式です。</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>both</term>
+      <listitem>
+      <para><token>gsi</token> と <token>rfc2253</token> の両方を許します。</para>
+      </listitem>
+    </varlistentry>
+  </variablelist>
+<para>
+デフォルトは gsi です。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	tls_dn_type rfc2253
+</literallayout>
+</listitem>
+</varlistentry>
+
+-->
+
+<varlistentry>
+<term><token>tls_allow_no_crl</token> <parameter moreinfo="none">有効性</parameter></term>
+<listitem>
+<para>
+TLS通信において、ルート証明書に対応するCRLファイルの存在を必須としたい場合に disable と設定します。
+</para>
+<para>
+デフォルトは enable であり、CRLファイルが存在しなくても構いません。
+これは Apache httpd における ``SSLCARevocationCheck chain no_crl_for_cert_ok'' 設定と同様な動作となります。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	tls_allow_no_crl disable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>tls_key_update</token> <parameter moreinfo="none">有効性</parameter></term>
+<listitem>
+<para>
+TLS通信の traffic key 更新機能を抑制したい場合に disable と設定します。
+</para>
+<para>
+デフォルトは enable です。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	tls_key_update disable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>tls_build_chain_local</token> <parameter moreinfo="none">有効性</parameter></term>
+<listitem>
+<para>
+TLS通信で自身の証明書を提示する際に、
+自身で証明書チェインの構築を行なって通信相手に送る場合 enable と設定します。
+</para>
+<para>
+デフォルトは disable であり、通信相手が証明書チェインの構築を行ないます。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	tls_build_chain_local enable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>tls_proxy_certificate</token> <parameter moreinfo="none">有効性</parameter></term>
+<listitem>
+<para>
+TLS通信において、proxy 証明書の利用を禁止したい場合に disable と設定します。
+</para>
+<para>
+デフォルトは enable です。
+この場合、以下の順序でクライアント証明書を探します。
+  <orderedlist numeration="arabic">
+  <listitem>
+  <para>環境変数 $X509_USER_PROXY でファイル名を指定した proxy certificate</para>
+  </listitem>
+  <listitem>
+  <para>ファイル <filename moreinfo="none">/tmp/x509up_uユーザーID</filename> に置かれた proxy certificate</para>
+  </listitem>
+  <listitem>
+  <para><token>tls_certificate_file</token> / <token>tls_key_file</token> で指定されたファイルにある証明書・秘密鍵ペア</para>
+  </listitem>
+  </orderedlist>
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	tls_proxy_certificate disable
+</literallayout>
+</listitem>
+</varlistentry>
+
 </variablelist>
 </refsect1>
 
@@ -3163,7 +3426,19 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 	&lt;write_verify_statement&gt; |
 	&lt;write_verify_interval_statement&gt; |
 	&lt;write_verify_retry_interval_statement&gt; |
-	&lt;write_verify_log_interval_statement&gt;</literallayout></listitem>
+	&lt;write_verify_log_interval_statement&gt; |
+	&lt;tls_cipher_suite_statement&gt; |
+	&lt;tls_ca_certificate_path_statement&gt; |
+	&lt;tls_ca_revocation_path_statement&gt; |
+	&lt;tls_ca_peer_verify_chain_path_statement&gt; |
+	&lt;tls_certificate_file_statement&gt; |
+	&lt;tls_certificate_chain_file_statement&gt; |
+	&lt;tls_key_file_statement&gt; |
+<!--	&lt;tls_dn_type_statement&gt; | -->
+	&lt;tls_allow_no_crl_statement&gt; |
+	&lt;tls_key_update_statement&gt; |
+	&lt;tls_build_chain_local_statement&gt; |
+	&lt;tls_proxy_certificate_statement&gt; </literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
@@ -3408,7 +3683,7 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 
 <varlistentry>
 <term>&lt;auth_method&gt; ::=</term>
-<listitem><literallayout format="linespecific" class="normal">"gsi" | "gsi_auth" | "sharedsecret"</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"sharedsecret" | "tls_sharedsecret" | "tls_client_certificate" | "gsi_auth" | "gsi" | "kerberos_auth" | "kerberos"</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
@@ -4068,6 +4343,68 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 <varlistentry>
 <term>&lt;write_verify_log_interval_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"write_verify_log_interval" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;tls_cipher_suite_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"tls_cipher_suite" &lt;string&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;tls_ca_certificate_path_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"tls_ca_certificate_path" &lt;pathname&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;tls_ca_revocation_path_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"tls_ca_revocation_path" &lt;pathname&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;tls_ca_peer_verify_chain_path_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"tls_ca_peer_verify_chain_path" &lt;pathname&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;tls_certificate_file_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"tls_certificate_file" &lt;pathname&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;tls_certificate_chain_file_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"tls_certificate_chain_file" &lt;pathname&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;tls_key_file_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"tls_key_file" &lt;pathname&gt;</literallayout></listitem>
+</varlistentry>
+
+<!--
+<varlistentry>
+<term>&lt;tls_dn_type_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"tls_dn_type" &lt;dn_type&gt;</literallayout></listitem>
+</varlistentry>
+-->
+
+<varlistentry>
+<term>&lt;tls_allow_no_crl_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"tls_allow_no_crl" &lt;validity&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;tls_key_update_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"tls_key_update" &lt;validity&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;tls_build_chain_local_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"tls_build_chain_local" &lt;validity&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;tls_proxy_certificate_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"tls_proxy_certificate" &lt;validity&gt;</literallayout></listitem>
 </varlistentry>
 
 </variablelist>
