@@ -378,7 +378,7 @@ is_valid_prvkey_file_permission(int fd, const char *file)
 			}
 		} else {
 			if (errno != 0) {
-				gflog_tls_error(GFARM_MSG_UNFIXED,
+				gflog_tls_debug(GFARM_MSG_UNFIXED,
 					"Can't access %s: %s",
 					file, strerror(errno));
 				ret = gfarm_errno_to_error(errno);
@@ -518,7 +518,7 @@ tlslog_tls_message(int msg_no, int priority,
 			(tls_flags & ERR_TXT_STRING) != 0 ? ": " : "",
 			(tls_flags & ERR_TXT_STRING) != 0 ? tls_data : "");
 #endif
-		gflog_auth_message(msg_no, priority, file, line_no, func,
+		gflog_message(msg_no, priority, file, line_no, func,
 			"%s", msgbuf2);
 	}
 }
@@ -2685,7 +2685,7 @@ tls_session_io_continuable(int sslerr, struct tls_session_ctx_struct *ctx,
 		 */
 		ctx->last_gfarm_error_ = GFARM_ERR_TLS_RUNTIME_ERROR;
 		ctx->is_got_fatal_ssl_error_ = true;
-		gflog_tls_notice(GFARM_MSG_UNFIXED,
+		gflog_tls_error(GFARM_MSG_UNFIXED,
 		    "TLS error during %s", diag);
 		break;
 
