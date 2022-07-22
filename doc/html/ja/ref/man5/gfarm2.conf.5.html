@@ -2,7 +2,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfarm2.conf</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
 <a name="gfarm2.conf.5"></a><div class="titlepage"></div>
@@ -799,8 +799,15 @@ PostgreSQLサーバーが動作しているホスト名を指定します。
 <p>この文は、第3引数で指定したホストとの通信に用いる認証方法を設定します。</p>
 <p>第1引数の<em class="parameter"><code>有効性</code></em>部には、<span class="token">enable</span>ないし<span class="token">disable</span>
 キーワードを指定します。
-第2引数の<em class="parameter"><code>認証方法</code></em>部には、<span class="token">gsi</span>、
-<span class="token">gsi_auth</span>ないし<span class="token">sharedsecret</span>
+第2引数の<em class="parameter"><code>認証方法</code></em>部には、
+<span class="token">sharedsecret</span>、
+<span class="token">tls_sharedsecret</span>、
+<span class="token">tls_client_certificate</span>、
+<span class="token">gsi_auth</span>、
+<span class="token">gsi</span>、
+<span class="token">kerberos_auth</span>
+ないし
+<span class="token">kerberos</span>
 キーワードを指定します。
 第3引数には、<em class="parameter"><code>ホスト指定</code></em>を記述します。</p>
 <p>この文は複数指定可能です。各認証方法ごとに、先頭から順にホスト指定に
@@ -811,8 +818,15 @@ PostgreSQLサーバーが動作しているホスト名を指定します。
 <p>この指定は、サーバー側とクライアント側の両方で解釈され、
 双方ともで有効になっている認証方法のみが用いられます。</p>
 <p>認証方法が異なるものに関しては、指定の順序は意味がありません。
-複数の認証方法が候補となった場合、<span class="token">sharedsecret</span>、
-<span class="token">gsi_auth</span>、<span class="token">gsi</span>認証の順序で試みます。</p>
+複数の認証方法が候補となった場合、
+<span class="token">sharedsecret</span>、
+<span class="token">tls_sharedsecret</span>、
+<span class="token">tls_client_certificate</span>、
+<span class="token">gsi_auth</span>、
+<span class="token">gsi</span>
+<span class="token">kerberos_auth</span>、
+<span class="token">kerberos</span> 認証
+の順序で試みます。</p>
 <p>Gfarmのコンパイル時にglobusとのリンクを指定しなかった場合、
 GSIは利用できません。この場合、<span class="token">gsi</span>および
 <span class="token">gsi_auth</span>認証の指定は単に無視されます。</p>
@@ -2361,6 +2375,176 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 	rdma_mr_reg_static_max_size 16777216<br>
 </p></div>
 </dd>
+<dt><span class="term"><span class="token">tls_cipher_suite</span> <em class="parameter"><code>暗号スイート</code></em></span></dt>
+<dd>
+<p>
+TLS認証で利用する暗号スイートをコロンで区切って指定します。
+指定可能な値は
+<a class="ulink" href="https://www.openssl.org/docs/man1.1.1/man3/SSL_set_ciphersuites.html" target="_top">https://www.openssl.org/docs/man1.1.1/man3/SSL_set_ciphersuites.html</a>
+を参照してください。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	tls_cipher_suite "TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256"<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">tls_ca_certificate_path</span> <em class="parameter"><code>ディレクトリ</code></em></span></dt>
+<dd>
+<p>
+TLS認証で利用する認証局のCA証明書を置くディレクトリを指定します。
+このディレクトリへの証明書ファイルの設置方法は、以下の文書の <span class="token">CApath</span> の項を参照してください。
+<a class="ulink" href="https://www.openssl.org/docs/man1.1.1/man3/SSL_CTX_load_verify_locations.html" target="_top">https://www.openssl.org/docs/man1.1.1/man3/SSL_CTX_load_verify_locations.html</a>
+</p>
+<p>
+デフォルト値は <code class="filename">/etc/pki/tls/certs/gfarm</code> です。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	tls_ca_certificate_path /etc/pki/tls/certs/gfarm<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">tls_ca_revocation_path</span> <em class="parameter"><code>ディレクトリ</code></em></span></dt>
+<dd>
+<p>
+TLS認証で利用する認証局から提供されたCRLを置くディレクトリを指定します。
+</p>
+<p>
+デフォルト値は <code class="filename">/etc/pki/tls/certs/gfarm</code> です。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	tls_ca_revocation_path /etc/pki/tls/certs/gfarm<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">tls_ca_peer_verify_chain_path</span> <em class="parameter"><code>ディレクトリ</code></em></span></dt>
+<dd>
+<p>
+TLS認証で、通信相手の提示する証明書に署名する中間証明書を限定したい場合に設定します。
+この設定がある場合、このディレクトリに置かれた以外の中間証明書は受け入れません。
+</p>
+<p>
+デフォルトは未設定です。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	tls_ca_peer_verify_chain_path /etc/pki/tls/certs/gfarm.chain<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">tls_certificate_file</span> <em class="parameter"><code>ファイル名</code></em></span></dt>
+<dd>
+<p>
+TLS認証で自分自身を表す証明書のファイル名を指定します。
+</p>
+<p>
+環境変数 X509_USER_CERT が設定されている場合は、それがこのディレクティブよりも優先されます。
+</p>
+<p>
+さもなくば、クライアントの場合 ``<code class="filename">$HOME/.gfarm/usercert.pem</code>''、
+gfmd の場合 ``<code class="filename">/etc/pki/tls/certs/gfmd.crt</code>''、
+gfsd の場合 ``<code class="filename">/etc/pki/tls/certs/gfsd.crt</code>''
+がデフォルト値となります。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	tls_certificate_file /etc/pki/tls/certs/myself.crt<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">tls_certificate_chain_file</span> <em class="parameter"><code>ファイル名</code></em></span></dt>
+<dd>
+<p>
+TLS認証で自身の証明書に署名した中間認証局の証明書を置くファイル名を指定します。
+なお、中間証明書は必ずしも別ファイルに分離する必要はなく、
+<span class="token">tls_certificate_file</span> で指定したファイルにまとめて記述することも可能です。
+</p>
+<p>
+デフォルトは未設定です。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	tls_certificate_chain_file /etc/pki/tls/certs/myself_intermediate.crt<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">tls_key_file</span> <em class="parameter"><code>ファイル名</code></em></span></dt>
+<dd>
+<p>
+TLS認証で自身が利用する証明書に対応する秘密鍵のファイル名を指定します。
+</p>
+<p>
+環境変数 X509_USER_KEY が設定されている場合は、それがこのディレクティブよりも優先されます。
+</p>
+<p>
+さもなくば、クライアントの場合 ``<code class="filename">$HOME/.gfarm/userkey.pem</code>''、
+gfmd の場合 ``<code class="filename">/etc/pki/tls/private/gfmd.key</code>''、
+gfsd の場合 ``<code class="filename">/etc/pki/tls/private/gfsd.key</code>''
+がデフォルト値となります。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	tls_certificate_key /etc/pki/tls/certs/myself.key<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">tls_allow_no_crl</span> <em class="parameter"><code>有効性</code></em></span></dt>
+<dd>
+<p>
+TLS通信において、ルート証明書に対応するCRLファイルの存在を必須としたい場合に disable と設定します。
+</p>
+<p>
+デフォルトは enable であり、CRLファイルが存在しなくても構いません。
+これは Apache httpd における ``SSLCARevocationCheck chain no_crl_for_cert_ok'' 設定と同様な動作となります。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	tls_allow_no_crl disable<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">tls_key_update</span> <em class="parameter"><code>有効性</code></em></span></dt>
+<dd>
+<p>
+TLS通信の traffic key 更新機能を抑制したい場合に disable と設定します。
+</p>
+<p>
+デフォルトは enable です。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	tls_key_update disable<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">tls_build_chain_local</span> <em class="parameter"><code>有効性</code></em></span></dt>
+<dd>
+<p>
+TLS通信で自身の証明書を提示する際に、
+自身で証明書チェインの構築を行なって通信相手に送る場合 enable と設定します。
+</p>
+<p>
+デフォルトは disable であり、通信相手が証明書チェインの構築を行ないます。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	tls_build_chain_local enable<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">tls_proxy_certificate</span> <em class="parameter"><code>有効性</code></em></span></dt>
+<dd>
+<p>
+TLS通信において、proxy 証明書の利用を禁止したい場合に disable と設定します。
+</p>
+<p>
+デフォルトは enable です。
+この場合、以下の順序でクライアント証明書を探します。
+  </p>
+<div class="orderedlist"><ol class="orderedlist" type="1">
+<li class="listitem"><p>環境変数 $X509_USER_PROXY でファイル名を指定した proxy certificate</p></li>
+<li class="listitem"><p>ファイル <code class="filename">/tmp/x509up_uユーザーID</code> に置かれた proxy certificate</p></li>
+<li class="listitem"><p><span class="token">tls_certificate_file</span> / <span class="token">tls_key_file</span> で指定されたファイルにある証明書・秘密鍵ペア</p></li>
+</ol></div>
+<p>
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	tls_proxy_certificate disable<br>
+</p></div>
+</dd>
 </dl></div>
 </div>
 <div class="refsect1">
@@ -2510,7 +2694,19 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 	&lt;write_verify_statement&gt; |<br>
 	&lt;write_verify_interval_statement&gt; |<br>
 	&lt;write_verify_retry_interval_statement&gt; |<br>
-	&lt;write_verify_log_interval_statement&gt;</p></div></dd>
+	&lt;write_verify_log_interval_statement&gt; |<br>
+	&lt;tls_cipher_suite_statement&gt; |<br>
+	&lt;tls_ca_certificate_path_statement&gt; |<br>
+	&lt;tls_ca_revocation_path_statement&gt; |<br>
+	&lt;tls_ca_peer_verify_chain_path_statement&gt; |<br>
+	&lt;tls_certificate_file_statement&gt; |<br>
+	&lt;tls_certificate_chain_file_statement&gt; |<br>
+	&lt;tls_key_file_statement&gt; |<br>
+<br>
+	&lt;tls_allow_no_crl_statement&gt; |<br>
+	&lt;tls_key_update_statement&gt; |<br>
+	&lt;tls_build_chain_local_statement&gt; |<br>
+	&lt;tls_proxy_certificate_statement&gt; </p></div></dd>
 <dt><span class="term">&lt;include_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"include" &lt;pathname&gt;</p></div></dd>
 <dt><span class="term">&lt;include_nesting_limit_statement&gt; ::=</span></dt>
@@ -2608,7 +2804,7 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 <dt><span class="term">&lt;auth_command&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"enable" | "disable"</p></div></dd>
 <dt><span class="term">&lt;auth_method&gt; ::=</span></dt>
-<dd><div class="literallayout"><p>"gsi" | "gsi_auth" | "sharedsecret"</p></div></dd>
+<dd><div class="literallayout"><p>"sharedsecret" | "tls_sharedsecret" | "tls_client_certificate" | "gsi_auth" | "gsi" | "kerberos_auth" | "kerberos"</p></div></dd>
 <dt><span class="term">&lt;shared_key_file_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"shared_key_file" &lt;pathname&gt;</p></div></dd>
 <dt><span class="term">&lt;digest_statement&gt; ::=</span></dt>
@@ -2845,6 +3041,28 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 <dd><div class="literallayout"><p>"write_verify_retry_interval" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;write_verify_log_interval_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"write_verify_log_interval" &lt;number&gt;</p></div></dd>
+<dt><span class="term">&lt;tls_cipher_suite_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"tls_cipher_suite" &lt;string&gt;</p></div></dd>
+<dt><span class="term">&lt;tls_ca_certificate_path_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"tls_ca_certificate_path" &lt;pathname&gt;</p></div></dd>
+<dt><span class="term">&lt;tls_ca_revocation_path_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"tls_ca_revocation_path" &lt;pathname&gt;</p></div></dd>
+<dt><span class="term">&lt;tls_ca_peer_verify_chain_path_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"tls_ca_peer_verify_chain_path" &lt;pathname&gt;</p></div></dd>
+<dt><span class="term">&lt;tls_certificate_file_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"tls_certificate_file" &lt;pathname&gt;</p></div></dd>
+<dt><span class="term">&lt;tls_certificate_chain_file_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"tls_certificate_chain_file" &lt;pathname&gt;</p></div></dd>
+<dt><span class="term">&lt;tls_key_file_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"tls_key_file" &lt;pathname&gt;</p></div></dd>
+<dt><span class="term">&lt;tls_allow_no_crl_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"tls_allow_no_crl" &lt;validity&gt;</p></div></dd>
+<dt><span class="term">&lt;tls_key_update_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"tls_key_update" &lt;validity&gt;</p></div></dd>
+<dt><span class="term">&lt;tls_build_chain_local_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"tls_build_chain_local" &lt;validity&gt;</p></div></dd>
+<dt><span class="term">&lt;tls_proxy_certificate_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"tls_proxy_certificate" &lt;validity&gt;</p></div></dd>
 </dl></div>
 </div>
 <div class="refsect1">
