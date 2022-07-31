@@ -72,36 +72,6 @@ abstract_host_init(struct abstract_host *h, struct abstract_host_ops *ops,
 	gfarm_mutex_init(&h->mutex, diag, ABSTRACT_HOST_MUTEX_DIAG);
 }
 
-int
-abstract_host_get_protocol_version(struct abstract_host *h)
-{
-	return (h->protocol_version);
-}
-
-void
-abstract_host_invalidate(struct abstract_host *h)
-{
-	h->invalid = 1;
-}
-
-void
-abstract_host_validate(struct abstract_host *h)
-{
-	h->invalid = 0;
-}
-
-int
-abstract_host_is_invalid_unlocked(struct abstract_host *h)
-{
-	return (h->invalid != 0);
-}
-
-int
-abstract_host_is_valid_unlocked(struct abstract_host *h)
-{
-	return (h->invalid == 0);
-}
-
 void
 abstract_host_mutex_lock(struct abstract_host *h, const char *diag)
 {
@@ -112,6 +82,61 @@ void
 abstract_host_mutex_unlock(struct abstract_host *h, const char *diag)
 {
 	gfarm_mutex_unlock(&h->mutex, diag, ABSTRACT_HOST_MUTEX_DIAG);
+}
+
+int
+abstract_host_get_protocol_version(struct abstract_host *h)
+{
+	int ver;
+	static const char diag[] = "abstract_host_get_protocol_version";
+
+	abstract_host_mutex_lock(h, diag);
+	ver = h->protocol_version;
+	abstract_host_mutex_unlock(h, diag);
+	return (ver);
+}
+
+void
+abstract_host_invalidate(struct abstract_host *h)
+{
+	static const char diag[] = "abstract_host_invalidate";
+
+	abstract_host_mutex_lock(h, diag);
+	h->invalid = 1;
+	abstract_host_mutex_unlock(h, diag);
+}
+
+void
+abstract_host_validate(struct abstract_host *h)
+{
+	static const char diag[] = "abstract_host_validate";
+
+	abstract_host_mutex_lock(h, diag);
+	h->invalid = 0;
+	abstract_host_mutex_unlock(h, diag);
+}
+
+static int
+abstract_host_is_invalid_unlocked(struct abstract_host *h)
+{
+	return (h->invalid != 0);
+}
+
+int
+abstract_host_is_invalid(struct abstract_host *h, const char *diag)
+{
+	int invalid;
+
+	abstract_host_mutex_lock(h, diag);
+	invalid = abstract_host_is_invalid_unlocked(h);
+	abstract_host_mutex_unlock(h, diag);
+	return (invalid);
+}
+
+static int
+abstract_host_is_valid_unlocked(struct abstract_host *h)
+{
+	return (h->invalid == 0);
 }
 
 int
