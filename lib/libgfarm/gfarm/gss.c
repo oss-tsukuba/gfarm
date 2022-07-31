@@ -93,7 +93,7 @@ libgfsl_gsi_initialize(void)
 struct gfarm_gss *
 gfarm_gss_gsi(void)
 {
-	static pthread_once_t initialized;
+	static pthread_once_t initialized = PTHREAD_ONCE_INIT;
 
 	pthread_once(&initialized, libgfsl_gsi_initialize);
 	return (libgfsl_gsi);
@@ -115,7 +115,7 @@ libgfsl_kerberos_initialize(void)
 struct gfarm_gss *
 gfarm_gss_kerberos(void)
 {
-	static pthread_once_t initialized;
+	static pthread_once_t initialized = PTHREAD_ONCE_INIT;
 
 	pthread_once(&initialized, libgfsl_kerberos_initialize);
 	return (libgfsl_kerberos);
