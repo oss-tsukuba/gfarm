@@ -327,19 +327,35 @@ mdhost_set_is_self(struct mdhost *m, int enable)
 struct mdcluster *
 mdhost_get_cluster(struct mdhost *m)
 {
-	return (m->cluster);
+	struct mdcluster *c;
+	static const char diag[] = "mdhost_set_is_self";
+
+	mdhost_mutex_lock(m, diag);
+	c = m->cluster;
+	mdhost_mutex_unlock(m, diag);
+	return (c);
 }
 
 void
 mdhost_set_cluster(struct mdhost *m, struct mdcluster *c)
 {
+	static const char diag[] = "mdhost_set_cluster";
+
+	mdhost_mutex_lock(m, diag);
 	m->cluster = c;
+	mdhost_mutex_unlock(m, diag);
 }
 
 const char *
 mdhost_get_cluster_name(struct mdhost *m)
 {
-	return (m->ms.clustername);
+	char *n;
+	static const char diag[] = "mdhost_set_cluster";
+
+	mdhost_mutex_lock(m, diag);
+	n = m->ms.clustername;
+	mdhost_mutex_unlock(m, diag);
+	return (n);
 }
 
 static enum mdhost_seqnum_state
@@ -1199,9 +1215,6 @@ gfm_server_metadb_server_get_all(struct peer *peer, int from_client, int skip)
 
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
-#ifdef DEBUG_CLUSTER
-	mdcluster_foreach(mdcluster_dump, NULL);
-#endif
 	return (metadb_server_get(peer, match_all, NULL, diag));
 }
 
