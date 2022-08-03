@@ -64,7 +64,7 @@ void mdhost_put_peer(struct mdhost *, struct peer *);
 int mdhost_has_async_replication_target(void);
 int mdhost_is_master(struct mdhost *);
 void mdhost_set_is_master(struct mdhost *, int);
-struct mdcluster *mdhost_get_cluster(struct mdhost *);
+struct mdcluster *mdhost_get_cluster_unlocked(struct mdhost *);
 void mdhost_set_cluster(struct mdhost *, struct mdcluster *);
 const char *mdhost_get_cluster_name(struct mdhost *);
 void mdhost_activate(struct mdhost *);
@@ -78,5 +78,4 @@ gfarm_error_t mdhost_modify_in_cache(struct mdhost *,
 gfarm_error_t mdhost_remove_in_cache(const char *);
 struct mdhost *mdhost_lookup_master(void);
 struct mdhost *mdhost_lookup_metadb_server(struct gfarm_metadb_server *);
-int mdhost_get_count(void);
 int mdhost_self_is_master_candidate(void);
