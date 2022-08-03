@@ -160,7 +160,13 @@ mdhost_master_mutex_unlock(const char *diag)
 const char *
 mdhost_get_name(struct mdhost *m)
 {
-	return (gfarm_metadb_server_get_name(&m->ms));
+	const char *name;
+	static const char diag[] = "mdhost_get_name";
+
+	mdhost_mutex_lock(m, diag);
+	name = gfarm_metadb_server_get_name(&m->ms);
+	mdhost_mutex_unlock(m, diag);
+	return (name);
 }
 
 int
@@ -227,7 +233,13 @@ mdhost_name0(struct abstract_host *h)
 int
 mdhost_get_port(struct mdhost *m)
 {
-	return (gfarm_metadb_server_get_port(&m->ms));
+	int port;
+	static const char diag[] = "mdhost_get_port";
+
+	mdhost_mutex_lock(m, diag);
+	port = gfarm_metadb_server_get_port(&m->ms);
+	mdhost_mutex_unlock(m, diag);
+	return (port);
 }
 
 static int
@@ -328,7 +340,7 @@ struct mdcluster *
 mdhost_get_cluster(struct mdhost *m)
 {
 	struct mdcluster *c;
-	static const char diag[] = "mdhost_set_is_self";
+	static const char diag[] = "mdhost_get_cluster";
 
 	mdhost_mutex_lock(m, diag);
 	c = m->cluster;
@@ -346,11 +358,25 @@ mdhost_set_cluster(struct mdhost *m, struct mdcluster *c)
 	mdhost_mutex_unlock(m, diag);
 }
 
+static int
+mdhost_eq_cluster(struct mdhost *m1, struct mdhost *m2)
+{
+	int r;
+	static const char diag[] = "mdhost_eq_cluster";
+
+	mdhost_mutex_lock(m1, diag);
+	mdhost_mutex_lock(m2, diag);
+	r = m1->cluster == m2->cluster;
+	mdhost_mutex_unlock(m2, diag);
+	mdhost_mutex_unlock(m1, diag);
+	return (r);
+}
+
 const char *
 mdhost_get_cluster_name(struct mdhost *m)
 {
 	char *n;
-	static const char diag[] = "mdhost_set_cluster";
+	static const char diag[] = "mdhost_get_cluster_name";
 
 	mdhost_mutex_lock(m, diag);
 	n = m->ms.clustername;
@@ -450,8 +476,14 @@ mdhost_invalidate(struct mdhost *m)
 int
 mdhost_self_is_master_candidate(void)
 {
-	return (gfarm_metadb_server_is_master_candidate(
-		&mdhost_lookup_self()->ms));
+	struct mdhost *m = mdhost_lookup_self();
+	int c;
+	static const char diag[] = "mdhost_self_is_master_candidate";
+
+	mdhost_mutex_lock(m, diag);
+	c = gfarm_metadb_server_is_master_candidate(&m->ms);
+	mdhost_mutex_unlock(m, diag);
+	return (c);
 }
 
 static void
@@ -792,13 +824,19 @@ mdhost_is_sync_replication(struct mdhost *mh)
 	if (mmh == NULL)
 		gflog_fatal(GFARM_MSG_1004734, "no master, abort");
 	assert(mh != mmh);
-	return (mh->cluster == mmh->cluster);
+	return (mdhost_eq_cluster(mh, mmh));
 }
 
 int
 mdhost_get_flags(struct mdhost *mh)
 {
-	return (mh->ms.flags);
+	int flags;
+	static const char diag[] = "mdhost_get_flags";
+
+	mdhost_mutex_lock(mh, diag);
+	flags = mh->ms.flags;
+	mdhost_mutex_unlock(mh, diag);
+	return (flags);
 }
 
 int
@@ -816,7 +854,7 @@ mdhost_has_async_replication_target(void)
 	FOREACH_MDHOST(it) {
 		mh = mdhost_iterator_access(&it);
 		if (mdhost_is_valid(mh) && mh != mmh &&
-		    mh->cluster != mmh->cluster) {
+		    !mdhost_eq_cluster(mh, mmh)) {
 			ret = 1;
 			break;
 		}
@@ -844,14 +882,11 @@ mdhost_update_replication_type(struct mdhost *mh,
 	gfarm_error_t e = GFARM_ERR_NO_ERROR, e2;
 	struct mdhost **to_sync_array = NULL;
 	struct mdhost **to_async_array = NULL;
-	int array_len;
-	int to_sync_len = 0;
-	int to_async_len = 0;
+	int array_len, to_sync_len = 0, to_async_len = 0;
 	struct gfarm_hash_iterator it;
 	struct mdhost *m;
-	int was_sync;
-	int is_sync;
-	int i;
+	int was_sync, is_sync, i;
+	const char *clustername;
 	static const char diag[] = "mdhost_update_replication_type";
 
 	if (mdhost_switch_to_sync_hook == NULL &&
@@ -891,10 +926,9 @@ mdhost_update_replication_type(struct mdhost *mh,
 			m = mdhost_iterator_access(&it);
 			if (!mdhost_is_valid(m) || m == mh)
 				continue;
-			was_sync = (strcmp(m->ms.clustername,
-				old_clustername) == 0);
-			is_sync  = (strcmp(m->ms.clustername,
-				new_clustername) == 0);
+			clustername = mdhost_get_cluster_name(m);
+			was_sync = (strcmp(clustername, old_clustername) == 0);
+			is_sync = (strcmp(clustername, new_clustername) == 0);
 			if (!was_sync && is_sync)
 				to_sync_array[to_sync_len++] = m;
 			else if (was_sync && !is_sync)
@@ -1035,11 +1069,18 @@ mdhost_remove_in_cache(const char *name)
 static gfarm_error_t
 metadb_server_reply(struct peer *peer, struct mdhost *m)
 {
-	struct gfarm_metadb_server *ms, tms;
+	struct gfarm_metadb_server tms;
 	struct gfp_xdr *xdr = peer_get_conn(peer);
+	gfarm_error_t e;
+	static const char diag[] = "metadb_server_reply";
 
-	ms = &m->ms;
-	tms.tflags = ms->tflags;
+	mdhost_mutex_lock(m, diag);
+	tms = m->ms;
+	tms.name = strdup(m->ms.name);
+	if (m->ms.clustername)
+		tms.clustername = strdup(m->ms.clustername);
+	mdhost_mutex_unlock(m, diag);
+	/* XXX - if tms.name == NULL, return GFARM_ERR_NO_MEMORY */
 	if (!mdhost_is_master(m) && mdhost_is_sync_replication(m))
 		gfarm_metadb_server_set_is_sync_replication(&tms, 1);
 	if (mdhost_is_up(m))
@@ -1063,9 +1104,11 @@ metadb_server_reply(struct peer *peer, struct mdhost *m)
 		break;
 	}
 
-	return (gfp_xdr_send(xdr, "sisii",
-	    ms->name, ms->port, ms->clustername ? ms->clustername : "",
-	    ms->flags, tms.tflags));
+	e = gfp_xdr_send(xdr, "sisii", tms.name, tms.port,
+		tms.clustername ? tms.clustername : "", tms.flags, tms.tflags);
+	free(tms.name);
+	free(tms.clustername);
+	return (e);
 }
 
 int
