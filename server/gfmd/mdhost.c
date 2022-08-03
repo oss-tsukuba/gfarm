@@ -111,7 +111,7 @@ mdhost_set_switch_to_async_hook(mdhost_modify_hook_t hook)
 
 /**********************************************************************/
 
-/* locking order: maseter -> others */
+/* locking order: giant_lock -> table_rwlock -> maseter -> others */
 static void
 mdhost_mutex_lock(struct mdhost *m, const char *diag)
 {
