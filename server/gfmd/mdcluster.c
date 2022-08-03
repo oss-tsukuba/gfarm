@@ -247,11 +247,12 @@ mdcluster_get_or_create_by_mdhost(struct mdhost *h)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+/* mdhost_mutex_lock is assumed */
 void
 mdcluster_remove_mdhost(struct mdhost *h)
 {
 	struct mdhost_elem *he, *tmp;
-	struct mdcluster *c = mdhost_get_cluster(h);
+	struct mdcluster *c = mdhost_get_cluster_unlocked(h);
 	static const char diag[] = "mdcluster_remove_mdhost";
 
 	mdcluster_mutex_lock(c, diag);
