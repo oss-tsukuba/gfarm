@@ -734,8 +734,10 @@ gfarm_paraccess_connect_request(void *closure)
 	struct gfarm_access *a = closure;
 	gfarm_error_t e;
 	struct gfs_client_connect_state *cs;
-	struct gfarm_filesystem *fs =
-	    gfarm_filesystem_get_by_connection(gfm_server);
+	struct gfarm_filesystem *fs = gfm_server ?
+	    gfarm_filesystem_get_by_connection(gfm_server) : NULL;
+	const char *user = gfm_server ?
+	    gfm_client_username(gfm_server) : gfarm_get_local_username();
 
 	e = gfs_client_get_load_result_multiplexed(a->protocol_state,
 	    &a->load);
@@ -744,7 +746,7 @@ gfarm_paraccess_connect_request(void *closure)
 		return;
 	}
 	e = gfs_client_connect_request_multiplexed(a->pa->q,
-	    a->canonical_hostname, a->port, gfm_client_username(gfm_server),
+	    a->canonical_hostname, a->port, user,
 	    &a->peer_addr, fs, gfarm_ctxp->schedule_rpc_timeout,
 	    gfarm_paraccess_connect_finish, a, &cs);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -1520,6 +1522,12 @@ main(int argc, char **argv)
 		e_save = register_db();
 		break;
 	case OP_LIST_GFSD_INFO:
+		if (opt_port == 0) {
+			fprintf(stderr, "%s: option -p <port> is "
+			    "mandatory with -%c\n", program_name,
+			    OP_LIST_GFSD_INFO);
+			usage();
+		}
 		e_save = paraccess_list(opt_concurrency, opt_udp_only,
 		    opt_architecture, opt_domainname, opt_port,
 		    opt_plain_order, opt_sort_by_loadavg,
