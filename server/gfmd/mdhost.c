@@ -111,7 +111,10 @@ mdhost_set_switch_to_async_hook(mdhost_modify_hook_t hook)
 
 /**********************************************************************/
 
-/* locking order: giant_lock -> table_rwlock -> maseter -> others */
+/*
+ * locking order: giant_lock -> table_rwlock -> mdhost (master)
+ * -> mdhost (others) -> abstract_host
+ */
 static void
 mdhost_mutex_lock(struct mdhost *m, const char *diag)
 {
@@ -234,7 +237,13 @@ mdhost_downcast_to_mdhost(struct abstract_host *h)
 static const char *
 mdhost_name0(struct abstract_host *h)
 {
-	return (mdhost_get_name(abstract_host_to_mdhost(h)));
+	return (mdhost_get_name_unlocked(abstract_host_to_mdhost(h)));
+}
+
+static int
+mdhost_get_port_unlocked(struct mdhost *m)
+{
+	return (gfarm_metadb_server_get_port(&m->ms));
 }
 
 int
@@ -244,7 +253,7 @@ mdhost_get_port(struct mdhost *m)
 	static const char diag[] = "mdhost_get_port";
 
 	mdhost_mutex_lock(m, diag);
-	port = gfarm_metadb_server_get_port(&m->ms);
+	port = mdhost_get_port_unlocked(m);
 	mdhost_mutex_unlock(m, diag);
 	return (port);
 }
@@ -252,7 +261,7 @@ mdhost_get_port(struct mdhost *m)
 static int
 mdhost_port0(struct abstract_host *h)
 {
-	return (mdhost_get_port(abstract_host_to_mdhost(h)));
+	return (mdhost_get_port_unlocked(abstract_host_to_mdhost(h)));
 }
 
 int
@@ -506,6 +515,7 @@ mdhost_set_peer_locked(struct abstract_host *h, struct peer *peer)
 {
 }
 
+/* this function assumed to be called without abstract_host lock */
 static void
 mdhost_set_peer_unlocked(struct abstract_host *h, struct peer *peer)
 {
@@ -567,6 +577,7 @@ mdhost_disabled(struct abstract_host *h, struct peer *peer)
 {
 }
 
+/* do not lock mdhost_mutex */
 struct abstract_host_ops mdhost_ops = {
 	mdhost_downcast_to_host,
 	mdhost_downcast_to_mdhost,
