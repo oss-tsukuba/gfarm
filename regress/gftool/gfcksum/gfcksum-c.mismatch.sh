@@ -8,7 +8,7 @@ set)	;;
 esac
 
 # may have been moved to lost+found
-gftest -f $GFARM_TEST_CKSUM_MISMATCH ||
+gfstat -r $GFARM_TEST_CKSUM_MISMATCH ||
 	exit $exit_unsupported
 
 if ( gfcksum -c $GFARM_TEST_CKSUM_MISMATCH >/dev/null ) 2>&1 |
