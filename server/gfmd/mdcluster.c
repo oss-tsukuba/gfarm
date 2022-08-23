@@ -212,13 +212,14 @@ mdcluster_enter(const char *name, struct mdcluster **cpp)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+/* mdhost_mutex_lock is assumed */
 gfarm_error_t
 mdcluster_get_or_create_by_mdhost(struct mdhost *h)
 {
 	gfarm_error_t e;
 	struct mdhost_elem *he;
 	struct mdcluster *c;
-	const char *cname = mdhost_get_cluster_name(h);
+	const char *cname = mdhost_get_cluster_name_unlocked(h);
 	static const char diag[] = "mdcluster_get_or_create_by_mdhost";
 
 	c = mdcluster_lookup(cname, diag);
@@ -226,17 +227,17 @@ mdcluster_get_or_create_by_mdhost(struct mdhost *h)
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1003015,
 		    "failed to create mdcluster for mdhost %s : %s",
-		    mdhost_get_name(h), gfarm_error_string(e));
+		    mdhost_get_name_unlocked(h), gfarm_error_string(e));
 		return (e);
 	}
-	mdhost_set_cluster(h, c);
+	mdhost_set_cluster_unlocked(h, c);
 
 	GFARM_MALLOC(he);
 	if (he == NULL) {
 		mdcluster_mutex_unlock(c, diag);
 		gflog_error(GFARM_MSG_1003016,
 		    "failed to create mdcluster for mdhost %s : %s",
-		    mdhost_get_name(h),
+		    mdhost_get_name_unlocked(h),
 		    gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
 	}
