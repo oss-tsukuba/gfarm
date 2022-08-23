@@ -113,7 +113,7 @@ mdhost_set_switch_to_async_hook(mdhost_modify_hook_t hook)
 
 /*
  * locking order: giant_lock -> table_rwlock -> mdhost (master)
- * -> mdhost (others) -> abstract_host
+ * -> mdhost (others) -> {abstract_host, mdcluster}
  */
 static void
 mdhost_mutex_lock(struct mdhost *m, const char *diag)
@@ -161,7 +161,7 @@ mdhost_master_mutex_unlock(const char *diag)
 		MDHOST_MASTER_MUTEX_DIAG);
 }
 
-static const char *
+const char *
 mdhost_get_name_unlocked(struct mdhost *m)
 {
 	return (gfarm_metadb_server_get_name(&m->ms));
@@ -358,7 +358,7 @@ mdhost_get_cluster_unlocked(struct mdhost *m)
 	return (m->cluster);
 }
 
-struct mdcluster *
+static struct mdcluster *
 mdhost_get_cluster(struct mdhost *m)
 {
 	struct mdcluster *c;
@@ -371,13 +371,9 @@ mdhost_get_cluster(struct mdhost *m)
 }
 
 void
-mdhost_set_cluster(struct mdhost *m, struct mdcluster *c)
+mdhost_set_cluster_unlocked(struct mdhost *m, struct mdcluster *c)
 {
-	static const char diag[] = "mdhost_set_cluster";
-
-	mdhost_mutex_lock(m, diag);
 	m->cluster = c;
-	mdhost_mutex_unlock(m, diag);
 }
 
 static int
@@ -391,13 +387,19 @@ mdhost_eq_cluster(struct mdhost *m1, struct mdhost *m2)
 }
 
 const char *
+mdhost_get_cluster_name_unlocked(struct mdhost *m)
+{
+	return (m->ms.clustername);
+}
+
+const char *
 mdhost_get_cluster_name(struct mdhost *m)
 {
-	char *n;
+	const char *n;
 	static const char diag[] = "mdhost_get_cluster_name";
 
 	mdhost_mutex_lock(m, diag);
-	n = m->ms.clustername;
+	n = mdhost_get_cluster_name_unlocked(m);
 	mdhost_mutex_unlock(m, diag);
 	return (n);
 }
@@ -1072,17 +1074,18 @@ mdhost_modify_in_cache_internal(
 	mh->ms.clustername = new_clustername;
 	mh->ms.port = ms->port;
 	mh->ms.flags = ms->flags;
-	mdhost_mutex_unlock(mh, diag);
 
 	if (cluster_changed) {
 		e = mdcluster_get_or_create_by_mdhost(mh);
+		mdhost_mutex_unlock(mh, diag);
 		if (e != GFARM_ERR_NO_ERROR)
 			goto end;
 		if (mdhost_self_is_master()) {
 			e = mdhost_update_replication_type(mh, old_clustername,
 			    new_clustername);
 		}
-	}
+	} else
+		mdhost_mutex_unlock(mh, diag);
 end:
 	free(old_clustername);
 	return (e);
