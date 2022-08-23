@@ -53,7 +53,6 @@
 #include "host.h"
 #include "fsngroup.h"
 #include "mdhost.h"
-#include "mdcluster.h"
 #include "user.h"
 #include "group.h"
 #include "peer.h"
