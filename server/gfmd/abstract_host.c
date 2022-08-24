@@ -624,10 +624,10 @@ async_channel_protocol_switch(struct abstract_host *host, struct peer *peer,
 		    back_channel_type_name(peer),
 		    (int)request, (int)xid, (int)size);
 		gflog_info(GFARM_MSG_1005148, "last request: %d",
-		    (int)ps->last_request);
+		    (int)ps->last_async_request);
 		e = gfp_xdr_purge(client, 0, size);
 	}
-	ps->last_request = request;
+	ps->last_async_request = request;
 	return (e);
 }
 

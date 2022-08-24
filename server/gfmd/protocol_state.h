@@ -39,5 +39,7 @@ struct protocol_state {
 	 */
 	struct compound_state cs;
 
-	gfarm_int32_t last_request; /* just for error reporting */
+	/* just for error reporting */
+	gfarm_int32_t last_sync_request;
+	gfarm_int32_t last_async_request;
 };
