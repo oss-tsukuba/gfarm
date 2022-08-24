@@ -8,6 +8,11 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
+#include <errno.h>
+#include <poll.h>
+#ifndef INFTIM
+#define INFTIM -1
+#endif
 #include <time.h>
 #include <sys/time.h>
 
@@ -642,6 +647,23 @@ async_channel_service(struct abstract_host *host,
 	gfp_xdr_xid_t xid;
 	size_t size;
 	gfarm_int32_t rv;
+
+	/* avoid sleeping while holding session lock for TLS and GFSL */
+	if (!gfp_xdr_recv_is_ready(conn)) {
+		int avail;
+		struct pollfd fds[1];
+
+		fds[0].fd = gfp_xdr_fd(conn);
+		fds[0].events = POLLIN;
+		avail = poll(fds, 1, INFTIM);
+		if (avail == -1) {
+			int save_errno = errno;
+
+			gflog_debug_errno(GFARM_MSG_UNFIXED,
+			    "async_channel_service:poll()");
+			return (gfarm_errno_to_error(save_errno));
+		}
+	}
 
 	e = gfp_xdr_recv_async_header(conn, 0, &type, &xid, &size);
 	if (e != GFARM_ERR_NO_ERROR) {

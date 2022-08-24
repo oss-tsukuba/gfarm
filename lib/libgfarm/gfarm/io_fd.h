@@ -1,5 +1,7 @@
 /* iobuffer operation: file descriptor read/write */
 
+struct gfarm_iobuffer;
+
 /* an option for gfarm_iobuffer_set_write_close() */
 #if 0 /* currently not used */
 void gfarm_iobuffer_write_close_fd_op(struct gfarm_iobuffer *, void *, int);

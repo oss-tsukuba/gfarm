@@ -306,7 +306,7 @@ host.lo: $(GFUTIL_SRCDIR)/gfnetdb.h context.h hostspec.h gfm_client.h host.h
 hostspec.lo: $(GFUTIL_SRCDIR)/gfnetdb.h liberror.h hostspec.h
 import_help.lo: liberror.h
 io_fd.lo: context.h iobuffer.h gfp_xdr.h io_fd.h config.h
-io_gfsl.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFSL_SRCDIR)/gfsl_secure_session.h context.h liberror.h iobuffer.h gfp_xdr.h io_fd.h io_gfsl.h config.h
+io_gfsl.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/thrsubr.h $(GFSL_SRCDIR)/gfsl_secure_session.h context.h liberror.h iobuffer.h gfp_xdr.h io_fd.h io_gfsl.h config.h
 iobuffer.lo: iobuffer.h crc32.h
 liberror.lo: $(GFUTIL_SRCDIR)/gfutil.h liberror.h gfpath.h
 lookup.lo: $(GFUTIL_SRCDIR)/gfutil.h context.h config.h gfm_client.h lookup.h gfs_failover.h
@@ -321,6 +321,6 @@ stringlist.lo:
 timespec.lo: timespec.h
 url.lo: $(GFUTIL_SRCDIR)/queue.h config.h gfs_pio.h
 gfs_rdma.lo: gfs_rdma.h
-io_tls.lo: tls_headers.h tls_instances.h tls_funcs.h context.h gfp_xdr.h io_tls.h
+io_tls.lo: $(GFUTIL_SRCDIR)/thrsubr.h config_openssl.h tls_headers.h tls_instances.h tls_funcs.h context.h gfp_xdr.h io_tls.h
 
 include $(optional_rule)
