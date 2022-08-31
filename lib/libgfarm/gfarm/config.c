@@ -3421,6 +3421,8 @@ parse_one_line(const char *s, char *p,
 	} else if (strcmp(s, o = "tls_proxy_certificate") == 0) {
 		e = parse_set_misc_enabled(p,
 		    &gfarm_ctxp->tls_proxy_certificate);
+	} else if (strcmp(s, o = "tls_security_level") == 0) {
+		e = parse_set_misc_int(p, &gfarm_ctxp->tls_security_level);
 
 	} else if (strcmp(s, o = "sasl_mechanisms") == 0) {
 		e = parse_set_var(p, &gfarm_ctxp->sasl_mechanisms);
@@ -3912,6 +3914,7 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_ctxp->tls_proxy_certificate == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->tls_proxy_certificate =
 		    GFARM_TLS_PROXY_CERTIFICATE_DEFAULT;
+	/* default value of gfarm_ctxp->tls_security_level is "NOT SET" */
 
 	if (gfarm_ctxp->log_level == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->log_level = GFARM_DEFAULT_PRIORITY_LEVEL_TO_LOG;

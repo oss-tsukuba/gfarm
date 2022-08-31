@@ -217,29 +217,32 @@ AC_SUBST(pthread_cflags)
 AC_SUBST(pthread_targets)
 
 ###
-### --with-openssl=OpenSSL_ROOT
+### --with-openssl=OpenSSL_PKG
 ###
 
 # sanity check for OpenSSL is deferred, because ${openssl_includes}
 # and ${openssl_lib} may be overrided by Globus autoconfiguration.
 
 AC_ARG_WITH(openssl,
-[  --with-openssl=OpenSSL_ROOT	openssl root directory
-				[[default=/usr]]],
+[  --with-openssl=OpenSSL_PKG	openssl package name
+				[[default=openssl]]],
 [with_openssl="${withval}"
 ],
-[with_openssl=/usr
+[with_openssl=openssl
 ])
-AC_MSG_RESULT([using \"${with_openssl}\"])
 
-openssl_libs='-lssl -lcrypto'
-if test x"${with_openssl}" = x"/usr"; then
-   openssl_includes=
-else
-   openssl_includes="-I${with_openssl}/include"
-   openssl_libs="-R${with_openssl}/lib -L${with_openssl}/lib ${openssl_libs}"
-fi
+PKG_CHECK_MODULES(openssl, ${with_openssl}, [
+  AC_MSG_RESULT([using \"${with_openssl}\"])
 
+  openssl_libs=$openssl_LIBS
+  openssl_includes=$openssl_CFLAGS
+], [
+  AC_MSG_RESULT([try using OpenSSL in default path])
+
+  # if "pkg-config --cflags --libs openssl" does not work, try default
+  openssl_libs='-lssl -lcrypto'
+  openssl_includes=
+])
 
 AC_SUBST(openssl_includes)
 AC_SUBST(openssl_libs)
@@ -806,6 +809,9 @@ AC_MSG_RESULT([using \"${openssl_includes} ${openssl_libs}\"])
 
 # these functions disappeared since OpenSSL-1.1.0
 AC_CHECK_FUNCS(CRYPTO_set_locking_callback CRYPTO_set_id_callback)
+
+# new function since OpenSSL-3.0
+AC_CHECK_FUNCS(ERR_get_error_all)
 
 CPPFLAGS="$CPPFLAGS_SAVE"
 LIBS="$LIBS_SAVE"

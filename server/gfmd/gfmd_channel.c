@@ -159,8 +159,8 @@ gfmdc_journal_syncsend_completed(struct gfmdc_journal_send_closure *c)
 	c->data = NULL;
 	gfarm_mutex_lock(&c->send_mutex, diag, SEND_MUTEX_DIAG);
 	c->end = 1;
-	gfarm_mutex_unlock(&c->send_mutex, diag, SEND_MUTEX_DIAG);
 	gfarm_cond_signal(&c->send_end_cond, diag, SEND_END_COND_DIAG);
+	gfarm_mutex_unlock(&c->send_mutex, diag, SEND_MUTEX_DIAG);
 
 	gfmdc_journal_transfer_event();
 }
@@ -460,10 +460,10 @@ gfmdc_journal_recv_end_signal(const char *diag)
 	gfarm_mutex_lock(&journal_sync_info.sync_mutex, diag,
 	    SYNC_MUTEX_DIAG);
 	--journal_sync_info.nrecv_threads;
-	gfarm_mutex_unlock(&journal_sync_info.sync_mutex, diag,
-	    SYNC_MUTEX_DIAG);
 	gfarm_cond_signal(&journal_sync_info.sync_end_cond, diag,
 	    SYNC_END_COND_DIAG);
+	gfarm_mutex_unlock(&journal_sync_info.sync_mutex, diag,
+	    SYNC_MUTEX_DIAG);
 }
 
 static void

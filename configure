@@ -692,6 +692,11 @@ gss_objs
 gss_srcs
 openssl_libs
 openssl_includes
+openssl_LIBS
+openssl_CFLAGS
+PKG_CONFIG_LIBDIR
+PKG_CONFIG_PATH
+PKG_CONFIG
 pthread_targets
 pthread_cflags
 pthread_objs
@@ -830,7 +835,12 @@ LIBS
 CPPFLAGS
 YACC
 YFLAGS
-CPP'
+CPP
+PKG_CONFIG
+PKG_CONFIG_PATH
+PKG_CONFIG_LIBDIR
+openssl_CFLAGS
+openssl_LIBS'
 
 
 # Initialize some variables set by options.
@@ -1474,8 +1484,8 @@ Optional Packages:
   --with-pthread=PTHREAD_ROOT	pthread root directory
 				[default=/usr]
   --without-pthread             disable pthread support
-  --with-openssl=OpenSSL_ROOT	openssl root directory
-				[default=/usr]
+  --with-openssl=OpenSSL_PKG	openssl package name
+				[default=openssl]
   --with-globus-static		link static version of globus libraries instead of shared version
 				[default=disable]
   --with-globus-flavor=FLAVOR	globus flavor name
@@ -1520,6 +1530,15 @@ Some influential environment variables:
               This script will default YFLAGS to the empty string to avoid a
               default value of `-d' given by some make applications.
   CPP         C preprocessor
+  PKG_CONFIG  path to pkg-config utility
+  PKG_CONFIG_PATH
+              directories to add to pkg-config's search path
+  PKG_CONFIG_LIBDIR
+              path overriding pkg-config's built-in search path
+  openssl_CFLAGS
+              C compiler flags for openssl, overriding pkg-config
+  openssl_LIBS
+              linker flags for openssl, overriding pkg-config
 
 Use these variables to override the choices made by `configure' or to help
 it to find libraries and programs with nonstandard names/locations.
@@ -12010,7 +12029,7 @@ esac
 
 
 ###
-### --with-openssl=OpenSSL_ROOT
+### --with-openssl=OpenSSL_PKG
 ###
 
 # sanity check for OpenSSL is deferred, because ${openssl_includes}
@@ -12022,21 +12041,222 @@ if test "${with_openssl+set}" = set; then :
   withval=$with_openssl; with_openssl="${withval}"
 
 else
-  with_openssl=/usr
+  with_openssl=openssl
 
 fi
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: using \"${with_openssl}\"" >&5
+
+
+
+
+
+
+
+
+if test "x$ac_cv_env_PKG_CONFIG_set" != "xset"; then
+	if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}pkg-config", so it can be a program name with args.
+set dummy ${ac_tool_prefix}pkg-config; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_PKG_CONFIG+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $PKG_CONFIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_PKG_CONFIG="$PKG_CONFIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_PKG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+PKG_CONFIG=$ac_cv_path_PKG_CONFIG
+if test -n "$PKG_CONFIG"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PKG_CONFIG" >&5
+$as_echo "$PKG_CONFIG" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+fi
+if test -z "$ac_cv_path_PKG_CONFIG"; then
+  ac_pt_PKG_CONFIG=$PKG_CONFIG
+  # Extract the first word of "pkg-config", so it can be a program name with args.
+set dummy pkg-config; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_ac_pt_PKG_CONFIG+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $ac_pt_PKG_CONFIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ac_pt_PKG_CONFIG="$ac_pt_PKG_CONFIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_ac_pt_PKG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+ac_pt_PKG_CONFIG=$ac_cv_path_ac_pt_PKG_CONFIG
+if test -n "$ac_pt_PKG_CONFIG"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_pt_PKG_CONFIG" >&5
+$as_echo "$ac_pt_PKG_CONFIG" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+  if test "x$ac_pt_PKG_CONFIG" = x; then
+    PKG_CONFIG=""
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
+$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    PKG_CONFIG=$ac_pt_PKG_CONFIG
+  fi
+else
+  PKG_CONFIG="$ac_cv_path_PKG_CONFIG"
+fi
+
+fi
+if test -n "$PKG_CONFIG"; then
+	_pkg_min_version=0.9.0
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking pkg-config is at least version $_pkg_min_version" >&5
+$as_echo_n "checking pkg-config is at least version $_pkg_min_version... " >&6; }
+	if $PKG_CONFIG --atleast-pkgconfig-version $_pkg_min_version; then
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	else
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+		PKG_CONFIG=""
+	fi
+fi
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for openssl" >&5
+$as_echo_n "checking for openssl... " >&6; }
+
+if test -n "$openssl_CFLAGS"; then
+    pkg_cv_openssl_CFLAGS="$openssl_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"\${with_openssl}\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "${with_openssl}") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_openssl_CFLAGS=`$PKG_CONFIG --cflags "${with_openssl}" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$openssl_LIBS"; then
+    pkg_cv_openssl_LIBS="$openssl_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"\${with_openssl}\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "${with_openssl}") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_openssl_LIBS=`$PKG_CONFIG --libs "${with_openssl}" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        openssl_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "${with_openssl}" 2>&1`
+        else
+	        openssl_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "${with_openssl}" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$openssl_PKG_ERRORS" >&5
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: try using OpenSSL in default path" >&5
+$as_echo "try using OpenSSL in default path" >&6; }
+
+  # if "pkg-config --cflags --libs openssl" does not work, try default
+  openssl_libs='-lssl -lcrypto'
+  openssl_includes=
+
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: try using OpenSSL in default path" >&5
+$as_echo "try using OpenSSL in default path" >&6; }
+
+  # if "pkg-config --cflags --libs openssl" does not work, try default
+  openssl_libs='-lssl -lcrypto'
+  openssl_includes=
+
+else
+	openssl_CFLAGS=$pkg_cv_openssl_CFLAGS
+	openssl_LIBS=$pkg_cv_openssl_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: using \"${with_openssl}\"" >&5
 $as_echo "using \"${with_openssl}\"" >&6; }
 
-openssl_libs='-lssl -lcrypto'
-if test x"${with_openssl}" = x"/usr"; then
-   openssl_includes=
-else
-   openssl_includes="-I${with_openssl}/include"
-   openssl_libs="-R${with_openssl}/lib -L${with_openssl}/lib ${openssl_libs}"
-fi
+  openssl_libs=$openssl_LIBS
+  openssl_includes=$openssl_CFLAGS
 
+fi
 
 
 
@@ -13292,6 +13512,19 @@ ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
 if eval test \"x\$"$as_ac_var"\" = x"yes"; then :
   cat >>confdefs.h <<_ACEOF
 #define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
+_ACEOF
+
+fi
+done
+
+
+# new function since OpenSSL-3.0
+for ac_func in ERR_get_error_all
+do :
+  ac_fn_c_check_func "$LINENO" "ERR_get_error_all" "ac_cv_func_ERR_get_error_all"
+if test "x$ac_cv_func_ERR_get_error_all" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_ERR_GET_ERROR_ALL 1
 _ACEOF
 
 fi

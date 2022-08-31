@@ -1,3 +1,4 @@
+#include <pthread.h>
 #include <stdlib.h>
 #include <dlfcn.h>
 
@@ -5,7 +6,6 @@
 
 #include <gfarm/gfarm.h>
 
-#include "gfarm_auth.h"
 #include "gfsl_secure_session.h"
 
 #include "auth.h"
@@ -39,7 +39,6 @@ gfarm_gss_dlopen(const char *libname, const char *proto,
 		break; \
 	}
 
-
 	do {
 		SYM(gfarmGssPrintMajorStatus)
 		SYM(gfarmGssPrintMinorStatus)
@@ -59,20 +58,16 @@ gfarm_gss_dlopen(const char *libname, const char *proto,
 		SYM(gfarmSecSessionFinalizeInitiator)
 		SYM(gfarmSecSessionFinalizeBoth)
 
-		SYM(gfarmSecSessionReceiveInt8)
-		SYM(gfarmSecSessionSendInt8)
-
+		SYM(gfarmSecSessionAccept)
 		SYM(gfarmSecSessionInitiate)
 		SYM(gfarmSecSessionInitiateRequest)
 		SYM(gfarmSecSessionInitiateResult)
-		SYM(gfarmSecSessionAccept)
-		SYM(gfarmSecSessionGetInitiatorInfo)
 		SYM(gfarmSecSessionTerminate)
 
-		SYM(gfarmAuthGetDistName)
-		SYM(gfarmAuthGetLocalName)
-		SYM(gfarmAuthGetAuthEntryType)
-		SYM(gfarmAuthGetAuthEntryType)
+		SYM(gfarmSecSessionReceiveInt8)
+		SYM(gfarmSecSessionSendInt8)
+
+		SYM(gfarmSecSessionGetInitiatorDistName)
 
 		return (gss);
 	} while (0);
@@ -98,7 +93,7 @@ libgfsl_gsi_initialize(void)
 struct gfarm_gss *
 gfarm_gss_gsi(void)
 {
-	static pthread_once_t initialized;
+	static pthread_once_t initialized = PTHREAD_ONCE_INIT;
 
 	pthread_once(&initialized, libgfsl_gsi_initialize);
 	return (libgfsl_gsi);
@@ -114,13 +109,13 @@ static void
 libgfsl_kerberos_initialize(void)
 {
 	libgfsl_kerberos = gfarm_gss_dlopen(LIBGFSL_KERBEROS, "kerberos",
-    	    gfarm_kerberos_client_cred_get);
+	    gfarm_kerberos_client_cred_get);
 }
 
 struct gfarm_gss *
 gfarm_gss_kerberos(void)
 {
-	static pthread_once_t initialized;
+	static pthread_once_t initialized = PTHREAD_ONCE_INIT;
 
 	pthread_once(&initialized, libgfsl_kerberos_initialize);
 	return (libgfsl_kerberos);

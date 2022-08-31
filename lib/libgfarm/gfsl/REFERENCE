@@ -122,7 +122,7 @@ int	gfarmGssAcquireCredential(gss_cred_id_t *credPtr,
 	*credNamePtr は、gfarmGssDeleteName() を用いて解放しなければならない。
 	credential の生成に成功した場合 1 が返り、その他の場合には -1 以下が
 	返る。
-	エラーの場合、*majStatPtr, *minStatPtr には、それぞれ GSSAPI 
+	エラーの場合、*majStatPtr, *minStatPtr には、それぞれ GSSAPI
 	呼び出しの major status, minor status が返る。
 
 int	gfarmGssDeleteCredential(gss_cred_id_t cred,
@@ -151,7 +151,7 @@ int	gfarmGssAcceptSecurityContext(int fd,
 	が返る。
 	*remoteCredPtr は、gfarmGssDeleteCredential() を用いて解放しなければ
 	ならない。
-	secure context の生成に成功した場合には 1 が返り、失敗した場合には -1 
+	secure context の生成に成功した場合には 1 が返り、失敗した場合には -1
 	以下が返る。
 	失敗した場合、gsiErrNoPtr が 0 でなければ そこに UNIX errno が入り、
 	さもなくば *majStatPtr, *minStatPtr に、それぞれ GSSAPI呼び出しの
@@ -193,7 +193,7 @@ int	gfarmGssConfigureMessageSize(gss_ctx_id_t sCtx,
 				     unsigned int *maxInSzPtr,
 				     OM_uint32 *majStatPtr,
 				     OM_uint32 *minStatPtr);
-	doEncrypt(1:暗号化する, 0:しない), qopReq(通常 
+	doEncrypt(1:暗号化する, 0:しない), qopReq(通常
 	GFARM_GSS_DEFAULT_QOP を使用), reqOutSz より、sCtx を使用する
 	際の GSSAPI 入出力/wrap/unwrap 関数群用の最大メッセージ長を決
 	定し、*maxInSzPtr で返す。正しく処理された場合には 1 が返り、
@@ -205,12 +205,12 @@ int	gfarmGssSend(int fd, gss_ctx_id_t sCtx,
 		     gss_qop_t qopReq,
 		     gfarm_int8_t *buf, int n, int chunkSz,
 		     OM_uint32 *statPtr);
-	sCtx, doEncrypt, qopReq により、buf (長さ n バイト)を暗号化し 
-	fd に出力する。sCtx, doEncrypt, qopReq は 
+	sCtx, doEncrypt, qopReq により、buf (長さ n バイト)を暗号化し
+	fd に出力する。sCtx, doEncrypt, qopReq は
 	gfarmGssConfigureMessageSize() を呼び出した時と同じ値を使用し
 	なければならない。chunkSz は gfarmGssConfigureMessageSize() で
 	決定した最大メッセージ長でなければならない。正しく処理された場
-	合には n が返り、その他の場合には 0 以下が返る。*statPtr には 
+	合には n が返り、その他の場合には 0 以下が返る。*statPtr には
 	GSSAPI 呼び出しの status が返る。
 
 int	gfarmGssReceive(int fd, gss_ctx_id_t sCtx,
@@ -219,43 +219,11 @@ int	gfarmGssReceive(int fd, gss_ctx_id_t sCtx,
 	fd から受け取った暗号文を sCtx で平文化し、**bufPtr で返す。平
 	文の長さは *lenPtr で返る。*bufPtr は free() されなければならな
 	い。正しく処理された場合には *lenPtr と同じ値が返り、その他の
-	場合には 0 以下が返る。*statPtr には GSSAPI 呼び出しの status 
+	場合には 0 以下が返る。*statPtr には GSSAPI 呼び出しの status
 	が返る。
 
 
-
-認可系
-
-int	gfarmAuthInitialize(char *usermapFile);
-	usermapFile で指定した DN -> UNIX uid への変換テーブルを用い、
-	認可データベースを初期化する。NULL もしくは "" が与えられた場
-	合、${GFARM_HOME}/etc/gfarm-usermap が使用される。正しく初期化
-	された場合には 1 が返り、その他の場合には -1 以下が返る。
-
-void	gfarmAuthFinalize(void);
-	gfarmAuthInitialize() で初期化された認可データベース全体を破棄する。
-
-gfarmAuthEntry *
-	gfarmAuthGetUserEntry(char *distUserName);
-	distUserName で指定された DN を持つエントリを認可データベース
-	から検索する。当該エントリが見つかった場合にはそのエントリを返
-	し、それ以外の場合には NULL を返す。
-
-void	gfarmAuthDestroyUserEntry(gfarmAuthEntry *aePtr);
-	aePtr で示されるエントリを破棄する。
-
-void	gfarmAuthMakeThisAlone(gfarmAuthEntry *laePtr);
-	認可データベース全体を破棄し、laePtr で示されるエントリの実体
-	のみを残す。setuid(0) なプロセスが setuid(0以外)した時に、余計
-	なものを見えなくするようにするため。
-	XXX
-		GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS が成り立って
-		いる場合は、認可データベースの破棄は行われない。
-		これは、initiator 側として動作する場合も、
-		認可データベースが必要なため。
-
 Session
-
 
 #define GFARM_SS_USE_ENCRYPTION		0x1
 #define GFARM_SS_USE_COMPRESSION	0x2
@@ -268,7 +236,7 @@ Session
 
 char **	gfarmSecSessionCrackStatus(gfarmSecSession *ssPtr);
 	ssPtr で示される session での GSSAPI 呼び出しの status を可読
-	文字列の配列に変換する。返り値は 
+	文字列の配列に変換する。返り値は
 	gfarmSecSessionFreeCrackedStatus() で解放しなければならない。
 
 void	gfarmSecSessionFreeCrackedStatus(char **strPtr);
@@ -279,11 +247,10 @@ void	gfarmSecSessionPrintStatus(gfarmSecSession *ssPtr);
 	文字列としてログに出力する。
 
 int	gfarmSecSessionInitializeAcceptor(char *configFile,
-					  char *usermapFile,
 					  OM_uint32 *majStatPtr,
 					  OM_uint32 *minStatPtr);
-	通信パラメタ設定ファイル configFile, 変換テーブル usermapFile 
-	を用い、acceptor 側の session 生成環境を初期化する。正しく初期
+	通信パラメタ設定ファイル configFile を用い、
+	acceptor 側の session 生成環境を初期化する。正しく初期
 	化された場合には 1 が返り、その他の場合には -1 以下が返る。
 	*majStatPtr, *minStatPtr には、それぞれ GSSAPI	呼び出しの
 	major status, minor status が返る。
@@ -293,11 +260,10 @@ int	gfarmSecSessionInitializeAcceptor(char *configFile,
 	が使用される。
 
 int	gfarmSecSessionInitializeInitiator(char *configFile,
-					   char *usermapFile,
 					   OM_uint32 *majStatPtr,
 					   OM_uint32 *minStatPtr);
-	通信パラメタ設定ファイル configFile, 変換テーブル usermapFile 
-	を用い、initiator 側の session 生成環境を初期化する。正しく初期
+	通信パラメタ設定ファイル configFile を用い、
+	initiator 側の session 生成環境を初期化する。正しく初期
 	化された場合には 1 が返り、その他の場合には -1 以下が返る。
 	*majStatPtr, *minStatPtr には、それぞれ GSSAPI	呼び出しの
 	major status, minor status が返る。
@@ -308,12 +274,11 @@ int	gfarmSecSessionInitializeInitiator(char *configFile,
 
 int	gfarmSecSessionInitializeBoth(char *iConfigFile,
 				      char *aConfigFile,
-				      char *usermapFile,
 				      OM_uint32 *majstatPtr,
 				      OM_uint32 *minstatPtr);
 	initiator 側通信パラメタ設定ファイル iConfigFile, acceptor 側
-	通信パラメタ設定ファイル aConfigFile, 変換テーブル usermapFile 
-	を用い、initiator/acceptor 双方の動作を行わせる場合の session 
+	通信パラメタ設定ファイル aConfigFile を用い、
+	initiator/acceptor 双方の動作を行わせる場合の session
 	生成環境を初期化する。正しく初期化された場合には 1 が返り、そ
 	の他の場合には -1 以下が返る。*majStatPtr, *minStatPtr には、
 	それぞれ GSSAPI	呼び出しの major status, minor status が返る。
@@ -334,7 +299,7 @@ gfarmSecSession *	gfarmSecSessionAccept(int fd,
 					      gfarmSecSessionOption *ssOptPtr,
 					      OM_uint32 *majStatPtr,
 					      OM_uint32 *minStatPtr);
-	fd, cred を使用して、session を accept する。*ssOptPtr は通常 
+	fd, cred を使用して、session を accept する。*ssOptPtr は通常
 	NULL を使用する。session の accept に成功すると session を返す。
 	それ以外の場合には NULL を返し、*gsiErrNoPtr が 0 でなければ
 	そこに UNIX errno が入り、さもなくば *majStatPtr, *minStatPtr に、
@@ -344,11 +309,11 @@ gfarmSecSession *	gfarmSecSessionAccept(int fd,
 			host certificate から生成された credential
 		b. getuid() != 0 の場合
 			user certificate から生成された credential
-	を使用する。cred != GSS_C_NO_CREDENTIAL の場合、特に、cred が 
+	を使用する。cred != GSS_C_NO_CREDENTIAL の場合、特に、cred が
 	user certificate から生成された credential である場合、user to
 	user で認証を行うことになり、security level が低下することに注
 	意。というわけで、GSS_C_NO_CREDENTIAL を常に使用してもよい。
-			
+
 gfarmSecSession *	gfarmSecSessionInitiate(int fd,
 						const gss_name_t acceptorName,
 						gss_cred_id_t cred,
@@ -365,7 +330,7 @@ gfarmSecSession *	gfarmSecSessionInitiate(int fd,
 	cred に GSS_C_NO_CREDENTIAL を使用した場合、user
 	certificate から生成された credential が使用される。
 	gfarmSecSessionInitializeBoth() で初期化された session 生成環
-	境でのみ、initiator から delegation された credential を cred 
+	境でのみ、initiator から delegation された credential を cred
 	に指定して session を initiate すること。
 
 gfarmSecSession *	gfarmSecSessionInitiateByName(
@@ -379,9 +344,9 @@ gfarmSecSession *	gfarmSecSessionInitiateByName(
 						int *gsiErrNo,
 						OM_uint32 *majStatPtr,
 						OM_uint32 *minStatPtr);
-	ホスト名 hostname, port 番号 port を利用して、hostname:port に 
+	ホスト名 hostname, port 番号 port を利用して、hostname:port に
 	connect(2) した後、connect(2) で生成された fd と cred を使用し
-	て、session を initiate する。以下 
+	て、session を initiate する。以下
 	gfarmSecSessionInitiate() と同様。
 
 void			gfarmSecSessionTerminate(gfarmSecSession *ssPtr);
@@ -403,17 +368,13 @@ int	gfarmSecSessionGetInitiatorName(gfarmSecSession *ssPtr,
 	成功した場合 1 が返り、その他の場合、たとえば initiate した
 	session を使用すると -1 以下を返す。
 
-gfarmAuthEntry *	gfarmSecSessionGetInitiatorInfo(gfarmSecSession *ssPtr);
-	accept した session ssPtr から、対応する認可データベースエントリ
-	を得る。initiate した session を使用すると、NULL が返る。
-
-int			gfarmSecSessionDedicate(gfarmSecSession *ssPtr);
-	accept した session ssPtr に対応するローカルマシンのユーザのための
-	専用プロセスになるためのおまじない。
-		a. gfarmAuthMakeThisAlone() を呼び、余計な情報を解放する。
-		b. getuid() == 0 である場合、setgid(), setuid() する。
-	の処理が行われる。成功した場合 1 が返り、それ以外の場合 -1 以
-	下が返る。
+int	gfarmSecSessionGetInitiatorDistName(gfarmSecSession *ssPtr,
+					    char **distNamePtr);
+	accept した session ssPtr から、
+	initiator の distingushed Name を取得し、
+	*namePtr に返す。
+	成功した場合 1 が返り、その他の場合、たとえば initiate した
+	session を使用すると -1 以下を返す。
 
 int			gfarmSecSessionSendInt8(gfarmSecSession *ssPtr,
 						gfarm_int8_t *buf,
@@ -443,9 +404,9 @@ int			gfarmSecSessionReceiveInt32(gfarmSecSession *ssPtr,
 int			gfarmSecSessionPoll(gfarmSecSession *ssList[],
 					    int n,
 					    struct timeval *toPtr);
-	ssList で示された配列内の n 個の session の入出力可否を poll 
+	ssList で示された配列内の n 個の session の入出力可否を poll
 	する。toPtr には select(2) の timeout 値と同様の値を指定する。
-	返り値も select(2) と同一。以下のマクロを使用して、poll すべき 
+	返り値も select(2) と同一。以下のマクロを使用して、poll すべき
 	event の指定/判定を行う。
 
 #define GFARM_SS_POLL_NONE		0x0

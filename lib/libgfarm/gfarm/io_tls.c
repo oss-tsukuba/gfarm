@@ -1,5 +1,7 @@
 #include <gfarm/gfarm_config.h>
 
+#include <pthread.h>
+
 #ifdef HAVE_TLS_1_3
 
 #define IN_TLS_CORE
@@ -10,9 +12,49 @@
 #include "tls_funcs.h"
 #include "io_fd.h"
 
+#include "thrsubr.h"
+
+#include "config_openssl.h"
+#include "io_fd.h" /* for gfp_xdr_set_socket() */
+
 /*
  * Gfarm iobuffer iops
  */
+
+struct gfp_io_tls {
+	struct tls_session_ctx_struct *ctx;
+
+	/* for exclusion between gfmd async protocol senders and receivers */
+	pthread_mutex_t mutex;
+};
+
+static const char mutex_what[] = "gfp_io_tls::mutex";
+
+/* destructor */
+
+static gfarm_error_t
+gfp_io_tls_free(struct gfp_io_tls *io, const char *diag)
+{
+	gfarm_error_t e;
+	struct tls_session_ctx_struct *ctx = io->ctx;
+
+	/*
+	 * just in case. (theoretically this mutex_lock call is unnecessary)
+	 * because upper layer must guarantee that other threads do not
+	 * access this io at the same time.
+	 */
+	gfarm_mutex_lock(&io->mutex, diag, mutex_what);
+
+	e = tls_session_shutdown(ctx);
+	tls_session_destroy_ctx(ctx);
+
+	gfarm_mutex_unlock(&io->mutex, diag, mutex_what);
+
+	gfarm_mutex_destroy(&io->mutex, diag, mutex_what);
+	free(io);
+
+	return (e);
+}
 
 /*
  * close
@@ -22,11 +64,11 @@ tls_iobufop_close(void *cookie, int fd)
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 	int st = -1;
-	struct tls_session_ctx_struct *ctx =
-		(struct tls_session_ctx_struct *)cookie;
+	struct gfp_io_tls *io = cookie;
+	static const char diag[] = "tls_iobufop_close";
 
-	ret = tls_session_shutdown(ctx);
-	tls_session_destroy_ctx(ctx);
+	ret = gfp_io_tls_free(io, diag);
+
 	errno = 0;
 	st = close(fd);
 	if (st != 0) {
@@ -44,10 +86,14 @@ tls_iobufop_shutdown(void *cookie, int fd)
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 	int st = -1;
-	struct tls_session_ctx_struct *ctx =
-		(struct tls_session_ctx_struct *)cookie;
+	struct gfp_io_tls *io = cookie;
+	struct tls_session_ctx_struct *ctx = io->ctx;
+	static const char diag[] = "tls_iobufop_shutdown";
 
+	gfarm_mutex_lock(&io->mutex, diag, mutex_what);
 	ret = tls_session_shutdown(ctx);
+	gfarm_mutex_unlock(&io->mutex, diag, mutex_what);
+
 	errno = 0;
 	st = shutdown(fd, SHUT_RDWR);
 	if (st != 0) {
@@ -60,10 +106,17 @@ tls_iobufop_shutdown(void *cookie, int fd)
 static int
 tls_iobufop_recv_is_ready(void *cookie)
 {
+	gfarm_error_t e;
 	int ret = -1;
+	struct gfp_io_tls *io = cookie;
+	struct tls_session_ctx_struct *ctx = io->ctx;
+	static const char diag[] = "tls_iobufop_recv_is_ready";
 
-	return (tls_session_get_pending_read_bytes_n(cookie, &ret) ==
-	    GFARM_ERR_NO_ERROR && ret > 0);
+	gfarm_mutex_lock(&io->mutex, diag, mutex_what);
+	e = tls_session_get_pending_read_bytes_n(ctx, &ret);
+	gfarm_mutex_unlock(&io->mutex, diag, mutex_what);
+
+	return (e == GFARM_ERR_NO_ERROR && ret > 0);
 }
 
 /*
@@ -74,8 +127,11 @@ tls_iobufop_timeout_read(struct gfarm_iobuffer *b,
 	void *cookie, int fd, void *buf, int len)
 {
 	int ret = -1;
-	struct tls_session_ctx_struct *ctx =
-		(struct tls_session_ctx_struct *)cookie;
+	struct gfp_io_tls *io = cookie;
+	struct tls_session_ctx_struct *ctx = io->ctx;
+	static const char diag[] = "tls_iobufop_timeout_read";
+
+	gfarm_mutex_lock(&io->mutex, diag, mutex_what);
 
 	if (likely(ctx != NULL && b != NULL)) {
 		gfarm_error_t gfe = tls_session_timeout_read(ctx, fd, buf, len,
@@ -93,6 +149,8 @@ tls_iobufop_timeout_read(struct gfarm_iobuffer *b,
 		}
 	}
 
+	gfarm_mutex_unlock(&io->mutex, diag, mutex_what);
+
 	return (ret);
 }
 
@@ -104,8 +162,11 @@ tls_iobufop_full_blocking_read(struct gfarm_iobuffer *b,
 	void *cookie, int fd, void *buf, int len)
 {
 	int ret = -1;
-	struct tls_session_ctx_struct *ctx =
-		(struct tls_session_ctx_struct *)cookie;
+	struct gfp_io_tls *io = cookie;
+	struct tls_session_ctx_struct *ctx = io->ctx;
+	static const char diag[] = "tls_iobufop_full_blocking_read";
+
+	gfarm_mutex_lock(&io->mutex, diag, mutex_what);
 
 	if (likely(ctx != NULL && b != NULL)) {
 		gfarm_error_t gfe = tls_session_timeout_read(ctx, fd, buf, len,
@@ -121,6 +182,8 @@ tls_iobufop_full_blocking_read(struct gfarm_iobuffer *b,
 		}
 	}
 
+	gfarm_mutex_unlock(&io->mutex, diag, mutex_what);
+
 	return (ret);
 }
 
@@ -132,8 +195,11 @@ tls_iobufop_timeout_write(struct gfarm_iobuffer *b,
 	void *cookie, int fd, void *buf, int len)
 {
 	int ret = -1;
-	struct tls_session_ctx_struct *ctx =
-		(struct tls_session_ctx_struct *)cookie;
+	struct gfp_io_tls *io = cookie;
+	struct tls_session_ctx_struct *ctx = io->ctx;
+	static const char diag[] = "tls_iobufop_timeout_write";
+
+	gfarm_mutex_lock(&io->mutex, diag, mutex_what);
 
 	if (likely(ctx != NULL && b != NULL)) {
 		gfarm_error_t gfe;
@@ -156,6 +222,8 @@ tls_iobufop_timeout_write(struct gfarm_iobuffer *b,
 		}
 	}
 
+	gfarm_mutex_unlock(&io->mutex, diag, mutex_what);
+
 	return (ret);
 }
 
@@ -167,8 +235,11 @@ tls_iobufop_full_blocking_write(struct gfarm_iobuffer *b,
 	void *cookie, int fd, void *buf, int len)
 {
 	int ret = -1;
-	struct tls_session_ctx_struct *ctx =
-		(struct tls_session_ctx_struct *)cookie;
+	struct gfp_io_tls *io = cookie;
+	struct tls_session_ctx_struct *ctx = io->ctx;
+	static const char diag[] = "tls_iobufop_full_blocking_write";
+
+	gfarm_mutex_lock(&io->mutex, diag, mutex_what);
 
 	if (likely(ctx != NULL && b != NULL)) {
 		gfarm_error_t gfe = tls_session_timeout_write(
@@ -183,6 +254,8 @@ tls_iobufop_full_blocking_write(struct gfarm_iobuffer *b,
 				GFARM_ERR_INVALID_ARGUMENT);
 		}
 	}
+
+	gfarm_mutex_unlock(&io->mutex, diag, mutex_what);
 
 	return (ret);
 }
@@ -213,6 +286,7 @@ gfp_xdr_tls_alloc(struct gfp_xdr *conn,	int fd, int flags)
 {
 	gfarm_error_t ret;
 
+	struct gfp_io_tls *io;
 	struct tls_session_ctx_struct *ctx = NULL;
 	bool do_mutual_auth =
 		(flags & GFP_XDR_TLS_CLIENT_AUTHENTICATION) != 0;
@@ -221,17 +295,50 @@ gfp_xdr_tls_alloc(struct gfp_xdr *conn,	int fd, int flags)
 		TLS_ROLE_INITIATOR : TLS_ROLE_ACCEPTOR;
 	bool use_proxy_cert =
 		flags & GFP_XDR_TLS_CLIENT_USE_PROXY_CERTIFICATE;
+	static const char diag[] = "gfp_xdr_tls_alloc";
 
+	GFARM_MALLOC(io);
+	if (io == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	gfarm_mutex_init(&io->mutex, diag, mutex_what);
+
+	/*
+	 * helgrind reports data race in openssl11-libs-1.1.1k on CentOS 7.
+	 * e.g.
+	 * OPENSSL_LH_retrieve() called from SSL_CTX_new()
+	 * for different sessions.
+	 *
+	 * enabling the following gfarm_openssl_global_{lock,unlock}()
+	 * reduces the problem.
+	 * XXX but this may be overblocking
+	 */
+#if 0
+	gfarm_openssl_global_lock(diag);
+#endif
 	ret = tls_session_create_ctx(&ctx, role,
 		do_mutual_auth, use_proxy_cert);
-	if (likely(ret == GFARM_ERR_NO_ERROR && ctx != NULL)) {
+#if 0
+	gfarm_openssl_global_unlock(diag);
+#endif
+
+	if (unlikely(ret != GFARM_ERR_NO_ERROR)) {
+		/* do nothing */
+	} else if (unlikely(ctx == NULL)) {
+		ret = GFARM_ERR_INTERNAL_ERROR;
+	} else {
+		io->ctx = ctx;
+
 		ret = tls_session_establish(ctx, fd);
-		if (likely(ret == GFARM_ERR_NO_ERROR)) {
-			gfp_xdr_set(conn, &gfp_xdr_tls_iobuf_ops,
-				ctx, fd);
-		} else {
+
+		if (likely(ret == GFARM_ERR_NO_ERROR))
+			gfp_xdr_set(conn, &gfp_xdr_tls_iobuf_ops, io, fd);
+	}
+
+	if (unlikely(ret != GFARM_ERR_NO_ERROR)) {
+		if (ctx != NULL)
 			tls_session_destroy_ctx(ctx);
-		}
+		gfarm_mutex_destroy(&io->mutex, diag, mutex_what);
+		free(io);
 	}
 
 	return (ret);
@@ -243,36 +350,58 @@ gfp_xdr_tls_alloc(struct gfp_xdr *conn,	int fd, int flags)
 void
 gfp_xdr_tls_reset(struct gfp_xdr *conn)
 {
-	struct tls_session_ctx_struct *ctx = gfp_xdr_cookie(conn);
+	int fd = gfp_xdr_fd(conn);
+	struct gfp_io_tls *io = gfp_xdr_cookie(conn);
+	static const char diag[] = "gfp_xdr_tls_reset";
 
-	(void)tls_session_shutdown(ctx);
-	tls_session_destroy_ctx(ctx);
+	(void)gfp_io_tls_free(io, diag);
 
-	gfp_xdr_set(conn, &gfp_xdr_tls_iobuf_ops, NULL, -1);
+	gfp_xdr_set_socket(conn, fd);
 }
 
 char *
 gfp_xdr_tls_peer_dn_rfc2253(struct gfp_xdr *conn)
 {
-	return (tls_session_peer_subjectdn_rfc2253(
-			((struct tls_session_ctx_struct *)
-			(gfp_xdr_cookie(conn)))));
+	struct gfp_io_tls *io = gfp_xdr_cookie(conn);
+	struct tls_session_ctx_struct *ctx = io->ctx;
+	char *dn;
+	const char diag[] = "gfp_xdr_tls_peer_dn_rfc2253";
+
+	gfarm_mutex_lock(&io->mutex, diag, mutex_what);
+	dn = tls_session_peer_subjectdn_rfc2253(ctx);
+	gfarm_mutex_unlock(&io->mutex, diag, mutex_what);
+
+	return (dn);
 }
 
 char *
 gfp_xdr_tls_peer_dn_gsi(struct gfp_xdr *conn)
 {
-	return (tls_session_peer_subjectdn_gsi(
-			((struct tls_session_ctx_struct *)
-			(gfp_xdr_cookie(conn)))));
+	struct gfp_io_tls *io = gfp_xdr_cookie(conn);
+	struct tls_session_ctx_struct *ctx = io->ctx;
+	char *dn;
+	const char diag[] = "gfp_xdr_tls_peer_dn_gsi";
+
+	gfarm_mutex_lock(&io->mutex, diag, mutex_what);
+	dn = tls_session_peer_subjectdn_gsi(ctx);
+	gfarm_mutex_unlock(&io->mutex, diag, mutex_what);
+
+	return (dn);
 }
 
 char *
 gfp_xdr_tls_peer_dn_common_name(struct gfp_xdr *conn)
 {
-	return (tls_session_peer_cn(
-			((struct tls_session_ctx_struct *)
-			(gfp_xdr_cookie(conn)))));
+	struct gfp_io_tls *io = gfp_xdr_cookie(conn);
+	struct tls_session_ctx_struct *ctx = io->ctx;
+	char *dn;
+	const char diag[] = "gfp_xdr_tls_peer_dn_common_name";
+
+	gfarm_mutex_lock(&io->mutex, diag, mutex_what);
+	dn = tls_session_peer_cn(ctx);
+	gfarm_mutex_unlock(&io->mutex, diag, mutex_what);
+
+	return (dn);
 }
 
 /*

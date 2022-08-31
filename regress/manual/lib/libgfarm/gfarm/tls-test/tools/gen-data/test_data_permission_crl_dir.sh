@@ -8,7 +8,7 @@ TEST_SUITE="permission_crl_dir"
 
 ## Funcs. ##
 
-source ${LIB_DIR}/funcs.sh
+. ${LIB_DIR}/funcs.sh
 
 usage() {
      cat << EOS >&2

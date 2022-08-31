@@ -378,7 +378,7 @@ is_valid_prvkey_file_permission(int fd, const char *file)
 			}
 		} else {
 			if (errno != 0) {
-				gflog_tls_error(GFARM_MSG_UNFIXED,
+				gflog_tls_debug(GFARM_MSG_UNFIXED,
 					"Can't access %s: %s",
 					file, strerror(errno));
 				ret = gfarm_errno_to_error(errno);
@@ -491,25 +491,34 @@ tlslog_tls_message(int msg_no, int priority,
 	} else {
 		char msgbuf2[TLS_LOG_MSG_LEN * 3];
 		char tlsmsg[TLS_LOG_MSG_LEN];
-		const char *tls_file = NULL;
-		int tls_line = -1;
+		const char *tls_file, *tls_data;
+		int tls_line, tls_flags;
+#ifdef HAVE_ERR_GET_ERROR_ALL /* since OpenSSL-3.0 */
+		const char *tls_func;
 
-		/*
-		 * NOTE:
-		 *	OpenSSL 1.1.1 doesn't have ERR_get_error_all()
-		 *	but 3.0 does. To dig into 3.0 API, check
-		 *	Apache 2.4 source.
-		 */
-		err = ERR_get_error_line_data(&tls_file, &tls_line,
-			NULL, NULL);
-
+		err = ERR_get_error_all(&tls_file, &tls_line, &tls_func,
+			&tls_data, &tls_flags);
 		ERR_error_string_n(err, tlsmsg, sizeof(tlsmsg));
-
 		(void)snprintf(msgbuf2, sizeof(msgbuf2),
-			"%s: [OpenSSL error info: %s:%d: %s]",
-			msgbuf, tls_file, tls_line, tlsmsg);
+			"%s: [OpenSSL error info: %s:%d: %s%s%s%s%s]",
+			msgbuf, tls_file, tls_line,
+			tls_func,
+			tls_func[0] != '\0' ? ": " : "",
+			tlsmsg,
+			(tls_flags & ERR_TXT_STRING) != 0 ? ": " : "",
+			(tls_flags & ERR_TXT_STRING) != 0 ? tls_data : "");
+#else /* deprecated since OpenSSL-3.0 */
 
-		gflog_auth_message(msg_no, priority, file, line_no, func,
+		err = ERR_get_error_line_data(&tls_file, &tls_line,
+			&tls_data, &tls_flags);
+		ERR_error_string_n(err, tlsmsg, sizeof(tlsmsg));
+		(void)snprintf(msgbuf2, sizeof(msgbuf2),
+			"%s: [OpenSSL error info: %s:%d: %s%s%s]",
+			msgbuf, tls_file, tls_line, tlsmsg,
+			(tls_flags & ERR_TXT_STRING) != 0 ? ": " : "",
+			(tls_flags & ERR_TXT_STRING) != 0 ? tls_data : "");
+#endif
+		gflog_message(msg_no, priority, file, line_no, func,
 			"%s", msgbuf2);
 	}
 }
@@ -1173,6 +1182,7 @@ tls_set_ca_path(SSL_CTX *ssl_ctx,
 			goto done;
 		}
 		if (is_valid_string(acceptable_ca_path) == true) {
+			bool need_free_ca_list = false;
 			int ncerts = 0;
 			const char *dir = acceptable_ca_path;
 			STACK_OF(X509_NAME) (*ca_list) =
@@ -1180,12 +1190,13 @@ tls_set_ca_path(SSL_CTX *ssl_ctx,
 			if (likely(ca_list != NULL &&
 				(ret = tls_get_x509_name_stack_from_dir(
 					dir, ca_list, &ncerts)) ==
-				GFARM_ERR_NO_ERROR && ncerts > 0)) {
-				if (trust_ca_list != NULL) {
-					*trust_ca_list = ca_list;
+				GFARM_ERR_NO_ERROR)) {
+				if (ncerts > 0) {
+					if (trust_ca_list != NULL) {
+						*trust_ca_list = ca_list;
+					}
 				} else {
-					sk_X509_NAME_pop_free(ca_list,
-						X509_NAME_free);
+					need_free_ca_list = true;
 				}
 			} else {
 				if (ca_list == NULL) {
@@ -1200,7 +1211,12 @@ tls_set_ca_path(SSL_CTX *ssl_ctx,
 						"No cert file is "
 						"added as a valid cert under "
 						"%s directory.", dir);
+					need_free_ca_list = true;
 				}
+			}
+			if (need_free_ca_list == true) {
+				sk_X509_NAME_pop_free(ca_list,
+					      X509_NAME_free);
 			}
 		}
 	} else {
@@ -1325,7 +1341,7 @@ tls_add_extra_certs(SSL_CTX *ssl_ctx, const char *file, int *n_added)
 		char *bp = b;
 		bool do_dbg_msg = (gflog_get_priority_level() >= LOG_DEBUG) ?
 			true : false;
-	
+
 		if (n_added != NULL) {
 			*n_added = 0;
 		}
@@ -1594,6 +1610,7 @@ tls_verify_callback_body(int ok, X509_STORE_CTX *sctx)
 					"flags, but Gfarm itself doesn't "
 					"allow the internal proxy use??");
 			}
+			PROXY_CERT_INFO_EXTENSION_free(pci);
 			goto done;
 		}
 
@@ -2164,17 +2181,18 @@ tls_session_create_ctx(struct tls_session_ctx_struct **ctxptr,
 		}
 	} else {
 		if (do_mutual_auth == true) {
-			if (likely(is_valid_string(ca_path) == true &&
-				(is_valid_string(cert_file) == true ||
-				is_valid_string(cert_chain_file) == true) &&
-				is_valid_string(prvkey_file) == true)) {
-				goto runtime_init;
-			} else if (likely(is_valid_string(ca_path) == true &&
-					is_valid_string(tmp_proxy_cert_file)
-					== true)) {
+			if (is_valid_string(ca_path) == true &&
+			    is_valid_string(tmp_proxy_cert_file) == true) {
+				free(cert_file);
+				free(prvkey_file);
 				cert_file = strdup(tmp_proxy_cert_file);
 				prvkey_file = strdup(tmp_proxy_cert_file);
 				do_proxy_auth = true;
+				goto runtime_init;
+			} else if (likely(is_valid_string(ca_path) == true &&
+				(is_valid_string(cert_file) == true ||
+				is_valid_string(cert_chain_file) == true) &&
+				is_valid_string(prvkey_file) == true)) {
 				goto runtime_init;
 			} else {
 				gflog_tls_error(GFARM_MSG_UNFIXED,
@@ -2231,6 +2249,12 @@ runtime_init:
 	if (likely(ssl_ctx != NULL)) {
 		int osst;
 		X509_VERIFY_PARAM *tmpvpm = NULL;
+
+		if (gfarm_ctxp->tls_security_level !=
+		    GFARM_CONFIG_MISC_DEFAULT) {
+			SSL_CTX_set_security_level(ssl_ctx,
+			    gfarm_ctxp->tls_security_level);
+		}
 
 		/*
 		 * Clear cert chain for our sanity.
@@ -2587,6 +2611,8 @@ bailout:
 	free(ctxret);
 
 ok:
+	free(tmp_proxy_cert_file);
+
 	return (ret);
 
 #undef str_or_NULL
@@ -2659,7 +2685,7 @@ tls_session_io_continuable(int sslerr, struct tls_session_ctx_struct *ctx,
 		 */
 		ctx->last_gfarm_error_ = GFARM_ERR_TLS_RUNTIME_ERROR;
 		ctx->is_got_fatal_ssl_error_ = true;
-		gflog_tls_notice(GFARM_MSG_UNFIXED,
+		gflog_tls_error(GFARM_MSG_UNFIXED,
 		    "TLS error during %s", diag);
 		break;
 
@@ -2862,6 +2888,8 @@ tls_session_verify(struct tls_session_ctx_struct *ctx, bool *is_verified)
 			bool v = false;
 			int vres = -INT_MAX;
 
+			X509_free(p);
+			p = NULL;
 #define DN_FORMAT_ONELINE	(XN_FLAG_ONELINE & ~ASN1_STRFLGS_ESC_MSB)
 #define DN_FORMAT_RFC2253	(XN_FLAG_RFC2253 & ~ASN1_STRFLGS_ESC_MSB)
 			if (likely((ret = get_peer_dn(pn,
@@ -3194,7 +3222,7 @@ retry:
 		}
 
 	} else {
-		ret = ctx->last_gfarm_error_ = GFARM_ERR_INVALID_ARGUMENT;
+		ret = ctx->last_gfarm_error_ = GFARM_ERR_UNEXPECTED_EOF;
 	}
 
 done:
@@ -3271,7 +3299,7 @@ retry:
 		}
 
 	} else {
-		ret = ctx->last_gfarm_error_ = GFARM_ERR_INVALID_ARGUMENT;
+		ret = ctx->last_gfarm_error_ = GFARM_ERR_UNEXPECTED_EOF;
 	}
 
 done:

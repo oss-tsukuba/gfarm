@@ -53,7 +53,6 @@
 #include "host.h"
 #include "fsngroup.h"
 #include "mdhost.h"
-#include "mdcluster.h"
 #include "user.h"
 #include "group.h"
 #include "peer.h"
@@ -113,11 +112,11 @@ sync_protocol_get_thrpool(void)
 gfarm_error_t
 gfm_server_protocol_extension_default(struct peer *peer,
 	int from_client, int skip, int level, gfarm_int32_t request,
-	gfarm_int32_t last_request,
+	gfarm_int32_t last_sync_request,
 	gfarm_int32_t *requestp, gfarm_error_t *on_errorp)
 {
 	gflog_warning(GFARM_MSG_1000181, "unknown request: %d", request);
-	gflog_info(GFARM_MSG_1005215, "last request: %d", last_request);
+	gflog_info(GFARM_MSG_1005215, "last request: %d", last_sync_request);
 	peer_record_protocol_error(peer);
 	return (GFARM_ERR_PROTOCOL);
 }
@@ -130,7 +129,7 @@ gfarm_error_t (*gfm_server_protocol_extension)(struct peer *,
 
 gfarm_error_t
 protocol_switch(struct peer *peer, int from_client, int skip, int level,
-	gfarm_int32_t last_request,
+	gfarm_int32_t last_sync_request,
 	gfarm_int32_t *requestp, gfarm_error_t *on_errorp, int *suspendedp)
 {
 	gfarm_error_t e, e2;
@@ -662,7 +661,7 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 		break;
 	default:
 		e = gfm_server_protocol_extension(peer,
-		    from_client, skip, level, request, last_request,
+		    from_client, skip, level, request, last_sync_request,
 		    requestp, on_errorp);
 		break;
 	}
@@ -699,7 +698,8 @@ void
 protocol_state_init(struct protocol_state *ps)
 {
 	ps->nesting_level = 0;
-	ps->last_request = -1;
+	ps->last_sync_request = -1;
+	ps->last_async_request = -1;
 }
 
 /*
@@ -728,9 +728,10 @@ protocol_service(struct peer *peer)
 
 	from_client = peer_get_auth_id_type(peer) == GFARM_AUTH_ID_TYPE_USER;
 	if (ps->nesting_level == 0) { /* top level */
-		e = protocol_switch(peer, from_client, 0, 0, ps->last_request,
+		e = protocol_switch(peer, from_client, 0, 0,
+		    ps->last_sync_request,
 		    &request, &dummy, &suspended);
-		ps->last_request = request;
+		ps->last_sync_request = request;
 		if (suspended)
 			return (1); /* finish */
 		giant_lock();
@@ -753,8 +754,9 @@ protocol_service(struct peer *peer)
 		giant_unlock();
 	} else { /* inside of a COMPOUND block */
 		e = protocol_switch(peer, from_client, cs->skip, 1,
-		    ps->last_request, &request, &cs->current_part, &suspended);
-		ps->last_request = request;
+		    ps->last_sync_request,
+		    &request, &cs->current_part, &suspended);
+		ps->last_sync_request = request;
 		if (suspended)
 			return (1); /* finish */
 		if (peer_had_protocol_error(peer)) {
@@ -964,107 +966,6 @@ resumer(void *arg)
 	return (NULL);
 }
 
-/*
- * only called in case of gfarm_auth_id_type == GFARM_AUTH_ID_TYPE_USER,
- * unless auth_method == GFARM_AUTH_METHOD_TLS_CLIENT_CERTIFICATE
- */
-gfarm_error_t
-auth_uid_to_global_username(void *closure,
-	enum gfarm_auth_method auth_method,
-	enum gfarm_auth_id_type auth_user_id_type,
-	const char *auth_user_id,
-	char **global_usernamep)
-{
-	gfarm_error_t e;
-	char *global_username;
-	struct user *u;
-	static const char diag[] = "auth_uid_to_global_username";
-
-	if (GFARM_IS_AUTH_TLS_CLIENT_CERTIFICATE(auth_method)) {
-		char *hostname;
-		struct host *h;
-		struct mdhost *m;
-
-		switch (auth_user_id_type) {
-		case GFARM_AUTH_ID_TYPE_USER:
-			break;
-		case GFARM_AUTH_ID_TYPE_SPOOL_HOST:
-			e = gfarm_x509_cn_get_hostname(auth_user_id_type,
-			    auth_user_id, &hostname);
-			if (e != GFARM_ERR_NO_ERROR)
-				return (GFARM_ERR_AUTHENTICATION);
-			giant_lock();
-			h = host_lookup(hostname);
-			giant_unlock();
-			if (h == NULL) {
-				gflog_info(GFARM_MSG_UNFIXED,
-				    "unknown gfsd <%s>", hostname);
-				free(hostname);
-				return (GFARM_ERR_AUTHENTICATION);
-			}
-			if (global_usernamep == NULL)
-				free(hostname);
-			else
-				*global_usernamep = hostname;
-			return (GFARM_ERR_NO_ERROR);
-		case GFARM_AUTH_ID_TYPE_METADATA_HOST:
-			e = gfarm_x509_cn_get_hostname(auth_user_id_type,
-			    auth_user_id, &hostname);
-			if (e != GFARM_ERR_NO_ERROR)
-				return (GFARM_ERR_AUTHENTICATION);
-			giant_lock();
-			m = mdhost_lookup(hostname);
-			giant_unlock();
-			if (m == NULL) {
-				gflog_info(GFARM_MSG_UNFIXED,
-				    "unknown gfmd <%s>", hostname);
-				free(hostname);
-				return (GFARM_ERR_AUTHENTICATION);
-			}
-			if (global_usernamep == NULL)
-				free(hostname);
-			else
-				*global_usernamep = hostname;
-			return (GFARM_ERR_NO_ERROR);
-		default:
-			gflog_debug(GFARM_MSG_UNFIXED,
-			    "auth_uid_to_global_username(id_type:%d, id:%s): "
-			    "unexpected call",
-			    auth_user_id_type, auth_user_id);
-			return (GFARM_ERR_AUTHENTICATION);
-		}
-	}
-
-	if (auth_user_id_type != GFARM_AUTH_ID_TYPE_USER)
-		return (GFARM_ERR_AUTHENTICATION);
-
-	giant_lock();
-	if (GFARM_IS_AUTH_GSS(auth_method) ||
-	    GFARM_IS_AUTH_TLS_CLIENT_CERTIFICATE(auth_method)) {
-		/* auth_user_id is a DN */
-		u = user_lookup_gsi_dn(auth_user_id);
-	} else { /* auth_user_id is a gfarm global user name */
-		u = user_lookup(auth_user_id);
-	}
-	giant_unlock();
-
-	if (u == NULL) {
-		/*
-		 * do not return GFARM_ERR_NO_SUCH_USER
-		 * to prevent information leak
-		 */
-		gflog_info(GFARM_MSG_UNFIXED,
-		    "unknown user id <%s>", auth_user_id);
-		return (GFARM_ERR_AUTHENTICATION);
-	}
-	if (global_usernamep == NULL)
-		return (GFARM_ERR_NO_ERROR);
-	global_username = strdup_log(user_name(u), diag);
-	if (global_username == NULL)
-		return (GFARM_ERR_NO_MEMORY);
-	*global_usernamep = global_username;
-	return (GFARM_ERR_NO_ERROR);
-}
 
 gfarm_error_t
 peer_authorize(struct peer *peer)

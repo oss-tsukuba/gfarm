@@ -1,110 +1,180 @@
+# Gfarm containers for developers
+
 Requirements
 ============
 
 - GNU Make
 - Python (>= 3.3)
-- Docker
-- Docker Compose
+- Docker + Docker Compose v2
+  or Podman + Podman Compose
 - sudo
-- cgroup v2: disabled
-- RAM : 4GB or more
-- The host OS is not used for other purposes
 
-Disable cgroup v2
-=================
+Restriction
+===========
 
-- Is enabled cgroup v2 ?
+- Memory size should be larger than 4 GiB
 
-  $ mount | grep "cgroup2 on /sys/fs/cgroup type"; echo $?
-  0
+- The host OS is assumed to be used exclusively because docker/dev requires
+  root privilege when using Rootful mode.
 
-  Zero means "cgroup v2 is enabled".
+- Rootless mode is available, but some restrictions exist.
 
-- Disable cgroup v2 when cgroup v2 is enabled.
+- cgroup v2 should be disabled to build centos7 container
 
-  add the following parameters to GRUB_CMDLINE_LINUX_DEFAULT
-  of /etc/default/grub :
-  - systemd.unified_cgroup_hierarchy=false
-  - systemd.legacy_systemd_cgroup_controller=false
+  In a docker container, systemctl does not work with cgroup v2.  You can
+  check by the following command
 
-  Example:
-    GRUB_CMDLINE_LINUX_DEFAULT="quiet systemd.unified_cgroup_hierarchy=false systemd.legacy_systemd_cgroup_controller=false"
+  $ docker/dev/common/is_cgroup_v2.sh && echo cgroup2 enabled || echo cgroup2 disabled
 
-- update and reboot
+  To disable cgroup2, add "systemd.unified_cgroup_hierarchy=false
+  systemd.legacy_systemd_cgroup_controller=false" to GRUB_CMDLINE_LINUX_DEFAULT
+  in /etc/default/grub like
+
+  GRUB_CMDLINE_LINUX_DEFAULT="quiet systemd.unified_cgroup_hierarchy=false systemd.legacy_systemd_cgroup_controller=false"
+
+  update and reboot
 
   $ sudo update-grub
   $ sudo reboot
 
-- Is enabled cgroup v2 ?
+Quick start
+===========
 
-  $ mount | grep "cgroup2 on /sys/fs/cgroup type"; echo $?
-  1
+1. Install Docker and Docker Compose
 
-Quick start on Ubuntu 18.04 host
-================================
+  See https://docs.docker.com/engine/install/ubuntu/ for details.
 
-1. Install Docker.
-   See https://docs.docker.com/engine/install/ubuntu/ for details.
-
-  $ sudo apt-get update
-  $ sudo apt-get install \
-    apt-transport-https \
-    ca-certificates \
-    curl \
-    gnupg-agent \
-    software-properties-common
-  $ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-  $ sudo add-apt-repository \
-    "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
-    $(lsb_release -cs) stable"
-  $ sudo apt-get update
-  $ sudo apt-get install docker-ce docker-ce-cli containerd.io
-
-2. Install Docker Compose.
-
-  (Compose v2)
-  See https://docs.docker.com/compose/cli-command/
-      https://github.com/docker/compose
-      for details.
-
-  $ sudo mkdir -p /usr/local/libexec/docker/cli-plugins
-  $ curl -SL https://github.com/docker/compose/releases/download/v2.0.1/docker-compose-linux-x86_64 -o /usr/local/libexec/docker/cli-plugins/docker-compose
-  $ sudo chmod +x /usr/local/libexec/docker/cli-plugins/docker-compose
-
-  (Compose v1)
-  See https://docs.docker.com/compose/install/ for details.
-
-  # specify the appropriate version.
-  # cf. https://github.com/docker/compose/releases/latest
-  $ VER=1.29.2
-  $ curl -L \
-    "https://github.com/docker/compose/releases/download/${VER}/docker-compose-$(uname -s)-$(uname -m)" \
-    -o docker-compose \
-  && sudo mv docker-compose /usr/local/bin/docker-compose
-  $ sudo chmod +x /usr/local/bin/docker-compose
-
-3. Install other packages.
+2. Install other packages (Example on Debian or Ubuntu)
 
   $ sudo apt install make git
 
-4. Checkout gfarm2fs.
+3. Download gfarm and gfarm2fs
 
-$ cd path/to/gfarm-src-top
-$ git clone git@github.com:oss-tsukuba/gfarm2fs.git
+  $ git clone git@github.com:oss-tsukuba/gfarm.git
+  $ cd gfarm
+  $ git clone git@github.com:oss-tsukuba/gfarm2fs.git
 
-5. Use Docker
+4. Edit config.mk
+
+  You can override from config-default.mk
+
+5. Setup sudo configuration
+
+  You need to have a privilege to execute sudo.
+  ("SUDO = sudo" in config.mk ... means Rootful mode)
+
+6. Start Gfarm containers
 
   $ cd docker/dev
-  $ editor config.mk
-  # override GFDOCKER_IP_VERSION, GFDOCKER_SUBNET, and GFDOCKER_START_HOST_ADDR
-  # from config-default.mk
-  $ cd dist/centos7/src  # when using source package on CentOS 7
-  # note: execute 'sudo' in Makefile
-  $ make help  # display usage.
-  $ make reborn  # up the containers.
-  $ make shell  # enter the container.
-  $ make regress  # execute regress.
-  $ make down  # down the containers.
+  $ cd dist/DISTRIBUTION/src
+  $ make help		# display usage.
+  $ make reborn		# up the containers.
+  $ make shell		# enter the container.
+  $ make regress 	# execute regress.
+  $ make down		# down the containers.
+
+7. Note
+
+  - Do not edit .shadow.config.mk, docker-compose.yml, and common/rc.gfservice.
+
+  - autofs + gfarm2fs
+      - not work in all containers on rootless mode
+          - autofs service does not start.
+      - not work in some containers even if running on rootful mode
+          - "automount fusermount: mounting over filesystem type 0x00000187 is forbidden"
+	    (not work on fuse version 2.8 to 3.2.6 without autofs patch)
+              - centos9
+              - fedora33
+              - opensuse
+          - "do_mount_autofs_indirect: already mounted as other than autofs or failed to unlink entry in tree"
+              - centos7
+
+Use Rootless mode
+=================
+
+0. Restrictions for Gfarm developers
+
+  - gfarm2fs: may not work by default
+    - Example of required options:
+      -o auto_uid_min=40000,auto_uid_max=50000,auto_gid_min=40000,auto_gid_max=50000
+    - The UID and GID ranges must be unused within your /etc/subuid.
+    - Otherwise, "Permission denied" will occur when creating a file.
+
+  - autofs: not work
+
+  - core_pattern: ineffective
+
+  - etc.:
+    https://docs.docker.com/engine/security/rootless/#known-limitations
+
+1. Setup Rootless mode by each user
+
+  See https://docs.docker.com/engine/security/rootless/ for details.
+
+  Note that containers are created in each user's home directory.
+
+2. Edit config.mk
+
+  SUDO =
+
+3. Start Gfarm containers
+
+  (host os)$ cd docker/dev
+  $ cd dist/DISTRIBUTION/src
+  $ make reborn
+
+4. How to remove files in mnt/
+
+  (host os)$ cd docker/dev
+  $ make shell
+  user1$ sudo -i
+  # cd /mnt
+  # rm FILENAME
+
+Use Podman instead of Docker
+============================
+
+0. Details
+
+  https://podman.io/
+  https://github.com/containers/podman
+
+1. Install Podman
+
+  https://podman.io/getting-started/installation
+
+  (Confirmed to work on Ubuntu 22.04 host)
+
+2. Install Podman Compose
+
+  https://github.com/containers/podman-compose
+
+  Version 1.0.4 or later is required.
+  (or, latest development version may be required)
+  (Related issue)
+  https://github.com/containers/podman-compose/issues/463
+
+3. Edit config.mk
+
+  DOCKER_CMD = podman
+  DOCKER_COMPOSE_CMD = podman-compose
+  SUDO =
+
+  (Use Rootless Podman when SUDO is empty)
+  https://github.com/containers/podman/blob/main/rootless.md
+
+4. Start Gfarm containers
+
+  (host os)$ cd docker/dev
+  $ cd dist/DISTRIBUTION/src
+  $ make reborn
+
+5. How to remove files in mnt/ when using Rootless mode
+
+  (host os)$ cd docker/dev
+  $ podman unshare
+  # cd mnt
+  # rm FILENAME
 
 Keep keys
 =========
@@ -136,11 +206,6 @@ Build test on all distributions
 
   $ cd docker/dev
   $ ./TEST_BUILD_ALL.sh
-
-Note
-====
-
-- Do not edit .shadow.config.mk, docker-compose.yml, and common/rc.gfservice.
 
 Debug
 =====

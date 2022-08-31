@@ -11,9 +11,8 @@
 # ARG GFDOCKER_HOSTNAME_PREFIX_GFSD
 # ARG GFDOCKER_HOSTNAME_SUFFIX
 # ARG GFDOCKER_USE_SAN_FOR_GFSD
-# COPY . /tmp/gfarm
-# COPY gfarm2fs /tmp/gfarm2fs
-# RUN "/tmp/gfarm/docker/dev/common/setup-univ.sh"
+# COPY --chown=1000:1000 . /work/gfarm
+# RUN "/work/gfarm/docker/dev/common/setup-univ.sh"
 
 set -eux
 
@@ -28,26 +27,28 @@ set -eux
 : $GFDOCKER_USE_SAN_FOR_GFSD
 
 MY_SHELL=/bin/bash
-USERADD="useradd -m -s "$MY_SHELL" -U"
+USERADD="useradd -m -s "$MY_SHELL" -U -K UID_MIN=1000 -K GID_MIN=1000"
 ca_key_pass=PASSWORD
 GRID_MAPFILE=/etc/grid-security/grid-mapfile
 PRIMARY_HOME=/home/${GFDOCKER_PRIMARY_USER}
-gfarm_src_path="${PRIMARY_HOME}/gfarm"
+gfarm_src_path="/work/gfarm"
+gfarm2fs_src_path="${gfarm_src_path}/gfarm2fs"
 
-# pin UID for user1
+# pin starting UID for user1
 for i in $(seq 1 "$GFDOCKER_NUM_USERS"); do
   $USERADD "${GFDOCKER_USERNAME_PREFIX}${i}";
 done
 
+ln -s ${gfarm_src_path} ${PRIMARY_HOME}/gfarm
+ln -s ${gfarm2fs_src_path} ${PRIMARY_HOME}/gfarm2fs
+
+# remove untracked files
+(cd ${gfarm_src_path}; git clean -df) || true
+(cd ${gfarm2fs_src_path}; git clean -df) || true
+
 for u in _gfarmmd _gfarmfs; do
   $USERADD "$u"
 done
-
-# "chown -R" is slow.
-rsync -a --chown=${GFDOCKER_PRIMARY_USER}:${GFDOCKER_PRIMARY_USER} \
-      /tmp/gfarm/ "${PRIMARY_HOME}"/gfarm
-rsync -a --chown=${GFDOCKER_PRIMARY_USER}:${GFDOCKER_PRIMARY_USER} \
-      /tmp/gfarm2fs/ "${PRIMARY_HOME}"/gfarm2fs
 
 # for grid-cert-request
 VARADM=/var/adm
@@ -208,6 +209,11 @@ su - "$GFDOCKER_PRIMARY_USER" -c " \
     done \
 "
 
+# install /usr/local/bin/authconfig
+cp -p "${gfarm_src_path}/docker/dev/common/authconfig" /usr/local/bin/
+# install /usr/local/bin/hookconfig
+cp -p "${gfarm_src_path}/docker/dev/common/hookconfig" /usr/local/bin/
+
 ### for gfsd certificate ("CN=gfsd/... and subjectAltName")
 if [ ${GFDOCKER_USE_SAN_FOR_GFSD} -eq 1 ]; then
   NAME_COMPATIBILITY_ENV="GLOBUS_GSSAPI_NAME_COMPATIBILITY=HYBRID"
@@ -248,3 +254,26 @@ EOF
 
 chmod +x ${CLEAR_NOLOGIN_SCRIPT}
 systemctl enable ${CLEAR_NOLOGIN}
+
+
+### setup autofs
+GFARM2FS_OPT="auto_uid_min=40000,auto_uid_max=50000,auto_gid_min=40000,auto_gid_max=50000"
+cat <<EOF | sudo dd of=/etc/auto.gfarm
+ROOT -fstype=gfarm2fs,${GFARM2FS_OPT},gfarmfs_root=/,allow_other,default_permissions,username=${user1} :/home/${user1}/.gfarm2rc
+* -fstype=gfarm2fs,${GFARM2FS_OPT},allow_root,username=& :/home/&/.gfarm2rc
+EOF
+
+cat <<EOF | sudo dd oflag=append conv=notrunc of=/etc/auto.master
+/gfarm /etc/auto.gfarm --debug
+EOF
+
+cat <<EOF | sudo dd oflag=append conv=notrunc of=/etc/fuse.conf
+user_allow_other
+EOF
+
+mkdir /gfarm
+systemctl enable autofs
+
+### disable getty
+systemctl mask systemd-logind.service
+systemctl mask getty.target

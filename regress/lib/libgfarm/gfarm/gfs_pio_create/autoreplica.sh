@@ -4,7 +4,7 @@
 
 [ `gfsched -w | wc -l` -ge 2 ] || exit $exit_unsupported
 
-WAIT_TIME_LIMIT=10
+WAIT_TIME_LIMIT=120
 
 gfs_pio_test=`dirname $testbin`/gfs_pio_test/gfs_pio_test
 tmpf=$gftmp/foo

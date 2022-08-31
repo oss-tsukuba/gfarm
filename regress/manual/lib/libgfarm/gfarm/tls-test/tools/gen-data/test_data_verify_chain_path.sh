@@ -21,7 +21,7 @@ SUBJECT_SUFFIX_BASE=4
 
 ## Funcs. ##
 
-source ${LIB_DIR}/funcs.sh
+. ${LIB_DIR}/funcs.sh
 
 usage() {
      cat << EOS >&2

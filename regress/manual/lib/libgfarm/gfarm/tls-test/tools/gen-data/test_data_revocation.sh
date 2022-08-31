@@ -9,7 +9,7 @@ PASS=test
 
 ## Funcs. ##
 
-source ${LIB_DIR}/funcs.sh
+. ${LIB_DIR}/funcs.sh
 
 usage() {
      cat << EOS >&2
@@ -178,7 +178,12 @@ cp_crls() {
 
     OUTPUT=${OUTPUT_DIR}/${TARGET}
 
-    mkdir -p "${OUTPUT}"/crls/{root,inter_ca_1,inter_ca_2,inter_ca_3,server,client1,client2,client3,client1_2,client1_2_3}
+    d="${OUTPUT}/crls"
+    mkdir -p "${d}/root" \
+	"${d}/inter_ca_1" "${d}/inter_ca_2" "${d}/inter_ca_3" \
+	"${d}/server" \
+	"${d}/client1" "${d}/client2" "${d}/client3" \
+	"${d}/client1_2" "${d}/client1_2_3"
     if [ $? -ne 0 ]; then
         puts_error "mkdir"
         return 1
@@ -214,7 +219,8 @@ gen_hash() {
 
     DIRS="root inter_ca_1 inter_ca_2 inter_ca_3 server client1 client2 client3 client1_2 client1_2_3"
     for DIR in ${DIRS}; do
-        pushd "${OUTPUT}/crls/$DIR" > /dev/null
+        olddir="`pwd`"
+        cd "${OUTPUT}/crls/$DIR"
 
         ls *\.crl | xargs -I {} sh -c 'ln -s {} "`openssl crl -noout -hash < {}`.r0"'
         if [ $? -ne 0 ]; then
@@ -222,7 +228,7 @@ gen_hash() {
             return 1
         fi
 
-        popd > /dev/null
+        cd "${olddir}"
     done
 
     return 0

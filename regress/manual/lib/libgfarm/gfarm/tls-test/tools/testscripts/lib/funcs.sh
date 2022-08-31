@@ -63,7 +63,7 @@ run_test() {
 	valgcmd=""
 	if [ ! -z "${__RUN_VALGRIND__}" ]; then
 	    do_valg=1
-	    valgcmd="valgrind --leak-check=full --leak-resolution=high --show-leak-kinds=all --gen-suppressions=all"
+	    valgcmd="valgrind --leak-check=full --leak-resolution=high --show-leak-kinds=definite --gen-suppressions=all"
 	    if [ -z "${__VALGRIND_NO_SUPPRESS__}" -a -r "./suppressed_funcs" ]; then
 		valgcmd="${valgcmd} --suppressions=./suppressed_funcs"
 	    fi
@@ -177,8 +177,16 @@ run_test() {
 	fi
 
 	if [ ${do_valg} -eq 1 ]; then
-	    srvwarn=`grep tls_funcs.h "${server_output_file}" | grep -v '<debug>' | wc -l`
-	    cliwarn=`grep tls_funcs.h "${client_output_file}" | grep -v '<debug>' | wc -l`
+	    srvwarn=0
+	    cliwarn=0
+	    grep 'are definitely lost in' "${server_output_file}" >/dev/null 2>&1
+	    if [ $? -eq 0 ]; then
+		srvwarn=`grep tls_funcs.h "${server_output_file}" | grep -v '<debug>' | wc -l`
+	    fi
+	    grep 'are definitely lost in' "${client_output_file}" >/dev/null 2>&1
+	    if [ $? -eq 0 ]; then
+		cliwarn=`grep tls_funcs.h "${client_output_file}" | grep -v '<debug>' | wc -l`
+	    fi
 	    echo "${test_id}		server leaks: ${srvwarn}"
 	    echo "${test_id}		client leaks: ${cliwarn}"
 	fi

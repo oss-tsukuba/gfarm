@@ -108,6 +108,7 @@ struct tls_test_ctx_struct {
 	int tls_key_update;		/* gfarm: bool, test: int */
 	int tls_build_chain_local;	/* bool */
 	int tls_allow_no_crl;		/* bool */
+	int tls_security_level;
 	int network_receive_timeout;
 	int network_send_timeout;
 };
@@ -249,8 +250,7 @@ tlslog_tls_message(int msg_no, int priority,
  */
 #define tls_log_template(msg_no, level, ...)	     \
 	do {					     \
-		if (gflog_auth_get_verbose() != 0 && \
-			gflog_get_priority_level() >= level) {		\
+		if (gflog_get_priority_level() >= level) {		\
 			tlslog_tls_message(msg_no, level,		\
 				__FILE__, __LINE__, __func__, __VA_ARGS__); \
 		}							\

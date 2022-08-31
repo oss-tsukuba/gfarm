@@ -102,6 +102,7 @@ struct gfarm_context {
 	int tls_build_chain_local; /* boolean */
 	int tls_allow_no_crl; /* boolean */
 	int tls_proxy_certificate; /* boolean */
+	int tls_security_level;
 
 	/* auth sasl* */
 	char *sasl_mechanisms;

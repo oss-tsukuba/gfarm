@@ -35,14 +35,14 @@
 static gfarm_error_t gfarm_authorize_panic(struct gfp_xdr *,
 	char *, char *,
 	gfarm_error_t (*)(void *,
-	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
+	    enum gfarm_auth_method, const char *, enum gfarm_auth_id_type *,
 	    char **), void *,
 	enum gfarm_auth_id_type *, char **);
 
 gfarm_error_t (*gfarm_authorization_table[])(struct gfp_xdr *,
 	char *, char *,
 	gfarm_error_t (*)(void *,
-	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
+	    enum gfarm_auth_method, const char *, enum gfarm_auth_id_type *,
 	    char **), void *,
 	enum gfarm_auth_id_type *, char **) = {
 	/*
@@ -89,8 +89,8 @@ static gfarm_error_t
 gfarm_authorize_panic(struct gfp_xdr *conn,
 	char *service_tag, char *hostname,
 	gfarm_error_t (*auth_uid_to_global_user)(void *,
-	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
-	    char **), void *closure,
+	    enum gfarm_auth_method, const char *,
+	    enum gfarm_auth_id_type *, char **), void *closure,
 	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
 {
 	gflog_fatal(GFARM_MSG_1000021,
@@ -432,8 +432,8 @@ gfarm_error_t
 gfarm_authorize_sharedsecret_common(struct gfp_xdr *conn,
 	char *service_tag, char *hostname,
 	gfarm_error_t (*auth_uid_to_global_user)(void *,
-	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
-	    char **), void *closure,
+	    enum gfarm_auth_method, const char *,
+	    enum gfarm_auth_id_type *, char **), void *closure,
 	const char *auth_method_name,
 	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
 {
@@ -471,8 +471,8 @@ gfarm_authorize_sharedsecret_common(struct gfp_xdr *conn,
 		 */
 		peer_type = GFARM_AUTH_ID_TYPE_USER;
 		e = (*auth_uid_to_global_user)(closure,
-		    GFARM_AUTH_METHOD_SHAREDSECRET, peer_type,
-		    global_username, NULL);
+		    GFARM_AUTH_METHOD_SHAREDSECRET,
+		    global_username, &peer_type, NULL);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_notice(GFARM_MSG_UNFIXED,
 			    "(%s@%s) authorize %s: "
@@ -564,8 +564,8 @@ gfarm_error_t
 gfarm_authorize_sharedsecret(struct gfp_xdr *conn,
 	char *service_tag, char *hostname,
 	gfarm_error_t (*auth_uid_to_global_user)(void *,
-	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
-	    char **), void *closure,
+	    enum gfarm_auth_method, const char *,
+	    enum gfarm_auth_id_type *, char **), void *closure,
 	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
 {
 	return (gfarm_authorize_sharedsecret_common(conn,
@@ -582,8 +582,8 @@ gfarm_error_t
 gfarm_authorize_wo_setuid(struct gfp_xdr *conn, char *service_tag,
 	char *hostname, struct sockaddr *addr,
 	gfarm_error_t (*auth_uid_to_global_user)(void *,
-	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
-	    char **), void *closure,
+	    enum gfarm_auth_method, const char *,
+	    enum gfarm_auth_id_type *, char **), void *closure,
 	enum gfarm_auth_id_type *peer_typep, char **global_usernamep,
 	enum gfarm_auth_method *auth_methodp)
 {

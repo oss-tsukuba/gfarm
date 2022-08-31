@@ -5,7 +5,7 @@ TOP_DIR=`cd ${TOP_DIR}; pwd`
 total_tests_num=`cat ${TOP_DIR}/expected-test-result.csv | grep -v -E "^3|^[a-zA-Z]" | wc -l`
 total_fail_num=0
 
-source ${TOP_DIR}/lib/funcs.sh
+. ${TOP_DIR}/lib/funcs.sh
 
 
 usage(){

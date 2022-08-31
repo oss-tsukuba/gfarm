@@ -1,7 +1,7 @@
 '\" t
 .\"     Title: gfarm2.conf
-.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
 .\"      Date: 17 Sep 2020
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
@@ -1051,9 +1051,14 @@ or
 disable
 keyword\&. The second argument,
 \fIauth method\fR, should be the
+sharedsecret,
+tls_sharedsecret,
+tls_client_certificate,
+gsi_auth,
 gsi,
-gsi_auth, or
-sharedsecret
+kerberos_auth
+or
+kerberos
 keyword\&. The third argument specifies the host(s) by using
 \fIHost specification\fR\&.
 .sp
@@ -1069,8 +1074,12 @@ This process takes place on both client and server sides\&. Candidates for authe
 .sp
 The order of statements with different authentication methods is not relevant\&. When there are several candidates for the authentication method for the host, the order of the authentication trial is
 sharedsecret,
-gsi_auth, and then
-gsi\&.
+tls_sharedsecret,
+tls_client_certificate,
+gsi_auth,
+gsi,
+kerberos_auth, and then
+kerberos\&.
 .sp
 The GSI methods are available if and only if the \-\-with\-globus option is specified at configuration\&. When the methods are not available, an
 auth
@@ -2955,6 +2964,265 @@ For example,
 .RE
 .\}
 .RE
+.PP
+tls_cipher_suite \fIcipher_suite\fR
+.RS 4
+Specifies the cipher suite to be used for TLS authentication, separated by a colon\&. Please see the following URL for possible values:
+\m[blue]\fB\%https://www.openssl.org/docs/man1.1.1/man3/SSL_set_ciphersuites.html\fR\m[]
+.sp
+For example,
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	tls_cipher_suite "TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256"
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+tls_ca_certificate_path \fIdirectory\fR
+.RS 4
+Specifies the directory where the CA certificate of the certification authority to be used for TLS authentication is to be placed\&. For instructions on how to install certificate files in this directory, see the description of
+CApath
+in the following URL:
+\m[blue]\fB\%https://www.openssl.org/docs/man1.1.1/man3/SSL_CTX_load_verify_locations.html\fR\m[]
+.sp
+The default value is
+/etc/pki/tls/certs/gfarm
+.sp
+For example,
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	tls_ca_certificate_path /etc/pki/tls/certs/gfarm
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+tls_ca_revocation_path \fIdirectory\fR
+.RS 4
+Specifies the directory where CRLs provided by the certification authority used for TLS authentication are to be placed\&.
+.sp
+The default value is
+/etc/pki/tls/certs/gfarm
+.sp
+For example,
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	tls_ca_revocation_path /etc/pki/tls/certs/gfarm
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+tls_ca_peer_verify_chain_path \fIdirectory\fR
+.RS 4
+Specifies this directive if you want to limit the intermediate certificates that sign the certificate of the communicating peer in TLS authentication\&. If this setting is present, intermediate certificates other than those placed in this directory will not be accepted\&.
+.sp
+Not set by default\&.
+.sp
+For example,
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	tls_ca_peer_verify_chain_path /etc/pki/tls/certs/gfarm\&.chain
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+tls_certificate_file \fIfilename\fR
+.RS 4
+Specifies the filename of the certificate that represents itself in TLS authentication\&.
+.sp
+If the environment variable X509_USER_CERT is set, it takes precedence over this directive\&.
+.sp
+Otherwise, if it is client, `$HOME/\&.gfarm/usercert\&.pem\*(Aq\*(Aq will be used, or if it is gfmd, ``/etc/pki/tls/certs/gfmd\&.crt\*(Aq\*(Aq、 well be used, or if it is gfsd, ``/etc/pki/tls/certs/gfsd\&.crt\*(Aq\*(Aq will be used by default\&.
+.sp
+For example,
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	tls_certificate_file /etc/pki/tls/certs/myself\&.crt
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+tls_certificate_chain_file \fIfilename\fR
+.RS 4
+Specifies the filename of the certificates of the intermediate certificate authorities that signed
+tls_certificate_file
+in TLS authentication\&. Note that intermediate certificates do not necessarily need to be in a separate file, but can be grouped together in
+tls_certificate_file\&.
+.sp
+Not set by default\&.
+.sp
+For example,
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	tls_certificate_chain_file /etc/pki/tls/certs/myself_intermediate\&.crt
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+tls_key_file \fIfilename\fR
+.RS 4
+Specifies the filename of the private key that represents itself in TLS authentication\&.
+.sp
+If the environment variable X509_USER_KEY is set, it takes precedence over this directive\&.
+.sp
+Otherwise, if it is client, ``$HOME/\&.gfarm/userkey\&.pem\*(Aq\*(Aq will be used, or if it is gfmd, ``/etc/pki/tls/private/gfmd\&.key\*(Aq\*(Aq will be used, or if it is gfsd, ``/etc/pki/tls/private/gfsd\&.key\*(Aq\*(Aq will be used by default\&.
+.sp
+For example,
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	tls_certificate_key /etc/pki/tls/certs/myself\&.key
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+tls_allow_no_crl \fIvalidity\fR
+.RS 4
+Set to disable if you want to require the existence of a CRL file corresponding to the root CA certificate for TLS communication\&.
+.sp
+Default is enable, which means that the CRL file does not have to exist\&. This works similarly to the ``SSLCARevocationCheck chain no_crl_for_cert_ok\*(Aq\*(Aq setting in Apache httpd\&.
+.sp
+For example,
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	tls_allow_no_crl disable
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+tls_key_update \fIvalidity\fR
+.RS 4
+Set to disable to suppress the traffic key update feature for TLS communication\&.
+.sp
+Default is enable\&.
+.sp
+For example,
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	tls_key_update disable
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+tls_build_chain_local \fIvalidity\fR
+.RS 4
+Set to enable to build the self certificate chain and send it to peer in TLS communication\&.
+.sp
+Defaults is disable, which means that the peer will build the certificate chain
+.sp
+For example,
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	tls_build_chain_local enable
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+tls_proxy_certificate \fIvalidity\fR
+.RS 4
+Set to disable to prohibit the use of proxy certificates in TLS communication\&.
+.sp
+Default is enable\&. In this case, look for the client certificate in the following order:
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+proxy certificate which is specified by the environment variable $X509_USER_PROXY
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+proxy certificate in
+/tmp/x509up_u$lt;USER_ID>
+file
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  3." 4.2
+.\}
+certificate/private key pair specified by
+tls_certificate_file
+/
+tls_key_file
+directives
+.RE
+.sp
+For example,
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	tls_proxy_certificate disable
+.fi
+.if n \{\
+.RE
+.\}
+.RE
 .SH "GRAMMAR"
 .PP
 This is a grammar of gfarm2\&.conf described by the BNF notation\&.
@@ -3107,7 +3375,19 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 	<write_verify_statement> |
 	<write_verify_interval_statement> |
 	<write_verify_retry_interval_statement> |
-	<write_verify_log_interval_statement>
+	<write_verify_log_interval_statement> |
+	<tls_cipher_suite_statement> |
+	<tls_ca_certificate_path_statement> |
+	<tls_ca_revocation_path_statement> |
+	<tls_ca_peer_verify_chain_path_statement> |
+	<tls_certificate_file_statement> |
+	<tls_certificate_chain_file_statement> |
+	<tls_key_file_statement> |
+
+	<tls_allow_no_crl_statement> |
+	<tls_key_update_statement> |
+	<tls_build_chain_local_statement> |
+	<tls_proxy_certificate_statement> 
 .fi
 .if n \{\
 .RE
@@ -3793,7 +4073,7 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 .RS 4
 .\}
 .nf
-"gsi" | "gsi_auth" | "sharedsecret"
+"sharedsecret" | "tls_sharedsecret" | "tls_client_certificate" | "gsi_auth" | "gsi" | "kerberos_auth" | "kerberos"
 .fi
 .if n \{\
 .RE
@@ -5386,6 +5666,160 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 .\}
 .nf
 "write_verify_log_interval" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<tls_cipher_suite_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"tls_cipher_suite" <string>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<tls_ca_certificate_path_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"tls_ca_certificate_path" <pathname>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<tls_ca_revocation_path_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"tls_ca_revocation_path" <pathname>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<tls_ca_peer_verify_chain_path_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"tls_ca_peer_verify_chain_path" <pathname>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<tls_certificate_file_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"tls_certificate_file" <pathname>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<tls_certificate_chain_file_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"tls_certificate_chain_file" <pathname>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<tls_key_file_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"tls_key_file" <pathname>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<tls_allow_no_crl_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"tls_allow_no_crl" <validity>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<tls_key_update_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"tls_key_update" <validity>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<tls_build_chain_local_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"tls_build_chain_local" <validity>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<tls_proxy_certificate_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"tls_proxy_certificate" <validity>
 .fi
 .if n \{\
 .RE

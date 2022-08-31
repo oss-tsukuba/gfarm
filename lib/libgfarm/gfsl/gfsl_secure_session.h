@@ -3,7 +3,6 @@
 
 #include "gfsl_config.h"
 #include "gfsl_gss.h"
-#include "gfarm_auth.h"
 
 /*
  * Session information struct
@@ -48,9 +47,8 @@ typedef struct gfarmSecSession {
 	 * Acceptor side session information.
 	 */
 	struct acceptorSessionInfo {
-	    gfarmAuthEntry *mappedUser;	/* Authenticated
-					   user information. */
 	    gss_name_t initiatorName;	/* Need to release */
+	    char *initiatorDistName;	/* Need to release */
 	    gss_cred_id_t deleCred;	/* A credential
 					   delegated from
 					   the initiator. */
@@ -134,16 +132,13 @@ extern void	gfarmSecSessionFreeCrackedStatus(char **strPtr);
 extern void	gfarmSecSessionPrintStatus(gfarmSecSession *ssPtr);
 
 extern int	gfarmSecSessionInitializeAcceptor(char *configFile,
-						  char *usermapFile,
 						  OM_uint32 *majStatPtr,
   						  OM_uint32 *minStatPtr);
 extern int	gfarmSecSessionInitializeInitiator(char *configFile,
-						   char *usermapFile,
 						   OM_uint32 *majStatPtr,
 						   OM_uint32 *minStatPtr);
 extern int	gfarmSecSessionInitializeBoth(char *iConfigFile,
 					      char *aConfigFile,
-					      char *usermapFile,
 					      OM_uint32 *majstatPtr,
 					      OM_uint32 *minstatPtr);
 
@@ -165,14 +160,6 @@ extern gfarmSecSession *	gfarmSecSessionInitiate(int fd,
 							int *gsiErrNoPtr,
 							OM_uint32 *majStatPtr,
 							OM_uint32 *minStatPtr);
-extern gfarmSecSession *	gfarmSecSessionInitiateByAddr(unsigned long rAddr,
-							int port,
-							const gss_name_t acceptorName,
-							gss_cred_id_t cred,
-							OM_uint32 reqFlag,
-							gfarmSecSessionOption *ssOptPtr,
-							OM_uint32 *majStatPtr,
-							OM_uint32 *minStatPtr);
 extern gfarmSecSession *	gfarmSecSessionInitiateByName(char *hostname,
 							int port,
 							const gss_name_t acceptorName,
@@ -190,9 +177,9 @@ extern int			gfarmSecSessionGetInitiatorName(
 							gfarmSecSession *ssPtr,
 							gss_name_t *namePtr);
 
-extern gfarmAuthEntry *		gfarmSecSessionGetInitiatorInfo(gfarmSecSession *ssPtr);
-
-extern int			gfarmSecSessionDedicate(gfarmSecSession *ssPtr);
+extern int			gfarmSecSessionGetInitiatorDistName(
+							gfarmSecSession *ssPtr,
+							char **distNamePtr);
 
 extern int			gfarmSecSessionSendInt32(gfarmSecSession *ssPtr,
 							 gfarm_int32_t *buf,

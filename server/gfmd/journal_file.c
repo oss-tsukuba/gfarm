@@ -1987,11 +1987,11 @@ journal_file_read(struct journal_file_reader *reader, void *op_arg,
 	}
 	reader->uncommitted_len += len;
 unlock:
+	if (drained)
+		gfarm_cond_signal(&jf->drain_cond, diag, JOURNAL_FILE_STR);
 	journal_file_mutex_unlock(jf, diag);
 	if (needs_free && obj)
 		free_op(op_arg, ope, obj);
-	if (drained)
-		gfarm_cond_signal(&jf->drain_cond, diag, JOURNAL_FILE_STR);
 	return (e);
 }
 
@@ -2097,8 +2097,8 @@ journal_file_wait_for_read_completion(struct journal_file_reader *reader)
 
 	journal_file_mutex_lock(jf, diag);
 	journal_file_reader_set_flag(reader, JOURNAL_FILE_READER_F_DRAIN, 1);
-	journal_file_mutex_unlock(jf, diag);
 	gfarm_cond_signal(&jf->nonempty_cond, diag, JOURNAL_FILE_STR);
+	journal_file_mutex_unlock(jf, diag);
 
 	journal_file_mutex_lock(jf, diag);
 	while (JOURNAL_FILE_READER_DRAINED(reader))

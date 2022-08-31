@@ -1,9 +1,12 @@
-FROM opensuse/leap
+FROM opensuse/leap:15.3
 
 # System dependent
 
 ARG TZ
 ENV TZ=${TZ}
+
+ARG REPO=https://download.opensuse.org/repositories/home:frank_scheiner:gct/openSUSE_Leap_15.2/home:frank_scheiner:gct.repo
+#ARG REPO=https://download.opensuse.org/repositories/home:/frank_scheiner:/gct/15.3/home:frank_scheiner:gct.repo
 
 RUN zypper install -y \
     sudo \
@@ -18,17 +21,17 @@ RUN zypper install -y \
     && systemctl enable sshd \
     && zypper install -y \
     libopenssl-devel \
-    postgresql13 \
-    postgresql13-devel \
-    postgresql13-server \
-    postgresql13-server-devel \
+    postgresql14 \
+    postgresql14-devel \
+    postgresql14-server \
+    postgresql14-server-devel \
     fuse \
     fuse-devel \
+    autofs \
     libacl-devel \
     ruby \
     libtool \
-    && zypper addrepo \
-    https://download.opensuse.org/repositories/home:frank_scheiner:gct/openSUSE_Leap_15.2/home:frank_scheiner:gct.repo \
+    && zypper addrepo ${REPO} \
     && zypper --non-interactive --no-gpg-checks refresh \
     && zypper install -y \
     globus-gssapi-gsi-devel \
@@ -59,8 +62,7 @@ ARG GFDOCKER_HOSTNAME_PREFIX_GFMD
 ARG GFDOCKER_HOSTNAME_PREFIX_GFSD
 ARG GFDOCKER_HOSTNAME_SUFFIX
 ARG GFDOCKER_USE_SAN_FOR_GFSD
-COPY . /tmp/gfarm
-COPY gfarm2fs /tmp/gfarm2fs
-RUN "/tmp/gfarm/docker/dev/common/setup-univ.sh"
+COPY --chown=1000:1000 . /work/gfarm
+RUN "/work/gfarm/docker/dev/common/setup-univ.sh"
 
 CMD ["/sbin/init"]

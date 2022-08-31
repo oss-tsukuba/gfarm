@@ -397,17 +397,25 @@ gfprep_update_hostinfohash_all(const char *path,
 }
 
 static gfarm_error_t
+gfprep_check_loadavg(struct gfprep_host_info *);
+
+static gfarm_error_t
+gfprep_check_disk_avail(struct gfprep_host_info *, gfarm_off_t, int);
+
+static gfarm_error_t
 gfprep_filter_hostinfohash(const char *path,
 			   struct gfarm_hash_table *hash_all,
 			   struct gfarm_hash_table **hash_info_p,
 			   struct gfarm_hash_table *include_hash_hostname,
 			   const char *include_domain,
 			   struct gfarm_hash_table *exclude_hash_hostname,
-			   const char *exclude_domain)
+			   const char *exclude_domain,
+			   int to_write, int is_gfpcopy)
 {
 	int created;
 	struct gfarm_hash_entry *he;
 	struct gfarm_hash_iterator iter;
+	gfarm_error_t e;
 
 	*hash_info_p = gfarm_hash_table_alloc(
 		HOSTHASH_SIZE, gfarm_hash_strptr, gfarm_hash_key_equal_strptr);
@@ -438,6 +446,20 @@ gfprep_filter_hostinfohash(const char *path,
 		    gfprep_in_hostnamehash(exclude_hash_hostname,
 					   hi->hostname))
 			continue;
+		if (to_write && is_gfpcopy) {
+			if ((e = gfprep_check_loadavg(hi))
+			    != GFARM_ERR_NO_ERROR) {
+				continue;
+			}
+			if ((e = gfprep_check_disk_avail(hi, 0, 1))
+			    != GFARM_ERR_NO_ERROR) {
+				if (e != GFARM_ERR_NO_SPACE) {
+					gfmsg_error_e(e, "check_disk_avail");
+				}
+				continue;
+			}
+		}
+
 		he = gfarm_hash_enter(*hash_info_p,
 				      &hi->hostname, sizeof(char *),
 				      sizeof(struct gfprep_host_info *),
@@ -3277,7 +3299,7 @@ main(int argc, char *argv[])
 		e = gfprep_filter_hostinfohash(
 		    gfurl_url(src), hash_all_src,
 		    &hash_src, hash_srcname, opt_src_domain,
-		    exclude_hash_dstname, exclude_dst_domain);
+		    exclude_hash_dstname, exclude_dst_domain, 0, is_gfpcopy);
 		gfmsg_fatal_e(e, "gfprep_filter_hostinfohash for source");
 		/* count n_src_available only */
 		e = gfprep_hostinfohash_to_array(
@@ -3331,7 +3353,8 @@ retry_hash_dst:
 		e = gfprep_filter_hostinfohash(
 			gfurl_url(dst), this_hash_all_dst,
 			&hash_dst, hash_dstname, opt_dst_domain,
-			exclude_hash_srcname, exclude_src_domain);
+			exclude_hash_srcname, exclude_src_domain,
+			1, is_gfpcopy);
 		gfmsg_fatal_e(e, "gfprep_filter_hostinfohash for destination");
 		e = gfprep_hostinfohash_to_array(
 		    gfurl_url(dst), &n_array_dst, &array_dst, hash_dst);
@@ -3345,6 +3368,9 @@ retry_hash_dst:
 				    "write_target_domain ?)");
 				exit(EXIT_FAILURE);
 			}
+			gfmsg_info("no available node for destination"
+				   " in specified domain (%s),"
+				   " select nodes from all", opt_dst_domain);
 			if (hash_dst) {
 				gfarm_hash_table_free(hash_dst);
 				hash_dst = NULL;

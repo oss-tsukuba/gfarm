@@ -970,6 +970,8 @@ add_gfmd_to_gfarm_conf_tmp_file()
 		}
 		if (!exist)
 			print(\" $1:$2\");
+		else
+			printf(\"\n\");
 		found = 1;
 		next;
 	    }

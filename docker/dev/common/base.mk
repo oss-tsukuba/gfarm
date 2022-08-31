@@ -31,7 +31,10 @@ PROXY_URL = http://$(GFDOCKER_PROXY_HOST):$(GFDOCKER_PROXY_PORT)/
 GFDOCKER_USERNAME_PREFIX = user
 GFDOCKER_PRIMARY_USER = $(GFDOCKER_USERNAME_PREFIX)1
 PRIMARY_CLIENT_CONTAINER = $(GFDOCKER_HOSTNAME_PREFIX_CLIENT)1
-TOP = ../../../../..
+TOP = $(ROOTDIR)/../..
+
+#COMPOSE_YML = $(TOP)/docker/dev/docker-compose.yml
+COMPOSE_YML = $(ROOTDIR)/docker-compose.yml
 
 ifneq ($(GFDOCKER_NO_CACHE), 0)
 NO_CACHE = --no-cache
@@ -76,10 +79,12 @@ DOCKER = $(SUDO) $(DOCKER_CMD)
 GFDOCKER_PRJ_NAME_FULL=gfarm-$(GFDOCKER_PRJ_NAME)
 
 COMPOSE = $(SUDO) COMPOSE_PROJECT_NAME=$(GFDOCKER_PRJ_NAME_FULL) \
-	GFDOCKER_PRJ_NAME=$(GFDOCKER_PRJ_NAME) $(DOCKER_COMPOSE_CMD)
+	GFDOCKER_PRJ_NAME=$(GFDOCKER_PRJ_NAME) $(DOCKER_COMPOSE_CMD) \
+	-f $(COMPOSE_YML)
 CONTSHELL_FLAGS = \
 		--env TZ='$(TZ)' \
 		--env LANG='$(LANG)' \
+		$${TERM+--env TERM='$(TERM)'}\
 		--env GFDOCKER_PRJ_NAME='$(GFDOCKER_PRJ_NAME)' \
 		--env GFDOCKER_SUBNET='$(GFDOCKER_SUBNET)' \
 		--env GFDOCKER_START_HOST_ADDR='$(GFDOCKER_START_HOST_ADDR)' \
@@ -136,6 +141,7 @@ help:
 	@echo '  make reborn'
 	@echo '  make start'
 	@echo '  make stop'
+	@echo '  make kerberos-setup'
 	@echo '  make shell'
 	@echo '  make shell-user'
 	@echo '  make shell-root'
@@ -226,9 +232,11 @@ build:
 build-nocache:
 	$(build_nocache)
 
+# --remove-orphans may not be suppported
 define down
-	$(COMPOSE) down --volumes --remove-orphans -t $(STOP_TIMEOUT) \
-		&& rm -f $(TOP)/docker/dev/.shadow.config.mk
+	($(COMPOSE) down --volumes --remove-orphans -t $(STOP_TIMEOUT) \
+	|| $(COMPOSE) down --volumes -t $(STOP_TIMEOUT) || true) \
+	&& rm -f $(TOP)/docker/dev/.shadow.config.mk
 endef
 
 down:
@@ -271,17 +279,21 @@ TOP='$(TOP)' \
 endef
 
 define up
+mkdir -p $(ROOTDIR)/mnt
+# readable for others
+chmod 755 $(ROOTDIR)/mnt
 $(COMPOSE) up -d --force-recreate\
   && $(CONTSHELL) -c '. ~/gfarm/docker/dev/common/up.rc'
 endef
 
 define reborn
-	if [ -f $(TOP)/docker/dev/docker-compose.yml ]; then \
+	if [ -f $(COMPOSE_YML) ]; then \
 		$(down); \
 	else \
 		echo 'warn: docker-compose does not exist.' 1>&2; \
 	fi
 	$(gen)
+	$(COMPOSE) ps
 	$(prune)
 	if [ $(USE_NOCACHE) -eq 1 ]; then \
 		$(build_nocache); \
@@ -352,6 +364,41 @@ endef
 regress:
 	$(check_config)
 	$(regress)
+
+memcheck-gfmd memcheck-gfmd1 memcheck-gfmd2 memcheck-gfmd3 \
+memcheck-gfsd memcheck-gfsd1 memcheck-gfsd2 memcheck-gfsd3 memcheck-gfsd4:
+	$(check_config)
+	target=`echo "$@" | sed 's/.*-//'`; \
+	$(CONTSHELL) -c "hookconfig --$${target} memcheck"; \
+	$(regress); \
+	status=$$?; \
+	$(CONTSHELL) -c "hookconfig --$${target} no-hook"; \
+	exit $${status}
+
+helgrind-gfmd helgrind-gfmd1 helgrind-gfmd2 helgrind-gfmd3:
+	$(check_config)
+	target=`echo "$@" | sed 's/.*-//'`; \
+	$(CONTSHELL) -c "hookconfig --$${target} helgrind"; \
+	$(CONTSHELL) -c '~/gfarm/docker/dev/common/regress.rc 3'; \
+	status=$$?; \
+	$(CONTSHELL) -c "hookconfig --$${target} no-hook"; \
+	exit $${status}
+
+memcheck-gfarm2fs:
+	$(check_config)
+	$(CONTSHELL) -c 'hookconfig --gfarm2fs memcheck.not-child'
+	$(CONTSHELL) -c '~/gfarm/docker/dev/common/test_gfarm2fs.sh 1 3 '; \
+	status=$$?; \
+	$(CONTSHELL) -c 'hookconfig --gfarm2fs no-hook'; \
+	exit $${status}
+
+helgrind-gfarm2fs:
+	$(check_config)
+	$(CONTSHELL) -c 'hookconfig --gfarm2fs helgrind.not-child'
+	$(CONTSHELL) -c '~/gfarm/docker/dev/common/test_gfarm2fs.sh 3 3'; \
+	status=$$?; \
+	$(CONTSHELL) -c 'hookconfig --gfarm2fs no-hook'; \
+	exit $${status}
 
 GFDOCKER_GFARMS3_ENV = \
 	--env GFDOCKER_GFARMS3_FRONT_WEBSERVER='$(GFDOCKER_GFARMS3_FRONT_WEBSERVER)' \
@@ -429,6 +476,53 @@ endef
 s3test:
 	$(s3test)
 
+kerberos-setup:
+	$(CONTEXEC_GFMD1) $(SCRIPTS)/kerberos-setup-server.sh
+	for i in $$(seq 1 $(GFDOCKER_NUM_GFMDS)); do \
+	    h="$(GFDOCKER_HOSTNAME_PREFIX_GFMD)$${i}"; \
+	    $(CONTSHELL_COMMON) $${h} $(SCRIPTS)/kerberos-setup-host.sh gfmd; \
+	done
+	for i in $$(seq 1 $(GFDOCKER_NUM_GFSDS)); do \
+	    h="$(GFDOCKER_HOSTNAME_PREFIX_GFSD)$${i}"; \
+	    $(CONTSHELL_COMMON) $${h} $(SCRIPTS)/kerberos-setup-host.sh gfsd; \
+	done
+	for i in $$(seq 1 $(GFDOCKER_NUM_CLIENTS)); do \
+	    h="$(GFDOCKER_HOSTNAME_PREFIX_CLIENT)$${i}"; \
+	    $(CONTSHELL_COMMON) $${h} \
+	        $(SCRIPTS)/kerberos-setup-host.sh client; \
+	done
+
+# DO NOT USE THIS, currently this does not work.
+# on CentOS 8:
+#	kinit: Password incorrect while getting initial credentials
+kerberos-keytab-regen:
+	for i in $$(seq 1 $(GFDOCKER_NUM_CLIENTS)); do \
+	    h="$(GFDOCKER_HOSTNAME_PREFIX_CLIENT)$${i}"; \
+	    if $(CONTSHELL_COMMON) $${h} bash -c \
+	        'kinit -k -t "$(HOME_DIR)/.keytab" "$(GFDOCKER_PRIMARY_USER)" \
+	            2>&1 | grep "Password incorrect" >/dev/null'; \
+	        then \
+	            echo "NOTICE: regenerating $(HOME_DIR)/.keytab on $${h}"; \
+	            $(CONTSHELL_COMMON) $${h} \
+	                $(SCRIPTS)/kerberos-setup-host.sh client; \
+	        fi; \
+	done
+
+# DO NOT USE THIS, because currently kerberos-keytab-regen does not work.
+kerberos-kinit:
+	for i in $$(seq 1 $(GFDOCKER_NUM_CLIENTS)); do \
+	    h="$(GFDOCKER_HOSTNAME_PREFIX_CLIENT)$${i}"; \
+	    echo "on $${h}:"; \
+	    $(CONTSHELL_COMMON) $${h} \
+	        kinit -k -t "$(HOME_DIR)/.keytab" "$(GFDOCKER_PRIMARY_USER)"; \
+	done
+
+kerberos-kdestroy:
+	for i in $$(seq 1 $(GFDOCKER_NUM_CLIENTS)); do \
+	    h="$(GFDOCKER_HOSTNAME_PREFIX_CLIENT)$${i}"; \
+	    $(CONTSHELL_COMMON) $${h} kdestroy; \
+	done
+
 gridftp-setup:
 	$(CONTEXEC_GFMD1) $(SCRIPTS)/gridftp-setup-server.sh
 	$(CONTSHELL) -c '. ~/gfarm/docker/dev/common/gridftp-setup-client.rc'
@@ -441,7 +535,7 @@ NEXTCLOUD_GFARM_SRC = $(ROOTDIR)/mnt/work/nextcloud-gfarm
 NEXTCLOUD_GFARM_CONF = $(ROOTDIR)/common/nextcloud
 
 COMPOSE_NEXTCLOUD = $(COMPOSE) \
-	-f $(TOP)/docker/dev/docker-compose.yml \
+	-f $(COMPOSE_YML) \
 	-f $(NEXTCLOUD_GFARM_SRC)/docker-compose.yml \
 	-f $(NEXTCLOUD_GFARM_CONF)/docker-compose.nextcloud-gfarm.override.yml
 
@@ -581,6 +675,9 @@ ubuntu1804:
 
 ubuntu2004:
 	$(DOCKER_RUN) -it --rm 'ubuntu:20.04' bash
+
+ubuntu2204:
+	$(DOCKER_RUN) -it --rm 'ubuntu:22.04' bash
 
 debian10:
 	$(DOCKER_RUN) -it --rm 'debian:buster' bash

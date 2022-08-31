@@ -25,6 +25,18 @@
 #include "hostspec.h"
 #include "auth.h"
 
+const char *
+gfarm_auth_id_type_name(enum gfarm_auth_id_type type)
+{
+	switch (type) {
+	case GFARM_AUTH_ID_TYPE_UNKNOWN: return ("unknown-auth-ID-type");
+	case GFARM_AUTH_ID_TYPE_USER: return ("user");
+	case GFARM_AUTH_ID_TYPE_SPOOL_HOST: return ("gfsd");
+	case GFARM_AUTH_ID_TYPE_METADATA_HOST: return ("gfmd");
+	default: return ("invalid-auth-ID-type");
+	}
+};
+
 /*
  * gfarm_auth_method
  */

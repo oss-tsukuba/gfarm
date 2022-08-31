@@ -2,7 +2,7 @@
 
 NCOPY1=3  # NCOPY1 >= 3
 NCOPY2=2  # NCOPY2 < NCOPY1
-NCOPY_TIMEOUT=2  # sec. (wait for replication after replica_check is finished)
+NCOPY_TIMEOUT=10  # sec. (wait for replication after replica_check is finished)
 hostgroupfile=$localtop/.hostgroup.$$
 
 GFPREP=$regress/bin/gfprep_for_test

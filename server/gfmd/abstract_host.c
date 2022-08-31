@@ -8,6 +8,11 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
+#include <errno.h>
+#include <poll.h>
+#ifndef INFTIM
+#define INFTIM -1
+#endif
 #include <time.h>
 #include <sys/time.h>
 
@@ -72,36 +77,6 @@ abstract_host_init(struct abstract_host *h, struct abstract_host_ops *ops,
 	gfarm_mutex_init(&h->mutex, diag, ABSTRACT_HOST_MUTEX_DIAG);
 }
 
-int
-abstract_host_get_protocol_version(struct abstract_host *h)
-{
-	return (h->protocol_version);
-}
-
-void
-abstract_host_invalidate(struct abstract_host *h)
-{
-	h->invalid = 1;
-}
-
-void
-abstract_host_validate(struct abstract_host *h)
-{
-	h->invalid = 0;
-}
-
-int
-abstract_host_is_invalid_unlocked(struct abstract_host *h)
-{
-	return (h->invalid != 0);
-}
-
-int
-abstract_host_is_valid_unlocked(struct abstract_host *h)
-{
-	return (h->invalid == 0);
-}
-
 void
 abstract_host_mutex_lock(struct abstract_host *h, const char *diag)
 {
@@ -112,6 +87,61 @@ void
 abstract_host_mutex_unlock(struct abstract_host *h, const char *diag)
 {
 	gfarm_mutex_unlock(&h->mutex, diag, ABSTRACT_HOST_MUTEX_DIAG);
+}
+
+int
+abstract_host_get_protocol_version(struct abstract_host *h)
+{
+	int ver;
+	static const char diag[] = "abstract_host_get_protocol_version";
+
+	abstract_host_mutex_lock(h, diag);
+	ver = h->protocol_version;
+	abstract_host_mutex_unlock(h, diag);
+	return (ver);
+}
+
+void
+abstract_host_invalidate(struct abstract_host *h)
+{
+	static const char diag[] = "abstract_host_invalidate";
+
+	abstract_host_mutex_lock(h, diag);
+	h->invalid = 1;
+	abstract_host_mutex_unlock(h, diag);
+}
+
+void
+abstract_host_validate(struct abstract_host *h)
+{
+	static const char diag[] = "abstract_host_validate";
+
+	abstract_host_mutex_lock(h, diag);
+	h->invalid = 0;
+	abstract_host_mutex_unlock(h, diag);
+}
+
+static int
+abstract_host_is_invalid_unlocked(struct abstract_host *h)
+{
+	return (h->invalid != 0);
+}
+
+int
+abstract_host_is_invalid(struct abstract_host *h, const char *diag)
+{
+	int invalid;
+
+	abstract_host_mutex_lock(h, diag);
+	invalid = abstract_host_is_invalid_unlocked(h);
+	abstract_host_mutex_unlock(h, diag);
+	return (invalid);
+}
+
+static int
+abstract_host_is_valid_unlocked(struct abstract_host *h)
+{
+	return (h->invalid == 0);
 }
 
 int
@@ -599,10 +629,10 @@ async_channel_protocol_switch(struct abstract_host *host, struct peer *peer,
 		    back_channel_type_name(peer),
 		    (int)request, (int)xid, (int)size);
 		gflog_info(GFARM_MSG_1005148, "last request: %d",
-		    (int)ps->last_request);
+		    (int)ps->last_async_request);
 		e = gfp_xdr_purge(client, 0, size);
 	}
-	ps->last_request = request;
+	ps->last_async_request = request;
 	return (e);
 }
 
@@ -617,6 +647,23 @@ async_channel_service(struct abstract_host *host,
 	gfp_xdr_xid_t xid;
 	size_t size;
 	gfarm_int32_t rv;
+
+	/* avoid sleeping while holding session lock for TLS and GFSL */
+	if (!gfp_xdr_recv_is_ready(conn)) {
+		int avail;
+		struct pollfd fds[1];
+
+		fds[0].fd = gfp_xdr_fd(conn);
+		fds[0].events = POLLIN;
+		avail = poll(fds, 1, INFTIM);
+		if (avail == -1) {
+			int save_errno = errno;
+
+			gflog_debug_errno(GFARM_MSG_UNFIXED,
+			    "async_channel_service:poll()");
+			return (gfarm_errno_to_error(save_errno));
+		}
+	}
 
 	e = gfp_xdr_recv_async_header(conn, 0, &type, &xid, &size);
 	if (e != GFARM_ERR_NO_ERROR) {

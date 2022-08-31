@@ -26,20 +26,24 @@
 
 struct gfarm_hostspec {
 	enum { GFHS_ANY, GFHS_NAME, GFHS_AF_INET4 } type;
-	union gfhs_union {
-		char name[1];
-		struct gfhs_in4_addr {
-			struct in_addr addr, mask;
-		} in4_addr;
-	} u;
 };
+
+struct gfarm_hostspec_name {
+	struct gfarm_hostspec hs;
+	char name[1];
+};
+
+struct gfarm_hostspec_af_inet4 {
+	struct gfarm_hostspec hs;
+	struct in_addr addr, mask;
+};
+
 
 gfarm_error_t
 gfarm_hostspec_any_new(struct gfarm_hostspec **hostspecpp)
 {
 	/* allocation size never overflows */
-	struct gfarm_hostspec *hsp = malloc(sizeof(struct gfarm_hostspec)
-	    - sizeof(union gfhs_union));
+	struct gfarm_hostspec *hsp = malloc(sizeof(*hsp));
 
 	if (hsp == NULL) {
 		gflog_debug(GFARM_MSG_1000854,
@@ -56,8 +60,8 @@ gfarm_error_t
 gfarm_hostspec_name_new(char *name, struct gfarm_hostspec **hostspecpp)
 {
 	/* never overflows, because huge name will never be passed here */
-	struct gfarm_hostspec *hsp = malloc(sizeof(struct gfarm_hostspec)
-	    - sizeof(union gfhs_union) + strlen(name) + 1);
+	struct gfarm_hostspec_name *hsp = malloc(sizeof(*hsp) +
+	    strlen(name));
 
 	if (hsp == NULL) {
 		gflog_debug(GFARM_MSG_1000855,
@@ -65,9 +69,9 @@ gfarm_hostspec_name_new(char *name, struct gfarm_hostspec **hostspecpp)
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
 	}
-	hsp->type = GFHS_NAME;
-	strcpy(hsp->u.name, name);
-	*hostspecpp = hsp;
+	hsp->hs.type = GFHS_NAME;
+	strcpy(hsp->name, name);
+	*hostspecpp = &hsp->hs;
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -76,8 +80,7 @@ gfarm_hostspec_af_inet4_new(gfarm_uint32_t addr, gfarm_uint32_t mask,
 	struct gfarm_hostspec **hostspecpp)
 {
 	/* allocation size never overvlows */
-	struct gfarm_hostspec *hsp = malloc(sizeof(struct gfarm_hostspec)
-	    - sizeof(union gfhs_union) + sizeof(struct gfhs_in4_addr));
+	struct gfarm_hostspec_af_inet4 *hsp = malloc(sizeof(*hsp));
 
 	if (hsp == NULL) {
 		gflog_debug(GFARM_MSG_1000856,
@@ -85,10 +88,10 @@ gfarm_hostspec_af_inet4_new(gfarm_uint32_t addr, gfarm_uint32_t mask,
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
 	}
-	hsp->type = GFHS_AF_INET4;
-	hsp->u.in4_addr.addr.s_addr = addr;
-	hsp->u.in4_addr.mask.s_addr = mask;
-	*hostspecpp = hsp;
+	hsp->hs.type = GFHS_AF_INET4;
+	hsp->addr.s_addr = addr;
+	hsp->mask.s_addr = mask;
+	*hostspecpp = &hsp->hs;
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -265,19 +268,25 @@ int
 gfarm_hostspec_match(struct gfarm_hostspec *hostspecp,
 	const char *name, struct sockaddr *addr)
 {
+	struct gfarm_hostspec_name *hs_namep;
+	struct gfarm_hostspec_af_inet4 *hs_af_inet4p;
+
 	switch (hostspecp->type) {
 	case GFHS_ANY:
 		return (1);
 	case GFHS_NAME:
+		hs_namep = (struct gfarm_hostspec_name *)hostspecp;
 		if (name == NULL)
 			return (0);
-		if (hostspecp->u.name[0] == '.') {
-			return (gfarm_host_is_in_domain(name,
-			    &hostspecp->u.name[1]));
+		if (hs_namep->name[0] == '.') {
+			return (gfarm_host_is_in_domain(
+			    name, &hs_namep->name[1]));
 		} else {
-			return (strcasecmp(name, hostspecp->u.name) == 0);
+			return (strcasecmp(name, hs_namep->name) == 0);
 		}
+		/*NOTREACHED*/
 	case GFHS_AF_INET4:
+		hs_af_inet4p = (struct gfarm_hostspec_af_inet4 *)hostspecp;
 		if (addr == NULL)
 			return (0);
 		/* XXX */
@@ -286,8 +295,8 @@ gfarm_hostspec_match(struct gfarm_hostspec *hostspecp,
 		if (addr->sa_family != AF_INET)
 			return (0);
 		return ((((struct sockaddr_in *)addr)->sin_addr.s_addr &
-			 hostspecp->u.in4_addr.mask.s_addr) ==
-			hostspecp->u.in4_addr.addr.s_addr);
+			 hs_af_inet4p->mask.s_addr) ==
+			hs_af_inet4p->addr.s_addr);
 	}
 	/* assert(0); */
 	return (0);
@@ -299,15 +308,19 @@ gfarm_hostspec_to_string(struct gfarm_hostspec *hostspec,
 	char *string, size_t size)
 {
 	unsigned char *a, *m;
+	struct gfarm_hostspec_name *hs_namep;
+	struct gfarm_hostspec_af_inet4 *hs_af_inet4p;
 
 	switch (hostspec->type) {
 	case GFHS_ANY:
 		return (snprintf(string, size, "*"));
 	case GFHS_NAME:
-		return (snprintf(string, size, "%s", hostspec->u.name));
+		hs_namep = (struct gfarm_hostspec_name *)hostspec;
+		return (snprintf(string, size, "%s", hs_namep->name));
 	case GFHS_AF_INET4:
-		a = (unsigned char *)&hostspec->u.in4_addr.addr.s_addr;
-		m = (unsigned char *)&hostspec->u.in4_addr.mask.s_addr;
+		hs_af_inet4p = (struct gfarm_hostspec_af_inet4 *)hostspec;
+		a = (unsigned char *)&hs_af_inet4p->addr.s_addr;
+		m = (unsigned char *)&hs_af_inet4p->mask.s_addr;
 		return (snprintf(string, size, "%d.%d.%d.%d/%d.%d.%d.%d",
 		    a[0], a[1], a[2], a[3], m[0], m[1], m[2], m[3]));
 	}

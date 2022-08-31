@@ -4,7 +4,7 @@ TOP_DIR=`dirname $0`
 TOP_DIR=`cd ${TOP_DIR}; pwd`
 TOP_DIR=`cd ${TOP_DIR}/../../; pwd`
 
-source ${TOP_DIR}/tools/testscripts/lib/funcs.sh
+. ${TOP_DIR}/tools/testscripts/lib/funcs.sh
 
 fail_num=0
 ENV_DIR="${TOP_DIR}/test_dir"

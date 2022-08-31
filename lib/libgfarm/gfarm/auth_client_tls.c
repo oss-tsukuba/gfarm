@@ -18,28 +18,31 @@ gfarm_tls_server_cert_is_ok(struct gfp_xdr *conn, const char *service_tag,
 	const char *hostname)
 {
 	gfarm_error_t e;
-	char *peer_dn, *peer_hostname = NULL;
+	char *peer_cn, *peer_hostname = NULL;
 
-	if ((peer_dn = gfp_xdr_tls_peer_dn_common_name(conn)) == NULL) {
+	if ((peer_cn = gfp_xdr_tls_peer_dn_common_name(conn)) == NULL) {
 		/* this shouldn't happen, raise alert */
-		gflog_warning(GFARM_MSG_UNFIXED,
-		    "%s: missing peer dn common name", hostname);
-		return (GFARM_ERR_NO_MESSAGE_OF_DESIRED_TYPE);
+		gflog_auth_warning(GFARM_MSG_UNFIXED,
+		    "%s: missing hostname in TLS server certificate",
+		    hostname);
+		return (GFARM_ERR_HOSTNAME_MISMATCH);
 	} else if ((e = gfarm_x509_cn_get_service_hostname(
-	    service_tag, peer_dn, &peer_hostname)) != GFARM_ERR_NO_ERROR) {
+	    service_tag, peer_cn, &peer_hostname)) != GFARM_ERR_NO_ERROR) {
 		/* server cert is invalid? raise alert */
-		gflog_warning(GFARM_MSG_UNFIXED,
-		    "%s: no expected %s service in certificate <%s>",
-		    hostname, service_tag, peer_dn);
-		return (GFARM_ERR_UNKNOWN_HOST);
+		gflog_auth_warning(GFARM_MSG_UNFIXED,
+		    "%s: '%s' service is expected "
+		    "in TLS server certificate <%s>",
+		    hostname, service_tag, peer_cn);
+		return (GFARM_ERR_HOSTNAME_MISMATCH);
 	}
 
 	if (strcasecmp(peer_hostname, hostname) != 0) {
 		/* server cert is invalid? raise alert */
-		gflog_warning(GFARM_MSG_UNFIXED,
-		    "%s: %s service - invalid server certificate <%s>",
-		    hostname, service_tag, peer_dn);
-		e = GFARM_ERR_UNKNOWN_HOST;
+		gflog_auth_warning(GFARM_MSG_UNFIXED,
+		    "%s: %s service - host '%s' is expected but '%s' "
+		    "in TLS server certificate <%s>",
+		    hostname, service_tag, hostname, peer_hostname, peer_cn);
+		e = GFARM_ERR_HOSTNAME_MISMATCH;
 	} else {
 		e = GFARM_ERR_NO_ERROR;
 	}
@@ -112,8 +115,12 @@ gfarm_auth_request_tls_sharedsecret_multiplexed(struct gfarm_eventqueue *q,
 		free(state);
 		return (e);
 	}
-	e = gfarm_auth_request_sharedsecret_multiplexed(
-	    q, conn, service_tag, hostname, self_type, user, pwd, auth_timeout,
+
+	e = gfarm_tls_server_cert_is_ok(conn, service_tag, hostname);
+
+	e = gfarm_auth_request_sharedsecret_common_multiplexed(
+	    q, conn, service_tag, hostname, self_type, user, pwd,
+	    e == GFARM_ERR_NO_ERROR, auth_timeout,
 	    continuation, closure, &state->sharedsecret_state);
 
 	if (e == GFARM_ERR_NO_ERROR) {
@@ -188,7 +195,7 @@ gfarm_auth_request_tls_client_certificate(struct gfp_xdr *conn,
 	if (req != GFARM_AUTH_TLS_CLIENT_CERTIFICATE_CLIENT_TYPE) {
 		/* giveup, due to server cert problem */
 		gfp_xdr_tls_reset(conn); /* is this case graceful? */
-		return (GFARM_ERR_AUTHENTICATION);
+		return (GFARM_ERR_HOSTNAME_MISMATCH);
 	}
 
 	if ((e = gfp_xdr_recv(conn, 1, &eof, "i", &result))
@@ -320,7 +327,7 @@ gfarm_auth_request_tls_client_certificate_multiplexed(
 		/* giveup, due to server cert problem */
 		free(state);
 		gfp_xdr_tls_reset(conn); /* is this case graceful? */
-		return (GFARM_ERR_AUTHENTICATION);
+		return (GFARM_ERR_HOSTNAME_MISMATCH);
 	}
 
 	/*
@@ -340,6 +347,7 @@ gfarm_auth_request_tls_client_certificate_multiplexed(
 		    gfarm_error_string(e));
 	} else if ((rv = gfarm_eventqueue_add_event(q, state->readable, NULL))
 	    != 0) {
+		e = gfarm_errno_to_error(rv);
 		/* XXX this is NOT graceful */
 		gflog_debug(GFARM_MSG_UNFIXED, "addition of event failed: %s",
 		    strerror(rv));
@@ -355,8 +363,12 @@ gfarm_auth_request_tls_client_certificate_multiplexed(
 		return (GFARM_ERR_NO_ERROR);
 	}
 
+	if (state->readable != NULL)
+		gfarm_event_free(state->readable);
+
 	/* is this case graceful? */
 	gfp_xdr_tls_reset(conn);
+	free(state);
 	return (e);
 }
 
@@ -366,6 +378,7 @@ gfarm_auth_result_tls_client_certificate_multiplexed(void *sp)
 	struct gfarm_auth_request_tls_client_certificate_state *state = sp;
 	gfarm_error_t e = state->error;
 
+	gfarm_event_free(state->readable);
 	if (e != GFARM_ERR_NO_ERROR) {
 		/* is this case graceful? */
 		gfp_xdr_tls_reset(state->conn);
@@ -373,4 +386,3 @@ gfarm_auth_result_tls_client_certificate_multiplexed(void *sp)
 	free(state);
 	return (e);
 }
-

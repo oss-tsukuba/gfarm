@@ -24,8 +24,8 @@ static gfarm_error_t
 gfarm_authorize_sasl_common(struct gfp_xdr *conn,
 	char *service_tag, char *hostname, enum gfarm_auth_method auth_method,
 	gfarm_error_t (*auth_uid_to_global_user)(void *,
-	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
-	    char **), void *closure,
+	    enum gfarm_auth_method, const char *,
+	    enum gfarm_auth_id_type *, char **), void *closure,
 	enum gfarm_auth_id_type *peer_typep, char **global_usernamep,
 	const char *diag)
 {
@@ -40,6 +40,7 @@ gfarm_authorize_sasl_common(struct gfp_xdr *conn,
 	unsigned len;
 	char *response = NULL, *global_username = NULL;
 	size_t rsz = 0;
+	enum gfarm_auth_id_type peer_type = GFARM_AUTH_ID_TYPE_USER;
 
 	/* sanity check, shouldn't happen */
 	if (sasl_server_initialized != GFARM_ERR_NO_ERROR) {
@@ -265,7 +266,7 @@ gfarm_authorize_sasl_common(struct gfp_xdr *conn,
 	}
 
 	e = (*auth_uid_to_global_user)(closure, auth_method,
-	    GFARM_AUTH_ID_TYPE_USER, user_id, &global_username);
+	    user_id, &peer_type, &global_username);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "%s@%s: unregistered user: %s", user_id, hostname,
@@ -310,8 +311,8 @@ gfarm_error_t
 gfarm_authorize_sasl(struct gfp_xdr *conn,
 	char *service_tag, char *hostname,
 	gfarm_error_t (*auth_uid_to_global_user)(void *,
-	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
-	    char **), void *closure,
+	    enum gfarm_auth_method, const char *,
+	    enum gfarm_auth_id_type *, char **), void *closure,
 	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
 {
 	return (gfarm_authorize_sasl_common(conn,
@@ -329,8 +330,8 @@ gfarm_error_t
 gfarm_authorize_sasl_auth(struct gfp_xdr *conn,
 	char *service_tag, char *hostname,
 	gfarm_error_t (*auth_uid_to_global_user)(void *,
-	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
-	    char **), void *closure,
+	    enum gfarm_auth_method, const char *,
+	    enum gfarm_auth_id_type *, char **), void *closure,
 	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
 {
 	gfarm_error_t e = gfarm_authorize_sasl_common(conn,

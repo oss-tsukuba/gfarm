@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 set -eu
 #set -x
@@ -7,7 +7,7 @@ BASEDIR="$PWD"
 #DOCKER=$(make -s ECHO_DOCKER)
 COMPOSE=$(make -s ECHO_COMPOSE)
 ROOTDIR=$(make -s ECHO_ROOTDIR)
-SERVICES=$($COMPOSE ps --services)
+SERVICES=$(eval $COMPOSE ps --services)
 GFARM_SRCDIR=$(cd $(realpath .) && cd $ROOTDIR/../.. && realpath .)
 GFARM2FS_SRCDIR="${GFARM_SRCDIR}/gfarm2fs"
 
@@ -49,8 +49,8 @@ rsync_fromto() {
     TO="$2"
 
     cd "$BASEDIR"
-    $COMPOSE exec -T -u "$USERNAME" "$FROM" bash -c "rsync -a ${GFARM_WORKDIR}/ ${TO}:${GFARM_WORKDIR}/"
-    $COMPOSE exec -T -u "$USERNAME" "$FROM" bash -c "rsync -a ${GFARM2FS_WORKDIR}/ ${TO}:${GFARM2FS_WORKDIR}/"
+    eval $COMPOSE exec -T -u "$USERNAME" "$FROM" bash -c \"rsync -a ${GFARM_WORKDIR}/ ${TO}:${GFARM_WORKDIR}/\"
+    eval $COMPOSE exec -T -u "$USERNAME" "$FROM" bash -c \"rsync -a ${GFARM2FS_WORKDIR}/ ${TO}:${GFARM2FS_WORKDIR}/\"
     echo "synchronized: $TO"
 }
 
