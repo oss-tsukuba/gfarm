@@ -20,7 +20,7 @@
 
 struct gfarm_auth_sasl_client_static {
 	gfarm_error_t sasl_client_initialized;
-	sasl_secret_t *sasl_secret;
+	sasl_secret_t *sasl_secret_password;
 };
 
 gfarm_error_t
@@ -744,14 +744,36 @@ sasl_getsimple(void *context, int id, const char **resultp, unsigned *lenp)
 	return (SASL_OK);
 }
 
+gfarm_error_t
+gfarm_auth_client_sasl_password_update(void)
+{
+	size_t sz, len;
+	sasl_secret_t *r = NULL;
+	int overflow = 0;
+
+	if (gfarm_ctxp->sasl_password == NULL)
+		return (GFARM_ERR_INTERNAL_ERROR);
+
+	len = strlen(gfarm_ctxp->sasl_password);
+	/* sizeof(*r) includes storage for terminating '\0' */
+	sz = gfarm_size_add(&overflow, sizeof(*r), len);
+	if (!overflow)
+		r = malloc(sz);
+	if (overflow || r == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	r->len = len;
+	strcpy((char *)r->data, gfarm_ctxp->sasl_password);
+
+	staticp->sasl_secret_password = r;
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
 static int
 sasl_getsecret(
 	sasl_conn_t *conn, void *context, int id, sasl_secret_t **resultp)
 {
 	char *rs;
-	size_t sz, len;
-	sasl_secret_t *r = NULL;
-	int overflow = 0;
 
 	/* sanity check */
 	if (conn == NULL || resultp == NULL)
@@ -767,22 +789,13 @@ sasl_getsecret(
 			}
 			return (SASL_FAIL);
 		}
+		*resultp = staticp->sasl_secret_password;
 		break;
 	default:
+		gflog_notice(GFARM_MSG_UNFIXED,
+		    "sasl_getsecret(): unknown callback id 0x%x", id);
 		return (SASL_BADPARAM);
 	}
-
-	len = strlen(rs);
-	/* sizeof(*r) includes storage for terminating '\0' */
-	sz = gfarm_size_add(&overflow, sizeof(*r), len);
-	if (!overflow)
-		r = malloc(sz);
-	if (overflow || r == NULL)
-		return (SASL_NOMEM);
-	r->len = len;
-	strcpy((char *)r->data, rs);
-
-	*resultp = r;
 
 	return (SASL_OK);
 }
@@ -808,7 +821,7 @@ gfarm_auth_client_sasl_static_init(struct gfarm_context *ctxp)
 	ctxp->auth_sasl_client_static = s;
 	r = sasl_client_init(callbacks);
 
-	s->sasl_secret = NULL;
+	s->sasl_secret_password = NULL;
 
 	if (r != SASL_OK) {
 		if (gflog_auth_get_verbose()) {
@@ -837,6 +850,9 @@ gfarm_auth_client_sasl_static_term(struct gfarm_context *ctxp)
 {
 	struct gfarm_auth_sasl_client_static *s =
 	    ctxp->auth_sasl_client_static;
+
+	if (s->sasl_secret_password != NULL)
+		free(s->sasl_secret_password);
 
 	free(s);
 	ctxp->auth_sasl_client_static = NULL;

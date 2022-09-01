@@ -292,6 +292,8 @@ gfarm_error_t gfarm_auth_request_kerberos_auth_multiplexed(
 gfarm_error_t gfarm_auth_result_kerberos_auth_multiplexed(void *);
 
 /* auth_client_sasl */
+gfarm_error_t gfarm_auth_client_sasl_password_update(void);
+
 gfarm_error_t gfarm_auth_request_sasl(struct gfp_xdr *,
 	const char *, const char *, enum gfarm_auth_id_type, const char *,
 	struct passwd *);
