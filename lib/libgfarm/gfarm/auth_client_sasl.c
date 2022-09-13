@@ -1,7 +1,10 @@
+#include <errno.h>
 #include <assert.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
+#include <unistd.h>
 #include <netdb.h>
 
 #include <gfarm/gfarm.h>
@@ -18,9 +21,14 @@
 
 #define staticp	(gfarm_ctxp->auth_sasl_client_static)
 
+#define SASL_JWT_PATHNAME "/tmp/jwt_user_u%lu/token.jwt"
+#define SASL_PASSWORD_LEN_MAX	16384	/* enough size to hold OAuth JWT */
+
 struct gfarm_auth_sasl_client_static {
 	gfarm_error_t sasl_client_initialized;
-	sasl_secret_t *sasl_secret_password;
+
+	/* use static storage instead of malloc() to avoid race condition */
+	char sasl_secret_password_storage[SASL_PASSWORD_LEN_MAX];
 };
 
 gfarm_error_t
@@ -744,36 +752,100 @@ sasl_getsimple(void *context, int id, const char **resultp, unsigned *lenp)
 	return (SASL_OK);
 }
 
-gfarm_error_t
-gfarm_auth_client_sasl_password_update(void)
+static gfarm_error_t
+gfarm_sasl_secret_password_set_by_string(char *s)
 {
-	size_t sz, len;
-	sasl_secret_t *r = NULL;
-	int overflow = 0;
+	size_t len = strlen(s);
+	sasl_secret_t *r;
 
-	if (gfarm_ctxp->sasl_password == NULL)
-		return (GFARM_ERR_INTERNAL_ERROR);
-
-	len = strlen(gfarm_ctxp->sasl_password);
-	/* sizeof(*r) includes storage for terminating '\0' */
-	sz = gfarm_size_add(&overflow, sizeof(*r), len);
-	if (!overflow)
-		r = malloc(sz);
-	if (overflow || r == NULL)
-		return (GFARM_ERR_NO_MEMORY);
+	if (sizeof(staticp->sasl_secret_password_storage)
+	    <= offsetof(sasl_secret_t, data) + len) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%zd bytes 'sasl_password' is too long, "
+		    "please increase SASL_PASSWORD_LEN_MAX (%zu)",
+		    len, sizeof(staticp->sasl_secret_password_storage));
+		return (GFARM_ERR_VALUE_TOO_LARGE_TO_BE_STORED_IN_DATA_TYPE);
+	}
+	r = (sasl_secret_t *)staticp->sasl_secret_password_storage;
 	r->len = len;
-	strcpy((char *)r->data, gfarm_ctxp->sasl_password);
-
-	staticp->sasl_secret_password = r;
+	strcpy((char *)r->data, s);
 
 	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+gfarm_sasl_secret_password_set_by_jwt_file(void)
+{
+	gfarm_error_t e;
+	static const char jwt_path_template[] = SASL_JWT_PATHNAME;
+	char path[sizeof(jwt_path_template) + GFARM_INT64STRLEN];
+	sasl_secret_t *r;
+	char *password;
+	size_t len;
+	FILE *fp;
+
+	snprintf(path, sizeof path, jwt_path_template,
+	    (unsigned long)getuid());
+
+	if ((fp = fopen(path, "r")) == NULL) {
+		e = gfarm_errno_to_error(errno);
+
+		if (e != GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY)
+			gflog_warning(GFARM_MSG_UNFIXED, "file %s: %s",
+			    path, gfarm_error_string(e));
+
+		return (e);
+	}
+
+	r = (sasl_secret_t *)staticp->sasl_secret_password_storage;
+	r->len = 0;
+	password = (char *)r->data;
+
+	if (fgets(password,
+	    sizeof(staticp->sasl_secret_password_storage) -
+	    offsetof(sasl_secret_t, data), fp) == NULL) {
+		gflog_warning(GFARM_MSG_UNFIXED, "file %s is empty", path);
+		fclose(fp);
+		return (GFARM_ERR_INVALID_CREDENTIAL);
+	}
+	len = strlen(password);
+	assert(len > 0);
+	if (password[len - 1] == '\n') {
+		password[len - 1] = '\0';
+		r->len = len - 1;
+		if (getc(fp) != EOF) {
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "file %s: second line is ignored", path);
+		}
+		e = GFARM_ERR_NO_ERROR;
+	} else if (getc(fp) == EOF) {
+		r->len = len;
+		e = GFARM_ERR_NO_ERROR;
+	} else if (len >= sizeof(staticp->sasl_secret_password_storage) -
+	    offsetof(sasl_secret_t, data) - 1) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "file %s is too large, "
+		    "please increase SASL_PASSWORD_LEN_MAX (%zu)",
+		    path,
+		    sizeof(staticp->sasl_secret_password_storage));
+		e = GFARM_ERR_VALUE_TOO_LARGE_TO_BE_STORED_IN_DATA_TYPE;
+	} else {
+		/* shouldn't happen */
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "file %s: partial read happens", path);
+		r->len = len;
+		e = GFARM_ERR_NO_ERROR;
+	}
+	fclose(fp);
+	return (e);
 }
 
 static int
 sasl_getsecret(
 	sasl_conn_t *conn, void *context, int id, sasl_secret_t **resultp)
 {
-	char *rs;
+	gfarm_error_t e;
+	static const char diag[] = "gfarm:sasl_getsecret";
 
 	/* sanity check */
 	if (conn == NULL || resultp == NULL)
@@ -781,15 +853,28 @@ sasl_getsecret(
 
 	switch (id) {
 	case SASL_CB_PASS:
-		rs = gfarm_ctxp->sasl_password;
-		if (rs == NULL) {
-			if (gflog_auth_get_verbose()) {
-				gflog_error(GFARM_MSG_UNFIXED,
-				    "sasl_password: not set");
+
+		gfarm_privilege_lock(diag);
+
+		if (gfarm_ctxp->sasl_password != NULL) {
+			e = gfarm_sasl_secret_password_set_by_string(
+			    gfarm_ctxp->sasl_password);
+		} else {
+			e = gfarm_sasl_secret_password_set_by_jwt_file();
+			if (e == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY) {
+				if (gflog_auth_get_verbose()) {
+					gflog_error(GFARM_MSG_UNFIXED,
+					    "sasl_password: not set");
+				}
 			}
-			return (SASL_FAIL);
 		}
-		*resultp = staticp->sasl_secret_password;
+
+		gfarm_privilege_unlock(diag);
+
+		if (e != GFARM_ERR_NO_ERROR)
+			return (SASL_FAIL);
+		*resultp =
+		    (sasl_secret_t *)staticp->sasl_secret_password_storage;
 		break;
 	default:
 		gflog_notice(GFARM_MSG_UNFIXED,
@@ -821,8 +906,6 @@ gfarm_auth_client_sasl_static_init(struct gfarm_context *ctxp)
 	ctxp->auth_sasl_client_static = s;
 	r = sasl_client_init(callbacks);
 
-	s->sasl_secret_password = NULL;
-
 	if (r != SASL_OK) {
 		if (gflog_auth_get_verbose()) {
 			gflog_error(GFARM_MSG_UNFIXED,
@@ -850,9 +933,6 @@ gfarm_auth_client_sasl_static_term(struct gfarm_context *ctxp)
 {
 	struct gfarm_auth_sasl_client_static *s =
 	    ctxp->auth_sasl_client_static;
-
-	if (s->sasl_secret_password != NULL)
-		free(s->sasl_secret_password);
 
 	free(s);
 	ctxp->auth_sasl_client_static = NULL;

@@ -3432,8 +3432,6 @@ parse_one_line(const char *s, char *p,
 		e = parse_set_var(p, &gfarm_ctxp->sasl_user);
 	} else if (strcmp(s, o = "sasl_password") == 0) {
 		e = parse_set_var(p, &gfarm_ctxp->sasl_password);
-		if (e == GFARM_ERR_NO_ERROR)
-			e = gfarm_auth_client_sasl_password_update();
 	} else if (strcmp(s, o = "auth") == 0) {
 		e = parse_auth_arguments(p, position, &o);
 #if 0 /* not yet in gfarm v2 */
