@@ -5,6 +5,7 @@
 #include <gfarm/gfarm.h>
 
 #include "hash.h"
+#include "thrsubr.h"
 
 #include "context.h"
 #include "filesystem.h"
@@ -40,6 +41,8 @@ struct gfarm_filesystem {
 
 	/* if gfm_connection of this filesystem is in failover process or not */
 	int in_failover_process;
+
+	pthread_mutex_t mutex;
 };
 
 struct gfarm_filesystem_hash_id {
@@ -55,6 +58,8 @@ struct gfarm_filesystem_static {
 };
 
 #define MS2FS_HASHTAB_SIZE 17
+
+static const char mutex_what[] = "struct gfarm_filesystem:mutex";
 
 static void gfarm_filesystem_free(struct gfarm_filesystem *);
 
@@ -76,7 +81,7 @@ gfarm_filesystem_static_init(struct gfarm_context *ctxp)
 }
 
 static void
-gfarm_filesystem_m2fs_hashtab_free(void)
+gfarm_filesystem_ms2fs_hashtab_free(void)
 {
 	if (staticp->ms2fs_hashtab != NULL) {
 		gfarm_hash_table_free(staticp->ms2fs_hashtab);
@@ -93,7 +98,7 @@ gfarm_filesystem_static_term(struct gfarm_context *ctxp)
 	if (s == NULL)
 		return;
 
-	gfarm_filesystem_m2fs_hashtab_free();
+	gfarm_filesystem_ms2fs_hashtab_free();
 	for (;;) {
 		fs = staticp->filesystems.next;
 		if (fs == &staticp->filesystems)
@@ -133,6 +138,7 @@ gfarm_filesystem_new(struct gfarm_filesystem **fsp)
 	gfarm_error_t e;
 	struct gfarm_filesystem *fs;
 	struct gfs_file_list *gfl;
+	static const char diag[] = "gfarm_filesystem_new";
 
 	GFARM_MALLOC(fs);
 	if (fs == NULL) {
@@ -158,6 +164,9 @@ gfarm_filesystem_new(struct gfarm_filesystem **fsp)
 	fs->failover_detected = 0;
 	fs->failover_count = 0;
 	fs->in_failover_process = 0;
+
+	gfarm_mutex_init(&fs->mutex, diag, mutex_what);
+
 	staticp->filesystems.next = fs;
 	*fsp = fs;
 	return (GFARM_ERR_NO_ERROR);
@@ -169,6 +178,7 @@ gfarm_filesystem_free(struct gfarm_filesystem *fs)
 	int i;
 	struct gfarm_metadb_server *ms;
 	struct gfarm_filesystem *p;
+	static const char diag[] = "gfarm_filesystem_free";
 
 	for (i = 0; i < fs->nservers; ++i) {
 		ms = fs->servers[i];
@@ -184,6 +194,8 @@ gfarm_filesystem_free(struct gfarm_filesystem *fs)
 			break;
 		}
 	}
+
+	gfarm_mutex_destroy(&fs->mutex, diag, mutex_what);
 }
 
 static gfarm_error_t
@@ -290,6 +302,17 @@ gfarm_filesystem_get_by_connection(struct gfm_connection *gfm_server)
 	    gfm_client_port(gfm_server)));
 }
 
+void
+gfarm_filesystem_lock(struct gfarm_filesystem *fs, const char *diag)
+{
+	gfarm_mutex_lock(&fs->mutex, diag, mutex_what);
+}
+
+void gfarm_filesystem_unlock(struct gfarm_filesystem *fs, const char *diag)
+{
+	gfarm_mutex_unlock(&fs->mutex, diag, mutex_what);
+}
+
 static gfarm_error_t
 gfarm_filesystem_update_metadb_server_list(struct gfarm_filesystem *fs,
 	struct gfarm_metadb_server **metadb_servers, int n,
@@ -298,6 +321,8 @@ gfarm_filesystem_update_metadb_server_list(struct gfarm_filesystem *fs,
 	gfarm_error_t e;
 	int i;
 	struct gfarm_metadb_server *ms, **servers;
+	static const char diag[] =
+	    "gfarm_filesystem_update_metadb_server_list";
 
 	GFARM_MALLOC_ARRAY(servers, sizeof(void *) * n);
 	if (servers == NULL) {
@@ -311,17 +336,21 @@ gfarm_filesystem_update_metadb_server_list(struct gfarm_filesystem *fs,
 		return (e);
 	}
 
+	gfarm_filesystem_lock(fs, diag);
+
 	for (i = 0; i < fs->nservers; ++i) {
-		gfarm_metadb_server_set_is_removed(fs->servers[i], 1);
+		gfarm_metadb_server_set_is_removed_unlocked(fs->servers[i], 1);
 		if (do_purge)
 			gfarm_filesystem_hash_purge(fs, fs->servers[i]);
 	}
 	for (i = 0; i < n; ++i)
-		gfarm_metadb_server_set_is_removed(metadb_servers[i], 0);
+		gfarm_metadb_server_set_is_removed_unlocked(
+		    metadb_servers[i], 0);
 	for (i = 0; i < fs->nservers; ++i) {
 		ms = fs->servers[i];
-		if (gfarm_metadb_server_is_removed(ms)) {
-			if (gfarm_metadb_server_is_memory_owned_by_fs(ms)) {
+		if (gfarm_metadb_server_is_removed_unlocked(ms)) {
+			if (gfarm_metadb_server_is_memory_owned_by_fs_unlocked(
+			    ms)) {
 				gfarm_metadb_server_free(ms);
 				free(ms);
 			}
@@ -338,10 +367,12 @@ gfarm_filesystem_update_metadb_server_list(struct gfarm_filesystem *fs,
 	for (i = 0; i < n; ++i) {
 		if ((e = gfarm_filesystem_hash_enter(fs, servers[i])) !=
 		    GFARM_ERR_NO_ERROR)
-			return (e);
+			break;
 	}
 
-	return (GFARM_ERR_NO_ERROR);
+	gfarm_filesystem_unlock(fs, diag);
+
+	return (e);
 }
 
 gfarm_error_t
@@ -362,7 +393,7 @@ gfarm_filesystem_replace_metadb_server_list(struct gfarm_filesystem *fs,
 	 * already broken by "gfmdhost -m -p <port>",
 	 * when this is called from mdhost_updated() in gfmd.
 	 */
-	gfarm_filesystem_m2fs_hashtab_free();
+	gfarm_filesystem_ms2fs_hashtab_free();
 
 	/* do_purge == false due to the reason above */
 	return (gfarm_filesystem_update_metadb_server_list(

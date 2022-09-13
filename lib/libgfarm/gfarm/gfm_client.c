@@ -436,7 +436,7 @@ gfm_client_connect_multiple(const char *hostname, int port,
 		ms = msl[i];
 		hostname = gfarm_metadb_server_get_name(ms);
 		port = gfarm_metadb_server_get_port(ms);
-		if (!gfarm_metadb_server_is_self(ms) &&
+		if (!gfarm_metadb_server_is_self(fs, ms) &&
 		    (e = gfm_client_nonblock_sock_connect(hostname, port,
 		    source_ip, &sock, &res)) == GFARM_ERR_NO_ERROR) {
 			ci = &cis[nfd];
