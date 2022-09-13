@@ -183,10 +183,11 @@ int
 mdhost_is_master(struct mdhost *m)
 {
 	int is_master;
+	struct gfarm_filesystem *fs = gfarm_filesystem_get_default();
 	static const char diag[] = "mdhost_is_master";
 
 	mdhost_mutex_lock(m, diag);
-	is_master = gfarm_metadb_server_is_master(&m->ms);
+	is_master = gfarm_metadb_server_is_master(fs, &m->ms);
 	mdhost_mutex_unlock(m, diag);
 	if (gfarm_get_metadb_server_force_slave() && m == mdhost_lookup_self())
 		is_master = 0;
@@ -196,10 +197,11 @@ mdhost_is_master(struct mdhost *m)
 void
 mdhost_set_is_master(struct mdhost *m, int enable)
 {
+	struct gfarm_filesystem *fs = gfarm_filesystem_get_default();
 	static const char diag[] = "mdhost_set_is_master";
 
 	mdhost_mutex_lock(m, diag);
-	gfarm_metadb_server_set_is_master(&m->ms, enable);
+	gfarm_metadb_server_set_is_master(fs, &m->ms, enable);
 	mdhost_mutex_unlock(m, diag);
 	if (enable) {
 		mdhost_master_mutex_lock(diag);
@@ -211,7 +213,9 @@ mdhost_set_is_master(struct mdhost *m, int enable)
 int
 mdhost_is_self(struct mdhost *m)
 {
-	return (gfarm_metadb_server_is_self(&m->ms));
+	struct gfarm_filesystem *fs = gfarm_filesystem_get_default();
+
+	return (gfarm_metadb_server_is_self(fs, &m->ms));
 }
 
 struct abstract_host *
@@ -345,10 +349,11 @@ mdhost_set_is_default_master(struct mdhost *m, int enable)
 static void
 mdhost_set_is_self(struct mdhost *m, int enable)
 {
+	struct gfarm_filesystem *fs = gfarm_filesystem_get_default();
 	static const char diag[] = "mdhost_set_is_self";
 
 	mdhost_mutex_lock(m, diag);
-	gfarm_metadb_server_set_is_self(&m->ms, enable);
+	gfarm_metadb_server_set_is_self(fs, &m->ms, enable);
 	mdhost_mutex_unlock(m, diag);
 }
 
@@ -768,6 +773,7 @@ mdhost_enter_internal(struct gfarm_metadb_server *ms, struct mdhost **mpp)
 	int created;
 	struct mdhost *mh;
 	gfarm_error_t e;
+	struct gfarm_filesystem *fs = gfarm_filesystem_get_default();
 	static const char diag[] = "mdhost_enter_internal";
 
 	mh = mdhost_lookup_internal(ms->name);
@@ -784,7 +790,7 @@ mdhost_enter_internal(struct gfarm_metadb_server *ms, struct mdhost **mpp)
 			free(mh->ms.clustername);
 		mdhost_validate(mh);
 		mh->ms = *ms;
-		gfarm_metadb_server_set_is_memory_owned_by_fs(&mh->ms, 0);
+		gfarm_metadb_server_set_is_memory_owned_by_fs(fs, &mh->ms, 0);
 		mdhost_mutex_unlock(mh, diag);
 		if (mpp)
 			*mpp = mh;
@@ -832,6 +838,7 @@ mdhost_enter_internal(struct gfarm_metadb_server *ms, struct mdhost **mpp)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+/* PREREQUISITE: giant_lock */
 gfarm_error_t
 mdhost_enter(struct gfarm_metadb_server *ms, struct mdhost **mpp)
 {
@@ -1091,6 +1098,7 @@ end:
 	return (e);
 }
 
+/* PREREQUISITE: giant_lock */
 gfarm_error_t
 mdhost_modify_in_cache(struct mdhost *mh, struct gfarm_metadb_server *ms)
 {
@@ -1141,6 +1149,7 @@ metadb_server_reply(struct peer *peer, struct mdhost *m)
 {
 	struct gfarm_metadb_server tms;
 	struct gfp_xdr *xdr = peer_get_conn(peer);
+	struct gfarm_filesystem *fs = gfarm_filesystem_get_default();
 	gfarm_error_t e;
 	static const char diag[] = "metadb_server_reply";
 
@@ -1152,25 +1161,25 @@ metadb_server_reply(struct peer *peer, struct mdhost *m)
 	mdhost_mutex_unlock(m, diag);
 	/* XXX - if tms.name == NULL, return GFARM_ERR_NO_MEMORY */
 	if (!mdhost_is_master(m) && mdhost_is_sync_replication(m))
-		gfarm_metadb_server_set_is_sync_replication(&tms, 1);
+		gfarm_metadb_server_set_is_sync_replication(fs, &tms, 1);
 	if (mdhost_is_up(m))
-		gfarm_metadb_server_set_is_active(&tms, 1);
+		gfarm_metadb_server_set_is_active(fs, &tms, 1);
 
 	switch (mdhost_get_seqnum_state(m)) {
 	case seqnum_state_unknown:
-		gfarm_metadb_server_set_seqnum_is_unknown(&tms);
+		gfarm_metadb_server_set_seqnum_is_unknown(fs, &tms);
 		break;
 	case seqnum_state_ok:
-		gfarm_metadb_server_set_seqnum_is_ok(&tms);
+		gfarm_metadb_server_set_seqnum_is_ok(fs, &tms);
 		break;
 	case seqnum_state_out_of_sync:
-		gfarm_metadb_server_set_seqnum_is_out_of_sync(&tms);
+		gfarm_metadb_server_set_seqnum_is_out_of_sync(fs, &tms);
 		break;
 	case seqnum_state_error:
-		gfarm_metadb_server_set_seqnum_is_error(&tms);
+		gfarm_metadb_server_set_seqnum_is_error(fs, &tms);
 		break;
 	case seqnum_state_behind:
-		gfarm_metadb_server_set_seqnum_is_behind(&tms);
+		gfarm_metadb_server_set_seqnum_is_behind(fs, &tms);
 		break;
 	}
 
@@ -1389,6 +1398,7 @@ mdhost_fix_default_master(struct mdhost *new_mmh, const char *diag)
 	return (e);
 }
 
+/* PREREQUISITE: giant_lock */
 static gfarm_error_t
 mdhost_updated(void)
 {
@@ -1423,7 +1433,7 @@ mdhost_updated(void)
 	e = gfarm_filesystem_replace_metadb_server_list(fs, mss, i);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1004730,
-		    "%s: gfarm_filesystem_set_metadb_server_list: %s",
+		    "%s: gfarm_filesystem_replace_metadb_server_list: %s",
 		    diag, gfarm_error_string(e));
 	free(mss);
 	if (mdhost_update_hook_for_journal_send != NULL)
@@ -1760,6 +1770,7 @@ mdhost_initial_entry(void)
 	gfarm_error_t e;
 	struct mdhost *mh;
 	struct gfarm_hash_iterator it;
+	struct gfarm_filesystem *fs = gfarm_filesystem_get_default();
 	static const char diag[] = "mdhost_initial_entry";
 	char *metadb_server_name = gfarm_ctxp->metadb_server_name;
 
@@ -1769,8 +1780,8 @@ mdhost_initial_entry(void)
 		ms.clustername = strdup_ck("", diag);
 		ms.flags = 0;
 		ms.tflags = 0;
-		gfarm_metadb_server_set_is_self(&ms, 1);
-		gfarm_metadb_server_set_is_master(&ms, 1);
+		gfarm_metadb_server_set_is_self(fs, &ms, 1);
+		gfarm_metadb_server_set_is_master(fs, &ms, 1);
 		gfarm_metadb_server_set_is_master_candidate(&ms, 1);
 		gfarm_metadb_server_set_is_default_master(&ms, 1);
 		if ((e = mdhost_enter_internal(&ms, &self))
