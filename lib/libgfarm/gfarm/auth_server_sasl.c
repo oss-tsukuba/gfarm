@@ -110,6 +110,10 @@ gfarm_authorize_sasl_common(struct gfp_xdr *conn,
 		}
 	}
 	if (data == NULL) {
+		/* mechanism_candidates == "" means error */
+		e = gfp_xdr_send(conn, "s", "");
+		if (e == GFARM_ERR_NO_ERROR)
+			e = gfp_xdr_flush(conn);
 		sasl_dispose(&sasl_conn);
 		gfp_xdr_tls_reset(conn); /* is this case graceful? */
 		return (GFARM_ERR_NO_MEMORY);
@@ -122,7 +126,7 @@ gfarm_authorize_sasl_common(struct gfp_xdr *conn,
 	/*
 	 * negotiation protocol phase 2:
 	 *
-	 * server: s:mechanisms
+	 * server: s:mechanism_candidates
 	 * client: s:chosen_mechanism
 	 * client: i:does_client_initial_response_exist?
 	 * client:(s:client_initial_response) ... optional
@@ -137,8 +141,17 @@ gfarm_authorize_sasl_common(struct gfp_xdr *conn,
 		return (e);
 	}
 
-	e = gfp_xdr_recv(conn, 1, &eof, "si",
-	    &chosen_mechanism, &has_initial_response);
+	e = gfp_xdr_recv(conn, 1, &eof, "s", &chosen_mechanism);
+	if (e != GFARM_ERR_NO_ERROR || eof ||
+	    (chosen_mechanism != NULL && chosen_mechanism[0] == '\0')) {
+		/* chosen_mechanism == "" means error */
+		if (e == GFARM_ERR_NO_ERROR && EOF) /* i.e. eof */
+			e = GFARM_ERR_UNEXPECTED_EOF;
+		sasl_dispose(&sasl_conn);
+		gfp_xdr_tls_reset(conn); /* is this case graceful? */
+		return (e);
+	}
+	e = gfp_xdr_recv(conn, 1, &eof, "i", &has_initial_response);
 	if (e != GFARM_ERR_NO_ERROR || eof) {
 		if (e == GFARM_ERR_NO_ERROR) /* i.e. eof */
 			e = GFARM_ERR_UNEXPECTED_EOF;
