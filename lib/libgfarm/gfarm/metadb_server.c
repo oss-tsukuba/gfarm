@@ -168,7 +168,7 @@ gfarm_metadb_server_is_sync_replication(
 	static const char diag[] = "gfarm_metadb_server_is_sync_replication";
 
 	gfarm_filesystem_lock(fs, diag);
-	rv =(m->tflags & GFARM_METADB_SERVER_FLAG_IS_SYNCREP) != 0;
+	rv = (m->tflags & GFARM_METADB_SERVER_FLAG_IS_SYNCREP) != 0;
 	gfarm_filesystem_unlock(fs, diag);
 	return (rv);
 }
