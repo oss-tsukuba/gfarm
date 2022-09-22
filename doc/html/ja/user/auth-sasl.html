@@ -1,0 +1,169 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD>
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<META http-equiv="Content-Style-Type" content="text/css">
+<TITLE>TLS 認証</TITLE>
+
+<STYLE type="text/css">
+<!-- /* BEGIN ... hide style from old browser */
+pre { background:#e0ffff; margin-left: 2em; margin-right: 2em }
+     /* END ... hide style from old browser */ -->
+</STYLE>
+
+</HEAD>
+<BODY><A href="http://oss-tsukuba.org/software/gfarm">
+<IMG alt="[GFARM LOGO]" src="../../pic/gfarm-logo.gif" align=right border=0></A>
+<A href="../../index.html">文書集</A> &gt;
+<A href="index.html">ユーザーズマニュアル</A> &gt;
+SASL 認証
+
+<HR>
+<H1>SASL 認証</H1>
+<A href="../../en/user/auth-sasl.html">English</A> | 日本語
+<p>
+<p>
+この文書は、Gfarm の SASL 認証で必要な設定について説明します。
+</p>
+
+<p>
+SASL認証には、
+TLS で暗号化された通信路で認証処理のみならず ファイルアクセスまで
+行なう sasl と、
+認証フェーズのみ TLS で暗号化し、その後のファイルアクセスは
+平文で行なう sasl_auth の 2種類があります。
+</p>
+
+<HR>
+<H2>TLS 設定</H2>
+
+SASL 認証では TLS で暗号化された通信路を利用するため、あらかじめ
+<A HREF="auth-tls.html#TLS-common-setting">
+「TLS 認証」の
+「tls_sharedsecret 認証と tls_client_certificate 認証に共通の設定」の項
+にある設定</A>を実施しておく必要があります。
+
+<HR>
+<H2>サーバー側設定</H2>
+
+gfmd.conf や gfsd の読む gfarm2.conf に、以下のような設定を追加します。
+<pre>
+auth enable sasl *
+</pre>
+あるいは
+<pre>
+auth enable sasl_auth *
+</pre>
+
+利用する SASL のメカニズムを制限したい場合には、
+さらに以下のような設定を追加して利用するメカニズムを指定してください。
+<pre>
+sasl_mechanisms "PLAIN XOAUTH2"
+</pre>
+
+その他の設定については、Cyrus SASL のドキュメントに従ってください。
+
+<H3>XOAUTH2 メカニズム用サーバー側設定</H3>
+
+<p>
+XOAUTH2 メカニズムを利用する場合、
+cyrus-sasl-xoauth2-idp パッケージをインストールし、
+Cyrus SASL のサーバー側設定を置くディレクトリ (例: /usr/lib64/sasl2) に
+以下の内容の設定を gfarm.conf という名称で置きます。
+
+<pre>
+log_level: 7
+mech_list: PLAIN XOAUTH2
+client_id: 〜Gfarmアクセス用のクライアントIDを設定します〜
+client_secret: 〜Gfarmアクセス用のクライアントシークレットを設定します〜
+introspection_url: 〜JWTトークン検証のための IdP のURLを指定します〜
+</pre>
+</p>
+
+<p>
+IdP として Keycloak を利用する場合、introspection_url は下記となります。
+<pre>
+https://サーバー名/auth/realms/レルム名/protocol/openid-connect/token/introspect
+</pre>
+「サーバー名」および「レルム名」は、適宜修正してください。
+</p>
+
+<p>
+また、IdP へのアクセスに Web proxy サーバーを介す必要がある場合には
+さらに下記の設定も追加します。
+<pre>
+proxy: http://proxyサーバー名:proxyポート番号/
+</pre>
+「proxyサーバー名」および「proxyボート番号」は、適宜修正してください。
+</p>
+
+<HR>
+<H2>クライアント側設定</H2>
+
+環境変数 GFARM_CONFIG_FILE で指定されたファイル、
+あるいはもし環境変数が設定されていない場合には
+ホームディレクトリの .gfarm2rc に、
+利用するSASLメカニズムに応じて下記のような設定を行ないます。
+
+<H3>ANONYMOUS メカニズムの場合</H3>
+
+<pre>
+sasl_mechanisms "ANONYMOUS"
+sasl_user "dummy-user-name"
+</pre>
+
+<H3>PLAIN メカニズムの場合</H3>
+
+<pre>
+sasl_mechanisms "PLAIN"
+sasl_user "ユーザー名"
+sasl_password "パスワード"
+</pre>
+
+このファイルが他のユーザーに読みとられないように、
+chmod(1) コマンドを用いてファイルのモードを 0600 ないし 0400 に
+設定してください。
+
+<H3>LOGIN メカニズムの場合</H3>
+
+<pre>
+sasl_mechanisms "LOGIN"
+sasl_user "ユーザー名"
+sasl_password "パスワード"
+</pre>
+
+このファイルが他のユーザーに読みとられないように、
+chmod(1) コマンドを用いてファイルのモードを 0600 ないし 0400 に
+設定してください。
+
+<H3>XOAUTH2 メカニズムの場合</H3>
+
+<pre>
+sasl_mechanisms "XOAUTH2"
+sasl_user "ユーザー名"
+</pre>
+
+<p>
+さらに環境変数 JWT_FILE で指定されたファイル、
+あるいはもし環境変数が設定されていない場合には
+ファイル /tmp/jwt_user_u＜自身のUNIX_UID＞/token.jwt に、
+XOAUTH2 で用いるアクセストークンを置き、
+このファイルが他のユーザーに読みとられないように、
+chmod(1) コマンドを用いてファイルのモードを 0600 ないし 0400 に
+設定してください。
+</p>
+<p>
+jwt-logon(1) コマンドや jwt-agent(1) コマンドを用いると、
+トークンを取得してこのファイルに書き込むことができます。
+</p>
+
+
+<HR>
+<H2>SEE ALSO</H2>
+<A HREF="../ref/man5/gfarm2.conf.5.html">gfarm2.conf(5)</A>
+
+<HR>
+
+<ADDRESS><A href="http://oss-tsukuba.org/software/gfarm">Gfarm File System</A> &lt;<TT>gfarmfs at gmail.com</TT>&gt;</ADDRESS>
+
+</BODY>
+</HTML>

@@ -2388,6 +2388,57 @@ The default size is 16 MiB.
 	rdma_mr_reg_static_max_size 16777216<br>
 </p></div>
 </dd>
+<dt><span class="term"><span class="token">sasl_mechanisms</span> <em class="parameter"><code>メカニズムリスト...</code></em></span></dt>
+<dd>
+<p>
+SASL認証で利用するメカニズムをスペースで区切って指定します。
+指定可能な値は Cyrus SASL のドキュメント 
+<a class="ulink" href="https://www.cyrusimap.org/sasl/sasl/authentication_mechanisms.html" target="_top">https://www.cyrusimap.org/sasl/sasl/authentication_mechanisms.html</a>
+を参照してください。
+cyrus-sasl-xoauth2-idp パッケージを導入している場合は、
+これらに加えて <span class="token">XOAUTH2</span> も指定可能です。
+</p>
+<p>
+サーバー側ではこの指定を省略することもでき、
+その場合は Cyrus SASL の設定に応じたメカニズムが選択されます。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	sasl_mechanisms "PLAIN XOAUTH2"<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">sasl_user</span> <em class="parameter"><code>ユーザー名</code></em></span></dt>
+<dd>
+<p>
+SASL 認証のユーザー名を指定します。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	sasl_user "MyAccount"<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">sasl_password</span> <em class="parameter"><code>パスワード文字列</code></em></span></dt>
+<dd>
+<p>
+SASL 認証の LOGIN や PLAIN 等メカニズムで利用するパスワードを指定します。
+XOAUTH2 メカニズムの場合ののトークンもこれで指定できます。
+</p>
+<p>
+なお、この設定がない場合、環境変数 JWT_USER が指すファイル、
+あるいは環境変数も設定されていない場合は
+ファイル /tmp/jwt_user_uユーザーID/token.jwt 
+の内容をパスワードとして利用します。
+</p>
+<p>
+このファイルから読む機能は XOAUTH2 メカニズムでの利用を想定したものですが、
+XOAUTH2 以外のメカニズムを利用した場合にも、
+このファイルから読むので注意してください。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	sasl_password "MyPasswordString"<br>
+</p></div>
+</dd>
 <dt><span class="term"><span class="token">tls_cipher_suite</span> <em class="parameter"><code>cipher_suite</code></em></span></dt>
 <dd>
 <p>
@@ -2740,6 +2791,9 @@ In this case, look for the client certificate in the following order:
 	&lt;write_verify_interval_statement&gt; |<br>
 	&lt;write_verify_retry_interval_statement&gt; |<br>
 	&lt;write_verify_log_interval_statement&gt; |<br>
+	&lt;sasl_mechanisms_statement&gt; |<br>
+	&lt;sasl_user_statement&gt; |<br>
+	&lt;sasl_password_statement&gt; |<br>
 	&lt;tls_cipher_suite_statement&gt; |<br>
 	&lt;tls_ca_certificate_path_statement&gt; |<br>
 	&lt;tls_ca_revocation_path_statement&gt; |<br>
@@ -3086,6 +3140,12 @@ In this case, look for the client certificate in the following order:
 <dd><div class="literallayout"><p>"write_verify_retry_interval" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;write_verify_log_interval_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"write_verify_log_interval" &lt;number&gt;</p></div></dd>
+<dt><span class="term">&lt;sasl_mechanisms_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"sasl_mechanisms" &lt;string&gt;</p></div></dd>
+<dt><span class="term">&lt;sasl_user_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"sasl_user" &lt;string&gt;</p></div></dd>
+<dt><span class="term">&lt;sasl_password_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"sasl_password" &lt;string&gt;</p></div></dd>
 <dt><span class="term">&lt;tls_cipher_suite_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"tls_cipher_suite" &lt;string&gt;</p></div></dd>
 <dt><span class="term">&lt;tls_ca_certificate_path_statement&gt; ::=</span></dt>

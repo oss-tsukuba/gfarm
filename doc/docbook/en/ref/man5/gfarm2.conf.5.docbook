@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>17 Sep 2020</date></refentryinfo>
+<refentryinfo><date>22 Sep 2022</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -3045,6 +3045,68 @@ The default size is 16 MiB.
 </varlistentry>
 
 <varlistentry>
+<term><token>sasl_mechanisms</token> <parameter moreinfo="none">"mechanism_list..."</parameter></term>
+<listitem>
+<para>
+Specifies the mechanisms to be used for SASL authentication,
+separated by spaces.
+See the Cyrus SASL documentation 
+<ulink url="https://www.cyrusimap.org/sasl/sasl/authentication_mechanisms.html"/>
+for possible values.
+If the cyrus-sasl-xoauth2-idp package is installed,
+<token>XOAUTH2</token> can additionally be specified.
+</para>
+<para>
+This directive can be omitted on the server side,
+in which case the mechanism is selected
+according to the Cyrus SASL configuration.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	sasl_mechanisms "PLAIN XOAUTH2"
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>sasl_user</token> <parameter moreinfo="none">user_name</parameter></term>
+<listitem>
+<para>
+Specifies a user name for SASL authentication.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	sasl_user "MyAccount"
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>sasl_password</token> <parameter moreinfo="none">"password_string"</parameter></term>
+<listitem>
+<para>
+Specifies the password used for SASL authentication mechanisms
+such as LOGIN, PLAIN, etc.
+JWT token for the XOAUTH2 mechanism can be specified too.
+</para>
+<para>
+If this directive is not specified, the file pointed to by the
+JWT_USER environment variable, or if the environment is not set either,
+the contents of the file /tmp/jwt_user_u$lt;USER_ID$gt;/token.jwt is
+used as the password.
+Note that reading from the file is a function intended for
+use with the XOAUTH2 mechanism,
+but the password may be read from this file even when non-XOAUTH2 mechanisms
+such as LOGIN or PLAIN are used.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	sasl_password "MyPasswordString"
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>tls_cipher_suite</token> <parameter moreinfo="none">cipher_suite</parameter></term>
 <listitem>
 <para>
@@ -3480,6 +3542,9 @@ In this case, look for the client certificate in the following order:
 	&lt;write_verify_interval_statement&gt; |
 	&lt;write_verify_retry_interval_statement&gt; |
 	&lt;write_verify_log_interval_statement&gt; |
+	&lt;sasl_mechanisms_statement&gt; |
+	&lt;sasl_user_statement&gt; |
+	&lt;sasl_password_statement&gt; |
 	&lt;tls_cipher_suite_statement&gt; |
 	&lt;tls_ca_certificate_path_statement&gt; |
 	&lt;tls_ca_revocation_path_statement&gt; |
@@ -4396,6 +4461,21 @@ In this case, look for the client certificate in the following order:
 <varlistentry>
 <term>&lt;write_verify_log_interval_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"write_verify_log_interval" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;sasl_mechanisms_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"sasl_mechanisms" &lt;string&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;sasl_user_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"sasl_user" &lt;string&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;sasl_password_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"sasl_password" &lt;string&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>

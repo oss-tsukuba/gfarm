@@ -1015,6 +1015,8 @@ PostgreSQLサーバーが動作しているホスト名を指定します。
 <token>tls_client_certificate</token>、
 <token>gsi_auth</token>、
 <token>gsi</token>、
+<token>sasl_auth</token>、
+<token>sasl</token>、
 <token>kerberos_auth</token>
 ないし
 <token>kerberos</token>
@@ -1037,9 +1039,19 @@ PostgreSQLサーバーが動作しているホスト名を指定します。
 <token>tls_client_certificate</token>、
 <token>gsi_auth</token>、
 <token>gsi</token>
+<token>sasl_auth</token>、
+<token>sasl</token>
 <token>kerberos_auth</token>、
 <token>kerberos</token> 認証
 の順序で試みます。</para>
+
+<para>
+また
+<token>sasl_auth</token> および
+<token>sasl</token>
+はクライアント-サーバー間の認証のみで使われます。
+たとえホスト指定が適合したとしてもサーバー間認証では使われません。
+</para>
 
 <para>Gfarmのコンパイル時にglobusとのリンクを指定しなかった場合、
 GSIは利用できません。この場合、<token>gsi</token>および
@@ -3028,6 +3040,64 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 </varlistentry>
 
 <varlistentry>
+<term><token>sasl_mechanisms</token> <parameter moreinfo="none">メカニズムリスト...</parameter></term>
+<listitem>
+<para>
+SASL認証で利用するメカニズムをスペースで区切って指定します。
+指定可能な値は Cyrus SASL のドキュメント 
+<ulink url="https://www.cyrusimap.org/sasl/sasl/authentication_mechanisms.html"/>
+を参照してください。
+cyrus-sasl-xoauth2-idp パッケージを導入している場合は、
+これらに加えて <token>XOAUTH2</token> も指定可能です。
+</para>
+<para>
+サーバー側ではこの指定を省略することもでき、
+その場合は Cyrus SASL の設定に応じたメカニズムが選択されます。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	sasl_mechanisms "PLAIN XOAUTH2"
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>sasl_user</token> <parameter moreinfo="none">ユーザー名</parameter></term>
+<listitem>
+<para>
+SASL 認証のユーザー名を指定します。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	sasl_user "MyAccount"
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>sasl_password</token> <parameter moreinfo="none">パスワード文字列</parameter></term>
+<listitem>
+<para>
+SASL 認証の LOGIN や PLAIN 等のメカニズムで利用するパスワードを指定します。
+XOAUTH2 メカニズムの場合ののトークンもこれで指定できます。
+</para>
+<para>
+なお、この設定がない場合、環境変数 JWT_USER が指すファイル、
+あるいは環境変数も設定されていない場合は
+ファイル /tmp/jwt_user_u&lt;ユーザーID$gt;/token.jwt 
+の内容をパスワードとして利用します。
+ファイルから読むのは XOAUTH2 メカニズムでの利用を想定した機能ですが、
+LOGIN や PLAIN といった XOAUTH2 以外のメカニズムを利用した場合でも、
+パスワードをこのファイルから読むので注意してください。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	sasl_password "MyPasswordString"
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>tls_cipher_suite</token> <parameter moreinfo="none">暗号スイート</parameter></term>
 <listitem>
 <para>
@@ -3427,6 +3497,9 @@ TLS通信において、proxy 証明書の利用を禁止したい場合に disa
 	&lt;write_verify_interval_statement&gt; |
 	&lt;write_verify_retry_interval_statement&gt; |
 	&lt;write_verify_log_interval_statement&gt; |
+	&lt;sasl_mechanisms_statement&gt; |
+	&lt;sasl_user_statement&gt; |
+	&lt;sasl_password_statement&gt; |
 	&lt;tls_cipher_suite_statement&gt; |
 	&lt;tls_ca_certificate_path_statement&gt; |
 	&lt;tls_ca_revocation_path_statement&gt; |
@@ -4343,6 +4416,21 @@ TLS通信において、proxy 証明書の利用を禁止したい場合に disa
 <varlistentry>
 <term>&lt;write_verify_log_interval_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"write_verify_log_interval" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;sasl_mechanisms_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"sasl_mechanisms" &lt;string&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;sasl_user_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"sasl_user" &lt;string&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;sasl_password_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"sasl_password" &lt;string&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
