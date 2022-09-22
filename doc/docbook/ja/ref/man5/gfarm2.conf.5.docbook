@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>17 Sep 2020</date></refentryinfo>
+<refentryinfo><date>22 Sep 2022</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -3044,7 +3044,7 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 <listitem>
 <para>
 SASL認証で利用するメカニズムをスペースで区切って指定します。
-指定可能な値は Cyrus SASL のドキュメント 
+指定可能な値は Cyrus SASL のドキュメント
 <ulink url="https://www.cyrusimap.org/sasl/sasl/authentication_mechanisms.html"/>
 を参照してください。
 cyrus-sasl-xoauth2-idp パッケージを導入している場合は、
@@ -3084,7 +3084,7 @@ XOAUTH2 メカニズムの場合ののトークンもこれで指定できます
 <para>
 なお、この設定がない場合、環境変数 JWT_USER が指すファイル、
 あるいは環境変数も設定されていない場合は
-ファイル /tmp/jwt_user_u&lt;ユーザーID$gt;/token.jwt 
+ファイル /tmp/jwt_user_u&lt;ユーザーID$gt;/token.jwt
 の内容をパスワードとして利用します。
 ファイルから読むのは XOAUTH2 メカニズムでの利用を想定した機能ですが、
 LOGIN や PLAIN といった XOAUTH2 以外のメカニズムを利用した場合でも、

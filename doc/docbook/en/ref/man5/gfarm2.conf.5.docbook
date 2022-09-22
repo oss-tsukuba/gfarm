@@ -3050,7 +3050,7 @@ The default size is 16 MiB.
 <para>
 Specifies the mechanisms to be used for SASL authentication,
 separated by spaces.
-See the Cyrus SASL documentation 
+See the Cyrus SASL documentation
 <ulink url="https://www.cyrusimap.org/sasl/sasl/authentication_mechanisms.html"/>
 for possible values.
 If the cyrus-sasl-xoauth2-idp package is installed,
