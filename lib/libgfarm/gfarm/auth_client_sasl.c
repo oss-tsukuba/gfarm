@@ -21,7 +21,8 @@
 
 #define staticp	(gfarm_ctxp->auth_sasl_client_static)
 
-#define SASL_JWT_PATHNAME "/tmp/jwt_user_u%lu/token.jwt"
+#define SASL_JWT_PATH_ENV	"JWT_USER"
+#define SASL_JWT_PATHNAME	"/tmp/jwt_user_u%lu/token.jwt"
 #define SASL_PASSWORD_LEN_MAX	16384	/* enough size to hold OAuth JWT */
 
 struct gfarm_auth_sasl_client_static {
@@ -785,20 +786,24 @@ gfarm_sasl_secret_password_set_by_jwt_file(void)
 	gfarm_error_t e;
 	static const char jwt_path_template[] = SASL_JWT_PATHNAME;
 	char path[sizeof(jwt_path_template) + GFARM_INT64STRLEN];
+	const char *filename;
 	sasl_secret_t *r;
 	char *password;
 	size_t len;
 	FILE *fp;
 
-	snprintf(path, sizeof path, jwt_path_template,
-	    (unsigned long)getuid());
+	if ((filename = getenv(SASL_JWT_PATH_ENV)) == NULL) {
+		snprintf(path, sizeof path, jwt_path_template,
+		    (unsigned long)getuid());
+		filename = path;
+	}
 
-	if ((fp = fopen(path, "r")) == NULL) {
+	if ((fp = fopen(filename, "r")) == NULL) {
 		e = gfarm_errno_to_error(errno);
 
 		if (e != GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY)
 			gflog_warning(GFARM_MSG_UNFIXED, "file %s: %s",
-			    path, gfarm_error_string(e));
+			    filename, gfarm_error_string(e));
 
 		return (e);
 	}
@@ -810,7 +815,7 @@ gfarm_sasl_secret_password_set_by_jwt_file(void)
 	if (fgets(password,
 	    sizeof(staticp->sasl_secret_password_storage) -
 	    offsetof(sasl_secret_t, data), fp) == NULL) {
-		gflog_warning(GFARM_MSG_UNFIXED, "file %s is empty", path);
+		gflog_warning(GFARM_MSG_UNFIXED, "file %s is empty", filename);
 		fclose(fp);
 		return (GFARM_ERR_INVALID_CREDENTIAL);
 	}
@@ -821,7 +826,7 @@ gfarm_sasl_secret_password_set_by_jwt_file(void)
 		r->len = len - 1;
 		if (getc(fp) != EOF) {
 			gflog_warning(GFARM_MSG_UNFIXED,
-			    "file %s: second line is ignored", path);
+			    "file %s: second line is ignored", filename);
 		}
 		e = GFARM_ERR_NO_ERROR;
 	} else if (getc(fp) == EOF) {
@@ -832,13 +837,13 @@ gfarm_sasl_secret_password_set_by_jwt_file(void)
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "file %s is too large, "
 		    "please increase SASL_PASSWORD_LEN_MAX (%zu)",
-		    path,
+		    filename,
 		    sizeof(staticp->sasl_secret_password_storage));
 		e = GFARM_ERR_VALUE_TOO_LARGE_TO_BE_STORED_IN_DATA_TYPE;
 	} else {
 		/* shouldn't happen */
 		gflog_warning(GFARM_MSG_UNFIXED,
-		    "file %s: partial read happens", path);
+		    "file %s: partial read happens", filename);
 		r->len = len;
 		e = GFARM_ERR_NO_ERROR;
 	}
