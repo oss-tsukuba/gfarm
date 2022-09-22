@@ -2388,53 +2388,55 @@ The default size is 16 MiB.
 	rdma_mr_reg_static_max_size 16777216<br>
 </p></div>
 </dd>
-<dt><span class="term"><span class="token">sasl_mechanisms</span> <em class="parameter"><code>メカニズムリスト...</code></em></span></dt>
+<dt><span class="term"><span class="token">sasl_mechanisms</span> <em class="parameter"><code>"mechanism_list..."</code></em></span></dt>
 <dd>
 <p>
-SASL認証で利用するメカニズムをスペースで区切って指定します。
-指定可能な値は Cyrus SASL のドキュメント 
+Specifies the mechanisms to be used for SASL authentication,
+separated by spaces.
+See the Cyrus SASL documentation
 <a class="ulink" href="https://www.cyrusimap.org/sasl/sasl/authentication_mechanisms.html" target="_top">https://www.cyrusimap.org/sasl/sasl/authentication_mechanisms.html</a>
-を参照してください。
-cyrus-sasl-xoauth2-idp パッケージを導入している場合は、
-これらに加えて <span class="token">XOAUTH2</span> も指定可能です。
+for possible values.
+If the cyrus-sasl-xoauth2-idp package is installed,
+<span class="token">XOAUTH2</span> can additionally be specified.
 </p>
 <p>
-サーバー側ではこの指定を省略することもでき、
-その場合は Cyrus SASL の設定に応じたメカニズムが選択されます。
+This directive can be omitted on the server side,
+in which case the mechanism is selected
+according to the Cyrus SASL configuration.
 </p>
-<p>例:</p>
+<p>For example,</p>
 <div class="literallayout"><p><br>
 	sasl_mechanisms "PLAIN XOAUTH2"<br>
 </p></div>
 </dd>
-<dt><span class="term"><span class="token">sasl_user</span> <em class="parameter"><code>ユーザー名</code></em></span></dt>
+<dt><span class="term"><span class="token">sasl_user</span> <em class="parameter"><code>user_name</code></em></span></dt>
 <dd>
 <p>
-SASL 認証のユーザー名を指定します。
+Specifies a user name for SASL authentication.
 </p>
-<p>例:</p>
+<p>For example,</p>
 <div class="literallayout"><p><br>
 	sasl_user "MyAccount"<br>
 </p></div>
 </dd>
-<dt><span class="term"><span class="token">sasl_password</span> <em class="parameter"><code>パスワード文字列</code></em></span></dt>
+<dt><span class="term"><span class="token">sasl_password</span> <em class="parameter"><code>"password_string"</code></em></span></dt>
 <dd>
 <p>
-SASL 認証の LOGIN や PLAIN 等メカニズムで利用するパスワードを指定します。
-XOAUTH2 メカニズムの場合ののトークンもこれで指定できます。
+Specifies the password used for SASL authentication mechanisms
+such as LOGIN, PLAIN, etc.
+JWT token for the XOAUTH2 mechanism can be specified too.
 </p>
 <p>
-なお、この設定がない場合、環境変数 JWT_USER が指すファイル、
-あるいは環境変数も設定されていない場合は
-ファイル /tmp/jwt_user_uユーザーID/token.jwt 
-の内容をパスワードとして利用します。
+If this directive is not specified, the file pointed to by the
+JWT_USER environment variable, or if the environment is not set either,
+the contents of the file /tmp/jwt_user_u$lt;USER_ID$gt;/token.jwt is
+used as the password.
+Note that reading from the file is a function intended for
+use with the XOAUTH2 mechanism,
+but the password may be read from this file even when non-XOAUTH2 mechanisms
+such as LOGIN or PLAIN are used.
 </p>
-<p>
-このファイルから読む機能は XOAUTH2 メカニズムでの利用を想定したものですが、
-XOAUTH2 以外のメカニズムを利用した場合にも、
-このファイルから読むので注意してください。
-</p>
-<p>例:</p>
+<p>For example,</p>
 <div class="literallayout"><p><br>
 	sasl_password "MyPasswordString"<br>
 </p></div>

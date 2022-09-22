@@ -2390,7 +2390,7 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 <dd>
 <p>
 SASL認証で利用するメカニズムをスペースで区切って指定します。
-指定可能な値は Cyrus SASL のドキュメント 
+指定可能な値は Cyrus SASL のドキュメント
 <a class="ulink" href="https://www.cyrusimap.org/sasl/sasl/authentication_mechanisms.html" target="_top">https://www.cyrusimap.org/sasl/sasl/authentication_mechanisms.html</a>
 を参照してください。
 cyrus-sasl-xoauth2-idp パッケージを導入している場合は、
@@ -2418,19 +2418,17 @@ SASL 認証のユーザー名を指定します。
 <dt><span class="term"><span class="token">sasl_password</span> <em class="parameter"><code>パスワード文字列</code></em></span></dt>
 <dd>
 <p>
-SASL 認証の LOGIN や PLAIN 等メカニズムで利用するパスワードを指定します。
+SASL 認証の LOGIN や PLAIN 等のメカニズムで利用するパスワードを指定します。
 XOAUTH2 メカニズムの場合ののトークンもこれで指定できます。
 </p>
 <p>
 なお、この設定がない場合、環境変数 JWT_USER が指すファイル、
 あるいは環境変数も設定されていない場合は
-ファイル /tmp/jwt_user_uユーザーID/token.jwt 
+ファイル /tmp/jwt_user_u&lt;ユーザーID$gt;/token.jwt
 の内容をパスワードとして利用します。
-</p>
-<p>
-このファイルから読む機能は XOAUTH2 メカニズムでの利用を想定したものですが、
-XOAUTH2 以外のメカニズムを利用した場合にも、
-このファイルから読むので注意してください。
+ファイルから読むのは XOAUTH2 メカニズムでの利用を想定した機能ですが、
+LOGIN や PLAIN といった XOAUTH2 以外のメカニズムを利用した場合でも、
+パスワードをこのファイルから読むので注意してください。
 </p>
 <p>例:</p>
 <div class="literallayout"><p><br>

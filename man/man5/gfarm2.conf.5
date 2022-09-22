@@ -2,12 +2,12 @@
 .\"     Title: gfarm2.conf
 .\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 17 Sep 2020
+.\"      Date: 22 Sep 2022
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFARM2\&.CONF" "5" "17 Sep 2020" "Gfarm" "Gfarm"
+.TH "GFARM2\&.CONF" "5" "22 Sep 2022" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -2965,6 +2965,65 @@ For example,
 .\}
 .RE
 .PP
+sasl_mechanisms \fI"mechanism_list\&.\&.\&."\fR
+.RS 4
+Specifies the mechanisms to be used for SASL authentication, separated by spaces\&. See the Cyrus SASL documentation
+\m[blue]\fB\%https://www.cyrusimap.org/sasl/sasl/authentication_mechanisms.html\fR\m[]
+for possible values\&. If the cyrus\-sasl\-xoauth2\-idp package is installed,
+XOAUTH2
+can additionally be specified\&.
+.sp
+This directive can be omitted on the server side, in which case the mechanism is selected according to the Cyrus SASL configuration\&.
+.sp
+For example,
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	sasl_mechanisms "PLAIN XOAUTH2"
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+sasl_user \fIuser_name\fR
+.RS 4
+Specifies a user name for SASL authentication\&.
+.sp
+For example,
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	sasl_user "MyAccount"
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+sasl_password \fI"password_string"\fR
+.RS 4
+Specifies the password used for SASL authentication mechanisms such as LOGIN, PLAIN, etc\&. JWT token for the XOAUTH2 mechanism can be specified too\&.
+.sp
+If this directive is not specified, the file pointed to by the JWT_USER environment variable, or if the environment is not set either, the contents of the file /tmp/jwt_user_u$lt;USER_ID$gt;/token\&.jwt is used as the password\&. Note that reading from the file is a function intended for use with the XOAUTH2 mechanism, but the password may be read from this file even when non\-XOAUTH2 mechanisms such as LOGIN or PLAIN are used\&.
+.sp
+For example,
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	sasl_password "MyPasswordString"
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 tls_cipher_suite \fIcipher_suite\fR
 .RS 4
 Specifies the cipher suite to be used for TLS authentication, separated by a colon\&. Please see the following URL for possible values:
@@ -3376,6 +3435,9 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 	<write_verify_interval_statement> |
 	<write_verify_retry_interval_statement> |
 	<write_verify_log_interval_statement> |
+	<sasl_mechanisms_statement> |
+	<sasl_user_statement> |
+	<sasl_password_statement> |
 	<tls_cipher_suite_statement> |
 	<tls_ca_certificate_path_statement> |
 	<tls_ca_revocation_path_statement> |
@@ -5666,6 +5728,48 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 .\}
 .nf
 "write_verify_log_interval" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<sasl_mechanisms_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"sasl_mechanisms" <string>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<sasl_user_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"sasl_user" <string>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<sasl_password_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"sasl_password" <string>
 .fi
 .if n \{\
 .RE

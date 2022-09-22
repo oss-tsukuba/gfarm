@@ -2,12 +2,12 @@
 .\"     Title: gfarm2.conf
 .\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 17 Sep 2020
+.\"      Date: 22 Sep 2022
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFARM2\&.CONF" "5" "17 Sep 2020" "Gfarm" "Gfarm"
+.TH "GFARM2\&.CONF" "5" "22 Sep 2022" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -967,6 +967,8 @@ tls_sharedsecret、
 tls_client_certificate、
 gsi_auth、
 gsi、
+sasl_auth、
+sasl、
 kerberos_auth
 ないし
 kerberos
@@ -982,9 +984,17 @@ tls_sharedsecret、
 tls_client_certificate、
 gsi_auth、
 gsi
+sasl_auth、
+sasl
 kerberos_auth、
 kerberos
 認証 の順序で試みます。
+.sp
+また
+sasl_auth
+および
+sasl
+はクライアント\-サーバー間の認証のみで使われます。 たとえホスト指定が適合したとしてもサーバー間認証では使われません。
 .sp
 Gfarmのコンパイル時にglobusとのリンクを指定しなかった場合、 GSIは利用できません。この場合、gsiおよび
 gsi_auth認証の指定は単に無視されます。
@@ -2812,6 +2822,65 @@ rdma_mr_reg_static_max_size \fIバイト数\fR
 .\}
 .RE
 .PP
+sasl_mechanisms \fIメカニズムリスト\&.\&.\&.\fR
+.RS 4
+SASL認証で利用するメカニズムをスペースで区切って指定します。 指定可能な値は Cyrus SASL のドキュメント
+\m[blue]\fB\%https://www.cyrusimap.org/sasl/sasl/authentication_mechanisms.html\fR\m[]
+を参照してください。 cyrus\-sasl\-xoauth2\-idp パッケージを導入している場合は、 これらに加えて
+XOAUTH2
+も指定可能です。
+.sp
+サーバー側ではこの指定を省略することもでき、 その場合は Cyrus SASL の設定に応じたメカニズムが選択されます。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	sasl_mechanisms "PLAIN XOAUTH2"
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+sasl_user \fIユーザー名\fR
+.RS 4
+SASL 認証のユーザー名を指定します。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	sasl_user "MyAccount"
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+sasl_password \fIパスワード文字列\fR
+.RS 4
+SASL 認証の LOGIN や PLAIN 等のメカニズムで利用するパスワードを指定します。 XOAUTH2 メカニズムの場合ののトークンもこれで指定できます。
+.sp
+なお、この設定がない場合、環境変数 JWT_USER が指すファイル、 あるいは環境変数も設定されていない場合は ファイル /tmp/jwt_user_u<ユーザーID$gt;/token\&.jwt の内容をパスワードとして利用します。 ファイルから読むのは XOAUTH2 メカニズムでの利用を想定した機能ですが、 LOGIN や PLAIN といった XOAUTH2 以外のメカニズムを利用した場合でも、 パスワードをこのファイルから読むので注意してください。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	sasl_password "MyPasswordString"
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 tls_cipher_suite \fI暗号スイート\fR
 .RS 4
 TLS認証で利用する暗号スイートをコロンで区切って指定します。 指定可能な値は
@@ -3224,6 +3293,9 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 	<write_verify_interval_statement> |
 	<write_verify_retry_interval_statement> |
 	<write_verify_log_interval_statement> |
+	<sasl_mechanisms_statement> |
+	<sasl_user_statement> |
+	<sasl_password_statement> |
 	<tls_cipher_suite_statement> |
 	<tls_ca_certificate_path_statement> |
 	<tls_ca_revocation_path_statement> |
@@ -5514,6 +5586,48 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .nf
 "write_verify_log_interval" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<sasl_mechanisms_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"sasl_mechanisms" <string>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<sasl_user_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"sasl_user" <string>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<sasl_password_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"sasl_password" <string>
 .fi
 .if n \{\
 .RE
