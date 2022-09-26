@@ -842,9 +842,11 @@ gfm_client_connection_and_process_acquire(const char *hostname, int port,
 			break;
 		}
 
+		gfm_client_connection_lock(gfm_server);
 		if (gfm_server->pid != 0) {
 			/* user must be already set when the pid was set */
 			assert(gfm_client_username(gfm_server) != NULL);
+			gfm_client_connection_unlock(gfm_server);
 			break;
 		}
 		gfarm_auth_random(gfm_server->pid_key,
@@ -864,12 +866,14 @@ gfm_client_connection_and_process_acquire(const char *hostname, int port,
 			    gfarm_error_string(e));
 		} else {
 #ifndef HAVE_GSI
+		  	gfm_client_connection_unlock(gfm_server);
 			break;
 #else /* HAVE_GSI */
 			if (!GFARM_IS_AUTH_GSI(gfm_server->auth_method) ||
 			    /* obtain global username */
 			    (e = gfarm_set_global_user_by_gsi(gfm_server)) ==
 			    GFARM_ERR_NO_ERROR) {
+				gfm_client_connection_unlock(gfm_server);
 				break;
 			}
 			gflog_error(GFARM_MSG_1003450,
@@ -878,6 +882,7 @@ gfm_client_connection_and_process_acquire(const char *hostname, int port,
 #endif /* HAVE_GSI */
 		}
 
+		gfm_client_connection_unlock(gfm_server);
 		gfm_client_connection_free(gfm_server);
 		if (IS_CONNECTION_ERROR(e) == 0)
 			break;
