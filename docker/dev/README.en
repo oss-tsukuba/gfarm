@@ -54,6 +54,14 @@ Quick start
   $ cd gfarm
   $ git clone git@github.com:oss-tsukuba/gfarm2fs.git
 
+  If you will test SASL authentication too, do the followings too
+  under the gfarm directory:
+
+  $ git clone git@github.com:oss-tsukuba/jwt-logon.git
+  $ git clone git@github.com:oss-tsukuba/jwt-agent.git
+  $ git clone git@github.com:oss-tsukuba/cyrus-sasl-xoauth2-idp.git
+  $ git clone git@github.com:scitokens/scitokens-cpp.git
+
 4. Edit config.mk
 
   You can override from config-default.mk

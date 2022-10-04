@@ -30,7 +30,9 @@ conf_modify()
 
 host_type=$1
 case ${host_type} in
-client)	conf_modify gfarm2.conf client
+client)	# the following setting is not normally used,
+	# because $HOME/.gfarm2rc does the job.
+	conf_modify gfarm2.conf client
 	;;
 gfmd)	conf_modify gfarm2.conf client
 	conf_modify gfmd.conf gfmd

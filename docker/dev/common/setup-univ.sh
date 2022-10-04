@@ -27,12 +27,20 @@ set -eux
 : $GFDOCKER_USE_SAN_FOR_GFSD
 
 MY_SHELL=/bin/bash
+HOST_SHARE_DIR=/mnt
+conf_include_dir=${HOST_SHARE_DIR}/conf
 USERADD="useradd -m -s "$MY_SHELL" -U -K UID_MIN=1000 -K GID_MIN=1000"
+SASL_DOMAIN=$(echo "$GFDOCKER_HOSTNAME_SUFFIX" | sed 's/^\.//')
+SASL_PASSWORD_BASE=PASS-
 ca_key_pass=PASSWORD
 GRID_MAPFILE=/etc/grid-security/grid-mapfile
 PRIMARY_HOME=/home/${GFDOCKER_PRIMARY_USER}
 gfarm_src_path="/work/gfarm"
 gfarm2fs_src_path="${gfarm_src_path}/gfarm2fs"
+jwt_logon_src_path="${gfarm_src_path}/jwt-logon"
+jwt_agent_src_path="${gfarm_src_path}/jwt-agent"
+cyrus_sasl_xoauth2_idp_src_path="${gfarm_src_path}/cyrus-sasl-xoauth2-idp"
+scitokens_cpp_src_path="${gfarm_src_path}/scitokens-cpp"
 
 # pin starting UID for user1
 for i in $(seq 1 "$GFDOCKER_NUM_USERS"); do
@@ -41,10 +49,20 @@ done
 
 ln -s ${gfarm_src_path} ${PRIMARY_HOME}/gfarm
 ln -s ${gfarm2fs_src_path} ${PRIMARY_HOME}/gfarm2fs
+# the following directories may not exist
+ln -s ${jwt_logon_src_path} ${PRIMARY_HOME}/jwt-logon
+ln -s ${jwt_agent_src_path} ${PRIMARY_HOME}/jwt-agent
+ln -s ${cyrus_sasl_xoauth2_idp_src_path} ${PRIMARY_HOME}/cyrus-sasl-xoauth2-idp
+ln -s ${scitokens_cpp_src_path} ${PRIMARY_HOME}/scitokens-cpp
 
 # remove untracked files
 (cd ${gfarm_src_path}; git clean -df) || true
 (cd ${gfarm2fs_src_path}; git clean -df) || true
+# the following directories may not exist
+( if cd ${jwt_logon_src_path}; then git clean -df; fi ) || true
+( if cd ${jwt_agent_src_path}; then git clean -df; fi ) || true
+( if cd ${cyrus_sasl_xoauth2_idp_src_path}; then git clean -df; fi ) || true
+( if cd ${scitokens_cpp_src_path}; then git clean -df; fi ) || true
 
 for u in _gfarmmd _gfarmfs; do
   $USERADD "$u"
@@ -200,6 +218,21 @@ for i in $(seq 1 "$GFDOCKER_NUM_USERS"); do
   cp "$base_gfarm2rc" "$gfarm2rc"
   chmod 0644 "$gfarm2rc"
   chown "${user}:${user}" "$gfarm2rc"
+  # use a symbolic link instead of direct referece to ${conf_include_dir},
+  # to access ${HOME}/.gfarm2rc.passwd via relative pathname
+  gfarm2rc_sasl="${gfarm2rc}.sasl"
+  ln -s "${conf_include_dir}/auth-client.sasl.conf" "$gfarm2rc_sasl"
+  gfarm2rc_passwd="${gfarm2rc}.passwd"
+  cp /dev/null "$gfarm2rc_passwd"
+  chmod 0600 "$gfarm2rc_passwd"
+  chown "${user}:${user}" "$gfarm2rc_passwd"
+  echo "sasl_user \"${user}@${SASL_DOMAIN}\"" >>"$gfarm2rc_passwd"
+  echo "sasl_password \"${SASL_PASSWORD_BASE}${user}\"" >>"$gfarm2rc_passwd"
+  if type saslpasswd2 2>/dev/null; then
+      echo "${SASL_PASSWORD_BASE}${user}" |
+	  saslpasswd2 -c -u "${SASL_DOMAIN}" "${user}"
+      chown _gfarmfs /etc/sasldb2
+  fi
 done
 
 su - "$GFDOCKER_PRIMARY_USER" -c " \
