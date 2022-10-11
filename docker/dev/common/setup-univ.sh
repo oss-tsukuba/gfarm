@@ -229,9 +229,15 @@ for i in $(seq 1 "$GFDOCKER_NUM_USERS"); do
   echo "sasl_user \"${user}@${SASL_DOMAIN}\"" >>"$gfarm2rc_passwd"
   echo "sasl_password \"${SASL_PASSWORD_BASE}${user}\"" >>"$gfarm2rc_passwd"
   if type saslpasswd2 2>/dev/null; then
-      echo "${SASL_PASSWORD_BASE}${user}" |
-	  saslpasswd2 -c -u "${SASL_DOMAIN}" "${user}"
-      chown _gfarmfs /etc/sasldb2
+    echo "${SASL_PASSWORD_BASE}${user}" |
+      saslpasswd2 -c -u "${SASL_DOMAIN}" "${user}"
+    if [ "${sasl_db:-NOT_SET}" = "NOT_SET" ]; then
+      sasl_db=/etc/sasl2/sasldb2
+      if [ ! -f ${sasl_db} ]; then
+        sasl_db=/etc/sasldb2
+      fi
+    fi
+    chown _gfarmfs "${sasl_db}"
   fi
 done
 

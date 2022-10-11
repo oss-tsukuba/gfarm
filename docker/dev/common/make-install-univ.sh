@@ -5,13 +5,15 @@
 # ENV OPENSSL_PACKAGE_NAME (optional)
 # ARG GFDOCKER_NUM_JOBS
 # ARG GFDOCKER_PRIMARY_USER
-# ARG GFDOCKER_ENABLE_PROXY (optional)
-# ARG https_proxy (optional)
+# ARG GFDOCKER_ENABLE_PROXY
+
+# for SASL (optional)
 # ARG GFDOCKER_SASL_MECH_LIST (optional)
 # ARG GFDOCKER_SASL_LOG_LEVEL (optional)
 # ARG GFDOCKER_SASL_XOAUTH2_SCOPE (optional)
-# ARG GFDOCKER_SASL_XOAUTH2_AUD} (optional)
+# ARG GFDOCKER_SASL_XOAUTH2_AUD (optional)
 # ARG GFDOCKER_SASL_XOAUTH2_USER_CLAIM (optional)
+
 # RUN "/home/${GFDOCKER_PRIMARY_USER}/gfarm/docker/dev/common/make-install-univ.sh"
 
 set -eux
@@ -21,6 +23,7 @@ GFDOCKER_USE_TSAN=0
 : ${OPENSSL_PACKAGE_NAME:=}
 : $GFDOCKER_NUM_JOBS
 : $GFDOCKER_PRIMARY_USER
+: ${GFDOCKER_ENABLE_PROXY:=false}
 
 WITH_OPENSSL_OPT=
 if [ -n "${OPENSSL_PACKAGE_NAME}" ]; then
@@ -34,6 +37,8 @@ else
 fi
 
 GFARM_OPT="--with-globus=/usr --enable-xmlattr ${WITH_OPENSSL_OPT}"
+
+scitokens_prefix=/usr/local
 
 su - "$GFDOCKER_PRIMARY_USER" -c " \
   cd ~/gfarm \
@@ -70,12 +75,13 @@ fi
 # if proxy is set, the following fails for some unknown reason,
 # the error is:
 #	go: golang.org/x/crypto@v0.0.0-20220722155217-630584e8d5aa: Get "https://proxy.golang.org/golang.org/x/crypto/@v/v0.0.0-20220722155217-630584e8d5aa.info": dial tcp: lookup proxy.golang.org on 8.8.4.4:53: read udp 172.17.0.2:40024->8.8.4.4:53: i/o timeout
-#if  [ -d "/home/${GFDOCKER_PRIMARY_USER}/jwt-agent" ] && type go 2>/dev/null
-#then
-#  su - "$GFDOCKER_PRIMARY_USER" -c "cd ~/jwt-agent && make" &&
-#    cd "/home/${GFDOCKER_PRIMARY_USER}/jwt-agent" &&
-#    make PREFIX=/usr/local install || exit 1
-#fi
+if  [ -d "/home/${GFDOCKER_PRIMARY_USER}/jwt-agent" ] && type go 2>/dev/null &&
+    ! "${GFDOCKER_ENABLE_PROXY}"
+then
+  su - "$GFDOCKER_PRIMARY_USER" -c "cd ~/jwt-agent && make" &&
+    cd "/home/${GFDOCKER_PRIMARY_USER}/jwt-agent" &&
+    make PREFIX=/usr/local install || exit 1
+fi
 
 if [ -d "/home/${GFDOCKER_PRIMARY_USER}/scitokens-cpp" -a \
      -f /usr/include/sqlite3.h -a \
@@ -87,7 +93,7 @@ then
   su - "$GFDOCKER_PRIMARY_USER" -c "cd ~/scitokens-cpp &&
       mkdir -p build &&
       cd build &&
-      cmake -DCMAKE_INSTALL_PREFIX=/usr/local .. &&
+      cmake -DCMAKE_INSTALL_PREFIX="${scitokens_prefix}" .. &&
       make -j '${GFDOCKER_NUM_JOBS}'" &&
     cd "/home/${GFDOCKER_PRIMARY_USER}/scitokens-cpp/build" &&
     make install || exit 1
@@ -105,7 +111,8 @@ else
 fi
 if [ -d "/home/${GFDOCKER_PRIMARY_USER}/cyrus-sasl-xoauth2-idp" -a \
      -n "${sasl_libdir}" -a -f /usr/include/sasl/sasl.h -a \
-     -f /usr/include/scitokens/scitokens.h ]
+     -f ${scitokens_prefix}/include/scitokens/scitokens.h -a \
+     "${GFDOCKER_SASL_MECH_LIST+set}" = "set" ]
 then
   # NOTE: this installs to /usr/lib64/sasl2/ instead of /usr/local/lib64/sasl2/
   su - "$GFDOCKER_PRIMARY_USER" -c "cd ~/cyrus-sasl-xoauth2-idp &&
@@ -123,7 +130,7 @@ xoauth2_aud: ${GFDOCKER_SASL_XOAUTH2_AUD}
 xoauth2_user_claim: ${GFDOCKER_SASL_XOAUTH2_USER_CLAIM}
 _EOF_
 
-    if "${GFDOCKER_ENABLE_PROXY:-false}"; then
+    if "${GFDOCKER_ENABLE_PROXY}"; then
       cat <<_EOF_
 proxy: ${https_proxy}
 _EOF_

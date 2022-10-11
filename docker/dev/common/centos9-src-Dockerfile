@@ -3,6 +3,7 @@ FROM gfarm-dev:centos9-base
 # System independent
 ARG GFDOCKER_NUM_JOBS
 ARG GFDOCKER_PRIMARY_USER
+ARG GFDOCKER_ENABLE_PROXY
 
 RUN "/home/${GFDOCKER_PRIMARY_USER}/gfarm/docker/dev/common/make-install-univ.sh"
 
