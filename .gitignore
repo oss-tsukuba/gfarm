@@ -5,7 +5,7 @@
 .libs
 
 include/gfarm/gfarm_config.h
-Makefile
+/Makefile
 makes/config.mk
 makes/install-doc
 makes/build-script

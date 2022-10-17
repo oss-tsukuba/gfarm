@@ -11,6 +11,8 @@ centos9/src
 centos9/pkg
 almalinux8/src
 almalinux8/pkg
+almalinux9/src
+almalinux9/pkg
 rockylinux8/src
 rockylinux8/pkg
 fedora33/src
