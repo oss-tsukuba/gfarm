@@ -38,7 +38,7 @@ fi
 
 GFARM_OPT="--with-globus=/usr --enable-xmlattr ${WITH_OPENSSL_OPT}"
 
-scitokens_prefix=/usr/local
+scitokens_prefix=/usr
 
 su - "$GFDOCKER_PRIMARY_USER" -c " \
   cd ~/gfarm \
