@@ -174,7 +174,7 @@ gen_auth_sasl_config()
 			;;
 		.xoauth2)
 			echo "sasl_mechanisms XOAUTH2"
-			echo "sasl_user REPLACE-THIS-BY-YOUR-OAUTH-ID"
+			echo "include .gfarm2rc.sasl.xoauth2"
 			;;
 		*)	echo >&2 "ERROR: unknown sasl_mechanisms <$sasl_mech>"
 			exit 2;;

@@ -239,6 +239,9 @@ for i in $(seq 1 "$GFDOCKER_NUM_USERS"); do
     fi
     chown _gfarmfs "${sasl_db}"
   fi
+  gfarm2rc_sasl_xoauth2="${gfarm2rc}.sasl.xoauth2"
+  echo "sasl_user \"${user}\"" >>"$gfarm2rc_sasl_xoauth2"
+  chown "${user}:${user}" "$gfarm2rc_sasl_xoauth2"
 done
 
 su - "$GFDOCKER_PRIMARY_USER" -c " \
