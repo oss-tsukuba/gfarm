@@ -155,12 +155,12 @@ done
 # because these files are included from $HOME/.gfarm2rc
 conf_include_dir="${HOST_SHARE_DIR}/conf"
 sudo mkdir -p "${conf_include_dir}"
+sudo chown -R "${GFDOCKER_PRIMARY_USER}" "${conf_include_dir}"
 cat <<'_EOF_' > "${conf_include_dir}/auth-client.conf"
 auth enable sharedsecret *
 auth enable gsi_auth *
 _EOF_
 cp /dev/null "${conf_include_dir}/auth-client.sasl.conf"
-sudo chown -R "${GFDOCKER_PRIMARY_USER}" "${conf_include_dir}"
 
 ## before systemd 235: "rsyslog.service: Failed to kill control group"
 for host in $gfmds $gfsds $clients; do
