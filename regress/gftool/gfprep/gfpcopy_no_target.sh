@@ -20,18 +20,18 @@ DST_HOST="unknown.example.com"
 
 CONFIG_FILE=$local_dir1/gfarm2rc
 
-if [ -n "$GFARM_CONFIG_FILE" ]; then
-    conf_file="$GFARM_CONFIG_FILE"
-else
-    conf_file=~/.gfarm2rc
-fi
-if [ -r "$conf_file" ]; then
-    cp "$conf_file" "$CONFIG_FILE" || exit
-fi
-cat <<EOF >> "$CONFIG_FILE" || exit $exit_fail
+cat <<EOF > "$CONFIG_FILE" || exit $exit_fail
 write_target_domain ${DST_HOST}
 #log_level debug
 EOF
+if [ -n "$GFARM_CONFIG_FILE" ]; then
+    conf_file="$GFARM_CONFIG_FILE"
+else
+    conf_file=$HOME/.gfarm2rc
+fi
+if [ -r "$conf_file" ]; then
+    echo "include $conf_file" >> "$CONFIG_FILE" || exit $exit_fail
+fi
 
 test_copy() {
   SIZE=$1
