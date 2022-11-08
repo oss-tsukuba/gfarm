@@ -287,6 +287,11 @@ for i in $(seq 1 $GFDOCKER_NUM_USERS); do
   sudo dd conv=notrunc oflag=append of="${S3_USERMAP}" > /dev/null 2>&1
 done
 
+if $sasl_available; then
+  sasl_user="${GFDOCKER_PRIMARY_USER}@${SASL_DOMAIN}"
+  gfgroup -a -m gfarmadm "${sasl_user}"
+fi
+
 # add gfarm user for SASL w/ mechanism=ANONYMOUS
 if $sasl_available &&
    expr "${GFDOCKER_SASL_MECH_LIST}" : '.*ANONYMOUS.*' >/dev/null
@@ -294,6 +299,7 @@ then
   sasl_user="anonymous"
   sasl_home="/home/${sasl_user}"
   gfuser -c "${sasl_user}" "${sasl_user}" "${sasl_home}" ""
+  gfgroup -a -m gfarmadm "${sasl_user}"
   gfsudo gfmkdir "${sasl_home}"
   gfsudo gfchown "${sasl_user}" "${sasl_home}"
 fi
