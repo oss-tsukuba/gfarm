@@ -24,6 +24,10 @@
 /docker/dev/docker-compose.yml
 /docker/dev/mnt/
 /gfarm2fs/
+/cyrus-sasl-xoauth2-idp/
+/jwt-agent/
+/jwt-logon/
+/scitokens-cpp/
 
 /bench/gfcreate-test/gfcreate-test
 /bench/gfiops/gfiops
