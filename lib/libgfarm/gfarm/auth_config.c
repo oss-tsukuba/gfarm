@@ -402,9 +402,8 @@ gfarm_auth_method_get_available(int is_server,
 				if (gfarm_auth_client_method_sasl_available())
 					break; /* available */
 			}
-#else
-			continue; /* not available */
 #endif
+			continue; /* not available */
 		default:
 			break; /* available */
 		}
