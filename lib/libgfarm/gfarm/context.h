@@ -71,6 +71,9 @@ struct gfarm_context {
 #ifdef HAVE_KERBEROS
 	struct gfarm_auth_gss_client_cred *auth_common_kerberos_static;
 #endif /* HAVE_GSI */
+#if defined(HAVE_CYRUS_SASL) && defined(HAVE_TLS_1_3)
+	struct gfarm_auth_sasl_client_static *auth_sasl_client_static;
+#endif
 	struct gfarm_auth_client_static *auth_client_static;
 	struct gfarm_schedule_static *schedule_static;
 	struct gfarm_gfs_pio_static *gfs_pio_static;
@@ -99,6 +102,13 @@ struct gfarm_context {
 	int tls_build_chain_local; /* boolean */
 	int tls_allow_no_crl; /* boolean */
 	int tls_proxy_certificate; /* boolean */
+	int tls_security_level;
+
+	/* auth sasl* */
+	char *sasl_mechanisms;
+	char *sasl_realm;
+	char *sasl_user;
+	char *sasl_password;
 };
 #ifndef __KERNEL__	/* gfarm_ctxp */
 extern struct gfarm_context *gfarm_ctxp;
@@ -135,6 +145,9 @@ gfarm_error_t gfarm_auth_common_gsi_static_init(struct gfarm_context *);
 void          gfarm_auth_common_gsi_static_term(struct gfarm_context *);
 gfarm_error_t gfarm_auth_common_kerberos_static_init(struct gfarm_context *);
 void          gfarm_auth_common_kerberos_static_term(struct gfarm_context *);
+
+gfarm_error_t gfarm_auth_client_sasl_static_init(struct gfarm_context *);
+void          gfarm_auth_client_sasl_static_term(struct gfarm_context *);
 
 gfarm_error_t gfarm_auth_client_static_init(struct gfarm_context *);
 void          gfarm_auth_client_static_term(struct gfarm_context *);

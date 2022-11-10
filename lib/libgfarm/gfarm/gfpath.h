@@ -6,9 +6,6 @@
 #ifndef GRID_CACERT_DIR
 #define GRID_CACERT_DIR		GRID_CONF_DIR "/certificates"
 #endif
-#ifndef GRID_MAPFILE
-#define GRID_MAPFILE		GRID_CONF_DIR "/grid-mapfile"
-#endif
 
 /* Gfarm related pathnames */
 

@@ -16,7 +16,7 @@ gfarm_auth_request_gsi(struct gfp_xdr *conn,
 	if (gss == NULL)
 		return (GFARM_ERR_INTERNAL_ERROR);
 	return (gfarm_auth_request_gss(conn, gss, service_tag, hostname,
-	    self_type, user, pwd));
+	    0, self_type, user, pwd));
 }
 
 /*
@@ -37,7 +37,7 @@ gfarm_auth_request_gsi_multiplexed(struct gfarm_eventqueue *q,
 	if (gss == NULL)
 		return (GFARM_ERR_INTERNAL_ERROR);
 	return (gfarm_auth_request_gss_multiplexed(q, conn, gss, service_tag,
-	    hostname, self_type, user, pwd, auth_timeout,
+	    hostname, 0, self_type, user, pwd, auth_timeout,
 	    continuation, closure, statepp));
 }
 
@@ -62,7 +62,7 @@ gfarm_auth_request_gsi_auth(struct gfp_xdr *conn,
 	if (gss == NULL)
 		return (GFARM_ERR_INTERNAL_ERROR);
 	return (gfarm_auth_request_gss_auth(conn, gss, service_tag, hostname,
-	    self_type, user, pwd));
+	    0, self_type, user, pwd));
 }
 
 gfarm_error_t
@@ -78,8 +78,8 @@ gfarm_auth_request_gsi_auth_multiplexed(struct gfarm_eventqueue *q,
 
 	if (gss == NULL)
 		return (GFARM_ERR_INTERNAL_ERROR);
-	return (gfarm_auth_request_gss_multiplexed(q, conn, gss,
-	    service_tag, hostname, self_type, user, pwd, auth_timeout,
+	return (gfarm_auth_request_gss_auth_multiplexed(q, conn, gss,
+	    service_tag, hostname, 0, self_type, user, pwd, auth_timeout,
 	    continuation, closure, statepp));
 }
 

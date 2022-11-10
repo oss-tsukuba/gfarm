@@ -908,8 +908,15 @@
 
 	GFM_PROTO_USER_INFO_GET_BY_GSI_DN
 	  入力: s:dn
+	  出力: i:エラー
 		エラー == GFARM_ERR_NO_ERROR の場合:
-		下記の、n_users 回の繰り返し:
+			s:username,
+			s:real_name, s:gfarm_homedir, s:gsi_dn
+
+	GFM_PROTO_USER_INFO_GET_MY_OWN
+	  入力: なし
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
 			s:username,
 			s:real_name, s:gfarm_homedir, s:gsi_dn
 

@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: gfarm2.conf
-.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
-.\"      Date: 17 Sep 2020
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 22 Sep 2022
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFARM2\&.CONF" "5" "17 Sep 2020" "Gfarm" "Gfarm"
+.TH "GFARM2\&.CONF" "5" "22 Sep 2022" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -961,16 +961,40 @@ auth \fI有効性\fR\ \& \fI認証方法\fR\ \& \fIホスト指定\fR
 この文は、第3引数で指定したホストとの通信に用いる認証方法を設定します。
 .sp
 第1引数の\fI有効性\fR部には、enableないしdisable
-キーワードを指定します。 第2引数の\fI認証方法\fR部には、gsi、
-gsi_authないしsharedsecret
+キーワードを指定します。 第2引数の\fI認証方法\fR部には、
+sharedsecret、
+tls_sharedsecret、
+tls_client_certificate、
+gsi_auth、
+gsi、
+sasl_auth、
+sasl、
+kerberos_auth
+ないし
+kerberos
 キーワードを指定します。 第3引数には、\fIホスト指定\fRを記述します。
 .sp
 この文は複数指定可能です。各認証方法ごとに、先頭から順にホスト指定に 適合するかどうか調べ、有効であるとの指定に適合した場合、その認証方法が 利用候補になります。有効であるとの指定に適合しない場合や、あるいは 有効であるとの指定に適合するよりも前に無効であるとの指定に適合した 場合、その認証方法は、候補になりません。
 .sp
 この指定は、サーバー側とクライアント側の両方で解釈され、 双方ともで有効になっている認証方法のみが用いられます。
 .sp
-認証方法が異なるものに関しては、指定の順序は意味がありません。 複数の認証方法が候補となった場合、sharedsecret、
-gsi_auth、gsi認証の順序で試みます。
+認証方法が異なるものに関しては、指定の順序は意味がありません。 複数の認証方法が候補となった場合、
+sharedsecret、
+tls_sharedsecret、
+tls_client_certificate、
+gsi_auth、
+gsi
+sasl_auth、
+sasl
+kerberos_auth、
+kerberos
+認証 の順序で試みます。
+.sp
+また
+sasl_auth
+および
+sasl
+はクライアント\-サーバー間の認証のみで使われます。 たとえホスト指定が適合したとしてもサーバー間認証では使われません。
 .sp
 Gfarmのコンパイル時にglobusとのリンクを指定しなかった場合、 GSIは利用できません。この場合、gsiおよび
 gsi_auth認証の指定は単に無視されます。
@@ -2797,6 +2821,325 @@ rdma_mr_reg_static_max_size \fIバイト数\fR
 .RE
 .\}
 .RE
+.PP
+sasl_mechanisms \fIメカニズムリスト\&.\&.\&.\fR
+.RS 4
+SASL認証で利用するメカニズムをスペースで区切って指定します。 指定可能な値は Cyrus SASL のドキュメント
+\m[blue]\fB\%https://www.cyrusimap.org/sasl/sasl/authentication_mechanisms.html\fR\m[]
+を参照してください。 cyrus\-sasl\-xoauth2\-idp パッケージを導入している場合は、 これらに加えて
+XOAUTH2
+も指定可能です。
+.sp
+サーバー側ではこの指定を省略することもでき、 その場合は Cyrus SASL の設定に応じたメカニズムが選択されます。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	sasl_mechanisms "PLAIN XOAUTH2"
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+sasl_user \fIユーザー名\fR
+.RS 4
+SASL 認証のユーザー名を指定します。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	sasl_user "MyAccount"
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+sasl_password \fIパスワード文字列\fR
+.RS 4
+SASL 認証の LOGIN や PLAIN 等のメカニズムで利用するパスワードを指定します。 XOAUTH2 メカニズムの場合ののトークンもこれで指定できます。
+.sp
+なお、この設定がない場合、環境変数 JWT_USER が指すファイル、 あるいは環境変数も設定されていない場合は ファイル /tmp/jwt_user_u<ユーザーID$gt;/token\&.jwt の内容をパスワードとして利用します。 ファイルから読むのは XOAUTH2 メカニズムでの利用を想定した機能ですが、 LOGIN や PLAIN といった XOAUTH2 以外のメカニズムを利用した場合でも、 パスワードをこのファイルから読むので注意してください。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	sasl_password "MyPasswordString"
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+tls_cipher_suite \fI暗号スイート\fR
+.RS 4
+TLS認証で利用する暗号スイートをコロンで区切って指定します。 指定可能な値は
+\m[blue]\fB\%https://www.openssl.org/docs/man1.1.1/man3/SSL_set_ciphersuites.html\fR\m[]
+を参照してください。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	tls_cipher_suite "TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256"
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+tls_ca_certificate_path \fIディレクトリ\fR
+.RS 4
+TLS認証で利用する認証局のCA証明書を置くディレクトリを指定します。 このディレクトリへの証明書ファイルの設置方法は、以下の文書の
+CApath
+の項を参照してください。
+\m[blue]\fB\%https://www.openssl.org/docs/man1.1.1/man3/SSL_CTX_load_verify_locations.html\fR\m[]
+.sp
+デフォルト値は
+/etc/pki/tls/certs/gfarm
+です。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	tls_ca_certificate_path /etc/pki/tls/certs/gfarm
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+tls_ca_revocation_path \fIディレクトリ\fR
+.RS 4
+TLS認証で利用する認証局から提供されたCRLを置くディレクトリを指定します。
+.sp
+デフォルト値は
+/etc/pki/tls/certs/gfarm
+です。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	tls_ca_revocation_path /etc/pki/tls/certs/gfarm
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+tls_ca_peer_verify_chain_path \fIディレクトリ\fR
+.RS 4
+TLS認証で、通信相手の提示する証明書に署名する中間証明書を限定したい場合に設定します。 この設定がある場合、このディレクトリに置かれた以外の中間証明書は受け入れません。
+.sp
+デフォルトは未設定です。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	tls_ca_peer_verify_chain_path /etc/pki/tls/certs/gfarm\&.chain
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+tls_certificate_file \fIファイル名\fR
+.RS 4
+TLS認証で自分自身を表す証明書のファイル名を指定します。
+.sp
+環境変数 X509_USER_CERT が設定されている場合は、それがこのディレクティブよりも優先されます。
+.sp
+さもなくば、クライアントの場合 ``$HOME/\&.gfarm/usercert\&.pem\*(Aq\*(Aq、 gfmd の場合 ``/etc/pki/tls/certs/gfmd\&.crt\*(Aq\*(Aq、 gfsd の場合 ``/etc/pki/tls/certs/gfsd\&.crt\*(Aq\*(Aq がデフォルト値となります。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	tls_certificate_file /etc/pki/tls/certs/myself\&.crt
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+tls_certificate_chain_file \fIファイル名\fR
+.RS 4
+TLS認証で自身の証明書に署名した中間認証局の証明書を置くファイル名を指定します。 なお、中間証明書は必ずしも別ファイルに分離する必要はなく、
+tls_certificate_file
+で指定したファイルにまとめて記述することも可能です。
+.sp
+デフォルトは未設定です。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	tls_certificate_chain_file /etc/pki/tls/certs/myself_intermediate\&.crt
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+tls_key_file \fIファイル名\fR
+.RS 4
+TLS認証で自身が利用する証明書に対応する秘密鍵のファイル名を指定します。
+.sp
+環境変数 X509_USER_KEY が設定されている場合は、それがこのディレクティブよりも優先されます。
+.sp
+さもなくば、クライアントの場合 ``$HOME/\&.gfarm/userkey\&.pem\*(Aq\*(Aq、 gfmd の場合 ``/etc/pki/tls/private/gfmd\&.key\*(Aq\*(Aq、 gfsd の場合 ``/etc/pki/tls/private/gfsd\&.key\*(Aq\*(Aq がデフォルト値となります。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	tls_certificate_key /etc/pki/tls/certs/myself\&.key
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+tls_allow_no_crl \fI有効性\fR
+.RS 4
+TLS通信において、ルート証明書に対応するCRLファイルの存在を必須としたい場合に disable と設定します。
+.sp
+デフォルトは enable であり、CRLファイルが存在しなくても構いません。 これは Apache httpd における ``SSLCARevocationCheck chain no_crl_for_cert_ok\*(Aq\*(Aq 設定と同様な動作となります。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	tls_allow_no_crl disable
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+tls_key_update \fI有効性\fR
+.RS 4
+TLS通信の traffic key 更新機能を抑制したい場合に disable と設定します。
+.sp
+デフォルトは enable です。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	tls_key_update disable
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+tls_build_chain_local \fI有効性\fR
+.RS 4
+TLS通信で自身の証明書を提示する際に、 自身で証明書チェインの構築を行なって通信相手に送る場合 enable と設定します。
+.sp
+デフォルトは disable であり、通信相手が証明書チェインの構築を行ないます。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	tls_build_chain_local enable
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+tls_proxy_certificate \fI有効性\fR
+.RS 4
+TLS通信において、proxy 証明書の利用を禁止したい場合に disable と設定します。
+.sp
+デフォルトは enable です。 この場合、以下の順序でクライアント証明書を探します。
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+環境変数 $X509_USER_PROXY でファイル名を指定した proxy certificate
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+ファイル
+/tmp/x509up_uユーザーID
+に置かれた proxy certificate
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  3." 4.2
+.\}
+tls_certificate_file
+/
+tls_key_file
+で指定されたファイルにある証明書・秘密鍵ペア
+.RE
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	tls_proxy_certificate disable
+.fi
+.if n \{\
+.RE
+.\}
+.RE
 .SH "GRAMMAR"
 .PP
 gfarm2\&.confの文法をBNFで記述すると、下記のようになります。
@@ -2949,7 +3292,22 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 	<write_verify_statement> |
 	<write_verify_interval_statement> |
 	<write_verify_retry_interval_statement> |
-	<write_verify_log_interval_statement>
+	<write_verify_log_interval_statement> |
+	<sasl_mechanisms_statement> |
+	<sasl_user_statement> |
+	<sasl_password_statement> |
+	<tls_cipher_suite_statement> |
+	<tls_ca_certificate_path_statement> |
+	<tls_ca_revocation_path_statement> |
+	<tls_ca_peer_verify_chain_path_statement> |
+	<tls_certificate_file_statement> |
+	<tls_certificate_chain_file_statement> |
+	<tls_key_file_statement> |
+
+	<tls_allow_no_crl_statement> |
+	<tls_key_update_statement> |
+	<tls_build_chain_local_statement> |
+	<tls_proxy_certificate_statement> 
 .fi
 .if n \{\
 .RE
@@ -3635,7 +3993,7 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .RS 4
 .\}
 .nf
-"gsi" | "gsi_auth" | "sharedsecret"
+"sharedsecret" | "tls_sharedsecret" | "tls_client_certificate" | "gsi_auth" | "gsi" | "kerberos_auth" | "kerberos"
 .fi
 .if n \{\
 .RE
@@ -5228,6 +5586,202 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .nf
 "write_verify_log_interval" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<sasl_mechanisms_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"sasl_mechanisms" <string>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<sasl_user_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"sasl_user" <string>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<sasl_password_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"sasl_password" <string>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<tls_cipher_suite_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"tls_cipher_suite" <string>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<tls_ca_certificate_path_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"tls_ca_certificate_path" <pathname>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<tls_ca_revocation_path_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"tls_ca_revocation_path" <pathname>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<tls_ca_peer_verify_chain_path_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"tls_ca_peer_verify_chain_path" <pathname>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<tls_certificate_file_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"tls_certificate_file" <pathname>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<tls_certificate_chain_file_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"tls_certificate_chain_file" <pathname>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<tls_key_file_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"tls_key_file" <pathname>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<tls_allow_no_crl_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"tls_allow_no_crl" <validity>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<tls_key_update_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"tls_key_update" <validity>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<tls_build_chain_local_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"tls_build_chain_local" <validity>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<tls_proxy_certificate_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"tls_proxy_certificate" <validity>
 .fi
 .if n \{\
 .RE

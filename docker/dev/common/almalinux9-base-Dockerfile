@@ -1,0 +1,57 @@
+FROM almalinux:9
+
+# System dependent
+
+ARG TZ
+ENV TZ=${TZ}
+
+RUN dnf -y install epel-release \
+    && dnf -y update \
+    && dnf -y groupinstall "Development Tools" \
+    && dnf -y install \
+    sudo \
+    openssh-server \
+    rsyslog \
+    rsync wget curl-minimal \
+    langpacks-ja \
+    openssl-devel \
+    krb5-devel \
+    postgresql-devel \
+    postgresql \
+    postgresql-server \
+    autofs \
+    libacl-devel \
+    ruby \
+    perl-bignum \
+    hostname \
+    zlib-devel libedit-devel pam-devel \
+    nc ldns iproute net-tools bind-utils telnet tcpdump \
+    gdb strace valgrind libtsan \
+    man man-pages man-db which \
+    nano emacs-nox less \
+    'dnf-command(debuginfo-install)' \
+    && dnf -y install --enablerepo=resilientstorage \
+    globus-gssapi-gsi-devel \
+    globus-simple-ca \
+    globus-gsi-cert-utils-progs \
+    globus-proxy-utils \
+    myproxy \
+    gsi-openssh-clients \
+    && dnf -y install --enablerepo=crb fuse-devel fuse-libs fuse \
+    && sed -i 's@^Defaults    secure_path = /sbin:/bin:/usr/sbin:/usr/bin$@Defaults    secure_path = /usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin@' /etc/sudoers
+
+# System independent (see setup-univ.sh)
+
+ARG GFDOCKER_USERNAME_PREFIX
+ARG GFDOCKER_PRIMARY_USER
+ARG GFDOCKER_NUM_GFMDS
+ARG GFDOCKER_NUM_GFSDS
+ARG GFDOCKER_NUM_USERS
+ARG GFDOCKER_HOSTNAME_PREFIX_GFMD
+ARG GFDOCKER_HOSTNAME_PREFIX_GFSD
+ARG GFDOCKER_HOSTNAME_SUFFIX
+ARG GFDOCKER_USE_SAN_FOR_GFSD
+COPY --chown=1000:1000 . /work/gfarm
+RUN "/work/gfarm/docker/dev/common/setup-univ.sh"
+
+CMD ["/sbin/init"]

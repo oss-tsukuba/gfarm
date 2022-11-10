@@ -1,0 +1,7 @@
+#!/bin/sh
+DATETIME=$(date +%Y%m%d_%H%M)
+LOG_PREFIX=${DATETIME}.${GFDOCKER_PRJ_NAME}
+progname=`basename "$0"`
+hostname=`hostname`
+
+exec valgrind --log-file="/mnt/memcheck-results/${LOG_PREFIX}.${progname}.${hostname}.memcheck.log.%p.%n" --trace-children=no --tool=memcheck --leak-check=full --show-reachable=no --malloc-fill=0xd0 --free-fill=0xd1 --error-limit=no "$@"

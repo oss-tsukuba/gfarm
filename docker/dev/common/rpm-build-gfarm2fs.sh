@@ -5,7 +5,8 @@ set -eux
 cd
 
 name=gfarm2fs
-spec=${name}/gfarm2fs.spec
+srcdir=/work/gfarm/gfarm2fs
+spec=${srcdir}/gfarm2fs.spec
 
 mkdir -p rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPEC,SPECS,SRPMS}
 
@@ -13,7 +14,7 @@ ver=$(grep '^Version:' ${spec} | awk '{print $2}')
 
 name_ver=${name}-${ver}
 targz=${name_ver}.tar.gz
-cp -a ${name} rpmbuild/SOURCES/${name_ver}  # "mv" is too slow.
+cp -a ${srcdir} rpmbuild/SOURCES/${name_ver}
 
 (cd rpmbuild/SOURCES &&
   tar --exclude=.svn --exclude=.git --owner=root --group=root -zcvf \

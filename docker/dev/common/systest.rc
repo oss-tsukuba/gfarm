@@ -6,7 +6,7 @@ REGRESS_DIR=~/gfarm/regress
 
 $REGRESS_DIR/bin/am_I_gfarmroot
 is_gfarmroot=$?
-me=$GFDOCKER_PRIMARY_USER
+me=`gfwhoami`
 
 trap_sigs='1 2 15'
 restore() {

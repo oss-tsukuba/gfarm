@@ -81,6 +81,10 @@ gfarm_server_initialize(char *config_file, int *argcp, char ***argvp)
 
 	gfarm_setup_debug_command();
 
+#if defined(HAVE_CYRUS_SASL) && defined(HAVE_TLS_1_3)
+	gfarm_sasl_server_init();
+#endif
+
 	return (GFARM_ERR_NO_ERROR);
 }
 

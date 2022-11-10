@@ -292,18 +292,6 @@ _EOF_
 		}
 		next
 	}
-	/^[ 	]*#*[ 	]*password_encryption[ 	]*=/ {
-		if (/^[ 	]*password_encryption/) {
-			print "#" $0
-		} else {
-			print $0
-		}
-		if (!password_encryption_done) {
-			print "password_encryption = true"
-			password_encryption_done = 1
-		}
-		next
-	}
 	/^[ 	]*#*[ 	]*autovacuum[ 	]*=/ {
 		if (/^[ 	]*autovacuum/) {
 			print "#" $0
@@ -334,8 +322,6 @@ _EOF_
 			print "listen_addresses = '"'*'"'"
 		if (!port_done)
 			print "port = '$BACKEND_PORT'"
-		if (!password_encryption_done)
-			print "password_encryption = true"
 		# ignore autovacuum_done and stats_row_level_done for now.
 		# PostgreSQL should be earlier than 8.0.X
 	}'	 "$BACKEND_DATA_DIR"/postgresql.conf.org \
@@ -476,7 +462,12 @@ _EOF_
 
 	case "$BACKEND_VERSION" in
 	[1-7].*|8.0)
-		createuser_option=;;
+	    # Don't ask the following question on PostgreSQL before 9.0
+	    #	Shall the new role be a superuser? (y/n)
+	    # but -A option for createuser is removed in PostgreSQL 13.0
+		createuser_option=-A;;
+	8.*)
+		createuser_option='--no-createrole -A';;
 	*)  # Don't ask the following question on PostgreSQL 8.1 or later:
 	    #    Shall the new role be allowed to create more new roles? (y/n) 
 		createuser_option=--no-createrole;;

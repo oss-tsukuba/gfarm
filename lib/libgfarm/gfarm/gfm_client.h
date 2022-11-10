@@ -46,10 +46,6 @@ const char *gfm_client_username(struct gfm_connection *);
 const char *gfm_client_username_in_tenant(struct gfm_connection *);
 int gfm_client_port(struct gfm_connection *);
 gfarm_error_t gfm_client_source_port(struct gfm_connection *gfm_server, int *);
-#ifdef HAVE_GSI
-gfarm_error_t gfm_client_set_username_for_gsi(struct gfm_connection *,
-	const char *);
-#endif
 struct gfarm_metadb_server *gfm_client_connection_get_real_server(
 	struct gfm_connection *);
 int gfm_client_connection_failover_count(struct gfm_connection *);
@@ -112,6 +108,9 @@ gfarm_error_t gfm_client_user_info_get_by_names(struct gfm_connection *,
 	int, const char **, gfarm_error_t *, struct gfarm_user_info *);
 gfarm_error_t gfm_client_user_info_get_by_gsi_dn(struct gfm_connection *,
 	const char *, struct gfarm_user_info *);
+gfarm_error_t gfm_client_user_info_get_my_own_request(struct gfm_connection *);
+gfarm_error_t gfm_client_user_info_get_my_own_result(struct gfm_connection *,
+	struct gfarm_user_info *);
 gfarm_error_t gfm_client_user_info_set(struct gfm_connection *,
 	const struct gfarm_user_info *);
 gfarm_error_t gfm_client_user_info_modify(struct gfm_connection *,
@@ -518,8 +517,10 @@ gfarm_error_t gfm_client_replica_create_file_in_lost_found_result(
 	struct gfm_connection *, gfarm_ino_t *, gfarm_uint64_t *);
 
 /* process management */
-gfarm_error_t gfm_client_process_alloc(struct gfm_connection *,
-	gfarm_int32_t, const char *, size_t, gfarm_pid_t *);
+gfarm_error_t gfm_client_process_alloc_request(struct gfm_connection *,
+	gfarm_int32_t, const char *, size_t);
+gfarm_error_t gfm_client_process_alloc_result(struct gfm_connection *,
+	gfarm_pid_t *);
 gfarm_error_t gfm_client_process_alloc_child(struct gfm_connection *,
 	gfarm_int32_t, const char *, size_t, gfarm_pid_t,
 	gfarm_int32_t, const char *, size_t, gfarm_pid_t *);

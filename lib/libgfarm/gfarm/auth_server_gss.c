@@ -21,7 +21,6 @@
 #include "gfutil.h"
 
 #include "gfsl_secure_session.h"
-#include "gfarm_auth.h"
 
 #include "liberror.h"
 #include "gfp_xdr.h"
@@ -32,39 +31,44 @@
 #include "gfarm_gss.h"
 #include "gss.h"
 
+#include "gfm_proto.h" /* for GFMD_USERNAME, XXX layering violation */
 #include "gfs_proto.h" /* for GFSD_USERNAME, XXX layering violation */
 
 /*
  * server side authentication
  */
 
-static gfarm_error_t
-gfarm_authorize_gss_common0(struct gfp_xdr *conn, struct gfarm_gss *gss,
-	char *service_tag, char *hostname, enum gfarm_auth_method auth_method,
+/*
+ * "gsi" method
+ */
+gfarm_error_t
+gfarm_authorize_gss(struct gfp_xdr *conn, struct gfarm_gss *gss,
+	char *service_tag, char *hostname, int send_self_type,
+	enum gfarm_auth_method auth_method,
 	gfarm_error_t (*auth_uid_to_global_user)(void *,
-	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
-	    char **), void *closure,
+	    enum gfarm_auth_method, const char *,
+	    enum gfarm_auth_id_type *, char **), void *closure,
 	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
 {
-	int gsi_errno = 0, fd = gfp_xdr_fd(conn);
+	int eof, gsi_errno = 0, fd = gfp_xdr_fd(conn);
 	gfarm_error_t e, e2;
 	char *global_username = NULL, *aux = NULL;
 	gfarm_OM_uint32 e_major, e_minor;
 	gfarmSecSession *session;
-	gfarmAuthEntry *userinfo;
-	char *distname, *localname;
+	char *distname;
 	gfarm_int32_t error = GFARM_AUTH_ERROR_NO_ERROR; /* gfarm_auth_error */
 	enum gfarm_auth_cred_type cred_type =
 	    gfarm_auth_server_cred_type_get(service_tag);
 	char *cred_service = gfarm_auth_server_cred_service_get(service_tag);
 	char *cred_name = gfarm_auth_server_cred_name_get(service_tag);
 	gss_cred_id_t cred;
-	enum gfarm_auth_id_type peer_type = GFARM_AUTH_ID_TYPE_UNKNOWN;
+	enum gfarm_auth_id_type peer_type;
+	gfarm_int32_t req, arg;
 
 	e = gfp_xdr_flush(conn);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_info(GFARM_MSG_1000712,
-		    "authorize_gsi: %s: protocol drain: %s",
+		    "authorize_gss: %s: protocol drain: %s",
 		    hostname, gfarm_error_string(e));
 		return (e);
 	}
@@ -72,7 +76,7 @@ gfarm_authorize_gss_common0(struct gfp_xdr *conn, struct gfarm_gss *gss,
 	e = gfarm_gss_server_initialize(gss);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1000713,
-		    "authorize_gsi: %s: GSI initialize: %s",
+		    "authorize_gss: %s: GSI initialize: %s",
 		    hostname, gfarm_error_string(e));
 		return (e);
 	}
@@ -165,66 +169,132 @@ gfarm_authorize_gss_common0(struct gfp_xdr *conn, struct gfarm_gss *gss,
 		return (GFARM_ERR_AUTHENTICATION);
 	}
 
-	userinfo = gss->gfarmSecSessionGetInitiatorInfo(session);
-	distname = gss->gfarmAuthGetDistName(userinfo);
-	localname = gss->gfarmAuthGetLocalName(userinfo);
-	switch (gss->gfarmAuthGetAuthEntryType(userinfo)) {
-	case GFARM_AUTH_HOST:
-		peer_type = GFARM_AUTH_ID_TYPE_SPOOL_HOST;
-		if ((global_username = strdup(GFSD_USERNAME)) != NULL) {
-			e = GFARM_ERR_NO_ERROR;
+	gfp_xdr_set_secsession(conn, gss, session, GSS_C_NO_CREDENTIAL, NULL);
+
+	/* peer_type is not sent in GSI due to protocol compatibility */
+	if (!send_self_type) {
+		peer_type = GFARM_AUTH_ID_TYPE_UNKNOWN;
+	} else {
+		e = gfp_xdr_recv(conn, 1, &eof, "ii", &req, &arg);
+		if (e != GFARM_ERR_NO_ERROR || eof) {
+			/*
+			 * this is not gfarceful,
+			 * but OK because of a network error
+			 */
+			if (e == GFARM_ERR_NO_ERROR) /* i.e. eof */
+				e = GFARM_ERR_UNEXPECTED_EOF;
+			return (e);
+		}
+		if (req == GFARM_AUTH_GSS_GIVEUP) {
+			/* this shouldn't happen for now */
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "client does not accept me: %s",
+			    gfarm_error_string(arg));
+			/* is this case graceful? */
+			gfp_xdr_reset_secsession(conn);
+			return (GFARM_ERR_AUTHENTICATION);
+		} else if (req == GFARM_AUTH_GSS_CLIENT_TYPE) {
+			peer_type = arg;
 		} else {
-			e = GFARM_ERR_NO_MEMORY;
+			/* unknown protocol */
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "unknown authentication request: 0x%x (0x%x)",
+			(int)req, (int)arg);
+			gfp_xdr_reset_secsession(conn);
+			return (GFARM_ERR_PROTOCOL);
+		}
+		if (peer_type != GFARM_AUTH_ID_TYPE_USER &&
+		    peer_type != GFARM_AUTH_ID_TYPE_SPOOL_HOST &&
+		    peer_type != GFARM_AUTH_ID_TYPE_METADATA_HOST) {
+			e = GFARM_ERR_PROTOCOL;
+			error = GFARM_AUTH_ERROR_NOT_SUPPORTED;
+		}
+	}
+
+	if (gss->gfarmSecSessionGetInitiatorDistName(session, &distname) < 0) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "GFSL: unexpected session state");
+		distname = "<not-known>";
+		error = GFARM_AUTH_ERROR_NOT_SUPPORTED;
+		e = GFARM_ERR_INTERNAL_ERROR;
+	} else if (error == GFARM_AUTH_ERROR_NO_ERROR) {
+		e = (*auth_uid_to_global_user)(closure, auth_method,
+		    distname, &peer_type, &global_username);
+		switch (e) {
+		case GFARM_ERR_NO_ERROR:
+			switch (peer_type) {
+			case GFARM_AUTH_ID_TYPE_UNKNOWN:
+				e = GFARM_ERR_INTERNAL_ERROR;
+				error = GFARM_AUTH_ERROR_INVALID_CREDENTIAL;
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "authorize_gss: \"%s\" @ %s: "
+				    "GSS authentication: peer type unknown",
+				    distname, hostname);
+				break;
+			case GFARM_AUTH_ID_TYPE_USER:
+				break;
+			case GFARM_AUTH_ID_TYPE_SPOOL_HOST:
+				free(global_username); /* hostname in DN */
+				global_username = strdup(GFSD_USERNAME);
+				if (global_username == NULL) {
+					e = GFARM_ERR_NO_MEMORY;
+					error =
+					 GFARM_AUTH_ERROR_RESOURCE_UNAVAILABLE;
+				}
+				break;
+			case GFARM_AUTH_ID_TYPE_METADATA_HOST:
+				free(global_username); /* hostname in DN */
+				global_username = strdup(GFMD_USERNAME);
+				if (global_username == NULL) {
+					e = GFARM_ERR_NO_MEMORY;
+					error =
+					 GFARM_AUTH_ERROR_RESOURCE_UNAVAILABLE;
+				}
+				break;
+			}
+			break;
+		case GFARM_ERR_NO_MEMORY:
 			error = GFARM_AUTH_ERROR_RESOURCE_UNAVAILABLE;
 			gflog_error(GFARM_MSG_1003393,
-			    "authorize_gsi: \"%s\" @ %s: host authentication: "
+			    "authorize_gss: \"%s\" @ %s: GSS authentication: "
 			    "no memory", distname, hostname);
-		}
-		break;
-	case GFARM_AUTH_USER:
-		peer_type = GFARM_AUTH_ID_TYPE_USER;
-		e = (*auth_uid_to_global_user)(closure, auth_method,
-		    peer_type, distname, &global_username);
-		if (e != GFARM_ERR_NO_ERROR) {
+			break;
+		case GFARM_ERR_NO_SUCH_OBJECT:
 			error = GFARM_AUTH_ERROR_INVALID_CREDENTIAL;
 			gflog_notice(GFARM_MSG_1003394,
-			    "authorize_gsi: \"%s\" @ %s: user authentication: "
+			    "authorize_gss: \"%s\" @ %s: authentication: "
 			    "%s%s", distname, hostname, gfarm_error_string(e),
 			    e == GFARM_ERR_AUTHENTICATION ?
-			    " (possibly unregistered user)" : "");
+			    " (possibly unregistered user/host)" : "");
+		default:
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "authorize_gss: \"%s\" @ %s: error: %s",
+			    distname, hostname, gfarm_error_string(e));
+			e = GFARM_ERR_AUTHENTICATION;
+			error = GFARM_AUTH_ERROR_DENIED;
+			break;
 		}
-		break;
-	default:
-		gflog_error(GFARM_MSG_1000720,
-		    "authorize_gsi: \"%s\" @ %s: auth entry type=%d", distname,
-		    hostname, gss->gfarmAuthGetAuthEntryType(userinfo));
-		e = GFARM_ERR_AUTHENTICATION;
-		error = GFARM_AUTH_ERROR_INVALID_CREDENTIAL;
-		break;
 	}
 
 	if (e == GFARM_ERR_NO_ERROR) {
 		/* assert(error == GFARM_AUTH_ERROR_NO_ERROR); */
 
 		/* succeed, do logging */
-		gflog_notice(GFARM_MSG_1000721,
-		    "(%s@%s) authenticated: auth=%s local_user=%s DN=\"%s\"",
+		gflog_notice(GFARM_MSG_UNFIXED,
+		    "(%s@%s) authenticated: auth=%s type=%s  DN=\"%s\"",
 		    global_username, hostname,
 		    gfarm_auth_method_name(auth_method),
-		    gss->gfarmAuthGetAuthEntryType(userinfo)
-		    == GFARM_AUTH_USER ? localname : "@host@", distname);
-
+		    gfarm_auth_id_type_name(peer_type), distname);
 	}
 
-	gfp_xdr_set_secsession(conn, gss, session, GSS_C_NO_CREDENTIAL, NULL);
 	e2 = gfp_xdr_send(conn, "i", error);
 	if (e2 != GFARM_ERR_NO_ERROR) {
 		gflog_info(GFARM_MSG_1000723,
-		    "(%s@%s) authorize_gsi: send reply: %s",
+		    "(%s@%s) authorize_gss: send reply: %s",
 		    global_username, hostname, gfarm_error_string(e2));
 	} else if ((e2 = gfp_xdr_flush(conn)) != GFARM_ERR_NO_ERROR) {
 		gflog_info(GFARM_MSG_1000724,
-		    "(%s@%s) authorize_gsi: completion: %s",
+		    "(%s@%s) authorize_gss: completion: %s",
 		    global_username, hostname, gfarm_error_string(e2));
 	}
 
@@ -234,7 +304,6 @@ gfarm_authorize_gss_common0(struct gfp_xdr *conn, struct gfarm_gss *gss,
 		if (aux != NULL)
 			free(aux);
 		gfp_xdr_reset_secsession(conn);
-		gfp_xdr_set_socket(conn, fd);
 		gflog_debug(GFARM_MSG_1001477,
 			"Authorization failed: %s",
 			gfarm_error_string(e != GFARM_ERR_NO_ERROR ? e : e2));
@@ -251,53 +320,21 @@ gfarm_authorize_gss_common0(struct gfp_xdr *conn, struct gfarm_gss *gss,
 	return (GFARM_ERR_NO_ERROR);
 }
 
-static gfarm_error_t
-gfarm_authorize_gss_common(struct gfp_xdr *conn, struct gfarm_gss *gss,
-	char *service_tag, char *hostname, enum gfarm_auth_method auth_method,
-	gfarm_error_t (*auth_uid_to_global_user)(void *,
-	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
-	    char **), void *closure,
-	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
-{
-	gfarm_error_t e;
-
-	e = gfarm_authorize_gss_common0(conn, gss,
-	    service_tag, hostname, auth_method, auth_uid_to_global_user,
-	    closure, peer_typep, global_usernamep);
-	return (e);
-}
-
-/*
- * "gsi" method
- */
-gfarm_error_t
-gfarm_authorize_gss(struct gfp_xdr *conn, struct gfarm_gss *gss,
-	char *service_tag, char *hostname, enum gfarm_auth_method auth_method,
-	gfarm_error_t (*auth_uid_to_global_user)(void *,
-	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
-	    char **), void *closure,
-	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
-{
-	return (gfarm_authorize_gss_common(conn, gss,
-	    service_tag, hostname, auth_method,
-	    auth_uid_to_global_user, closure,
-	    peer_typep, global_usernamep));
-}
-
 /*
  * "gsi_auth" method
  */
 
 gfarm_error_t
 gfarm_authorize_gss_auth(struct gfp_xdr *conn, struct gfarm_gss *gss,
-	char *service_tag, char *hostname, enum gfarm_auth_method auth_method,
+	char *service_tag, char *hostname, int send_self_type,
+	enum gfarm_auth_method auth_method,
 	gfarm_error_t (*auth_uid_to_global_user)(void *,
-	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
-	    char **), void *closure,
+	    enum gfarm_auth_method, const char *,
+	    enum gfarm_auth_id_type *, char **), void *closure,
 	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
 {
-	gfarm_error_t e = gfarm_authorize_gss_common(conn, gss,
-	    service_tag, hostname, auth_method,
+	gfarm_error_t e = gfarm_authorize_gss(conn, gss,
+	    service_tag, hostname, send_self_type, auth_method,
 	    auth_uid_to_global_user, closure,
 	    peer_typep, global_usernamep);
 

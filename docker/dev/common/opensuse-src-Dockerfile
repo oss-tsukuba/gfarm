@@ -3,7 +3,6 @@ FROM gfarm-dev:opensuse-base
 # System independent
 ARG GFDOCKER_NUM_JOBS
 ARG GFDOCKER_PRIMARY_USER
-RUN "/home/${GFDOCKER_PRIMARY_USER}/gfarm/docker/dev/common/make-install-univ.sh"
+ARG GFDOCKER_ENABLE_PROXY
 
-# System dependent
-RUN ldconfig  # enable /usr/local/lib
+RUN "/home/${GFDOCKER_PRIMARY_USER}/gfarm/docker/dev/common/make-install-univ.sh"

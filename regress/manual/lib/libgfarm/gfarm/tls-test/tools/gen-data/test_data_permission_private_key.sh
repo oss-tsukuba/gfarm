@@ -8,7 +8,7 @@ TEST_SUITE="permission_private_key"
 
 ## Funcs. ##
 
-source ${LIB_DIR}/funcs.sh
+. ${LIB_DIR}/funcs.sh
 
 usage() {
      cat << EOS >&2

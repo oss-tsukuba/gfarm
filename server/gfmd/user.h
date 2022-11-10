@@ -62,6 +62,7 @@ struct peer;
 gfarm_error_t gfm_server_user_info_get_all(struct peer *, int, int);
 gfarm_error_t gfm_server_user_info_get_by_names(struct peer *, int, int);
 gfarm_error_t gfm_server_user_info_get_by_gsi_dn(struct peer *, int, int);
+gfarm_error_t gfm_server_user_info_get_my_own(struct peer *, int, int);
 gfarm_error_t gfm_server_user_info_set(struct peer *, int, int);
 gfarm_error_t gfm_server_user_info_modify(struct peer *, int, int);
 gfarm_error_t gfm_server_user_info_remove(struct peer *, int, int);

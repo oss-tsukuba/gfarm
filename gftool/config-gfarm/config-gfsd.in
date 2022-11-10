@@ -25,7 +25,7 @@ PRIVATE_MODE=false
 # check whether shell function does work or not.
 #
 BOURNE_SHELL="${BOURNE_SHELL-/bin/sh}"
-if [ x"$1" = x--re-invoked ]; then
+if [ $# -gt 0 ] && [ x"$1" = x--re-invoked ]; then
 	# shell function works with this shell, remove --re-invoked option
 	shift
 elif "$BOURNE_SHELL" -c 'shellfunc() { exit 0; }; shellfunc' 2>/dev/null; then
@@ -41,8 +41,7 @@ else
 		do
 			shell="$dir/$sh"
 			if ( [ -f "$shell" ] || [ -f "$shell.exe" ] ) &&
-				"$shell" -c 'shellfunc() { exit 0; };
-					shellfunc' 2>/dev/null
+				"$shell" -c 'shellfunc() { exit 0; }; shellfunc' 2>/dev/null
 			then
 				BOURNE_SHELL="$shell" exec "$shell" "$0" \
 					--re-invoked ${1+"$@"}

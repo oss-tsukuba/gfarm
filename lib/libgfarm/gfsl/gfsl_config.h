@@ -3,6 +3,9 @@
 
 #define USE_GLOBUS
 
+#define GFSL_PROTO_VER_1	1	/* GSI */
+#define GFSL_PROTO_VER_2	2	/* Kerberos */
+
 #if defined(USE_GLOBUS) && GLOBUS_FAKE_GSS_C_NT_USER
 /* currently Globus doesn't actually support GSS_C_NT_USER_NAME */
 #define GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS 1

@@ -16,6 +16,7 @@
 
 #include "metadb_common.h"
 #include "metadb_server.h"
+#include "filesystem.h"
 #include "gfm_client.h"
 #include "gfm_proto.h"
 #include "lookup.h"
@@ -25,6 +26,7 @@
 char *program_name = "gfmdhost";
 
 struct gfm_connection *gfm_conn = NULL;
+struct gfarm_filesystem *gfm_fs = NULL;
 
 #define OP_LIST			'\0'	/* '\0' means default operation */
 #define OP_LIST_DETAIL		'l'
@@ -191,17 +193,17 @@ compare_metadb_server_detail(const void *a, const void *b)
 static int
 gfarm_metadb_server_get_state_symbol(struct gfarm_metadb_server *ms)
 {
-	if (gfarm_metadb_server_seqnum_is_out_of_sync(ms))
+	if (gfarm_metadb_server_seqnum_is_out_of_sync(gfm_fs, ms))
 		return ('x'); /* ignore gfarm_metadb_server_is_active() */
-	else if (gfarm_metadb_server_seqnum_is_error(ms))
+	else if (gfarm_metadb_server_seqnum_is_error(gfm_fs, ms))
 		return ('e'); /* ignore gfarm_metadb_server_is_active() */
-	else if (!gfarm_metadb_server_is_active(ms))
+	else if (!gfarm_metadb_server_is_active(gfm_fs, ms))
 		return ('-');
-	else if (gfarm_metadb_server_seqnum_is_ok(ms))
+	else if (gfarm_metadb_server_seqnum_is_ok(gfm_fs, ms))
 		return ('+');
-	else if (gfarm_metadb_server_seqnum_is_behind(ms))
+	else if (gfarm_metadb_server_seqnum_is_behind(gfm_fs, ms))
 		return ('|');
-	else if (gfarm_metadb_server_seqnum_is_unknown(ms))
+	else if (gfarm_metadb_server_seqnum_is_unknown(gfm_fs, ms))
 		return ('?');
 	else
 		return ('u'); /* really unknown/unsupported value */
@@ -233,11 +235,11 @@ do_list(int detail)
 		if (detail) {
 			printf("%c %-6s %-5s %c %-12s %s %d\n",
 			    gfarm_metadb_server_get_state_symbol(ms),
-			    gfarm_metadb_server_is_master(ms) ?
+			    gfarm_metadb_server_is_master(gfm_fs, ms) ?
 				"master" : "slave",
-			    gfarm_metadb_server_is_master(ms) ? "-" :
-			    (gfarm_metadb_server_is_sync_replication(ms) ?
-				"sync" : "async"),
+			    gfarm_metadb_server_is_master(gfm_fs, ms) ? "-" :
+			    (gfarm_metadb_server_is_sync_replication(
+			    gfm_fs, ms) ? "sync" : "async"),
 			    gfarm_metadb_server_is_default_master(ms) ? 'm' :
 			    (gfarm_metadb_server_is_master_candidate(ms) ?
 				'c' : 's'),
@@ -482,6 +484,13 @@ main(int argc, char **argv)
 		free(hostname);
 	}
 	free(realpath);
+
+	gfm_fs = gfarm_filesystem_get_by_connection(gfm_conn);
+	if (gfm_fs == NULL) {
+		fprintf(stderr, "%s: no filesystem for this metadata server\n",
+		    program_name);
+		exit(EXIT_FAILURE);
+	}
 
 	switch (opt_operation) {
 	case OP_CREATE_ENTRY:

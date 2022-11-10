@@ -21,6 +21,7 @@
 #include <gfarm/gfs.h> /* for definition of gfarm_off_t */
 
 #include "gfutil.h"
+#include "thrsubr.h"
 
 #include "gfsl_secure_session.h"
 #include "gss.h"
@@ -46,20 +47,26 @@ struct io_gfsl {
 	/* for read */
 	char *buffer;
 	int p, residual;
+
+	/* for exclusion between gfmd async protocol senders and receivers */
+	pthread_mutex_t mutex;
 };
+
+static const char mutex_what[] = "io_gfsl::mutex";
 
 /*
  * only blocking i/o is available.
  */
 
 static int
-gfarm_iobuffer_read_session_x(struct gfarm_iobuffer *b, void *cookie, int fd,
+gfarm_iobuffer_read_secsession_x(struct gfarm_iobuffer *b, void *cookie, int fd,
 	void *data, int length, int do_timeout)
 {
 	struct io_gfsl *io = cookie;
 	int rv;
 	int msec = do_timeout ? gfarm_ctxp->network_receive_timeout * 1000
 		: GFARM_GSS_TIMEOUT_INFINITE;
+	static const char diag[] = "gfarm_iobuffer_read_secsession_x";
 
 	if (io->buffer == NULL) {
 		int flag = fcntl(fd, F_GETFL, NULL);
@@ -68,8 +75,10 @@ gfarm_iobuffer_read_session_x(struct gfarm_iobuffer *b, void *cookie, int fd,
 		if (flag & O_NONBLOCK)
 			fcntl(fd, F_SETFL, flag & ~O_NONBLOCK);
 
+		gfarm_mutex_lock(&io->mutex, diag, mutex_what);
 		rv = io->gss->gfarmSecSessionReceiveInt8(io->session,
 		    &io->buffer, &io->residual, msec);
+		gfarm_mutex_unlock(&io->mutex, diag, mutex_what);
 
 		if (flag & O_NONBLOCK)
 			fcntl(fd, F_SETFL, flag);
@@ -101,14 +110,16 @@ int
 gfarm_iobuffer_read_timeout_secsession_op(struct gfarm_iobuffer *b,
 	void *cookie, int fd, void *data, int length)
 {
-	return (gfarm_iobuffer_read_session_x(b, cookie, fd, data, length, 1));
+	return (gfarm_iobuffer_read_secsession_x(
+	    b, cookie, fd, data, length, 1));
 }
 
 int
 gfarm_iobuffer_read_notimeout_secsession_op(struct gfarm_iobuffer *b,
 	void *cookie, int fd, void *data, int length)
 {
-	return (gfarm_iobuffer_read_session_x(b, cookie, fd, data, length, 0));
+	return (gfarm_iobuffer_read_secsession_x(
+	    b, cookie, fd, data, length, 0));
 }
 
 static int
@@ -118,6 +129,7 @@ gfarm_iobuffer_write_secsession_x(struct gfarm_iobuffer *b,
 	struct io_gfsl *io = cookie;
 	int rv, flag = fcntl(fd, F_GETFL, NULL);
 	int msec;
+	static const char diag[] = "gfarm_iobuffer_write_secsession_x";
 
 	if (do_timeout && gfarm_ctxp->network_send_timeout != 0)
 		msec = gfarm_ctxp->network_send_timeout * 1000;
@@ -128,7 +140,9 @@ gfarm_iobuffer_write_secsession_x(struct gfarm_iobuffer *b,
 	if (flag & O_NONBLOCK)
 		fcntl(fd, F_SETFL, flag & ~O_NONBLOCK);
 
+	gfarm_mutex_lock(&io->mutex, diag, mutex_what);
 	rv = io->gss->gfarmSecSessionSendInt8(io->session, data, length, msec);
+	gfarm_mutex_unlock(&io->mutex, diag, mutex_what);
 
 	if (flag & O_NONBLOCK)
 		fcntl(fd, F_SETFL, flag);
@@ -159,9 +173,16 @@ gfarm_iobuffer_write_notimeout_secsession_op(struct gfarm_iobuffer *b,
 }
 
 static void
-free_secsession(struct io_gfsl *io)
+free_secsession(struct io_gfsl *io, const char *diag)
 {
 	OM_uint32 e_major, e_minor;
+
+	/*
+	 * just in case. (theoretically this mutex_lock call is unnecessary)
+	 * because upper layer must guarantee that other threads do not
+	 * access this io at the same time.
+	 */
+	gfarm_mutex_lock(&io->mutex, diag, mutex_what);
 
 	io->gss->gfarmSecSessionTerminate(io->session);
 
@@ -174,6 +195,10 @@ free_secsession(struct io_gfsl *io)
 		io->gss->gfarmGssPrintMajorStatus(e_major);
 		io->gss->gfarmGssPrintMinorStatus(e_minor);
 	}
+
+	gfarm_mutex_unlock(&io->mutex, diag, mutex_what);
+	gfarm_mutex_destroy(&io->mutex, diag, mutex_what);
+
 	free(io->initiator_dn);
 	free(io->buffer);
 	free(io);
@@ -188,8 +213,9 @@ gfp_iobuffer_close_secsession_op(void *cookie, int fd)
 {
 	int rv;
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+	static const char diag[] = "gfp_iobuffer_close_secsession_op";
 
-	free_secsession(cookie);
+	free_secsession(cookie, diag);
 	rv = close(fd);
 	if (rv == -1)
 		e = gfarm_errno_to_error(errno);
@@ -230,6 +256,7 @@ gfp_xdr_set_secsession(struct gfp_xdr *conn, struct gfarm_gss *gss,
 	gfarmSecSession *secsession, gss_cred_id_t cred_to_be_freed, char *dn)
 {
 	struct io_gfsl *io;
+	static const char diag[] = "gfp_xdr_set_secsession";
 
 	GFARM_MALLOC(io);
 	if (io == NULL) {
@@ -244,6 +271,7 @@ gfp_xdr_set_secsession(struct gfp_xdr *conn, struct gfarm_gss *gss,
 	io->initiator_dn = dn;
 	io->buffer = NULL;
 	io->p = io->residual = 0;
+	gfarm_mutex_init(&io->mutex, diag, mutex_what);
 	gfp_xdr_set(conn, &gfp_xdr_secsession_iobuffer_ops,
 	    io, secsession->fd);
 	return (GFARM_ERR_NO_ERROR);
@@ -253,11 +281,14 @@ gfp_xdr_set_secsession(struct gfp_xdr *conn, struct gfarm_gss *gss,
 void
 gfp_xdr_reset_secsession(struct gfp_xdr *conn)
 {
+	int fd = gfp_xdr_fd(conn);
 	struct io_gfsl *io = gfp_xdr_cookie(conn);
+	static const char diag[] = "gfp_xdr_reset_secsession";
 
 	if (io != NULL)
-		free_secsession(io);
-	gfp_xdr_set(conn, &gfp_xdr_secsession_iobuffer_ops, NULL, -1);
+		free_secsession(io, diag);
+
+	gfp_xdr_set_socket(conn, fd);
 }
 
 char *
@@ -302,9 +333,8 @@ static struct gfp_iobuffer_ops gfp_xdr_insecure_gsi_session_iobuffer_ops = {
 };
 
 /*
- * downgrade
- * from a "gsi" connection which is created by gfp_xdr_set_secsession()
- * to a "gsi_auth" connection.
+ * downgrade from a "gsi"/"kerberos" connection which is created
+ * by gfp_xdr_set_secsession() to a "gsi_auth"/"kerberos_auth" connection.
  */
 
 void

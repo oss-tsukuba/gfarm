@@ -35,6 +35,12 @@ void gfmd_terminate(const char *);
 void gfmd_modules_init_default(int);
 extern void (*gfmd_modules_init)(int);
 
+/* auth_uid.c */
+enum gfarm_auth_method;
+enum gfarm_auth_id_type;
+gfarm_error_t auth_uid_to_global_username(void *, enum gfarm_auth_method,
+	const char *, enum gfarm_auth_id_type *, char **);
+
 /* faillover_notify.c */
 void failover_notify(void);
 

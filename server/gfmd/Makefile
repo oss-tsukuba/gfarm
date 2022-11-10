@@ -37,6 +37,7 @@ SRCS =	$(GFMD_COMMON_SRCS) \
 	db_journal.c \
 	fs.c \
 	failover_notify.c \
+	auth_uid.c \
 	gfmd.c \
 	$(ldap_srcs) $(postgresql_srcs) $(optional_srcs)
 OBJS =	$(GFMD_COMMON_OBJS) \
@@ -44,6 +45,7 @@ OBJS =	$(GFMD_COMMON_OBJS) \
 	db_journal.o \
 	fs.o \
 	failover_notify.o \
+	auth_uid.o \
 	gfmd.o \
 	$(ldap_objs) $(postgresql_objs) $(optional_objs)
 

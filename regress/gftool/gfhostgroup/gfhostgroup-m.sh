@@ -18,7 +18,7 @@ trap 'cleanup; exit $exit_trap' $trap_sigs
 gfhost -c -a dummy -p 12345 ${host} > /dev/null 2>&1
 if test $? -ne 0; then
     cleanup
-    exot $exit_fail
+    exit $exit_fail
 fi
 
 gfhostgroup -s ${host} "${host}-group" > /dev/null 2>&1

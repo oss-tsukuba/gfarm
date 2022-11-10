@@ -172,9 +172,9 @@ host_validate(struct host *h)
 }
 
 static int
-host_is_invalid_unlocked(struct host *h)
+host_is_invalid(struct host *h)
 {
-	return (abstract_host_is_invalid_unlocked(&h->ah));
+	return (abstract_host_is_invalid(&h->ah, BACK_CHANNEL_DIAG));
 }
 
 int
@@ -230,7 +230,7 @@ host_lookup(const char *hostname)
 
 	if (h == NULL)
 		return (NULL);
-	if (host_is_invalid_unlocked(h)) {
+	if (host_is_invalid(h)) {
 		gflog_error(GFARM_MSG_1004261,
 		    "unexpected error: invalid host %s in host_hashtab",
 		    host_name(h));
@@ -347,7 +347,7 @@ host_namealiases_lookup(const char *hostname)
 	if (h != NULL)
 		return (h);
 	h = host_hashtab_lookup(hostalias_hashtab, hostname);
-	return ((h == NULL || host_is_invalid_unlocked(h)) ? NULL : h);
+	return ((h == NULL || host_is_invalid(h)) ? NULL : h);
 }
 
 static void all_host_hostset_cache_purge(void);
@@ -365,7 +365,7 @@ host_enter(struct gfarm_host_info *hi, struct host **hpp)
 
 	h = host_hashtab_lookup(host_hashtab, hi->hostname);
 	if (h != NULL) {
-		if (host_is_invalid_unlocked(h)) {
+		if (host_is_invalid(h)) {
 			gflog_error(GFARM_MSG_1004262,
 			    "unexpected error: invalid host %s "
 			    "in host_hashtab", hi->hostname);
@@ -2465,7 +2465,7 @@ hostset_alloc_by(int (*filter)(struct host *, void *), void *closure,
 static int
 host_valid_filter(struct host *h, void *closure)
 {
-	return (!host_is_invalid_unlocked(h));
+	return (!host_is_invalid(h));
 }
 
 struct hostset *
@@ -2512,7 +2512,7 @@ host_fsngroup_filter(struct host *h, void *closure)
 {
 	const char *fsngroup = closure;
 
-	return (!host_is_invalid_unlocked(h) &&
+	return (!host_is_invalid(h) &&
 		strcmp(host_fsngroup(h), fsngroup) == 0);
 }
 

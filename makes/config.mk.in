@@ -97,6 +97,14 @@ kerberos_objs = @kerberos_objs@
 kerberos_cflags = @kerberos_cflags@
 kerberos_targets = @kerberos_targets@
 
+cyrus_sasl_includes = @cyrus_sasl_includes@
+cyrus_sasl_libs = @cyrus_sasl_libs@
+# for conditional compilation which depends on whether Cyrus SASL is enabled or not
+cyrus_sasl_srcs = @cyrus_sasl_srcs@
+cyrus_sasl_objs = @cyrus_sasl_objs@
+cyrus_sasl_cflags = @cyrus_sasl_cflags@
+cyrus_sasl_targets = @cyrus_sasl_targets@
+
 # for conditional compilation related to syscall hooking library
 gfshook_srcs = @gfshook_srcs@
 gfshook_objs = @gfshook_objs@

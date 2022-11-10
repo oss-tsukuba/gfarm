@@ -1,0 +1,7 @@
+#!/bin/sh
+DATETIME=$(date +%Y%m%d_%H%M)
+LOG_PREFIX=${DATETIME}.${GFDOCKER_PRJ_NAME}
+progname=`basename "$0"`
+hostname=`hostname`
+
+exec valgrind --log-file="/mnt/helgrind-results/${LOG_PREFIX}.${progname}.${hostname}.helgrind.log.%p.%n" --trace-children=no --tool=helgrind "$@"

@@ -217,29 +217,32 @@ AC_SUBST(pthread_cflags)
 AC_SUBST(pthread_targets)
 
 ###
-### --with-openssl=OpenSSL_ROOT
+### --with-openssl=OpenSSL_PKG
 ###
 
 # sanity check for OpenSSL is deferred, because ${openssl_includes}
 # and ${openssl_lib} may be overrided by Globus autoconfiguration.
 
 AC_ARG_WITH(openssl,
-[  --with-openssl=OpenSSL_ROOT	openssl root directory
-				[[default=/usr]]],
+[  --with-openssl=OpenSSL_PKG	openssl package name
+				[[default=openssl]]],
 [with_openssl="${withval}"
 ],
-[with_openssl=/usr
+[with_openssl=openssl
 ])
-AC_MSG_RESULT([using \"${with_openssl}\"])
 
-openssl_libs='-lssl -lcrypto'
-if test x"${with_openssl}" = x"/usr"; then
-   openssl_includes=
-else
-   openssl_includes="-I${with_openssl}/include"
-   openssl_libs="-R${with_openssl}/lib -L${with_openssl}/lib ${openssl_libs}"
-fi
+PKG_CHECK_MODULES(openssl, ${with_openssl}, [
+  AC_MSG_RESULT([using \"${with_openssl}\"])
 
+  openssl_libs=$openssl_LIBS
+  openssl_includes=$openssl_CFLAGS
+], [
+  AC_MSG_RESULT([try using OpenSSL in default path])
+
+  # if "pkg-config --cflags --libs openssl" does not work, try default
+  openssl_libs='-lssl -lcrypto'
+  openssl_includes=
+])
 
 AC_SUBST(openssl_includes)
 AC_SUBST(openssl_libs)
@@ -260,20 +263,27 @@ AC_SUBST(gss_targets)
 
 
 ###
-### --enable-kerberos
+### --disable-kerberos
 ###
 
 AC_ARG_ENABLE(kerberos,
-AS_HELP_STRING([--enable-kerberos],[enable Kerberos authentication [default=disable]]),
-[if test x"${enable_kerberos}" = x"yes"; then
+AS_HELP_STRING([--disable-kerberos],[disable Kerberos authentication [default=enable]]), [], [])
+
+if test x"${enable_kerberos}" != x"no"; then
   AC_CHECK_LIB(gssapi_krb5, gss_init_sec_context)
+  AC_MSG_CHECKING(Kerberos library available)
   if test x"${ac_cv_lib_gssapi_krb5_gss_init_sec_context}" = x"yes"; then
-    AC_MSG_CHECKING(Kerberos library available)
+    AC_MSG_RESULT([yes])
+    enable_kerberos=yes
   else
+    AC_MSG_RESULT([no])
+    if test "x${enable_kerberos}" = "xyes"; then
+      AC_MSG_ERROR([cannot enable Kerberos support.])
+      exit 1
+    fi
     enable_kerberos=no
   fi
-  AC_MSG_RESULT(${enable_kerberos})
-fi], [])
+fi
 
 if test x"${enable_kerberos}" = x"yes"; then
   kerberos_includes= # assumes standard include path, for now
@@ -514,6 +524,55 @@ AC_SUBST(globus_cflags)
 AC_SUBST(globus_targets)
 
 ###
+### --disable-cyrus-sasl
+###
+
+AC_ARG_ENABLE(cyrus-sasl,
+AS_HELP_STRING([--disable-cyrus-sasl],[disable Cyrus SASL [default=enable]]), [], [])
+
+if test x"${enable_cyrus_sasl}" != x"no"; then
+  AC_CHECK_LIB(sasl2, sasl_client_init)
+  AC_MSG_CHECKING(Cyrus SASL library available)
+  if test x"${ac_cv_lib_sasl2_sasl_client_init}" = x"yes"; then
+    AC_MSG_RESULT([yes])
+    enable_cyrus_sasl=yes
+  else
+    AC_MSG_RESULT([no])
+    if test "x${enable_cyrus_sasl}" = "xyes"; then
+      AC_MSG_ERROR([cannot enable SASL support.])
+      exit 1
+    fi
+    enable_cyrus_sasl=no
+  fi
+fi
+
+if test x"${enable_cyrus_sasl}" = x"yes"; then
+  cyrus_sasl_includes= # assumes standard include path, for now
+  cyrus_sasl_libs=-lsasl2
+
+  cyrus_sasl_srcs='${CYRUS_SASL_SRCS}'
+  cyrus_sasl_objs='${CYRUS_SASL_OBJS}'
+  cyrus_sasl_cflags='${CYRUS_SASL_CFLAGS}'
+  cyrus_sasl_targets='${CYRUS_SASL_TARGETS}'
+  AC_DEFINE(HAVE_CYRUS_SASL, 1, [Cyrus SASL exists])
+else
+  cyrus_sasl_includes=
+  cyrus_sasl_libs=
+
+  cyrus_sasl_srcs=
+  cyrus_sasl_objs=
+  cyrus_sasl_cflags=
+  cyrus_sasl_targets=
+fi
+
+AC_SUBST(cyrus_sasl_includes)
+AC_SUBST(cyrus_sasl_libs)
+AC_SUBST(cyrus_sasl_srcs)
+AC_SUBST(cyrus_sasl_objs)
+AC_SUBST(cyrus_sasl_cflags)
+AC_SUBST(cyrus_sasl_targets)
+
+###
 ### --without-mtsafe-netdb ... are getaddrinfo(3) and getnameinfo(3) MT-Safe?
 ###
 
@@ -751,6 +810,9 @@ AC_MSG_RESULT([using \"${openssl_includes} ${openssl_libs}\"])
 # these functions disappeared since OpenSSL-1.1.0
 AC_CHECK_FUNCS(CRYPTO_set_locking_callback CRYPTO_set_id_callback)
 
+# new function since OpenSSL-3.0
+AC_CHECK_FUNCS(ERR_get_error_all)
+
 CPPFLAGS="$CPPFLAGS_SAVE"
 LIBS="$LIBS_SAVE"
 
@@ -944,7 +1006,7 @@ else
     *) postgresql_includes="-I${postgresql_include_dir}" ;;
     esac
     case ${postgresql_lib_dir} in
-    /usr/lib) postgresql_libs="-lpq" ;;
+    /usr/lib|/usr/lib/*) postgresql_libs="-lpq" ;;
     *) postgresql_libs="-R${postgresql_lib_dir} -L${postgresql_lib_dir} -lpq" ;;
     esac
   else
@@ -1501,7 +1563,7 @@ else
 fi
 
 ##
-## TLS support
+## --disable-tls13: TLS 1.3 support
 ##
 tls_srcs=
 tls_objs=

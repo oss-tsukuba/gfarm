@@ -40,6 +40,7 @@ static struct tls_test_ctx_struct ttcs = {
 	-INT_MAX,
 	0,	/* No domain check. Mandatory to initialize properly 0 or 1 */
 	0,	/* No domain check. Mandatory to initialize properly 0 or 1 */
+	0,	/* security level 0, because tls_test generates 1024bit cert */
 	60,
 	60
 };
@@ -808,6 +809,9 @@ main(int argc, char **argv)
 	int ret = 1;
 	struct addrinfo *a_info;
 	struct tls_session_ctx_struct *tls_ctx = NULL;
+
+	SSL_load_error_strings();
+	SSL_library_init();
 
 	if (prologue(argc, argv, &a_info) == 0) {
 		gfarm_error_t gerr = GFARM_ERR_UNKNOWN;

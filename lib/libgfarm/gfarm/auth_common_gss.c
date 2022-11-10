@@ -16,7 +16,6 @@
 #include "thrsubr.h"
 
 #include "gfsl_secure_session.h"
-#include "gfarm_auth.h"
 
 #include "gfarm_gss.h"
 #include "gss.h"
@@ -241,8 +240,7 @@ gfarm_gss_client_initialize(struct gfarm_gss *gss)
 	OM_uint32 e_major, e_minor;
 	int rv;
 
-	rv = gss->gfarmSecSessionInitializeInitiator(NULL, GRID_MAPFILE,
-	    &e_major, &e_minor);
+	rv = gss->gfarmSecSessionInitializeInitiator(NULL, &e_major, &e_minor);
 	if (rv <= 0) {
 		if (gflog_auth_get_verbose()) {
 			gflog_error(GFARM_MSG_1000706,
@@ -269,7 +267,7 @@ gfarm_gss_server_initialize(struct gfarm_gss *gss)
 	gfarm_OM_uint32 e_major, e_minor;
 	int rv;
 
-	rv = gss->gfarmSecSessionInitializeBoth(NULL, NULL, GRID_MAPFILE,
+	rv = gss->gfarmSecSessionInitializeBoth(NULL, NULL,
 	    &e_major, &e_minor);
 	if (rv <= 0) {
 		if (gflog_auth_get_verbose()) {

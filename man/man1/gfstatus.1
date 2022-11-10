@@ -1,7 +1,7 @@
 '\" t
 .\"     Title: gfstatus
-.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
 .\"      Date: 24 Oct 2018
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
@@ -31,7 +31,7 @@
 gfstatus \- display Gfarm configuration status
 .SH "SYNOPSIS"
 .HP \w'\fBgfstatus\fR\ 'u
-\fBgfstatus\fR [\-P\ \fIpath\fR] [\-d]
+\fBgfstatus\fR [\-P\ \fIpath\fR] [\-dS]
 .HP \w'\fBgfstatus\fR\ 'u
 \fBgfstatus\fR [\-P\ \fIpath\fR] [\-d | \-M] [\-l | \-L]
 .HP \w'\fBgfstatus\fR\ 'u
@@ -122,6 +122,11 @@ Performs specified operation against gfmd\&.
 \fB\-P\fR \fIpath\fR
 .RS 4
 Specifies a path name to specify a metadata server instead of the root metadata server\&.
+.RE
+.PP
+\fB\-S\fR
+.RS 4
+Displays settings determined statically at Gfarm compile time\&.
 .RE
 .PP
 \fB\-V\fR

@@ -23,6 +23,7 @@ char *program_name = "gfstatus";
 
 enum gfstatus_operation {
 	OP_PRINT = '\0',
+	OP_PRINT_STATIC_CONFIG = 'S',
 	OP_MODIFY = 'm',
 	OP_LIST = 'l',
 	OP_LIST_WITH_VALUE = 'L',
@@ -94,6 +95,39 @@ print_msg(char *msg, const char *status)
 {
 	if (msg != NULL && status != NULL)
 		printf("%s: %s\n", msg, status);
+}
+
+void
+print_static_config(void)
+{
+	print_msg("client auth gsi     ",
+#ifdef HAVE_GSI
+		  "available"
+#else
+		  "not available"
+#endif
+	    );
+	print_msg("client auth tls     ",
+#ifdef HAVE_TLS_1_3
+		  "available"
+#else
+		  "not available"
+#endif
+	    );
+	print_msg("client auth kerberos",
+#ifdef HAVE_KERBEROS
+		  "available"
+#else
+		  "not available"
+#endif
+	    );
+	print_msg("client auth sasl    ",
+#if defined(HAVE_CYRUS_SASL) && defined(HAVE_TLS_1_3)
+		  "available"
+#else
+		  "not available"
+#endif
+	    );
 }
 
 void
@@ -274,14 +308,14 @@ main(int argc, char *argv[])
 	const char *path = ".";
 	struct gfm_connection *gfm_server = NULL;
 	struct gfarm_metadb_server *ms;
-#ifdef HAVE_GSI
+#if defined(HAVE_GSI) || defined(HAVE_KERBEROS)
 	char *cred;
 #endif
 
 	if (argc > 0)
 		program_name = basename(argv[0]);
 
-	while ((c = getopt(argc, argv, "dlLmMP:V?"))
+	while ((c = getopt(argc, argv, "dlLmMP:SV?"))
 	    != -1) {
 		switch (c) {
 		case 'd':
@@ -292,6 +326,7 @@ main(int argc, char *argv[])
 		case 'l':
 		case 'L':
 		case 'm':
+		case 'S':
 			op = c;
 			break;
 		case 'M':
@@ -309,6 +344,11 @@ main(int argc, char *argv[])
 	}
 	argc -= optind;
 	argv += optind;
+
+	if (op == OP_PRINT_STATIC_CONFIG) {
+		print_static_config();
+		return 0;
+	}
 
 	e = gfarm_initialize(&argc, &argv);
 	error_check("gfarm_initialize", e);
@@ -351,23 +391,10 @@ main(int argc, char *argv[])
 		exit(e == GFARM_ERR_NO_ERROR ? 0 : 1);
 	}
 
-	print_msg("client version    ", gfarm_version());
-	print_user_config_file("user config file  ");
-	print_msg("system config file", gfarm_config_get_filename());
-	print_msg("client auth gsi   ",
-#ifdef HAVE_GSI
-		  "available"
-#else
-		  "not available"
-#endif
-	    );
-	print_msg("client auth tls   ",
-#ifdef HAVE_TLS_1_3
-		  "available"
-#else
-		  "not available"
-#endif
-	    );
+	print_msg("client version      ", gfarm_version());
+	print_user_config_file("user config file    ");
+	print_msg("system config file  ", gfarm_config_get_filename());
+	print_static_config();
 
 	puts("");
 	print_msg("hostname          ", gfarm_host_get_self_name());
@@ -393,7 +420,7 @@ main(int argc, char *argv[])
 #endif
 #ifdef HAVE_KERBEROS
 	cred = gfarm_kerberos_client_cred_name();
-	print_msg("principal name", cred ? cred : "no principal");
+	print_msg(" principal name", cred ? cred : "no principal");
 #endif
 	/* gfmd */
 	puts("");

@@ -20,7 +20,7 @@ SERVER_NAME="server"
 
 ## Funcs. ##
 
-source ${LIB_DIR}/funcs.sh
+. ${LIB_DIR}/funcs.sh
 
 usage() {
      cat << EOS >&2
@@ -156,9 +156,9 @@ mkdir -p ${OUTPUT_SERVER_DIR}
 
 # generate certificates.
 gen_certs_under_root
-pushd ${OUTPUT_CAS_DIR}/${CLIENT_NAME}
+cd ${OUTPUT_CAS_DIR}/${CLIENT_NAME}
 gen_proxy_certs
 cat_certs
-popd
+
 
 exit 0

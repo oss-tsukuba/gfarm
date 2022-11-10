@@ -83,11 +83,17 @@ restart_gfmd()
 
 MASTER=`get_master`
 if [ -z "$MASTER" ]; then
+    echo no master server
     exit 1
 fi
 SLAVE=`choose_async_slave`
 if [ -z "$SLAVE" ]; then
     SLAVE=`choose_sync_slave`
+fi
+if [ -z "$SLAVE" ]; then
+    echo no slave server
+    gfmdhost -l
+    exit 1
 fi
 
 MASTER_NAME=`convert_gfservice_name $MASTER`

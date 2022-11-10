@@ -148,6 +148,7 @@ static const char *errcode_string[GFARM_ERR_NUMBER] = {
 	"no filesystem node",
 	"directory quota exists",
 	"TLS runtime error",
+	"hostname mismatch",
 };
 
 static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {

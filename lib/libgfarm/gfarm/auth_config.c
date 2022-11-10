@@ -25,6 +25,18 @@
 #include "hostspec.h"
 #include "auth.h"
 
+const char *
+gfarm_auth_id_type_name(enum gfarm_auth_id_type type)
+{
+	switch (type) {
+	case GFARM_AUTH_ID_TYPE_UNKNOWN: return ("unknown-auth-ID-type");
+	case GFARM_AUTH_ID_TYPE_USER: return ("user");
+	case GFARM_AUTH_ID_TYPE_SPOOL_HOST: return ("gfsd");
+	case GFARM_AUTH_ID_TYPE_METADATA_HOST: return ("gfmd");
+	default: return ("invalid-auth-ID-type");
+	}
+};
+
 /*
  * gfarm_auth_method
  */
@@ -48,6 +60,10 @@ struct gfarm_auth_method_name_value {
 	  GFARM_AUTH_METHOD_KERBEROS },
 	{ 'k', "kerberos_auth",
 	  GFARM_AUTH_METHOD_KERBEROS_AUTH },
+	{ 'A', "sasl",
+	  GFARM_AUTH_METHOD_SASL },
+	{ 'a', "sasl_auth",
+	  GFARM_AUTH_METHOD_SASL_AUTH },
 };
 
 enum gfarm_auth_config_command { GFARM_AUTH_ENABLE, GFARM_AUTH_DISABLE };
@@ -336,8 +352,20 @@ gfarm_auth_method_kerberos_available(void)
 #endif
 }
 
-gfarm_int32_t
-gfarm_auth_method_get_available(void)
+gfarm_error_t
+gfarm_auth_method_sasl_available(void)
+{
+#if defined(HAVE_CYRUS_SASL) && defined(HAVE_TLS_1_3)
+	/* XXX TODO(?) check whether JWT is available or not? */
+	return (GFARM_ERR_NO_ERROR);
+#else
+	return (GFARM_ERR_PROTOCOL_NOT_SUPPORTED);
+#endif
+}
+
+static gfarm_int32_t
+gfarm_auth_method_get_available(int is_server,
+	enum gfarm_auth_id_type self_type)
 {
 	int i;
 	gfarm_int32_t methods;
@@ -364,12 +392,37 @@ gfarm_auth_method_get_available(void)
 				break; /* available */
 #endif
 			continue; /* not available */
+		case GFARM_AUTH_METHOD_SASL:
+		case GFARM_AUTH_METHOD_SASL_AUTH:
+#if defined(HAVE_CYRUS_SASL) && defined(HAVE_TLS_1_3)
+			if (is_server) {
+				if (gfarm_auth_server_method_sasl_available())
+					break; /* available */
+			} else if (self_type == GFARM_AUTH_ID_TYPE_USER) {
+				if (gfarm_auth_client_method_sasl_available())
+					break; /* available */
+			}
+#endif
+			continue; /* not available */
 		default:
 			break; /* available */
 		}
 		methods |= 1 << i;
 	}
 	return (methods);
+}
+
+gfarm_int32_t
+gfarm_auth_server_method_get_available(void)
+{
+	return (
+	    gfarm_auth_method_get_available(1, GFARM_AUTH_ID_TYPE_UNKNOWN));
+}
+
+gfarm_int32_t
+gfarm_auth_client_method_get_available(enum gfarm_auth_id_type self_type)
+{
+	return (gfarm_auth_method_get_available(0, self_type));
 }
 
 void

@@ -21,3 +21,5 @@ char *gfp_xdr_tls_peer_dn_gsi(struct gfp_xdr *);
 char *gfp_xdr_tls_peer_dn_common_name(struct gfp_xdr *);
 
 int gfp_xdr_tls_is_readable(struct gfp_xdr *);
+
+void gfp_xdr_downgrade_from_tls_to_fd(struct gfp_xdr *);

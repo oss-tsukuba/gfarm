@@ -1,0 +1,190 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD>
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<META http-equiv="Content-Style-Type" content="text/css">
+<TITLE>TLS 認証</TITLE>
+
+<STYLE type="text/css">
+<!-- /* BEGIN ... hide style from old browser */
+pre { background:#e0ffff; margin-left: 2em; margin-right: 2em }
+     /* END ... hide style from old browser */ -->
+</STYLE>
+
+</HEAD>
+<BODY><A href="http://oss-tsukuba.org/software/gfarm">
+<IMG alt="[GFARM LOGO]" src="../../pic/gfarm-logo.gif" align=right border=0></A>
+<A href="../../index.html">文書集</A> &gt;
+<A href="index.html">ユーザーズマニュアル</A> &gt;
+TLS 認証
+
+<HR>
+<H1>TLS 認証</H1>
+<A href="../../en/user/auth-tls.html">English</A> | 日本語
+<p>
+この文書は、Gfarm の TLS 認証で必要な設定について説明します。
+
+TLS認証には、
+サーバーとクライアントで秘密鍵を共有する tls_sharedsecret 認証と、
+クライアント証明書を用いる tls_client_certificate 認証の
+2種類があります。
+
+<HR>
+<H2><A NAME="TLS-common-setting">
+tls_sharedsecret 認証と tls_client_certificate 認証に共通の設定</A></H2>
+
+以下の設定は2種類のTLS認証方式で共通です。
+
+<UL>
+<LI>認証局の証明書ファイル群を置くディレクトリ
+<BR>
+
+クライアント、gfmd、gfsd すべてで必要です。
+
+tls_ca_certificate_path ディレクティブで設定でき、デフォルトは /etc/pki/tls/certs/gfarm です。
+
+このディレクトリの形式は GSI 認証における /etc/grid-security/certificates と共通ですので、
+既に GSI 認証の設定を完了しているサイトでは、以下のコマンドでシンボリックリンクを張れば設定完了です。
+
+<PRE>
+# mkdir -p /etc/pki/tls/certs
+# ln -s /etc/grid-security/certificates /etc/pki/tls/certs/gfarm
+</PRE>
+
+<BR>
+<LI>認証局が提供する CRL ファイルを置くディレクトリ
+<BR>
+
+クライアント、gfmd、gfsd すべてで必要です。
+
+デフォルトは /etc/pki/tls/certs/gfarm であり tls_ca_certificate_path と共通です。
+
+このディレクトリの形式も GSI 認証における /etc/grid-security/certificates と共通ですので、
+既に GSI 認証の設定を完了しているサイトでは、上述のシンボリックリンク作成で設定が完了しています。
+
+<BR>
+<LI>gfmd のホスト証明書および秘密鍵
+<BR>
+
+gfmd を実行するホストのみで必要です。
+
+gfmd.conf の tls_certificate_file および tls_key_file で設定でき、
+デフォルトでは以下のファイル名となっています。
+
+<TABLE>
+<TR><TH>ホスト証明書</TH>	<TD>/etc/pki/tls/certs/gfmd.crt</TD></TR>
+<TR><TH>秘密鍵</TH>		<TD>/etc/pki/tls/private/gfmd.key</TD></TR>
+</TABLE>
+
+既に GSI 認証の設定を完了しているサイトでは、以下のコマンドでシンボリックリンクを張れば設定完了です。
+
+<pre>
+# mkdir -p /etc/pki/tls/certs /etc/pki/tls/private
+# ln -s /etc/grid-security/hostcert.pem /etc/pki/tls/certs/gfmd.crt
+# ln -s /etc/grid-security/hostkey.pem /etc/pki/tls/private/gfmd.key
+</pre>
+
+<BR>
+<LI>gfsd のサービス証明書および秘密鍵
+<BR>
+
+gfsd が参照する gfarm2.conf の
+tls_certificate_file および tls_key_file ディレクティブで設定でき、
+デフォルト設定では以下のファイル名となっています。
+
+<TABLE>
+<TR><TH>サービス証明書</TH>	<TD>/etc/pki/tls/certs/gfsd.crt</TD></TR>
+<TR><TH>秘密鍵</TH>		<TD>/etc/pki/tls/private/gfsd.key</TD></TR>
+</TABLE>
+
+ただし tls_certificate_file および tls_key_file の設定よりも、
+それぞれ環境変数 X509_USER_CERT および X509_USER_KEY の設定の方が
+優先されるようになっており、config-gfsd コマンドを用いて
+gfsd を初期設定した場合には、これらの環境変数経由で
+以下の場所が設定されているため、tls_certificate_file および
+tls_key_file ディレクティブの設定は効きません。
+
+<TABLE>
+<TR><TH>サービス証明書</TH><TD>/etc/grid-security/gfsd*/gfsdcert.pem</TD></TR>
+<TR><TH>秘密鍵</TH>	   <TD>/etc/grid-security/gfsd*/gfsdkey.pem</TD></TR>
+</TABLE>
+
+こちらのパス名は GSI 認証と同一ですので、
+既に GSI 認証の設定を完了しているサイトでは追加設定は不要です。
+
+また、gfsd でサービス証明書を用いるためには以下の設定の追加が、
+クライアントの gfarm2.conf、gfsd の gfarm2.conf、gfmd の gfmd.conf
+すべてについて必要です。
+<pre>
+spool_server_cred_type host
+spool_server_cred_service gfsd
+</pre>
+この設定についても GSI と共通ですので、
+既に GSI 認証の設定を完了しているサイトでは追加設定は不要です。
+</UL>
+
+<HR>
+<H2>tls_sharedsecret 認証に特有の設定</H2>
+
+クライアント、gfmd、gfsd すべてのホストについて、
+各ユーザのホームディレクトリ直下の .gfarm_shared_key ファイルに
+共通鍵を置く必要があります。
+
+このファイルの設定については sharedsecret 認証と同一ですので、
+sharedsecret 認証に関する記述を参照してください。
+
+<HR>
+<H2>tls_client_certificate 認証に特有の設定</H2>
+
+<H3>管理者の行なう設定</H3>
+
+各ユーザー毎に、
+gfuser コマンドで設定する第4欄に「/O=Company/OU=Division/CN=UserName」
+のような形式で、クライアント証明書の Subject DN を設定しておきます。
+
+この設定についても GSI と共通ですので、
+既に GSI 認証の設定を完了しているサイトでは追加設定は不要です。
+
+
+<H3>各ユーザーの行なう設定</H3>
+
+<UL>
+<LI>proxy 証明書を用いる場合
+<BR>
+
+GSI の grid-proxy-init コマンドや、myproxy-logon コマンドで
+作成した proxy 証明書がそのまま使えます。
+これらのコマンドを用いて proxy 証明書を作成してください。
+
+<BR>
+<LI>proxy 証明書を用いない場合
+<BR>
+
+クライアントの gfarm2.conf の
+tls_certificate_file および tls_key_file で設定でき、
+デフォルトでは、各ユーザーのホームディレクトリの以下のファイル名となっています。
+
+<TABLE>
+<TR><TH>ユーザー証明書</TH>	<TD>.gfarm/usercert.pem</TD></TR>
+<TR><TH>秘密鍵</TH>		<TD>.gfarm/userkey.pem</TD></TR>
+</TABLE>
+
+これらのファイル形式は GSI と共通ですので、
+既に GSI 認証の設定を完了しているサイトでは、以下のコマンドでシンボリックリンクを張れば設定完了です。
+
+<pre>
+$ ln -s .globus $HOME/.gfarm
+</pre>
+
+</UL>
+
+
+<HR>
+<H2>SEE ALSO</H2>
+<A HREF="../ref/man5/gfarm2.conf.5.html">gfarm2.conf(5)</A>
+
+<HR>
+
+<ADDRESS><A href="http://oss-tsukuba.org/software/gfarm">Gfarm File System</A> &lt;<TT>gfarmfs at gmail.com</TT>&gt;</ADDRESS>
+
+</BODY>
+</HTML>

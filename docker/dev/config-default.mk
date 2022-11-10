@@ -3,10 +3,16 @@ TZ = Asia/Tokyo
 LANG = en_US.UTF-8
 
 DOCKER_CMD = docker
-### Compose v1
-DOCKER_COMPOSE_CMD = docker-compose
+#DOCKER_CMD = podman
+
 ### Compose v2
-#DOCKER_COMPOSE_CMD = docker compose
+DOCKER_COMPOSE_CMD = docker compose
+### Podman Compose
+#DOCKER_COMPOSE_CMD = podman-compose
+### Compose v1 (obsolete)
+#DOCKER_COMPOSE_CMD = docker-compose
+### Compose v1 running on container for Podman (obsolete)
+#DOCKER_COMPOSE_CMD = $(ROOTDIR)/common/compose.sh
 
 #GFDOCKER_PROXY_HOST = 192.168.0.1
 #GFDOCKER_PROXY_PORT = 8080
@@ -65,6 +71,17 @@ GFDOCKER_GFMD_JOURNAL_DIR = /dev/shm/gfarm-metadata/journal/
 # --no-cache for docker build (0: disable, 1: enable)
 GFDOCKER_NO_CACHE = 0
 SUDO = sudo
+
+# cyrus-sasl-xoauth2-idp
+#
+# GFDOCKER_SASL_MECH_LIST:
+# 	tested mechanisms: ANONYMOUS LOGIN PLAIN XOAUTH2
+#	NOTE: PLAIN and XOAUTH2 are mandatory, do not remove them.
+GFDOCKER_SASL_MECH_LIST = PLAIN XOAUTH2
+GFDOCKER_SASL_LOG_LEVEL = 7
+GFDOCKER_SASL_XOAUTH2_SCOPE = hpci
+GFDOCKER_SASL_XOAUTH2_AUD = hpci
+GFDOCKER_SASL_XOAUTH2_USER_CLAIM = hpci.id
 
 # using port numbers of host OS
 GFDOCKER_HOSTPORT_S3_HTTP = 18080

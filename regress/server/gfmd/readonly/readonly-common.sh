@@ -1,10 +1,11 @@
 . ./regress.conf
 
 HOST_INFO_FLAG_READONLY=1
-N_REQUIRED_SDHOSTS=2
+N_REQUIRED_SDHOSTS=3
 HOST_FLAGS_MAP_FILE="${localtmp}/readonly-common-host-flags.txt"
 
 GFPREP=$regress/bin/gfprep_for_test
+GFPCOPY=$regress/bin/gfpcopy_for_test
 
 GFS_PIO_TEST_P=${base}/../../../lib/libgfarm/gfarm/gfs_pio_test/gfs_pio_test
 update_file() {
@@ -237,15 +238,39 @@ test_gfprep() {
 }
 
 test_gfrep_ro_before_rep() {
-  diag=test_gfrep
+  diag=test_gfrep_ro_before_rep
   test_gfrep_common gfrep true "$diag"
 }
 
 test_gfprep_ro_before_rep() {
-  diag=test_gfprep
+  diag=test_gfprep_ro_before_rep
   test_gfrep_common gfprep true "$diag"
 }
 
+test_gfpcopy_write_to_readonly_domain_and_retry() {
+  diag=test_gfpcopy_write_to_readonly_domain_and_retry
+  gf_test_dir="gfarm://${gftmp}"
+  rohost="$(gfsched -w | head -n 1)"
+
+  flags="$(query_host_flags "$rohost")"
+  gfhost -m -f "$(set_readonly_flag "$flags")" "$rohost"
+  if [ "$?" -ne 0 ]; then
+    echo "failed: ${diag}: gfhost"
+    exit
+  fi
+
+  nhosts="$(gfsched -w | wc -l)"
+  if [ "$nhosts" -lt 1 ]; then
+    echo "unexpected condition: At least one writable host required"
+    exit
+  fi
+
+  $GFPCOPY -D $rohost "${data}/1byte" "$gf_test_dir"
+  if [ "$?" -ne 0 ]; then
+    echo "failed: ${diag}: gfpcopy"
+    exit
+  fi
+}
 
 # setup test
 

@@ -11,6 +11,8 @@ gfarm_error_t gfarm_filesystem_add(const char *, int,
 	struct gfarm_filesystem **);
 struct gfarm_filesystem *gfarm_filesystem_get_by_connection(
 	struct gfm_connection *);
+void gfarm_filesystem_lock(struct gfarm_filesystem *, const char *);
+void gfarm_filesystem_unlock(struct gfarm_filesystem *, const char *);
 gfarm_error_t gfarm_filesystem_set_metadb_server_list(
 	struct gfarm_filesystem *,
 	struct gfarm_metadb_server **, int);

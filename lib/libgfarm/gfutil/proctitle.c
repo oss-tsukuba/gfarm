@@ -224,6 +224,10 @@ gfarm_proctitle_set(const char *fmt, ...)
 static char *proctitle_argv_environ_space;
 static size_t proctitle_argv_environ_size;
 
+/* to shut up "valgrind --tool=memcheck" */
+char **gfarm_proctitle_argv;
+char **gfarm_proctitle_environ;
+
 int
 gfarm_proctitle_init(const char *progname, int argc, char ***argvp)
 {
@@ -269,6 +273,11 @@ gfarm_proctitle_init(const char *progname, int argc, char ***argvp)
 #if defined(__darwin__) || defined(__APPLE__)
 	*_NSGetArgv() = new_argv;
 #endif
+
+	/* to shut up "valgrind --tool=memcheck" */
+	gfarm_proctitle_argv = new_argv;
+	gfarm_proctitle_environ = new_environ;
+
 	*argvp = new_argv;
 	return (0);
 }

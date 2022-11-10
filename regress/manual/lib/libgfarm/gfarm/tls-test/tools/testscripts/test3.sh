@@ -4,7 +4,7 @@ TOP_DIR=`dirname $0`
 TOP_DIR=`cd ${TOP_DIR}; pwd`
 TOP_DIR=`cd ${TOP_DIR}/../../; pwd`
 
-source ${TOP_DIR}/tools/testscripts/lib/funcs.sh
+. ${TOP_DIR}/tools/testscripts/lib/funcs.sh
 
 _ret=1
 expected_result_csv="${TOP_DIR}/tools/testscripts/expected-test-result.csv"

@@ -117,6 +117,8 @@ gftool/gfmkdir/mkdir-p.sh
 gftool/gfpath/path_dir.sh
 gftool/gfpath/url_dir.sh
 gftool/gfpath/url_base.sh
+gftool/gfpconcat/gfpconcat.sh
+gftool/gfcp/gfcp.sh
 gftool/gfprep/gfpcopy_dir.sh
 gftool/gfprep/gfpcopy_dir_by_gfcp.sh
 gftool/gfprep/gfpcopy_file.sh
@@ -192,6 +194,7 @@ server/gfmd/readonly/readonly-gfrep.sh  # may take a long time
 server/gfmd/readonly/readonly-gfprep.sh
 server/gfmd/readonly/readonly-gfrep-ro-before-rep.sh
 server/gfmd/readonly/readonly-gfprep-ro-before-rep.sh  # may take a long time
+server/gfmd/readonly/readonly-gfpcopy-domain-retry.sh
 server/gfmd/readonly/replication_at_write_open.sh
 server/gfmd/db_journal/db_journal_open.sh
 server/gfmd/db_journal/db_journal_write.sh

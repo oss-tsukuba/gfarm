@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>17 Sep 2020</date></refentryinfo>
+<refentryinfo><date>22 Sep 2022</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -1039,7 +1039,15 @@ communicating with the host(s) specified by the third argument.</para>
 <para>The first argument should be either the <token>enable</token> or
 <token>disable</token> keyword.
 The second argument, <parameter moreinfo="none">auth method</parameter>, should be
-the <token>gsi</token>, <token>gsi_auth</token>, or <token>sharedsecret</token>
+the
+<token>sharedsecret</token>,
+<token>tls_sharedsecret</token>,
+<token>tls_client_certificate</token>,
+<token>gsi_auth</token>,
+<token>gsi</token>,
+<token>kerberos_auth</token>
+or
+<token>kerberos</token>
 keyword.
 The third argument specifies the host(s) by using <parameter moreinfo="none">Host
 specification</parameter>.</para>
@@ -1059,8 +1067,14 @@ tried.</para>
 <para>The order of statements with different authentication methods is
 not relevant.  When there are several candidates for the authentication
 method for the host, the order of the authentication trial is
-<token>sharedsecret</token>, <token>gsi_auth</token>,
-and then <token>gsi</token>.
+<token>sharedsecret</token>,
+<token>tls_sharedsecret</token>,
+<token>tls_client_certificate</token>,
+<token>gsi_auth</token>,
+<token>gsi</token>,
+<token>kerberos_auth</token>,
+and then
+<token>kerberos</token>.
 </para>
 
 <para>The GSI methods are available if and only if the
@@ -3030,6 +3044,352 @@ The default size is 16 MiB.
 </listitem>
 </varlistentry>
 
+<varlistentry>
+<term><token>sasl_mechanisms</token> <parameter moreinfo="none">"mechanism_list..."</parameter></term>
+<listitem>
+<para>
+Specifies the mechanisms to be used for SASL authentication,
+separated by spaces.
+See the Cyrus SASL documentation
+<ulink url="https://www.cyrusimap.org/sasl/sasl/authentication_mechanisms.html"/>
+for possible values.
+If the cyrus-sasl-xoauth2-idp package is installed,
+<token>XOAUTH2</token> can additionally be specified.
+</para>
+<para>
+This directive can be omitted on the server side,
+in which case the mechanism is selected
+according to the Cyrus SASL configuration.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	sasl_mechanisms "PLAIN XOAUTH2"
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>sasl_user</token> <parameter moreinfo="none">user_name</parameter></term>
+<listitem>
+<para>
+Specifies a user name for SASL authentication.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	sasl_user "MyAccount"
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>sasl_password</token> <parameter moreinfo="none">"password_string"</parameter></term>
+<listitem>
+<para>
+Specifies the password used for SASL authentication mechanisms
+such as LOGIN, PLAIN, etc.
+JWT token for the XOAUTH2 mechanism can be specified too.
+</para>
+<para>
+If this directive is not specified, the file pointed to by the
+JWT_USER environment variable, or if the environment is not set either,
+the contents of the file /tmp/jwt_user_u$lt;USER_ID$gt;/token.jwt is
+used as the password.
+Note that reading from the file is a function intended for
+use with the XOAUTH2 mechanism,
+but the password may be read from this file even when non-XOAUTH2 mechanisms
+such as LOGIN or PLAIN are used.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	sasl_password "MyPasswordString"
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>tls_cipher_suite</token> <parameter moreinfo="none">cipher_suite</parameter></term>
+<listitem>
+<para>
+Specifies the cipher suite to be used for TLS authentication,
+separated by a colon.
+Please see the following URL for possible values:
+<ulink url="https://www.openssl.org/docs/man1.1.1/man3/SSL_set_ciphersuites.html"/>
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	tls_cipher_suite "TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256"
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>tls_ca_certificate_path</token> <parameter moreinfo="none">directory</parameter></term>
+<listitem>
+<para>
+Specifies the directory where the CA certificate of the certification
+authority to be used for TLS authentication is to be placed.
+For instructions on how to install certificate files in this
+directory, see the description of <token>CApath</token> in the following URL:
+<ulink url="https://www.openssl.org/docs/man1.1.1/man3/SSL_CTX_load_verify_locations.html"/>
+</para>
+<para>
+The default value is <filename class="directory">/etc/pki/tls/certs/gfarm</filename>
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	tls_ca_certificate_path /etc/pki/tls/certs/gfarm
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>tls_ca_revocation_path</token> <parameter moreinfo="none">directory</parameter></term>
+<listitem>
+<para>
+Specifies the directory where CRLs provided by the certification authority
+used for TLS authentication are to be placed.
+</para>
+<para>
+The default value is <filename class="directory">/etc/pki/tls/certs/gfarm</filename>
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	tls_ca_revocation_path /etc/pki/tls/certs/gfarm
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>tls_ca_peer_verify_chain_path</token> <parameter moreinfo="none">directory</parameter></term>
+<listitem>
+<para>
+Specifies this directive if you want to limit the intermediate certificates
+that sign the certificate of the communicating peer in TLS authentication.
+If this setting is present, intermediate certificates other than those
+placed in this directory will not be accepted.
+</para>
+<para>
+Not set by default.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	tls_ca_peer_verify_chain_path /etc/pki/tls/certs/gfarm.chain
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>tls_certificate_file</token> <parameter moreinfo="none">filename</parameter></term>
+<listitem>
+<para>
+Specifies the filename of the certificate that represents itself
+in TLS authentication.
+</para>
+<para>
+If the environment variable X509_USER_CERT is set,
+it takes precedence over this directive.
+</para>
+<para>
+Otherwise,
+if it is client, 
+`<filename moreinfo="none">$HOME/.gfarm/usercert.pem</filename>'' 
+will be used,
+or if it is gfmd,
+``<filename moreinfo="none">/etc/pki/tls/certs/gfmd.crt</filename>''、
+well be used,
+or if it is gfsd,
+``<filename moreinfo="none">/etc/pki/tls/certs/gfsd.crt</filename>''
+will be used by default.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	tls_certificate_file /etc/pki/tls/certs/myself.crt
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>tls_certificate_chain_file</token> <parameter moreinfo="none">filename</parameter></term>
+<listitem>
+<para>
+Specifies the filename of the certificates
+of the intermediate certificate authorities
+ that signed <token>tls_certificate_file</token> in TLS authentication.
+Note that intermediate certificates do not necessarily need to be
+in a separate file, but can be grouped together
+in <token>tls_certificate_file</token>.
+</para>
+<para>
+Not set by default.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	tls_certificate_chain_file /etc/pki/tls/certs/myself_intermediate.crt
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>tls_key_file</token> <parameter moreinfo="none">filename</parameter></term>
+<listitem>
+<para>
+Specifies the filename of the private key that represents itself
+in TLS authentication.
+</para>
+<para>
+If the environment variable X509_USER_KEY is set,
+it takes precedence over this directive.
+</para>
+<para>
+Otherwise,
+if it is client, 
+``<filename moreinfo="none">$HOME/.gfarm/userkey.pem</filename>''
+will be used,
+or if it is gfmd,
+``<filename moreinfo="none">/etc/pki/tls/private/gfmd.key</filename>''
+will be used,
+or if it is gfsd,
+``<filename moreinfo="none">/etc/pki/tls/private/gfsd.key</filename>''
+will be used by default.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	tls_certificate_key /etc/pki/tls/certs/myself.key
+</literallayout>
+</listitem>
+</varlistentry>
+
+<!--
+
+<varlistentry>
+<term><token>tls_dn_type</token> <parameter moreinfo="none">dn_type</parameter></term>
+<listitem>
+<para>
+Specifies the format of the DN to be used in the GSI DN field
+of the gfuser metadatabase for tls_client_certificate authentication.
+The following values can be specified
+as <parameter moreinfo="none">dn_type</parameter>:
+</para>
+  <variablelist>
+    <varlistentry>
+      <term>gsi</term>
+      <listitem>
+      <para>Same format with the GSI authentation,
+      for example, ``/O=Company/OU=Division/CN=Name''</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>rfc2253</term>
+      <listitem>
+      <para>the format defined in RFC2253,
+      for example, ``CN=Name, OU=Division, O=Company''</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>both</term>
+      <listitem>
+      <para>allows both <token>gsi</token> and <token>rfc2253</token> formats
+      </para>
+      </listitem>
+    </varlistentry>
+  </variablelist>
+<para>
+Default is gsi.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	tls_dn_type rfc2253
+</literallayout>
+</listitem>
+</varlistentry>
+
+-->
+
+<varlistentry>
+<term><token>tls_allow_no_crl</token> <parameter moreinfo="none">validity</parameter></term>
+<listitem>
+<para>
+Set to disable if you want to require the existence of a CRL file
+corresponding to the root CA certificate for TLS communication.
+</para>
+<para>
+Default is enable, which means that the CRL file does not have to exist.
+This works similarly to the ``SSLCARevocationCheck chain no_crl_for_cert_ok'' 
+setting in Apache httpd.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	tls_allow_no_crl disable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>tls_key_update</token> <parameter moreinfo="none">validity</parameter></term>
+<listitem>
+<para>
+Set to disable to suppress the traffic key update feature
+for TLS communication.
+</para>
+<para>
+Default is enable.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	tls_key_update disable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>tls_build_chain_local</token> <parameter moreinfo="none">validity</parameter></term>
+<listitem>
+<para>
+Set to enable to build the self certificate chain and send it to peer
+in TLS communication.
+</para>
+<para>
+Defaults is disable,
+which means that the peer will build the certificate chain
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	tls_build_chain_local enable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>tls_proxy_certificate</token> <parameter moreinfo="none">validity</parameter></term>
+<listitem>
+<para>
+Set to disable to prohibit the use of proxy certificates in TLS communication.
+</para>
+<para>
+Default is enable.
+In this case, look for the client certificate in the following order:
+  <orderedlist numeration="arabic">
+  <listitem>
+  <para>proxy certificate which is specified
+  by the environment variable $X509_USER_PROXY</para>
+  </listitem>
+  <listitem>
+  <para>proxy certificate
+  in <filename moreinfo="none">/tmp/x509up_u$lt;USER_ID&gt;</filename> file</para>
+  </listitem>
+  <listitem>
+  <para>certificate/private key pair specified by
+  <token>tls_certificate_file</token> / <token>tls_key_file</token>
+  directives</para>
+  </listitem>
+  </orderedlist>
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	tls_proxy_certificate disable
+</literallayout>
+</listitem>
+</varlistentry>
 
 </variablelist>
 </refsect1>
@@ -3181,7 +3541,22 @@ The default size is 16 MiB.
 	&lt;write_verify_statement&gt; |
 	&lt;write_verify_interval_statement&gt; |
 	&lt;write_verify_retry_interval_statement&gt; |
-	&lt;write_verify_log_interval_statement&gt;</literallayout></listitem>
+	&lt;write_verify_log_interval_statement&gt; |
+	&lt;sasl_mechanisms_statement&gt; |
+	&lt;sasl_user_statement&gt; |
+	&lt;sasl_password_statement&gt; |
+	&lt;tls_cipher_suite_statement&gt; |
+	&lt;tls_ca_certificate_path_statement&gt; |
+	&lt;tls_ca_revocation_path_statement&gt; |
+	&lt;tls_ca_peer_verify_chain_path_statement&gt; |
+	&lt;tls_certificate_file_statement&gt; |
+	&lt;tls_certificate_chain_file_statement&gt; |
+	&lt;tls_key_file_statement&gt; |
+<!--	&lt;tls_dn_type_statement&gt; | -->
+	&lt;tls_allow_no_crl_statement&gt; |
+	&lt;tls_key_update_statement&gt; |
+	&lt;tls_build_chain_local_statement&gt; |
+	&lt;tls_proxy_certificate_statement&gt; </literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
@@ -3426,7 +3801,7 @@ The default size is 16 MiB.
 
 <varlistentry>
 <term>&lt;auth_method&gt; ::=</term>
-<listitem><literallayout format="linespecific" class="normal">"gsi" | "gsi_auth" | "sharedsecret"</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"sharedsecret" | "tls_sharedsecret" | "tls_client_certificate" | "gsi_auth" | "gsi" | "kerberos_auth" | "kerberos"</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
@@ -4086,6 +4461,83 @@ The default size is 16 MiB.
 <varlistentry>
 <term>&lt;write_verify_log_interval_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"write_verify_log_interval" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;sasl_mechanisms_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"sasl_mechanisms" &lt;string&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;sasl_user_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"sasl_user" &lt;string&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;sasl_password_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"sasl_password" &lt;string&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;tls_cipher_suite_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"tls_cipher_suite" &lt;string&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;tls_ca_certificate_path_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"tls_ca_certificate_path" &lt;pathname&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;tls_ca_revocation_path_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"tls_ca_revocation_path" &lt;pathname&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;tls_ca_peer_verify_chain_path_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"tls_ca_peer_verify_chain_path" &lt;pathname&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;tls_certificate_file_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"tls_certificate_file" &lt;pathname&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;tls_certificate_chain_file_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"tls_certificate_chain_file" &lt;pathname&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;tls_key_file_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"tls_key_file" &lt;pathname&gt;</literallayout></listitem>
+</varlistentry>
+
+<!--
+<varlistentry>
+<term>&lt;tls_dn_type_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"tls_dn_type" &lt;dn_type&gt;</literallayout></listitem>
+</varlistentry>
+-->
+
+<varlistentry>
+<term>&lt;tls_allow_no_crl_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"tls_allow_no_crl" &lt;validity&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;tls_key_update_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"tls_key_update" &lt;validity&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;tls_build_chain_local_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"tls_build_chain_local" &lt;validity&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;tls_proxy_certificate_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"tls_proxy_certificate" &lt;validity&gt;</literallayout></listitem>
 </varlistentry>
 
 </variablelist>

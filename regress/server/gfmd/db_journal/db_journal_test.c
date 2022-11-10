@@ -3427,7 +3427,7 @@ t_apply_mdhost_add(void)
 	ms.clustername = assert_strdup("clustername");
 	ms.port = 1234;
 	ms.flags = 2;
-	gfarm_metadb_server_set_is_memory_owned_by_fs(&ms, 0);
+	gfarm_metadb_server_set_is_memory_owned_by_fs_unlocked(&ms, 0);
 
 	TEST_ASSERT_B("mdhost_lookup",
 	    (h = mdhost_lookup(name)) == NULL);
@@ -3462,7 +3462,7 @@ t_apply_mdhost_modify(void)
 	m.ms.port = 5678;
 	m.ms.flags = 5;
 	m.modflags = 0; /* modflags is not used yet */
-	gfarm_metadb_server_set_is_memory_owned_by_fs(&m.ms, 0);
+	gfarm_metadb_server_set_is_memory_owned_by_fs_unlocked(&m.ms, 0);
 
 	TEST_ASSERT_NOERR("mdhost_modify",
 	    db_journal_apply_ops.mdhost_modify(0, &m));

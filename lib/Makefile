@@ -12,3 +12,6 @@ SUBDIRS = \
 #	$(gfshook_targets)
 
 include $(top_srcdir)/makes/subdir.mk
+
+post-install-hook:
+	[ -w / ] && ldconfig || :

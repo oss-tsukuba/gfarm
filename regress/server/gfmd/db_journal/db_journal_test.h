@@ -31,8 +31,8 @@
 /* assert for gfarm_int64_t */
 #define TEST_ASSERT_L(msg, v1, v2) \
 	if ((v1) != (v2)) { \
-		char assertbuf[BUFSIZ]; \
-		sprintf(assertbuf, "%s : expected " \
+		char assertbuf[BUFSIZ + /* to shut up gcc warning */ 256]; \
+		snprintf(assertbuf, sizeof assertbuf, "%s : expected " \
 		    "%" GFARM_PRId64 " but %" GFARM_PRId64, \
 		    (msg), (gfarm_int64_t)(v1), (gfarm_int64_t)(v2)); \
 		TEST_ASSERT(assertbuf, 0); \

@@ -269,7 +269,7 @@ case ${CA_TYPE} in
 esac
 
 mkdir -p ${OUTPUT_DIR}/${DIR}
-pushd ${OUTPUT_DIR}/${DIR}
+cd ${OUTPUT_DIR}/${DIR}
 
 # cretate newcerts/, index.txt, serial
 mkdir -p newcerts
@@ -289,7 +289,5 @@ gen_${CA_TYPE}
 RET=$?
 
 find ./ -name "*\.key" | xargs -I {} chmod 600 {}
-
-popd
 
 exit ${RET}

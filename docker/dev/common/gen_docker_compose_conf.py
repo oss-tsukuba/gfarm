@@ -19,6 +19,8 @@ hostport_s3_http = environ['GFDOCKER_HOSTPORT_S3_HTTP']
 hostport_s3_https = environ['GFDOCKER_HOSTPORT_S3_HTTPS']
 hostport_s3_direct = environ['GFDOCKER_HOSTPORT_S3_DIRECT']
 
+is_cgroup_v2 = environ['IS_CGROUP_V2']
+
 if ip_version == '4':
     nw = IPv4Network(subnet)
 elif ip_version == '6':
@@ -56,6 +58,16 @@ for i in range(0, num_gfsds):
         next(hi)
     ))
 
+if is_cgroup_v2 == 'true':
+    privileged = 'true'
+    disable_cgroupfs_mount = '#'
+    disable_security_opt = '#'
+    disable_capadd = '#'
+else:
+    privileged = 'false'
+    disable_cgroupfs_mount = ''
+    disable_security_opt = ''
+    disable_capadd = ''
 
 print('''\
 # This file was automatically generated.
@@ -66,24 +78,30 @@ version: "3.4"
 x-common:
   &common
   image: gfarm-dev:${GFDOCKER_PRJ_NAME}
+''', end='')
+
+print('''\
   volumes:
     - ./mnt:/mnt:rw
-    - /sys/fs/cgroup:/sys/fs/cgroup:ro
-  security_opt:
-    - seccomp:unconfined
-    - apparmor:unconfined
-  cap_add:
-    - SYS_ADMIN
-    - SYS_PTRACE
+    {disable_cgroupfs_mount}- /sys/fs/cgroup:/sys/fs/cgroup:ro
+  {disable_security_opt}security_opt:
+  {disable_security_opt}  - seccomp:unconfined
+  {disable_security_opt}  - apparmor:unconfined
+  {disable_capadd}cap_add:
+  {disable_capadd}  - SYS_ADMIN
+  {disable_capadd}  - SYS_PTRACE
   devices:
     - /dev/fuse:/dev/fuse
-  privileged: false
+  privileged: {privileged}
   extra_hosts:
-''', end='')
+'''.format(disable_cgroupfs_mount=disable_cgroupfs_mount,
+           disable_security_opt=disable_security_opt,
+           disable_capadd=disable_capadd,
+           privileged=privileged),
+      end='')
 
 for h in hosts:
     print("    - {}:{}".format(h.hostname, str(h.ipaddr)))
-    print("    - {}:{}".format(h.name, str(h.ipaddr)))
 
 print('''\
 

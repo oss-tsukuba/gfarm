@@ -24,6 +24,7 @@ $(OBJS): $(DEPGFARMINC) \
 	$(GFUTIL_SRCDIR)/gfevent.h \
 	$(GFARMLIB_SRCDIR)/liberror.h \
 	$(GFARMLIB_SRCDIR)/metadb_server.h \
+	$(GFARMLIB_SRCDIR)/filesystem.h \
 	$(GFARMLIB_SRCDIR)/auth.h \
 	$(GFARMLIB_SRCDIR)/gfm_client.h \
 	$(GFARMLIB_SRCDIR)/gfs_client.h \
