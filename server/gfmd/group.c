@@ -223,26 +223,6 @@ group_tenant_enter(char *groupname, struct group **gpp)
 		++tenant_name;
 	}
 
-	tenant_name = strchr(groupname, GFARM_TENANT_DELIMITER);
-	if (tenant_name == NULL) {
-		name_in_tenant = strdup_log(groupname, "group_enter");
-		if (name_in_tenant == NULL)
-			return (GFARM_ERR_NO_MEMORY);
-		tenant_name = groupname + strlen(groupname); /* i.e. "" */
-	} else {
-		size_t len = tenant_name - groupname;
-
-		name_in_tenant = malloc(len + 1);
-		if (name_in_tenant == NULL) {
-			gflog_error(GFARM_MSG_UNFIXED,
-			    "group_enter(%s): no memory", groupname);
-			return (GFARM_ERR_NO_MEMORY);
-		}
-		memcpy(name_in_tenant, groupname, len);
-		name_in_tenant[len] = '\0';
-		++tenant_name;
-	}
-
 	e = tenant_lookup_or_enter(tenant_name, &tenant);
 	if (e != GFARM_ERR_NO_ERROR) {
 		free(name_in_tenant);

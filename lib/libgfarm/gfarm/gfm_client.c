@@ -502,7 +502,7 @@ gfm_client_connection0(struct gfp_cached_connection *cache_entry,
 	struct gfm_connection *gfm_server;
 	int port, sock;
 	const char *hostname, *user;
-	char *username_in_tenant;
+	char *username_in_tenant = NULL;
 	struct gfarm_metadb_server *ms = NULL;
 	struct pollfd *pfds = NULL;
 	struct addrinfo *res = NULL;
@@ -687,6 +687,8 @@ gfm_client_connection0(struct gfp_cached_connection *cache_entry,
 	gfp_cached_connection_set_data(cache_entry, gfm_server);
 	*gfm_serverp = gfm_server;
 end:
+	if (e != GFARM_ERR_NO_ERROR)
+		free(username_in_tenant);
 	if (res)
 		gfarm_freeaddrinfo(res);
 	free(cis);
