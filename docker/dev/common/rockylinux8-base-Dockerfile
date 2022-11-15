@@ -35,6 +35,10 @@ RUN dnf -y update \
     gsi-openssh-clients \
     && globus-version \
     && dnf -y install krb5-libs krb5-devel krb5-server krb5-workstation \
+    && dnf -y install cyrus-sasl cyrus-sasl-lib cyrus-sasl-devel \
+                      cyrus-sasl-plain cyrus-sasl-gssapi \
+    && dnf -y install golang \
+    && dnf -y install gcc-c++ cmake sqlite-devel libcurl-devel libuuid-devel \
     && dnf -y install \
     nc ldns iproute net-tools bind-utils telnet tcpdump \
     gdb strace valgrind inotify-tools libtsan procps-ng \
