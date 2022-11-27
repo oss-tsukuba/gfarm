@@ -3,7 +3,10 @@
  * All rights reserved.
  */
 
-gfarm_error_t xattr_inherit(struct inode *, struct inode *,
+struct inode;
+struct tenant;
+struct peer;
+gfarm_error_t xattr_inherit(struct inode *, struct inode *, struct tenant *,
 	void **, size_t *, void **, size_t *,
 	gfarm_mode_t *, int *,
 	void **, size_t *, void **, size_t *);

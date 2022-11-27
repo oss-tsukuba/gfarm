@@ -333,7 +333,7 @@ main(int argc, char **argv)
 	free(realpath);
 
 	if (opt_user == NULL)
-		opt_user = gfm_client_username(gfm_server);
+		opt_user = gfm_client_username_in_tenant(gfm_server);
 
 	e = gfm_client_process_fd_info(gfm_server,
 	    opt_gfsd_domain, opt_user_host_domain, opt_user, opt_flags,

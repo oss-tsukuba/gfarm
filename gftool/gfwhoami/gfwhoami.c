@@ -30,10 +30,10 @@ char *program_name = "gfwhoami";
 #endif
 
 
-#define GFWHOAMI_NO_ARG_OPTIONS	"h" \
+#define GFWHOAMI_NO_ARG_OPTIONS	"fh" \
 				GFWHOAMI_KERBEROS_OPTION \
 				GFWHOAMI_GSI_OPTION
-#define GFWHOAMI_GETOPT_ARG	"P:h" \
+#define GFWHOAMI_GETOPT_ARG	"P:fh" \
 				GFWHOAMI_KERBEROS_GETOPT_ARG \
 				GFWHOAMI_GSI_GETOPT_ARG \
 				"?"
@@ -60,6 +60,7 @@ main(int argc, char **argv)
 #ifdef HAVE_GSI
 	int verbose_flag = 0;
 #endif
+	int fullname_flag = 0;
 
 	if (argc > 0)
 		program_name = basename(argv[0]);
@@ -75,6 +76,9 @@ main(int argc, char **argv)
 		switch (c) {
 		case 'P':
 			path = optarg;
+			break;
+		case 'f':
+			fullname_flag = 1;
 			break;
 #ifdef HAVE_KERBEROS
 		case 'k':
@@ -98,7 +102,9 @@ main(int argc, char **argv)
 
 	if (gfarm_realpath_by_gfarm2fs(path, &realpath) == GFARM_ERR_NO_ERROR)
 		path = realpath;
-	if ((e = gfarm_get_global_username_by_url(path, &user))
+	if ((e = (fullname_flag ?
+	    gfarm_get_global_username_by_url(path, &user) :
+	    gfarm_get_global_username_in_tenant_by_url(path, &user)))
 	    != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: gfarm_get_global_username_by_url: %s\n",
 		    program_name, gfarm_error_string(e));

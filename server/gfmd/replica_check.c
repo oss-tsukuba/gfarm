@@ -298,7 +298,7 @@ replica_check_remove_replicas(struct inode *inode,
 			REDUCED_INFO(GFARM_MSG_1004273, &remove_ok_state,
 			    "replica_check: %lld:%lld:%s@%s: removed",
 			    (long long)info->inum, (long long)info->gen,
-			    user_name(inode_get_user(inode)),
+			    user_tenant_name(inode_get_user(inode)),
 			    host_name(srcs[i]));
 			remove_num_total++;
 			remove_size_total += inode_get_size(inode);
@@ -369,7 +369,7 @@ replica_check_fix(struct replication_info *info)
 		    "replica_check: %lld:%lld:%s: "
 		    "opened in write mode, ignored",
 		    (long long)info->inum, (long long)info->gen,
-		    user_name(inode_get_user(inode)));
+		    user_tenant_name(inode_get_user(inode)));
 		return (GFARM_ERR_NO_ERROR); /* ignore */
 	}
 
@@ -379,7 +379,8 @@ replica_check_fix(struct replication_info *info)
 		gflog_error(GFARM_MSG_1003692,
 		    "replica_check: %lld:%lld:%s: replica_hosts: %s",
 		    (long long)info->inum, (long long)info->gen,
-		    user_name(inode_get_user(inode)), gfarm_error_string(e));
+		    user_tenant_name(inode_get_user(inode)),
+		    gfarm_error_string(e));
 		return (e); /* retry */
 	}
 	if (n_existing == 0) {
@@ -390,7 +391,7 @@ replica_check_fix(struct replication_info *info)
 		gflog_error(GFARM_MSG_1003624,
 		    "replica_check: %lld:%lld:%s: lost all replicas",
 		    (long long)info->inum, (long long)info->gen,
-		    user_name(inode_get_user(inode)));
+		    user_tenant_name(inode_get_user(inode)));
 		return (GFARM_ERR_NO_ERROR); /* error, ignore */
 	}
 
@@ -402,7 +403,8 @@ replica_check_fix(struct replication_info *info)
 		gflog_error(GFARM_MSG_1003628,
 		    "replica_check: %lld:%lld:%s: replica_list: %s",
 		    (long long)info->inum, (long long)info->gen,
-		    user_name(inode_get_user(inode)), gfarm_error_string(e));
+		    user_tenant_name(inode_get_user(inode)),
+		    gfarm_error_string(e));
 		return (e); /* retry */
 	}
 
@@ -414,7 +416,7 @@ replica_check_fix(struct replication_info *info)
 		REDUCED_WARN(GFARM_MSG_1004274, &hosts_down_state,
 		    "replica_check: %lld:%lld:%s: no available replica",
 		    (long long)info->inum, (long long)info->gen,
-		    user_name(inode_get_user(inode)));
+		    user_tenant_name(inode_get_user(inode)));
 		return (GFARM_ERR_NO_ERROR); /* ignore */
 	}
 
@@ -1304,7 +1306,7 @@ gfm_server_replica_check_ctrl(struct peer *peer, int from_client, int skip)
 
 	giant_lock();
 	if (!from_client || (user = peer_get_user(peer)) == NULL ||
-	    !user_is_admin(user)) {
+	    !user_is_super_admin(user)) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		gflog_debug(GFARM_MSG_1003759, "%s", gfarm_error_string(e));
 	} else {
@@ -1392,7 +1394,7 @@ gfm_server_replica_check_status(struct peer *peer, int from_client, int skip)
 
 	giant_lock();
 	if (!from_client || (user = peer_get_user(peer)) == NULL ||
-	    !user_is_admin(user)) {
+	    !user_is_super_admin(user)) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		gflog_debug(GFARM_MSG_1005041, "%s", gfarm_error_string(e));
 	} else {

@@ -12,6 +12,7 @@
 #include "inode.h"
 #include "user.h"
 #include "group.h"
+#include "acl.h"
 
 #define REPLACE_MODE_T 1
 #define CHECK_VALIDITY 1
@@ -38,7 +39,7 @@ acl_get_mode(gfarm_acl_entry_t ent)
 
 static gfarm_error_t
 acl_convert_for_setxattr_internal(
-	struct inode *inode, gfarm_acl_type_t type,
+	struct inode *inode, struct tenant *tenant, gfarm_acl_type_t type,
 	const void *in_value, size_t in_size,
 	void **out_valuep, size_t *out_sizep,
 	gfarm_mode_t *new_modep, int *mode_updatedp,
@@ -68,7 +69,7 @@ acl_convert_for_setxattr_internal(
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_notice(GFARM_MSG_1002855,
 				    "gfs_acl_check() failed by %s: %s",
-				     user_name(inode_get_user(inode)),
+				     user_tenant_name(inode_get_user(inode)),
 				    gfs_acl_error(acl_check_err));
 			gfs_acl_free(acl);
 			return (e);
@@ -94,7 +95,8 @@ acl_convert_for_setxattr_internal(
 			break;
 		case GFARM_ACL_USER:
 			gfs_acl_get_qualifier(ent, &qual);
-			if ((u = user_lookup(qual)) == NULL) {
+			if ((u = user_lookup_in_tenant(qual, tenant))
+			    == NULL) {
 				gflog_debug(GFARM_MSG_1002856,
 					    "unknown user: %s", qual);
 				gfs_acl_free(acl);
@@ -104,7 +106,8 @@ acl_convert_for_setxattr_internal(
 			break;
 		case GFARM_ACL_GROUP:
 			gfs_acl_get_qualifier(ent, &qual);
-			if ((g = group_lookup(qual)) == NULL) {
+			if ((g = group_lookup_in_tenant(qual, tenant))
+			    == NULL) {
 				gflog_debug(GFARM_MSG_1002857,
 					    "unknown group: %s", qual);
 				gfs_acl_free(acl);
@@ -157,7 +160,7 @@ acl_convert_for_setxattr_internal(
 
 gfarm_error_t
 acl_convert_for_setxattr(
-	struct inode *inode, gfarm_acl_type_t type,
+	struct inode *inode, struct tenant *tenant, gfarm_acl_type_t type,
 	void **valuep, size_t *sizep,
 	gfarm_mode_t *new_modep, int *mode_updatedp)
 {
@@ -166,7 +169,7 @@ acl_convert_for_setxattr(
 	size_t out_size;
 
 	e = acl_convert_for_setxattr_internal(
-	    inode, type, *valuep, *sizep, &out_value, &out_size,
+	    inode, tenant, type, *valuep, *sizep, &out_value, &out_size,
 	    new_modep, mode_updatedp, REPLACE_MODE_T,
 	    type == GFARM_ACL_TYPE_DEFAULT ? !CHECK_VALIDITY : CHECK_VALIDITY);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -277,6 +280,7 @@ acl_convert_for_getxattr(
 
 gfarm_error_t
 acl_inherit_default_acl(struct inode *parent, struct inode *child,
+	struct tenant *tenant,
 	void **acl_def_p, size_t *acl_def_size_p,
 	void **acl_acc_p, size_t *acl_acc_size_p,
 	gfarm_mode_t *new_modep, int *mode_updatedp)
@@ -299,7 +303,7 @@ acl_inherit_default_acl(struct inode *parent, struct inode *child,
 		return (e);
 	}
 	e = acl_convert_for_setxattr_internal(
-		child, GFARM_ACL_TYPE_ACCESS,
+		child, tenant, GFARM_ACL_TYPE_ACCESS,
 		*acl_def_p, *acl_def_size_p,
 		acl_acc_p, acl_acc_size_p, new_modep, mode_updatedp,
 		!REPLACE_MODE_T, !CHECK_VALIDITY);
@@ -343,7 +347,8 @@ acl_inherit_default_acl(struct inode *parent, struct inode *child,
 
 /* If this returns GFARM_ERR_NO_SUCH_OBJECT, the inode does not have ACL. */
 gfarm_error_t
-acl_access(struct inode *inode, struct user *user, int op)
+acl_access(struct inode *inode, struct tenant *tenant, struct user *user,
+	int op)
 {
 	gfarm_error_t e;
 	void *value;
@@ -409,12 +414,13 @@ acl_access(struct inode *inode, struct user *user, int op)
 		gfs_acl_get_tag_type(ent, &tag);
 		gfs_acl_get_qualifier(ent, &qual);
 		if (user_found == 0 && tag == GFARM_ACL_USER &&
-		    strcmp(user_name(user), qual) == 0) {
+		    user_lookup_in_tenant(qual, tenant) == user) {
 			user_mode = acl_get_mode(ent);
 			user_found = 1;
 		} else if (user_found == 0 && group_found == 0 &&
-			   tag == GFARM_ACL_GROUP &&
-			   user_in_group(user, group_lookup(qual))) {
+		    tag == GFARM_ACL_GROUP &&
+		    user_in_group(user,
+				  group_lookup_in_tenant(qual, tenant))) {
 			group_mode = acl_get_mode(ent);
 			group_found = 1;
 		} else if (tag == GFARM_ACL_MASK)

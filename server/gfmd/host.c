@@ -1877,7 +1877,7 @@ gfm_server_host_info_set(struct peer *peer, int from_client, int skip)
 	hi.hostaliases = NULL;
 
 	giant_lock();
-	if (!from_client || user == NULL || !user_is_admin(user)) {
+	if (!from_client || user == NULL || !user_is_super_admin(user)) {
 		gflog_debug(GFARM_MSG_1001563,
 			"operation is not permitted");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
@@ -1985,7 +1985,7 @@ gfm_server_host_info_modify(struct peer *peer, int from_client, int skip)
 
 	/* XXX should we disconnect a back channel to the host? */
 	giant_lock();
-	if (!from_client || user == NULL || !user_is_admin(user)) {
+	if (!from_client || user == NULL || !user_is_super_admin(user)) {
 		gflog_debug(GFARM_MSG_1001568,
 			"operation is not permitted");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
@@ -2098,7 +2098,7 @@ gfm_server_host_info_remove(struct peer *peer, int from_client, int skip)
 	 * specified host?
 	 */
 	giant_lock();
-	if (!from_client || user == NULL || !user_is_admin(user)) {
+	if (!from_client || user == NULL || !user_is_super_admin(user)) {
 		gflog_debug(GFARM_MSG_1001572,
 			"operation is not permitted");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;

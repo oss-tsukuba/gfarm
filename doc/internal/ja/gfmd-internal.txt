@@ -49,8 +49,11 @@ host_*() となっている。
 
 ■ データ構造
 
-struct host, struct user, struct group へのポインタは、
+struct host, struct user, struct group, struct tenant へのポインタは、
 gfmd が動作している間、常に有効であり、継続して利用できる。
+これらは gfarmadm グループ権限がないと作成できないので、
+これらを過剰に生成してメモリを圧迫する DoS 攻撃は想定していない。
+(すなわち gfarmadm グループ権限を付与してよいのは信頼できるユーザーのみである)
 
 ただし、削除されたホスト/ユーザー/グループも存在するので、
 場合によっては host_is_valid()/user_is_valid()/group_is_valid() で
@@ -64,6 +67,8 @@ host_is_up() で検査できる。この host_is_up() については、
 giant_lock とは別のロックで保護されているため、giant_lock 保持中で
 あっても、host_is_up() を呼び出すたびに別の結果が返ってくることがあり、
 そのことを考慮してコーディングする必要がある。
+
+struct tenant は gfmd の内部的なデータ構造であり、削除された状態は存在しない。
 
 ※ struct inode も、現在の実装では gfmd が動作している間、常に有効だが、
 　 コーディング規約としては、それを仮定していない。

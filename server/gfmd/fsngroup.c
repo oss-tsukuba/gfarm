@@ -466,7 +466,8 @@ gfm_server_fsngroup_modify(
 
 		giant_lock();
 
-		if (!from_client || user == NULL || !user_is_admin(user)) {
+		if (!from_client || user == NULL ||
+		    !user_is_super_admin(user)) {
 			gflog_debug(GFARM_MSG_1004058,
 			    "operation is not permitted");
 			e = GFARM_ERR_OPERATION_NOT_PERMITTED;

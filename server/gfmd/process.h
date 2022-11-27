@@ -7,6 +7,8 @@ struct replication_info;
 
 struct process *process_lookup(gfarm_pid_t);
 
+enum inode_close_mode;
+
 gfarm_error_t process_new_generation_wait(struct peer *, int,
 	gfarm_error_t (*)(struct peer *, void *, int *), void *, const char *);
 gfarm_error_t process_new_generation_done(struct process *, struct peer *,
@@ -21,6 +23,9 @@ void process_detach_peer(struct process *, struct peer *, const char *);
 
 gfarm_pid_t process_get_pid(struct process *);
 struct user *process_get_user(struct process *);
+struct tenant *process_get_tenant(struct process *);
+gfarm_ino_t process_get_root_inum(struct process *);
+gfarm_uint64_t process_get_root_igen(struct process *);
 
 gfarm_error_t process_verify_fd(struct process *, struct peer *, int,
 	const char *);

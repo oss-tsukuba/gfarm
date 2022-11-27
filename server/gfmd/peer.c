@@ -886,7 +886,7 @@ peer_authorized(struct peer *peer,
 
 	switch (id_type) {
 	case GFARM_AUTH_ID_TYPE_USER:
-		peer->user = user_lookup(username);
+		peer->user = user_tenant_lookup(username);
 		if (peer->user != NULL) {
 			free(username);
 			peer->username = NULL;
@@ -1290,7 +1290,8 @@ peer_get_auth_id_type(struct peer *peer)
 char *
 peer_get_username(struct peer *peer)
 {
-	return (peer->user != NULL ? user_name(peer->user) : peer->username);
+	return (peer->user != NULL ?
+	    user_tenant_name(peer->user) : peer->username);
 }
 
 const char *
@@ -1486,7 +1487,7 @@ peer_unset_pending_new_generation_by_cookie(
 		inode_new_generation_by_cookie_finish(
 		    inode, peer, cookie->id, INODE_CLOSE_V2_4, reason,
 		    inode_get_size(inode), NULL, NULL,
-		    user_name(peer_get_user(peer)));
+		    user_tenant_name(peer_get_user(peer)));
 		GFARM_HCIRCLEQ_REMOVE(cookie, cookie_link);
 		free(cookie);
 	}

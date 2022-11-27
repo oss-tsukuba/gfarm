@@ -59,6 +59,10 @@ struct process {
 
 	int nfiles;
 	struct file_opening **filetab;
+
+	struct tenant *tenant;
+	gfarm_ino_t root_inum;
+	gfarm_uint64_t root_igen;
 };
 
 static struct gfarm_id_table *process_id_table = NULL;
@@ -144,10 +148,12 @@ process_alloc(struct user *user,
 	gfarm_int32_t keytype, size_t keylen, char *sharedkey,
 	struct process **processp, gfarm_pid_t *pidp)
 {
+	gfarm_error_t e;
 	struct process *process;
 	struct file_opening **filetab;
 	int fd;
 	gfarm_int32_t pid32;
+	struct inode *root_inode;
 
 	if (process_id_table == NULL) {
 		process_id_table = gfarm_id_table_alloc(&process_id_table_ops);
@@ -165,6 +171,15 @@ process_alloc(struct user *user,
 			"'keytype' or 'keylen' is invalid");
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
+
+	e = inode_lookup_user_root(user, &root_inode);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "user %s: process_alloc failed, tenant root: %s",
+		    user_tenant_name(user), gfarm_error_string(e));
+		return (e);
+	}
+
 	GFARM_MALLOC_ARRAY(filetab, FILETAB_INITIAL);
 	if (filetab == NULL) {
 		gflog_debug(GFARM_MSG_1001595,
@@ -189,6 +204,10 @@ process_alloc(struct user *user,
 	process->filetab = filetab;
 	for (fd = 0; fd < FILETAB_INITIAL; fd++)
 		filetab[fd] = NULL;
+
+	process->tenant = user_get_tenant(user);
+	process->root_inum = inode_get_number(root_inode);
+	process->root_igen = inode_get_gen(root_inode);
 
 	*processp = process;
 	*pidp = pid32;
@@ -312,6 +331,24 @@ struct user *
 process_get_user(struct process *process)
 {
 	return (process->user);
+}
+
+struct tenant *
+process_get_tenant(struct process *process)
+{
+	return (process->tenant);
+}
+
+gfarm_ino_t
+process_get_root_inum(struct process *process)
+{
+	return (process->root_inum);
+}
+
+gfarm_uint64_t
+process_get_root_igen(struct process *process)
+{
+	return (process->root_igen);
 }
 
 gfarm_error_t
@@ -673,7 +710,7 @@ process_new_generation_done(struct process *process, struct peer *peer, int fd,
 	} else if ((e = inode_new_generation_by_fd_finish(fo->inode, peer,
 	    close_mode, result, fo->u.f.replica_spec.desired_number,
 	    fo->u.f.replica_spec.repattr, size, atime, mtime,
-	    user_name(process_get_user(process)), diag))
+	    user_tenant_name(process_get_user(process)), diag))
 	    == GFARM_ERR_NO_ERROR) {
 
 		/* resume deferred operaton: close the file */
@@ -1349,7 +1386,6 @@ process_prepare_to_replicate(struct process *process, struct peer *peer,
 {
 	gfarm_error_t e;
 	struct file_opening *fo;
-	struct user *user;
 
 	if ((e = process_get_file_opening(process, peer, fd, &fo, diag))
 	    != GFARM_ERR_NO_ERROR) {
@@ -1363,13 +1399,14 @@ process_prepare_to_replicate(struct process *process, struct peer *peer,
 			"operation is not permitted, already reopened");
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
-	if ((user = process_get_user(process)) == NULL) {
+	if (process_get_user(process) == NULL) {
 		gflog_debug(GFARM_MSG_1001656,
 			"process_get_user() failed");
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
 
-	e = inode_prepare_to_replicate(fo->inode, user, src, dst, flags, frp);
+	e = inode_prepare_to_replicate(fo->inode, process, src, dst, flags,
+	    frp);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001657,
 			"inode_prepare_to_replicate() failed: %s",
@@ -1911,6 +1948,16 @@ process_fd_info_count(void *closure, struct gfarm_id_table *idtab,
 	if (c->proc_user != NULL && c->proc_user != process->user)
 		return;
 
+	if (c->proc_user != NULL) {
+		if (process->user != c->proc_user)
+			return;
+	} else { /* all_users */
+		if (!user_is_super_admin(peer_get_user(c->peer)) &&
+		    process_get_tenant(peer_get_process(c->peer)) !=
+		    process_get_tenant(process))
+			return;
+	}
+
 	nfds = 0;
 	for (fd = 0; fd < process->nfiles; fd++) {
 		fo = process->filetab[fd];
@@ -1941,8 +1988,15 @@ process_fd_info_record(void *closure, struct gfarm_id_table *idtab,
 	if (c->e != GFARM_ERR_NO_ERROR)
 		return;
 
-	if (c->proc_user != NULL && c->proc_user != process->user)
-		return;
+	if (c->proc_user != NULL) {
+		if (process->user != c->proc_user)
+			return;
+	} else { /* all_users */
+		if (!user_is_super_admin(peer_get_user(c->peer)) &&
+		    process_get_tenant(peer_get_process(c->peer)) !=
+		    process_get_tenant(process))
+			return;
+	}
 
 	for (fd = 0; fd < process->nfiles; fd++) {
 		fo = process->filetab[fd];
@@ -1993,11 +2047,41 @@ process_fd_info_record(void *closure, struct gfarm_id_table *idtab,
 	}
 }
 
+static gfarm_error_t
+process_fd_info_lookup_user(char *username,
+	struct tenant *tenant, struct user *peer_user, struct user **up)
+{
+	struct user *u;
+
+	/* all_users? */
+	if (username[0] == '\0') {
+		if (!user_is_tenant_admin(peer_user, tenant))
+			return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+		*up = NULL; /* yes, all_users */
+		return (GFARM_ERR_NO_ERROR);
+	}
+
+	if (user_is_super_admin(peer_user))
+		u = user_tenant_lookup(username);
+	else
+		u = user_lookup_in_tenant(username, tenant);
+	if (!user_is_tenant_admin(peer_user, tenant) && u != peer_user)
+		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+	if (u == NULL)
+		return (GFARM_ERR_NO_SUCH_USER);
+
+	*up = u;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+
 gfarm_error_t
 gfm_server_process_fd_info(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
 	struct user *user = peer_get_user(peer), *proc_user;
+	struct process *process;
+	struct tenant *tenant;
 	char *gfsd_domain, *user_host_domain, *proc_username;
 	gfarm_uint64_t flags;
 	gfarm_int32_t i;
@@ -2019,24 +2103,24 @@ gfm_server_process_fd_info(struct peer *peer, int from_client, int skip)
 	}
 	giant_lock();
 
-	if (proc_username[0] == '\0')
-		proc_user = NULL;
-	else
-		proc_user = user_lookup(proc_username);
-
 	if (!from_client || user == NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		gflog_debug(GFARM_MSG_1004510, "%s: %s",
 		    diag, gfarm_error_string(e));
-	} else if (!user_is_admin(user) &&
-	    (proc_user == NULL || proc_user != peer_get_user(peer))) {
+	} else if ((process = peer_get_process(peer)) == NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_1004511, "%s: specified user '%s': %s",
-		    diag, proc_username, gfarm_error_string(e));
-	} else if (proc_username[0] != '\0' && proc_user == NULL) {
-		e = GFARM_ERR_NO_SUCH_USER;
-		gflog_debug(GFARM_MSG_1004512, "%s: specified user '%s': %s",
-		    diag, proc_username, gfarm_error_string(e));
+		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s): no process",
+		    diag, peer_get_username(peer), peer_get_hostname(peer));
+	} else if ((tenant = process_get_tenant(process)) == NULL) {
+		e = GFARM_ERR_INTERNAL_ERROR;
+		gflog_error(GFARM_MSG_UNFIXED, "%s (%s@%s): no tenant: %s",
+		    diag, peer_get_username(peer), peer_get_hostname(peer),
+		    gfarm_error_string(e));
+	} else if ((e = process_fd_info_lookup_user(proc_username,
+	    tenant, user, &proc_user)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s): user='%s': %s",
+		    diag, peer_get_username(peer), peer_get_hostname(peer),
+		    proc_username, gfarm_error_string(e));
 	} else if ((flags & ~GFM_PROTO_PROCESS_FD_FLAG_MASK) != 0) {
 		e = GFARM_ERR_INVALID_ARGUMENT;
 		gflog_debug(GFARM_MSG_1004513, "%s: flags: 0x%llx: %s",
@@ -2080,7 +2164,10 @@ gfm_server_process_fd_info(struct peer *peer, int from_client, int skip)
 			for (i = 0; i < closure.nfds; i++) {
 				fdi = &closure.fd_info[i];
 				e = gfp_xdr_send(peer_get_conn(peer),
-				    "sliillilsisiil", user_name(fdi->user),
+				    "sliillilsisiil",
+				    user_is_super_admin(user) ?
+				    user_tenant_name(fdi->user) :
+				    user_name_in_tenant(fdi->user, process),
 				    (gfarm_uint64_t)fdi->pid, fdi->fd,
 				    (gfarm_uint32_t)fdi->mode,
 				    (gfarm_uint64_t)fdi->inum, fdi->igen,

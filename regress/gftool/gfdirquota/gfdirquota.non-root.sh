@@ -2,7 +2,7 @@
 
 . ./regress.conf
 
-if $regress/bin/am_I_gfarmroot; then
+if $regress/bin/am_I_gfarm_super_root; then
 	exit $exit_unsupported
 fi
 

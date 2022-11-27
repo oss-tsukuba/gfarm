@@ -55,6 +55,7 @@
 #include "mdhost.h"
 #include "user.h"
 #include "group.h"
+#include "tenant.h"
 #include "peer.h"
 #include "inode.h"
 #include "file_copy.h"
@@ -966,7 +967,6 @@ resumer(void *arg)
 	return (NULL);
 }
 
-
 gfarm_error_t
 peer_authorize(struct peer *peer)
 {
@@ -1764,6 +1764,7 @@ gfmd_modules_init_default(int table_size)
 	if (gfarm_get_metadb_replication_enabled())
 		gfmdc_init();
 	/* directory service */
+	tenant_init();
 	host_init();
 	user_init();
 	group_init();

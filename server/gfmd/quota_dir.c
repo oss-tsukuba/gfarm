@@ -29,11 +29,11 @@
 /*
  * NOTE: directory quota related code uses the following APIs:
  *
- * - user_name_even_invalid() instead of user_name()
+ * - user_tenant_name_even_invalid() instead of user_tenant_name()
  *   to show original user names even if the users were removed
- * - user_lookup_or_enter_invalid() instead of user_lookup()
+ * - user_tenant_lookup_or_enter_invalid() instead of user_tenant_lookup()
  *   to load all directory quotas even if the owners of the quotas were removed
- * - user_lookup_including_invalid() instead of user_lookup()
+ * - user_tenant_lookup_including_invalid() instead of user_tenant_lookup()
  *   to allow the gfarmroot group to remove a directory quota which owner
  *   was removed
  * - specify USER_FOREARCH_FLAG_INCLUDING_INVALID in user_foreach()
@@ -279,10 +279,10 @@ quota_dir_add_one(
 	static const char diag[] = "quota_dir_add_one";
 
 	/*
-	 * use user_lookup_or_enter_invalid() to load a quota_dir
+	 * use user_tenant_lookup_or_enter_invalid() to load a quota_dir
 	 * which owner was already removed
 	 */
-	u = user_lookup_or_enter_invalid(dirset->username);
+	u = user_tenant_lookup_or_enter_invalid(dirset->username);
 	if (u == NULL) {
 		gflog_error(GFARM_MSG_1004646,
 		    "%s: cannot enter obsolete user %s",
@@ -338,6 +338,7 @@ gfm_server_quota_dir_get(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
 	struct process *process;
+	struct tenant *tenant;
 	struct user *user;
 	gfarm_int32_t fd;
 	struct inode *inode;
@@ -359,6 +360,11 @@ gfm_server_quota_dir_get(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1004652, "%s: %s has no process",
 		    diag, peer_get_username(peer));
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if ((tenant = process_get_tenant(process)) == NULL) {
+		e = GFARM_ERR_INTERNAL_ERROR;
+		gflog_error(GFARM_MSG_UNFIXED, "%s (%s@%s): no tenant: %s",
+		    diag, peer_get_username(peer), peer_get_hostname(peer),
+		    gfarm_error_string(e));
 	} else if ((user = process_get_user(process)) == NULL) {
 		gflog_debug(GFARM_MSG_1004653, "%s: user %s inconsistent",
 		    diag, peer_get_username(peer));
@@ -372,7 +378,7 @@ gfm_server_quota_dir_get(struct peer *peer, int from_client, int skip)
 		;
 	} else if (user != inode_get_user(inode) &&
 	    !user_is_root_for_inode(user, inode) &&
-	    (e = inode_access(inode, user, GFS_X_OK|GFS_W_OK))
+	    (e = inode_access(inode, tenant, user, GFS_X_OK|GFS_W_OK))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1004655, "%s: %s has no privilege",
 		    diag, peer_get_username(peer));
@@ -407,16 +413,16 @@ quota_dir_settable(struct inode *inode, struct dirset *ds,
 		return (GFARM_ERR_NO_ERROR);
 
 	/*
-	 * use user_is_root() instead of user_is_root_for_inode() here,
+	 * use user_is_super_root() instead of user_is_root_for_inode() here,
 	 * because inode_is_ok_to_set_dirset() may take giant_lock
 	 * too long period,
 	 * and only real gfarmroot is allowed to do such thing
 	 * usually during maintenance.
 	 */
-	if (!user_is_root(user)) {
+	if (!user_is_super_root(user)) {
 		gflog_debug(GFARM_MSG_1004657,
 		    "%s: %s specified non-empty dir %lld:%lld",
-		    diag, user_name(user),
+		    diag, user_tenant_name(user),
 		    (long long)inode_get_number(inode),
 		    (long long)inode_get_gen(inode));
 		return (GFARM_ERR_DIRECTORY_NOT_EMPTY);
@@ -424,7 +430,7 @@ quota_dir_settable(struct inode *inode, struct dirset *ds,
 		/* nested quota_dir, or has a hardlink to outside of the dir */
 		gflog_debug(GFARM_MSG_1004658,
 		    "%s: %s specified prohibited dir %lld:%lld",
-		    diag, user_name(user),
+		    diag, user_tenant_name(user),
 		    (long long)inode_get_number(inode),
 		    (long long)inode_get_gen(inode));
 		return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
@@ -438,6 +444,7 @@ gfm_server_quota_dir_set(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 	char *username, *dirsetname;
 	struct process *process;
+	struct tenant *tenant;
 	struct user *user, *dirset_user;
 	gfarm_int32_t fd;
 	struct inode *inode;
@@ -463,6 +470,11 @@ gfm_server_quota_dir_set(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1004660, "%s: %s has no process",
 		    diag, peer_get_username(peer));
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if ((tenant = process_get_tenant(process)) == NULL) {
+		e = GFARM_ERR_INTERNAL_ERROR;
+		gflog_error(GFARM_MSG_UNFIXED, "%s (%s@%s): no tenant: %s",
+		    diag, peer_get_username(peer), peer_get_hostname(peer),
+		    gfarm_error_string(e));
 	} else if ((user = process_get_user(process)) == NULL) {
 		gflog_debug(GFARM_MSG_1004661, "%s: user %s inconsistent",
 		    diag, peer_get_username(peer));
@@ -479,9 +491,12 @@ gfm_server_quota_dir_set(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1004663, "%s: %s has no privilege",
 		    diag, peer_get_username(peer));
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if ((dirset_user = user_lookup(username)) == NULL) {
+	} else if ((dirset_user = (user_is_super_admin(user) ?
+	    user_tenant_lookup(username) :
+	    user_lookup_in_tenant(username, tenant))) == NULL) {
 		e = GFARM_ERR_NO_SUCH_USER;
-	} else if (user != dirset_user && !user_is_root(user)) {
+	} else if (user != dirset_user &&
+	    !user_is_root_for_inode(user, inode)) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((ds = user_lookup_dirset(dirset_user, dirsetname))
 	    == NULL) {

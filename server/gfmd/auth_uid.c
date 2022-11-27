@@ -103,7 +103,7 @@ auth_uid_to_global_username_gsi(void *closure,
 		*auth_user_id_typep = GFARM_AUTH_ID_TYPE_USER;
 		if (global_usernamep == NULL)
 			return (GFARM_ERR_NO_ERROR);
-		global_username = strdup_log(user_name(u), diag);
+		global_username = strdup_log(user_tenant_name(u), diag);
 		if (global_username == NULL)
 			return (GFARM_ERR_NO_MEMORY);
 		*global_usernamep = global_username;
@@ -193,7 +193,7 @@ auth_uid_to_global_username_server_auth(void *closure,
 		}
 		if (global_usernamep == NULL)
 			return (GFARM_ERR_NO_ERROR);
-		global_username = strdup_log(user_name(u), diag);
+		global_username = strdup_log(user_tenant_name(u), diag);
 		if (global_username == NULL)
 			return (GFARM_ERR_NO_MEMORY);
 		*global_usernamep = global_username;
@@ -292,7 +292,7 @@ auth_uid_to_global_username_sharedsecret(void *closure,
 		return (GFARM_ERR_AUTHENTICATION);
 
 	giant_lock();
-	u = user_lookup(auth_user_id);
+	u = user_tenant_lookup(auth_user_id);
 	giant_unlock();
 
 	if (u == NULL) {
@@ -306,7 +306,7 @@ auth_uid_to_global_username_sharedsecret(void *closure,
 	}
 	if (global_usernamep == NULL)
 		return (GFARM_ERR_NO_ERROR);
-	global_username = strdup_log(user_name(u), diag);
+	global_username = strdup_log(user_tenant_name(u), diag);
 	if (global_username == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	*global_usernamep = global_username;

@@ -2,7 +2,7 @@
 
 . ./regress.conf
 
-$regress/bin/am_I_gfarmadm
+$regress/bin/am_I_gfarm_super_adm
 if test $? -ne 0; then
     exit $exit_unsupported
 fi

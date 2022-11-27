@@ -30,7 +30,7 @@ clean_test() {
 
 check_supported_env() {
   diag=check_supported_env
-  if $regress/bin/am_I_gfarmadm; then
+  if $regress/bin/am_I_gfarm_super_adm; then
     :
   else
     exit $exit_unsupported

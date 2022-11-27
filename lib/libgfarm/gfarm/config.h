@@ -186,6 +186,8 @@ extern int gfarm_read_only;
 extern int gfarm_simultaneous_replication_receivers;
 extern int gfarm_replication_busy_host;
 
+char *gfarm_alloc_name_in_tenant(const char *);
+
 gfarm_error_t gfarm_get_global_username_by_host_for_connection_cache(
 	const char *, int, char **);
 

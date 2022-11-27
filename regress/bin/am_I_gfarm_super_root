@@ -1,0 +1,5 @@
+#!/bin/sh
+
+. ./regress.conf
+
+$regress/bin/am_I_in_default_tenant && $regress/bin/am_I_gfarmroot
