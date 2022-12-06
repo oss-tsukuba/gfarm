@@ -4,19 +4,4 @@ FROM gfarm-dev:centos9-base
 ARG GFDOCKER_NUM_JOBS
 ARG GFDOCKER_PRIMARY_USER
 
-ARG GFDOCKER_SCRIPT_PATH="/home/${GFDOCKER_PRIMARY_USER}/gfarm/docker/dev/common"
-
-### use OPENSSL_PACKAGE_NAME
-USER "$GFDOCKER_PRIMARY_USER"
-RUN "${GFDOCKER_SCRIPT_PATH}/rpm-build-gfarm.sh"
-
-USER root
-RUN "${GFDOCKER_SCRIPT_PATH}/rpm-install-gfarm.sh"
-
-USER "$GFDOCKER_PRIMARY_USER"
-RUN "${GFDOCKER_SCRIPT_PATH}/rpm-build-gfarm2fs.sh"
-
-USER root
-RUN "${GFDOCKER_SCRIPT_PATH}/rpm-install-gfarm2fs.sh"
-
-RUN mandb
+RUN "/home/${GFDOCKER_PRIMARY_USER}/gfarm/docker/dev/common/rpm-do-all.sh"

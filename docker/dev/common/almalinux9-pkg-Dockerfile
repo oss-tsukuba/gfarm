@@ -3,9 +3,5 @@ FROM gfarm-dev:almalinux9-base
 # System independent
 ARG GFDOCKER_NUM_JOBS
 ARG GFDOCKER_PRIMARY_USER
-RUN GFDOCKER_SCRIPT_PATH="/home/${GFDOCKER_PRIMARY_USER}/gfarm/docker/dev/common" \
-   && sudo -u "${GFDOCKER_PRIMARY_USER}" "${GFDOCKER_SCRIPT_PATH}/rpm-build-gfarm.sh" \
-   && "${GFDOCKER_SCRIPT_PATH}/rpm-install-gfarm.sh" \
-   && sudo -u "${GFDOCKER_PRIMARY_USER}" "${GFDOCKER_SCRIPT_PATH}/rpm-build-gfarm2fs.sh" \
-   && "${GFDOCKER_SCRIPT_PATH}/rpm-install-gfarm2fs.sh" \
-   && mandb
+
+RUN "/home/${GFDOCKER_PRIMARY_USER}/gfarm/docker/dev/common/rpm-do-all.sh"

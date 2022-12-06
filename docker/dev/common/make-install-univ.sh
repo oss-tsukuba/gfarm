@@ -7,13 +7,6 @@
 # ARG GFDOCKER_PRIMARY_USER
 # ARG GFDOCKER_ENABLE_PROXY
 
-# for SASL (optional)
-# ARG GFDOCKER_SASL_MECH_LIST (optional)
-# ARG GFDOCKER_SASL_LOG_LEVEL (optional)
-# ARG GFDOCKER_SASL_XOAUTH2_SCOPE (optional)
-# ARG GFDOCKER_SASL_XOAUTH2_AUD (optional)
-# ARG GFDOCKER_SASL_XOAUTH2_USER_CLAIM (optional)
-
 # RUN "/home/${GFDOCKER_PRIMARY_USER}/gfarm/docker/dev/common/make-install-univ.sh"
 
 set -eux
@@ -47,15 +40,6 @@ su - "$GFDOCKER_PRIMARY_USER" -c " \
     && make -j '${GFDOCKER_NUM_JOBS}' \
 " \
   && cd "/home/${GFDOCKER_PRIMARY_USER}/gfarm" \
-  && make install || exit 1
-
-su - "$GFDOCKER_PRIMARY_USER" -c " \
-  cd ~/gfarm2fs \
-    && (test -f Makefile && make distclean || true) \
-    && eval \"${CFLAGS_ARGS}\" ./configure --with-gfarm=/usr/local \
-    && make -j '${GFDOCKER_NUM_JOBS}' \
-" \
-  && cd "/home/${GFDOCKER_PRIMARY_USER}/gfarm2fs" \
   && make install || exit 1
 
 su - "$GFDOCKER_PRIMARY_USER" -c " \
@@ -102,40 +86,20 @@ fi
 
 # autoconf at least until version 2.69 does not detect /usr/lib64 automatically
 # as ${libdir}, thus detect it by myself
-if [ -f /usr/lib64/sasl2/libsasldb.so ]; then
-  sasl_libdir=/usr/lib64
-elif [ -f /usr/lib/sasl2/libsasldb.so ]; then
-  sasl_libdir=/usr/lib
-else
-  sasl_libdir=
-fi
-if [ -d "/home/${GFDOCKER_PRIMARY_USER}/cyrus-sasl-xoauth2-idp" -a \
-     -n "${sasl_libdir}" -a -f /usr/include/sasl/sasl.h -a \
-     -f ${scitokens_prefix}/include/scitokens/scitokens.h -a \
-     "${GFDOCKER_SASL_MECH_LIST+set}" = "set" ]
-then
-  # NOTE: this installs to /usr/lib64/sasl2/ instead of /usr/local/lib64/sasl2/
-  su - "$GFDOCKER_PRIMARY_USER" -c "cd ~/cyrus-sasl-xoauth2-idp &&
-      ./autogen.sh &&
-      ./configure --libdir="${sasl_libdir}" &&
-      make" &&
-    cd "/home/${GFDOCKER_PRIMARY_USER}/cyrus-sasl-xoauth2-idp" &&
-    make install || exit 1
-  (
-    cat <<_EOF_
-mech_list: ${GFDOCKER_SASL_MECH_LIST}
-log_level: ${GFDOCKER_SASL_LOG_LEVEL}
-xoauth2_scope: ${GFDOCKER_SASL_XOAUTH2_SCOPE}
-xoauth2_aud: ${GFDOCKER_SASL_XOAUTH2_AUD}
-xoauth2_user_claim: ${GFDOCKER_SASL_XOAUTH2_USER_CLAIM}
-_EOF_
-
-    if "${GFDOCKER_ENABLE_PROXY}"; then
-      cat <<_EOF_
-proxy: ${https_proxy}
-_EOF_
-    fi
-  ) >"${sasl_libdir}/sasl2/gfarm.conf"
+if pkg-config --exists libsasl2; then
+  sasl_libdir=$(pkg-config --variable=libdir libsasl2)
+  if [ -d "/home/${GFDOCKER_PRIMARY_USER}/cyrus-sasl-xoauth2-idp" -a \
+       -f /usr/include/sasl/sasl.h -a \
+       -f ${scitokens_prefix}/include/scitokens/scitokens.h ]
+  then
+    # NOTE: this installs to /usr/lib64/sasl2/ instead of /usr/local/lib64/sasl2/
+    su - "$GFDOCKER_PRIMARY_USER" -c "cd ~/cyrus-sasl-xoauth2-idp &&
+	./autogen.sh &&
+	./configure --libdir="${sasl_libdir}" &&
+	make" &&
+      cd "/home/${GFDOCKER_PRIMARY_USER}/cyrus-sasl-xoauth2-idp" &&
+      make install || exit 1
+  fi
 fi
 
 # for autofs

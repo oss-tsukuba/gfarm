@@ -3,4 +3,4 @@
 set -eux
 
 GFDOCKER_SCRIPT_PATH="`dirname $0`"
-"${GFDOCKER_SCRIPT_PATH}/rpm-build.sh" gfarm2fs
+"${GFDOCKER_SCRIPT_PATH}/rpm-install.sh" -O jwt-logon
