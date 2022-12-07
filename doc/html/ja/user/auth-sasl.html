@@ -51,6 +51,7 @@ SASL 認証では TLS で暗号化された通信路を利用するため、あ�
 Cyrus SASL の設定を置くディレクトリ
 (RHEL 系 Linux distribution の場合だと /usr/lib64/sasl2) に
 以下の内容の設定を gfarm.conf という名称で置きます。
+<BR>
 なおこの文書では以降このファイルを
 「Cyrus SASL の設定ファイル」と呼称します。
 
@@ -70,6 +71,7 @@ mech_list: PLAIN XOAUTH2
 </pre>
 このファイルが存在しない場合、システムにインストールされている
 SASL メカニズムすべてが利用候補となります。
+<BR>
 しかしこれはトラブルのもととなりますので、
 実際に利用するメカニズムのみを指定してください。
 
@@ -84,8 +86,8 @@ Cyrus SASL の設定ファイルに
 <pre>
 log_level: 7
 mech_list: XOAUTH2
-xoauth2_scope: JWTのサーバー側検証時に要求する scope
-xoauth2_aud: JWTのサーバー側検証時に要求する audience
+xoauth2_scope: JWTのサーバー側検証時にJWTへ要求する scope
+xoauth2_aud: JWTのサーバー側検証時にJWTへ要求する audience
 xoauth2_user_claim: JWT中でユーザーIDとして用いるclaimのkey名
 </pre>
 
@@ -107,7 +109,7 @@ sasl_user の設定がされている場合には xoauth2_user_claim の設定�
 <pre>
 proxy: http://proxyサーバー名:proxyポート番号/
 </pre>
-「proxyサーバー名」および「proxyボート番号」は、適宜修正してください。
+「proxyサーバー名」および「proxyポート番号」は、適宜修正してください。
 
 <HR>
 <H2>サーバー側設定</H2>
@@ -121,14 +123,13 @@ auth enable sasl *
 auth enable sasl_auth *
 </pre>
 
-利用する SASL のメカニズムを制限したい場合には、
-さらに以下のような設定を追加して利用するメカニズムを限定してください。
+また以下のような設定を追加して利用するメカニズムを限定してください。
 <pre>
 sasl_mechanisms "PLAIN XOAUTH2"
 </pre>
 
 セキュリティ確保のため、実際に利用するメカニズムのみを指定してください。
-
+<BR>
 その他の設定については、Cyrus SASL のドキュメントに従ってください。
 
 <HR>
@@ -189,16 +190,20 @@ gfarm2.conf に設定することも可能です。
 さらに環境変数 JWT_FILE で指定されたファイル、
 あるいはもし環境変数が設定されていない場合には
 ファイル /tmp/jwt_user_u＜自身のUNIX_UID＞/token.jwt に、
-XOAUTH2 で用いるアクセストークンを置き、
+XOAUTH2 で用いるアクセストークンを置いてください。
 このファイルが他のユーザーに読みとられないように、
-chmod(1) コマンドを用いてファイルのモードを 0600 ないし 0400 に
+chmod(1) コマンドを用いて JWT ファイルのモードを 0600 ないし 0400 に
 設定してください。
 <p>
 jwt-logon(1) コマンドや jwt-agent(1) コマンドを用いると、
 トークンを取得してこのファイルに適切なモードで JWT を設定することができます。
 
 <p>
-なお sasl_password 設定で、JWT の内容を直書きすることも可能です。
+なお環境変数 GFARM_CONFIG_FILE で指定されたファイル、
+あるいはもし環境変数が設定されていない場合には
+ホームディレクトリの .gfarm2rc ファイル中の
+sasl_password ディレクティブで、
+JWT の内容を直に設定することも可能です。
 この場合、他のユーザーに読みとられないように、
 chmod(1) コマンドを用いてファイルのモードを 0600 ないし 0400 に
 設定してください。

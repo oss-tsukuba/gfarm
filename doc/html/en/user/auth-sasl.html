@@ -2,7 +2,7 @@
 <HTML><HEAD>
 <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <META http-equiv="Content-Style-Type" content="text/css">
-<TITLE>SASL 認証</TITLE>
+<TITLE>SASL Authentication</TITLE>
 
 <STYLE type="text/css">
 <!-- /* BEGIN ... hide style from old browser */
@@ -13,195 +13,199 @@ pre { background:#e0ffff; margin-left: 2em; margin-right: 2em }
 </HEAD>
 <BODY><A href="http://oss-tsukuba.org/software/gfarm">
 <IMG alt="[GFARM LOGO]" src="../../pic/gfarm-logo.gif" align=right border=0></A>
-<A href="../../index.html">文書集</A> &gt;
-<A href="index.html">ユーザーズマニュアル</A> &gt;
-SASL 認証
+<A href="../../index.html">documents</A> &gt;
+<A href="index.html">User's Manual</A> &gt;
+SASL Authentication
 
 <HR>
 <H1>SASL 認証</H1>
-<A href="../../en/user/auth-sasl.html">English</A> | 日本語
+English | <A href="../../ja/user/auth-sasl.html">Japanese</A>
 <p>
 <p>
-この文書は、Gfarm の SASL 認証で必要な設定について説明します。
+This document describes the settings required for SASL authentication in Gfarm.
 
 <p>
-Gfarm における SASL認証には以下の2種類があります。
+There are two types of SASL authentication in Gfarm.
 <DL>
   <DT>sasl
-    <DD>認証処理のみならずメタデータアクセスおよびファイルアクセスまで
-      TLS で暗号化された通信路上で行ないます。
+    <DD>Not only the authentication process, but also metadata access
+        and file access are performed over a TLS-encrypted communication.
   <DT>sasl_auth
-    <DD>SASL による認証フェーズのみ TLS で暗号化し、
-        その後のメタデータアクセスおよびファイルアクセスは平文で通信します。
+    <DD>Only the SASL authentication phase is encrypted with TLS,
+        and subsequent metadata access and file access are
+        communicated in plain text.
 </DL>
 
 <HR>
-<H2>TLS 設定</H2>
+<H2>TLS configuiration</H2>
 
-SASL 認証では TLS で暗号化された通信路を利用するため、あらかじめ
+Since SASL authentication uses TLS-encrypted communication,
+the settings described in
 <A HREF="auth-tls.html#TLS-common-setting">
-「TLS 認証」の
-「tls_sharedsecret 認証、tls_client_certificate 認証、sasl_auth 認証
-  および sasl 認証に共通の設定」の項にある設定</A>を
-実施しておく必要があります。
+"Common settings for tls_sharedsecret authentication,
+    tls_client_certificate authentication,
+    sasl authentication and sasl_auth authentication"
+in "TLS Authentication"</A>
+must be configured in advance.
 
 <HR>
-<H2>サーバーとクライアントに共通する設定</H2>
+<H2>Settings common to server and client</H2>
 
-Cyrus SASL の設定を置くディレクトリ
-(RHEL 系 Linux distribution の場合だと /usr/lib64/sasl2) に
-以下の内容の設定を gfarm.conf という名称で置きます。
-なおこの文書では以降このファイルを
-「Cyrus SASL の設定ファイル」と呼称します。
+Place the following configuration file named gfarm.conf
+in the Cyrus SASL configuration directory
+(/usr/lib64/sasl2 in the case of RHEL-based Linux distribution).
+<BR>
+In this document, this file will be referred to
+as the "Cyrus SASL configuration file".
 
 <pre>
 log_level: 7
-mech_list: 利用するSASL認証メカニズムを空白で区切って指定
-…その他、メカニズム固有の設定が必要な場合は記述する
+mech_list: the SASL authentication mechanisms to be used
+...If other mechanism-specific settings are required, describe them.
 </pre>
 
-mech_list には以下のように空白で区切って複数のメカニズムを
-記述できます。
-
+Multiple mechanisms can be described in mech_list,
+separated by spaces as follows.
 <p>
-例:
+For example,
 <pre>
 mech_list: PLAIN XOAUTH2
 </pre>
-このファイルが存在しない場合、システムにインストールされている
-SASL メカニズムすべてが利用候補となります。
-しかしこれはトラブルのもととなりますので、
-実際に利用するメカニズムのみを指定してください。
+If this file is not present, all SASL mechanisms installed on the system
+are candidates for use.
+<BR>
+However, this can lead to problems,
+so only specify the mechanisms that you actually use.
 
-
-<H3>XOAUTH2 メカニズム用設定</H3>
+<H3>Configuration for XOAUTH2 mechanism</H3>
 
 <p>
-XOAUTH2 メカニズムを利用する場合、
-cyrus-sasl-xoauth2-idp パッケージをインストールし、
-Cyrus SASL の設定ファイルに
-以下の内容の設定を gfarm.conf という名称で置きます。
+To use the XOAUTH2 mechanism, install the cyrus-sasl-xoauth2-idp package
+and place the following settings in the Cyrus SASL configuration file
+under the name gfarm.conf.
 <pre>
 log_level: 7
 mech_list: XOAUTH2
-xoauth2_scope: JWTのサーバー側検証時に要求する scope
-xoauth2_aud: JWTのサーバー側検証時に要求する audience
-xoauth2_user_claim: JWT中でユーザーIDとして用いるclaimのkey名
+xoauth2_scope: scope required in JWT, used for server-side validation
+xoauth2_aud: audience required in JWT, used for server-side validation
+xoauth2_user_claim: key name of claim to be used as user ID in JWT
 </pre>
 
 <p>
-以上のうちクライアント側では xoauth2_scope および xoauth2_aud の設定は
-省略できます。
+Of the above, xoauth2_scope and xoauth2_aud settings can be omitted
+on the client side.
 
 <p>
-またクライアント側では、
-環境変数 GFARM_CONFIG_FILE で指定されたファイル、
-あるいはもし環境変数が設定されていない場合の
-ホームディレクトリの .gfarm2rc 内で、
-sasl_user の設定がされている場合には xoauth2_user_claim の設定も
-省略できます。
+xoauth2_user_claim setting also can be omitted on the client side,
+if sasl_user is set in the file specified
+ by the GFARM_CONFIG_FILE environment variable,
+or in .gfarm2rc in the home directory.
 
 <p>
-なおサーバー側は IdP へアクセスしますが、このときに Web proxy サーバーを
-介す必要がある場合にはさらに下記の設定も追加します。
+The server side accesses the IdP,
+ but if you need to use a web proxy server for this,
+add the following setting:
 <pre>
-proxy: http://proxyサーバー名:proxyポート番号/
+proxy: http://PROXY-SERVER-NAME:PROXY-PORT-NUMBER/
 </pre>
-「proxyサーバー名」および「proxyボート番号」は、適宜修正してください。
+Modify "PROXY-SERVER-NAME" and "PROXY-PORT-NUMBER" as appropriate.
 
 <HR>
-<H2>サーバー側設定</H2>
+<H2>Server-side configuration</H2>
 
-gfmd.conf や gfsd の読む gfarm2.conf に、以下のような設定を追加します。
+Add the following settings to gfmd.conf for gfmd,
+and gfarm2.conf which is read by gfsd
 <pre>
 auth enable sasl *
 </pre>
-あるいは
+or
 <pre>
 auth enable sasl_auth *
 </pre>
 
-利用する SASL のメカニズムを制限したい場合には、
-さらに以下のような設定を追加して利用するメカニズムを限定してください。
+Also, please add the following settings to limit the mechanisms used.
 <pre>
 sasl_mechanisms "PLAIN XOAUTH2"
 </pre>
 
-セキュリティ確保のため、実際に利用するメカニズムのみを指定してください。
-
-その他の設定については、Cyrus SASL のドキュメントに従ってください。
+For security purposes, specify only the mechanism actually used. 
+<BR>
+For other settings, follow the Cyrus SASL documentation.
 
 <HR>
-<H2>クライアント側設定</H2>
+<H2>Client-side configuration</H2>
 
-環境変数 GFARM_CONFIG_FILE で指定されたファイル、
-あるいはもし環境変数が設定されていない場合には
-ホームディレクトリの .gfarm2rc に、
-利用するSASLメカニズムに応じた下記のような設定を行ないます。
+Set the file specified by the GFARM_CONFIG_FILE environment variable,
+or, if the environment variable is not set,
+in .gfarm2rc in your home directory, as follows,
+depending on the SASL mechanism you are using.
 
-<H3>ANONYMOUS メカニズムの場合</H3>
+<H3>For ANONYMOUS mechanism</H3>
 
 <pre>
 sasl_mechanisms "ANONYMOUS"
 sasl_user "dummy-user-name"
 </pre>
 
-anonymous メカニズムの設定にはユーザ特有の情報は含まれていませんから、
-gfarm2.conf に設定することも可能です。
+Since the anonymous mechanism configuration does not contain
+any user-specific information, it can also be set in gfarm2.conf.
 
-<H3>PLAIN メカニズムの場合</H3>
+<H3>For PLAIN mechanism</H3>
 
 <pre>
 sasl_mechanisms "PLAIN"
-sasl_user "ユーザー名"
-sasl_password "パスワード"
+sasl_user "USER-NAME"
+sasl_password "PASSWORD"
 </pre>
+Modify "USER-NAME" and "PASSWORD" as appropriate.
+<P>
+To prevent other users from reading this file,
+set the mode of the file to 0600 or 0400 using the chmod(1) command.  
 
-このファイルが他のユーザーに読みとられないように、
-chmod(1) コマンドを用いてファイルのモードを 0600 ないし 0400 に
-設定してください。
-
-<H3>LOGIN メカニズムの場合</H3>
+<H3>For LOGIN mechanism</H3>
 
 <pre>
 sasl_mechanisms "LOGIN"
-sasl_user "ユーザー名"
-sasl_password "パスワード"
+sasl_user "USER-NAME"
+sasl_password "PASSWORD"
 </pre>
+Modify "USER-NAME" and "PASSWORD" as appropriate.
+<P>
+To prevent other users from reading this file,
+set the mode of the file to 0600 or 0400 using the chmod(1) command.  
 
-このファイルが他のユーザーに読みとられないように、
-chmod(1) コマンドを用いてファイルのモードを 0600 ないし 0400 に
-設定してください。
-
-<H3>XOAUTH2 メカニズムの場合</H3>
+<H3>For XOAUTH2 mechanism</H3>
 
 <pre>
 sasl_mechanisms "XOAUTH2"
-sasl_user "ユーザー名"
+sasl_user "USER-NAME"
 </pre>
-
-Cyrus SASL の設定ファイルに xoauth2_user_claim が設定されている場合は
-sasl_user の指定は省略できます。
-その場合、ユーザ固有の設定はありませんから、sasl_mechanism のみを
-gfarm2.conf に設定することも可能です。
-
-<p>
-さらに環境変数 JWT_FILE で指定されたファイル、
-あるいはもし環境変数が設定されていない場合には
-ファイル /tmp/jwt_user_u＜自身のUNIX_UID＞/token.jwt に、
-XOAUTH2 で用いるアクセストークンを置き、
-このファイルが他のユーザーに読みとられないように、
-chmod(1) コマンドを用いてファイルのモードを 0600 ないし 0400 に
-設定してください。
-<p>
-jwt-logon(1) コマンドや jwt-agent(1) コマンドを用いると、
-トークンを取得してこのファイルに適切なモードで JWT を設定することができます。
+Modify "USER-NAME" and "PASSWORD" as appropriate.
+<P>
+If xoauth2_user_claim is set in the Cyrus SASL configuration file,
+the sasl_user specification can be omitted.
+In that case, since there is no user-specific setting,
+only sasl_mechanism can be set in gfarm2.conf.
 
 <p>
-なお sasl_password 設定で、JWT の内容を直書きすることも可能です。
-この場合、他のユーザーに読みとられないように、
-chmod(1) コマンドを用いてファイルのモードを 0600 ないし 0400 に
-設定してください。
+In addition, place the access token used by XOAUTH2
+in the file specified by the JWT_FILE environment variable,
+or in the file /tmp/jwt_user_u&lt;YOUR-UNIX-UID$gt;/token.jwt
+if the environment variable is not set.
+To prevent other users from reading this file,
+set the mode of the JWT file to 0600 or 0400 using the chmod(1) command.  
+<p>
+The jwt-logon(1) and jwt-agent(1) commands can be used
+to obtain a token and set JWT in the appropriate mode for this file.
+
+<p>
+You can also set the JWT contents directly
+by using the sasl_password directive
+in the file specified by the GFARM_CONFIG_FILE environment variable,
+or in the .gfarm2rc file in your home directory
+if the environment variable is not set.
+In this case, use the chmod(1) command to set the mode of the file
+to 0600 or 0400 to prevent other users from reading it.
 
 <HR>
 <H2>SEE ALSO</H2>
