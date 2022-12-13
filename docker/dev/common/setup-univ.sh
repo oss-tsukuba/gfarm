@@ -203,7 +203,7 @@ root_authkey="${root_dotssh}/authorized_keys"
 user1="${GFDOCKER_USERNAME_PREFIX}1"
 user1_dotssh="/home/${user1}/.ssh"
 user1_authkey="${user1_dotssh}/authorized_keys"
-mkdir "${root_dotssh}"
+mkdir -p "${root_dotssh}"
 cat "${user1_authkey}" >> "${root_authkey}"
 
 base_gfservicerc="${gfarm_src_path}/docker/dev/common/rc.gfservice"
