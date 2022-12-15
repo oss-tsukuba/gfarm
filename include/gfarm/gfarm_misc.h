@@ -74,7 +74,8 @@ int gfarm_get_client_file_bufsize(void);
 void gfarm_set_client_digest_check(int);
 
 /*
- * authentication
+ * used by external programs (e.g. gfarm-gridftp-dsi)
+ * to pass a (delegated) credentail to libgfarm
  */
 gfarm_error_t gfarm_auth_method_gsi_available(void);
 gfarm_error_t gfarm_auth_method_kerberos_available(void);
