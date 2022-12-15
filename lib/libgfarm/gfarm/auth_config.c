@@ -352,17 +352,6 @@ gfarm_auth_method_kerberos_available(void)
 #endif
 }
 
-gfarm_error_t
-gfarm_auth_method_sasl_available(void)
-{
-#if defined(HAVE_CYRUS_SASL) && defined(HAVE_TLS_1_3)
-	/* XXX TODO(?) check whether JWT is available or not? */
-	return (GFARM_ERR_NO_ERROR);
-#else
-	return (GFARM_ERR_PROTOCOL_NOT_SUPPORTED);
-#endif
-}
-
 static gfarm_int32_t
 gfarm_auth_method_get_available(int is_server,
 	enum gfarm_auth_id_type self_type)
