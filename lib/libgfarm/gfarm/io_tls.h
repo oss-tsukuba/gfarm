@@ -11,6 +11,7 @@
 #define GFP_XDR_TLS_CLIENT_USE_PROXY_CERTIFICATE	4
 						/* tls_proxy_certificate */
 
+struct gfp_xdr;
 gfarm_error_t gfp_xdr_tls_alloc(struct gfp_xdr *, int, int);
 	/* gfp_xdr_tls_alloc(conn, fd, flags) */
 
