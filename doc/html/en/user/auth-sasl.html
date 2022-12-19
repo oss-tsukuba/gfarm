@@ -2,7 +2,7 @@
 <HTML><HEAD>
 <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <META http-equiv="Content-Style-Type" content="text/css">
-<TITLE>TLS 認証</TITLE>
+<TITLE>SASL Authentication</TITLE>
 
 <STYLE type="text/css">
 <!-- /* BEGIN ... hide style from old browser */
@@ -13,149 +13,199 @@ pre { background:#e0ffff; margin-left: 2em; margin-right: 2em }
 </HEAD>
 <BODY><A href="http://oss-tsukuba.org/software/gfarm">
 <IMG alt="[GFARM LOGO]" src="../../pic/gfarm-logo.gif" align=right border=0></A>
-<A href="../../index.html">文書集</A> &gt;
-<A href="index.html">ユーザーズマニュアル</A> &gt;
-SASL 認証
+<A href="../../index.html">documents</A> &gt;
+<A href="index.html">User's Manual</A> &gt;
+SASL Authentication
 
 <HR>
 <H1>SASL 認証</H1>
-<A href="../../en/user/auth-sasl.html">English</A> | 日本語
+English | <A href="../../ja/user/auth-sasl.html">Japanese</A>
 <p>
 <p>
-この文書は、Gfarm の SASL 認証で必要な設定について説明します。
-</p>
+This document describes the settings required for SASL authentication in Gfarm.
 
 <p>
-SASL認証には、
-TLS で暗号化された通信路で認証処理のみならず ファイルアクセスまで
-行なう sasl と、
-認証フェーズのみ TLS で暗号化し、その後のファイルアクセスは
-平文で行なう sasl_auth の 2種類があります。
-</p>
+There are two types of SASL authentication in Gfarm.
+<DL>
+  <DT>sasl
+    <DD>Not only the authentication process, but also metadata access
+        and file access are performed over a TLS-encrypted communication.
+  <DT>sasl_auth
+    <DD>Only the SASL authentication phase is encrypted with TLS,
+        and subsequent metadata access and file access are
+        communicated in plain text.
+</DL>
 
 <HR>
-<H2>TLS 設定</H2>
+<H2>TLS configuiration</H2>
 
-SASL 認証では TLS で暗号化された通信路を利用するため、あらかじめ
+Since SASL authentication uses TLS-encrypted communication,
+the settings described in
 <A HREF="auth-tls.html#TLS-common-setting">
-「TLS 認証」の
-「tls_sharedsecret 認証と tls_client_certificate 認証に共通の設定」の項
-にある設定</A>を実施しておく必要があります。
+"Common settings for tls_sharedsecret authentication,
+    tls_client_certificate authentication,
+    sasl authentication and sasl_auth authentication"
+in "TLS Authentication"</A>
+must be configured in advance.
 
 <HR>
-<H2>サーバー側設定</H2>
+<H2>Settings common to server and client</H2>
 
-gfmd.conf や gfsd の読む gfarm2.conf に、以下のような設定を追加します。
+Place the following configuration file named gfarm.conf
+in the Cyrus SASL configuration directory
+(/usr/lib64/sasl2 in the case of RHEL-based Linux distribution).
+<BR>
+In this document, this file will be referred to
+as the "Cyrus SASL configuration file".
+
+<pre>
+log_level: 7
+mech_list: the SASL authentication mechanisms to be used
+...If other mechanism-specific settings are required, describe them.
+</pre>
+
+Multiple mechanisms can be described in mech_list,
+separated by spaces as follows.
+<p>
+For example,
+<pre>
+mech_list: PLAIN XOAUTH2
+</pre>
+If this file is not present, all SASL mechanisms installed on the system
+are candidates for use.
+<BR>
+However, this can lead to problems,
+so only specify the mechanisms that you actually use.
+
+<H3>Configuration for XOAUTH2 mechanism</H3>
+
+<p>
+To use the XOAUTH2 mechanism, install the cyrus-sasl-xoauth2-idp package
+and place the following settings in the Cyrus SASL configuration file
+under the name gfarm.conf.
+<pre>
+log_level: 7
+mech_list: XOAUTH2
+xoauth2_scope: scope required in JWT, used for server-side validation
+xoauth2_aud: audience required in JWT, used for server-side validation
+xoauth2_user_claim: key name of claim to be used as user ID in JWT
+</pre>
+
+<p>
+Of the above, xoauth2_scope and xoauth2_aud settings can be omitted
+on the client side.
+
+<p>
+xoauth2_user_claim setting also can be omitted on the client side,
+if sasl_user is set in the file specified
+ by the GFARM_CONFIG_FILE environment variable,
+or in .gfarm2rc in the home directory.
+
+<p>
+The server side accesses the IdP,
+ but if you need to use a web proxy server for this,
+add the following setting:
+<pre>
+proxy: http://PROXY-SERVER-NAME:PROXY-PORT-NUMBER/
+</pre>
+Modify "PROXY-SERVER-NAME" and "PROXY-PORT-NUMBER" as appropriate.
+
+<HR>
+<H2>Server-side configuration</H2>
+
+Add the following settings to gfmd.conf for gfmd,
+and gfarm2.conf which is read by gfsd
 <pre>
 auth enable sasl *
 </pre>
-あるいは
+or
 <pre>
 auth enable sasl_auth *
 </pre>
 
-利用する SASL のメカニズムを制限したい場合には、
-さらに以下のような設定を追加して利用するメカニズムを指定してください。
+Also, please add the following settings to limit the mechanisms used.
 <pre>
 sasl_mechanisms "PLAIN XOAUTH2"
 </pre>
 
-その他の設定については、Cyrus SASL のドキュメントに従ってください。
-
-<H3>XOAUTH2 メカニズム用サーバー側設定</H3>
-
-<p>
-XOAUTH2 メカニズムを利用する場合、
-cyrus-sasl-xoauth2-idp パッケージをインストールし、
-Cyrus SASL のサーバー側設定を置くディレクトリ (例: /usr/lib64/sasl2) に
-以下の内容の設定を gfarm.conf という名称で置きます。
-
-<pre>
-log_level: 7
-mech_list: PLAIN XOAUTH2
-client_id: 〜Gfarmアクセス用のクライアントIDを設定します〜
-client_secret: 〜Gfarmアクセス用のクライアントシークレットを設定します〜
-introspection_url: 〜JWTトークン検証のための IdP のURLを指定します〜
-</pre>
-</p>
-
-<p>
-IdP として Keycloak を利用する場合、introspection_url は下記となります。
-<pre>
-https://サーバー名/auth/realms/レルム名/protocol/openid-connect/token/introspect
-</pre>
-「サーバー名」および「レルム名」は、適宜修正してください。
-</p>
-
-<p>
-また、IdP へのアクセスに Web proxy サーバーを介す必要がある場合には
-さらに下記の設定も追加します。
-<pre>
-proxy: http://proxyサーバー名:proxyポート番号/
-</pre>
-「proxyサーバー名」および「proxyボート番号」は、適宜修正してください。
-</p>
+For security purposes, specify only the mechanism actually used. 
+<BR>
+For other settings, follow the Cyrus SASL documentation.
 
 <HR>
-<H2>クライアント側設定</H2>
+<H2>Client-side configuration</H2>
 
-環境変数 GFARM_CONFIG_FILE で指定されたファイル、
-あるいはもし環境変数が設定されていない場合には
-ホームディレクトリの .gfarm2rc に、
-利用するSASLメカニズムに応じて下記のような設定を行ないます。
+Set the file specified by the GFARM_CONFIG_FILE environment variable,
+or, if the environment variable is not set,
+in .gfarm2rc in your home directory, as follows,
+depending on the SASL mechanism you are using.
 
-<H3>ANONYMOUS メカニズムの場合</H3>
+<H3>For ANONYMOUS mechanism</H3>
 
 <pre>
 sasl_mechanisms "ANONYMOUS"
 sasl_user "dummy-user-name"
 </pre>
 
-<H3>PLAIN メカニズムの場合</H3>
+Since the anonymous mechanism configuration does not contain
+any user-specific information, it can also be set in gfarm2.conf.
+
+<H3>For PLAIN mechanism</H3>
 
 <pre>
 sasl_mechanisms "PLAIN"
-sasl_user "ユーザー名"
-sasl_password "パスワード"
+sasl_user "USER-NAME"
+sasl_password "PASSWORD"
 </pre>
+Modify "USER-NAME" and "PASSWORD" as appropriate.
+<P>
+To prevent other users from reading this file,
+set the mode of the file to 0600 or 0400 using the chmod(1) command.  
 
-このファイルが他のユーザーに読みとられないように、
-chmod(1) コマンドを用いてファイルのモードを 0600 ないし 0400 に
-設定してください。
-
-<H3>LOGIN メカニズムの場合</H3>
+<H3>For LOGIN mechanism</H3>
 
 <pre>
 sasl_mechanisms "LOGIN"
-sasl_user "ユーザー名"
-sasl_password "パスワード"
+sasl_user "USER-NAME"
+sasl_password "PASSWORD"
 </pre>
+Modify "USER-NAME" and "PASSWORD" as appropriate.
+<P>
+To prevent other users from reading this file,
+set the mode of the file to 0600 or 0400 using the chmod(1) command.  
 
-このファイルが他のユーザーに読みとられないように、
-chmod(1) コマンドを用いてファイルのモードを 0600 ないし 0400 に
-設定してください。
-
-<H3>XOAUTH2 メカニズムの場合</H3>
+<H3>For XOAUTH2 mechanism</H3>
 
 <pre>
 sasl_mechanisms "XOAUTH2"
-sasl_user "ユーザー名"
+sasl_user "USER-NAME"
 </pre>
+Modify "USER-NAME" and "PASSWORD" as appropriate.
+<P>
+If xoauth2_user_claim is set in the Cyrus SASL configuration file,
+the sasl_user specification can be omitted.
+In that case, since there is no user-specific setting,
+only sasl_mechanism can be set in gfarm2.conf.
 
 <p>
-さらに環境変数 JWT_FILE で指定されたファイル、
-あるいはもし環境変数が設定されていない場合には
-ファイル /tmp/jwt_user_u＜自身のUNIX_UID＞/token.jwt に、
-XOAUTH2 で用いるアクセストークンを置き、
-このファイルが他のユーザーに読みとられないように、
-chmod(1) コマンドを用いてファイルのモードを 0600 ないし 0400 に
-設定してください。
-</p>
+In addition, place the access token used by XOAUTH2
+in the file specified by the JWT_FILE environment variable,
+or in the file /tmp/jwt_user_u&lt;YOUR-UNIX-UID$gt;/token.jwt
+if the environment variable is not set.
+To prevent other users from reading this file,
+set the mode of the JWT file to 0600 or 0400 using the chmod(1) command.  
 <p>
-jwt-logon(1) コマンドや jwt-agent(1) コマンドを用いると、
-トークンを取得してこのファイルに書き込むことができます。
-</p>
+The jwt-logon(1) and jwt-agent(1) commands can be used
+to obtain a token and set JWT in the appropriate mode for this file.
 
+<p>
+You can also set the JWT contents directly
+by using the sasl_password directive
+in the file specified by the GFARM_CONFIG_FILE environment variable,
+or in the .gfarm2rc file in your home directory
+if the environment variable is not set.
+In this case, use the chmod(1) command to set the mode of the file
+to 0600 or 0400 to prevent other users from reading it.
 
 <HR>
 <H2>SEE ALSO</H2>

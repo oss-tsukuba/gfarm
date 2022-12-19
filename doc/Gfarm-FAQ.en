@@ -229,6 +229,13 @@ Table of Contents:
 	config-gfarm and config-gfsd.  For details,
 	refer to the installation manual.
 
+	Check whether the result of the reverse hostname lookup matches
+	the hostname in the server certificate or the name in
+	the auth directive of gfarm2.conf.
+	This problem may be caused by the fact that hostnames without
+	the suffix part of the domain name are registered before
+	 hostnames with the suffix part in /etc/hosts.
+
   2.2 "Authentication error" or "no filesystem node" error occurs when
      accessing or replicating files.
 

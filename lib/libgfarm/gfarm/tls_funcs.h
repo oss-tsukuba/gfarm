@@ -2549,14 +2549,7 @@ runtime_init:
 		ctxret->role_ = role;
 		ctxret->do_mutual_auth_ = do_mutual_auth;
 		if (gfarm_ctxp->tls_key_update > 0) {
-#ifndef TLS_TEST
-#define TLS_KEY_UPDATE_THRESH	512 * 1024 * 1024;
 			ctxret->io_key_update_thresh_ = TLS_KEY_UPDATE_THRESH;
-#undef TLS_KEY_UPDATE_THRESH
-#else
-			ctxret->io_key_update_thresh_ =
-				gfarm_ctxp->tls_key_update;
-#endif /* ! TLS_TEST */
 		} else {
 			ctxret->io_key_update_thresh_ = 0;
 		}

@@ -1,14 +1,13 @@
-FROM opensuse/leap:15.3
+FROM opensuse/leap:15.4
 
 # System dependent
 
 ARG TZ
 ENV TZ=${TZ}
 
-ARG REPO=https://download.opensuse.org/repositories/home:frank_scheiner:gct/openSUSE_Leap_15.2/home:frank_scheiner:gct.repo
-#ARG REPO=https://download.opensuse.org/repositories/home:/frank_scheiner:/gct/15.3/home:frank_scheiner:gct.repo
+ARG GCT_REPO=https://download.opensuse.org/repositories/home:/frank_scheiner:/gct/15.4/home:frank_scheiner:gct.repo
 
-RUN zypper install -y \
+RUN zypper --non-interactive install -y \
     sudo \
     openssh \
     rsyslog \
@@ -19,7 +18,7 @@ RUN zypper install -y \
     rsync \
     git \
     && systemctl enable sshd \
-    && zypper install -y \
+    && zypper --non-interactive install -y \
     libopenssl-devel \
     postgresql14 \
     postgresql14-devel \
@@ -31,18 +30,17 @@ RUN zypper install -y \
     libacl-devel \
     ruby \
     libtool \
-    && zypper addrepo ${REPO} \
+    && zypper --non-interactive addrepo ${GCT_REPO} \
     && zypper --non-interactive --no-gpg-checks refresh \
-    && zypper install -y \
+    && zypper --non-interactive install -y \
     globus-gssapi-gsi-devel \
     globus-simple-ca \
     globus-gsi-cert-utils-progs \
     globus-proxy-utils \
-    gsi-openssh \
     myproxy \
     && globus-version \
-    && zypper mr -e repo-debug \
-    && zypper install -y \
+    && zypper --non-interactive mr -e repo-debug \
+    && zypper --non-interactive install -y \
     telnet ncat ldns iproute2 net-tools bind-utils tcpdump \
     gdb valgrind strace inotify-tools \
     man man-pages man-pages-ja \

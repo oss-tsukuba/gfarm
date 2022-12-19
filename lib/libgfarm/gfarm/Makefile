@@ -239,7 +239,10 @@ auth_client_gss.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/gfevent.h $(GFSL_
 auth_client_tls.lo: context.h gfp_xdr.h io_tls.h auth.h
 auth_common.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/thrsubr.h context.h liberror.h auth.h
 auth_common_gss.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/thrsubr.h $ $(GFSL_SRCDIR)/gfsl_secure_session.h context.h liberror.h gfpath.h auth.h auth_gss.h
-auth_config.lo: context.h liberror.h hostspec.h auth.h
+auth_config.lo: \
+	$(GFSL_SRCDIR)/gfsl_gss.h $(GFSL_SRCDIR)/gfsl_secure_session.h \
+	gfarm_gss.h gss.h \
+	context.h liberror.h hostspec.h auth.h
 auth_server.lo: $(GFUTIL_SRCDIR)/gfutil.h context.h liberror.h hostspec.h auth.h gfp_xdr.h gfs_proto.h gfm_proto.h
 auth_server_kerberos.lo: auth.h gss.h
 auth_server_gsi.lo: auth.h gss.h

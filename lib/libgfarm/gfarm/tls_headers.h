@@ -115,7 +115,20 @@ struct tls_test_ctx_struct {
 
 extern struct tls_test_ctx_struct *gfarm_ctxp;
 
-#endif /* TLS_TEST */
+/* allow this value to be changed in tls_test */
+#define TLS_KEY_UPDATE_THRESH	(gfarm_ctxp->tls_key_update)
+
+#else /* !TLS_TEST */
+
+/*
+ * NOTE:
+ *
+ * UPDATE THIS VALUE to keep pace with the increased speed of
+ * cryptographic calculations
+ */
+#define TLS_KEY_UPDATE_THRESH	(512 * 1024 * 1024)
+
+#endif /* !TLS_TEST */
 
 /*
  * TLS role
