@@ -20,6 +20,10 @@ RUN zypper --non-interactive install -y \
     && systemctl enable sshd \
     && zypper --non-interactive install -y \
     libopenssl-devel \
+    krb5-devel krb5-server krb5-client \
+    cyrus-sasl cyrus-sasl-devel cyrus-sasl-plain cyrus-sasl-gssapi \
+    go \
+    gcc-c++ cmake3 sqlite-devel libcurl-devel libuuid-devel \
     postgresql14 \
     postgresql14-devel \
     postgresql14-server \
@@ -47,7 +51,6 @@ RUN zypper --non-interactive install -y \
     nano emacs-nox vim less which \
     libfuse2-debuginfo \
     && sed -i 's@^Defaults secure_path="/usr/sbin:@Defaults secure_path="/usr/local/bin:/usr/sbin:@' /etc/sudoers
-
 
 # System independent (see setup-univ.sh)
 
