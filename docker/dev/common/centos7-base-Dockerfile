@@ -37,6 +37,12 @@ RUN sed -i -e '/override_install_langs/s/$/,ja_JP.utf8/g' /etc/yum.conf \
     gsi-openssh-clients \
     && globus-version \
     && yum -y install \
+    krb5-libs krb5-devel krb5-server krb5-workstation \
+    cyrus-sasl cyrus-sasl-lib cyrus-sasl-devel \
+    cyrus-sasl-plain cyrus-sasl-gssapi \
+    golang \
+    gcc-c++ cmake3 sqlite-devel libcurl-devel libuuid-devel \
+    epel-rpm-macros \
     docbook-utils docbook-style-xsl libxslt \
     nc ldns iproute2 net-tools bind-utils telnet tcpdump \
     gdb valgrind strace inotify-tools \
@@ -45,6 +51,9 @@ RUN sed -i -e '/override_install_langs/s/$/,ja_JP.utf8/g' /etc/yum.conf \
     && debuginfo-install -y \
     fuse-libs \
     && sed -i 's@^Defaults    secure_path = /sbin:/bin:/usr/sbin:/usr/bin$@Defaults    secure_path = /usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin@' /etc/sudoers
+
+# for scitokens-cpp
+RUN ln -s /usr/bin/cmake3 /usr/local/bin/cmake
 
 
 ENV OPENSSL_PACKAGE_NAME="openssl11"
