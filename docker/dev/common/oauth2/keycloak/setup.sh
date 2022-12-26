@@ -453,11 +453,11 @@ RECRETE_USER_ID=0
 create_user()
 {
     local USER="$1"
-    local PASSWORD="$2"    
+    local PASSWORD="$2"
     shift
 
     local USER_ID
-    
+
     USER_ID=$(get_user_id "$USER" || ignore)
     echo "USER_ID:"$USER_ID
     if [ -n "${USER_ID}" -a ${RECRETE_USER_ID} -eq 1 ]; then
@@ -476,7 +476,7 @@ update_user()
     shift
 
     local USER_ID
-    
+
     USER_ID=$(get_user_id "$USER" || ignore)
     ARG='attributes."hpci.id"='${USER}
     ${KCADM} update users/${USER_ID} -r ${REALM} \
