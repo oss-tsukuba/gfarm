@@ -339,11 +339,6 @@ then
   gfsudo gfchown "${sasl_user}" "${sasl_home}"
 fi
 
-### check autofs
-SUPPORT_AUTOFS=1
-ls /gfarm/ROOT || SUPPORT_AUTOFS=0
-ls /gfarm/user1 || SUPPORT_AUTOFS=0
-
 ### copy certificates
 CERTIFICATES_DIR=/etc/grid-security/certificates
 COPY_CERTIFICATES_DIR="${COPY_DIR}/CERTS"
@@ -436,63 +431,12 @@ wait
 # fix timing problem since the introduction of hookconfig
 sleep 1
 
-set +x
-
-test_auth() {
-  echo "***** $authtype *****"
-  gfmdhost -l
-  gfhost -lv
-  num_gfmdhost=$(gfmdhost | wc -l)
-  num_gfsched=$(gfsched | wc -l)
-  [ $num_gfmdhost -eq $GFDOCKER_NUM_GFMDS ] || exit 1
-  [ $num_gfsched -eq $GFDOCKER_NUM_GFSDS ] || exit 1
-}
-
-auth_trial=
-if $tls_available; then
-  auth_trial="${auth_trial} tls_sharedsecret tls_client_certificate"
-fi
-if $sasl_available; then
-  auth_trial="${auth_trial} sasl_auth.plain sasl.plain"
-fi
-# FIXME: do not try kerberos for now, because "kadmin ktadd" sometimes fails
-# to generate $HOME/.keytab.  the reason of the failure is not known yet.
-
-tmp_gfarmconf=$(mktemp)
-for authtype in sharedsecret gsi_auth gsi $auth_trial; do
-  case ${authtype} in
-  sasl*) authconfig \
-	    --client-server "${authtype}" \
-	    --server-server tls_client_certificate;;
-  *)	 authconfig "${authtype}";;
-  esac
-  test_auth
-done
-authconfig all
-
-
 # for jwt-server HTTPS
 sudo mkdir -p ${HOST_SHARE_DIR}/httpd
 sudo cp /etc/grid-security/httpdcert.pem ${HOST_SHARE_DIR}/httpd/
 sudo cp /etc/grid-security/httpdkey.pem ${HOST_SHARE_DIR}/httpd/
 
-# LOG=/var/log/messages
-# SYSLOG=/var/log/syslog
-# if [ -f $SYSLOG ]; then
-#    LOG=$SYSLOG
-# fi
-# sudo tail -1 $LOG
-
-echo -n "GFDOCKER_PRJ_NAME=$GFDOCKER_PRJ_NAME: autofs (/gfarm/*) "
-if [ ${SUPPORT_AUTOFS} -eq 1 ]; then
-    echo "works."
-else
-    echo "does not work."
-fi
-
-date
-
-### update CA
+### update CA for OAuth-related web servers
 
 CA_DIR=/root/simple_ca
 
@@ -514,5 +458,3 @@ case $GFDOCKER_PRJ_NAME in
     *)
 	;;
 esac
-
-echo "GFDOCKER_PRJ_NAME=$GFDOCKER_PRJ_NAME: setup is now complete."

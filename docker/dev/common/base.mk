@@ -310,6 +310,10 @@ $(COMPOSE) up -d --force-recreate\
   && $(CONTSHELL) -c '. ~/gfarm/docker/dev/common/up.rc'
 endef
 
+define authtest
+$(CONTSHELL) -c '~/gfarm/docker/dev/common/authtest.sh'
+endef
+
 define reborn
 	if [ -f $(COMPOSE_YML) ]; then \
 		$(down); \
@@ -329,6 +333,7 @@ define reborn
 		$(COMPOSE) exec $(CONTSHELL_FLAGS) httpd /setup.sh; \
 		$(COMPOSE) exec $(CONTSHELL_FLAGS) keycloak ./setup.sh; \
 	fi
+	$(authtest)
 endef
 
 reborn:
@@ -342,6 +347,7 @@ reborn-nocache: USE_NOCACHE = 1
 reborn-without-build:
 	$(down)
 	$(up)
+	$(authtest)
 
 start:
 	$(COMPOSE) start
