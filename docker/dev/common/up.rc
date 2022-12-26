@@ -15,9 +15,6 @@ set -eux -o pipefail
 : $GFDOCKER_HOSTNAME_SUFFIX
 : $GFDOCKER_SASL_MECH_LIST
 : $GFDOCKER_SASL_LOG_LEVEL
-: $GFDOCKER_SASL_XOAUTH2_SCOPE
-: $GFDOCKER_SASL_XOAUTH2_AUD
-: $GFDOCKER_SASL_XOAUTH2_USER_CLAIM
 
 # the followings are optional:
 #: $https_proxy
@@ -29,6 +26,11 @@ gfarm_src_path="/work/gfarm"
 HOST_SHARE_DIR=/mnt
 SUDO_USER2="sudo sudo -i -u user2"
 SASL_DOMAIN=$(echo "$GFDOCKER_HOSTNAME_SUFFIX" | sed 's/^\.//')
+
+# to change these values, change scripts in ./oauth2/ as well
+GFDOCKER_SASL_XOAUTH2_SCOPE=hpci
+GFDOCKER_SASL_XOAUTH2_AUD=hpci
+GFDOCKER_SASL_XOAUTH2_USER_CLAIM=hpci.id
 
 gfmds=
 gfsds=
