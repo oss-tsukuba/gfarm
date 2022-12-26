@@ -470,6 +470,12 @@ for authtype in sharedsecret gsi_auth gsi $auth_trial; do
 done
 authconfig all
 
+
+# for jwt-server HTTPS
+sudo mkdir -p ${HOST_SHARE_DIR}/httpd
+sudo cp /etc/grid-security/httpdcert.pem ${HOST_SHARE_DIR}/httpd/
+sudo cp /etc/grid-security/httpdkey.pem ${HOST_SHARE_DIR}/httpd/
+
 # LOG=/var/log/messages
 # SYSLOG=/var/log/syslog
 # if [ -f $SYSLOG ]; then
@@ -485,4 +491,28 @@ else
 fi
 
 date
+
+### update CA
+
+CA_DIR=/root/simple_ca
+
+case $GFDOCKER_PRJ_NAME in
+    centos*-* | almalinux*-* | rockylinux*-*)
+	for host in $clients; do
+	   ssh "$host" sudo cp ${CA_DIR}/cacert.pem /usr/share/pki/ca-trust-source/anchors
+	   ssh "$host" sudo update-ca-trust
+        done
+        ;;
+    ubuntu*-*)
+	for host in $clients; do
+	   ssh "$host" sudo mkdir -p /usr/share/ca-certificates/gfarm
+	   ssh "$host" sudo cp ${CA_DIR}/cacert.pem /usr/share/ca-certificates/gfarm
+	   ssh "$host" sudo "echo 'gfarm/cacert.pem' | sudo tee -a /etc/ca-certificates.conf"
+	   ssh "$host" sudo update-ca-certificates
+        done
+        ;;
+    *)
+	;;
+esac
+
 echo "GFDOCKER_PRJ_NAME=$GFDOCKER_PRJ_NAME: setup is now complete."

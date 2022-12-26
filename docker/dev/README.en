@@ -62,9 +62,18 @@ Quick start
   $ git clone git@github.com:oss-tsukuba/cyrus-sasl-xoauth2-idp.git
   $ git clone git@github.com:scitokens/scitokens-cpp.git
 
+  If you will test keycloak and jwt-server too, do the followings too
+  under the gfarm directory:
+
+  $ git clone -b dev_es256 git@github.com:oss-tsukuba/jwt-server.git
+
 4. Edit config.mk
 
   You can override from config-default.mk
+
+  If you will test keycloak and jwt-server, edit config.mk:
+
+  GFDOCKER_SASL_USE_KEYCLOAK = true
 
 5. Setup sudo configuration
 

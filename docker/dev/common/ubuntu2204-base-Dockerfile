@@ -37,6 +37,7 @@ RUN yes | unminimize \
     globus-simple-ca \
     globus-gsi-cert-utils-progs \
     globus-proxy-utils \
+    curl \
     && globus-version \
     && apt-get -y install \
     docbook-utils docbook-xsl xsltproc \

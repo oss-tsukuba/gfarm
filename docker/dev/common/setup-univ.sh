@@ -154,6 +154,17 @@ for i in $(seq 1 "$GFDOCKER_NUM_GFSDS"); do
   echo "#${GFSD_SBJ} @host@ ${fqdn}" >> "$GRID_MAPFILE"
 done
 
+name="httpd"
+fqdn="${name}${GFDOCKER_HOSTNAME_SUFFIX}"
+echo "$force_yes" \
+  | grid-cert-request -verbose -nopw -prefix "$name" \
+   -host "$fqdn" -dns "${fqdn},${name}" \
+    -ca "$(cat /ca_hash)"
+grid-ca-sign -in "/etc/grid-security/${name}cert_request.pem" \
+  -out "/etc/grid-security/${name}cert.pem" \
+  -passin pass:"$ca_key_pass" -md $MD -dir ${CA_DIR}
+grid-cert-info -file "/etc/grid-security/${name}cert.pem"
+
 base_ssh_config="${gfarm_src_path}/docker/dev/common/ssh_config"
 echo >> /etc/sudoers
 echo '# for Gfarm' >> /etc/sudoers

@@ -28,6 +28,7 @@
 /jwt-agent/
 /jwt-logon/
 /scitokens-cpp/
+/jwt-server/
 
 /bench/gfcreate-test/gfcreate-test
 /bench/gfiops/gfiops

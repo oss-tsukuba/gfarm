@@ -4,6 +4,7 @@ from ipaddress import IPv4Network, IPv6Network
 from os import environ
 import sys
 import re
+from distutils.util import strtobool
 
 num_gfmds = int(environ['GFDOCKER_NUM_GFMDS'])
 num_gfsds = int(environ['GFDOCKER_NUM_GFSDS'])
@@ -21,6 +22,8 @@ hostport_s3_https = environ['GFDOCKER_HOSTPORT_S3_HTTPS']
 hostport_s3_direct = environ['GFDOCKER_HOSTPORT_S3_DIRECT']
 
 is_cgroup_v2 = environ['IS_CGROUP_V2']
+
+use_keycloak = bool(strtobool(environ['GFDOCKER_SASL_USE_KEYCLOAK']))
 
 if ip_version == '4':
     nw = IPv4Network(subnet)
@@ -140,6 +143,59 @@ for h in hosts:
     <<: *common
 
 '''.format(h.name, h.hostname, ports, ip_version, str(h.ipaddr)), end='')
+
+if use_keycloak:
+   print('''\
+
+  ubuntu:
+    container_name: utuntu
+    build: common/oauth2/ubuntu
+    privileged: true
+    networks:
+      gfarm_dev:
+    ports:
+      - "0.0.0.0:13389:3389"
+  httpd:
+    container_name: httpd
+    hostname: httpd{}
+    build: common/oauth2/apache
+    tty: true
+    privileged: true
+    volumes:
+      - ./mnt:/mnt:ro
+    networks:
+      gfarm_dev:
+  tomcat:
+    container_name: tomcat
+    build:
+     context: ../../
+     dockerfile: docker/dev/common/oauth2/tomcat/Dockerfile
+    networks:
+      gfarm_dev:
+    environment:
+      - 'CATALINA_OPTS=-Duser.timezone=Asia/Tokyo'
+  db:
+    container_name: mariadb
+    image: mariadb
+    volumes:
+      - "./common/oauth2/mariadb/initdb.d:/docker-entrypoint-initdb.d"
+    networks:
+      gfarm_dev:
+    environment:
+      - MYSQL_ROOT_PASSWORD=passwd
+      - MYSQL_DATABASE=gfarm
+      - MYSQL_USER=gfarm
+      - MYSQL_PASSWORD=gfarm123
+  keycloak:
+    container_name: keycloak
+    build: common/oauth2/keycloak
+    networks:
+      gfarm_dev:
+    environment:
+      DB_VENDOR: h2
+      KEYCLOAK_USER: admin
+      KEYCLOAK_PASSWORD: admin
+'''.format(hostname_suffix), end='')
 
 print('''\
 
