@@ -148,7 +148,7 @@ if use_keycloak:
    print('''\
 
   ubuntu:
-    container_name: utuntu
+    container_name: ubuntu
     build: common/oauth2/ubuntu
     privileged: true
     networks:
