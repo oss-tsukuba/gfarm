@@ -792,6 +792,7 @@ gfarm_sasl_secret_password_set_by_jwt_file(void)
 	char *password;
 	size_t len;
 	FILE *fp;
+	int popened = 0;
 
 	if ((filename = getenv(SASL_JWT_PATH_ENV)) == NULL) {
 		snprintf(path, sizeof path, jwt_path_template,
@@ -799,7 +800,22 @@ gfarm_sasl_secret_password_set_by_jwt_file(void)
 		filename = path;
 	}
 
-	if ((fp = fopen(filename, "r")) == NULL) {
+	if (filename[0] == '!') {
+		popened = 1;
+		errno = 0;
+		if ((fp = popen(filename + 1, "r")) == NULL) {
+			if (errno == 0) /* this may happen, see popen(3) */
+				e = GFARM_ERR_UNKNOWN;
+			else
+				e = gfarm_errno_to_error(errno);
+
+			if (e != GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY)
+				gflog_warning(GFARM_MSG_UNFIXED, "file %s: %s",
+				    filename, gfarm_error_string(e));
+
+			return (e);
+		}
+	} else if ((fp = fopen(filename, "r")) == NULL) {
 		e = gfarm_errno_to_error(errno);
 
 		if (e != GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY)
@@ -816,8 +832,12 @@ gfarm_sasl_secret_password_set_by_jwt_file(void)
 	if (fgets(password,
 	    sizeof(staticp->sasl_secret_password_storage) -
 	    offsetof(sasl_secret_t, data), fp) == NULL) {
-		gflog_warning(GFARM_MSG_UNFIXED, "file %s is empty", filename);
-		fclose(fp);
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "Contents of \"%s\" is empty", filename);
+		if (popened)
+			pclose(fp);
+		else
+			fclose(fp);
 		return (GFARM_ERR_INVALID_CREDENTIAL);
 	}
 	len = strlen(password);
@@ -848,7 +868,10 @@ gfarm_sasl_secret_password_set_by_jwt_file(void)
 		r->len = len;
 		e = GFARM_ERR_NO_ERROR;
 	}
-	fclose(fp);
+	if (popened)
+		pclose(fp);
+	else
+		fclose(fp);
 	return (e);
 }
 
