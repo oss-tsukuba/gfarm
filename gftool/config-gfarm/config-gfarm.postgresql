@@ -516,6 +516,7 @@ _EOF_
 		print "    INode, FileInfo, FileCopy, DeadFileCopy, DirEntry, "
 		print "    Symlink, QuotaUser, QuotaGroup, "
 		print "    QuotaDirSet, QuotaDirectory, SeqNum, MdHost, "
+		print "    GfarmUserAuth, "
 		print "    XAttr $XMLATTR_TABLENAME"
 		print "	TO $BACKEND_USER;"
 #		if ($SCHEMA_VERSION > 1) {

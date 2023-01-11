@@ -193,3 +193,11 @@ CREATE TABLE MdHost (
 	clustername	VARCHAR(256)	NOT NULL,
 	flags		INTEGER		NOT NULL
 );
+
+CREATE TABLE GfarmUserAuth (
+       username		   VARCHAR(64)	NOT NULL
+              REFERENCES GfarmUser(username) ON DELETE CASCADE,
+       authMethod	  VARCHAR(64)   NOT NULL,
+       authUserID	  VARCHAR(1024),
+PRIMARY KEY(username, authMethod)
+);
