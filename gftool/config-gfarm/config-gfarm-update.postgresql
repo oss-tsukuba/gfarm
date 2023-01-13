@@ -210,7 +210,6 @@ update_postgresql()
 	create_table MdHost
 	create_table QuotaDirSet
 	create_table QuotaDirectory
-	create_table GfarmUserAuth
 
 	update_host_table
 	update_quota_dirset_table
