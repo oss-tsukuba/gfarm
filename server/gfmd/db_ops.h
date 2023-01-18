@@ -155,6 +155,17 @@ struct db_mdhost_modify_arg {
 	int modflags;
 };
 
+struct db_user_auth_arg {
+       char *username;
+       char *auth_method;
+       char *auth_user_id;
+};
+
+struct db_user_auth_remove_arg {
+       char *username;
+       char *auth_method;
+};
+
 struct db_ops {
 	gfarm_error_t (*initialize)(void);
 	gfarm_error_t (*terminate)(void);

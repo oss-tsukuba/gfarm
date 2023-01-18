@@ -552,6 +552,16 @@ class GFJournalRecordAnalyzer
     when OPEID_QUOTA_DIR_REMOVE
       record.add_record_data_fields(["INUM"], "l", data)
 
+    when OPEID_USER_AUTH_ADD,
+         OPEID_USER_AUTH_MODIFY
+      record.add_record_data_fields(["USERNAME", "AUTHMETHOD", "AUTHUSERID"],
+				    "sss", data)
+
+    when OPEID_USER_AUTH_REMOVE
+      record.add_record_data_fields(["USERNAME", "AUTHMETHOD"],
+				    "ss", data)
+
+
     else
       record.add_octet_field("DATA", "", data) if datalen > 0
     end

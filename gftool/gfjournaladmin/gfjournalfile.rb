@@ -102,6 +102,10 @@ module GFJournalFileConsts
   OPEID_QUOTA_DIR_ADD       = 49
   OPEID_QUOTA_DIR_REMOVE    = 50
 
+  OPEID_USER_AUTH_ADD       = 51
+  OPEID_USER_AUTH_MODIFY    = 52
+  OPEID_USER_AUTH_REMOVE    = 53
+
   #
   # Titles of operation ID.
   #
@@ -172,5 +176,9 @@ module GFJournalFileConsts
 
     OPEID_QUOTA_DIR_ADD       => "QUOTA_DIR_ADD",
     OPEID_QUOTA_DIR_REMOVE    => "QUOTA_DIR_REMOVE",
+
+    OPEID_USER_AUTH_ADD       => "USER_AUTH_ADD",
+    OPEID_USER_AUTH_MODIFY    => "USER_AUTH_MODIFY",
+    OPEID_USER_AUTH_REMOVE    => "USER_AUTH_REMOVE",
   }
 end
