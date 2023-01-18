@@ -277,6 +277,12 @@ class GfURL(metaclass=abc.ABCMeta):
     def __init__(self, url):
         self._url = urlparse(url)
 
+    def parent(self):
+        parent_path = os.path.dirname(self.path)
+        if parent_path == '.':
+            parent_path = ''
+        return GfURL.init(self.root_url_str + parent_path)
+
     @property
     def url_str(self):
         return self._url.geturl()
@@ -284,6 +290,11 @@ class GfURL(metaclass=abc.ABCMeta):
     @property
     def path(self):
         return os.path.normpath(self._url.path)
+
+    @property
+    def root_url_str(self):
+        # ex. http://example.com/a/b/c -> http://example.com
+        return self.url_str[:-len(self._url.path)]
 
     @staticmethod
     def subpath(parent, path):
@@ -359,7 +370,7 @@ class GfURL(metaclass=abc.ABCMeta):
 
     @contextmanager
     @abc.abstractmethod
-    def writeopen(self):
+    def writeopen(self, parents=False):
         raise NotImplementedError()
 
 
@@ -520,30 +531,53 @@ class GfURLGfarm(GfURL):
                     raise AssertionError
                 first = False
 
+    dircache = set()
+
+    # text mode, (binary mode: proc.stdin.buffer)
+    @classmethod
+    def gfreg(cls, url_str, parents=False):
+        # TODO gfreg --parents
+        if parents:
+            url = GfURL.init(url_str)
+            parent = url.parent()
+            parent_str = parent.url_str
+            if parent_str not in cls.dircache:
+                # slow
+                if not parent.exists():
+                    parent.mkdir_p()
+                cls.dircache.add(parent.url_str)
+
+        args = ['gfreg', '-', url_str]
+        return subprocess.Popen(
+            args, shell=False, encoding=get_encoding(), close_fds=True,
+            stdin=subprocess.PIPE, stdout=subprocess.DEVNULL,
+            stderr=sys.stderr.buffer)
+
+    # text mode, (binary mode: proc.stdout.buffer)
+    @classmethod
+    def gfexport(cls, url_str):
+        args = ['gfexport', url_str]
+        # binary mode
+        return subprocess.Popen(
+            args, shell=False, encoding=get_encoding(), close_fds=True,
+            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+            stderr=sys.stderr.buffer)
+
     def tar_add(self, tar, entry, subpath):
         tarinfo = entry.toTarinfo(subpath)
         if tarinfo is None:
             return
         if entry.file_type == GfURLEntry.TYPE_FILE:
-            args = ['gfexport', entry.path]
-            # binary mode
-            proc = subprocess.Popen(
-                args, shell=False, close_fds=True,
-                stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-                stderr=sys.stderr.buffer)
-            tar.addfile(tarinfo, fileobj=proc.stdout)
+            proc = GfURLGfarm.gfexport(entry.path)
+            tar.addfile(tarinfo, fileobj=proc.stdout.buffer)
             proc.stdout.close()
         else:
             tar.addfile(tarinfo)
 
-    # text mode
+    # text mode, (binary mode: proc.stdout.buffer)
     @contextmanager
     def readopen(self):
-        args = ['gfexport', self.url_str]
-        proc = subprocess.Popen(
-            args, shell=False, encoding=get_encoding(), close_fds=True,
-            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-            stderr=sys.stderr.buffer)
+        proc = GfURLGfarm.gfexport(self.url_str)
         try:
             yield proc.stdout
         finally:
@@ -551,16 +585,12 @@ class GfURLGfarm(GfURL):
             ret = proc.wait()
             if ret != 0:
                 raise Exception('{}: returncode={}'.format(
-                    ' '.join(args), ret))
+                    ' '.join(proc.args), ret))
 
-    # text mode
+    # text mode, (binary mode: proc.stdin.buffer)
     @contextmanager
-    def writeopen(self):
-        args = ['gfreg', '-', self.url_str]
-        proc = subprocess.Popen(
-            args, shell=False, encoding=get_encoding(), close_fds=True,
-            stdin=subprocess.PIPE, stdout=subprocess.DEVNULL,
-            stderr=sys.stderr.buffer)
+    def writeopen(self, parents=False):
+        proc = GfURLGfarm.gfreg(self.url_str, parents=parents)
         try:
             yield proc.stdin
         finally:
@@ -568,7 +598,7 @@ class GfURLGfarm(GfURL):
             ret = proc.wait()
             if ret != 0:
                 raise Exception('{}: returncode={}'.format(
-                    ' '.join(args), ret))
+                    ' '.join(proc.args), ret))
 
 
 class GfURLLocal(GfURL):
@@ -682,7 +712,7 @@ class GfURLLocal(GfURL):
         else:
             tar.addfile(tarinfo)
 
-    # text mode
+    # text mode, (binary mode: f.buffer)
     @contextmanager
     def readopen(self):
         f = open(self.url_str, 'r', encoding=get_encoding())
@@ -691,9 +721,13 @@ class GfURLLocal(GfURL):
         finally:
             f.close()
 
-    # text mode
+    # text mode, (binary mode: f.buffer)
     @contextmanager
-    def writeopen(self):
+    def writeopen(self, parents=False):
+        if parents:
+            parent = self.parent()
+            if not parent.exists():
+                parent.mkdir_p()
         f = open(self.url_str, 'x', encoding=get_encoding())
         try:
             yield f
@@ -712,16 +746,10 @@ class GfTarFile(tarfile.TarFile):
         if gfurl.is_gfarm():
             if not gfurl.exists():
                 raise FileNotFoundError(gfurl.url_str)
-            args = ['gfexport', gfurl.url_str]
-            # binary mode
-            proc = subprocess.Popen(
-                args, shell=False, close_fds=True,
-                stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-                stderr=sys.stderr.buffer)
-            tar = GfTarFile.open(None, mode=openmode, fileobj=proc.stdout,
-                                 bufsize=bufsize)
+            proc = GfURLGfarm.gfexport(gfurl.url_str)
+            tar = GfTarFile.open(None, mode=openmode,
+                                 fileobj=proc.stdout.buffer, bufsize=bufsize)
             setattr(tar, 'gfexport_proc', proc)
-            setattr(tar, 'gfexport_args', args)
         else:
             tar = GfTarFile.open(gfurl.url_str, mode=openmode, bufsize=bufsize)
         return tar
@@ -737,16 +765,10 @@ class GfTarFile(tarfile.TarFile):
         if gfurl.is_gfarm():
             if gfurl.exists():
                 raise FileExistsError(gfurl.url_str)
-            args = ['gfreg', '-', gfurl.url_str]
-            # binary mode
-            proc = subprocess.Popen(
-                args, shell=False, close_fds=True,
-                stdin=subprocess.PIPE, stdout=subprocess.DEVNULL,
-                stderr=sys.stderr.buffer)
-            tar = GfTarFile.open(None, mode=openmode, fileobj=proc.stdin,
-                                 bufsize=bufsize)
+            proc = GfURLGfarm.gfreg(gfurl.url_str)
+            tar = GfTarFile.open(None, mode=openmode,
+                                 fileobj=proc.stdin.buffer, bufsize=bufsize)
             setattr(tar, 'gfreg_proc', proc)
-            setattr(tar, 'gfreg_args', args)
         else:
             tar = GfTarFile.open(gfurl.url_str, mode=openmode, bufsize=bufsize)
         return tar
@@ -759,14 +781,14 @@ class GfTarFile(tarfile.TarFile):
             ret = self.gfexport_proc.wait()
             if ret != 0:
                 raise Exception('{}: returncode={}'.format(
-                    ' '.join(self.gfexport_args), ret))
+                    ' '.join(self.gfexport_proc.args), ret))
             logger.debug('gfexport_proc.stdout.close OK')
         if getattr(self, 'gfreg_proc', None):
             self.gfreg_proc.stdin.close()
             ret = self.gfreg_proc.wait()
             if ret != 0:
                 raise Exception('{}: returncode={}'.format(
-                    ' '.join(self.gfreg_args), ret))
+                    ' '.join(self.gfreg_proc.args), ret))
             logger.debug('gfreg_proc.stdout.close OK')
 
 
@@ -784,6 +806,9 @@ class GfptarCommand(Command):
 
     def getSchema(self) -> Schema:
         return _schema
+
+    def progress_enabled(self):
+        return not self.debug and not self.verbose and not self.quiet
 
     def run(self):
         self.logger.debug(pformat(self.opt))
@@ -845,7 +870,7 @@ class GfptarCommand(Command):
             filelist.sort(key=entry_key, reverse=False)
             self.filelistlist.extend(self.schedule(filelist))
 
-        if not self.debug and not self.verbose and not self.quiet:
+        if self.progress_enabled():
             if use_tqdm:
                 term_size = shutil.get_terminal_size()
                 # bar_format = '{l_bar}{r_bar}'
@@ -869,13 +894,12 @@ class GfptarCommand(Command):
             self.create_tars_MT()
         else:
             self.create_tars()
-        if not self.quiet:
-            if self.progress:
-                self.progress.close()
-            if self.totalsize_file > 0:
-                print('compression ratio: %.2f %% (%d/%d)' %
-                      (100 * self.totalsize_archive / self.totalsize_file,
-                       self.totalsize_archive, self.totalsize_file))
+        if self.progress:
+            self.progress.close()
+        if not self.quiet and self.totalsize_file > 0:
+            print('compression ratio: %.2f %% (%d/%d)' %
+                  (100 * self.totalsize_archive / self.totalsize_file,
+                   self.totalsize_archive, self.totalsize_file))
 
     def create_tars(self):
         self.lock_init(False)
@@ -1049,24 +1073,62 @@ class GfptarCommand(Command):
         target_list = list(target_set)
         target_list.sort()
 
-        self.lock_init(True)
+        self.cancelled = False
         self.extract_num = 0
         self.totalsize_file = 0
         self.start_time = time.time()
         self.next_time = self.start_time + 1
+        if self.jobs >= 2:
+            self.extract_from_archives_MT(target_list, member_set)
+        else:
+            self.extract_from_archives(target_list, member_set)
+
+    def extract_from_archives(self, target_list, member_set):
+        self.lock_init(False)
         for target in target_list:
             logger.debug('target_set: %s', target)
-            # TODO thread
-            self.extract_members(target, member_set)
-        # TODO
-        if not self.debug and not self.verbose and not self.quiet:
+            self.extract_from_a_tar(target, member_set)
+        if self.progress_enabled():
             self.progress_for_extract(time.time())
             sys.stderr.write('\n')
 
-    def extract_members(self, target, member_set):
+    def extract_from_archives_MT(self, target_list, member_set):
+        self.lock_init(True)
+        with concurrent.futures.ThreadPoolExecutor(
+                max_workers=self.jobs) as executor:
+            futures = {}
+            for target in target_list:
+                logger.debug('target_set: %s', target)
+                t = executor.submit(self.extract_from_a_tar,
+                                    target, member_set)
+                futures[t] = target
+
+            for t in concurrent.futures.as_completed(futures, timeout=None):
+                exc = t.exception()
+                if exc:
+                    logger.error(repr(exc))
+                    tb = traceback.TracebackException.from_exception(exc)
+                    logger.debug(''.join(tb.format()))
+                    if not self.is_cancelled():
+                        self.cancel()
+                        for t2 in futures:
+                            logger.error("cancel: name=%s", futures[t2])
+                            t2.cancel()
+                    raise exc
+        if self.progress_enabled():
+            self.progress_for_extract(time.time())
+            sys.stderr.write('\n')
+
+    def extract_from_a_tar(self, target, member_set):
+        if self.is_cancelled():
+            logger.debug('cancelled (1): name=%s', target)
+            return
         arch_url = GfURL.init(target)
         tar = GfTarFile.readopen(arch_url, self.bufsize)
         while True:
+            if self.is_cancelled():
+                logger.debug('cancelled (2): name=%s', target)
+                return
             tarinfo = tar.next()
             if tarinfo is None:
                 break
@@ -1082,11 +1144,12 @@ class GfptarCommand(Command):
             if tarinfo.isfile():
                 inf = tar.extractfile(tarinfo)  # io.BufferedReader
                 readlen = 0
-                with outurl.writeopen() as outf:
+                with outurl.writeopen(parents=True) as outf:
                     while True:
                         buf = inf.read(self.bufsize)
                         if not buf:
                             break
+                        # binary mode
                         wlen = outf.buffer.write(buf)
                         readlen += wlen
                 logger.debug('extract,file: %s, %d', tarinfo.name, readlen)
@@ -1101,15 +1164,16 @@ class GfptarCommand(Command):
             else:
                 logger.warning('unsupported type: %s: %s',
                                tarinfo.name, tarinfo.type)
-            self.lock()
-            self.extract_num += 1
-            if tarinfo.isfile():
-                self.totalsize_file += tarinfo.size
-            now = time.time()
-            if now >= self.next_time:
-                self.next_time += 1
-                self.progress_for_extract(now)
-            self.unlock()
+            if self.progress_enabled():
+                self.lock()
+                self.extract_num += 1
+                if tarinfo.isfile():
+                    self.totalsize_file += tarinfo.size
+                now = time.time()
+                if now >= self.next_time:
+                    self.next_time += 1
+                    self.progress_for_extract(now)
+                self.unlock()
 
         tar.close()
 
@@ -1117,12 +1181,10 @@ class GfptarCommand(Command):
     def progress_for_extract(self, now):
         sec = now - self.start_time
         bytes_per_sec = self.totalsize_file / sec
-        # TODO
-        if not self.debug and not self.verbose and not self.quiet:
-            sys.stderr.write(f'\rextracted: num={self.extract_num}, '
-                             f'size={self.totalsize_file}, '
-                             f'sec={sec:.0f}, '
-                             f'B/s={bytes_per_sec:.1f}  ')
+        sys.stderr.write(f'\rextracted: num={self.extract_num}, '
+                         f'size={self.totalsize_file}, '
+                         f'sec={sec:.0f}, '
+                         f'B/s={bytes_per_sec:.1f}  ')
 
 
 progname = os.path.basename(__file__)
