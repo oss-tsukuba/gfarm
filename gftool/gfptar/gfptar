@@ -651,6 +651,22 @@ class GfURLLocal(GfURL):
             linkname = ''
         return linkname
 
+    @classmethod
+    def uid2name(cls, uid):
+        try:
+            pw = pwd.getpwuid(uid)
+            return pw.pw_name
+        except Exception:
+            return str(uid)
+
+    @classmethod
+    def gid2name(cls, gid):
+        try:
+            gr = grp.getgrgid(gid)
+            return gr.gr_name
+        except Exception:
+            return str(gid)
+
     def _toGfURLEntry(self, entry, path_only):
         parent = self
         if path_only:
@@ -665,20 +681,18 @@ class GfURLLocal(GfURL):
                                'nlink=%d, inode=%d (Local): %s',
                                st.st_nlink, st.st_ino, entry.path)
         linkname = self._readlink(entry.path, entry.is_symlink())
-        pw = pwd.getpwuid(st.st_uid)
-        gr = grp.getgrgid(st.st_gid)
         return GfURLEntry(parent, entry.path, st.st_mode, file_type,
-                          pw.pw_name, gr.gr_name,
+                          self.uid2name(st.st_uid),
+                          self.gid2name(st.st_gid),
                           st.st_size, st.st_mtime, linkname)
 
     def _scandir(self, path, path_only, recursive, first):
         if first:
             st = os.stat(path, follow_symlinks=True)
             parent = self
-            pw = pwd.getpwuid(st.st_uid)
-            gr = grp.getgrgid(st.st_gid)
             yield GfURLEntry(parent, path, st.st_mode, self._toFileType(st),
-                             pw.pw_name, gr.gr_name,
+                             self.uid2name(st.st_uid),
+                             self.gid2name(st.st_gid),
                              st.st_size, st.st_mtime, '')
 
         for entry in os.scandir(path):
@@ -821,7 +835,10 @@ class GfptarCommand(Command):
             if outdir:
                 self.extract(outdir)
                 return
-            # TODO --list
+            indir = self.opt['--list']
+            if indir:
+                self.list(indir)
+                return
         except Exception as e:
             if self.debug:
                 raise
@@ -1185,6 +1202,23 @@ class GfptarCommand(Command):
                          f'size={self.totalsize_file}, '
                          f'sec={sec:.0f}, '
                          f'B/s={bytes_per_sec:.1f}  ')
+
+    def list(self, indir):
+        indir_url = GfURL.init(indir)
+        filelistlist = []
+        for ent in indir_url.listdir():
+            if not ent.path.endswith(self.LIST_SUFFIX):
+                continue
+            filelistlist.append(ent.path)
+        filelistlist.sort()
+        for filelist in filelistlist:
+            list_url = GfURL.init(filelist)
+            with list_url.readopen() as f:
+                while True:
+                    line = f.readline()
+                    if not line:
+                        break
+                    print(line.rstrip())
 
 
 progname = os.path.basename(__file__)

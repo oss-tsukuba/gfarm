@@ -27,6 +27,11 @@ RUN dnf -y update \
     ruby \
     hostname \
     perl-bignum \
+    python3 \
+    python3-docopt \
+    python3-schema \
+    python3-tqdm \
+    python3-flake8 \
     && dnf -y --enablerepo=epel install \
     globus-gssapi-gsi-devel \
     globus-simple-ca \
