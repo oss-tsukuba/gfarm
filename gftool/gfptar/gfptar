@@ -170,8 +170,6 @@ def execcmd(args, stdin=subprocess.DEVNULL, stderr=sys.stdout.buffer,
         return out, err, ret
 
 
-# SEE: https://docs.python.org/3/library/codecs.html#standard-encodings
-
 def execcmd_readline(args, stdin=subprocess.DEVNULL, stderr=sys.stderr.buffer):
     # text mode
     proc = subprocess.Popen(
@@ -753,7 +751,7 @@ class GfTarFile(tarfile.TarFile):
     COMPRESS_TYPE_NO = 'no'
 
     @staticmethod
-    def readopen(gfurl, bufsize):
+    def extract_open(gfurl, bufsize):
         # use Stream (not seekable)
         openmode = 'r|*'  # any type (gz, bz2, xz)
         # TODO external compression program
@@ -769,12 +767,11 @@ class GfTarFile(tarfile.TarFile):
         return tar
 
     @staticmethod
-    def writeopen(gfurl, compress_type, bufsize):
+    def create_open(gfurl, compress_type, bufsize):
         # use Stream (not seekable)
         openmode = 'w|'
         if compress_type != GfTarFile.COMPRESS_TYPE_NO:
             openmode = 'w|' + compress_type
-        logger.debug('writeopen mode=%s', openmode)
         # TODO external compression program
         if gfurl.is_gfarm():
             if gfurl.exists():
@@ -1030,7 +1027,7 @@ class GfptarCommand(Command):
         outname = serial_str + outname
         outurl = GfURL.init(self.outdir_url.url_join(outname))
         self.create_a_archive_list(outurl, filelist)
-        tar = GfTarFile.writeopen(outurl, self.compress_type, self.bufsize)
+        tar = GfTarFile.create_open(outurl, self.compress_type, self.bufsize)
         for entry in filelist:
             if self.is_cancelled():
                 logger.debug('cancelled (2): serial=%04d', serial)
@@ -1141,7 +1138,7 @@ class GfptarCommand(Command):
             logger.debug('cancelled (1): name=%s', target)
             return
         arch_url = GfURL.init(target)
-        tar = GfTarFile.readopen(arch_url, self.bufsize)
+        tar = GfTarFile.extract_open(arch_url, self.bufsize)
         while True:
             if self.is_cancelled():
                 logger.debug('cancelled (2): name=%s', target)
