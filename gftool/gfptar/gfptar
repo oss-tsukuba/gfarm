@@ -31,6 +31,7 @@ from urllib.parse import urlparse
 import shutil
 from contextlib import contextmanager
 import traceback
+import unittest
 
 from docopt import docopt
 from schema import Schema, Use, Or
@@ -96,7 +97,7 @@ class GfLogger(logging.getLoggerClass()):
             self._log(logging.ERROR, msg, args, **kwargs)
             self.lock.release()
 
-    def error_exit(self, exit_code, msg, args, **kwargs):
+    def error_exit(self, exit_code, msg, *args, **kwargs):
         if self.isEnabledFor(logging.ERROR):
             self.lock.acquire()
             self._log(logging.ERROR, msg, args, **kwargs)
@@ -330,11 +331,19 @@ class GfURL(metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def mkdir_p(self):
+    def makedirs(self):
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def remove_tree(self):
         raise NotImplementedError()
 
     @abc.abstractmethod
     def symlink(self, linkname):
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def hardlink(self, linkname):
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -386,21 +395,31 @@ class GfURLGfarm(GfURL):
         return url.startswith('gfarm:')
 
     def mkdir(self):
+        # TODO gfmkdir -m
         out, err, ret = execcmd(['gfmkdir', self.url_str])
         if ret != 0:
             return ret == 0
         out, err, ret = execcmd(['gfchmod', '0700', self.url_str])
         return ret == 0
 
-    def mkdir_p(self):
+    def makedirs(self):
+        # TODO gfmkdir -m
         out, err, ret = execcmd(['gfmkdir', '-p', self.url_str])
         if ret != 0:
             return ret == 0
         out, err, ret = execcmd(['gfchmod', '0700', self.url_str])
         return ret == 0
 
+    def remove_tree(self):
+        out, err, ret = execcmd(['gfrm', '-rf', self.url_str])
+        return ret == 0
+
     def symlink(self, linkname):
         out, err, ret = execcmd(['gfln', '-s', linkname, self.url_str])
+        return ret == 0
+
+    def hardlink(self, linkname):
+        out, err, ret = execcmd(['gfln', linkname, self.url_str])
         return ret == 0
 
     def exists(self):
@@ -529,7 +548,7 @@ class GfURLGfarm(GfURL):
                     raise AssertionError
                 first = False
 
-    dircache = set()
+    dircache = set()  # TODO Temporary implementation
 
     # text mode, (binary mode: proc.stdin.buffer)
     @classmethod
@@ -542,7 +561,7 @@ class GfURLGfarm(GfURL):
             if parent_str not in cls.dircache:
                 # slow
                 if not parent.exists():
-                    parent.mkdir_p()
+                    parent.makedirs()
                 cls.dircache.add(parent.url_str)
 
         args = ['gfreg', '-', url_str]
@@ -610,11 +629,17 @@ class GfURLLocal(GfURL):
     def mkdir(self):
         return os.mkdir(self.url_str, mode=0o700)
 
-    def mkdir_p(self):
+    def makedirs(self):
         return os.makedirs(self.url_str, mode=0o700, exist_ok=True)
+
+    def remove_tree(self):
+        return shutil.rmtree(self.url_str)
 
     def symlink(self, linkname):
         return os.symlink(linkname, self.url_str)
+
+    def hardlink(self, linkname):
+        return os.link(linkname, self.url_str)
 
     def exists(self):
         return os.path.exists(self.url_str)
@@ -739,7 +764,7 @@ class GfURLLocal(GfURL):
         if parents:
             parent = self.parent()
             if not parent.exists():
-                parent.mkdir_p()
+                parent.makedirs()
         f = open(self.url_str, 'x', encoding=get_encoding())
         try:
             yield f
@@ -803,6 +828,22 @@ class GfTarFile(tarfile.TarFile):
             logger.debug('gfreg_proc.stdout.close OK')
 
 
+class TestGfptar(unittest.TestCase):
+    @staticmethod
+    def suite():
+        suite = unittest.TestSuite()
+        suite.addTest(TestGfptar('test_unhumanize'))
+        return suite
+
+    def test_unhumanize(self):
+        self.assertEqual(unhumanize_number('1K'), 1024)
+        self.assertEqual(unhumanize_number('2M'), 2097152)
+        self.assertEqual(unhumanize_number('3G'), 3221225472)
+        self.assertEqual(unhumanize_number('4T'), 4398046511104)
+        self.assertEqual(unhumanize_number('5P'), 5629499534213120)
+        self.assertEqual(unhumanize_number('6E'), 6917529027641081856)
+
+
 class GfptarCommand(Command):
     LIST_SUFFIX = '.lst'
 
@@ -826,15 +867,22 @@ class GfptarCommand(Command):
         try:
             outdir = self.opt['--create']
             if outdir:
-                self.create(outdir)
+                basedir = self.opt['--basedir']
+                infiles = self.opt['<infile>']
+                self.create(outdir, basedir, infiles)
                 return
             outdir = self.opt['--extract']
             if outdir:
-                self.extract(outdir)
+                indir = self.opt['<indir>']
+                members = self.opt['<member>']
+                self.extract(outdir, indir, members)
                 return
             indir = self.opt['--list']
             if indir:
                 self.list(indir)
+                return
+            if self.opt['--test']:
+                self.test_main()
                 return
         except Exception as e:
             if self.debug:
@@ -846,11 +894,216 @@ class GfptarCommand(Command):
                     logger.error(repr(e))
                 sys.exit(1)
 
-    def create(self, outdir):
+    def test_main(self):
+        self.uid = os.getuid()
+        self.pid = os.getpid()
+
+        self.test_unit()
+        self.test_simple_dir()
+        self.test_specified_dir()
+
+    def test_unit(self):
+        verbosity = 2
+        runner = unittest.TextTestRunner(verbosity=verbosity)
+        result = runner.run(TestGfptar.suite())
+        if len(result.errors) > 0 or len(result.failures) > 0:
+            logger.error_exit(1, 'unittest error')
+        print('unittest ... PASS')
+
+    def test_simple_dir(self):
+        save_opt_jobs = self.opt['--jobs']
+        save_opt_type = self.opt['--type']
+
+        pattern_jobs = [1, 2, 4, 10]
+        for jobs in pattern_jobs:
+            self.opt['--jobs'] = jobs
+            self.test_simple_sub('jobs_' + str(jobs))
+
+        pattern_type = ['gz', 'bz2', 'xz', 'no']
+        for t in pattern_type:
+            self.opt['--type'] = t
+            self.test_simple_sub('type_' + t)
+
+        self.opt['--jobs'] = save_opt_jobs
+        self.opt['--type'] = save_opt_type
+
+    def test_simple_sub(self, name):
+        testname = f'gfptar-test-simple-{name}'
+        d_name = f'{testname}-{self.uid}-{self.pid}'
+        workdir_local = os.path.join(self.opt['--test-workdir-local'], d_name)
+        workdir_gfarm = os.path.join(self.opt['--test-workdir-gfarm'], d_name)
+        workdir_local_url = GfURL.init(workdir_local)
+        workdir_gfarm_url = GfURL.init(workdir_gfarm)
+        workdir_local_url.mkdir()
+        workdir_gfarm_url.mkdir()
+
+        testsrc_name = 'test-src'
+        srcdir_local = workdir_local_url.url_join(testsrc_name)
+        srcdir_gfarm = workdir_gfarm_url.url_join(testsrc_name)
+        self.test_prepare_srcdir(srcdir_local)
+        self.test_prepare_srcdir(srcdir_gfarm)
+
+        test1_name = 'gfptar-test-1-create'
+        test1_dir_gfarm = workdir_gfarm_url.url_join(test1_name)
+        test2_name = 'gfptar-test-2-extract'
+        test2_dir_gfarm = workdir_gfarm_url.url_join(test2_name)
+        test3_name = 'gfptar-test-3-create'
+        test3_dir_local = workdir_local_url.url_join(test3_name)
+        test4_name = 'gfptar-test-4-extract'
+        test4_dir_local = workdir_local_url.url_join(test4_name)
+
+        # Gfarm -> Gfarm(tar)
+        self.create(test1_dir_gfarm, workdir_gfarm, [testsrc_name])
+        # Gfarm(tar) -> Gfarm
+        self.extract(test2_dir_gfarm, test1_dir_gfarm, [])
+        # Gfarm -> Local(tar)
+        self.create(test3_dir_local, test2_dir_gfarm, [testsrc_name])
+        # Local(tar) -> Local
+        self.extract(test4_dir_local, test3_dir_local, [])
+
+        test5_name = 'gfptar-test-5-create'
+        test5_dir_gfarm = workdir_gfarm_url.url_join(test5_name)
+        test6_name = 'gfptar-test-6-extract'
+        test6_dir_gfarm = workdir_gfarm_url.url_join(test6_name)
+        test7_name = 'gfptar-test-7-create'
+        test7_dir_local = workdir_local_url.url_join(test7_name)
+        test8_name = 'gfptar-test-8-extract'
+        test8_dir_local = workdir_local_url.url_join(test8_name)
+
+        # Local -> Gfarm(tar)
+        self.create(test5_dir_gfarm, workdir_local, [testsrc_name])
+        # Gfarm(tar) -> Gfarm
+        self.extract(test6_dir_gfarm, test5_dir_gfarm, [])
+        # Gfarm -> Local(tar)
+        self.create(test7_dir_local, test6_dir_gfarm, [testsrc_name])
+        # Local(tar) -> Local
+        self.extract(test8_dir_local, test7_dir_local, [])
+
+        # --list
+        self.list(test5_dir_gfarm, quiet=True)
+        self.list(test7_dir_local, quiet=True)
+
+        # compare
+        if self.test_compare_local(test4_dir_local, test8_dir_local):
+            print(testname + ' ... PASS')
+            workdir_local_url.remove_tree()
+            workdir_gfarm_url.remove_tree()
+        else:
+            logger.error_exit(1, testname + ' ... FAIL')
+
+    def test_prepare_srcdir(self, dir_url_str):
+        F = 'file'
+        D = 'directory'
+        S = 'symlink'
+        L = 'hardlink'
+        tree = [
+            (F, 'file1'),
+            (S, 'symlink1', 'file1'),
+            (L, 'hardlink1', 'file1'),
+            (D, 'dir1'),
+            (D, 'dir1/ディレクトリ 2'),
+            (F, 'dir1/ディレクトリ 2/ファイル 2'),
+            (S, 'dir1/ディレクトリ 2/シンボリックリンク 2', 'ファイル 2'),
+            (L, 'dir1/ディレクトリ 2/ハードリンク 2',
+             'dir1/ディレクトリ 2/ファイル 2'),
+            ]
+        srcdir_url = GfURL.init(dir_url_str)
+        srcdir_url.mkdir()
+        for ent in tree:
+            url = GfURL.init(srcdir_url.url_join(ent[1]))
+            if ent[0] == F:
+                # TODO set same mtime and mode=0600
+                with url.writeopen() as f:
+                    f.write(ent[1])
+            elif ent[0] == D:
+                # TODO set same mtime and mode=0700
+                url.makedirs()
+            elif ent[0] == S:
+                url.symlink(ent[2])
+            elif ent[0] == L:
+                url.hardlink(srcdir_url.url_join(ent[2]))
+
+    def test_specified_dir(self):
+        basedir = self.opt['--basedir']
+        if basedir is None:
+            return
+        infiles = self.opt['<infile>']
+
+        basedir_url = GfURL.init(basedir)
+
+        testname = 'gfptar-test-specified-dir'
+        d_name = f'{testname}-{self.uid}-{self.pid}'
+        workdir_local = os.path.join(self.opt['--test-workdir-local'], d_name)
+        workdir_gfarm = os.path.join(self.opt['--test-workdir-gfarm'], d_name)
+        workdir_local_url = GfURL.init(workdir_local)
+        workdir_gfarm_url = GfURL.init(workdir_gfarm)
+        workdir_local_url.mkdir()
+        workdir_gfarm_url.mkdir()
+
+        test9_name = 'gfptar-test-9-create'
+        test9_dir_gfarm = workdir_gfarm_url.url_join(test9_name)
+        test10_name = 'gfptar-test-10-extract'
+        test10_dir_gfarm = workdir_gfarm_url.url_join(test10_name)
+        test11_name = 'gfptar-test-11-create'
+        test11_dir_local = workdir_local_url.url_join(test11_name)
+        test12_name = 'gfptar-test-12-extract'
+        test12_dir_local = workdir_local_url.url_join(test12_name)
+
+        # basedir -> Gfarm(tar)
+        self.create(test9_dir_gfarm, basedir, infiles)
+        # Gfarm(tar) -> Gfarm
+        self.extract(test10_dir_gfarm, test9_dir_gfarm, [])
+        # Gfarm -> Local(tar)
+        self.create(test11_dir_local, test10_dir_gfarm, infiles)
+        # Local(tar) -> Local
+        self.extract(test12_dir_local, test11_dir_local, [])
+
+        test13_name = 'gfptar-test-13-src'
+        test13_dir_local = workdir_local_url.url_join(test13_name)
+        test13_dir_local_url = GfURL.init(test13_dir_local)
+        test13_dir_local_url.mkdir()
+
+        result = True
+        if basedir_url.is_gfarm():
+            for infile in infiles:
+                src = basedir_url.url_join(infile)
+                copied = test13_dir_local_url.url_join(infile)
+                copied_url = GfURL.init(copied)
+                parent_url = copied_url.parent()
+                parent_url.makedirs()
+                out, err, ret = execcmd(['gfpcopy', src, copied])
+                if err:
+                    logger.error(err)
+                result_dir = os.path.join(test12_dir_local, infile)
+                if not self.test_compare_local(result_dir, copied):
+                    result = False
+                    break
+        else:  # Local
+            for infile in infiles:
+                src = basedir_url.url_join(infile)
+                result_dir = os.path.join(test12_dir_local, infile)
+                if self.test_compare_local(result_dir, src):
+                    result = False
+                    break
+        if result:
+            print(testname + ' ... PASS')
+            workdir_local_url.remove_tree()
+            workdir_gfarm_url.remove_tree()
+        else:
+            logger.error_exit(1, testname + ' ... FAIL')
+
+    def test_compare_local(self, dir1, dir2):
+        # TODO compare mtime and mode of dir1/files with dir2/files
+        out, err, ret = execcmd(['diff', '-r', dir1, dir2])
+        if err:
+            logger.error(err)
+        return ret == 0
+
+    def create(self, outdir, basedir, infiles):
         self.outdir = outdir
         self.outdir_url = GfURL.init(outdir)
         self.outdir_url.create_new_dir()
-        self.basedir_url = GfURL.init(self.opt['--basedir'])
+        self.basedir_url = GfURL.init(basedir)
         self.size = self.opt['--size']
         self.ratio = self.opt['--ratio']
         self.compress_type = self.opt['--type']
@@ -866,7 +1119,7 @@ class GfptarCommand(Command):
 
         self.filelistlist = []
         totalsize = 0
-        for infile in self.opt['<infile>']:
+        for infile in infiles:
             infile_url = GfURL.init(infile)
             if not infile_url.is_local():
                 raise Exception('a relative path is required '
@@ -1049,12 +1302,12 @@ class GfptarCommand(Command):
             for entry in filelist:
                 f.write(entry.subpath + '\n')
 
-    def extract(self, outdir):
+    def extract(self, outdir, indir, members):
         self.outdir = outdir
         self.outdir_url = GfURL.init(outdir)
         self.outdir_url.create_new_dir()
-        self.indir = self.opt['<indir>']
-        member_set = set(self.opt['<member>'])
+        self.indir = indir
+        member_set = set(members)
 
         indir_url = GfURL.init(self.indir)
         archive_dict = {}  # {filename}
@@ -1158,6 +1411,7 @@ class GfptarCommand(Command):
             if tarinfo.isfile():
                 inf = tar.extractfile(tarinfo)  # io.BufferedReader
                 readlen = 0
+                # TODO outurl.copy(inf, mode, mtime)
                 with outurl.writeopen(parents=True) as outf:
                     while True:
                         buf = inf.read(self.bufsize)
@@ -1170,7 +1424,8 @@ class GfptarCommand(Command):
                 inf.close()
             elif tarinfo.isdir():
                 logger.debug('extract,dir: %s', tarinfo.name)
-                outurl.mkdir_p()
+                # TODO outurl.makedirs(mode|0700, mtime)
+                outurl.makedirs()
             elif tarinfo.issym():
                 logger.debug('extract,link: %s, %s', tarinfo.name,
                              tarinfo.linkname)
@@ -1200,7 +1455,7 @@ class GfptarCommand(Command):
                          f'sec={sec:.0f}, '
                          f'B/s={bytes_per_sec:.1f}  ')
 
-    def list(self, indir):
+    def list(self, indir, quiet=False):
         indir_url = GfURL.init(indir)
         filelistlist = []
         for ent in indir_url.listdir():
@@ -1215,7 +1470,8 @@ class GfptarCommand(Command):
                     line = f.readline()
                     if not line:
                         break
-                    print(line.rstrip())
+                    if not quiet:
+                        print(line.rstrip())
 
 
 progname = os.path.basename(__file__)
@@ -1226,31 +1482,36 @@ Usage:
   {f} [options] -c <outdir> -C <basedir> [--] <infile>...
   {f} [options] -x <outdir> [--] <indir> [<member>...]
   {f} [options] -t <indir>
+  {f} [options] --test
+  {f} [options] --test -C <basedir> <infile>...
   {f} -h | --help
 
 Options:
-  -t, --list=DIR           list mode,
-                           list the members of <indir>
-  -x, --extract=DIR        extract mode,
-                           extract all members or specified <member>s
-                           from <indir> to <outdir>
-  -c, --create=DIR         create mode,
-                           create tar files in <outdir> from <infile>s
-  -C, --basedir=DIR        base directory for <infile>s
-  -s, --size=BYTES         target bytes per output file [default: 100M]
-  -T, --type=TYPE          compress type (gz,bz2,xz,no) [default: no]
-  -r, --ratio=RATIO        assumed comprettion ratio (%) [default: 70]
+  -t, --list=DIR            list mode,
+                            list the members of <indir>
+  -x, --extract=DIR         extract mode,
+                            extract all members or specified <member>s
+                            from <indir> to <outdir>
+  -c, --create=DIR          create mode,
+                            create tar files in <outdir> from <infile>s
+  -C, --basedir=DIR         base directory for <infile>s
+  -j, --jobs=NUM            the number of jobs to copy simultaneously
+                            [default: 4]
+  -s, --size=BYTES          assumed bytes per output file [default: 100M]
+  -T, --type=TYPE           compress type (gz,bz2,xz,no) [default: no]
+  -r, --ratio=RATIO         assumed compression ratio (%) [default: 70]
   -I, --use-compress-program=COMMAND
-                           filter data through COMMAND,
-                           the command must accept -d option for decompression
-  -j, --jobs=NUM           the number of jobs to copy simultaneously
-                           [default: 4]
-  -e, --encoding=CODEC     codec for filename encoding [default: utf-8]
-  -b, --bufsize=BYTES      buffer size to copy [default: 1M]
-  -q, --quiet              quiet messages
-  -v, --verbose            verbose output
-  -d, --debug              debug mode
-  -?, -h, --help           show this help and exit
+                            filter data through COMMAND,
+                            the command must accept -d option for decompression
+  -e, --encoding=CODEC      codec for filename encoding [default: utf-8]
+  -b, --bufsize=BYTES       buffer size to copy [default: 1M]
+  --test                    test mode
+  --test-workdir-local=DIR  local directory for test [default: /tmp]
+  --test-workdir-gfarm=DIR  Gfarm directory for test [default: gfarm:/tmp]
+  -q, --quiet               quiet messages
+  -v, --verbose             verbose output
+  -d, --debug               debug mode
+  -?, -h, --help            show this help and exit
 
 Example of --create (Gfarm to Gfarm):
   Command line:
@@ -1291,9 +1552,6 @@ Codecs for encoding:
 """.format(f=progname)
 
 
-# TODO --test --testdir-local=DIR --testdir-gfarm=DIR
-
-
 _schema = Schema({
     '--list': Or(str, None),
     '--extract': Or(str, None),
@@ -1306,6 +1564,9 @@ _schema = Schema({
     '--ratio': Use(int),
     '--jobs': Use(int),
     '--use-compress-program': Or(str, None),  # TODO
+    '--test': bool,
+    '--test-workdir-local': Or(str, None),
+    '--test-workdir-gfarm': Or(str, None),
     '--quiet': bool,
     '--verbose': bool,
     '--debug': bool,
@@ -1318,5 +1579,5 @@ _schema = Schema({
 
 
 if __name__ == '__main__':
-    cmd = GfptarCommand(progname)
-    cmd.run()
+    gfptar = GfptarCommand(progname)
+    gfptar.run()
