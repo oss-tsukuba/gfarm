@@ -32,6 +32,7 @@ import shutil
 from contextlib import contextmanager
 import traceback
 import unittest
+import hashlib
 
 from docopt import docopt
 from schema import Schema, Use, Or
@@ -983,7 +984,34 @@ class GfptarCommand(Command):
         self.list(test5_dir_gfarm, quiet=True)
         self.list(test7_dir_local, quiet=True)
 
-        # compare
+        # extract a member (SEE ALSO: test_prepare_srcdir)
+        member = testsrc_name + '/dir1/ディレクトリ 2/ファイル 2'
+        test6_g_m = test6_dir_gfarm + '_m'
+        test8_l_m = test8_dir_local + '_m'
+        self.extract(test6_g_m, test5_dir_gfarm, [member])
+        self.extract(test8_l_m, test7_dir_local, [member])
+        g_member = GfURL.init(os.path.join(test6_g_m, member))
+        l_member = GfURL.init(os.path.join(test8_l_m, member))
+        # TODO GfURL.compare_file(g_member, l_member)
+        g_hash = hashlib.sha256()
+        l_hash = hashlib.sha256()
+        with g_member.readopen() as gf:
+            while True:
+                buf = gf.buffer.read(self.bufsize)
+                if not buf:
+                    break
+                g_hash.update(buf)
+        with l_member.readopen() as lf:
+            while True:
+                buf = lf.buffer.read(self.bufsize)
+                if not buf:
+                    break
+                l_hash.update(buf)
+        logger.debug(g_hash.hexdigest())
+        logger.debug(l_hash.hexdigest())
+        if g_hash.digest() != l_hash.digest():
+            logger.error_exit(1, testname + '(extract a member) ... FAIL')
+
         if self.test_compare_local(test4_dir_local, test8_dir_local):
             print(testname + ' ... PASS')
             workdir_local_url.remove_tree()
