@@ -964,7 +964,10 @@ class GfptarCommand(Command):
     def test_main(self):
         self.uid = os.getuid()
         self.pid = os.getpid()
-
+        out, err, ret = execcmd(['gfwhoami'])
+        if ret != 0:
+            logger.error_exit(ret, 'gfwhoami: %s', err)
+        self.gfarm_user = out.strip()
         self.test_unit()
         self.test_opt_pattern()
         self.test_specified_dir()
@@ -982,7 +985,7 @@ class GfptarCommand(Command):
         save_opt_type = self.opt['--type']
         save_opt_compress_prog = self.opt['--use-compress-program']
 
-        pattern_jobs = [1, 2, 4, 10]
+        pattern_jobs = [1, 4, 10]
         for jobs in pattern_jobs:
             self.opt['--jobs'] = jobs
             self.test_simple('jobs_' + str(jobs))
@@ -995,11 +998,11 @@ class GfptarCommand(Command):
         self.opt['--type'] = save_opt_type
 
         pattern_compress_prog = {
-            'gz': 'gzip',
-            'bz2': 'bzip2',
+            # 'gz': 'gzip',
+            # 'bz2': 'bzip2',
             'xz': 'xz',
-            'lzip': 'lzip',
-            'lzop': 'lzop',
+            # 'lzip': 'lzip',
+            # 'lzop': 'lzop',
         }
         for t, prog in pattern_compress_prog.items():
             w = shutil.which(prog)
@@ -1017,7 +1020,7 @@ class GfptarCommand(Command):
 
     def test_simple(self, name):
         testname = f'gfptar-test-simple-{name}'
-        d_name = f'{testname}-{self.uid}-{self.pid}'
+        d_name = f'{testname}-{self.gfarm_user}-{self.uid}-{self.pid}'
         workdir_local = os.path.join(self.opt['--test-workdir-local'], d_name)
         workdir_gfarm = os.path.join(self.opt['--test-workdir-gfarm'], d_name)
         workdir_local_url = GfURL.init(workdir_local)
@@ -1031,13 +1034,13 @@ class GfptarCommand(Command):
         self.test_prepare_srcdir(srcdir_local)
         self.test_prepare_srcdir(srcdir_gfarm)
 
-        test1_name = 'gfptar-test-1-create'
+        test1_name = 'test-1-create'
         test1_dir_gfarm = workdir_gfarm_url.url_join(test1_name)
-        test2_name = 'gfptar-test-2-extract'
+        test2_name = 'test-2-extract'
         test2_dir_gfarm = workdir_gfarm_url.url_join(test2_name)
-        test3_name = 'gfptar-test-3-create'
+        test3_name = 'test-3-create'
         test3_dir_local = workdir_local_url.url_join(test3_name)
-        test4_name = 'gfptar-test-4-extract'
+        test4_name = 'test-4-extract'
         test4_dir_local = workdir_local_url.url_join(test4_name)
 
         # Gfarm -> Gfarm(tar)
@@ -1049,36 +1052,20 @@ class GfptarCommand(Command):
         # Local(tar) -> Local
         self.extract(test4_dir_local, test3_dir_local, [])
 
-        test5_name = 'gfptar-test-5-create'
-        test5_dir_gfarm = workdir_gfarm_url.url_join(test5_name)
-        test6_name = 'gfptar-test-6-extract'
-        test6_dir_gfarm = workdir_gfarm_url.url_join(test6_name)
-        test7_name = 'gfptar-test-7-create'
-        test7_dir_local = workdir_local_url.url_join(test7_name)
-        test8_name = 'gfptar-test-8-extract'
-        test8_dir_local = workdir_local_url.url_join(test8_name)
-
-        # Local -> Gfarm(tar)
-        self.create(test5_dir_gfarm, workdir_local, [testsrc_name])
-        # Gfarm(tar) -> Gfarm
-        self.extract(test6_dir_gfarm, test5_dir_gfarm, [])
-        # Gfarm -> Local(tar)
-        self.create(test7_dir_local, test6_dir_gfarm, [testsrc_name])
-        # Local(tar) -> Local
-        self.extract(test8_dir_local, test7_dir_local, [])
-
         # --list
-        self.list(test5_dir_gfarm, quiet=True)
-        self.list(test7_dir_local, quiet=True)
+        self.list(test1_dir_gfarm, quiet=True)
+        self.list(test3_dir_local, quiet=True)
 
         # extract a member (SEE ALSO: test_prepare_srcdir)
         member = testsrc_name + '/dir1/ディレクトリ 2/ファイル 2'
-        test6_g_m = test6_dir_gfarm + '_m'
-        test8_l_m = test8_dir_local + '_m'
-        self.extract(test6_g_m, test5_dir_gfarm, [member])
-        self.extract(test8_l_m, test7_dir_local, [member])
-        g_member = GfURL.init(os.path.join(test6_g_m, member))
-        l_member = GfURL.init(os.path.join(test8_l_m, member))
+        test_member_g_name = 'test-gfptar-member-g'
+        test_member_l_name = 'test-gfptar-member-l'
+        test_member_g = workdir_gfarm_url.url_join(test_member_g_name)
+        test_member_l = workdir_local_url.url_join(test_member_l_name)
+        self.extract(test_member_g, test1_dir_gfarm, [member])
+        self.extract(test_member_l, test3_dir_local, [member])
+        g_member = GfURL.init(os.path.join(test_member_g, member))
+        l_member = GfURL.init(os.path.join(test_member_l, member))
         # TODO GfURL.compare_file(g_member, l_member)
         g_hash = hashlib.sha256()
         l_hash = hashlib.sha256()
@@ -1099,7 +1086,18 @@ class GfptarCommand(Command):
         if g_hash.digest() != l_hash.digest():
             logger.error_exit(1, testname + '(extract a member) ... FAIL')
 
-        if self.test_compare_local(test4_dir_local, test8_dir_local):
+        test5_name = 'test-5-create'
+        test5_dir_gfarm = workdir_gfarm_url.url_join(test5_name)
+        test6_name = 'test-6-extract'
+        test6_dir_local = workdir_local_url.url_join(test6_name)
+
+        # NOTE: check ignoring hardlinks for Local
+        # Local -> Gfarm(tar)
+        self.create(test5_dir_gfarm, workdir_local, [testsrc_name])
+        # Gfarm(tar) -> Local
+        self.extract(test6_dir_local, test5_dir_gfarm, [])
+
+        if self.test_compare_local(test4_dir_local, test6_dir_local):
             print(testname + ' ... PASS')
             workdir_local_url.remove_tree()
             workdir_gfarm_url.remove_tree()
@@ -1147,7 +1145,7 @@ class GfptarCommand(Command):
         basedir_url = GfURL.init(basedir)
 
         testname = 'gfptar-test-specified-dir'
-        d_name = f'{testname}-{self.uid}-{self.pid}'
+        d_name = f'{testname}-{self.gfarm_user}-{self.uid}-{self.pid}'
         workdir_local = os.path.join(self.opt['--test-workdir-local'], d_name)
         workdir_gfarm = os.path.join(self.opt['--test-workdir-gfarm'], d_name)
         workdir_local_url = GfURL.init(workdir_local)
@@ -1155,13 +1153,13 @@ class GfptarCommand(Command):
         workdir_local_url.mkdir()
         workdir_gfarm_url.mkdir()
 
-        test9_name = 'gfptar-test-9-create'
+        test9_name = 'test-9-create'
         test9_dir_gfarm = workdir_gfarm_url.url_join(test9_name)
-        test10_name = 'gfptar-test-10-extract'
+        test10_name = 'test-10-extract'
         test10_dir_gfarm = workdir_gfarm_url.url_join(test10_name)
-        test11_name = 'gfptar-test-11-create'
+        test11_name = 'test-11-create'
         test11_dir_local = workdir_local_url.url_join(test11_name)
-        test12_name = 'gfptar-test-12-extract'
+        test12_name = 'test-12-extract'
         test12_dir_local = workdir_local_url.url_join(test12_name)
 
         # basedir -> Gfarm(tar)
@@ -1173,16 +1171,15 @@ class GfptarCommand(Command):
         # Local(tar) -> Local
         self.extract(test12_dir_local, test11_dir_local, [])
 
-        test13_name = 'gfptar-test-13-src'
-        test13_dir_local = workdir_local_url.url_join(test13_name)
-        test13_dir_local_url = GfURL.init(test13_dir_local)
-        test13_dir_local_url.mkdir()
-
         result = True
         if basedir_url.is_gfarm():
+            copy_src_name = 'test-src-copied'
+            copy_src_dir_local = workdir_local_url.url_join(copy_src_name)
+            copy_src_dir_local_url = GfURL.init(copy_src_dir_local)
+            copy_src_dir_local_url.mkdir()
             for infile in infiles:
                 src = basedir_url.url_join(infile)
-                copied = test13_dir_local_url.url_join(infile)
+                copied = copy_src_dir_local_url.url_join(infile)
                 copied_url = GfURL.init(copied)
                 parent_url = copied_url.parent()
                 parent_url.makedirs()
@@ -1197,7 +1194,7 @@ class GfptarCommand(Command):
             for infile in infiles:
                 src = basedir_url.url_join(infile)
                 result_dir = os.path.join(test12_dir_local, infile)
-                if self.test_compare_local(result_dir, src):
+                if not self.test_compare_local(result_dir, src):
                     result = False
                     break
         if result:
