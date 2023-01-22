@@ -775,58 +775,124 @@ class GfURLLocal(GfURL):
 
 class GfTarFile(tarfile.TarFile):
     COMPRESS_TYPE_NO = 'no'
+    ATTR_PROC_LIST = '_gfptar_proc_list'  # [(proc, fileobj), ...]
 
-    @staticmethod
-    def extract_open(gfurl, bufsize):
+    @classmethod
+    def extract_open(cls, gfurl, bufsize, compress_prog=None):
         # use Stream (not seekable)
-        openmode = 'r|*'  # any type (gz, bz2, xz)
-        # TODO external compression program
-        if gfurl.is_gfarm():
-            if not gfurl.exists():
-                raise FileNotFoundError(gfurl.url_str)
-            proc = GfURLGfarm.gfexport(gfurl.url_str)
-            tar = GfTarFile.open(None, mode=openmode,
-                                 fileobj=proc.stdout.buffer, bufsize=bufsize)
-            setattr(tar, 'gfexport_proc', proc)
+        if compress_prog is not None:
+            openmode = 'r|'
         else:
-            tar = GfTarFile.open(gfurl.url_str, mode=openmode, bufsize=bufsize)
+            openmode = 'r|*'  # any type (gz, bz2, xz)
+        if not gfurl.exists():
+            raise FileNotFoundError(gfurl.url_str)
+        proc_list = []
+        if gfurl.is_gfarm():
+            if compress_prog:
+                gfexport_proc = GfURLGfarm.gfexport(gfurl.url_str)
+                decompress_proc = cls.decompress(compress_prog,
+                                                 gfexport_proc.stdout.buffer)
+                tar = cls.open(None, mode=openmode,
+                               fileobj=decompress_proc.stdout,
+                               bufsize=bufsize)
+                proc_list.append(tuple([gfexport_proc,
+                                        gfexport_proc.stdout.buffer]))
+                proc_list.append(tuple([decompress_proc,
+                                        decompress_proc.stdout]))
+            else:
+                gfexport_proc = GfURLGfarm.gfexport(gfurl.url_str)
+                tar = cls.open(None, mode=openmode,
+                               fileobj=gfexport_proc.stdout.buffer,
+                               bufsize=bufsize)
+                proc_list.append(tuple([gfexport_proc,
+                                        gfexport_proc.stdout.buffer]))
+        else:
+            if compress_prog:
+                inf = open(gfurl.url_str, 'rb')
+                decompress_proc = cls.decompress(compress_prog, inf)
+                tar = cls.open(None, mode=openmode,
+                               fileobj=decompress_proc.stdout,
+                               bufsize=bufsize)
+                proc_list.append(tuple([None, inf]))
+                proc_list.append(tuple([decompress_proc,
+                                        decompress_proc.stdout]))
+            else:
+                tar = GfTarFile.open(gfurl.url_str, mode=openmode,
+                                     bufsize=bufsize)
+        setattr(tar, cls.ATTR_PROC_LIST, proc_list)
         return tar
 
-    @staticmethod
-    def create_open(gfurl, compress_type, bufsize):
+    @classmethod
+    def create_open(cls, gfurl, compress_type, bufsize, compress_prog=None):
         # use Stream (not seekable)
         openmode = 'w|'
-        if compress_type != GfTarFile.COMPRESS_TYPE_NO:
+        if compress_prog is None \
+           and compress_type != cls.COMPRESS_TYPE_NO:
             openmode = 'w|' + compress_type
-        # TODO external compression program
+        if gfurl.exists():
+            raise FileExistsError(gfurl.url_str)
+        proc_list = []
         if gfurl.is_gfarm():
-            if gfurl.exists():
-                raise FileExistsError(gfurl.url_str)
-            proc = GfURLGfarm.gfreg(gfurl.url_str)
-            tar = GfTarFile.open(None, mode=openmode,
-                                 fileobj=proc.stdin.buffer, bufsize=bufsize)
-            setattr(tar, 'gfreg_proc', proc)
-        else:
-            tar = GfTarFile.open(gfurl.url_str, mode=openmode, bufsize=bufsize)
+            if compress_prog:
+                gfreg_proc = GfURLGfarm.gfreg(gfurl.url_str)
+                compress_proc = cls.compress(compress_prog,
+                                             gfreg_proc.stdin.buffer)
+                tar = cls.open(None, mode=openmode,
+                               fileobj=compress_proc.stdin, bufsize=bufsize)
+                proc_list.append(tuple([compress_proc, compress_proc.stdin]))
+                proc_list.append(tuple([gfreg_proc, gfreg_proc.stdin.buffer]))
+            else:
+                gfreg_proc = GfURLGfarm.gfreg(gfurl.url_str)
+                tar = cls.open(None, mode=openmode,
+                               fileobj=gfreg_proc.stdin.buffer,
+                               bufsize=bufsize)
+                proc_list.append(tuple([gfreg_proc, gfreg_proc.stdin.buffer]))
+        else:  # Local
+            if compress_prog:
+                outf = open(gfurl.url_str, 'wb')
+                compress_proc = cls.compress(compress_prog, outf)
+                tar = cls.open(None, mode=openmode,
+                               fileobj=compress_proc.stdin, bufsize=bufsize)
+                proc_list.append(tuple([compress_proc, compress_proc.stdin]))
+                proc_list.append(tuple([None, outf]))
+            else:
+                tar = cls.open(gfurl.url_str, mode=openmode, bufsize=bufsize)
+        setattr(tar, cls.ATTR_PROC_LIST, proc_list)
         return tar
+
+    @classmethod
+    def compress(cls, compress_prog, outf):
+        args = [compress_prog]
+        # binary mode
+        return subprocess.Popen(
+            args, shell=False, close_fds=True,
+            stdin=subprocess.PIPE, stdout=outf,
+            stderr=sys.stderr.buffer)
+
+    @classmethod
+    def decompress(cls, compress_prog, inf):
+        args = [compress_prog, '-d']
+        # binary mode
+        return subprocess.Popen(
+            args, shell=False, close_fds=True,
+            stdin=inf, stdout=subprocess.PIPE,
+            stderr=sys.stderr.buffer)
 
     # override
     def close(self):
         super().close()
-        if getattr(self, 'gfexport_proc', None):
-            self.gfexport_proc.stdout.close()
-            ret = self.gfexport_proc.wait()
-            if ret != 0:
-                raise Exception('{}: returncode={}'.format(
-                    ' '.join(self.gfexport_proc.args), ret))
-            logger.debug('gfexport_proc.stdout.close OK')
-        if getattr(self, 'gfreg_proc', None):
-            self.gfreg_proc.stdin.close()
-            ret = self.gfreg_proc.wait()
-            if ret != 0:
-                raise Exception('{}: returncode={}'.format(
-                    ' '.join(self.gfreg_proc.args), ret))
-            logger.debug('gfreg_proc.stdout.close OK')
+        proc_list = getattr(self, self.ATTR_PROC_LIST, None)
+        if proc_list:
+            for proc_tuple in proc_list:
+                proc, fileobj = proc_tuple
+                fileobj.close()
+                if proc is not None:
+                    logger.debug('close external process for tar: %s',
+                                 str(proc.args))
+                    ret = proc.wait()
+                    if ret != 0:
+                        raise Exception('{}: returncode={}'.format(
+                            ' '.join(proc.args), ret))
 
 
 class TestGfptar(unittest.TestCase):
@@ -900,7 +966,7 @@ class GfptarCommand(Command):
         self.pid = os.getpid()
 
         self.test_unit()
-        self.test_simple_dir()
+        self.test_opt_pattern()
         self.test_specified_dir()
 
     def test_unit(self):
@@ -911,24 +977,45 @@ class GfptarCommand(Command):
             logger.error_exit(1, 'unittest error')
         print('unittest ... PASS')
 
-    def test_simple_dir(self):
+    def test_opt_pattern(self):
         save_opt_jobs = self.opt['--jobs']
         save_opt_type = self.opt['--type']
+        save_opt_compress_prog = self.opt['--use-compress-program']
 
         pattern_jobs = [1, 2, 4, 10]
         for jobs in pattern_jobs:
             self.opt['--jobs'] = jobs
-            self.test_simple_sub('jobs_' + str(jobs))
+            self.test_simple('jobs_' + str(jobs))
+        self.opt['--jobs'] = save_opt_jobs
 
         pattern_type = ['gz', 'bz2', 'xz', 'no']
         for t in pattern_type:
             self.opt['--type'] = t
-            self.test_simple_sub('type_' + t)
+            self.test_simple('type_' + t)
+        self.opt['--type'] = save_opt_type
+
+        pattern_compress_prog = {
+            'gz': 'gzip',
+            'bz2': 'bzip2',
+            'xz': 'xz',
+            'lzip': 'lzip',
+            'lzop': 'lzop',
+        }
+        for t, prog in pattern_compress_prog.items():
+            w = shutil.which(prog)
+            if not w:
+                logger.error('SKIPPED: No such command: %s', prog)
+                continue
+            self.opt['--type'] = t
+            self.opt['--use-compress-program'] = prog
+            self.test_simple('compress_prog_' + prog)
+        # self.opt['--use-compress-program'] = save_opt_compress_prog
 
         self.opt['--jobs'] = save_opt_jobs
         self.opt['--type'] = save_opt_type
+        self.opt['--use-compress-program'] = save_opt_compress_prog
 
-    def test_simple_sub(self, name):
+    def test_simple(self, name):
         testname = f'gfptar-test-simple-{name}'
         d_name = f'{testname}-{self.uid}-{self.pid}'
         workdir_local = os.path.join(self.opt['--test-workdir-local'], d_name)
@@ -1135,6 +1222,7 @@ class GfptarCommand(Command):
         self.size = self.opt['--size']
         self.ratio = self.opt['--ratio']
         self.compress_type = self.opt['--type']
+        self.compress_prog = self.opt['--use-compress-program']
         if self.compress_type == GfTarFile.COMPRESS_TYPE_NO:
             self.split_size = self.size
             self.suffix = '.tar'
@@ -1308,7 +1396,8 @@ class GfptarCommand(Command):
         outname = serial_str + outname
         outurl = GfURL.init(self.outdir_url.url_join(outname))
         self.create_a_archive_list(outurl, filelist)
-        tar = GfTarFile.create_open(outurl, self.compress_type, self.bufsize)
+        tar = GfTarFile.create_open(outurl, self.compress_type, self.bufsize,
+                                    compress_prog=self.compress_prog)
         for entry in filelist:
             if self.is_cancelled():
                 logger.debug('cancelled (2): serial=%04d', serial)
@@ -1336,6 +1425,7 @@ class GfptarCommand(Command):
         self.outdir_url.create_new_dir()
         self.indir = indir
         member_set = set(members)
+        self.compress_prog = self.opt['--use-compress-program']
 
         indir_url = GfURL.init(self.indir)
         archive_dict = {}  # {filename}
@@ -1419,7 +1509,8 @@ class GfptarCommand(Command):
             logger.debug('cancelled (1): name=%s', target)
             return
         arch_url = GfURL.init(target)
-        tar = GfTarFile.extract_open(arch_url, self.bufsize)
+        tar = GfTarFile.extract_open(arch_url, self.bufsize,
+                                     compress_prog=self.compress_prog)
         while True:
             if self.is_cancelled():
                 logger.debug('cancelled (2): name=%s', target)
@@ -1526,7 +1617,7 @@ Options:
   -j, --jobs=NUM            the number of jobs to copy simultaneously
                             [default: 4]
   -s, --size=BYTES          assumed bytes per output file [default: 100M]
-  -T, --type=TYPE           compress type (gz,bz2,xz,no) [default: no]
+  -T, --type=TYPE           compress type (gz,bz2,xz,no) [default: gz]
   -r, --ratio=RATIO         assumed compression ratio (%) [default: 70]
   -I, --use-compress-program=COMMAND
                             filter data through COMMAND,
@@ -1591,7 +1682,7 @@ _schema = Schema({
     '--type': str,
     '--ratio': Use(int),
     '--jobs': Use(int),
-    '--use-compress-program': Or(str, None),  # TODO
+    '--use-compress-program': Or(str, None),
     '--test': bool,
     '--test-workdir-local': Or(str, None),
     '--test-workdir-gfarm': Or(str, None),
