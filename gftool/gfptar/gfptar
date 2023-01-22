@@ -155,21 +155,30 @@ def set_encoding(enc):
         _encoding = enc
 
 
-def execcmd(args, stdin=subprocess.DEVNULL, stderr=sys.stdout.buffer,
-            timeout=None):
+def execcmd_raw(args, stdin=subprocess.DEVNULL, stderr=sys.stdout.buffer,
+                timeout=None):
     # text mode
     proc = subprocess.Popen(
         args, shell=False, encoding=get_encoding(), close_fds=True,
         stdin=stdin, stdout=subprocess.PIPE, stderr=stderr)
     try:
         out, err = proc.communicate(timeout=timeout)
-        ret = proc.wait()
-        return out, err, ret
     except subprocess.TimeoutExpired:
         proc.kill()
         out, err = proc.communicate()
-        ret = proc.wait()
-        return out, err, ret
+    ret = proc.wait()
+    return out, err, ret
+
+
+def execcmd(args, stdin=subprocess.DEVNULL, stderr=sys.stdout.buffer,
+            timeout=None):
+    out, err, ret = execcmd_raw(args, stdin=stdin, stderr=stderr,
+                                timeout=timeout)
+    if ret != 0:
+        raise Exception('{}: {}'.format(str(args), err))
+    if err:
+        logger.warning(err)
+    return out
 
 
 def execcmd_readline(args, stdin=subprocess.DEVNULL, stderr=sys.stderr.buffer):
@@ -328,11 +337,19 @@ class GfURL(metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def mkdir(self):
+    def chmod(self, mode):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def makedirs(self):
+    def utime(self, atime, mtime):
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def mkdir(self, mode=0o700, mtime=None):
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def makedirs(self, mode=0o700, mtime=None):
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -395,40 +412,45 @@ class GfURLGfarm(GfURL):
     def is_my_URL(cls, url):
         return url.startswith('gfarm:')
 
-    def mkdir(self):
-        # TODO gfmkdir -m
-        out, err, ret = execcmd(['gfmkdir', self.url_str])
-        if ret != 0:
-            return ret == 0
-        out, err, ret = execcmd(['gfchmod', '0700', self.url_str])
-        return ret == 0
+    def chmod(self, mode):
+        # ex. (int)0o644 -> '644'
+        execcmd(['gfchmod', oct(mode)[2:], self.url_str])
 
-    def makedirs(self):
+    def utime(self, atime, mtime):
+        # TODO
+        logger.warning('mtime cannot be updated: %s', self.url_str)
+
+    def mkdir(self, mode=0o700, mtime=None):
         # TODO gfmkdir -m
-        out, err, ret = execcmd(['gfmkdir', '-p', self.url_str])
-        if ret != 0:
-            return ret == 0
-        out, err, ret = execcmd(['gfchmod', '0700', self.url_str])
-        return ret == 0
+        execcmd(['gfmkdir', self.url_str])
+        # slow
+        self.chmod(mode)
+        if mtime:
+            self.utime(mtime, mtime)
+
+    def makedirs(self, mode=0o700, mtime=None):
+        # TODO gfmkdir -m
+        execcmd(['gfmkdir', '-p', self.url_str])
+        # slow
+        self.chmod(mode)
+        if mtime:
+            self.utime(mtime, mtime)
 
     def remove_tree(self):
-        out, err, ret = execcmd(['gfrm', '-rf', self.url_str])
-        return ret == 0
+        execcmd(['gfrm', '-rf', self.url_str])
 
     def symlink(self, linkname):
-        out, err, ret = execcmd(['gfln', '-s', linkname, self.url_str])
-        return ret == 0
+        execcmd(['gfln', '-s', linkname, self.url_str])
 
     def hardlink(self, linkname):
-        out, err, ret = execcmd(['gfln', linkname, self.url_str])
-        return ret == 0
+        execcmd(['gfln', linkname, self.url_str])
 
     def exists(self):
-        out, err, ret = execcmd(['gftest', '-e', self.url_str])
+        out, err, ret = execcmd_raw(['gftest', '-e', self.url_str])
         return ret == 0
 
     def is_directory(self):
-        out, err, ret = execcmd(['gftest', '-d', self.url_str])
+        out, err, ret = execcmd_raw(['gftest', '-d', self.url_str])
         return ret == 0
 
     def is_empty(self):
@@ -627,20 +649,30 @@ class GfURLLocal(GfURL):
     def is_my_URL(cls, url):
         return True
 
-    def mkdir(self):
-        return os.mkdir(self.url_str, mode=0o700)
+    def chmod(self, mode):
+        os.chmod(self.url_str, mode)
 
-    def makedirs(self):
-        return os.makedirs(self.url_str, mode=0o700, exist_ok=True)
+    def utime(self, atime, mtime):
+        os.utime(self.url_str, times=(atime, mtime))
+
+    def mkdir(self, mode=0o700, mtime=None):
+        os.mkdir(self.url_str, mode)
+        if mtime:
+            self.utime(mtime, mtime)
+
+    def makedirs(self, mode=0o700, mtime=None):
+        os.makedirs(self.url_str, mode=mode, exist_ok=True)
+        if mtime:
+            self.utime(mtime, mtime)
 
     def remove_tree(self):
-        return shutil.rmtree(self.url_str)
+        shutil.rmtree(self.url_str)
 
     def symlink(self, linkname):
-        return os.symlink(linkname, self.url_str)
+        os.symlink(linkname, self.url_str)
 
     def hardlink(self, linkname):
-        return os.link(linkname, self.url_str)
+        os.link(linkname, self.url_str)
 
     def exists(self):
         return os.path.exists(self.url_str)
@@ -964,9 +996,7 @@ class GfptarCommand(Command):
     def test_main(self):
         self.uid = os.getuid()
         self.pid = os.getpid()
-        out, err, ret = execcmd(['gfwhoami'])
-        if ret != 0:
-            logger.error_exit(ret, 'gfwhoami: %s', err)
+        out = execcmd(['gfwhoami'])
         self.gfarm_user = out.strip()
         self.test_unit()
         self.test_opt_pattern()
@@ -1183,9 +1213,7 @@ class GfptarCommand(Command):
                 copied_url = GfURL.init(copied)
                 parent_url = copied_url.parent()
                 parent_url.makedirs()
-                out, err, ret = execcmd(['gfpcopy', src, copied])
-                if err:
-                    logger.error(err)
+                execcmd(['gfpcopy', src, copied])
                 result_dir = os.path.join(test12_dir_local, infile)
                 if not self.test_compare_local(result_dir, copied):
                     result = False
@@ -1206,9 +1234,7 @@ class GfptarCommand(Command):
 
     def test_compare_local(self, dir1, dir2):
         # TODO compare mtime and mode of dir1/files with dir2/files
-        out, err, ret = execcmd(['diff', '-r', dir1, dir2])
-        if err:
-            logger.error(err)
+        out, err, ret = execcmd_raw(['diff', '-r', dir1, dir2])
         return ret == 0
 
     def create(self, outdir, basedir, infiles):
@@ -1527,7 +1553,7 @@ class GfptarCommand(Command):
             if tarinfo.isfile():
                 inf = tar.extractfile(tarinfo)  # io.BufferedReader
                 readlen = 0
-                # TODO outurl.copy(inf, mode, mtime)
+                # TODO outurl.copy(inf, mode, mtime, uname, gname)
                 with outurl.writeopen(parents=True) as outf:
                     while True:
                         buf = inf.read(self.bufsize)
@@ -1538,10 +1564,15 @@ class GfptarCommand(Command):
                         readlen += wlen
                 logger.debug('extract,file: %s, %d', tarinfo.name, readlen)
                 inf.close()
+                # TODO
+                # slow on Gfarm
+                outurl.chmod(tarinfo.mode)
+                outurl.utime(tarinfo.mtime, tarinfo.mtime)
+                # outurl.chown(tarinfo.uname, tarinfo.gname) TODO
             elif tarinfo.isdir():
                 logger.debug('extract,dir: %s', tarinfo.name)
-                # TODO outurl.makedirs(mode|0700, mtime)
-                outurl.makedirs()
+                outurl.makedirs(mode=(tarinfo.mode | 0o700),
+                                mtime=tarinfo.mtime)
             elif tarinfo.issym():
                 logger.debug('extract,link: %s, %s', tarinfo.name,
                              tarinfo.linkname)
