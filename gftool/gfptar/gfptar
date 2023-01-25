@@ -3,9 +3,11 @@
 # Requirements:
 # --- for Debian,Ubuntu series ---
 # apt-get install python3 python3-docopt python3-schema python3-tqdm
+#
 # --- for RHEL,CentOS series ---
 # yum install     python3 python3-docopt python3-schema python3-tqdm
-# --- to install to ~/.local of each user ---
+#
+# --- Or, install to ~/.local just for user's environment ---
 # (required: python3-pip)
 # pip3 install --user docopt schema tqdm
 
@@ -156,10 +158,13 @@ def set_encoding(enc):
 
 
 def execcmd_raw(args, stdin=subprocess.DEVNULL, stderr=sys.stdout.buffer,
-                timeout=None):
-    # text mode
+                timeout=None, textmode=False):
+    if textmode:
+        encoding = get_encoding()
+    else:
+        encoding = None
     proc = subprocess.Popen(
-        args, shell=False, encoding=get_encoding(), close_fds=True,
+        args, shell=False, encoding=encoding, close_fds=True,
         stdin=stdin, stdout=subprocess.PIPE, stderr=stderr)
     try:
         out, err = proc.communicate(timeout=timeout)
@@ -171,9 +176,9 @@ def execcmd_raw(args, stdin=subprocess.DEVNULL, stderr=sys.stdout.buffer,
 
 
 def execcmd(args, stdin=subprocess.DEVNULL, stderr=sys.stdout.buffer,
-            timeout=None):
+            timeout=None, textmode=False):
     out, err, ret = execcmd_raw(args, stdin=stdin, stderr=stderr,
-                                timeout=timeout)
+                                timeout=timeout, textmode=textmode)
     if ret != 0:
         raise Exception('{}: {}'.format(str(args), err))
     if err:
@@ -181,8 +186,8 @@ def execcmd(args, stdin=subprocess.DEVNULL, stderr=sys.stdout.buffer,
     return out
 
 
+# text mode
 def execcmd_readline(args, stdin=subprocess.DEVNULL, stderr=sys.stderr.buffer):
-    # text mode
     proc = subprocess.Popen(
         args, shell=False, encoding=get_encoding(), close_fds=True,
         stdin=stdin, stdout=subprocess.PIPE, stderr=stderr)
@@ -390,12 +395,12 @@ class GfURL(metaclass=abc.ABCMeta):
 
     @contextmanager
     @abc.abstractmethod
-    def readopen(self):
+    def readopen(self, textmode=False):
         raise NotImplementedError()
 
     @contextmanager
     @abc.abstractmethod
-    def writeopen(self, parents=False):
+    def writeopen(self, textmode=False, parents=False):
         raise NotImplementedError()
 
 
@@ -429,7 +434,7 @@ class GfURLGfarm(GfURL):
             self.utime(mtime, mtime)
 
     def makedirs(self, mode=0o700, mtime=None):
-        # TODO gfmkdir -m
+        # TODO gfmkdir -m -M
         execcmd(['gfmkdir', '-p', self.url_str])
         # slow
         self.chmod(mode)
@@ -573,9 +578,8 @@ class GfURLGfarm(GfURL):
 
     dircache = set()  # TODO Temporary implementation
 
-    # text mode, (binary mode: proc.stdin.buffer)
     @classmethod
-    def gfreg(cls, url_str, parents=False):
+    def gfreg(cls, url_str, textmode=False, parents=False):
         # TODO gfreg --parents
         if parents:
             url = GfURL.init(url_str)
@@ -588,18 +592,24 @@ class GfURLGfarm(GfURL):
                 cls.dircache.add(parent.url_str)
 
         args = ['gfreg', '-', url_str]
+        if textmode:
+            encoding = get_encoding()
+        else:
+            encoding = None
         return subprocess.Popen(
-            args, shell=False, encoding=get_encoding(), close_fds=True,
+            args, shell=False, encoding=encoding, close_fds=True,
             stdin=subprocess.PIPE, stdout=subprocess.DEVNULL,
             stderr=sys.stderr.buffer)
 
-    # text mode, (binary mode: proc.stdout.buffer)
     @classmethod
-    def gfexport(cls, url_str):
+    def gfexport(cls, url_str, textmode=False):
         args = ['gfexport', url_str]
-        # binary mode
+        if textmode:
+            encoding = get_encoding()
+        else:
+            encoding = None
         return subprocess.Popen(
-            args, shell=False, encoding=get_encoding(), close_fds=True,
+            args, shell=False, encoding=encoding, close_fds=True,
             stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
             stderr=sys.stderr.buffer)
 
@@ -609,15 +619,14 @@ class GfURLGfarm(GfURL):
             return
         if entry.file_type == GfURLEntry.TYPE_FILE:
             proc = GfURLGfarm.gfexport(entry.path)
-            tar.addfile(tarinfo, fileobj=proc.stdout.buffer)
+            tar.addfile(tarinfo, fileobj=proc.stdout)
             proc.stdout.close()
         else:
             tar.addfile(tarinfo)
 
-    # text mode, (binary mode: proc.stdout.buffer)
     @contextmanager
-    def readopen(self):
-        proc = GfURLGfarm.gfexport(self.url_str)
+    def readopen(self, textmode=False):
+        proc = GfURLGfarm.gfexport(self.url_str, textmode=textmode)
         try:
             yield proc.stdout
         finally:
@@ -627,10 +636,10 @@ class GfURLGfarm(GfURL):
                 raise Exception('{}: returncode={}'.format(
                     ' '.join(proc.args), ret))
 
-    # text mode, (binary mode: proc.stdin.buffer)
     @contextmanager
-    def writeopen(self, parents=False):
-        proc = GfURLGfarm.gfreg(self.url_str, parents=parents)
+    def writeopen(self, textmode=False, parents=False):
+        proc = GfURLGfarm.gfreg(self.url_str, textmode=textmode,
+                                parents=parents)
         try:
             yield proc.stdin
         finally:
@@ -782,23 +791,27 @@ class GfURLLocal(GfURL):
         else:
             tar.addfile(tarinfo)
 
-    # text mode, (binary mode: f.buffer)
     @contextmanager
-    def readopen(self):
-        f = open(self.url_str, 'r', encoding=get_encoding())
+    def readopen(self, textmode=False):
+        if textmode:
+            f = open(self.url_str, 'rt', encoding=get_encoding())
+        else:
+            f = open(self.url_str, 'rb')
         try:
             yield f
         finally:
             f.close()
 
-    # text mode, (binary mode: f.buffer)
     @contextmanager
-    def writeopen(self, parents=False):
+    def writeopen(self, textmode=False, parents=False):
         if parents:
             parent = self.parent()
             if not parent.exists():
                 parent.makedirs()
-        f = open(self.url_str, 'x', encoding=get_encoding())
+        if textmode:
+            f = open(self.url_str, 'xt', encoding=get_encoding())
+        else:
+            f = open(self.url_str, 'xb')
         try:
             yield f
         finally:
@@ -823,21 +836,21 @@ class GfTarFile(tarfile.TarFile):
             if compress_prog:
                 gfexport_proc = GfURLGfarm.gfexport(gfurl.url_str)
                 decompress_proc = cls.decompress(compress_prog,
-                                                 gfexport_proc.stdout.buffer)
+                                                 gfexport_proc.stdout)
                 tar = cls.open(None, mode=openmode,
                                fileobj=decompress_proc.stdout,
                                bufsize=bufsize)
                 proc_list.append(tuple([gfexport_proc,
-                                        gfexport_proc.stdout.buffer]))
+                                        gfexport_proc.stdout]))
                 proc_list.append(tuple([decompress_proc,
                                         decompress_proc.stdout]))
             else:
                 gfexport_proc = GfURLGfarm.gfexport(gfurl.url_str)
                 tar = cls.open(None, mode=openmode,
-                               fileobj=gfexport_proc.stdout.buffer,
+                               fileobj=gfexport_proc.stdout,
                                bufsize=bufsize)
                 proc_list.append(tuple([gfexport_proc,
-                                        gfexport_proc.stdout.buffer]))
+                                        gfexport_proc.stdout]))
         else:
             if compress_prog:
                 inf = open(gfurl.url_str, 'rb')
@@ -868,17 +881,17 @@ class GfTarFile(tarfile.TarFile):
             if compress_prog:
                 gfreg_proc = GfURLGfarm.gfreg(gfurl.url_str)
                 compress_proc = cls.compress(compress_prog,
-                                             gfreg_proc.stdin.buffer)
+                                             gfreg_proc.stdin)
                 tar = cls.open(None, mode=openmode,
                                fileobj=compress_proc.stdin, bufsize=bufsize)
                 proc_list.append(tuple([compress_proc, compress_proc.stdin]))
-                proc_list.append(tuple([gfreg_proc, gfreg_proc.stdin.buffer]))
+                proc_list.append(tuple([gfreg_proc, gfreg_proc.stdin]))
             else:
                 gfreg_proc = GfURLGfarm.gfreg(gfurl.url_str)
                 tar = cls.open(None, mode=openmode,
-                               fileobj=gfreg_proc.stdin.buffer,
+                               fileobj=gfreg_proc.stdin,
                                bufsize=bufsize)
-                proc_list.append(tuple([gfreg_proc, gfreg_proc.stdin.buffer]))
+                proc_list.append(tuple([gfreg_proc, gfreg_proc.stdin]))
         else:  # Local
             if compress_prog:
                 outf = open(gfurl.url_str, 'wb')
@@ -996,7 +1009,7 @@ class GfptarCommand(Command):
     def test_main(self):
         self.uid = os.getuid()
         self.pid = os.getpid()
-        out = execcmd(['gfwhoami'])
+        out = execcmd(['gfwhoami'], textmode=True)
         self.gfarm_user = out.strip()
         self.test_unit()
         self.test_opt_pattern()
@@ -1101,13 +1114,13 @@ class GfptarCommand(Command):
         l_hash = hashlib.sha256()
         with g_member.readopen() as gf:
             while True:
-                buf = gf.buffer.read(self.bufsize)
+                buf = gf.read(self.bufsize)
                 if not buf:
                     break
                 g_hash.update(buf)
         with l_member.readopen() as lf:
             while True:
-                buf = lf.buffer.read(self.bufsize)
+                buf = lf.read(self.bufsize)
                 if not buf:
                     break
                 l_hash.update(buf)
@@ -1156,7 +1169,7 @@ class GfptarCommand(Command):
             url = GfURL.init(srcdir_url.url_join(ent[1]))
             if ent[0] == F:
                 # TODO set same mtime and mode=0600
-                with url.writeopen() as f:
+                with url.writeopen(textmode=True) as f:
                     f.write(ent[1])
             elif ent[0] == D:
                 # TODO set same mtime and mode=0700
@@ -1438,7 +1451,7 @@ class GfptarCommand(Command):
 
     def create_a_archive_list(self, url, filelist):
         outurl = GfURL.init(url.url_str + self.LIST_SUFFIX)
-        with outurl.writeopen() as f:
+        with outurl.writeopen(textmode=True) as f:
             for entry in filelist:
                 f.write(entry.subpath + '\n')
 
@@ -1460,7 +1473,7 @@ class GfptarCommand(Command):
             arch_url_str = indir_url.url_join(subpath)
             target_set_all.add(arch_url_str)
             list_url = GfURL.init(arch_url_str + self.LIST_SUFFIX)
-            with list_url.readopen() as f:
+            with list_url.readopen(textmode=True) as f:
                 while True:
                     line = f.readline()
                     if not line:
@@ -1560,7 +1573,7 @@ class GfptarCommand(Command):
                         if not buf:
                             break
                         # binary mode
-                        wlen = outf.buffer.write(buf)
+                        wlen = outf.write(buf)
                         readlen += wlen
                 logger.debug('extract,file: %s, %d', tarinfo.name, readlen)
                 inf.close()
@@ -1612,7 +1625,7 @@ class GfptarCommand(Command):
         filelistlist.sort()
         for filelist in filelistlist:
             list_url = GfURL.init(filelist)
-            with list_url.readopen() as f:
+            with list_url.readopen(textmode=True) as f:
                 while True:
                     line = f.readline()
                     if not line:
@@ -1624,7 +1637,7 @@ class GfptarCommand(Command):
 progname = os.path.basename(__file__)
 
 
-__doc__ = """{f}
+__doc__ = """
 Usage:
   {f} [options] -c <outdir> -C <basedir> [--] <infile>...
   {f} [options] -x <outdir> [--] <indir> [<member>...]
@@ -1644,9 +1657,9 @@ Options:
   -C, --basedir=DIR         base directory for <infile>s
   -j, --jobs=NUM            the number of jobs to copy simultaneously
                             [default: 4]
-  -s, --size=BYTES          assumed bytes per output file [default: 100M]
+  -s, --size=BYTES          assumed bytes per output file [default: 200M]
   -T, --type=TYPE           compress type (gz,bz2,xz,no) [default: gz]
-  -r, --ratio=RATIO         assumed compression ratio (%) [default: 70]
+  -r, --ratio=RATIO         assumed compression ratio (%) [default: 50]
   -I, --use-compress-program=COMMAND
                             filter data through COMMAND,
                             the command must accept -d option for decompression
@@ -1693,6 +1706,20 @@ Example of --list:
     dir/test0000.data
     ...
     dir/test9999.data
+
+File name rule:
+  - sort list of members.
+  - 0001_<first fullpath>..<last fullpath>.tar<.suffix>
+  - fullpath: replace '/' to '_'
+  - Too long file name: cut first half of file name.
+    (use MAXNAMLEN=255)
+
+Not implemented yet (TODO):
+  - preserve mtime for Gfarm.
+
+Limitations:
+  - Hard links are not preserved.
+  - File names cannot include newline characters.
 
 Codecs for encoding:
   https://docs.python.org/3/library/codecs.html#standard-encodings
