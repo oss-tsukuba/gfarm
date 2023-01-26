@@ -1190,6 +1190,7 @@ fi
 %{prefix}/bin/gfpcopy-test.sh
 %{prefix}/bin/gfpcopy-stress
 %{prefix}/bin/gfpath
+%{prefix}/bin/gfptar
 %if %{gfarm_v2_not_yet}
 %{prefix}/bin/gfps
 %{prefix}/bin/gfpwd
