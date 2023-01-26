@@ -1344,7 +1344,7 @@ class GfptarCommand(Command):
             for t in concurrent.futures.as_completed(futures, timeout=None):
                 exc = t.exception()
                 if exc:
-                    logger.error(repr(exc))
+                    logger.error('%s: serial=%04d', repr(exc), futures[t])
                     tb = traceback.TracebackException.from_exception(exc)
                     logger.debug(''.join(tb.format()))
                     if not self.is_cancelled():
@@ -1456,6 +1456,9 @@ class GfptarCommand(Command):
             for entry in filelist:
                 f.write(entry.subpath + '\n')
 
+    def error_not_a_gfptar_directory(self, url_str):
+        raise Exception('Not a gfptar-archived directory: ' + url_str)
+
     def extract(self, outdir, indir, members):
         self.outdir = outdir
         self.outdir_url = GfURL.init(outdir)
@@ -1465,6 +1468,9 @@ class GfptarCommand(Command):
         self.compress_prog = self.opt['--use-compress-program']
 
         indir_url = GfURL.init(self.indir)
+        if not indir_url.is_directory():
+            self.error_not_a_gfptar_directory(indir_url.url_str)
+
         archive_dict = {}  # {filename}
         target_set_all = set()
         for ent in indir_url.listdir():
@@ -1474,6 +1480,8 @@ class GfptarCommand(Command):
             arch_url_str = indir_url.url_join(subpath)
             target_set_all.add(arch_url_str)
             list_url = GfURL.init(arch_url_str + self.LIST_SUFFIX)
+            if not list_url.exists():
+                self.error_not_a_gfptar_directory(indir_url.url_str)
             with list_url.readopen(textmode=True) as f:
                 while True:
                     line = f.readline()
@@ -1528,7 +1536,7 @@ class GfptarCommand(Command):
             for t in concurrent.futures.as_completed(futures, timeout=None):
                 exc = t.exception()
                 if exc:
-                    logger.error(repr(exc))
+                    logger.error('%s: %s', repr(exc), futures[t])
                     tb = traceback.TracebackException.from_exception(exc)
                     logger.debug(''.join(tb.format()))
                     if not self.is_cancelled():
