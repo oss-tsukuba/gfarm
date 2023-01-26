@@ -28,6 +28,9 @@ debian11/src
 BASEDIR=dist
 IS_CGROUP_V2_COMMAND="./common/is_cgroup_v2.sh"
 
+REGRESS=${REGRESS:-0}
+SKIP_PKG=${SKIP_PKG:-1}
+
 if ${IS_CGROUP_V2_COMMAND}; then
     echo "unsupported: ${LIST_OLD_SYSTEMD}"
     LIST_OLD_SYSTEMD=""
@@ -46,7 +49,14 @@ trap 'cleanup; exit 1' $trap_sigs
 
 RESULT_NAME=0
 for name in ${LIST_ALL}; do
-    (cd ${BASEDIR}/${name} && make reborn)
+    if [ $SKIP_PKG -eq 1 ] && [[ $name =~ .*"/pkg" ]]; then
+        continue
+    fi
+    if [ $REGRESS -eq 1 ]; then
+        (cd ${BASEDIR}/${name} && make reborn && make regress)
+    else
+        (cd ${BASEDIR}/${name} && make reborn)
+    fi
     RESULT=$?
     (cd ${BASEDIR}/${name} && make down)
     RESULT_NAME=$name
