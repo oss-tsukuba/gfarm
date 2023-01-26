@@ -129,6 +129,8 @@ gftool/gfprep/gfprep_m.sh
 gftool/gfprep/gfprep_m_exist.sh
 gftool/gfprep/gfprep_m_exist2.sh
 gftool/gfprep/gfprep_N.sh
+gftool/gfptar/flake8.sh
+gftool/gfptar/gfptar.sh
 gftool/gfrmdir/rmdir.sh
 gftool/gfrmdir/rmdir_symlink.sh
 gftool/gfreg/0byte.sh
