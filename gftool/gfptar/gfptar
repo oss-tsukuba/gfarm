@@ -5,6 +5,7 @@
 # apt-get install python3 python3-docopt python3-schema python3-tqdm
 #
 # --- for RHEL,CentOS series ---
+# yum install     epel-release
 # yum install     python3 python3-docopt python3-schema python3-tqdm
 #
 # --- Or, install to ~/.local just for user's environment ---
@@ -1663,8 +1664,8 @@ Options:
   -I, --use-compress-program=COMMAND
                             filter data through COMMAND,
                             the command must accept -d option for decompression
-  -e, --encoding=CODEC      codec for filename encoding [default: utf-8]
-  -b, --bufsize=BYTES       buffer size to copy [default: 1M]
+  --encoding=CODEC          codec for filename encoding [default: utf-8]
+  --bufsize=BYTES           buffer size to copy [default: 1M]
   --test                    test mode
   --test-workdir-local=DIR  local directory for test [default: /tmp]
   --test-workdir-gfarm=DIR  Gfarm directory for test [default: gfarm:/tmp]
