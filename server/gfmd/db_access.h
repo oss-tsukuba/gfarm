@@ -150,6 +150,14 @@ gfarm_error_t db_mdhost_remove(const char *);
 gfarm_error_t db_mdhost_load(void *, void (*)(void *,
 	struct gfarm_metadb_server *));
 
+struct db_user_auth_arg;
+struct db_user_auth_remove_arg;
+gfarm_error_t db_user_auth_add(const struct db_user_auth_arg *);
+gfarm_error_t db_user_auth_modify(const struct db_user_auth_arg *);
+gfarm_error_t db_user_auth_remove(const struct db_user_auth_remove_arg *);
+gfarm_error_t db_user_auth_load(void *,
+	void (*)(void *, struct db_user_auth_arg *));
+
 /* allocation for storage operations arguments */
 struct db_host_modify_arg;
 struct db_fsngroup_modify_arg;

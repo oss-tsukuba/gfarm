@@ -36,6 +36,11 @@
 #define USER_DN_HASHTAB_SIZE	3079	/* prime number */
 
 /* in-core gfarm_user_info */
+struct user_auth {
+	char *auth_method;
+	char *auth_user_id;
+};
+
 struct user {
 	struct gfarm_user_info ui;
 	struct group_assignment groups;
@@ -47,6 +52,8 @@ struct user {
 	int needs_chroot;
 	struct tenant *tenant;
 	char *name_in_tenant;
+
+	struct user_auth *user_auths;
 };
 
 /* used to access "/tenantes/${TENANT}", not registered in hashtabs */
@@ -83,6 +90,34 @@ grpassign_add_group(struct group_assignment *ga)
 	u->groups.group_prev->group_next = ga;
 	u->groups.group_prev = ga;
 }
+
+gfarm_error_t
+user_enter_auth_id(struct user *u, const char *auth_method,
+	const char *auth_user_id, int limit_check,
+	struct user_auth **uap)
+{
+	return (GFARM_ERR_NO_ERROR);
+}
+
+void
+user_set_user_auth_metadata_in_cache(struct user_auth *ua,
+	const char *auth_method, const char *auth_user_id)
+{
+}
+
+struct user_auth
+*user_lookup_auth_id(struct user *user,
+	const char *auth_method, const char *auth_user_id)
+{
+	return (NULL);
+}
+
+gfarm_error_t
+user_remove_auth_id(struct user *user, const char *auth_method)
+{
+	return (GFARM_ERR_NO_ERROR);
+}
+
 
 static void
 user_invalidate(struct user *u)

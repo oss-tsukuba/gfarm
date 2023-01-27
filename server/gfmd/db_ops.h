@@ -311,4 +311,14 @@ struct db_ops {
 
 	gfarm_error_t (*fsngroup_modify)(gfarm_uint64_t,
 		struct db_fsngroup_modify_arg *);
+
+	gfarm_error_t (*user_auth_add)(gfarm_uint64_t,
+		struct db_user_auth_arg *);
+	gfarm_error_t (*user_auth_modify)(gfarm_uint64_t,
+		struct db_user_auth_arg *);
+	gfarm_error_t (*user_auth_remove)(gfarm_uint64_t,
+		struct db_user_auth_remove_arg *);
+	gfarm_error_t (*user_auth_load)(void *,
+		void (*)(void *, struct db_user_auth_arg *));
+
 };

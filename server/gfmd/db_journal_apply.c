@@ -947,6 +947,63 @@ db_journal_apply_mdhost_remove(gfarm_uint64_t seqnum, char *name)
 }
 
 /**********************************************************/
+/* user_auth */
+
+static gfarm_error_t
+db_journal_apply_user_auth_add(gfarm_uint64_t seqnum,
+	struct db_user_auth_arg *arg)
+{
+	gfarm_error_t e;
+	struct user *u;
+	struct user_auth *ua;
+
+	u = user_tenant_lookup(arg->username);
+	if (u == NULL)
+		return (GFARM_ERR_NO_SUCH_USER);
+
+	e = user_enter_auth_id(u, arg->auth_method, arg->auth_user_id, 0, &ua);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	user_set_user_auth_metadata_in_cache(ua,
+		arg->auth_method, arg->auth_user_id);
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+db_journal_apply_user_auth_modify(gfarm_uint64_t seqnum,
+	struct db_user_auth_arg *arg)
+{
+	struct user *u;
+	struct user_auth *ua;
+
+	u = user_tenant_lookup(arg->username);
+	if (u == NULL)
+		return (GFARM_ERR_NO_SUCH_USER);
+
+	ua = user_lookup_auth_id(u, arg->auth_method, arg->auth_user_id);
+	if (ua == NULL)
+		return (GFARM_ERR_NO_SUCH_OBJECT);
+
+	user_set_user_auth_metadata_in_cache(ua,
+		arg->auth_method, arg->auth_user_id);
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+db_journal_apply_user_auth_remove(gfarm_uint64_t seqnum,
+	struct db_user_auth_remove_arg *arg)
+{
+	struct user *u;
+
+	u = user_tenant_lookup(arg->username);
+	if (u == NULL)
+		return (GFARM_ERR_NO_SUCH_USER);
+
+	return (user_remove_auth_id(u, arg->auth_method));
+}
+
+/**********************************************************/
 
 const struct db_ops db_journal_apply_ops = {
 	NULL,
@@ -1040,6 +1097,10 @@ const struct db_ops db_journal_apply_ops = {
 	NULL,
 
 	db_journal_apply_fsngroup_modify,
+
+	db_journal_apply_user_auth_add,
+	db_journal_apply_user_auth_modify,
+	db_journal_apply_user_auth_remove,
 };
 
 void
