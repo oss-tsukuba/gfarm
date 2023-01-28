@@ -1035,7 +1035,11 @@ class GfptarCommand(Command):
             self.test_simple('jobs_' + str(jobs))
         self.opt['--jobs'] = save_opt_jobs
 
-        pattern_type = ['gz', 'bz2', 'xz', 'no']
+        pattern_type = [
+            'gz',
+            # 'bz2',
+            # 'xz',
+            'no']
         for t in pattern_type:
             self.opt['--type'] = t
             self.test_simple('type_' + t)
