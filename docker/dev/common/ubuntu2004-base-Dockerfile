@@ -44,7 +44,7 @@ RUN yes | unminimize \
     python3-docopt \
     python3-schema \
     python3-tqdm \
-    python3-flake8 \
+    flake8 \
     && apt-get -y install \
     docbook-utils docbook-xsl xsltproc \
     ncat ldnsutils iproute2 net-tools bind9-dnsutils telnet tcpdump \

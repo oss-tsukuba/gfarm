@@ -38,7 +38,7 @@ RUN apt-get update \
     python3-docopt \
     python3-schema \
     python3-tqdm \
-    python3-flake8 \
+    flake8 \
     && sed -i -E "s/# (${LANG})/\1/" /etc/locale.gen \
     && locale-gen \
     && update-locale LANG=${LANG} \
