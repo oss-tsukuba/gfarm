@@ -7,7 +7,7 @@ COMPOSE=$(make -s ECHO_COMPOSE)
 ROOTDIR=$(make -s ECHO_ROOTDIR)
 GFARM_WORKDIR=/home/user1/gfarm
 GFARM_SRCDIR=$(cd $(realpath .) && cd $ROOTDIR/../.. && realpath .)
-COMPOSE_EXEC="$COMPOSE exec -T client1 bash -c"
+COMPOSE_EXEC="$COMPOSE exec -u user1 -T client1 bash -c"
 
 docker_cp_from() {
     FILE="$1"
