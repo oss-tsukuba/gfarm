@@ -32,7 +32,7 @@ copy_from_service() {
 }
 
 #$COMPOSE_EXEC "xsltproc --version"
-$COMPOSE_EXEC "cd $GFARM_WORKDIR && make man html" > /dev/null 2>&1
+$COMPOSE_EXEC "cd $GFARM_WORKDIR && make man html" # > /dev/null 2>&1
 
 FILES=$($COMPOSE_EXEC "cd $GFARM_WORKDIR && git status -s man/ doc/html/" | grep -v '^??' | awk '{print $2}')
 

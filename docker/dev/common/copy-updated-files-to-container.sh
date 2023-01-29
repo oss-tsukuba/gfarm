@@ -24,7 +24,7 @@ updated_files() {
 scp0() {
     SRC="$1"
     DST="$2"
-    scp -q "$SRC" "$DST"
+    scp -q -p "$SRC" "$DST"
     echo "COPY TO: $DST"
 }
 
