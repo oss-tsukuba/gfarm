@@ -24,6 +24,7 @@ DOCBOOK = \
 	gfpconcat.1 \
 	gfpcopy.1 \
 	gfprep.1 \
+	gfptar.1 \
 	gfquota.1 \
 	gfquotacheck.1 \
 	gfreg.1 \
