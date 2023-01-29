@@ -1,0 +1,222 @@
+'\" t
+.\"     Title: gfptar
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 29 Jan 2023
+.\"    Manual: Gfarm
+.\"    Source: Gfarm
+.\"  Language: English
+.\"
+.TH "GFPTAR" "1" "29 Jan 2023" "Gfarm" "Gfarm"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+gfptar \- ファイルを並列にアーカイブする
+.SH "SYNOPSIS"
+.HP \w'\fBgfptar\fR\ 'u
+\fBgfptar\fR [OPTIONS] \-c\ \fIoutdir\fR \-C\ \fIbasedir\fR \fImember\fR...
+.HP \w'\fBgfptar\fR\ 'u
+\fBgfptar\fR [OPTIONS] \-x\ \fIoutdir\fR \fIindir\fR [\fImember\fR...]
+.HP \w'\fBgfptar\fR\ 'u
+\fBgfptar\fR [OPTIONS] \-t\ \fIindir\fR
+.SH "DESCRIPTION"
+.PP
+\fBgfptar\fR
+は、アーカイブファイルをGfarm上に作成します。また、そのアーカイブファイルからファイルを抽出します。 作成されるアーカイブファイルは、ディレクトリの中に複数のtarファイルと複数のファイル一覧のファイルで構成されます。 アーカイブの作成または抽出処理を、アーカイブ用ディレクトリ内のtarファイルごとに並列でおこないます。
+.SH "OPERATION MODE"
+.PP
+\fB\-c(\-\-create)\fR \fIoutdir\fR \fB\-C(\-\-basedir)\fR \fIbasedir\fR \fImember\&.\&.\&.\fR
+.RS 4
+\fIoutdir\fR
+ディレクトリを新規に作成し、そのディレクトリにアーカイブファイル群を作成します。
+.sp
+\fIbasedir\fR
+ディレクトリ以下の
+\fImember\&.\&.\&.\fR
+ディレクトリまたはファイルをアーカイブします。
+.RE
+.PP
+\fB\-x(\-\-extract)\fR \fIoutdir\fR \fIindir\fR \fI[member\&.\&.\&.]\fR
+.RS 4
+\fIoutdir\fR
+ディレクトリを新規に作成し、 そのディレクトリに
+\fIindir\fR
+のアーカイブファイル群からファイルを抽出します。
+.sp
+一部のファイルのみを抽出するには
+\fImember\fR
+を指定します。
+.RE
+.PP
+\fB\-t(\-\-list)\fR \fIindir\fR
+.RS 4
+\fIinidir\fR
+ディレクトリにあるアーカイブ群の内容一覧を表示します。
+.RE
+.SH "PATH STYLE"
+.PP
+\fIoutdir\fR
+や
+\fIindir\fR、
+\fIbasedir\fR
+には、以下のパス形式を指定できます。
+.PP
+\fIパス名\fR
+.RS 4
+ローカルファイルシステム上のファイルやディレクトリを絶対パスまたは相対パスで指定します。 そのパスが gfarm2fs のマウントポイントの場合だとしても、 gfarm2fs を経由してファイルを操作します。 (他の Gfarm コマンドとは挙動が異なります)
+.RE
+.PP
+\fIgfarm:\&.\&.\&.\fR
+.RS 4
+Gfarm のファイルやディレクトリを Gfarm URL で指定します。
+.RE
+.SH "OPTIONS"
+.PP
+\fB\-j, \-\-jobs=\fR\fINUM\fR
+.RS 4
+複数のアーカイブファイルを作成、または複数のアーカイブファイルから抽出するための最大同時処理数を指定します。
+.sp
+デフォルト値は 4 です。
+.RE
+.PP
+\fB\-s, \-\-size=\fR\fIBYTES\fR
+.RS 4
+アーカイブを作成時に、分割されるアーカイブファイル1個あたりの想定サイズを指定します。 ファイルの内容や圧縮方法によって圧縮率は異なるため、 仮定圧縮率(別オプション \-\-ratio)を考慮して計算された想定サイズで分割されたファイル群ごとにアーカイブファイルを作成します。
+.sp
+デフォルト値は 200M (200 * 1024^2 = 209715200) (200 メビバイト) です。
+.RE
+.PP
+\fB\-r, \-\-ratio=\fR\fIRATIO\fR
+.RS 4
+アーカイブを作成時に、分割されるアーカイブファイルの仮定圧縮率(%)を指定します。
+.sp
+デフォルト値は 50 (50 %)です。
+.RE
+.PP
+\fB\-T, \-\-type=\fR\fITYPE\fR
+.RS 4
+アーカイブを作成時に、圧縮する形式を指定します。 gz は gzip、bz2 は bzip2、xz は xz 形式で圧縮されます。 拡張子もそれぞれ tar\&.gz, tar\&.bz2, tar,xz になります。 no を指定すると圧縮しません。
+.sp
+抽出時にこのオプションは使用されず、形式が自動で認識されます。
+.sp
+デフォルト値は gz です。
+.RE
+.PP
+\fB\-I, \-\-use\-compress\-program=\fR\fICOMMAND\fR
+.RS 4
+アーカイブを作成時または抽出時に、圧縮・伸張するための外部コマンドを指定します。 作成されるアーカイブファイルの拡張子を
+\fB\-\-type\fR
+オプションで指定します。 抽出時にはそのコマンドに \-d オプションが指定されます。
+.RE
+.PP
+\fB\-q, \-\-quiet\fR
+.RS 4
+警告を表示しません。
+.RE
+.PP
+\fB\-v, \-\-verbose\fR
+.RS 4
+冗長な情報を出力します。
+.RE
+.PP
+\fB\-d, \-\-debug\fR
+.RS 4
+デバッグ情報を出力します。
+.RE
+.PP
+\fB\-?, \-h, \-\-help\fR
+.RS 4
+コマンドオプションを出力します。
+.RE
+.SH "EXAMPLES"
+.PP
+ローカルのディレクトリから、Gfarmのディレクトリにアーカイブを作成します。 この例では dir1, dir2 以下のファイルが相対パスでアーカイブされます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+    $ gfptar \-c gfarm:/home/user1/out\&.gfptar \-C /home/user1 \&./dir1 \&./dir2
+  
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+Gfarmにあるアーカイブディレクトリから、ローカルのディレクトリに抽出します。 この例では outdir 以下に dir1, dir2 が抽出されます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+    $ gfptar \-x /home/user1/outdir gfarm:/home/user1/out\&.gfptar
+  
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+GfarmのディレクトリからGfarmのディレクトリにアーカイブを作成します。 注意: 小さいサイズのファイルが多い場合は、 gfarm2fs 上のパス名を
+\fB\-C\fR
+に指定したほうが、性能が良い場合があります。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+    $ gfptar \-c gfarm:/home/user1/out\&.gfptar \-C gfarm:/home/user1 \&./dir
+  
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+GfarmにあるアーカイブディレクトリをGfarmのディレクトリに抽出します。 注意: 小さいサイズのファイルが多い場合は、 gfarm2fs 上のパス名を
+\fB\-x\fR
+に指定したほうが、性能が良い場合があります。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+    $ gfptar \-x gfarm:/home/user1/dir2 gfarm:/home/user1/out\&.gfptar
+  
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+Gfarmにあるアーカイブディレクトリからローカルのディレクトリに一部のファイルを抽出します。 この例では outdir ディレクトリに dir1/path/to/file だけが抽出されます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+    $ gfptar \-x /home/user1/outdir gfarm:/home/user1/out\&.gfptar dir1/path/to/file1
+  
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "SEE ALSO"
+.PP
+\fBgfreg\fR(1),
+\fBgfexport\fR(1)
