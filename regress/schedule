@@ -114,6 +114,10 @@ gftool/gfmkdir/mkdir.sh
 gftool/gfmkdir/mkdir_toolong.sh
 gftool/gfmkdir/dir_nlink.sh
 gftool/gfmkdir/mkdir-p.sh
+gftool/gfmkdir/mkdir-m.sh
+gftool/gfmkdir/mkdir-M.sh
+gftool/gfmkdir/mkdir-u.sh
+gftool/gfmkdir/mkdir-g.sh
 gftool/gfpath/path_dir.sh
 gftool/gfpath/url_dir.sh
 gftool/gfpath/url_base.sh
