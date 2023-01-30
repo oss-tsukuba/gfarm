@@ -104,7 +104,7 @@ print('''\
       end='')
 
 for h in hosts:
-    print("    - {}:{}".format(h.hostname, str(h.ipaddr)))
+    print('    - "{} {}:{}"'.format(h.hostname, h.name, str(h.ipaddr)))
 
 print('''\
 
