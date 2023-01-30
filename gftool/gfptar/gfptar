@@ -158,7 +158,7 @@ def set_encoding(enc):
         _encoding = enc
 
 
-def execcmd_raw(args, stdin=subprocess.DEVNULL, stderr=sys.stdout.buffer,
+def execcmd_raw(args, stdin=subprocess.DEVNULL, stderr=subprocess.PIPE,
                 timeout=None, textmode=False):
     if textmode:
         encoding = get_encoding()
@@ -176,11 +176,15 @@ def execcmd_raw(args, stdin=subprocess.DEVNULL, stderr=sys.stdout.buffer,
     return out, err, ret
 
 
-def execcmd(args, stdin=subprocess.DEVNULL, stderr=sys.stdout.buffer,
+def execcmd(args, stdin=subprocess.DEVNULL, stderr=subprocess.PIPE,
             timeout=None, textmode=False):
     out, err, ret = execcmd_raw(args, stdin=stdin, stderr=stderr,
                                 timeout=timeout, textmode=textmode)
     if ret != 0:
+        try:
+            err = err.decode().rstrip()
+        except Exception:
+            pass
         raise Exception('{}: {}'.format(str(args), err))
     if err:
         logger.warning(err)
@@ -227,15 +231,15 @@ class Command(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def getDoc(self) -> str:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def getSchema(self) -> Schema:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def run(self, option) -> NoReturn:
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class GfURLEntry():
@@ -256,16 +260,25 @@ class GfURLEntry():
         self.mtime = mtime
         self.linkname = linkname
 
+    def is_file(self):
+        return self.file_type == self.TYPE_FILE
+
+    def is_directory(self):
+        return self.file_type == self.TYPE_DIR
+
+    def is_symlink(self):
+        return self.file_type == self.TYPE_SYMLINK
+
     def tar_add(self, tar, subpath):
         self.parent.tar_add(tar, self, subpath)
 
     def toTarinfo(self, path):
         tarinfo = tarfile.TarInfo(path)
-        if self.file_type == self.TYPE_FILE:
+        if self.is_file():
             tarinfo.type = tarfile.REGTYPE
-        elif self.file_type == self.TYPE_DIR:
+        elif self.is_directory():
             tarinfo.type = tarfile.DIRTYPE
-        elif self.file_type == self.TYPE_SYMLINK:
+        elif self.is_symlink():
             tarinfo.type = tarfile.SYMTYPE
         else:
             logger.warning('unsupported type: %s, %s', path, self.file_type)
@@ -292,11 +305,22 @@ class GfURL(metaclass=abc.ABCMeta):
     def __init__(self, url):
         self._url = urlparse(url)
 
+    @property
     def parent(self):
         parent_path = os.path.dirname(self.path)
-        if parent_path == '.':
+        # "." ... relative path (of local path)
+        # "/" ... absolute path
+        if parent_path == '.' or parent_path == '/':
             parent_path = ''
         return GfURL.init(self.root_url_str + parent_path)
+
+    @property
+    def parent_list(self):
+        def parents_func(u):
+            if u.path != '.' and u.path != '/':
+                yield u.parent
+                yield from parents_func(u.parent)
+        yield from parents_func(self)
 
     @property
     def url_str(self):
@@ -340,69 +364,68 @@ class GfURL(metaclass=abc.ABCMeta):
     @classmethod
     @abc.abstractmethod
     def is_my_URL(cls, url):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def chmod(self, mode):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def utime(self, atime, mtime):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
-    def mkdir(self, mode=0o700, mtime=None):
-        raise NotImplementedError()
+    def mkdir(self, mode=0o700, parents=False):
+        raise NotImplementedError
 
-    @abc.abstractmethod
-    def makedirs(self, mode=0o700, mtime=None):
-        raise NotImplementedError()
+    def makedirs(self, mode=0o700):
+        self.mkdir(mode, parents=True)
 
     @abc.abstractmethod
     def remove_tree(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def symlink(self, linkname):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def hardlink(self, linkname):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def exists(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def is_directory(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def is_empty(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def get_size(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def listdir(self, path_only=False, recursive=False, first=False):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def tar_add(self, tar, entry, subpath):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @contextmanager
     @abc.abstractmethod
     def readopen(self, textmode=False):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @contextmanager
     @abc.abstractmethod
-    def writeopen(self, textmode=False, parents=False):
-        raise NotImplementedError()
+    def writeopen(self, textmode=False):
+        raise NotImplementedError
 
 
 class GfURLGfarm(GfURL):
@@ -411,6 +434,10 @@ class GfURLGfarm(GfURL):
                            r'(\d+)\s+(\S+\s+\d+\s+\d+:\d+:\d+\s+\d+)\s+(.+)$')
     PAT_EMPTY = re.compile(r'^\s*$')
 
+    USE_GFMKDIR_PLUS = True
+    USE_GFCHMOD_PLUS = True  # TODO
+    USE_GRREG_PLUS = True  # TODO
+
     def __init__(self, url):
         super().__init__(url)
 
@@ -418,29 +445,34 @@ class GfURLGfarm(GfURL):
     def is_my_URL(cls, url):
         return url.startswith('gfarm:')
 
+    @staticmethod
+    def to_oct_str(mode):
+        # ex. (int)0o644 -> (str)'644'
+        return oct(mode)[2:]
+
     def chmod(self, mode):
-        # ex. (int)0o644 -> '644'
-        execcmd(['gfchmod', oct(mode)[2:], self.url_str])
+        execcmd(['gfchmod', self.to_oct_str(mode), self.url_str])
 
     def utime(self, atime, mtime):
         # TODO
         logger.warning('mtime cannot be updated: %s', self.url_str)
 
-    def mkdir(self, mode=0o700, mtime=None):
-        # TODO gfmkdir -m
-        execcmd(['gfmkdir', self.url_str])
-        # slow
-        self.chmod(mode)
-        if mtime:
-            self.utime(mtime, mtime)
-
-    def makedirs(self, mode=0o700, mtime=None):
-        # TODO gfmkdir -m -M
-        execcmd(['gfmkdir', '-p', self.url_str])
-        # slow
-        self.chmod(mode)
-        if mtime:
-            self.utime(mtime, mtime)
+    def mkdir(self, mode=0o700, parents=False):
+        args = ['gfmkdir']
+        if parents:
+            args.append('-p')
+        if self.__class__.USE_GFMKDIR_PLUS:
+            if mode is not None:
+                args.append('-m')
+                args.append(self.to_oct_str(mode))
+            args.append(self.url_str)
+            execcmd(args)
+        else:
+            args.append(self.url_str)
+            execcmd(args)
+            if mode is not None:
+                # slow
+                self.chmod(mode)
 
     def remove_tree(self):
         execcmd(['gfrm', '-rf', self.url_str])
@@ -486,7 +518,9 @@ class GfURLGfarm(GfURL):
             perm |= 0o4
         if w == 'w':
             perm |= 0o2
-        if x == highchar:
+        if x == 'x':
+            perm |= 0o1
+        elif x == highchar:
             perm |= 0o1
             highbit = 0o1
         elif x == highchar.upper():
@@ -577,21 +611,8 @@ class GfURLGfarm(GfURL):
                     raise AssertionError
                 first = False
 
-    dircache = set()  # TODO Temporary implementation
-
     @classmethod
-    def gfreg(cls, url_str, textmode=False, parents=False):
-        # TODO gfreg --parents
-        if parents:
-            url = GfURL.init(url_str)
-            parent = url.parent()
-            parent_str = parent.url_str
-            if parent_str not in cls.dircache:
-                # slow
-                if not parent.exists():
-                    parent.makedirs()
-                cls.dircache.add(parent.url_str)
-
+    def gfreg(cls, url_str, textmode=False):
         args = ['gfreg', '-', url_str]
         if textmode:
             encoding = get_encoding()
@@ -618,7 +639,7 @@ class GfURLGfarm(GfURL):
         tarinfo = entry.toTarinfo(subpath)
         if tarinfo is None:
             return
-        if entry.file_type == GfURLEntry.TYPE_FILE:
+        if entry.is_file():
             proc = GfURLGfarm.gfexport(entry.path)
             tar.addfile(tarinfo, fileobj=proc.stdout)
             proc.stdout.close()
@@ -638,9 +659,8 @@ class GfURLGfarm(GfURL):
                     ' '.join(proc.args), ret))
 
     @contextmanager
-    def writeopen(self, textmode=False, parents=False):
-        proc = GfURLGfarm.gfreg(self.url_str, textmode=textmode,
-                                parents=parents)
+    def writeopen(self, textmode=False):
+        proc = GfURLGfarm.gfreg(self.url_str, textmode=textmode)
         try:
             yield proc.stdin
         finally:
@@ -665,15 +685,11 @@ class GfURLLocal(GfURL):
     def utime(self, atime, mtime):
         os.utime(self.url_str, times=(atime, mtime))
 
-    def mkdir(self, mode=0o700, mtime=None):
-        os.mkdir(self.url_str, mode)
-        if mtime:
-            self.utime(mtime, mtime)
-
-    def makedirs(self, mode=0o700, mtime=None):
-        os.makedirs(self.url_str, mode=mode, exist_ok=True)
-        if mtime:
-            self.utime(mtime, mtime)
+    def mkdir(self, mode=0o700, parents=False):
+        if parents:
+            os.makedirs(self.url_str, mode=mode, exist_ok=True)
+        else:
+            os.mkdir(self.url_str, mode)
 
     def remove_tree(self):
         shutil.rmtree(self.url_str)
@@ -699,17 +715,6 @@ class GfURLLocal(GfURL):
         return st.st_size
 
     @classmethod
-    def _toFileType(cls, st):
-        file_type = GfURLEntry.TYPE_OTHER
-        if stat.S_ISREG(st.st_mode):
-            file_type = GfURLEntry.TYPE_FILE
-        elif stat.S_ISDIR(st.st_mode):
-            file_type = GfURLEntry.TYPE_DIR
-        elif stat.S_ISLNK(st.st_mode):
-            file_type = GfURLEntry.TYPE_SYMLINK
-        return file_type
-
-    @classmethod
     def _readlink(cls, path, is_symlink):
         if is_symlink:
             linkname = os.readlink(path)
@@ -732,6 +737,17 @@ class GfURLLocal(GfURL):
             return gr.gr_name
         except Exception:
             return str(gid)
+
+    @classmethod
+    def _toFileType(cls, st):
+        file_type = GfURLEntry.TYPE_OTHER
+        if stat.S_ISREG(st.st_mode):
+            file_type = GfURLEntry.TYPE_FILE
+        elif stat.S_ISDIR(st.st_mode):
+            file_type = GfURLEntry.TYPE_DIR
+        elif stat.S_ISLNK(st.st_mode):
+            file_type = GfURLEntry.TYPE_SYMLINK
+        return file_type
 
     def _toGfURLEntry(self, entry, path_only):
         parent = self
@@ -768,7 +784,7 @@ class GfURLLocal(GfURL):
                                          False)
 
     def listdir(self, path_only=False, recursive=False, first=False):
-        return self._scandir(self.url_str, path_only, recursive, first)
+        yield from self._scandir(self.url_str, path_only, recursive, first)
 
     # NOTE: This is not expected behavior.
     # - This can copy a hard link,
@@ -785,7 +801,7 @@ class GfURLLocal(GfURL):
         tarinfo = entry.toTarinfo(subpath)
         if tarinfo is None:
             return
-        if entry.file_type == GfURLEntry.TYPE_FILE:
+        if entry.is_file():
             # binary mode
             with open(entry.path, 'rb') as f:
                 tar.addfile(tarinfo, fileobj=f)
@@ -804,11 +820,7 @@ class GfURLLocal(GfURL):
             f.close()
 
     @contextmanager
-    def writeopen(self, textmode=False, parents=False):
-        if parents:
-            parent = self.parent()
-            if not parent.exists():
-                parent.makedirs()
+    def writeopen(self, textmode=False):
         if textmode:
             f = open(self.url_str, 'xt', encoding=get_encoding())
         else:
@@ -1001,10 +1013,10 @@ class GfptarCommand(Command):
             if self.debug:
                 raise
             else:
-                if type(e) == Exception:  # not isinstance()
+                if type(e) == Exception:  # custom errors
                     logger.error(str(e))
                 else:
-                    logger.error(repr(e))
+                    logger.error('%s: %s', e.__class__.__name__, str(e))
                 sys.exit(1)
 
     def test_main(self):
@@ -1025,16 +1037,21 @@ class GfptarCommand(Command):
         print('unittest ... PASS')
 
     def test_opt_pattern(self):
+        save_opt_size = self.opt['--size']
         save_opt_jobs = self.opt['--jobs']
         save_opt_type = self.opt['--type']
         save_opt_compress_prog = self.opt['--use-compress-program']
 
+        # create tar per one entry
+        self.opt['--size'] = 0
         pattern_jobs = [1, 4, 10]
         for jobs in pattern_jobs:
             self.opt['--jobs'] = jobs
             self.test_simple('jobs_' + str(jobs))
         self.opt['--jobs'] = save_opt_jobs
 
+        # create one tar
+        self.opt['--size'] = unhumanize_number('100M')
         pattern_type = [
             'gz',
             # 'bz2',
@@ -1062,6 +1079,7 @@ class GfptarCommand(Command):
             self.test_simple('compress_prog_' + prog)
         # self.opt['--use-compress-program'] = save_opt_compress_prog
 
+        self.opt['--size'] = save_opt_size
         self.opt['--jobs'] = save_opt_jobs
         self.opt['--type'] = save_opt_type
         self.opt['--use-compress-program'] = save_opt_compress_prog
@@ -1157,6 +1175,7 @@ class GfptarCommand(Command):
         D = 'directory'
         S = 'symlink'
         L = 'hardlink'
+        longname = ('0123456789' * 30)[:255]
         tree = [
             (F, 'file1'),
             (S, 'symlink1', 'file1'),
@@ -1167,6 +1186,7 @@ class GfptarCommand(Command):
             (S, 'dir1/ディレクトリ 2/シンボリックリンク 2', 'ファイル 2'),
             (L, 'dir1/ディレクトリ 2/ハードリンク 2',
              'dir1/ディレクトリ 2/ファイル 2'),
+            (F, 'dir1/' + longname),
             ]
         srcdir_url = GfURL.init(dir_url_str)
         srcdir_url.mkdir()
@@ -1177,7 +1197,6 @@ class GfptarCommand(Command):
                 with url.writeopen(textmode=True) as f:
                     f.write(ent[1])
             elif ent[0] == D:
-                # TODO set same mtime and mode=0700
                 url.makedirs()
             elif ent[0] == S:
                 url.symlink(ent[2])
@@ -1229,7 +1248,7 @@ class GfptarCommand(Command):
                 src = basedir_url.url_join(infile)
                 copied = copy_src_dir_local_url.url_join(infile)
                 copied_url = GfURL.init(copied)
-                parent_url = copied_url.parent()
+                parent_url = copied_url.parent
                 parent_url.makedirs()
                 execcmd(['gfpcopy', src, copied])
                 result_dir = os.path.join(test12_dir_local, infile)
@@ -1254,6 +1273,9 @@ class GfptarCommand(Command):
         # TODO compare mtime and mode of dir1/files with dir2/files
         out, err, ret = execcmd_raw(['diff', '-r', dir1, dir2])
         return ret == 0
+
+    def MT_enabled(self):
+        return self.jobs >= 2
 
     def create(self, outdir, basedir, infiles):
         self.outdir = outdir
@@ -1314,7 +1336,7 @@ class GfptarCommand(Command):
         self.cancelled = False
         self.totalsize_file = 0
         self.totalsize_archive = 0
-        if self.jobs >= 2:
+        if self.MT_enabled():
             self.create_tars_MT()
         else:
             self.create_tars()
@@ -1370,7 +1392,7 @@ class GfptarCommand(Command):
         total = 0
         for entry in filelist:
             total += entry.size
-            if total > self.split_size:
+            if total >= self.split_size:
                 if len(newlist) > 0:
                     filelistlist.append(newlist)
                 newlist = []
@@ -1418,7 +1440,7 @@ class GfptarCommand(Command):
             # ex.: home/user1/dir -> home_user1_dir
             lastname = subpath.replace('/', '_')
             if firstname is None \
-               and entry.file_type == GfURLEntry.TYPE_FILE:
+               and entry.is_file():
                 firstname = lastname
             logger.debug('[%04d] %s %f %d %s %s',
                          serial,
@@ -1432,11 +1454,11 @@ class GfptarCommand(Command):
             outname = '%s..%s%s' % (firstname, lastname, self.suffix)
         outname_max = GfURL.MAXNAMLEN - len(serial_str) - len(self.LIST_SUFFIX)
         if len(outname) > outname_max:
-            # last half of name
+            # use last half of name
             outname = outname[-outname_max:]
         outname = serial_str + outname
         outurl = GfURL.init(self.outdir_url.url_join(outname))
-        self.create_a_archive_list(outurl, filelist)
+        self.create_a_members_list(outurl, filelist)
         tar = GfTarFile.create_open(outurl, self.compress_type, self.bufsize,
                                     compress_prog=self.compress_prog)
         for entry in filelist:
@@ -1454,10 +1476,19 @@ class GfptarCommand(Command):
         self.totalsize_archive += tar_size
         self.unlock()
 
-    def create_a_archive_list(self, url, filelist):
+    def create_a_members_list(self, url, filelist):
         outurl = GfURL.init(url.url_str + self.LIST_SUFFIX)
         with outurl.writeopen(textmode=True) as f:
             for entry in filelist:
+                # ex. "D /path/to/dir"
+                if entry.is_file():
+                    f.write('F ')
+                elif entry.is_directory():
+                    f.write('D ')
+                elif entry.is_symlink():
+                    f.write('S ')
+                else:  # unknown
+                    f.write('? ')
                 f.write(entry.subpath + '\n')
 
     def error_not_a_gfptar_directory(self, url_str):
@@ -1475,8 +1506,10 @@ class GfptarCommand(Command):
         if not indir_url.is_directory():
             self.error_not_a_gfptar_directory(indir_url.url_str)
 
+        search_target = len(member_set) > 0
         archive_dict = {}  # {filename}
-        target_set_all = set()
+        target_set_all = set()  # all  tar files
+        directory_list = []
         for ent in indir_url.listdir():
             if ent.path.endswith(self.LIST_SUFFIX):  # ignored
                 continue
@@ -1492,30 +1525,90 @@ class GfptarCommand(Command):
                     if not line:
                         break
                     line = line.rstrip()
-                    archive_dict[line] = arch_url_str
+                    # ex. "D /path/to/dir"
+                    filetype = line[:1]
+                    path = line[2:].lstrip('/')
+                    if search_target:
+                        archive_dict[path] = arch_url_str
+                    if filetype == 'D':
+                        directory_list.append(path)
 
-        if len(member_set) > 0:
+        if search_target:
+            # selected tar files
             target_set = set()
             for member in member_set:
                 target = archive_dict.get(member)
                 if not target:
-                    raise Exception(member + ': Not found in archive')
+                    raise Exception('Not found in archive:' + member)
                 target_set.add(target)
+            del archive_dict
         else:
             target_set = target_set_all
 
         target_list = list(target_set)
+        del target_set
         target_list.sort()
+
+        # self.create_directories(directory_list)
+        self.create_directories_fast(directory_list)
 
         self.cancelled = False
         self.extract_num = 0
         self.totalsize_file = 0
         self.start_time = time.time()
         self.next_time = self.start_time + 1
-        if self.jobs >= 2:
+        self.dirstat_dict = {}
+        if self.MT_enabled():
             self.extract_from_archives_MT(target_list, member_set)
         else:
             self.extract_from_archives(target_list, member_set)
+
+        self.update_stat_for_directories(directory_list, member_set)
+
+    def create_directories(self, directory_list):
+        # NOTE: slow on Gfarm
+        directory_list.sort()
+        for d in directory_list:
+            url_str = self.outdir_url.url_join(d)
+            dir_url = GfURL.init(url_str)
+            try:
+                dir_url.mkdir()
+            except Exception:
+                dir_url.makedirs()
+
+    def create_directories_fast(self, directory_list):
+        # faster implementation for gfmkdir
+        directory_list.sort(reverse=True)
+        created = set()
+        for d in directory_list:
+            url_str = self.outdir_url.url_join(d)
+            if url_str in created:
+                logger.debug('skip (already created): %s', url_str)
+                continue
+            dir_url = GfURL.init(url_str)
+            dir_url.makedirs()
+            for p in dir_url.parent_list:
+                created.add(p.url_str)
+        del created
+
+    def update_stat_for_directories(self, directory_list, member_set):
+        # prefer children
+        directory_list.sort(reverse=True)
+        for d in directory_list:
+            tarinfo = self.dirstat_dict.get(d)
+            if len(member_set) > 0 and d not in member_set:
+                continue
+            if tarinfo is None:
+                logger.error('Mismatch between tar file and .lst file: %s', d)
+                continue
+            url_str = self.outdir_url.url_join(d)
+            dir_url = GfURL.init(url_str)
+            dir_url.chmod(tarinfo.mode)
+            logger.debug("update_stat: %s, %s", d, oct(tarinfo.mode))
+            # TODO dir_url.chmod(tarinfo.mode, mtime=tarinfo.mtime)
+            # TODO if --same-owner:
+            # TODO dir_url.chmod(tarinfo.mode, mtime=tarinfo.mtime,
+            #  user=tarinfo.uname, group=tarinfo.gname)
 
     def extract_from_archives(self, target_list, member_set):
         self.lock_init(False)
@@ -1570,7 +1663,7 @@ class GfptarCommand(Command):
             if len(member_set) > 0:
                 if tarinfo.name not in member_set:
                     continue  # not a target
-            # len(member_set) == 0 -> all targets
+            # len(member_set) == 0 -> extract all
 
             outfile = tarinfo.name.lstrip('/')  # relative path only
             url_str = self.outdir_url.url_join(outfile)
@@ -1580,7 +1673,7 @@ class GfptarCommand(Command):
                 inf = tar.extractfile(tarinfo)  # io.BufferedReader
                 readlen = 0
                 # TODO outurl.copy(inf, mode, mtime, uname, gname)
-                with outurl.writeopen(parents=True) as outf:
+                with outurl.writeopen() as outf:
                     while True:
                         buf = inf.read(self.bufsize)
                         if not buf:
@@ -1596,9 +1689,11 @@ class GfptarCommand(Command):
                 outurl.utime(tarinfo.mtime, tarinfo.mtime)
                 # outurl.chown(tarinfo.uname, tarinfo.gname) TODO
             elif tarinfo.isdir():
+                # NOTE: already created
                 logger.debug('extract,dir: %s', tarinfo.name)
-                outurl.makedirs(mode=(tarinfo.mode | 0o700),
-                                mtime=tarinfo.mtime)
+                self.lock()
+                self.dirstat_dict[outfile] = tarinfo
+                self.unlock()
             elif tarinfo.issym():
                 logger.debug('extract,link: %s, %s', tarinfo.name,
                              tarinfo.linkname)
@@ -1652,7 +1747,7 @@ progname = os.path.basename(__file__)
 
 __doc__ = """
 Usage:
-  {f} [options] -c <outdir> -C <basedir> [--] <member>...
+  {f} [options] -c <outdir> [-C <basedir>] [--] <member>...
   {f} [options] -x <outdir> [--] <indir> [<member>...]
   {f} [options] -t <indir>
   {f} [options] --test
@@ -1667,7 +1762,7 @@ Options:
                             from <indir> to <outdir>
   -c, --create=DIR          create mode,
                             create tar files in <outdir> from <member>s
-  -C, --basedir=DIR         base directory for <member>s
+  -C, --basedir=DIR         base directory for <member>s  [default: .]
   -j, --jobs=NUM            the number of jobs to copy per tar file in parallel
                             [default: 4]
   -s, --size=BYTES          assumed bytes per output file [default: 200M]
@@ -1676,7 +1771,9 @@ Options:
   -I, --use-compress-program=COMMAND
                             filter data through COMMAND,
                             the command must accept -d option for decompression
-  --encoding=CODEC          codec for filename encoding [default: utf-8]
+  --encoding=CODEC          codec for filename encoding
+             (https://docs.python.org/3/library/codecs.html#standard-encodings)
+                            [default: utf-8]
   --bufsize=BYTES           buffer size to copy [default: 1M]
   --test                    test mode
   --test-workdir-local=DIR  local directory for test [default: /tmp]
@@ -1688,7 +1785,7 @@ Options:
 
 Example of --create (Gfarm to Gfarm):
   Command line:
-    gfptar -T gz -c gfarm:/home/user1/out -C gfarm:/home/user1 ./dir
+    gfptar -c gfarm:/home/user1/out -C gfarm:/home/user1 ./dir
   Input files:
     gfarm:/home/user1/dir/test0000.data
     ...
@@ -1699,33 +1796,18 @@ Example of --create (Gfarm to Gfarm):
     ...
     gfarm:/home/user1/out/0010_dir_test9000.data..dir_test9999.data.tar.gz
     gfarm:/home/user1/out/0010_dir_test9000.data..di1_test9999.data.tar.gz.lst
-  List file contents (*.lst):
-    dir/test0000.data
+  Contents of list file (*.lst):
+    F dir/test0000.data
     ...
-    dir/test0999.data
+    F dir/test0999.data
 
 Example of --extract (Gfarm to Gfarm):
   Command line:
-    gfptar -x gfarm:/home/user1/dir2 gfarm:/home/user1/out
+    gfptar -x gfarm:/home/user1/out2 gfarm:/home/user1/out
   Output files:
-    gfarm:/home/user1/dir2/dir/test0000.data
+    gfarm:/home/user1/out2/dir/test0000.data
     ...
-    gfarm:/home/user1/dir2/dir/test9999.data
-
-Example of --list:
-  Command line:
-    gfptar -t gfarm:/home/user1/out
-  Standard Output (stdout):
-    dir/test0000.data
-    ...
-    dir/test9999.data
-
-File name rule:
-  - sort list of members.
-  - 0001_<first fullpath>..<last fullpath>.tar<.suffix>
-  - fullpath: replace '/' to '_'
-  - Too long file name: cut first half of file name.
-    (use MAXNAMLEN=255)
+    gfarm:/home/user1/out2/dir/test9999.data
 
 Not implemented yet (TODO):
   - preserve mtime for Gfarm.
@@ -1733,9 +1815,6 @@ Not implemented yet (TODO):
 Limitations:
   - Hard links are not preserved.
   - File names cannot include newline characters.
-
-Codecs for encoding:
-  https://docs.python.org/3/library/codecs.html#standard-encodings
 """.format(f=progname)
 
 
