@@ -2206,7 +2206,7 @@ db_user_auth_dup(const struct db_user_auth_arg *ua, size_t size)
 	if (!overflow)
 		r = malloc(sz);
 	if (overflow || r == NULL) {
-		gflog_debug(GFARM_MSG_1002005,
+		gflog_debug(GFARM_MSG_UNFIXED,
 			"allocation of 'gfarm_user_info' failed or overflow");
 		return (NULL);
 	}
@@ -2236,7 +2236,7 @@ db_user_auth_remove_dup(const struct db_user_auth_remove_arg *ua, size_t size)
 	if (!overflow)
 		r = malloc(sz);
 	if (overflow || r == NULL) {
-		gflog_debug(GFARM_MSG_1002005,
+		gflog_debug(GFARM_MSG_UNFIXED,
 			"allocation of 'gfarm_user_info' failed or overflow");
 		return (NULL);
 	}
