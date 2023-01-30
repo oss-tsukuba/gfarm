@@ -92,28 +92,14 @@ grpassign_add_group(struct group_assignment *ga)
 }
 
 gfarm_error_t
-user_enter_auth_id(struct user *u, const char *auth_method,
-	const char *auth_user_id, int limit_check,
-	struct user_auth **uap)
+user_auth_id_moidfy(struct user *u, const char *auth_method,
+	const char *auth_user_id)
 {
 	return (GFARM_ERR_NO_ERROR);
 }
 
-void
-user_set_user_auth_metadata_in_cache(struct user_auth *ua,
-	const char *auth_method, const char *auth_user_id)
-{
-}
-
-struct user_auth
-*user_lookup_auth_id(struct user *user,
-	const char *auth_method, const char *auth_user_id)
-{
-	return (NULL);
-}
-
 gfarm_error_t
-user_remove_auth_id(struct user *user, const char *auth_method)
+user_auth_id_remove(struct user *user, const char *auth_method)
 {
 	return (GFARM_ERR_NO_ERROR);
 }

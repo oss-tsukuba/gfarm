@@ -955,18 +955,15 @@ db_journal_apply_user_auth_add(gfarm_uint64_t seqnum,
 {
 	gfarm_error_t e;
 	struct user *u;
-	struct user_auth *ua;
 
 	u = user_tenant_lookup(arg->username);
 	if (u == NULL)
 		return (GFARM_ERR_NO_SUCH_USER);
 
-	e = user_enter_auth_id(u, arg->auth_method, arg->auth_user_id, 0, &ua);
+	e = user_auth_id_moidfy(u, arg->auth_method, arg->auth_user_id);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
-	user_set_user_auth_metadata_in_cache(ua,
-		arg->auth_method, arg->auth_user_id);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -974,19 +971,17 @@ static gfarm_error_t
 db_journal_apply_user_auth_modify(gfarm_uint64_t seqnum,
 	struct db_user_auth_arg *arg)
 {
+	gfarm_error_t e;
 	struct user *u;
-	struct user_auth *ua;
 
 	u = user_tenant_lookup(arg->username);
 	if (u == NULL)
 		return (GFARM_ERR_NO_SUCH_USER);
 
-	ua = user_lookup_auth_id(u, arg->auth_method, arg->auth_user_id);
-	if (ua == NULL)
-		return (GFARM_ERR_NO_SUCH_OBJECT);
+	e = user_auth_id_moidfy(u, arg->auth_method, arg->auth_user_id);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
 
-	user_set_user_auth_metadata_in_cache(ua,
-		arg->auth_method, arg->auth_user_id);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -1000,7 +995,7 @@ db_journal_apply_user_auth_remove(gfarm_uint64_t seqnum,
 	if (u == NULL)
 		return (GFARM_ERR_NO_SUCH_USER);
 
-	return (user_remove_auth_id(u, arg->auth_method));
+	return (user_auth_id_remove(u, arg->auth_method));
 }
 
 /**********************************************************/

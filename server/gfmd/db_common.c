@@ -21,6 +21,50 @@
 /**********************************************************************/
 
 static void
+db_user_auth_arg_free(void *vinfo)
+{
+	struct db_user_auth_arg *info = vinfo;
+
+	db_user_auth_arg_free(info);
+}
+
+static void
+db_user_auth_arg_clear(void *vinfo)
+{
+	struct db_user_auth_arg *info = vinfo;
+
+	memset(info, 0, sizeof(*info));
+}
+
+static int
+db_user_auth_arg_validate(void *vinfo)
+{
+	struct db_user_auth_arg *info = vinfo;
+
+	return (
+	    info->username != NULL &&
+	    info->auth_method != NULL &&
+	    info->auth_user_id != NULL
+	);
+}
+
+void
+db_user_auth_callback_trampoline(void *closure, void *vinfo)
+{
+	struct db_user_auth_trampoline_closure *c = closure;
+	(*c->callback)(c->closure, vinfo);
+}
+
+const struct gfarm_base_generic_info_ops db_base_user_auth_arg_ops = {
+	sizeof(struct db_inode_dirset_arg),
+	db_user_auth_arg_free,
+	db_user_auth_arg_clear,
+	db_user_auth_arg_validate,
+};
+
+/**********************************************************************/
+
+static void
 db_inode_cksum_arg_free(void *vinfo)
 {
 	struct db_inode_cksum_arg *info = vinfo;
@@ -338,44 +382,3 @@ const struct gfarm_base_generic_info_ops db_base_quota_dir_arg_ops = {
 	db_inode_dirset_arg_validate,
 };
 
-static void
-db_user_auth_arg_free(void *vinfo)
-{
-	struct db_user_auth_arg *info = vinfo;
-
-	db_user_auth_arg_free(info);
-}
-
-static void
-db_user_auth_arg_clear(void *vinfo)
-{
-	struct db_user_auth_arg *info = vinfo;
-
-	memset(info, 0, sizeof(*info));
-}
-
-static int
-db_user_auth_arg_validate(void *vinfo)
-{
-	struct db_user_auth_arg *info = vinfo;
-
-	return (
-	    info->username != NULL &&
-	    info->auth_method != NULL &&
-	    info->auth_user_id != NULL
-	);
-}
-
-void
-db_user_auth_callback_trampoline(void *closure, void *vinfo)
-{
-	struct db_user_auth_trampoline_closure *c = closure;
-	(*c->callback)(c->closure, vinfo);
-}
-
-const struct gfarm_base_generic_info_ops db_base_user_auth_arg_ops = {
-	sizeof(struct db_inode_dirset_arg),
-	db_user_auth_arg_free,
-	db_user_auth_arg_clear,
-	db_user_auth_arg_validate,
-};
