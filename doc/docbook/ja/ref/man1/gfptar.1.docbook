@@ -25,7 +25,7 @@
   <command moreinfo="none">gfptar</command>
   <arg choice="opt" rep="norepeat">OPTIONS</arg>
   <arg choice="plain" rep="norepeat">-c <replaceable>outdir</replaceable></arg>
-  <arg choice="plain" rep="norepeat">-C <replaceable>basedir</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-C <replaceable>basedir</replaceable></arg>
   <arg choice="plain" rep="repeat"><replaceable>member</replaceable></arg>
 </cmdsynopsis>
 

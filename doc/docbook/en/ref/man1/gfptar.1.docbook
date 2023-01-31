@@ -25,7 +25,7 @@
   <command moreinfo="none">gfptar</command>
   <arg choice="opt" rep="norepeat">OPTIONS</arg>
   <arg choice="plain" rep="norepeat">-c <replaceable>outdir</replaceable></arg>
-  <arg choice="plain" rep="norepeat">-C <replaceable>basedir</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-C <replaceable>basedir</replaceable></arg>
   <arg choice="plain" rep="repeat"><replaceable>member</replaceable></arg>
 </cmdsynopsis>
 
@@ -53,7 +53,7 @@
   <command moreinfo="none">gfptar</command>
   creates archive files to Gfarm, or extracts files from archive files on Gfarm.
   The archive files consist of multiple tar files and list files of archived members in a directory.
-  Creation or extraction is performed in parallel for each tar file in a directoy for archive.
+  Creation or extraction is performed in parallel for each tar file in a directory for archive.
 </para>
 
 </refsect1>
@@ -102,7 +102,7 @@
 </variablelist>
 </refsect1>
 
-<refsect1 id="path-stype"><title>PATH STYLE</title>
+<refsect1 id="path-style"><title>PATH STYLE</title>
 
 <para>
   <parameter moreinfo="none">outdir</parameter>, <parameter moreinfo="none">indir</parameter>
@@ -202,7 +202,7 @@
 <listitem>
   <para>
     Specifies a command of compression program.
-    Suffix for creating tar files must be specfied by <option>--type</option> option.
+    Suffix for creating tar files must be specified by <option>--type</option> option.
     The command must accept -d option for decompression.
   </para>
 </listitem>
@@ -282,7 +282,7 @@
 </para>
 
 <para>
-  Extract a spefified file from a Gfarm directory to a local directory.
+  Extract a specified file from a Gfarm directory to a local directory.
   The extracted file of this example is dir1/path/to/file only.
   <literallayout format="linespecific" class="normal">
     $ gfptar -x /home/user1/outdir gfarm:/home/user1/out.gfptar dir1/path/to/file1
