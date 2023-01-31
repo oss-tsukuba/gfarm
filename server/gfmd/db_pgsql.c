@@ -2078,7 +2078,7 @@ user_auth_info_set_fields_from_copy_binary(
 	    "pgsql_user_auth_dir_load: field number");
 	num_fields = ntohs(num_fields);
 	if (num_fields < 3) /* allow fields addition in future */
-		gflog_fatal(GFARM_MSG_1004715,
+		gflog_fatal(GFARM_MSG_UNFIXED,
 		    "pgsql_user_auth_load: fields = %d", num_fields);
 
 	info->username =
