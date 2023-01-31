@@ -367,11 +367,16 @@ class GfURL(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def chmod(self, mode):
+    def chmod(self, mode, mtime=None, user=None, group=None,
+              follow_symlinks=True):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def utime(self, atime, mtime):
+    def chown(self, user, group, follow_symlinks=True):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def utime(self, atime, mtime, follow_symlinks=True):
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -399,6 +404,10 @@ class GfURL(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def is_directory(self):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def is_symlink(self):
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -435,7 +444,7 @@ class GfURLGfarm(GfURL):
     PAT_EMPTY = re.compile(r'^\s*$')
 
     USE_GFMKDIR_PLUS = True
-    USE_GFCHMOD_PLUS = True  # TODO
+    USE_GFCHMOD_PLUS = True
     USE_GRREG_PLUS = True  # TODO
 
     def __init__(self, url):
@@ -450,12 +459,48 @@ class GfURLGfarm(GfURL):
         # ex. (int)0o644 -> (str)'644'
         return oct(mode)[2:]
 
-    def chmod(self, mode):
-        execcmd(['gfchmod', self.to_oct_str(mode), self.url_str])
+    def chmod(self, mode, mtime=None, user=None, group=None,
+              follow_symlinks=True):
+        args = ['gfchmod']
+        if self.__class__.USE_GFCHMOD_PLUS:
+            if mtime:
+                args.append('-M')
+                args.append(str(int(mtime)))
+            if user:
+                args.append('-u')
+                args.append(user)
+            if group:
+                args.append('-g')
+                args.append(group)
+        if not follow_symlinks:
+            args.append('-h')
+        args.append(self.to_oct_str(mode))
+        args.append(self.url_str)
+        execcmd(args)
+        if not self.__class__.USE_GFCHMOD_PLUS:
+            if mtime:
+                self.utime(mtime, mtime, follow_symlinks=follow_symlinks)
+            self.chown(user, group, follow_symlinks=follow_symlinks)
 
-    def utime(self, atime, mtime):
-        # TODO
-        logger.warning('mtime cannot be updated: %s', self.url_str)
+    def chown(self, user, group, follow_symlinks=True):
+        if user is None and group is None:
+            return
+        chown_args = ['gfchown']
+        if not follow_symlinks:
+            chown_args.append('-h')
+        if user and group:
+            chown_args.append(user + ':' + group)
+        elif user:
+            chown_args.append(user)
+        else:
+            chown_args.append(':' + group)
+        chown_args.append(self.url_str)
+        execcmd(chown_args)
+
+    def utime(self, atime, mtime, follow_symlinks=True):
+        # not used when USE_GFCHMOD_PLUS = True
+        logger.warning('mtime cannot be updated (not supported): %s',
+                       self.url_str)
 
     def mkdir(self, mode=0o700, parents=False):
         args = ['gfmkdir']
@@ -489,6 +534,10 @@ class GfURLGfarm(GfURL):
 
     def is_directory(self):
         out, err, ret = execcmd_raw(['gftest', '-d', self.url_str])
+        return ret == 0
+
+    def is_symlink(self):
+        out, err, ret = execcmd_raw(['gftest', '-h', self.url_str])
         return ret == 0
 
     def is_empty(self):
@@ -671,6 +720,26 @@ class GfURLGfarm(GfURL):
                     ' '.join(proc.args), ret))
 
 
+def get_uid(user):
+    try:
+        pw = pwd.getpwnam(user)
+        if pw is not None:
+            return pw.pw_uid
+    except KeyError:
+        pass
+    return -1  # uid is not changed by os.chown()
+
+
+def get_gid(group):
+    try:
+        gr = grp.getgrnam(group)
+        if gr is not None:
+            return gr.gr_gid
+    except KeyError:
+        pass
+    return -1  # gid is not changed by os.chown()
+
+
 class GfURLLocal(GfURL):
     def __init__(self, url):
         super().__init__(url)
@@ -679,11 +748,31 @@ class GfURLLocal(GfURL):
     def is_my_URL(cls, url):
         return True
 
-    def chmod(self, mode):
-        os.chmod(self.url_str, mode)
+    def chmod(self, mode, mtime=None, user=None, group=None,
+              follow_symlinks=True):
+        if follow_symlinks:
+            os.chmod(self.url_str, mode)
+        else:
+            try:
+                os.chmod(self.url_str, mode, follow_symlinks=False)
+            except NotImplementedError:
+                if not self.is_symlink():
+                    raise
+                # ignore, not changed for symlink
+        if mtime:
+            self.utime(mtime, mtime, follow_symlinks=follow_symlinks)
+            self.chown(user, group)
 
-    def utime(self, atime, mtime):
-        os.utime(self.url_str, times=(atime, mtime))
+    def chown(self, user, group, follow_symlinks=False):
+        if user or group:
+            # shutil.chown does not have follow_symlinks option.
+            uid = get_uid(user)
+            gid = get_gid(group)
+            os.chown(self.url_str, uid, gid, follow_symlinks=follow_symlinks)
+
+    def utime(self, atime, mtime, follow_symlinks=True):
+        os.utime(self.url_str, times=(atime, mtime),
+                 follow_symlinks=follow_symlinks)
 
     def mkdir(self, mode=0o700, parents=False):
         if parents:
@@ -705,6 +794,9 @@ class GfURLLocal(GfURL):
 
     def is_directory(self):
         return os.path.isdir(self.url_str)
+
+    def is_symlink(self):
+        return os.path.islink(self.url_str)
 
     def is_empty(self):
         return len(os.listdir(self.url_str)) == 0
@@ -1501,6 +1593,7 @@ class GfptarCommand(Command):
         self.indir = indir
         member_set = set(members)
         self.compress_prog = self.opt['--use-compress-program']
+        self.same_owner = self.opt['--same-owner']
 
         indir_url = GfURL.init(self.indir)
         if not indir_url.is_directory():
@@ -1595,20 +1688,20 @@ class GfptarCommand(Command):
         # prefer children
         directory_list.sort(reverse=True)
         for d in directory_list:
-            tarinfo = self.dirstat_dict.get(d)
             if len(member_set) > 0 and d not in member_set:
                 continue
+            tarinfo = self.dirstat_dict.get(d)
             if tarinfo is None:
                 logger.error('Mismatch between tar file and .lst file: %s', d)
                 continue
             url_str = self.outdir_url.url_join(d)
             dir_url = GfURL.init(url_str)
-            dir_url.chmod(tarinfo.mode)
+            if self.same_owner:
+                dir_url.chmod(tarinfo.mode, mtime=tarinfo.mtime,
+                              user=tarinfo.uname, group=tarinfo.gname)
+            else:
+                dir_url.chmod(tarinfo.mode, mtime=tarinfo.mtime)
             logger.debug("update_stat: %s, %s", d, oct(tarinfo.mode))
-            # TODO dir_url.chmod(tarinfo.mode, mtime=tarinfo.mtime)
-            # TODO if --same-owner:
-            # TODO dir_url.chmod(tarinfo.mode, mtime=tarinfo.mtime,
-            #  user=tarinfo.uname, group=tarinfo.gname)
 
     def extract_from_archives(self, target_list, member_set):
         self.lock_init(False)
@@ -1685,9 +1778,11 @@ class GfptarCommand(Command):
                 inf.close()
                 # TODO
                 # slow on Gfarm
-                outurl.chmod(tarinfo.mode)
-                outurl.utime(tarinfo.mtime, tarinfo.mtime)
-                # outurl.chown(tarinfo.uname, tarinfo.gname) TODO
+                if self.same_owner:
+                    outurl.chmod(tarinfo.mode, mtime=tarinfo.mtime,
+                                 user=tarinfo.uname, group=tarinfo.gname)
+                else:
+                    outurl.chmod(tarinfo.mode, mtime=tarinfo.mtime)
             elif tarinfo.isdir():
                 # NOTE: already created
                 logger.debug('extract,dir: %s', tarinfo.name)
@@ -1698,6 +1793,13 @@ class GfptarCommand(Command):
                 logger.debug('extract,link: %s, %s', tarinfo.name,
                              tarinfo.linkname)
                 outurl.symlink(tarinfo.linkname)
+                if self.same_owner:
+                    outurl.chmod(tarinfo.mode, mtime=tarinfo.mtime,
+                                 user=tarinfo.uname, group=tarinfo.gname,
+                                 follow_symlinks=False)
+                else:
+                    outurl.chmod(tarinfo.mode, mtime=tarinfo.mtime,
+                                 follow_symlinks=False)
             else:
                 logger.warning('unsupported type: %s: %s',
                                tarinfo.name, tarinfo.type)
@@ -1768,6 +1870,8 @@ Options:
   -s, --size=BYTES          assumed bytes per output file [default: 200M]
   -T, --type=TYPE           compress type (gz,bz2,xz,no) [default: gz]
   -r, --ratio=RATIO         assumed compression ratio (%) [default: 50]
+  --same-owner              extract files with the same ownership
+                            (for euid=0 on local, or gfarmroot on Gfarm)
   -I, --use-compress-program=COMMAND
                             filter data through COMMAND,
                             the command must accept -d option for decompression
@@ -1830,6 +1934,7 @@ _schema = Schema({
     '--ratio': Use(int),
     '--jobs': Use(int),
     '--use-compress-program': Or(str, None),
+    '--same-owner': bool,
     '--test': bool,
     '--test-workdir-local': Or(str, None),
     '--test-workdir-gfarm': Or(str, None),
