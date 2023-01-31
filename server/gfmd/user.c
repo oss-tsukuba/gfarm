@@ -47,8 +47,6 @@ struct user {
 	int needs_chroot;
 	struct tenant *tenant;
 	char *name_in_tenant;
-
-	struct user_auth *user_auths;
 };
 
 /* used to access "/tenantes/${TENANT}", not registered in hashtabs */
