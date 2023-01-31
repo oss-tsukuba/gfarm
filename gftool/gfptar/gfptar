@@ -229,6 +229,10 @@ class Command(metaclass=abc.ABCMeta):
         mylogger = logger_init(name, loglevel=loglevel, debug=self.debug)
         self.logger = mylogger
 
+        logger.debug('USE_GFMKDIR_PLUS: %s', USE_GFMKDIR_PLUS)
+        logger.debug('USE_GFCHMOD_PLUS: %s', USE_GFCHMOD_PLUS)
+        logger.debug('USE_GFREG_PLUS: %s', USE_GFREG_PLUS)
+
     @abc.abstractmethod
     def getDoc(self) -> str:
         raise NotImplementedError
@@ -299,7 +303,6 @@ class GfURL(metaclass=abc.ABCMeta):
     def init(url):
         if GfURLGfarm.is_my_URL(url):
             return GfURLGfarm(url)
-        # TODO GfURLGfarm.is_gfarm2fs(url)
         return GfURLLocal(url)
 
     def __init__(self, url):
@@ -433,8 +436,32 @@ class GfURL(metaclass=abc.ABCMeta):
 
     @contextmanager
     @abc.abstractmethod
-    def writeopen(self, textmode=False):
+    def writeopen(self, textmode=False, mode=None, mtime=None,
+                  user=None, group=None):
         raise NotImplementedError
+
+    def copy_from(self, inf, bufsize, mode=None, mtime=None,
+                  user=None, group=None):
+        readlen = 0
+        with self.writeopen(mode=mode, mtime=mtime,
+                            user=user, group=group) as outf:
+            while True:
+                buf = inf.read(bufsize)
+                if not buf:
+                    break
+                # binary mode
+                wlen = outf.write(buf)
+                readlen += wlen
+        return readlen
+
+
+def str2bool(s):
+    return s.upper() in ['TRUE', '1', 'ON', 'ENABLE', 'ENABLED']
+
+
+USE_GFMKDIR_PLUS = str2bool(os.getenv('GFMKDIR_PLUS', 'True'))
+USE_GFCHMOD_PLUS = str2bool(os.getenv('GFCHMOD_PLUS', 'True'))
+USE_GFREG_PLUS = str2bool(os.getenv('GFREG_PLUS', 'True'))
 
 
 class GfURLGfarm(GfURL):
@@ -442,10 +469,6 @@ class GfURLGfarm(GfURL):
     PAT_ENTRY = re.compile(r'^\s*(\d+)\s+([-dl]\S+)\s+(\d+)\s+(\S+)\s+(\S+)\s+'
                            r'(\d+)\s+(\S+\s+\d+\s+\d+:\d+:\d+\s+\d+)\s+(.+)$')
     PAT_EMPTY = re.compile(r'^\s*$')
-
-    USE_GFMKDIR_PLUS = True
-    USE_GFCHMOD_PLUS = True
-    USE_GRREG_PLUS = True  # TODO
 
     def __init__(self, url):
         super().__init__(url)
@@ -462,7 +485,7 @@ class GfURLGfarm(GfURL):
     def chmod(self, mode, mtime=None, user=None, group=None,
               follow_symlinks=True):
         args = ['gfchmod']
-        if self.__class__.USE_GFCHMOD_PLUS:
+        if USE_GFCHMOD_PLUS:
             if mtime:
                 args.append('-M')
                 args.append(str(int(mtime)))
@@ -477,7 +500,7 @@ class GfURLGfarm(GfURL):
         args.append(self.to_oct_str(mode))
         args.append(self.url_str)
         execcmd(args)
-        if not self.__class__.USE_GFCHMOD_PLUS:
+        if not USE_GFCHMOD_PLUS:
             if mtime:
                 self.utime(mtime, mtime, follow_symlinks=follow_symlinks)
             self.chown(user, group, follow_symlinks=follow_symlinks)
@@ -498,7 +521,7 @@ class GfURLGfarm(GfURL):
         execcmd(chown_args)
 
     def utime(self, atime, mtime, follow_symlinks=True):
-        # not used when USE_GFCHMOD_PLUS = True
+        # not used when USE_GFCHMOD_PLUS == True
         logger.warning('mtime cannot be updated (not supported): %s',
                        self.url_str)
 
@@ -506,7 +529,7 @@ class GfURLGfarm(GfURL):
         args = ['gfmkdir']
         if parents:
             args.append('-p')
-        if self.__class__.USE_GFMKDIR_PLUS:
+        if USE_GFMKDIR_PLUS:
             if mode is not None:
                 args.append('-m')
                 args.append(self.to_oct_str(mode))
@@ -660,21 +683,56 @@ class GfURLGfarm(GfURL):
                     raise AssertionError
                 first = False
 
-    @classmethod
-    def gfreg(cls, url_str, textmode=False):
-        args = ['gfreg', '-', url_str]
+    def gfreg(self, textmode=False, mode=None, mtime=None,
+              user=None, group=None):
+        class Gfreg():
+            def __init__(self, url, proc, stdin):
+                self.url = url
+                self.proc = proc
+                self.stdin = stdin
+
+            def close(self):
+                self.stdin.close()
+
+            def post(self):
+                if USE_GFREG_PLUS:
+                    return
+                # must be called after wait()
+                if mode:
+                    self.url.chmod(mode, mtime=mtime, user=user, group=group)
+                else:
+                    if mtime:
+                        self.url.utime(mtime, mtime)
+                    self.url.chown(user, group)
+
+        args = ['gfreg']
+        if USE_GFREG_PLUS:
+            if mode:
+                args.append('-m')
+                args.append(self.to_oct_str(mode))
+            if mtime:
+                args.append('-M')
+                args.append(str(int(mtime)))
+            if user:
+                args.append('-u')
+                args.append(user)
+            if group:
+                args.append('-g')
+                args.append(group)
+        args.append('-')
+        args.append(self.url_str)
         if textmode:
             encoding = get_encoding()
         else:
             encoding = None
-        return subprocess.Popen(
+        proc = subprocess.Popen(
             args, shell=False, encoding=encoding, close_fds=True,
             stdin=subprocess.PIPE, stdout=subprocess.DEVNULL,
             stderr=sys.stderr.buffer)
+        return Gfreg(self, proc, proc.stdin)
 
-    @classmethod
-    def gfexport(cls, url_str, textmode=False):
-        args = ['gfexport', url_str]
+    def gfexport(self, textmode=False):
+        args = ['gfexport', self.url_str]
         if textmode:
             encoding = get_encoding()
         else:
@@ -689,7 +747,8 @@ class GfURLGfarm(GfURL):
         if tarinfo is None:
             return
         if entry.is_file():
-            proc = GfURLGfarm.gfexport(entry.path)
+            url = GfURL.init(entry.path)
+            proc = url.gfexport()
             tar.addfile(tarinfo, fileobj=proc.stdout)
             proc.stdout.close()
         else:
@@ -697,7 +756,7 @@ class GfURLGfarm(GfURL):
 
     @contextmanager
     def readopen(self, textmode=False):
-        proc = GfURLGfarm.gfexport(self.url_str, textmode=textmode)
+        proc = self.gfexport(textmode=textmode)
         try:
             yield proc.stdout
         finally:
@@ -708,12 +767,15 @@ class GfURLGfarm(GfURL):
                     ' '.join(proc.args), ret))
 
     @contextmanager
-    def writeopen(self, textmode=False):
-        proc = GfURLGfarm.gfreg(self.url_str, textmode=textmode)
+    def writeopen(self, textmode=False, mode=None, mtime=None,
+                  user=None, group=None):
+        gfreg_obj = self.gfreg(textmode=textmode, mode=mode, mtime=mtime,
+                               user=user, group=group)
+        proc = gfreg_obj.proc
         try:
-            yield proc.stdin
+            yield gfreg_obj.stdin
         finally:
-            proc.stdin.close()
+            gfreg_obj.close()
             ret = proc.wait()
             if ret != 0:
                 raise Exception('{}: returncode={}'.format(
@@ -912,7 +974,8 @@ class GfURLLocal(GfURL):
             f.close()
 
     @contextmanager
-    def writeopen(self, textmode=False):
+    def writeopen(self, textmode=False, mode=None, mtime=None,
+                  user=None, group=None):
         if textmode:
             f = open(self.url_str, 'xt', encoding=get_encoding())
         else:
@@ -921,6 +984,12 @@ class GfURLLocal(GfURL):
             yield f
         finally:
             f.close()
+            if mode:
+                self.chmod(mode, mtime=mtime, user=user, group=group)
+            else:
+                if mtime:
+                    self.utime(mtime, mtime)
+                self.chown(user, group)
 
 
 class GfTarFile(tarfile.TarFile):
@@ -939,7 +1008,7 @@ class GfTarFile(tarfile.TarFile):
         proc_list = []
         if gfurl.is_gfarm():
             if compress_prog:
-                gfexport_proc = GfURLGfarm.gfexport(gfurl.url_str)
+                gfexport_proc = gfurl.gfexport()
                 decompress_proc = cls.decompress(compress_prog,
                                                  gfexport_proc.stdout)
                 tar = cls.open(None, mode=openmode,
@@ -950,7 +1019,7 @@ class GfTarFile(tarfile.TarFile):
                 proc_list.append(tuple([decompress_proc,
                                         decompress_proc.stdout]))
             else:
-                gfexport_proc = GfURLGfarm.gfexport(gfurl.url_str)
+                gfexport_proc = gfurl.gfexport()
                 tar = cls.open(None, mode=openmode,
                                fileobj=gfexport_proc.stdout,
                                bufsize=bufsize)
@@ -984,19 +1053,19 @@ class GfTarFile(tarfile.TarFile):
         proc_list = []
         if gfurl.is_gfarm():
             if compress_prog:
-                gfreg_proc = GfURLGfarm.gfreg(gfurl.url_str)
+                gfreg_obj = gfurl.gfreg(mode=0o600)
                 compress_proc = cls.compress(compress_prog,
-                                             gfreg_proc.stdin)
+                                             gfreg_obj.stdin)
                 tar = cls.open(None, mode=openmode,
                                fileobj=compress_proc.stdin, bufsize=bufsize)
                 proc_list.append(tuple([compress_proc, compress_proc.stdin]))
-                proc_list.append(tuple([gfreg_proc, gfreg_proc.stdin]))
+                proc_list.append(tuple([gfreg_obj.proc, gfreg_obj]))
             else:
-                gfreg_proc = GfURLGfarm.gfreg(gfurl.url_str)
+                gfreg_obj = gfurl.gfreg(mode=0o600)
                 tar = cls.open(None, mode=openmode,
-                               fileobj=gfreg_proc.stdin,
+                               fileobj=gfreg_obj.stdin,
                                bufsize=bufsize)
-                proc_list.append(tuple([gfreg_proc, gfreg_proc.stdin]))
+                proc_list.append(tuple([gfreg_obj.proc, gfreg_obj]))
         else:  # Local
             if compress_prog:
                 outf = open(gfurl.url_str, 'wb')
@@ -1007,6 +1076,8 @@ class GfTarFile(tarfile.TarFile):
                 proc_list.append(tuple([None, outf]))
             else:
                 tar = cls.open(gfurl.url_str, mode=openmode, bufsize=bufsize)
+            gfurl.chmod(0o600)
+        logger.debug('GfTarFile.create_open: %s', gfurl.url_str)
         setattr(tar, cls.ATTR_PROC_LIST, proc_list)
         return tar
 
@@ -1034,8 +1105,9 @@ class GfTarFile(tarfile.TarFile):
         proc_list = getattr(self, self.ATTR_PROC_LIST, None)
         if proc_list:
             for proc_tuple in proc_list:
-                proc, fileobj = proc_tuple
-                fileobj.close()
+                proc, close_obj = proc_tuple
+                if close_obj:
+                    close_obj.close()
                 if proc is not None:
                     logger.debug('close external process for tar: %s',
                                  str(proc.args))
@@ -1043,6 +1115,10 @@ class GfTarFile(tarfile.TarFile):
                     if ret != 0:
                         raise Exception('{}: returncode={}'.format(
                             ' '.join(proc.args), ret))
+                if close_obj:
+                    post_func = getattr(close_obj, 'post', None)
+                    if post_func:
+                        close_obj.post()
 
 
 class TestGfptar(unittest.TestCase):
@@ -1685,7 +1761,7 @@ class GfptarCommand(Command):
         del created
 
     def update_stat_for_directories(self, directory_list, member_set):
-        # prefer children
+        # process from leaves
         directory_list.sort(reverse=True)
         for d in directory_list:
             if len(member_set) > 0 and d not in member_set:
@@ -1763,26 +1839,18 @@ class GfptarCommand(Command):
             outurl = GfURL.init(url_str)
 
             if tarinfo.isfile():
-                inf = tar.extractfile(tarinfo)  # io.BufferedReader
-                readlen = 0
-                # TODO outurl.copy(inf, mode, mtime, uname, gname)
-                with outurl.writeopen() as outf:
-                    while True:
-                        buf = inf.read(self.bufsize)
-                        if not buf:
-                            break
-                        # binary mode
-                        wlen = outf.write(buf)
-                        readlen += wlen
-                logger.debug('extract,file: %s, %d', tarinfo.name, readlen)
-                inf.close()
-                # TODO
-                # slow on Gfarm
+                user = None
+                group = None
                 if self.same_owner:
-                    outurl.chmod(tarinfo.mode, mtime=tarinfo.mtime,
-                                 user=tarinfo.uname, group=tarinfo.gname)
-                else:
-                    outurl.chmod(tarinfo.mode, mtime=tarinfo.mtime)
+                    user = tarinfo.uname
+                    group = tarinfo.gname
+                inf = tar.extractfile(tarinfo)  # io.BufferedReader
+                size = outurl.copy_from(inf, self.bufsize,
+                                        mode=tarinfo.mode,
+                                        mtime=tarinfo.mtime,
+                                        user=user, group=group)
+                logger.debug('extract,file: %s, %d', tarinfo.name, size)
+                inf.close()
             elif tarinfo.isdir():
                 # NOTE: already created
                 logger.debug('extract,dir: %s', tarinfo.name)
@@ -1912,9 +1980,6 @@ Example of --extract (Gfarm to Gfarm):
     gfarm:/home/user1/out2/dir/test0000.data
     ...
     gfarm:/home/user1/out2/dir/test9999.data
-
-Not implemented yet (TODO):
-  - preserve mtime for Gfarm.
 
 Limitations:
   - Hard links are not preserved.
