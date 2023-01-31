@@ -137,6 +137,10 @@ gftool/gfptar/flake8.sh
 gftool/gfptar/gfptar.sh
 gftool/gfrmdir/rmdir.sh
 gftool/gfrmdir/rmdir_symlink.sh
+gftool/gfreg/gfreg-m.sh
+gftool/gfreg/gfreg-M.sh
+gftool/gfreg/gfreg-u.sh
+gftool/gfreg/gfreg-g.sh
 gftool/gfreg/0byte.sh
 gftool/gfrm/0byte.sh
 gftool/gfreg/1byte.sh

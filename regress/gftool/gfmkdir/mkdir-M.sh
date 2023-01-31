@@ -9,12 +9,16 @@ test_gfmkdir_M()
     mtime="$1"
     expect="$2"
 
+    ok=0
     if gfmkdir -M $mtime $gftmp &&
        [ x"`gfls -ldT $gftmp | awk '{ print $6,$7,$8,$9 }'`" = x"$expect" ]
     then
-	exit_code=$exit_pass
+	ok=1
     fi
     gfrmdir $gftmp
+    if [ $ok -eq 0 ]; then
+        exit $exit_fail
+    fi
 }
 
 # $ touch -d @1234567890 /tmp/aaa; TZ=UTC ls -l --full-time /tmp/aaa
@@ -27,4 +31,4 @@ TZ=UTC
 export UTC
 test_gfmkdir_M 1234567890 "Feb 13 23:31:30 2009"
 
-exit $exit_code
+exit $exit_pass

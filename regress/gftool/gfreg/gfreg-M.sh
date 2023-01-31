@@ -2,21 +2,22 @@
 
 . ./regress.conf
 
-trap 'gfrmdir $gftmp; exit $exit_trap' $trap_sigs
+datafile=$data/1byte
 
-test_gfchmod_M()
+trap 'gfrm $gftmp; exit $exit_trap' $trap_sigs
+
+test_gfreg_M()
 {
     mtime="$1"
     expect="$2"
 
     ok=0
-    if gfmkdir $gftmp &&
-       gfchmod -M $mtime 755 $gftmp &&
+    if gfreg -M $mtime $datafile $gftmp &&
        [ x"`gfls -ldT $gftmp | awk '{ print $6,$7,$8,$9 }'`" = x"$expect" ]
     then
 	ok=1
     fi
-    gfrmdir $gftmp
+    gfrm $gftmp
     if [ $ok -eq 0 ]; then
         exit $exit_fail
     fi
@@ -30,6 +31,6 @@ test_gfchmod_M()
 
 TZ=UTC
 export UTC
-test_gfchmod_M 1234567890 "Feb 13 23:31:30 2009"
+test_gfreg_M 1234567890 "Feb 13 23:31:30 2009"
 
 exit $exit_pass

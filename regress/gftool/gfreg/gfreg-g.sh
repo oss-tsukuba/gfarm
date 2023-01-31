@@ -14,26 +14,27 @@ fi
 g1=`gfgroup | sed 1q`
 g2=`gfgroup | sed -n 2p`
 
-trap 'gfrm -rf $gftmp; exit $exit_trap' $trap_sigs
+datafile=$data/1byte
 
-test_gfchmod_g()
+trap 'gfrm $gftmp; exit $exit_trap' $trap_sigs
+
+test_gfreg_g()
 {
-    group=$1
+    group="$1"
 
     ok=0
-    if gfmkdir $gftmp &&
-	    gfchmod -g $group 700 $gftmp &&
-	    [ x"`gfls -ld $gftmp | awk '{ print $4 }'`" = x"$group" ]
+    if gfreg -g $group $datafile $gftmp &&
+	    [ x"`gfls -l $gftmp | awk '{ print $4 }'`" = x"$group" ]
     then
 	ok=1
     fi
-    gfrm -rf $gftmp
+    gfrm $gftmp
     if [ $ok -eq 0 ]; then
         exit $exit_fail
     fi
 }
 
-test_gfchmod_g $g1
-test_gfchmod_g $g2
+test_gfreg_g $g1
+test_gfreg_g $g2
 
 exit $exit_pass
