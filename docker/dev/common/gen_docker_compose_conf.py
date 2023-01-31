@@ -3,7 +3,6 @@
 from ipaddress import IPv4Network, IPv6Network
 from os import environ
 import sys
-import re
 from distutils.util import strtobool
 
 num_gfmds = int(environ['GFDOCKER_NUM_GFMDS'])
@@ -105,13 +104,7 @@ print('''\
       end='')
 
 for h in hosts:
-    print("    - {}:{}".format(h.hostname, str(h.ipaddr)))
-
-if hostname_suffix != '':
-    print('''\
-  dns_search:
-    - {search_domain}
-'''.format(search_domain=re.sub('^.', '', hostname_suffix)), end='')
+    print('    - "{} {}:{}"'.format(h.hostname, h.name, str(h.ipaddr)))
 
 print('''\
 

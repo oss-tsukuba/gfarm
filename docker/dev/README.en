@@ -66,6 +66,7 @@ Quick start
   under the gfarm directory:
 
   $ git clone -b dev_es256 git@github.com:oss-tsukuba/jwt-server.git
+  (See common/oauth2/README.ja for usage)
 
 4. Edit config.mk
 
