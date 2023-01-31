@@ -105,11 +105,11 @@ gfarm_authorize_sasl_common(struct gfp_xdr *conn,
 		if (r != SASL_OK) {
 			gflog_error(GFARM_MSG_UNFIXED, "sasl_listmech(): %s",
 			    sasl_errstring(r, NULL, NULL));
-			data = "";
+			data = ""; /* mechanism_candidates == "" means error */
 			len = 0;
 		}
 	}
-	if (data == NULL) {
+	if (data == NULL || data[0] == '\0') {
 		/* mechanism_candidates == "" means error */
 		e = gfp_xdr_send(conn, "s", "");
 		if (e == GFARM_ERR_NO_ERROR)

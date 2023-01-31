@@ -83,7 +83,11 @@ gfarm_auth_request_sasl_common(struct gfp_xdr *conn,
 			gflog_notice(GFARM_MSG_UNFIXED,
 			    "%s: sasl_client_new(): %s",
 			    hostname, sasl_errstring(r, NULL, NULL));
-			error = GFARM_ERR_AUTHENTICATION;
+			/*
+			 * XXX change this to GFARM_ERR_AUTHENTICATION
+			 * if graceful
+			 */
+			error = GFARM_ERR_PROTOCOL_NOT_AVAILABLE;
 		}
 	}
 
@@ -92,8 +96,9 @@ gfarm_auth_request_sasl_common(struct gfp_xdr *conn,
 		e = gfp_xdr_flush(conn);
 	if (error != GFARM_ERR_NO_ERROR || e != GFARM_ERR_NO_ERROR) {
 		gfp_xdr_tls_reset(conn); /* is this case graceful? */
+		/* XXX change this to GFARM_ERR_AUTHENTICATION if graceful */
 		return (error != GFARM_ERR_NO_ERROR ?
-		    GFARM_ERR_AUTHENTICATION : e);
+		    GFARM_ERR_PROTOCOL_NOT_AVAILABLE : e);
 	}
 
 
@@ -107,10 +112,19 @@ gfarm_auth_request_sasl_common(struct gfp_xdr *conn,
 	 */
 	e = gfp_xdr_recv(conn, 1, &eof, "s", &mechanism_candidates);
 	if (e != GFARM_ERR_NO_ERROR || eof ||
-	    (mechanism_candidates != NULL && mechanism_candidates[0] == '\0')) {
+	    (mechanism_candidates == NULL || *mechanism_candidates == '\0')) {
 		/* mechanism_candidates == "" means error */
-		if (e == GFARM_ERR_NO_ERROR && eof)
-			e = GFARM_ERR_UNEXPECTED_EOF;
+		if (e == GFARM_ERR_NO_ERROR) {
+			if (eof)
+				e = GFARM_ERR_UNEXPECTED_EOF;
+			else
+				/*
+				 * XXX change this to GFARM_ERR_AUTHENTICATION
+				 * if graceful
+				 */
+				e = GFARM_ERR_PROTOCOL_NOT_AVAILABLE;
+		}
+		free(mechanism_candidates);
 		sasl_dispose(&sasl_conn);
 		gfp_xdr_tls_reset(conn); /* is this case graceful? */
 		return (e);
@@ -119,11 +133,11 @@ gfarm_auth_request_sasl_common(struct gfp_xdr *conn,
 	if (gfarm_ctxp->sasl_mechanisms != NULL &&
 	    strstr(mechanism_candidates, gfarm_ctxp->sasl_mechanisms)
 	    == NULL) {
-		/* XXX FIXME: this is NOT graceful*/
 		free(mechanism_candidates);
 		sasl_dispose(&sasl_conn);
 		gfp_xdr_tls_reset(conn); /* is this case graceful? */
-		return (GFARM_ERR_AUTHENTICATION);
+		/* XXX change this to GFARM_ERR_AUTHENTICATION if graceful */
+		return (GFARM_ERR_PROTOCOL_NOT_AVAILABLE);
 	}
 
 	r = sasl_client_start(sasl_conn,
@@ -143,7 +157,8 @@ gfarm_auth_request_sasl_common(struct gfp_xdr *conn,
 			e = gfp_xdr_flush(conn);
 		sasl_dispose(&sasl_conn);
 		gfp_xdr_tls_reset(conn); /* is this case graceful? */
-		return (GFARM_ERR_AUTHENTICATION);
+		/* XXX change this to GFARM_ERR_AUTHENTICATION if graceful */
+		return (GFARM_ERR_PROTOCOL_NOT_AVAILABLE);
 	}
 
 	if (gflog_auth_get_verbose()) {
@@ -194,7 +209,11 @@ gfarm_auth_request_sasl_common(struct gfp_xdr *conn,
 			    hostname, sasl_errstring(r, NULL, NULL));
 			sasl_dispose(&sasl_conn);
 			gfp_xdr_tls_reset(conn); /* is this case graceful? */
-			return (GFARM_ERR_AUTHENTICATION);
+			/*
+			 * XXX change this to GFARM_ERR_AUTHENTICATION
+			 * if graceful
+			 */
+			return (GFARM_ERR_PROTOCOL_NOT_AVAILABLE);
 		}
 		e = gfp_xdr_send(conn, "b", (size_t)len, data);
 		if (e == GFARM_ERR_NO_ERROR)
@@ -211,7 +230,8 @@ gfarm_auth_request_sasl_common(struct gfp_xdr *conn,
 		return (GFARM_ERR_NO_ERROR);
 	} else {
 		gfp_xdr_tls_reset(conn); /* is this case graceful? */
-		return (GFARM_ERR_AUTHENTICATION);
+		/* XXX change this to GFARM_ERR_AUTHENTICATION if graceful */
+		return (GFARM_ERR_PROTOCOL_NOT_AVAILABLE);
 	}
 }
 
@@ -271,7 +291,8 @@ gfarm_auth_request_sasl_step(int events, int fd, void *closure,
 	} else if (step_type == GFARM_AUTH_SASL_STEP_DONE) {
 		/* leave state->error as is. i.e. GFARM_ERR_NO_ERROR */
 	} else if (step_type != GFARM_AUTH_SASL_STEP_CONTINUE) {
-		state->error = GFARM_ERR_AUTHENTICATION;
+		/* XXX change this to GFARM_ERR_AUTHENTICATION if graceful */
+		state->error = GFARM_ERR_PROTOCOL_NOT_AVAILABLE;
 	} else if ((e = gfp_xdr_recv(state->conn, 1, &eof, "B",
 	    &rsz, &response)) != GFARM_ERR_NO_ERROR || eof) {
 		if (e == GFARM_ERR_NO_ERROR) /* i.e. eof */
@@ -287,7 +308,11 @@ gfarm_auth_request_sasl_step(int events, int fd, void *closure,
 			gflog_error(GFARM_MSG_UNFIXED,
 			    "%s: sasl_client_step(): %s",
 			    state->hostname, sasl_errstring(r, NULL, NULL));
-			state->error = GFARM_ERR_AUTHENTICATION;
+			/*
+			 * XXX change this to GFARM_ERR_AUTHENTICATION
+			 * if graceful
+			 */
+			state->error = GFARM_ERR_PROTOCOL_NOT_AVAILABLE;
 		} else if ((e = gfp_xdr_send(state->conn, "b",
 		    (size_t)state->len, state->data)) != GFARM_ERR_NO_ERROR ||
 		    (e = gfp_xdr_flush(state->conn)) != GFARM_ERR_NO_ERROR) {
@@ -396,7 +421,8 @@ gfarm_auth_request_sasl_receive_mechanisms(int events, int fd, void *closure,
 	    == NULL) {
 		/* XXX FIXME: this is NOT graceful*/
 		free(mechanism_candidates);
-		state->error = GFARM_ERR_AUTHENTICATION;
+		/* XXX change this to GFARM_ERR_AUTHENTICATION if graceful */
+		state->error = GFARM_ERR_PROTOCOL_NOT_AVAILABLE;
 	} else {
 		gfarm_fd_event_set_callback(state->writable,
 		    gfarm_auth_request_sasl_send_chosen_mechanism, state);
@@ -414,7 +440,11 @@ gfarm_auth_request_sasl_receive_mechanisms(int events, int fd, void *closure,
 				    state->hostname,
 				    sasl_errstring(r, NULL, NULL));
 			}
-			state->error = GFARM_ERR_AUTHENTICATION;
+			/*
+			 * XXX change this to GFARM_ERR_AUTHENTICATION
+			 * if graceful
+			 */
+			state->error = GFARM_ERR_PROTOCOL_NOT_AVAILABLE;
 		} else if ((rv = gfarm_eventqueue_add_event(state->q,
 		    state->writable, NULL)) != 0) {
 			state->error = gfarm_errno_to_error(rv);
@@ -464,7 +494,11 @@ gfarm_auth_request_sasl_send_server_auth_result(int events, int fd,
 			gflog_notice(GFARM_MSG_UNFIXED,
 			    "%s: sasl_client_new(): %s",
 			    state->hostname, sasl_errstring(r, NULL, NULL));
-			error = GFARM_ERR_AUTHENTICATION;
+			/*
+			 * XXX change this to GFARM_ERR_AUTHENTICATION
+			 * if graceful
+			 */
+			error = GFARM_ERR_PROTOCOL_NOT_AVAILABLE;
 		}
 	}
 
@@ -473,7 +507,8 @@ gfarm_auth_request_sasl_send_server_auth_result(int events, int fd,
 	    (e = gfp_xdr_flush(state->conn)) != GFARM_ERR_NO_ERROR) {
 		state->error = e;
 	} else if (error != GFARM_ERR_NO_ERROR) {
-		state->error = GFARM_ERR_AUTHENTICATION;
+		/* XXX change this to GFARM_ERR_AUTHENTICATION if graceful */
+		state->error = GFARM_ERR_PROTOCOL_NOT_AVAILABLE;
 	} else {
 		struct timeval timeout;
 
