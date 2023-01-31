@@ -15,7 +15,7 @@ test_gfmkdir_m()
 	ok=1
     fi
     gfrmdir $gftmp
-    if [ $ok -eq 0]; then
+    if [ $ok -eq 0 ]; then
         exit $exit_fail
     fi
 }

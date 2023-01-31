@@ -28,7 +28,7 @@ test_gfmkdir_M()
 # drwxr-xr-x 2 user1    gfarmadm          0 Feb 13 23:31:30 2009 /tmp/AAA
 
 TZ=UTC
-export UTC
+export TZ
 test_gfmkdir_M 1234567890 "Feb 13 23:31:30 2009"
 
 exit $exit_pass
