@@ -419,6 +419,23 @@ db_journal_user_modify_arg_destroy(struct db_user_modify_arg *arg)
 }
 
 static void
+db_journal_user_auth_arg_destroy(struct db_user_auth_arg *arg)
+{
+	free(arg->username);
+	free(arg->auth_method);
+	free(arg->auth_user_id);
+	free(arg);
+}
+
+static void
+db_journal_user_auth_remove_arg_destroy(struct db_user_auth_remove_arg *arg)
+{
+	free(arg->username);
+	free(arg->auth_method);
+	free(arg);
+}
+
+static void
 db_journal_user_info_destroy(struct gfarm_user_info *ui)
 {
 	gfarm_user_info_free(ui);
@@ -549,23 +566,6 @@ db_journal_metadb_server_modify_arg_destroy(
 	struct db_mdhost_modify_arg *arg)
 {
 	gfarm_metadb_server_free(&arg->ms);
-	free(arg);
-}
-
-static void
-db_journal_user_auth_arg_destroy(struct db_user_auth_arg *arg)
-{
-	free(arg->username);
-	free(arg->auth_method);
-	free(arg->auth_user_id);
-	free(arg);
-}
-
-static void
-db_journal_user_auth_remove_arg_destroy(struct db_user_auth_remove_arg *arg)
-{
-	free(arg->username);
-	free(arg->auth_method);
 	free(arg);
 }
 
@@ -1295,6 +1295,208 @@ db_journal_write_user_remove(gfarm_uint64_t seqnum, char *username)
 {
 	return (db_journal_write_string(
 		seqnum, GFM_JOURNAL_USER_REMOVE, username));
+}
+
+/**********************************************************/
+/* GfarmUserAuth */
+
+#define GFM_JOURNAL_USER_AUTH_XDR_FMT			"sss"
+#define GFM_JOURNAL_USER_AUTH_REMOVE_XDR_FMT		"ss"
+
+static gfarm_error_t
+db_journal_write_user_auth_size_add(enum journal_operation ope,
+				    size_t *sizep, void *arg)
+{
+	gfarm_error_t e;
+	struct db_user_auth_arg *ua = arg;
+
+	if ((e = gfp_xdr_send_size_add(sizep,
+		GFM_JOURNAL_USER_AUTH_XDR_FMT,
+		ua->username,
+		ua->auth_method,
+		ua->auth_user_id)) != GFARM_ERR_NO_ERROR) {
+			GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+			"gfp_xdr_send_size_add", e, ope);
+		return (e);
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
+
+static gfarm_error_t
+db_journal_write_user_auth_core(enum journal_operation ope, void *arg)
+{
+	gfarm_error_t e;
+	struct db_user_auth_arg *m = arg;
+
+	if ((e = gfp_xdr_send(JOURNAL_W_XDR,
+		GFM_JOURNAL_USER_AUTH_XDR_FMT,
+		m->username,
+		m->auth_method,
+		m->auth_user_id)) != GFARM_ERR_NO_ERROR) {
+			GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+			"gfp_xdr_send", e, ope);
+		return (e);
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+db_journal_read_user_auth(struct gfp_xdr *xdr, enum journal_operation ope,
+	struct db_user_auth_arg **argp)
+{
+	gfarm_error_t e;
+	struct db_user_auth_arg *arg;
+	int eof;
+
+	GFARM_MALLOC(arg);
+	if (arg == NULL) {
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		    "GFARM_MALLOC", GFARM_ERR_NO_MEMORY, ope);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	memset(arg, 0, sizeof(*arg));
+	if ((e = gfp_xdr_recv(xdr, 1, &eof,
+	    GFM_JOURNAL_USER_AUTH_XDR_FMT,
+	    &arg->username,
+	    &arg->auth_method,
+	    &arg->auth_user_id)) != GFARM_ERR_NO_ERROR) {
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		    "gfp_xdr_recv", e, ope);
+	}
+	if (e == GFARM_ERR_NO_ERROR)
+		*argp = arg;
+	else {
+		db_journal_user_auth_arg_destroy(arg);
+		*argp = NULL;
+	}
+	return (e);
+}
+
+static gfarm_error_t
+db_journal_write_user_auth(gfarm_uint64_t seqnum,
+	enum journal_operation ope, struct db_user_auth_arg *arg)
+{
+	return (db_journal_write(seqnum, ope, arg,
+		db_journal_write_user_auth_size_add,
+		db_journal_write_user_auth_core));
+}
+
+static gfarm_error_t
+db_journal_write_user_auth_add(gfarm_uint64_t seqnum,
+	struct db_user_auth_arg *arg)
+{
+	return (db_journal_write_user_auth(
+	    seqnum, GFM_JOURNAL_USER_AUTH_ADD, arg));
+}
+
+static gfarm_error_t
+db_journal_write_user_auth_modify(gfarm_uint64_t seqnum,
+	struct db_user_auth_arg *arg)
+{
+	return (db_journal_write_user_auth(
+	    seqnum, GFM_JOURNAL_USER_AUTH_MODIFY, arg));
+}
+
+static gfarm_error_t
+db_journal_read_user_auth_add(struct gfp_xdr *xdr,
+	struct db_user_auth_arg **argp)
+{
+	return (db_journal_read_user_auth(xdr,
+	    GFM_JOURNAL_USER_AUTH_ADD, argp));
+}
+
+static gfarm_error_t
+db_journal_read_user_auth_modify(struct gfp_xdr *xdr,
+	struct db_user_auth_arg **argp)
+{
+	return (db_journal_read_user_auth(xdr,
+	    GFM_JOURNAL_USER_AUTH_MODIFY, argp));
+}
+
+static gfarm_error_t
+db_journal_write_user_auth_remove_size_add(enum journal_operation ope,
+	size_t *sizep, void *arg)
+{
+	gfarm_error_t e;
+	struct db_user_auth_remove_arg *ua = arg;
+
+	if ((e = gfp_xdr_send_size_add(sizep,
+	    GFM_JOURNAL_USER_AUTH_REMOVE_XDR_FMT,
+	    ua->username,
+	    ua->auth_method)) != GFARM_ERR_NO_ERROR) {
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		    "gfp_xdr_send_size_add", e, ope);
+		return (e);
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
+
+static gfarm_error_t
+db_journal_write_user_auth_remove_core(enum journal_operation ope, void *arg)
+{
+	gfarm_error_t e;
+	struct db_user_auth_remove_arg *m = arg;
+
+	if ((e = gfp_xdr_send(JOURNAL_W_XDR,
+	    GFM_JOURNAL_USER_AUTH_REMOVE_XDR_FMT,
+	    m->username,
+	    m->auth_method)) != GFARM_ERR_NO_ERROR) {
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		    "gfp_xdr_send", e, ope);
+		return (e);
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+db_journal_write_user_auth_remove(gfarm_uint64_t seqnum,
+	struct db_user_auth_remove_arg *arg)
+{
+	return (db_journal_write(seqnum, GFM_JOURNAL_USER_AUTH_REMOVE, arg,
+		db_journal_write_user_auth_remove_size_add,
+		db_journal_write_user_auth_remove_core));
+}
+
+static gfarm_error_t
+db_journal_read_user_auth_remove(struct gfp_xdr *xdr,
+	struct db_user_auth_remove_arg **argp)
+{
+	gfarm_error_t e;
+	struct db_user_auth_remove_arg *arg;
+	int eof;
+	enum journal_operation ope = GFM_JOURNAL_USER_AUTH_REMOVE;
+
+	GFARM_MALLOC(arg);
+	if (arg == NULL) {
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		    "GFARM_MALLOC", GFARM_ERR_NO_MEMORY, ope);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	if ((e = gfp_xdr_recv(xdr, 1, &eof,
+	    GFM_JOURNAL_USER_AUTH_REMOVE_XDR_FMT,
+	    &arg->username,
+	    &arg->auth_method)) != GFARM_ERR_NO_ERROR) {
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		    "gfp_xdr_recv", e, ope);
+	}
+	if (e == GFARM_ERR_NO_ERROR)
+		*argp = arg;
+	else {
+		db_journal_user_auth_remove_arg_destroy(arg);
+		*argp = NULL;
+	}
+	return (e);
+
+}
+
+static gfarm_error_t
+db_journal_user_auth_load(
+	void *closure,
+	void (*callback)(void *, struct db_user_auth_arg *))
+{
+	return (store_ops->user_auth_load(closure, callback));
 }
 
 /**********************************************************/
@@ -3481,207 +3683,6 @@ db_journal_write_mdhost_remove(gfarm_uint64_t seqnum, char *name)
 		seqnum, GFM_JOURNAL_MDHOST_REMOVE, name));
 }
 
-/* GfarmUserAuth */
-
-#define GFM_JOURNAL_USER_AUTH_XDR_FMT			"sss"
-#define GFM_JOURNAL_USER_AUTH_REMOVE_XDR_FMT		"ss"
-
-static gfarm_error_t
-db_journal_write_user_auth_size_add(enum journal_operation ope,
-				    size_t *sizep, void *arg)
-{
-	gfarm_error_t e;
-	struct db_user_auth_arg *ua = arg;
-
-	if ((e = gfp_xdr_send_size_add(sizep,
-		GFM_JOURNAL_USER_AUTH_XDR_FMT,
-		ua->username,
-		ua->auth_method,
-		ua->auth_user_id)) != GFARM_ERR_NO_ERROR) {
-			GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1004702,
-			"gfp_xdr_send_size_add", e, ope);
-		return (e);
-	}
-	return (GFARM_ERR_NO_ERROR);
-}
-
-
-static gfarm_error_t
-db_journal_write_user_auth_core(enum journal_operation ope, void *arg)
-{
-	gfarm_error_t e;
-	struct db_user_auth_arg *m = arg;
-
-	if ((e = gfp_xdr_send(JOURNAL_W_XDR,
-		GFM_JOURNAL_USER_AUTH_XDR_FMT,
-		m->username,
-		m->auth_method,
-		m->auth_user_id)) != GFARM_ERR_NO_ERROR) {
-			GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003147,
-			"gfp_xdr_send", e, ope);
-		return (e);
-	}
-	return (GFARM_ERR_NO_ERROR);
-}
-
-static gfarm_error_t
-db_journal_read_user_auth(struct gfp_xdr *xdr, enum journal_operation ope,
-	struct db_user_auth_arg **argp)
-{
-	gfarm_error_t e;
-	struct db_user_auth_arg *arg;
-	int eof;
-
-	GFARM_MALLOC(arg);
-	if (arg == NULL) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003148,
-		    "GFARM_MALLOC", GFARM_ERR_NO_MEMORY, ope);
-		return (GFARM_ERR_NO_MEMORY);
-	}
-	memset(arg, 0, sizeof(*arg));
-	if ((e = gfp_xdr_recv(xdr, 1, &eof,
-	    GFM_JOURNAL_USER_AUTH_XDR_FMT,
-	    &arg->username,
-	    &arg->auth_method,
-	    &arg->auth_user_id)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003149,
-		    "gfp_xdr_recv", e, ope);
-	}
-	if (e == GFARM_ERR_NO_ERROR)
-		*argp = arg;
-	else {
-		db_journal_user_auth_arg_destroy(arg);
-		*argp = NULL;
-	}
-	return (e);
-}
-
-static gfarm_error_t
-db_journal_write_user_auth(gfarm_uint64_t seqnum,
-	enum journal_operation ope, struct db_user_auth_arg *arg)
-{
-	return (db_journal_write(seqnum, ope, arg,
-		db_journal_write_user_auth_size_add,
-		db_journal_write_user_auth_core));
-}
-
-static gfarm_error_t
-db_journal_write_user_auth_add(gfarm_uint64_t seqnum,
-	struct db_user_auth_arg *arg)
-{
-	return (db_journal_write_user_auth(
-	    seqnum, GFM_JOURNAL_USER_AUTH_ADD, arg));
-}
-
-static gfarm_error_t
-db_journal_write_user_auth_modify(gfarm_uint64_t seqnum,
-	struct db_user_auth_arg *arg)
-{
-	return (db_journal_write_user_auth(
-	    seqnum, GFM_JOURNAL_USER_AUTH_MODIFY, arg));
-}
-
-static gfarm_error_t
-db_journal_read_user_auth_add(struct gfp_xdr *xdr,
-	struct db_user_auth_arg **argp)
-{
-	return (db_journal_read_user_auth(xdr,
-	    GFM_JOURNAL_USER_AUTH_ADD, argp));
-}
-
-static gfarm_error_t
-db_journal_read_user_auth_modify(struct gfp_xdr *xdr,
-	struct db_user_auth_arg **argp)
-{
-	return (db_journal_read_user_auth(xdr,
-	    GFM_JOURNAL_USER_AUTH_MODIFY, argp));
-}
-
-static gfarm_error_t
-db_journal_write_user_auth_remove_size_add(enum journal_operation ope,
-	size_t *sizep, void *arg)
-{
-	gfarm_error_t e;
-	struct db_user_auth_remove_arg *ua = arg;
-
-	if ((e = gfp_xdr_send_size_add(sizep,
-	    GFM_JOURNAL_USER_AUTH_REMOVE_XDR_FMT,
-	    ua->username,
-	    ua->auth_method)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1004702,
-		    "gfp_xdr_send_size_add", e, ope);
-		return (e);
-	}
-	return (GFARM_ERR_NO_ERROR);
-}
-
-
-static gfarm_error_t
-db_journal_write_user_auth_remove_core(enum journal_operation ope, void *arg)
-{
-	gfarm_error_t e;
-	struct db_user_auth_remove_arg *m = arg;
-
-	if ((e = gfp_xdr_send(JOURNAL_W_XDR,
-	    GFM_JOURNAL_USER_AUTH_REMOVE_XDR_FMT,
-	    m->username,
-	    m->auth_method)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003147,
-		    "gfp_xdr_send", e, ope);
-		return (e);
-	}
-	return (GFARM_ERR_NO_ERROR);
-}
-
-static gfarm_error_t
-db_journal_write_user_auth_remove(gfarm_uint64_t seqnum,
-	struct db_user_auth_remove_arg *arg)
-{
-	return (db_journal_write(seqnum, GFM_JOURNAL_USER_AUTH_REMOVE, arg,
-		db_journal_write_user_auth_remove_size_add,
-		db_journal_write_user_auth_remove_core));
-}
-
-static gfarm_error_t
-db_journal_read_user_auth_remove(struct gfp_xdr *xdr,
-	struct db_user_auth_remove_arg **argp)
-{
-	gfarm_error_t e;
-	struct db_user_auth_remove_arg *arg;
-	int eof;
-	enum journal_operation ope = GFM_JOURNAL_USER_AUTH_REMOVE;
-
-	GFARM_MALLOC(arg);
-	if (arg == NULL) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003164,
-		    "GFARM_MALLOC", GFARM_ERR_NO_MEMORY, ope);
-		return (GFARM_ERR_NO_MEMORY);
-	}
-	if ((e = gfp_xdr_recv(xdr, 1, &eof,
-	    GFM_JOURNAL_USER_AUTH_REMOVE_XDR_FMT,
-	    &arg->username,
-	    &arg->auth_method)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003165,
-		    "gfp_xdr_recv", e, ope);
-	}
-	if (e == GFARM_ERR_NO_ERROR)
-		*argp = arg;
-	else {
-		db_journal_user_auth_remove_arg_destroy(arg);
-		*argp = NULL;
-	}
-	return (e);
-
-}
-
-static gfarm_error_t
-db_journal_user_auth_load(
-	void *closure,
-	void (*callback)(void *, struct db_user_auth_arg *))
-{
-	return (store_ops->user_auth_load(closure, callback));
-}
-
  /**********************************************************/
 /* nop */
 
@@ -3869,6 +3870,18 @@ db_journal_read_ops(void *op_arg, struct gfp_xdr *xdr,
 	case GFM_JOURNAL_MDHOST_REMOVE:
 		e = db_journal_read_string(xdr, ope, (char **)objp);
 		break;
+	case GFM_JOURNAL_USER_AUTH_ADD:
+		e = db_journal_read_user_auth_add(xdr,
+			(struct db_user_auth_arg **)objp);
+		break;
+	case GFM_JOURNAL_USER_AUTH_MODIFY:
+		e = db_journal_read_user_auth_modify(xdr,
+			(struct db_user_auth_arg **)objp);
+		break;
+	case GFM_JOURNAL_USER_AUTH_REMOVE:
+		e = db_journal_read_user_auth_remove(xdr,
+			(struct db_user_auth_remove_arg **)objp);
+		break;
 	case GFM_JOURNAL_INODE_ADD:
 	case GFM_JOURNAL_INODE_MODIFY:
 		e = db_journal_read_stat(xdr, ope, (struct gfs_stat **)objp);
@@ -3972,18 +3985,6 @@ db_journal_read_ops(void *op_arg, struct gfp_xdr *xdr,
 		e = db_journal_read_nop(xdr,
 			(struct db_mdhost_modify_arg **)objp);
 		break;
-	case GFM_JOURNAL_USER_AUTH_ADD:
-		e = db_journal_read_user_auth_add(xdr,
-			(struct db_user_auth_arg **)objp);
-		break;
-	case GFM_JOURNAL_USER_AUTH_MODIFY:
-		e = db_journal_read_user_auth_modify(xdr,
-			(struct db_user_auth_arg **)objp);
-		break;
-	case GFM_JOURNAL_USER_AUTH_REMOVE:
-		e = db_journal_read_user_auth_remove(xdr,
-			(struct db_user_auth_remove_arg **)objp);
-		break;
 	default:
 		e = GFARM_ERR_INVALID_ARGUMENT;
 		break;
@@ -4019,6 +4020,12 @@ db_journal_ops_call(const struct db_ops *ops, gfarm_uint64_t seqnum,
 		e = ops->user_modify(seqnum, obj); break;
 	case GFM_JOURNAL_USER_REMOVE:
 		e = ops->user_remove(seqnum, obj); break;
+	case GFM_JOURNAL_USER_AUTH_ADD:
+		e = ops->user_auth_add(seqnum, obj); break;
+	case GFM_JOURNAL_USER_AUTH_MODIFY:
+		e = ops->user_auth_modify(seqnum, obj); break;
+	case GFM_JOURNAL_USER_AUTH_REMOVE:
+		e = ops->user_auth_remove(seqnum, obj); break;
 	case GFM_JOURNAL_GROUP_ADD:
 		e = ops->group_add(seqnum, obj); break;
 	case GFM_JOURNAL_GROUP_MODIFY:
@@ -4107,12 +4114,6 @@ db_journal_ops_call(const struct db_ops *ops, gfarm_uint64_t seqnum,
 		e = ops->mdhost_remove(seqnum, obj); break;
 	case GFM_JOURNAL_FSNGROUP_MODIFY:
 		e = ops->fsngroup_modify(seqnum, obj); break;
-	case GFM_JOURNAL_USER_AUTH_ADD:
-		e = ops->user_auth_add(seqnum, obj); break;
-	case GFM_JOURNAL_USER_AUTH_MODIFY:
-		e = ops->user_auth_modify(seqnum, obj); break;
-	case GFM_JOURNAL_USER_AUTH_REMOVE:
-		e = ops->user_auth_remove(seqnum, obj); break;
 	case GFM_JOURNAL_NOP:
 		e = GFARM_ERR_NO_ERROR; break;
 	default:
@@ -4892,6 +4893,11 @@ struct db_ops db_journal_ops = {
 	db_journal_write_user_remove,
 	db_journal_user_load,
 
+	db_journal_write_user_auth_add,
+	db_journal_write_user_auth_modify,
+	db_journal_write_user_auth_remove,
+	db_journal_user_auth_load,
+
 	db_journal_write_group_add,
 	db_journal_write_group_modify,
 	db_journal_write_group_remove,
@@ -4968,10 +4974,5 @@ struct db_ops db_journal_ops = {
 	db_journal_write_mdhost_remove,
 	db_journal_mdhost_load,
 
-	db_journal_write_fsngroup_modify,
-
-	db_journal_write_user_auth_add,
-	db_journal_write_user_auth_modify,
-	db_journal_write_user_auth_remove,
-	db_journal_user_auth_load
+	db_journal_write_fsngroup_modify
 };

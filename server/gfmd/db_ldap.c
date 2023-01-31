@@ -1546,6 +1546,162 @@ gfarm_ldap_user_load(void *closure,
 
 /**********************************************************************/
 
+static char *gfarm_ldap_user_auth_make_dn(void *vkey);
+static gfarm_error_t gfarm_ldap_user_auth_set_field(void *info,
+	char *attribute, char **vals);
+
+struct gfarm_ldap_user_auth_key {
+	const char *username;
+	const char *auth_method;
+};
+
+static const struct gfarm_ldap_generic_info_ops gfarm_ldap_user_auth_ops = {
+	&gfarm_base_user_auth_ops,
+	"(objectclass=GFarmUserAuth)",
+	"username=%s, auth_method=%s, %s",
+	gfarm_ldap_user_info_make_dn,
+	gfarm_ldap_user_info_set_field,
+};
+
+static char *
+gfarm_ldap_user_auth_make_dn(void *vkey)
+{
+	struct gfarm_ldap_user_auth_key *key = vkey;
+	char *dn;
+
+	GFARM_MALLOC_ARRAY(dn, strlen(gfarm_ldap_user_auth_ops.dn_template) +
+		strlen(key->username) + strlen(key->auth_method) +
+		strlen(gfarm_ldap_base_dn) + 1);
+	if (dn == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of string 'dn' failed");
+		return (NULL);
+	}
+	sprintf(dn, gfarm_ldap_user_auth_ops.dn_template,
+		key->username, key->auth_method, gfarm_ldap_base_dn);
+	return (dn);
+}
+
+static gfarm_error_t
+gfarm_ldap_user_auth_set_field(
+	void *vinfo,
+	char *attribute,
+	char **vals)
+{
+	gfarm_error_t err = GFARM_ERR_NO_ERROR;
+	struct db_user_auth_arg *info = vinfo;
+	static const char diag[] = "gfarm_ldap_user_auth_set_field";
+
+	if (strcasecmp(attribute, "username") == 0) {
+		info->username = strdup_log(vals[0], diag);
+		if (info->username == NULL)
+			err = GFARM_ERR_NO_MEMORY;
+	} else if (strcasecmp(attribute, "authMethod") == 0) {
+		/* XXX FIXME - hack to allow null string */
+		if (strcmp(vals[0], " ") == 0)
+			info->auth_method = strdup_log("", diag);
+		else
+			info->auth_method = strdup_log(vals[0], diag);
+		if (info->auth_method == NULL)
+			err = GFARM_ERR_NO_MEMORY;
+	} else if (strcasecmp(attribute, "authUserId") == 0) {
+		/* XXX FIXME - hack to allow null string */
+		if (strcmp(vals[0], " ") == 0)
+			info->auth_user_id = strdup_log("", diag);
+		else
+			info->auth_user_id = strdup_log(vals[0], diag);
+		if (info->auth_user_id == NULL)
+			err = GFARM_ERR_NO_MEMORY;
+	}
+	return (err);
+}
+
+static gfarm_error_t
+gfarm_ldap_user_auth_update(
+	struct db_user_auth_arg *info,
+	int mod_op,
+	gfarm_error_t (*update_op)(void *, LDAPMod **,
+	    const struct gfarm_ldap_generic_info_ops *))
+{
+	int i;
+	LDAPMod *modv[6];
+	struct ldap_string_modify storage[ARRAY_LENGTH(modv) - 1];
+
+	struct gfarm_ldap_user_auth_key key;
+
+	key.username = info->username;
+	key.auth_method = info->auth_method;
+
+	i = 0;
+	set_string_mod(&modv[i], mod_op,
+	    "objectclass", "GFarmUserAuth", &storage[i]);
+	i++;
+	set_string_mod(&modv[i], mod_op,
+	    "username", info->username, &storage[i]);
+	i++;
+	set_string_mod(&modv[i], mod_op,
+	    "authMethod", info->auth_method, &storage[i]);
+	i++;
+	/* XXX FIXME - hack to allow null string */
+	set_string_mod(&modv[i], mod_op, "authUserId",
+		*info->auth_user_id ? info->auth_user_id : " ", &storage[i]);
+	i++;
+
+	modv[i++] = NULL;
+	assert(i == ARRAY_LENGTH(modv));
+
+	return ((*update_op)(&key, modv, &gfarm_ldap_user_auth_ops));
+}
+
+static gfarm_error_t
+gfarm_ldap_user_auth_add(gfarm_uint64_t seqnum, struct db_user_auth_arg *arg)
+{
+	gfarm_error_t e;
+	e = gfarm_ldap_user_auth_update(arg,
+	    LDAP_MOD_ADD, gfarm_ldap_generic_info_add);
+	free(arg);
+	return (e);
+}
+
+static gfarm_error_t
+gfarm_ldap_user_auth_modify(gfarm_uint64_t seqnum, struct db_user_auth_arg *arg)
+{
+	gfarm_error_t e;
+	e = gfarm_ldap_user_auth_update(arg,
+	    LDAP_MOD_REPLACE, gfarm_ldap_generic_info_modify);
+	free(arg);
+	return (e);
+}
+
+static gfarm_error_t
+gfarm_ldap_user_auth_remove(gfarm_uint64_t seqnum,
+	struct db_user_auth_remove_arg *arg)
+{
+	gfarm_error_t e;
+	struct gfarm_ldap_user_auth_key key;
+
+	key.username = username;
+	key.auth_method = auth_method
+
+	e = gfarm_ldap_generic_info_remove(&key, &gfarm_ldap_user_auth_ops);
+	free(arg);
+	return (e);
+}
+
+static gfarm_error_t
+gfarm_ldap_user_auth_load(void *closure,
+	void (*callback)(void *, struct db_user_auth_arg *))
+{
+	struct db_user_auth_arg tmp_info;
+
+	return (gfarm_ldap_generic_info_get_foreach(gfarm_ldap_base_dn,
+	    LDAP_SCOPE_ONELEVEL, gfarm_ldap_user_auth_ops.query_type,
+	    &tmp_info, (void (*)(void *, void *))callback, closure,
+	    &gfarm_ldap_user_auth_ops));
+}
+
+/**********************************************************************/
+
 static char *gfarm_ldap_group_info_make_dn(void *vkey);
 static gfarm_error_t gfarm_ldap_group_info_set_field(void *info,
 	char *attribute, char **vals);
@@ -3265,162 +3421,6 @@ gfarm_ldap_quota_dir_load(void *closure,
 }
 
 /**********************************************************************/
-
-static char *gfarm_ldap_user_auth_make_dn(void *vkey);
-static gfarm_error_t gfarm_ldap_user_auth_set_field(void *info,
-	char *attribute, char **vals);
-
-struct gfarm_ldap_user_auth_key {
-	const char *username;
-	const char *auth_method;
-};
-
-static const struct gfarm_ldap_generic_info_ops gfarm_ldap_user_auth_ops = {
-	&gfarm_base_user_auth_ops,
-	"(objectclass=GFarmUserAuth)",
-	"username=%s, auth_method=%s, %s",
-	gfarm_ldap_user_info_make_dn,
-	gfarm_ldap_user_info_set_field,
-};
-
-static char *
-gfarm_ldap_user_auth_make_dn(void *vkey)
-{
-	struct gfarm_ldap_user_auth_key *key = vkey;
-	char *dn;
-
-	GFARM_MALLOC_ARRAY(dn, strlen(gfarm_ldap_user_auth_ops.dn_template) +
-		strlen(key->username) + strlen(key->auth_method) +
-		strlen(gfarm_ldap_base_dn) + 1);
-	if (dn == NULL) {
-		gflog_debug(GFARM_MSG_1002128,
-			"allocation of string 'dn' failed");
-		return (NULL);
-	}
-	sprintf(dn, gfarm_ldap_user_auth_ops.dn_template,
-		key->username, key->auth_method, gfarm_ldap_base_dn);
-	return (dn);
-}
-
-static gfarm_error_t
-gfarm_ldap_user_auth_set_field(
-	void *vinfo,
-	char *attribute,
-	char **vals)
-{
-	gfarm_error_t err = GFARM_ERR_NO_ERROR;
-	struct db_user_auth_arg *info = vinfo;
-	static const char diag[] = "gfarm_ldap_user_auth_set_field";
-
-	if (strcasecmp(attribute, "username") == 0) {
-		info->username = strdup_log(vals[0], diag);
-		if (info->username == NULL)
-			err = GFARM_ERR_NO_MEMORY;
-	} else if (strcasecmp(attribute, "authMethod") == 0) {
-		/* XXX FIXME - hack to allow null string */
-		if (strcmp(vals[0], " ") == 0)
-			info->auth_method = strdup_log("", diag);
-		else
-			info->auth_method = strdup_log(vals[0], diag);
-		if (info->auth_method == NULL)
-			err = GFARM_ERR_NO_MEMORY;
-	} else if (strcasecmp(attribute, "authUserId") == 0) {
-		/* XXX FIXME - hack to allow null string */
-		if (strcmp(vals[0], " ") == 0)
-			info->auth_user_id = strdup_log("", diag);
-		else
-			info->auth_user_id = strdup_log(vals[0], diag);
-		if (info->auth_user_id == NULL)
-			err = GFARM_ERR_NO_MEMORY;
-	}
-	return (err);
-}
-
-static gfarm_error_t
-gfarm_ldap_user_auth_update(
-	struct db_user_auth_arg *info,
-	int mod_op,
-	gfarm_error_t (*update_op)(void *, LDAPMod **,
-	    const struct gfarm_ldap_generic_info_ops *))
-{
-	int i;
-	LDAPMod *modv[6];
-	struct ldap_string_modify storage[ARRAY_LENGTH(modv) - 1];
-
-	struct gfarm_ldap_user_auth_key key;
-
-	key.username = info->username;
-	key.auth_method = info->auth_method;
-
-	i = 0;
-	set_string_mod(&modv[i], mod_op,
-	    "objectclass", "GFarmUserAuth", &storage[i]);
-	i++;
-	set_string_mod(&modv[i], mod_op,
-	    "username", info->username, &storage[i]);
-	i++;
-	set_string_mod(&modv[i], mod_op,
-	    "authMethod", info->auth_method, &storage[i]);
-	i++;
-	/* XXX FIXME - hack to allow null string */
-	set_string_mod(&modv[i], mod_op, "authUserId",
-		*info->auth_user_id ? info->auth_user_id : " ", &storage[i]);
-	i++;
-
-	modv[i++] = NULL;
-	assert(i == ARRAY_LENGTH(modv));
-
-	return ((*update_op)(&key, modv, &gfarm_ldap_user_auth_ops));
-}
-
-static gfarm_error_t
-gfarm_ldap_user_auth_add(gfarm_uint64_t seqnum, struct db_user_auth_arg *arg)
-{
-	gfarm_error_t e;
-	e = gfarm_ldap_user_auth_update(arg,
-	    LDAP_MOD_ADD, gfarm_ldap_generic_info_add);
-	free(arg);
-	return (e);
-}
-
-static gfarm_error_t
-gfarm_ldap_user_auth_modify(gfarm_uint64_t seqnum, struct db_user_auth_arg *arg)
-{
-	gfarm_error_t e;
-	e = gfarm_ldap_user_auth_update(arg,
-	    LDAP_MOD_REPLACE, gfarm_ldap_generic_info_modify);
-	free(arg);
-	return (e);
-}
-
-static gfarm_error_t
-gfarm_ldap_user_auth_remove(gfarm_uint64_t seqnum,
-	struct db_user_auth_remove_arg *arg)
-{
-	gfarm_error_t e;
-	struct gfarm_ldap_user_auth_key key;
-
-	key.username = username;
-	key.auth_method = auth_method
-
-	e = gfarm_ldap_generic_info_remove(&key, &gfarm_ldap_user_auth_ops);
-	free(arg);
-	return (e);
-}
-
-static gfarm_error_t
-gfarm_ldap_user_auth_load(void *closure,
-	void (*callback)(void *, struct db_user_auth_arg *))
-{
-	struct db_user_auth_arg tmp_info;
-
-	return (gfarm_ldap_generic_info_get_foreach(gfarm_ldap_base_dn,
-	    LDAP_SCOPE_ONELEVEL, gfarm_ldap_user_auth_ops.query_type,
-	    &tmp_info, (void (*)(void *, void *))callback, closure,
-	    &gfarm_ldap_user_auth_ops));
-}
-
-/**********************************************************************/
 const struct db_ops db_ldap_ops = {
 	gfarm_ldap_initialize,
 	gfarm_ldap_terminate,
@@ -3437,6 +3437,11 @@ const struct db_ops db_ldap_ops = {
 	gfarm_ldap_user_modify,
 	gfarm_ldap_user_remove,
 	gfarm_ldap_user_load,
+
+	gfarm_ldap_user_auth_add,
+	gfarm_ldap_user_auth_modify,
+	gfarm_ldap_user_auth_remove,
+	gfarm_ldap_user_auth_load,
 
 	gfarm_ldap_group_add,
 	gfarm_ldap_group_modify,
@@ -3515,9 +3520,4 @@ const struct db_ops db_ldap_ops = {
 	NULL,
 
 	gfarm_ldap_fsngroup_modify,
-
-	gfarm_ldap_user_auth_add,
-	gfarm_ldap_user_auth_modify,
-	gfarm_ldap_user_auth_remove,
-	gfarm_ldap_user_auth_load,
 };

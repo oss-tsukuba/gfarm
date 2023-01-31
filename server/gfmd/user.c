@@ -36,11 +36,6 @@
 #define USER_DN_HASHTAB_SIZE	3079	/* prime number */
 
 /* in-core gfarm_user_info */
-struct user_auth {
-	char *auth_method;
-	char *auth_user_id;
-};
-
 struct user {
 	struct gfarm_user_info ui;
 	struct group_assignment groups;

@@ -113,6 +113,12 @@ attributetype ( 1.3.6.1.4.1.13122.2.1.2924.101.2.30 NAME 'attrvalue'
 attributetype ( 1.3.6.1.4.1.13122.2.1.2924.101.2.31 NAME 'fsngroupname'
 	SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
 
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.101.2.32 NAME 'authMethod'
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.101.2.33 NAME 'authUserId'
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+
 # Object Class Definitions
 # 1.3.6.1.4.1.13122.2.1.2924.101.3.x
 

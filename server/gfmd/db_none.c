@@ -178,6 +178,38 @@ gfarm_none_user_load(void *closure,
 /**********************************************************************/
 
 static gfarm_error_t
+gfarm_none_user_auth_add(gfarm_uint64_t seqnum, struct db_user_auth_arg *arg)
+{
+	modify_seqnum(seqnum);
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+gfarm_none_user_auth_modify(gfarm_uint64_t seqnum,
+	struct db_user_auth_arg *arg)
+{
+	modify_seqnum(seqnum);
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+gfarm_none_user_auth_remove(gfarm_uint64_t seqnum,
+	struct db_user_auth_remove_arg *arg)
+{
+	modify_seqnum(seqnum);
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+gfarm_none_user_auth_load(void *closure,
+	void (*callback)(void *, struct db_user_auth_arg *))
+{
+	return (GFARM_ERR_NO_ERROR);
+}
+
+/**********************************************************************/
+
+static gfarm_error_t
 gfarm_none_group_add(gfarm_uint64_t seqnum, struct gfarm_group_info *info)
 {
 	modify_seqnum(seqnum);
@@ -574,38 +606,6 @@ gfarm_none_mdhost_load(void *closure,
 
 /**********************************************************************/
 
-static gfarm_error_t
-gfarm_none_user_auth_add(gfarm_uint64_t seqnum, struct db_user_auth_arg *arg)
-{
-	modify_seqnum(seqnum);
-	return (GFARM_ERR_NO_ERROR);
-}
-
-static gfarm_error_t
-gfarm_none_user_auth_modify(gfarm_uint64_t seqnum,
-	struct db_user_auth_arg *arg)
-{
-	modify_seqnum(seqnum);
-	return (GFARM_ERR_NO_ERROR);
-}
-
-static gfarm_error_t
-gfarm_none_user_auth_remove(gfarm_uint64_t seqnum,
-	struct db_user_auth_remove_arg *arg)
-{
-	modify_seqnum(seqnum);
-	return (GFARM_ERR_NO_ERROR);
-}
-
-static gfarm_error_t
-gfarm_none_user_auth_load(void *closure,
-	void (*callback)(void *, struct db_user_auth_arg *))
-{
-	return (GFARM_ERR_NO_ERROR);
-}
-
-/**********************************************************************/
-
 const struct db_ops db_none_ops = {
 	gfarm_none_initialize,
 	gfarm_none_terminate,
@@ -622,6 +622,11 @@ const struct db_ops db_none_ops = {
 	gfarm_none_user_modify,
 	gfarm_none_user_remove,
 	gfarm_none_user_load,
+
+	gfarm_none_user_auth_add,
+	gfarm_none_user_auth_modify,
+	gfarm_none_user_auth_remove,
+	gfarm_none_user_auth_load,
 
 	gfarm_none_group_add,
 	gfarm_none_group_modify,
@@ -700,9 +705,4 @@ const struct db_ops db_none_ops = {
 	gfarm_none_mdhost_load,
 
 	gfarm_none_fsngroup_modify,
-
-	gfarm_none_user_auth_add,
-	gfarm_none_user_auth_modify,
-	gfarm_none_user_auth_remove,
-	gfarm_none_user_auth_load,
 };
