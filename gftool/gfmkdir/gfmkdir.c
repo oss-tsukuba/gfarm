@@ -158,6 +158,7 @@ main(int argc, char **argv)
 		usage();
 
 	if (option_mode) {
+		errno = 0;
 		mode = strtol(option_mode, &ep, 8);
 		if (errno != 0 || ep == option_mode || *ep != '\0') {
 			fprintf(stderr, "%s: %s: %s\n",
@@ -170,6 +171,7 @@ main(int argc, char **argv)
 	if (option_mtime) {
 		long mtime;
 
+		errno = 0;
 		mtime = strtol(option_mtime, &ep, 0);;
 		if (errno != 0 || ep == option_mtime || *ep != '\0') {
 			fprintf(stderr, "%s: %s: %s\n",

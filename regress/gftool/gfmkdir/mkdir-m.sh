@@ -9,7 +9,7 @@ test_gfmkdir_m()
     mode="$1"
     expect="$2"
 
-    if gfmkdir -m $mode $gftmp
+    if gfmkdir -m $mode $gftmp &&
        [ x"`gfls -ld $gftmp | awk '{ print $1 }'`" = x"$expect" ]; then
 	exit_code=$exit_pass
     fi

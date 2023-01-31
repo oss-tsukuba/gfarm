@@ -161,6 +161,9 @@ gftool/gfchmod/gfchmod_700_dir.sh
 gftool/gfchmod/gfchmod_755_dir.sh
 gftool/gfchmod/gfchmod_symlink.sh
 gftool/gfchmod/gfchmod-h.sh
+gftool/gfchmod/gfchmod-M.sh
+gftool/gfchmod/gfchmod-u.sh
+gftool/gfchmod/gfchmod-g.sh
 gftool/gfchown/gfchown.sh
 gftool/gfchown/gfchown-h.sh
 gftool/gfcksum/gfcksum-c.sh

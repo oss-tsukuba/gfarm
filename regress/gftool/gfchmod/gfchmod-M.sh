@@ -4,12 +4,13 @@
 
 trap 'gfrmdir $gftmp; exit $exit_trap' $trap_sigs
 
-test_gfmkdir_M()
+test_gfchmod_M()
 {
     mtime="$1"
     expect="$2"
 
-    if gfmkdir -M $mtime $gftmp &&
+    if gfmkdir $gftmp &&
+       gfchmod -M $mtime 755 $gftmp &&
        [ x"`gfls -ldT $gftmp | awk '{ print $6,$7,$8,$9 }'`" = x"$expect" ]
     then
 	exit_code=$exit_pass
@@ -25,6 +26,6 @@ test_gfmkdir_M()
 
 TZ=UTC
 export UTC
-test_gfmkdir_M 1234567890 "Feb 13 23:31:30 2009"
+test_gfchmod_M 1234567890 "Feb 13 23:31:30 2009"
 
 exit $exit_code
