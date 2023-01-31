@@ -31,7 +31,7 @@
 gfptar \- archive files in parallel
 .SH "SYNOPSIS"
 .HP \w'\fBgfptar\fR\ 'u
-\fBgfptar\fR [OPTIONS] \-c\ \fIoutdir\fR \-C\ \fIbasedir\fR \fImember\fR...
+\fBgfptar\fR [OPTIONS] \-c\ \fIoutdir\fR [\-C\ \fIbasedir\fR] \fImember\fR...
 .HP \w'\fBgfptar\fR\ 'u
 \fBgfptar\fR [OPTIONS] \-x\ \fIoutdir\fR \fIindir\fR [\fImember\fR...]
 .HP \w'\fBgfptar\fR\ 'u
@@ -39,7 +39,7 @@ gfptar \- archive files in parallel
 .SH "DESCRIPTION"
 .PP
 \fBgfptar\fR
-creates archive files to Gfarm, or extracts files from archive files on Gfarm\&. The archive files consist of multiple tar files and list files of archived members in a directory\&. Creation or extraction is performed in parallel for each tar file in a directoy for archive\&.
+creates archive files to Gfarm, or extracts files from archive files on Gfarm\&. The archive files consist of multiple tar files and list files of archived members in a directory\&. Creation or extraction is performed in parallel for each tar file in a directory for archive\&.
 .SH "OPERATION MODE"
 .PP
 \fB\-c(\-\-create)\fR \fIoutdir\fR \fB\-C(\-\-basedir)\fR \fIbasedir\fR \fImember\&.\&.\&.\fR
@@ -125,7 +125,7 @@ The default value is gz\&.
 .PP
 \fB\-I, \-\-use\-compress\-program=\fR\fICOMMAND\fR
 .RS 4
-Specifies a command of compression program\&. Suffix for creating tar files must be specfied by
+Specifies a command of compression program\&. Suffix for creating tar files must be specified by
 \fB\-\-type\fR
 option\&. The command must accept \-d option for decompression\&.
 .RE
@@ -207,7 +207,7 @@ option\&.
 .RE
 .\}
 .PP
-Extract a spefified file from a Gfarm directory to a local directory\&. The extracted file of this example is dir1/path/to/file only\&.
+Extract a specified file from a Gfarm directory to a local directory\&. The extracted file of this example is dir1/path/to/file only\&.
 .sp
 .if n \{\
 .RS 4

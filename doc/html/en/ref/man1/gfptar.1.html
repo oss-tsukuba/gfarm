@@ -12,7 +12,7 @@
 </div>
 <div class="refsynopsisdiv">
 <a name="synopsis"></a><h2>Synopsis</h2>
-<div class="cmdsynopsis"><p><code class="command">gfptar</code>  [OPTIONS]  -c <em class="replaceable"><code>outdir</code></em>   -C <em class="replaceable"><code>basedir</code></em>   <em class="replaceable"><code>member</code></em>... </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfptar</code>  [OPTIONS]  -c <em class="replaceable"><code>outdir</code></em>  [-C <em class="replaceable"><code>basedir</code></em>]  <em class="replaceable"><code>member</code></em>... </p></div>
 <div class="cmdsynopsis"><p><code class="command">gfptar</code>  [OPTIONS]  -x <em class="replaceable"><code>outdir</code></em>   <em class="replaceable"><code>indir</code></em>  [<em class="replaceable"><code>member</code></em>...]</p></div>
 <div class="cmdsynopsis"><p><code class="command">gfptar</code>  [OPTIONS]  -t <em class="replaceable"><code>indir</code></em> </p></div>
 </div>
@@ -22,7 +22,7 @@
   <span class="command"><strong>gfptar</strong></span>
   creates archive files to Gfarm, or extracts files from archive files on Gfarm.
   The archive files consist of multiple tar files and list files of archived members in a directory.
-  Creation or extraction is performed in parallel for each tar file in a directoy for archive.
+  Creation or extraction is performed in parallel for each tar file in a directory for archive.
 </p>
 </div>
 <div class="refsect1">
@@ -58,7 +58,7 @@
 </dl></div>
 </div>
 <div class="refsect1">
-<a name="path-stype"></a><h2>PATH STYLE</h2>
+<a name="path-style"></a><h2>PATH STYLE</h2>
 <p>
   <em class="parameter"><code>outdir</code></em>, <em class="parameter"><code>indir</code></em>
   and <em class="parameter"><code>basedir</code></em> must be one of the following formats.
@@ -130,7 +130,7 @@
 <dt><span class="term"><code class="option">-I, --use-compress-program=</code><em class="parameter"><code>COMMAND</code></em></span></dt>
 <dd><p>
     Specifies a command of compression program.
-    Suffix for creating tar files must be specfied by <code class="option">--type</code> option.
+    Suffix for creating tar files must be specified by <code class="option">--type</code> option.
     The command must accept -d option for decompression.
   </p></dd>
 <dt><span class="term"><code class="option">-q, --quiet</code></span></dt>
@@ -190,7 +190,7 @@
 <p>
 </p>
 <p>
-  Extract a spefified file from a Gfarm directory to a local directory.
+  Extract a specified file from a Gfarm directory to a local directory.
   The extracted file of this example is dir1/path/to/file only.
   </p>
 <div class="literallayout"><p><br>
