@@ -1556,11 +1556,11 @@ struct gfarm_ldap_user_auth_key {
 };
 
 static const struct gfarm_ldap_generic_info_ops gfarm_ldap_user_auth_ops = {
-	&gfarm_base_user_auth_ops,
+	&db_base_user_auth_arg_ops,
 	"(objectclass=GFarmUserAuth)",
 	"username=%s, authMethod=%s, %s",
-	gfarm_ldap_user_info_make_dn,
-	gfarm_ldap_user_info_set_field,
+	gfarm_ldap_user_auth_make_dn,
+	gfarm_ldap_user_auth_set_field,
 };
 
 static char *
@@ -1675,8 +1675,8 @@ gfarm_ldap_user_auth_remove(gfarm_uint64_t seqnum,
 	gfarm_error_t e;
 	struct gfarm_ldap_user_auth_key key;
 
-	key.username = username;
-	key.auth_method = auth_method
+	key.username = arg->username;
+	key.auth_method = arg->auth_method;
 
 	e = gfarm_ldap_generic_info_remove(&key, &gfarm_ldap_user_auth_ops);
 	free(arg);
