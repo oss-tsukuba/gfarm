@@ -813,7 +813,8 @@ db_user_auth_remove_dup(const struct db_user_auth_remove_arg *ua, size_t size)
 		r = malloc(sz);
 	if (overflow || r == NULL) {
 		gflog_debug(GFARM_MSG_UNFIXED,
-			"allocation of 'db_user_auth_remove_arg' failed or overflow");
+			"allocation of 'db_user_auth_remove_arg'"
+			"failed or overflow");
 		return (NULL);
 	}
 	r->username = (char *)r + size;
