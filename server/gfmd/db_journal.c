@@ -419,6 +419,13 @@ db_journal_user_modify_arg_destroy(struct db_user_modify_arg *arg)
 }
 
 static void
+db_journal_user_info_destroy(struct gfarm_user_info *ui)
+{
+	gfarm_user_info_free(ui);
+	free(ui);
+}
+
+static void
 db_journal_user_auth_arg_destroy(struct db_user_auth_arg *arg)
 {
 	free(arg->username);
@@ -433,13 +440,6 @@ db_journal_user_auth_remove_arg_destroy(struct db_user_auth_remove_arg *arg)
 	free(arg->username);
 	free(arg->auth_method);
 	free(arg);
-}
-
-static void
-db_journal_user_info_destroy(struct gfarm_user_info *ui)
-{
-	gfarm_user_info_free(ui);
-	free(ui);
 }
 
 static void
@@ -1298,7 +1298,7 @@ db_journal_write_user_remove(gfarm_uint64_t seqnum, char *username)
 }
 
 /**********************************************************/
-/* GfarmUserAuth */
+/* user_auth */
 
 #define GFM_JOURNAL_USER_AUTH_XDR_FMT			"sss"
 #define GFM_JOURNAL_USER_AUTH_REMOVE_XDR_FMT		"ss"
@@ -1396,22 +1396,6 @@ db_journal_write_user_auth_modify(gfarm_uint64_t seqnum,
 {
 	return (db_journal_write_user_auth(
 	    seqnum, GFM_JOURNAL_USER_AUTH_MODIFY, arg));
-}
-
-static gfarm_error_t
-db_journal_read_user_auth_add(struct gfp_xdr *xdr,
-	struct db_user_auth_arg **argp)
-{
-	return (db_journal_read_user_auth(xdr,
-	    GFM_JOURNAL_USER_AUTH_ADD, argp));
-}
-
-static gfarm_error_t
-db_journal_read_user_auth_modify(struct gfp_xdr *xdr,
-	struct db_user_auth_arg **argp)
-{
-	return (db_journal_read_user_auth(xdr,
-	    GFM_JOURNAL_USER_AUTH_MODIFY, argp));
 }
 
 static gfarm_error_t
@@ -3730,6 +3714,15 @@ db_journal_ops_free(void *op_arg, enum journal_operation ope, void *obj)
 	case GFM_JOURNAL_USER_MODIFY:
 		db_journal_user_modify_arg_destroy(obj);
 		break;
+	case GFM_JOURNAL_USER_AUTH_ADD:
+	case GFM_JOURNAL_USER_AUTH_MODIFY:
+		db_journal_user_auth_arg_destroy(
+			(struct db_user_auth_arg *)obj);
+		break;
+	case GFM_JOURNAL_USER_AUTH_REMOVE:
+		db_journal_user_auth_remove_arg_destroy(
+			(struct db_user_auth_remove_arg *)obj);
+		break;
 	case GFM_JOURNAL_GROUP_ADD:
 		db_journal_group_info_destroy(obj);
 		break;
@@ -3812,15 +3805,6 @@ db_journal_ops_free(void *op_arg, enum journal_operation ope, void *obj)
 		db_journal_fsngroup_modify_arg_destroy(
 			(struct db_fsngroup_modify_arg *)obj);
 		break;
-	case GFM_JOURNAL_USER_AUTH_ADD:
-	case GFM_JOURNAL_USER_AUTH_MODIFY:
-		db_journal_user_auth_arg_destroy(
-			(struct db_user_auth_arg *)obj);
-		break;
-	case GFM_JOURNAL_USER_AUTH_REMOVE:
-		db_journal_user_auth_remove_arg_destroy(
-			(struct db_user_auth_remove_arg *)obj);
-		break;
 	default:
 		break;
 	}
@@ -3871,11 +3855,8 @@ db_journal_read_ops(void *op_arg, struct gfp_xdr *xdr,
 		e = db_journal_read_string(xdr, ope, (char **)objp);
 		break;
 	case GFM_JOURNAL_USER_AUTH_ADD:
-		e = db_journal_read_user_auth_add(xdr,
-			(struct db_user_auth_arg **)objp);
-		break;
 	case GFM_JOURNAL_USER_AUTH_MODIFY:
-		e = db_journal_read_user_auth_modify(xdr,
+		e = db_journal_read_user_auth(xdr, ope,
 			(struct db_user_auth_arg **)objp);
 		break;
 	case GFM_JOURNAL_USER_AUTH_REMOVE:

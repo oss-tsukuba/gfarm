@@ -2100,7 +2100,7 @@ gfarm_pgsql_user_auth_load(void *closure,
 	c.callback = callback;
 
 	return (gfarm_pgsql_generic_load(
-	    "COPY UserAuth TO STDOUT BINARY",
+	    "COPY GfarmUserAuth TO STDOUT BINARY",
 	    &tmp_info, db_user_auth_callback_trampoline, &c,
 	    &db_base_user_auth_arg_ops,
 	    user_auth_info_set_fields_from_copy_binary,

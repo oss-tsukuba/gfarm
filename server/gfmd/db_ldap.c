@@ -1558,7 +1558,7 @@ struct gfarm_ldap_user_auth_key {
 static const struct gfarm_ldap_generic_info_ops gfarm_ldap_user_auth_ops = {
 	&gfarm_base_user_auth_ops,
 	"(objectclass=GFarmUserAuth)",
-	"username=%s, auth_method=%s, %s",
+	"username=%s, authMethod=%s, %s",
 	gfarm_ldap_user_info_make_dn,
 	gfarm_ldap_user_info_set_field,
 };
@@ -1597,11 +1597,6 @@ gfarm_ldap_user_auth_set_field(
 		if (info->username == NULL)
 			err = GFARM_ERR_NO_MEMORY;
 	} else if (strcasecmp(attribute, "authMethod") == 0) {
-		/* XXX FIXME - hack to allow null string */
-		if (strcmp(vals[0], " ") == 0)
-			info->auth_method = strdup_log("", diag);
-		else
-			info->auth_method = strdup_log(vals[0], diag);
 		if (info->auth_method == NULL)
 			err = GFARM_ERR_NO_MEMORY;
 	} else if (strcasecmp(attribute, "authUserId") == 0) {
