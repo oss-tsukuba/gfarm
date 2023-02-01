@@ -252,9 +252,9 @@ class GfURLEntry():
     TYPE_SYMLINK = 'SYM'
     TYPE_OTHER = 'OTHER'
 
-    def __init__(self, parent, path, mode, file_type, uname, gname,
+    def __init__(self, start_url, path, mode, file_type, uname, gname,
                  size, mtime, linkname):
-        self.parent = parent
+        self.start_url = start_url  # GfURL
         self.path = path
         self.mode = mode
         self.file_type = file_type
@@ -264,6 +264,18 @@ class GfURLEntry():
         self.mtime = mtime
         self.linkname = linkname
 
+        if not self.is_file():
+            self.size = 0
+
+    def __str__(self):
+        return f'{self.path}, {self.mode:o}, {self.file_type}'
+
+    def __repr__(self):
+        return str(self)
+
+    def subpath(self, baseurl):
+        return baseurl.subpath(self.path)
+
     def is_file(self):
         return self.file_type == self.TYPE_FILE
 
@@ -272,9 +284,6 @@ class GfURLEntry():
 
     def is_symlink(self):
         return self.file_type == self.TYPE_SYMLINK
-
-    def tar_add(self, tar, subpath):
-        self.parent.tar_add(tar, self, subpath)
 
     def toTarinfo(self, path):
         tarinfo = tarfile.TarInfo(path)
@@ -294,6 +303,39 @@ class GfURLEntry():
         tarinfo.uname = self.uname
         tarinfo.gname = self.gname
         return tarinfo
+
+    def compare(self, ent2, data=False, same_owner=False, bufsize=1048576):
+        ent1 = self
+
+        def cmpval(a, b, name):
+            if name == 'mtime':
+                a = int(a)
+                b = int(b)
+            elif name == 'mode':
+                a = oct(a & 0o7777)
+                b = oct(b & 0o7777)
+            if a != b:
+                raise Exception(
+                    f'{ent1.path} vs {ent2.path}: prop={name}: {a} != {b}')
+            logger.debug(f'GfURLEntry.compare:prop={name}: PASS')
+
+        def cmpprop(ent1, ent2, properties):
+            for pname in properties:
+                val1 = getattr(ent1, pname)
+                val2 = getattr(ent2, pname)
+                cmpval(val1, val2, pname)
+
+        # path is not compared
+        cmpprop(ent1, ent2, ['file_type', 'mode', 'mtime', 'size', 'linkname'])
+        if same_owner:
+            cmpprop(ent1, ent2, ['uname', 'gname'])
+        if data and ent1.is_file():
+            url1 = GfURL.init(ent1.path)
+            url2 = GfURL.init(ent2.path)
+            if not url1.compare_data(url2, bufsize=bufsize):
+                raise Exception(f'{ent1.path} vs {ent2.path}: different data')
+            logger.debug('GfURLEntry.compare:data: PASS')
+        return True
 
 
 class GfURL(metaclass=abc.ABCMeta):
@@ -338,13 +380,13 @@ class GfURL(metaclass=abc.ABCMeta):
         # ex. http://example.com/a/b/c -> http://example.com
         return self.url_str[:-len(self._url.path)]
 
-    @staticmethod
-    def subpath(parent, path):
-        if not path.startswith(parent):
-            logger.error('subpath: %s, %s', parent, path)
+    def subpath(self, fullpath):
+        base = self.url_str
+        if not fullpath.startswith(base):
+            logger.error('subpath: %s, %s', base, fullpath)
             raise AssertionError
-        logger.debug('subpath: %s, %s', parent, path)
-        return path[len(parent):].lstrip('/')  # relative path
+        logger.debug('subpath: %s, %s', base, fullpath)
+        return fullpath[len(base):].lstrip('/')  # relative path
 
     def url_join(self, subpath):
         return os.path.join(self.url_str, subpath.lstrip('/'))
@@ -425,10 +467,6 @@ class GfURL(metaclass=abc.ABCMeta):
     def listdir(self, path_only=False, recursive=False, first=False):
         raise NotImplementedError
 
-    @abc.abstractmethod
-    def tar_add(self, tar, entry, subpath):
-        raise NotImplementedError
-
     @contextmanager
     @abc.abstractmethod
     def readopen(self, textmode=False):
@@ -436,11 +474,23 @@ class GfURL(metaclass=abc.ABCMeta):
 
     @contextmanager
     @abc.abstractmethod
-    def writeopen(self, textmode=False, mode=None, mtime=None,
+    def writeopen(self, textmode=False, mode=0o600, mtime=None,
                   user=None, group=None):
         raise NotImplementedError
 
-    def copy_from(self, inf, bufsize, mode=None, mtime=None,
+    def tar_add(self, tar, subpath, entry):
+        tarinfo = entry.toTarinfo(subpath)
+        if tarinfo is None:
+            return
+        # hard link is not supported
+        if entry.is_file():
+            url = GfURL.init(entry.path)
+            with url.readopen() as f:
+                tar.addfile(tarinfo, fileobj=f)
+        else:
+            tar.addfile(tarinfo)
+
+    def copy_from(self, inf, bufsize, mode=None, mtime=0o600,
                   user=None, group=None):
         readlen = 0
         with self.writeopen(mode=mode, mtime=mtime,
@@ -453,6 +503,84 @@ class GfURL(metaclass=abc.ABCMeta):
                 wlen = outf.write(buf)
                 readlen += wlen
         return readlen
+
+    def sha256(self, bufsize=1048576):
+        h = hashlib.sha256()
+        with self.readopen() as f:
+            while True:
+                buf = f.read(bufsize)
+                if not buf:
+                    break
+                h.update(buf)
+        return h.hexdigest()
+
+    def compare_data(self, url2, bufsize=1048576):
+        url1 = self
+        return url1.sha256(bufsize) == url2.sha256(bufsize)
+
+    def compare_entries(self, d2url, data=True, same_owner=False,
+                        bufsize=1048576):
+        def search_compare_pop(subpath, ent1, dirdict2):
+            ent2 = dirdict2.pop(subpath, None)
+            if ent2 is None:
+                return False  # not found
+            ent1.compare(ent2, data=data, same_owner=same_owner,
+                         bufsize=bufsize)
+            # raise if different
+            return True
+
+        d1url = self
+        d1i = d1url.listdir(recursive=True)
+        d2i = d2url.listdir(recursive=True)
+        d1dict = dict()
+        d2dict = dict()
+        d2stop = False
+        for d1ent in d1i:
+            subpath1 = d1ent.subpath(d1url)
+            logger.debug('compare:dir1: %s', subpath1)
+            try:
+                if not search_compare_pop(subpath1, d1ent, d2dict):
+                    # not found, compare later
+                    d1dict[subpath1] = d1ent
+            except Exception as e:
+                logger.error(str(e))
+                return False
+            while not d2stop:
+                d2ent = next(d2i, None)
+                if d2ent is None:
+                    d2stop = True
+                    break
+                subpath2 = d2ent.subpath(d2url)
+                logger.debug('compare:dir2: %s', subpath1)
+                try:
+                    if not search_compare_pop(subpath2, d2ent, d1dict):
+                        # not found, compare later
+                        d2dict[subpath2] = d2ent
+                except Exception as e:
+                    logger.error(str(e))
+                    return False
+        if d2stop is False:
+            while True:
+                d2ent = next(d2i, None)
+                if d2ent is None:
+                    break
+                subpath2 = d2ent.subpath(d2url)
+                logger.debug('compare:dir2: %s', subpath1)
+                d2dict[subpath2] = d2ent
+        d1notfound = dict()
+        for subpath1, d1ent in d1dict.items():
+            try:
+                if not search_compare_pop(subpath1, d1ent, d2dict):
+                    d1notfound[subpath1] = d1ent
+            except Exception as e:
+                logger.error(str(e))
+                return False
+        if len(d1notfound) > 0 or len(d2dict) > 0:
+            logger.error('different entries: dir1=%s, dir2=%s',
+                         pformat(d1notfound), pformat(d2dict))
+            return False
+        logger.debug('compare_entries: PASS')
+        return True
 
 
 def str2bool(s):
@@ -486,13 +614,13 @@ class GfURLGfarm(GfURL):
               follow_symlinks=True):
         args = ['gfchmod']
         if USE_GFCHMOD_PLUS:
-            if mtime:
+            if mtime is not None:
                 args.append('-M')
                 args.append(str(int(mtime)))
-            if user:
+            if user is not None:
                 args.append('-u')
                 args.append(user)
-            if group:
+            if group is not None:
                 args.append('-g')
                 args.append(group)
         if not follow_symlinks:
@@ -501,7 +629,7 @@ class GfURLGfarm(GfURL):
         args.append(self.url_str)
         execcmd(args)
         if not USE_GFCHMOD_PLUS:
-            if mtime:
+            if mtime is not None:
                 self.utime(mtime, mtime, follow_symlinks=follow_symlinks)
             self.chown(user, group, follow_symlinks=follow_symlinks)
 
@@ -511,11 +639,11 @@ class GfURLGfarm(GfURL):
         chown_args = ['gfchown']
         if not follow_symlinks:
             chown_args.append('-h')
-        if user and group:
+        if user is not None and group is not None:
             chown_args.append(user + ':' + group)
-        elif user:
+        elif user is not None:
             chown_args.append(user)
-        else:
+        elif group is not None:
             chown_args.append(':' + group)
         chown_args.append(self.url_str)
         execcmd(chown_args)
@@ -575,7 +703,8 @@ class GfURLGfarm(GfURL):
         return count == 0
 
     def get_size(self):
-        for entry in self.listdir():
+        # TODO use gfstat
+        for entry in self.listdir(recursive=False):
             logger.debug('get_size: %s, %d', entry.path, entry.size)
             return entry.size
 
@@ -667,14 +796,13 @@ class GfURLGfarm(GfURL):
                         logger.warning('hard link is not supported: '
                                        'nlink=%d, inode=%d (Gfarm): %s',
                                        nlink, inum, name)
-                if dirname == '':
-                    path = name
-                elif first and name == '.':
+                if first and name == '.':
                     path = dirname
                 else:
                     path = dirname + '/' + name
-                parent = self
-                yield GfURLEntry(parent, path, mode, file_type, uname, gname,
+                # path is Gfarm URL (gfarm:/...)
+                start = self
+                yield GfURLEntry(start, path, mode, file_type, uname, gname,
                                  size, mtime, linkname)
             else:
                 # ex. gfarm:/home/user1/dir: -> gfarm:/home/user1/dir
@@ -701,7 +829,7 @@ class GfURLGfarm(GfURL):
                 if mode:
                     self.url.chmod(mode, mtime=mtime, user=user, group=group)
                 else:
-                    if mtime:
+                    if mtime is not None:
                         self.url.utime(mtime, mtime)
                     self.url.chown(user, group)
 
@@ -710,13 +838,13 @@ class GfURLGfarm(GfURL):
             if mode:
                 args.append('-m')
                 args.append(self.to_oct_str(mode))
-            if mtime:
+            if mtime is not None:
                 args.append('-M')
                 args.append(str(int(mtime)))
-            if user:
+            if user is not None:
                 args.append('-u')
                 args.append(user)
-            if group:
+            if group is not None:
                 args.append('-g')
                 args.append(group)
         args.append('-')
@@ -742,18 +870,6 @@ class GfURLGfarm(GfURL):
             stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
             stderr=sys.stderr.buffer)
 
-    def tar_add(self, tar, entry, subpath):
-        tarinfo = entry.toTarinfo(subpath)
-        if tarinfo is None:
-            return
-        if entry.is_file():
-            url = GfURL.init(entry.path)
-            proc = url.gfexport()
-            tar.addfile(tarinfo, fileobj=proc.stdout)
-            proc.stdout.close()
-        else:
-            tar.addfile(tarinfo)
-
     @contextmanager
     def readopen(self, textmode=False):
         proc = self.gfexport(textmode=textmode)
@@ -767,7 +883,7 @@ class GfURLGfarm(GfURL):
                     ' '.join(proc.args), ret))
 
     @contextmanager
-    def writeopen(self, textmode=False, mode=None, mtime=None,
+    def writeopen(self, textmode=False, mode=0o600, mtime=None,
                   user=None, group=None):
         gfreg_obj = self.gfreg(textmode=textmode, mode=mode, mtime=mtime,
                                user=user, group=group)
@@ -821,12 +937,12 @@ class GfURLLocal(GfURL):
                 if not self.is_symlink():
                     raise
                 # ignore, not changed for symlink
-        if mtime:
+        if mtime is not None:
             self.utime(mtime, mtime, follow_symlinks=follow_symlinks)
-            self.chown(user, group)
+        self.chown(user, group)
 
     def chown(self, user, group, follow_symlinks=False):
-        if user or group:
+        if user is not None or group is not None:
             # shutil.chown does not have follow_symlinks option.
             uid = get_uid(user)
             gid = get_gid(group)
@@ -904,9 +1020,9 @@ class GfURLLocal(GfURL):
         return file_type
 
     def _toGfURLEntry(self, entry, path_only):
-        parent = self
+        start = self
         if path_only:
-            return GfURLEntry(parent, entry.path, 0, None,
+            return GfURLEntry(start, entry.path, 0, None,
                               'root', 'root',
                               0, 0, '')
         st = entry.stat(follow_symlinks=False)
@@ -917,7 +1033,7 @@ class GfURLLocal(GfURL):
                                'nlink=%d, inode=%d (Local): %s',
                                st.st_nlink, st.st_ino, entry.path)
         linkname = self._readlink(entry.path, entry.is_symlink())
-        return GfURLEntry(parent, entry.path, st.st_mode, file_type,
+        return GfURLEntry(start, entry.path, st.st_mode, file_type,
                           self.uid2name(st.st_uid),
                           self.gid2name(st.st_gid),
                           st.st_size, st.st_mtime, linkname)
@@ -925,15 +1041,15 @@ class GfURLLocal(GfURL):
     def _scandir(self, path, path_only, recursive, first):
         if first:
             st = os.stat(path, follow_symlinks=True)
-            parent = self
-            yield GfURLEntry(parent, path, st.st_mode, self._toFileType(st),
+            start = self
+            yield GfURLEntry(start, path, st.st_mode, self._toFileType(st),
                              self.uid2name(st.st_uid),
                              self.gid2name(st.st_gid),
                              st.st_size, st.st_mtime, '')
 
         for entry in os.scandir(path):
             yield self._toGfURLEntry(entry, path_only)
-            if entry.is_dir(follow_symlinks=False):
+            if recursive and entry.is_dir(follow_symlinks=False):
                 yield from self._scandir(entry.path, path_only, recursive,
                                          False)
 
@@ -943,24 +1059,14 @@ class GfURLLocal(GfURL):
     # NOTE: This is not expected behavior.
     # - This can copy a hard link,
     #   but a hard link cannot be extracted from gfexport (stream open)
-    # - When the specified <indir> is a symlink,
+    # - When the specified <member> for --create is a symlink,
     #   the entry will be archived as symlink.
-    # def tar_add(self, tar, entry, subpath):
+    # def tar_add(self, tar, subpath, entry):
     #     if entry.path:
     #         path = os.path.join(self.url_str, entry.path)
     #     else:
     #         path = self.url_str
     #     tar.add(path, arcname=subpath, recursive=False)
-    def tar_add(self, tar, entry, subpath):
-        tarinfo = entry.toTarinfo(subpath)
-        if tarinfo is None:
-            return
-        if entry.is_file():
-            # binary mode
-            with open(entry.path, 'rb') as f:
-                tar.addfile(tarinfo, fileobj=f)
-        else:
-            tar.addfile(tarinfo)
 
     @contextmanager
     def readopen(self, textmode=False):
@@ -974,12 +1080,17 @@ class GfURLLocal(GfURL):
             f.close()
 
     @contextmanager
-    def writeopen(self, textmode=False, mode=None, mtime=None,
+    def writeopen(self, textmode=False, mode=0o600, mtime=None,
                   user=None, group=None):
+        tmpmode = mode | 0o200  # necessary (Permission denied at ex.0o400)
+        fd = os.open(path=self.url_str,
+                     flags=(os.O_WRONLY | os.O_CREAT | os.O_EXCL),
+                     mode=tmpmode,
+                     )
         if textmode:
-            f = open(self.url_str, 'xt', encoding=get_encoding())
+            f = open(fd, 'wt', encoding=get_encoding(), closefd=True)
         else:
-            f = open(self.url_str, 'xb')
+            f = open(self.url_str, 'wb', closefd=True)
         try:
             yield f
         finally:
@@ -987,7 +1098,7 @@ class GfURLLocal(GfURL):
             if mode:
                 self.chmod(mode, mtime=mtime, user=user, group=group)
             else:
-                if mtime:
+                if mtime is not None:
                     self.utime(mtime, mtime)
                 self.chown(user, group)
 
@@ -1119,6 +1230,10 @@ class GfTarFile(tarfile.TarFile):
                     post_func = getattr(close_obj, 'post', None)
                     if post_func:
                         close_obj.post()
+
+    def add_entry(self, base_url, entry):
+        subpath = entry.subpath(base_url)
+        entry.start_url.tar_add(self, subpath, entry)
 
 
 class TestGfptar(unittest.TestCase):
@@ -1300,24 +1415,7 @@ class GfptarCommand(Command):
         self.extract(test_member_l, test3_dir_local, [member])
         g_member = GfURL.init(os.path.join(test_member_g, member))
         l_member = GfURL.init(os.path.join(test_member_l, member))
-        # TODO GfURL.compare_file(g_member, l_member)
-        g_hash = hashlib.sha256()
-        l_hash = hashlib.sha256()
-        with g_member.readopen() as gf:
-            while True:
-                buf = gf.read(self.bufsize)
-                if not buf:
-                    break
-                g_hash.update(buf)
-        with l_member.readopen() as lf:
-            while True:
-                buf = lf.read(self.bufsize)
-                if not buf:
-                    break
-                l_hash.update(buf)
-        logger.debug(g_hash.hexdigest())
-        logger.debug(l_hash.hexdigest())
-        if g_hash.digest() != l_hash.digest():
+        if not g_member.compare_data(l_member):
             logger.error_exit(1, testname + '(extract a member) ... FAIL')
 
         test5_name = 'test-5-create'
@@ -1331,7 +1429,8 @@ class GfptarCommand(Command):
         # Gfarm(tar) -> Local
         self.extract(test6_dir_local, test5_dir_gfarm, [])
 
-        if self.test_compare_local(test4_dir_local, test6_dir_local):
+        if self.test_compare_local(test4_dir_local, test6_dir_local,
+                                   same_owner=True):
             print(testname + ' ... PASS')
             workdir_local_url.remove_tree()
             workdir_gfarm_url.remove_tree()
@@ -1345,31 +1444,50 @@ class GfptarCommand(Command):
         L = 'hardlink'
         longname = ('0123456789' * 30)[:255]
         tree = [
-            (F, 'file1'),
-            (S, 'symlink1', 'file1'),
-            (L, 'hardlink1', 'file1'),
-            (D, 'dir1'),
-            (D, 'dir1/ディレクトリ 2'),
-            (F, 'dir1/ディレクトリ 2/ファイル 2'),
-            (S, 'dir1/ディレクトリ 2/シンボリックリンク 2', 'ファイル 2'),
+            (F, 'file1', 0o664, 1234567890, None),
+            (S, 'symlink1', 0o707, 234567890, 'file1'),
+            (L, 'hardlink1', 0o606, 334567890, 'file1'),
+            (D, 'dir1', 0o715, 4234567890, None),
+            (D, 'dir1/ディレクトリ 2', 0o755, 5234567890, None),
+            (F, 'dir1/ディレクトリ 2/ファイル 2', 0o400, 6234567890, None),
+            (S, 'dir1/ディレクトリ 2/シンボリックリンク 2',
+             0o777, 7234567890, 'ファイル 2'),
             (L, 'dir1/ディレクトリ 2/ハードリンク 2',
-             'dir1/ディレクトリ 2/ファイル 2'),
-            (F, 'dir1/' + longname),
+             0o400, 8234567890, 'dir1/ディレクトリ 2/ファイル 2'),
+            (F, 'dir1/' + longname, 0o775, 9234567890, None),
             ]
         srcdir_url = GfURL.init(dir_url_str)
         srcdir_url.mkdir()
         for ent in tree:
-            url = GfURL.init(srcdir_url.url_join(ent[1]))
-            if ent[0] == F:
-                # TODO set same mtime and mode=0600
-                with url.writeopen(textmode=True) as f:
-                    f.write(ent[1])
-            elif ent[0] == D:
-                url.makedirs()
-            elif ent[0] == S:
-                url.symlink(ent[2])
-            elif ent[0] == L:
-                url.hardlink(srcdir_url.url_join(ent[2]))
+            ftype = ent[0]
+            path = ent[1]
+            mode = ent[2]
+            mtime = ent[3]
+            linkname = ent[4]
+            url = GfURL.init(srcdir_url.url_join(path))
+            if ftype == F:
+                with url.writeopen(textmode=True,
+                                   mode=mode,
+                                   mtime=mtime) as f:
+                    f.write(path)
+            elif ftype == D:
+                url.mkdir()
+            elif ftype == S:
+                url.symlink(linkname)
+                url.chmod(mode, mtime=mtime, follow_symlinks=False)
+            elif ftype == L:
+                url.hardlink(srcdir_url.url_join(linkname))
+                url.chmod(mode, mtime=mtime)
+        for ent in reversed(tree):
+            ftype = ent[0]
+            path = ent[1]
+            mode = ent[2]
+            mtime = ent[3]
+            # linkname = ent[4]
+            url = GfURL.init(srcdir_url.url_join(path))
+            if ftype == D:
+                url.chmod(mode, mtime=mtime)
+        srcdir_url.chmod(mode=0o700, mtime=0)
 
     def test_specified_dir(self):
         basedir = self.opt['--basedir']
@@ -1407,29 +1525,15 @@ class GfptarCommand(Command):
         self.extract(test12_dir_local, test11_dir_local, [])
 
         result = True
-        if basedir_url.is_gfarm():
-            copy_src_name = 'test-src-copied'
-            copy_src_dir_local = workdir_local_url.url_join(copy_src_name)
-            copy_src_dir_local_url = GfURL.init(copy_src_dir_local)
-            copy_src_dir_local_url.mkdir()
-            for infile in infiles:
-                src = basedir_url.url_join(infile)
-                copied = copy_src_dir_local_url.url_join(infile)
-                copied_url = GfURL.init(copied)
-                parent_url = copied_url.parent
-                parent_url.makedirs()
-                execcmd(['gfpcopy', src, copied])
-                result_dir = os.path.join(test12_dir_local, infile)
-                if not self.test_compare_local(result_dir, copied):
-                    result = False
-                    break
-        else:  # Local
-            for infile in infiles:
-                src = basedir_url.url_join(infile)
-                result_dir = os.path.join(test12_dir_local, infile)
-                if not self.test_compare_local(result_dir, src):
-                    result = False
-                    break
+        for infile in infiles:
+            src = basedir_url.url_join(infile)
+            result_dir = os.path.join(test12_dir_local, infile)
+            # owner on local and Gfarm may be different
+            same_owner = not basedir_url.is_gfarm()
+            if not self.test_compare(result_dir, src, data=True,
+                                     same_owner=same_owner):
+                result = False
+                break
         if result:
             print(testname + ' ... PASS')
             workdir_local_url.remove_tree()
@@ -1437,10 +1541,18 @@ class GfptarCommand(Command):
         else:
             logger.error_exit(1, testname + ' ... FAIL')
 
-    def test_compare_local(self, dir1, dir2):
-        # TODO compare mtime and mode of dir1/files with dir2/files
+    def test_compare_local(self, dir1, dir2, data=False, same_owner=False):
         out, err, ret = execcmd_raw(['diff', '-r', dir1, dir2])
-        return ret == 0
+        if ret != 0:
+            return False
+        logger.debug('diff -r (data check): PASS')
+        return self.test_compare(dir1, dir2, data=data, same_owner=same_owner)
+
+    def test_compare(self, dir1, dir2, data=True, same_owner=False):
+        # compare mtime and mode of dir1/files with dir2/files
+        d1url = GfURL.init(dir1)
+        d2url = GfURL.init(dir2)
+        return d1url.compare_entries(d2url, data=True, same_owner=same_owner)
 
     def MT_enabled(self):
         return self.jobs >= 2
@@ -1600,31 +1712,32 @@ class GfptarCommand(Command):
         if self.is_cancelled():
             logger.debug('cancelled (1): serial=%04d', serial)
             return
-        firstname = None
-        lastname = None
+        first = None
+        last = None
         for entry in filelist:
-            subpath = GfURL.subpath(self.basedir_url.url_str, entry.path)
-            setattr(entry, 'subpath', subpath)
-            # ex.: home/user1/dir -> home_user1_dir
-            lastname = subpath.replace('/', '_')
-            if firstname is None \
-               and entry.is_file():
-                firstname = lastname
-            logger.debug('[%04d] %s %f %d %s %s',
-                         serial,
-                         entry.file_type, entry.mtime,
-                         entry.size, subpath,
-                         entry.linkname)
-        serial_str = '%04d_' % serial
-        if firstname is None or firstname == lastname:
-            outname = '%s%s' % (lastname, self.suffix)
+            if entry.is_file():
+                first = entry
+                break
+        if first is None:
+            first = filelist[0]
+        for entry in reversed(filelist):
+            if entry.is_file():
+                last = entry
+        if last is None or first == last:
+            firstpath = first.subpath(self.basedir_url)
+            outname = '%s%s' % (firstpath, self.suffix)
         else:
-            outname = '%s..%s%s' % (firstname, lastname, self.suffix)
+            firstpath = first.subpath(self.basedir_url)
+            lastpath = last.subpath(self.basedir_url)
+            outname = '%s..%s%s' % (firstpath, lastpath, self.suffix)
+
+        serial_str = '%04d_' % serial
         outname_max = GfURL.MAXNAMLEN - len(serial_str) - len(self.LIST_SUFFIX)
         if len(outname) > outname_max:
             # use last half of name
             outname = outname[-outname_max:]
-        outname = serial_str + outname
+        # ex.: home/user1/dir -> home_user1_dir
+        outname = serial_str + outname.replace('/', '_')
         outurl = GfURL.init(self.outdir_url.url_join(outname))
         self.create_a_members_list(outurl, filelist)
         tar = GfTarFile.create_open(outurl, self.compress_type, self.bufsize,
@@ -1633,7 +1746,7 @@ class GfptarCommand(Command):
             if self.is_cancelled():
                 logger.debug('cancelled (2): serial=%04d', serial)
                 break
-            entry.tar_add(tar, entry.subpath)
+            tar.add_entry(self.basedir_url, entry)
             self.lock()
             self.totalsize_file += entry.size
             self.unlock()
@@ -1657,7 +1770,9 @@ class GfptarCommand(Command):
                     f.write('S ')
                 else:  # unknown
                     f.write('? ')
-                f.write(entry.subpath + '\n')
+                subpath = entry.subpath(self.basedir_url)
+                f.write(subpath)
+                f.write('\n')
 
     def error_not_a_gfptar_directory(self, url_str):
         raise Exception('Not a gfptar-archived directory: ' + url_str)
@@ -1679,10 +1794,10 @@ class GfptarCommand(Command):
         archive_dict = {}  # {filename}
         target_set_all = set()  # all  tar files
         directory_list = []
-        for ent in indir_url.listdir():
+        for ent in indir_url.listdir(recursive=False):
             if ent.path.endswith(self.LIST_SUFFIX):  # ignored
                 continue
-            subpath = GfURL.subpath(indir_url.url_str, ent.path)
+            subpath = ent.subpath(indir_url)
             arch_url_str = indir_url.url_join(subpath)
             target_set_all.add(arch_url_str)
             list_url = GfURL.init(arch_url_str + self.LIST_SUFFIX)
@@ -1718,8 +1833,8 @@ class GfptarCommand(Command):
         del target_set
         target_list.sort()
 
-        # self.create_directories(directory_list)
-        self.create_directories_fast(directory_list)
+        # self.extract_directories(directory_list)
+        self.extract_directories_fast(directory_list)
 
         self.cancelled = False
         self.extract_num = 0
@@ -1734,7 +1849,7 @@ class GfptarCommand(Command):
 
         self.update_stat_for_directories(directory_list, member_set)
 
-    def create_directories(self, directory_list):
+    def extract_directories(self, directory_list):
         # NOTE: slow on Gfarm
         directory_list.sort()
         for d in directory_list:
@@ -1745,7 +1860,7 @@ class GfptarCommand(Command):
             except Exception:
                 dir_url.makedirs()
 
-    def create_directories_fast(self, directory_list):
+    def extract_directories_fast(self, directory_list):
         # faster implementation for gfmkdir
         directory_list.sort(reverse=True)
         created = set()
@@ -1896,7 +2011,7 @@ class GfptarCommand(Command):
     def list(self, indir, quiet=False):
         indir_url = GfURL.init(indir)
         filelistlist = []
-        for ent in indir_url.listdir():
+        for ent in indir_url.listdir(recursive=False):
             if not ent.path.endswith(self.LIST_SUFFIX):
                 continue
             filelistlist.append(ent.path)
@@ -1984,6 +2099,7 @@ Example of --extract (Gfarm to Gfarm):
 Limitations:
   - Hard links are not preserved.
   - File names cannot include newline characters.
+  - Subsecond (less than a second) for mtime is not supported.
 """.format(f=progname)
 
 
