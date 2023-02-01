@@ -81,40 +81,34 @@ class GfLogger(logging.getLoggerClass()):
     # REFERENCE: logging/__init__.py: class Logger()
     def debug(self, msg, *args, **kwargs):
         if self.isEnabledFor(logging.DEBUG):
-            self.lock.acquire()
-            self._log(logging.DEBUG, msg, args, **kwargs)
-            self.lock.release()
+            with self.lock:
+                self._log(logging.DEBUG, msg, args, **kwargs)
 
     def info(self, msg, *args, **kwargs):
         if self.isEnabledFor(logging.INFO):
-            self.lock.acquire()
-            self._log(logging.INFO, msg, args, **kwargs)
-            self.lock.release()
+            with self.lock:
+                self._log(logging.INFO, msg, args, **kwargs)
 
     def warning(self, msg, *args, **kwargs):
         if self.isEnabledFor(logging.WARNING):
-            self.lock.acquire()
-            self._log(logging.WARNING, msg, args, **kwargs)
-            self.lock.release()
+            with self.lock:
+                self._log(logging.WARNING, msg, args, **kwargs)
 
     def error(self, msg, *args, **kwargs):
         if self.isEnabledFor(logging.ERROR):
-            self.lock.acquire()
-            self._log(logging.ERROR, msg, args, **kwargs)
-            self.lock.release()
+            with self.lock:
+                self._log(logging.ERROR, msg, args, **kwargs)
 
     def error_exit(self, exit_code, msg, *args, **kwargs):
         if self.isEnabledFor(logging.ERROR):
-            self.lock.acquire()
-            self._log(logging.ERROR, msg, args, **kwargs)
-            self.lock.release()
+            with self.lock:
+                self._log(logging.ERROR, msg, args, **kwargs)
         sys.exit(exit_code)
 
     def fatal(self, msg, *args, **kwargs):
         if self.isEnabledFor(logging.ERROR):
-            self.lock.acquire()
-            self._log(logging.ERROR, msg, args, **kwargs)
-            self.lock.release()
+            with self.lock:
+                self._log(logging.ERROR, msg, args, **kwargs)
             if 'exit_code' in kwargs:
                 raise Exception('exit_code={}'.format(kwargs['exit_code']))
             else:
@@ -1740,23 +1734,23 @@ class GfptarCommand(Command):
         else:
             self._lock = None
 
+    @contextmanager
     def lock(self):
         if self._lock:
             self._lock.acquire()
-
-    def unlock(self):
-        if self._lock:
-            self._lock.release()
+        try:
+            yield
+        finally:
+            if self._lock:
+                self._lock.release()
 
     def cancel(self):
-        self.lock()
-        self.cancelled = True
-        self.unlock()
+        with self.lock():
+            self.cancelled = True
 
     def is_cancelled(self):
-        self.lock()
-        val = self.cancelled
-        self.unlock()
+        with self.lock():
+            val = self.cancelled
         return val
 
     def create_a_tar(self, serial, filelist):
@@ -1801,26 +1795,24 @@ class GfptarCommand(Command):
             subpath = entry.subpath(self.basedir_url)
             tar.add_entry(subpath, entry)
 
-            self.lock()
-            self.info('stored: {}', subpath)
-            self.stored_size += entry.size
-            if self.myprogress:
-                self.stored_num += 1
-                now = time.time()
-                if now >= self.next_time:
-                    self.next_time += 1
-                    self.progress_for_create(now)
-            elif self.tqdm:
-                if entry.is_file():
-                    self.tqdm.update(entry.size)
-            self.unlock()
+            with self.lock():
+                self.info('stored: {}', subpath)
+                self.stored_size += entry.size
+                if self.myprogress:
+                    self.stored_num += 1
+                    now = time.time()
+                    if now >= self.next_time:
+                        self.next_time += 1
+                        self.progress_for_create(now)
+                elif self.tqdm:
+                    if entry.is_file():
+                        self.tqdm.update(entry.size)
 
         tar.close()
         tar_size = outurl.get_size()
-        self.lock()
-        self.info('created(.tar): {}', outurl.url_str)
-        self.archive_size += tar_size
-        self.unlock()
+        with self.lock():
+            self.info('created(.tar): {}', outurl.url_str)
+            self.archive_size += tar_size
 
     def create_a_members_list(self, url, filelist):
         outurl = GfURL.init(url.url_str + self.LIST_SUFFIX)
@@ -2050,15 +2042,13 @@ class GfptarCommand(Command):
                                         user=user, group=group)
                 inf.close()
                 logger.debug('extract,file: %s, %d', tarinfo.name, size)
-                self.lock()
-                self.info('extracted(F): {}', tarinfo.name)
-                self.unlock()
+                with self.lock():
+                    self.info('extracted(F): {}', tarinfo.name)
             elif tarinfo.isdir():
                 # NOTE: already created
                 logger.debug('extract,dir: %s', tarinfo.name)
-                self.lock()
-                self.dirstat_dict[outfile] = tarinfo
-                self.unlock()
+                with self.lock():
+                    self.dirstat_dict[outfile] = tarinfo
             elif tarinfo.issym():
                 logger.debug('extract,link: %s, %s', tarinfo.name,
                              tarinfo.linkname)
@@ -2070,27 +2060,24 @@ class GfptarCommand(Command):
                 else:
                     outurl.chmod(tarinfo.mode, mtime=tarinfo.mtime,
                                  follow_symlinks=False)
-                self.lock()
-                self.info('extracted(S): {}', tarinfo.name)
-                self.unlock()
+                with self.lock():
+                    self.info('extracted(S): {}', tarinfo.name)
             else:
                 logger.warning('unsupported type: %s: %s',
                                tarinfo.name, tarinfo.type)
             if self.progress_enabled:
-                self.lock()
-                self.extracted_num += 1
-                if tarinfo.isfile():
-                    self.extracted_size += tarinfo.size
-                now = time.time()
-                if now >= self.next_time:
-                    self.next_time += 1
-                    self.progress_for_extract(now)
-                self.unlock()
+                with self.lock():
+                    self.extracted_num += 1
+                    if tarinfo.isfile():
+                        self.extracted_size += tarinfo.size
+                    now = time.time()
+                    if now >= self.next_time:
+                        self.next_time += 1
+                        self.progress_for_extract(now)
 
         tar.close()
-        self.lock()
-        self.info('extracted(done): {}', arch_url.url_str)
-        self.unlock()
+        with self.lock():
+            self.info('extracted(done): {}', arch_url.url_str)
 
     # lock required
     def progress_for_create(self, now):
