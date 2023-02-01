@@ -309,6 +309,11 @@ class GfURLEntry():
 
         def cmpval(a, b, name):
             if name == 'mtime':
+                if USE_GFMKDIR_PLUS is False \
+                   or USE_GFCHMOD_PLUS is False \
+                   or USE_GFREG_PLUS is False:
+                    # skip (not supported)
+                    return
                 a = int(a)
                 b = int(b)
             elif name == 'mode':
@@ -826,7 +831,7 @@ class GfURLGfarm(GfURL):
                 if USE_GFREG_PLUS:
                     return
                 # must be called after wait()
-                if mode:
+                if mode is not None:
                     self.url.chmod(mode, mtime=mtime, user=user, group=group)
                 else:
                     if mtime is not None:
@@ -835,7 +840,7 @@ class GfURLGfarm(GfURL):
 
         args = ['gfreg']
         if USE_GFREG_PLUS:
-            if mode:
+            if mode is not None:
                 args.append('-m')
                 args.append(self.to_oct_str(mode))
             if mtime is not None:
@@ -896,6 +901,7 @@ class GfURLGfarm(GfURL):
             if ret != 0:
                 raise Exception('{}: returncode={}'.format(
                     ' '.join(proc.args), ret))
+            gfreg_obj.post()
 
 
 def get_uid(user):
@@ -1095,7 +1101,7 @@ class GfURLLocal(GfURL):
             yield f
         finally:
             f.close()
-            if mode:
+            if mode is not None:
                 self.chmod(mode, mtime=mtime, user=user, group=group)
             else:
                 if mtime is not None:
@@ -2099,7 +2105,7 @@ Example of --extract (Gfarm to Gfarm):
 Limitations:
   - Hard links are not preserved.
   - File names cannot include newline characters.
-  - Subsecond (less than a second) for mtime is not supported.
+  - Subsecond (less than a second) for mtime is not preserved.
 """.format(f=progname)
 
 
