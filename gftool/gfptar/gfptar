@@ -2,18 +2,20 @@
 
 # Requirements:
 # --- for Debian,Ubuntu series ---
-# apt-get install python3 python3-docopt python3-schema python3-tqdm
+# apt-get install python3 python3-docopt python3-schema
+# (optional) python3-tqdm
 #
 # --- for RHEL,CentOS series ---
 # yum install     epel-release
-# yum install     python3 python3-docopt python3-schema python3-tqdm
+# yum install     python3 python3-docopt python3-schema
+# (optional) python3-tqdm
 #
 # --- Or, install to ~/.local just for user's environment ---
 # (required: python3-pip)
 # pip3 install --user docopt schema tqdm
 
 # Coding style check:
-# flake8 gfptar
+# flake8 ./gfptar
 
 import os
 import stat
@@ -42,9 +44,9 @@ from schema import Schema, Use, Or
 
 try:
     from tqdm import tqdm
-    use_tqdm = True
+    have_tqdm = True
 except Exception:
-    use_tqdm = False
+    have_tqdm = False
 
 
 # library
@@ -471,7 +473,8 @@ class GfURL(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def listdir(self, path_only=False, recursive=False, first=False):
+    def listdir(self, path_only=False, recursive=False, first=False,
+                hardlink_warn=True):
         raise NotImplementedError
 
     @contextmanager
@@ -720,7 +723,6 @@ class GfURLGfarm(GfURL):
         return count == 0
 
     def get_size(self):
-        # TODO use gfstat
         for entry in self.listdir(recursive=False):
             logger.debug('get_size: %s, %d', entry.path, entry.size)
             return entry.size
@@ -770,7 +772,8 @@ class GfURLGfarm(GfURL):
         mode |= (highbit << 9)
         return mode, file_type
 
-    def listdir(self, path_only=False, recursive=False, first=False):
+    def listdir(self, path_only=False, recursive=False, first=False,
+                hardlink_warn=False):
         dirname = self.url_str
         gfls_opt = '-ailT'
         if recursive:
@@ -809,7 +812,7 @@ class GfURLGfarm(GfURL):
                     name = link[0]
                     linkname = link[1]
                 elif file_type == GfURLEntry.TYPE_FILE:
-                    if nlink >= 2:
+                    if hardlink_warn and nlink >= 2:
                         logger.warning('hard link is not supported: '
                                        'nlink=%d, inode=%d (Gfarm): %s',
                                        nlink, inum, name)
@@ -1050,7 +1053,7 @@ class GfURLLocal(GfURL):
             file_type = GfURLEntry.TYPE_SYMLINK
         return file_type
 
-    def _toGfURLEntry(self, entry, path_only):
+    def _toGfURLEntry(self, entry, path_only, hardlink_warn):
         start = self
         if path_only:
             return GfURLEntry(start, entry.path, 0, None,
@@ -1059,7 +1062,7 @@ class GfURLLocal(GfURL):
         st = entry.stat(follow_symlinks=False)
         file_type = self._toFileType(st)
         if file_type == GfURLEntry.TYPE_FILE:
-            if st.st_nlink >= 2:
+            if hardlink_warn and st.st_nlink >= 2:
                 logger.warning('hard link is not supported: '
                                'nlink=%d, inode=%d (Local): %s',
                                st.st_nlink, st.st_ino, entry.path)
@@ -1069,7 +1072,7 @@ class GfURLLocal(GfURL):
                           self.gid2name(st.st_gid),
                           st.st_size, st.st_mtime, linkname)
 
-    def _scandir(self, path, path_only, recursive, first):
+    def _scandir(self, path, path_only, recursive, first, hardlink_warn):
         if first:
             st = os.stat(path, follow_symlinks=True)
             start = self
@@ -1078,14 +1081,17 @@ class GfURLLocal(GfURL):
                              self.gid2name(st.st_gid),
                              st.st_size, st.st_mtime, '')
 
+        first = False
         for entry in os.scandir(path):
-            yield self._toGfURLEntry(entry, path_only)
+            yield self._toGfURLEntry(entry, path_only, hardlink_warn)
             if recursive and entry.is_dir(follow_symlinks=False):
                 yield from self._scandir(entry.path, path_only, recursive,
-                                         False)
+                                         first, hardlink_warn)
 
-    def listdir(self, path_only=False, recursive=False, first=False):
-        yield from self._scandir(self.url_str, path_only, recursive, first)
+    def listdir(self, path_only=False, recursive=False, first=False,
+                hardlink_warn=True):
+        yield from self._scandir(self.url_str, path_only, recursive, first,
+                                 hardlink_warn)
 
     # NOTE: This is not expected behavior.
     # - This can copy a hard link,
@@ -1290,6 +1296,8 @@ class GfptarCommand(Command):
         set_encoding(self.opt['--encoding'])
         self.jobs = self.opt['--jobs']
         self.bufsize = self.opt['--bufsize']
+        self.progress_enabled = self._progress_enabled()
+        self.hardlink_warn = True
 
     def getDoc(self) -> str:
         return __doc__
@@ -1297,7 +1305,7 @@ class GfptarCommand(Command):
     def getSchema(self) -> Schema:
         return _schema
 
-    def progress_enabled(self):
+    def _progress_enabled(self):
         return not self.debug and not self.verbose and not self.quiet
 
     def run(self):
@@ -1336,6 +1344,7 @@ class GfptarCommand(Command):
                 sys.exit(1)
 
     def test_main(self):
+        self.hardlink_warn = False
         self.uid = os.getuid()
         self.pid = os.getpid()
         out = execcmd(['gfwhoami'], textmode=True)
@@ -1531,6 +1540,8 @@ class GfptarCommand(Command):
         if basedir is None:
             return
         infiles = self.opt['<member>']
+        if len(infiles) == 0:
+            return
 
         basedir_url = GfURL.init(basedir)
 
@@ -1608,6 +1619,7 @@ class GfptarCommand(Command):
         self.ratio = self.opt['--ratio']
         self.compress_type = self.opt['--type']
         self.compress_prog = self.opt['--use-compress-program']
+        self.use_tqdm = self.opt['--use-tqdm']
         if self.compress_type == GfTarFile.COMPRESS_TYPE_NO:
             self.split_size = self.size
             self.suffix = '.tar'
@@ -1619,7 +1631,8 @@ class GfptarCommand(Command):
             return entry.path
 
         self.filelistlist = []
-        totalsize = 0
+        self.total_size = 0
+        self.total_num = 0
         for infile in infiles:
             infile_url = GfURL.init(infile)
             if not infile_url.is_local():
@@ -1631,58 +1644,60 @@ class GfptarCommand(Command):
             url_str = os.path.join(self.basedir_url.url_str, infile)
             gfurl = GfURL.init(url_str)
             logger.debug('listdir: %s', gfurl.url_str)
-            for entry in gfurl.listdir(recursive=True, first=True):
+            for entry in gfurl.listdir(recursive=True, first=True,
+                                       hardlink_warn=self.hardlink_warn):
                 logger.debug('listdir: entry.path=%s', entry.path)
                 filelist.append(entry)
-                totalsize += entry.size
+                self.total_size += entry.size
+                self.total_num += 1
             filelist.sort(key=entry_key, reverse=False)
             self.filelistlist.extend(self.schedule(filelist))
 
-        if self.progress_enabled():
-            if use_tqdm:
+        self.tqdm = None
+        self.myprogress = False
+        if self.progress_enabled:
+            if self.use_tqdm and have_tqdm:
                 term_size = shutil.get_terminal_size()
                 # bar_format = '{l_bar}{r_bar}'
                 bar_format = '{percentage:3.0f}% {n_fmt}/{total_fmt}' \
                     + ' [{elapsed}<{remaining}, {rate_fmt}]'
-                self.progress = tqdm(total=totalsize, unit_scale=True,
-                                     unit='B', dynamic_ncols=False,
-                                     bar_format=bar_format,
-                                     ncols=int(term_size.columns*3/4))
+                self.tqdm = tqdm(total=self.total_size, unit_scale=True,
+                                 unit='B', dynamic_ncols=False,
+                                 bar_format=bar_format,
+                                 ncols=int(term_size.columns*3/4))
             else:
-                # TODO GfProgress()
-                self.progress = None
-        else:
-            self.progress = None
+                self.myprogress = True
 
         self.serial = 0
         self.cancelled = False
-        self.totalsize_file = 0
-        self.totalsize_archive = 0
+        self.archive_size = 0
+        self.stored_size = 0
+        self.stored_num = 0
+        self.start_time = time.time()
+        self.next_time = self.start_time + 1
         if self.MT_enabled():
             self.create_tars_MT()
         else:
             self.create_tars()
-        if self.progress:
-            self.progress.close()
-        if not self.quiet and self.totalsize_file > 0:
-            print('compression ratio: %.2f %% (%d/%d)' %
-                  (100 * self.totalsize_archive / self.totalsize_file,
-                   self.totalsize_archive, self.totalsize_file))
+        if self.myprogress:
+            self.progress_for_create(time.time())
+            sys.stderr.write('\n')
+        if self.tqdm:
+            self.tqdm.close()
+        if not self.quiet and self.stored_size > 0:
+            print('compression ratio result: %.2f %% (%d/%d)' %
+                  (100 * self.archive_size / self.stored_size,
+                   self.archive_size, self.stored_size))
         del self.filelistlist
 
     def create_tars(self):
         self.lock_init(False)
-        before = 0
         for filelist in self.filelistlist:
             self.serial += 1
             self.create_a_tar(self.serial, filelist)
-            if self.progress:
-                self.progress.update(self.totalsize_file - before)
-                before = self.totalsize_file
 
     def create_tars_MT(self):
         self.lock_init(True)
-        before = 0
         with concurrent.futures.ThreadPoolExecutor(
                 max_workers=self.jobs) as executor:
             futures = {}
@@ -1702,12 +1717,6 @@ class GfptarCommand(Command):
                             logger.error("cancel: serial=%04d", futures[t2])
                             t2.cancel()
                     raise exc
-                elif self.progress:
-                    self.lock()
-                    diff = self.totalsize_file - before
-                    before = self.totalsize_file
-                    self.unlock()
-                    self.progress.update(diff)
 
     def schedule(self, filelist):
         filelistlist = []
@@ -1791,15 +1800,26 @@ class GfptarCommand(Command):
                 break
             subpath = entry.subpath(self.basedir_url)
             tar.add_entry(subpath, entry)
+
             self.lock()
             self.info('stored: {}', subpath)
-            self.totalsize_file += entry.size
+            self.stored_size += entry.size
+            if self.myprogress:
+                self.stored_num += 1
+                now = time.time()
+                if now >= self.next_time:
+                    self.next_time += 1
+                    self.progress_for_create(now)
+            elif self.tqdm:
+                if entry.is_file():
+                    self.tqdm.update(entry.size)
             self.unlock()
+
         tar.close()
         tar_size = outurl.get_size()
         self.lock()
         self.info('created(.tar): {}', outurl.url_str)
-        self.totalsize_archive += tar_size
+        self.archive_size += tar_size
         self.unlock()
 
     def create_a_members_list(self, url, filelist):
@@ -1840,6 +1860,7 @@ class GfptarCommand(Command):
         archive_dict = {}  # {filename}
         target_set_all = set()  # all  tar files
         directory_list = []
+        self.total_num = 0
         for ent in indir_url.listdir(recursive=False):
             if ent.path.endswith(self.LIST_SUFFIX):  # ignored
                 continue
@@ -1854,6 +1875,7 @@ class GfptarCommand(Command):
                     line = f.readline()
                     if not line:
                         break
+                    self.total_num += 1
                     line = line.rstrip()
                     # ex. "D /path/to/dir"
                     filetype = line[:1]
@@ -1866,7 +1888,9 @@ class GfptarCommand(Command):
         if search_target:
             # selected tar files
             target_set = set()
+            self.total_num = 0  # clear
             for member in member_set:
+                self.total_num += 1
                 target = archive_dict.get(member)
                 if not target:
                     raise Exception('Not found in archive:' + member)
@@ -1883,8 +1907,8 @@ class GfptarCommand(Command):
         self.extract_directories_fast(directory_list)
 
         self.cancelled = False
-        self.extract_num = 0
-        self.totalsize_file = 0
+        self.extracted_num = 0
+        self.extracted_size = 0
         self.start_time = time.time()
         self.next_time = self.start_time + 1
         self.dirstat_dict = {}
@@ -1892,6 +1916,9 @@ class GfptarCommand(Command):
             self.extract_from_archives_MT(target_list, member_set)
         else:
             self.extract_from_archives(target_list, member_set)
+        if self.progress_enabled:
+            self.progress_for_extract(time.time())
+            sys.stderr.write('\n')
 
         self.update_stat_for_directories(directory_list, member_set)
 
@@ -1962,9 +1989,6 @@ class GfptarCommand(Command):
         for target in target_list:
             logger.debug('target_set: %s', target)
             self.extract_from_a_tar(target, member_set)
-        if self.progress_enabled():
-            self.progress_for_extract(time.time())
-            sys.stderr.write('\n')
 
     def extract_from_archives_MT(self, target_list, member_set):
         self.lock_init(True)
@@ -1989,9 +2013,6 @@ class GfptarCommand(Command):
                             logger.error("cancel: name=%s", futures[t2])
                             t2.cancel()
                     raise exc
-        if self.progress_enabled():
-            self.progress_for_extract(time.time())
-            sys.stderr.write('\n')
 
     def extract_from_a_tar(self, target, member_set):
         if self.is_cancelled():
@@ -2055,11 +2076,11 @@ class GfptarCommand(Command):
             else:
                 logger.warning('unsupported type: %s: %s',
                                tarinfo.name, tarinfo.type)
-            if self.progress_enabled():
+            if self.progress_enabled:
                 self.lock()
-                self.extract_num += 1
+                self.extracted_num += 1
                 if tarinfo.isfile():
-                    self.totalsize_file += tarinfo.size
+                    self.extracted_size += tarinfo.size
                 now = time.time()
                 if now >= self.next_time:
                     self.next_time += 1
@@ -2072,13 +2093,38 @@ class GfptarCommand(Command):
         self.unlock()
 
     # lock required
+    def progress_for_create(self, now):
+        sec = now - self.start_time
+        if self.total_size > 0:
+            percent = self.stored_size * 100 / self.total_size
+        else:
+            percent = 0
+        if sec > 0:
+            bytes_per_sec = self.stored_size / sec
+        else:
+            bytes_per_sec = 0
+        sys.stderr.write(f'\rcreated: {percent:.0f}%, '
+                         f'num={self.stored_num}/{self.total_num}, '
+                         f'size={self.stored_size}, '
+                         f'sec={sec:.0f}, '
+                         f'B/s={bytes_per_sec:.0f}  ')
+
+    # lock required
     def progress_for_extract(self, now):
         sec = now - self.start_time
-        bytes_per_sec = self.totalsize_file / sec
-        sys.stderr.write(f'\rextracted: num={self.extract_num}, '
-                         f'size={self.totalsize_file}, '
+        if self.total_num > 0:
+            percent = self.extracted_num * 100 / self.total_num
+        else:
+            percent = 0
+        if sec > 0:
+            bytes_per_sec = self.extracted_size / sec
+        else:
+            bytes_per_sec = 0
+        sys.stderr.write(f'\rextracted: {percent:.0f}%, '
+                         f'num={self.extracted_num}/{self.total_num}, '
+                         f'size={self.extracted_size}, '
                          f'sec={sec:.0f}, '
-                         f'B/s={bytes_per_sec:.1f}  ')
+                         f'B/s={bytes_per_sec:.0f}  ')
 
     def list_simple(self, indir, quiet=False):
         indir_url = GfURL.init(indir)
@@ -2150,11 +2196,12 @@ Options:
   -s, --size=BYTES          assumed bytes per output file [default: 200M]
   -T, --type=TYPE           compress type (gz,bz2,xz,no) [default: gz]
   -r, --ratio=RATIO         assumed compression ratio (%) [default: 50]
-  --same-owner              extract files with the same ownership
-                            (for euid=0 on local, or gfarmroot on Gfarm)
   -I, --use-compress-program=COMMAND
                             filter data through COMMAND,
                             the command must accept -d option for decompression
+  --same-owner              extract files with the same ownership
+                            (for euid=0 on local, or gfarmroot on Gfarm)
+  --use-tqdm                use tqdm to show progress (for --create)
   --encoding=CODEC          codec for filename encoding
              (https://docs.python.org/3/library/codecs.html#standard-encodings)
                             [default: utf-8]
@@ -2213,6 +2260,7 @@ _schema = Schema({
     '--jobs': Use(int),
     '--use-compress-program': Or(str, None),
     '--same-owner': bool,
+    '--use-tqdm': bool,
     '--test': bool,
     '--test-workdir-local': Or(str, None),
     '--test-workdir-gfarm': Or(str, None),
