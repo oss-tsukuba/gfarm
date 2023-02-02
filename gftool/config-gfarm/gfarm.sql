@@ -29,6 +29,14 @@ CREATE TABLE GfarmUser (
 	gsiDN		VARCHAR(1024)
 );
 
+CREATE TABLE GfarmUserAuth (
+       username		   VARCHAR(64)	NOT NULL
+              REFERENCES GfarmUser(username) ON DELETE CASCADE,
+       authMethod	  VARCHAR(64)   NOT NULL,
+       authUserID	  VARCHAR(1024),
+PRIMARY KEY(username, authMethod)
+);
+
 CREATE TABLE GfarmGroup (
 	groupname	VARCHAR(8192)	PRIMARY KEY
 );
@@ -194,10 +202,3 @@ CREATE TABLE MdHost (
 	flags		INTEGER		NOT NULL
 );
 
-CREATE TABLE GfarmUserAuth (
-       username		   VARCHAR(64)	NOT NULL
-              REFERENCES GfarmUser(username) ON DELETE CASCADE,
-       authMethod	  VARCHAR(64)   NOT NULL,
-       authUserID	  VARCHAR(1024),
-PRIMARY KEY(username, authMethod)
-);

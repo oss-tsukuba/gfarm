@@ -84,6 +84,20 @@ grpassign_add_group(struct group_assignment *ga)
 	u->groups.group_prev = ga;
 }
 
+gfarm_error_t
+user_auth_id_modify(struct user *u, const char *auth_method,
+	const char *auth_user_id)
+{
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+user_auth_id_remove(struct user *user, const char *auth_method)
+{
+	return (GFARM_ERR_NO_ERROR);
+}
+
+
 static void
 user_invalidate(struct user *u)
 {

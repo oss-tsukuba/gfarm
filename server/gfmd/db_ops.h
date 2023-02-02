@@ -38,6 +38,17 @@ struct db_user_modify_arg {
 	int modflags;
 };
 
+struct db_user_auth_arg {
+       char *username;
+       char *auth_method;
+       char *auth_user_id;
+};
+
+struct db_user_auth_remove_arg {
+       char *username;
+       char *auth_method;
+};
+
 struct db_group_modify_arg {
 	struct gfarm_group_info gi;
 		/* should be first member, for db_group_dup() */
@@ -155,17 +166,6 @@ struct db_mdhost_modify_arg {
 	int modflags;
 };
 
-struct db_user_auth_arg {
-       char *username;
-       char *auth_method;
-       char *auth_user_id;
-};
-
-struct db_user_auth_remove_arg {
-       char *username;
-       char *auth_method;
-};
-
 struct db_ops {
 	gfarm_error_t (*initialize)(void);
 	gfarm_error_t (*terminate)(void);
@@ -186,6 +186,15 @@ struct db_ops {
 	gfarm_error_t (*user_remove)(gfarm_uint64_t, char *);
 	gfarm_error_t (*user_load)(void *,
 		void (*)(void *, struct gfarm_user_info *));
+
+	gfarm_error_t (*user_auth_add)(gfarm_uint64_t,
+		struct db_user_auth_arg *);
+	gfarm_error_t (*user_auth_modify)(gfarm_uint64_t,
+		struct db_user_auth_arg *);
+	gfarm_error_t (*user_auth_remove)(gfarm_uint64_t,
+		struct db_user_auth_remove_arg *);
+	gfarm_error_t (*user_auth_load)(void *,
+		void (*)(void *, struct db_user_auth_arg *));
 
 	gfarm_error_t (*group_add)(gfarm_uint64_t, struct gfarm_group_info *);
 	gfarm_error_t (*group_modify)(gfarm_uint64_t,
@@ -311,4 +320,5 @@ struct db_ops {
 
 	gfarm_error_t (*fsngroup_modify)(gfarm_uint64_t,
 		struct db_fsngroup_modify_arg *);
+
 };

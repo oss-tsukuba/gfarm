@@ -179,6 +179,40 @@ db_journal_apply_user_remove(gfarm_uint64_t seqnum, char *username)
 }
 
 /**********************************************************/
+/* user_auth */
+
+static gfarm_error_t
+db_journal_apply_user_auth_add_or_modify(gfarm_uint64_t seqnum,
+	struct db_user_auth_arg *arg)
+{
+	gfarm_error_t e;
+	struct user *u;
+
+	u = user_tenant_lookup(arg->username);
+	if (u == NULL)
+		return (GFARM_ERR_NO_SUCH_USER);
+
+	e = user_auth_id_modify(u, arg->auth_method, arg->auth_user_id);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+db_journal_apply_user_auth_remove(gfarm_uint64_t seqnum,
+	struct db_user_auth_remove_arg *arg)
+{
+	struct user *u;
+
+	u = user_tenant_lookup(arg->username);
+	if (u == NULL)
+		return (GFARM_ERR_NO_SUCH_USER);
+
+	return (user_auth_id_remove(u, arg->auth_method));
+}
+
+/**********************************************************/
 /* group */
 
 static gfarm_error_t
@@ -963,6 +997,11 @@ const struct db_ops db_journal_apply_ops = {
 	db_journal_apply_user_add,
 	db_journal_apply_user_modify,
 	db_journal_apply_user_remove,
+	NULL,
+
+	db_journal_apply_user_auth_add_or_modify,
+	db_journal_apply_user_auth_add_or_modify,
+	db_journal_apply_user_auth_remove,
 	NULL,
 
 	db_journal_apply_group_add,
