@@ -132,16 +132,17 @@ gfimport_to(int ifd, char *gfarm_url, int mode,
 
 gfarm_error_t
 gfimport_from_to(const char *ifile, char *gfarm_url,
-	char *host, gfarm_off_t off, gfarm_off_t size)
+    char *host, gfarm_off_t off, gfarm_off_t size, gfarm_mode_t *modep)
 {
 	gfarm_error_t e;
 	int ifd;
 	struct stat st;
+	gfarm_mode_t mode;
 	int rv, save_errno;
 
 	if (strcmp(ifile, "-") == 0) {
 		ifd = STDIN_FILENO;
-		st.st_mode = 0600;
+		mode = 0600;
 	} else {
 		ifd  = open(ifile, O_RDONLY);
 		if (ifd == -1) {
@@ -157,8 +158,12 @@ gfimport_from_to(const char *ifile, char *gfarm_url,
 		}
 		if (size < 0)
 			size = st.st_size;
+		mode = st.st_mode;
 	}
-	e = gfimport_to(ifd, gfarm_url, st.st_mode & 0777, host, off, size);
+	if (modep != NULL) {
+		mode = *modep | 0200; /* writable */
+	}
+	e = gfimport_to(ifd, gfarm_url, mode & 0777, host, off, size);
 	if (ifd != STDIN_FILENO)
 		close(ifd);
 	return (e);
@@ -171,10 +176,15 @@ usage(void)
 		program_name);
 	fprintf(stderr, "option:\n");
 	fprintf(stderr, "\t%s\n", "-h <hostname>");
-#if 0
+#if 0	/* hidden options */
 	fprintf(stderr, "\t%s\t%s\n", "-o <offset>",
 		"skip bytes at start of output, not truncate the file");
 	fprintf(stderr, "\t%s\t%s\n", "-s <size>", "output size");
+	fprintf(stderr, "\t%s\t%s\n", "-m <mode>", "change mode");
+	fprintf(stderr, "\t%s\t%s\n", "-M <second>",
+		"change modification time (since UNIX epoch)\n");
+	fprintf(stderr, "\t%s\t%s\n", "-u <username>", "change owner");
+	fprintf(stderr, "\t%s\t%s\n", "-g <groupname>", "change group");
 #endif
 	fprintf(stderr, "\t%s\t%s\n", "-w", "use 'write' instead of "
 			"'sendfile'");
@@ -188,8 +198,14 @@ main(int argc, char **argv)
 {
 	gfarm_error_t e;
 	int c, status = 0;
-	char *host = NULL, *path = NULL;
+	char *host = NULL, *path = NULL, *ep;
 	gfarm_off_t off = -1, size = -1;
+	const char *option_mode = NULL;
+	const char *option_mtime = NULL;
+	const char *option_user = NULL;
+	const char *option_group = NULL;
+	gfarm_mode_t mode = 0755, *modep = NULL;
+	struct gfarm_timespec ts[2], *tsp = NULL;
 
 	if (argc > 0)
 		program_name = basename(argv[0]);
@@ -200,7 +216,7 @@ main(int argc, char **argv)
 		exit(1);
 	}
 
-	while ((c = getopt(argc, argv, "h:o:ps:wv?")) != -1) {
+	while ((c = getopt(argc, argv, "h:o:ps:wvm:M:u:g:?")) != -1) {
 		switch (c) {
 		case 'p':
 			gfs_profile_set();
@@ -220,6 +236,18 @@ main(int argc, char **argv)
 		case 'v':
 			gflog_auth_set_verbose(1);
 			break;
+		case 'm':
+			option_mode = optarg;
+			break;
+		case 'M':
+			option_mtime = optarg;
+			break;
+		case 'u':
+			option_user = optarg;
+			break;
+		case 'g':
+			option_group = optarg;
+			break;
 		case '?':
 		default:
 			usage();
@@ -233,12 +261,76 @@ main(int argc, char **argv)
 	if (!writemode)
 		gfs_ib_rdma_disable();
 
+	if (option_mode) {
+		errno = 0;
+		mode = strtol(option_mode, &ep, 8);
+		if (errno != 0 || ep == option_mode || *ep != '\0') {
+			fprintf(stderr, "%s: %s: %s\n",
+			    program_name, argv[0],
+			    errno != 0 ? strerror(errno)
+			    : "<mode> must be an octal number");
+			exit(EXIT_FAILURE);
+		}
+		modep = &mode;
+	}
+	if (option_mtime) {
+		long mtime;
+
+		errno = 0;
+		mtime = strtol(option_mtime, &ep, 0);;
+		if (errno != 0 || ep == option_mtime || *ep != '\0') {
+			fprintf(stderr, "%s: %s: %s\n",
+			    program_name, argv[0],
+			    errno != 0 ? strerror(errno)
+			    : "<mtime> must be an integer number"
+			    " of seconds since UNIX epoch");
+			exit(EXIT_FAILURE);
+		}
+		ts[0].tv_sec = mtime;  /* atime */
+		ts[1].tv_sec = mtime;
+		ts[0].tv_nsec = 0;
+		ts[1].tv_nsec = 0;
+		tsp = ts;
+	}
+
 	e = gfarm_realpath_by_gfarm2fs(argv[1], &path);
 	if (e == GFARM_ERR_NO_ERROR)
 		argv[1] = path;
-	e = gfimport_from_to(argv[0], argv[1], host, off, size);
-	if (e != GFARM_ERR_NO_ERROR)
+	e = gfimport_from_to(argv[0], argv[1], host, off, size, modep);
+	if (e != GFARM_ERR_NO_ERROR) {
 		status = 1;
+	} else {		/* no error */
+		if (modep != NULL) {
+			e = gfs_lchmod(argv[1], *modep);
+			if (e != GFARM_ERR_NO_ERROR) {
+				fprintf(stderr, "%s: %s: %s\n", program_name,
+					argv[1], gfarm_error_string(e));
+				status = 1;
+			}
+		}
+		if (tsp != NULL) {
+			e = gfs_lutimes(argv[1], tsp);
+			if (e != GFARM_ERR_NO_ERROR) {
+				fprintf(stderr, "%s: %s: %s\n", program_name,
+					argv[1], gfarm_error_string(e));
+				status = 1;
+			}
+		}
+		if (option_user != NULL || option_group != NULL) {
+			e = gfs_lchown(argv[1], option_user, option_group);
+			if (e != GFARM_ERR_NO_ERROR) {
+				fprintf(stderr, "%s: %s: %s%s%s: %s\n",
+				    program_name,
+				    argv[1],
+				    option_user != NULL ? option_user : "",
+				    option_user != NULL && option_group != NULL
+					? ":" : "",
+				    option_group != NULL ? option_group : "",
+				    gfarm_error_string(e));
+				status = 1;
+			}
+		}
+	}
 	free(path);
 
 	e = gfarm_terminate();

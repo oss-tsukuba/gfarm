@@ -112,6 +112,10 @@ gftool/gfmkdir/mkdir.sh
 gftool/gfmkdir/mkdir_toolong.sh
 gftool/gfmkdir/dir_nlink.sh
 gftool/gfmkdir/mkdir-p.sh
+gftool/gfmkdir/mkdir-m.sh
+gftool/gfmkdir/mkdir-M.sh
+gftool/gfmkdir/mkdir-u.sh
+gftool/gfmkdir/mkdir-g.sh
 gftool/gfpath/path_dir.sh
 gftool/gfpath/url_dir.sh
 gftool/gfpath/url_base.sh
@@ -123,8 +127,14 @@ gftool/gfprep/gfprep_m.sh
 gftool/gfprep/gfprep_m_exist.sh
 gftool/gfprep/gfprep_m_exist2.sh
 gftool/gfprep/gfprep_N.sh
+gftool/gfptar/flake8.sh
+gftool/gfptar/gfptar.sh
 gftool/gfrmdir/rmdir.sh
 gftool/gfrmdir/rmdir_symlink.sh
+gftool/gfreg/gfreg-m.sh
+gftool/gfreg/gfreg-M.sh
+gftool/gfreg/gfreg-u.sh
+gftool/gfreg/gfreg-g.sh
 gftool/gfreg/0byte.sh
 gftool/gfrm/0byte.sh
 gftool/gfreg/1byte.sh
@@ -149,6 +159,9 @@ gftool/gfchmod/gfchmod_700_dir.sh
 gftool/gfchmod/gfchmod_755_dir.sh
 gftool/gfchmod/gfchmod_symlink.sh
 gftool/gfchmod/gfchmod-h.sh
+gftool/gfchmod/gfchmod-M.sh
+gftool/gfchmod/gfchmod-u.sh
+gftool/gfchmod/gfchmod-g.sh
 gftool/gfchown/gfchown.sh
 gftool/gfchown/gfchown-h.sh
 gftool/gfcksum/gfcksum-c.sh

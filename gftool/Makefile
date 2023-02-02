@@ -35,6 +35,7 @@ SUBDIRS = \
 	gfncopy \
 	gfpath \
 	gfprep \
+	gfptar \
 	gfquota \
 	gfreg \
 	gfrep \
