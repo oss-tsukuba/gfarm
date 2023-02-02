@@ -688,6 +688,9 @@ rockylinux8:
 almalinux8:
 	$(DOCKER_RUN) -it --rm 'almalinux:8' bash
 
+almalinux9:
+	$(DOCKER_RUN) -it --rm 'almalinux:9' bash
+
 centos8stream:
 	$(DOCKER_RUN) -it --rm 'quay.io/centos/centos:stream8' bash
 

@@ -1,0 +1,226 @@
+'\" t
+.\"     Title: gfptar
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 29 Jan 2023
+.\"    Manual: Gfarm
+.\"    Source: Gfarm
+.\"  Language: English
+.\"
+.TH "GFPTAR" "1" "29 Jan 2023" "Gfarm" "Gfarm"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+gfptar \- archive files in parallel
+.SH "SYNOPSIS"
+.HP \w'\fBgfptar\fR\ 'u
+\fBgfptar\fR [OPTIONS] \-c\ \fIoutdir\fR [\-C\ \fIbasedir\fR] \fImember\fR...
+.HP \w'\fBgfptar\fR\ 'u
+\fBgfptar\fR [OPTIONS] \-x\ \fIoutdir\fR \fIindir\fR [\fImember\fR...]
+.HP \w'\fBgfptar\fR\ 'u
+\fBgfptar\fR [OPTIONS] \-t\ \fIindir\fR
+.SH "DESCRIPTION"
+.PP
+\fBgfptar\fR
+creates archive files to Gfarm, or extracts files from archive files on Gfarm\&. The archive files consist of multiple tar files and list files of archived members in a directory\&. Creation or extraction is performed in parallel for each tar file in a directory for archive\&.
+.SH "OPERATION MODE"
+.PP
+\fB\-c(\-\-create)\fR \fIoutdir\fR \fB\-C(\-\-basedir)\fR \fIbasedir\fR \fImember\&.\&.\&.\fR
+.RS 4
+Create
+\fIoutdir\fR
+directory, and create archive files in the new directory\&.
+.sp
+\fImember\&.\&.\&.\fR
+(files or directories) in
+\fIbasedir\fR
+are archived\&.
+.RE
+.PP
+\fB\-x(\-\-extract)\fR \fIoutdir\fR \fIindir\fR \fI[member\&.\&.\&.]\fR
+.RS 4
+Create
+\fIoutdir\fR
+directory, and extract files from archive files of
+\fIindir\fR
+to the new directory\&.
+.sp
+When
+\fImember\fRs are specified, only the specified members will be extracted\&.
+.RE
+.PP
+\fB\-t(\-\-list)\fR \fIindir\fR
+.RS 4
+List the contents of archive files in
+\fIindir\fR\&.
+.RE
+.SH "PATH STYLE"
+.PP
+\fIoutdir\fR,
+\fIindir\fR
+and
+\fIbasedir\fR
+must be one of the following formats\&.
+.PP
+\fIpath\-name\fR
+.RS 4
+is a relative path or an absolute path of a local file system\&. Even if the path is a mount point on gfarm2fs, files are copied with passing through the gfarm2fs\&. (It behaves differently from other Gfarm commands\&.)
+.RE
+.PP
+\fIgfarm:\&.\&.\&.\fR
+.RS 4
+is a Gfarm URL of a Gfarm file system\&.
+.RE
+.SH "OPTIONS"
+.PP
+\fB\-j, \-\-jobs=\fR\fINUM\fR
+.RS 4
+Specifies the maximum number of jobs to create archive files or extract from archive files simultaneously\&.
+.sp
+The default value is 4\&.
+.RE
+.PP
+\fB\-s, \-\-size=\fR\fIBYTES\fR
+.RS 4
+Specifies assumed size in bytes per output tar file for
+\fB\-\-create\fR\&. Since compression ratios vary depending on the content of the file and the compression type, Archive files will be created for each group of files divided by the assumed size calculated considering the assumed compression ratio (\-\-ratio option)\&.
+.sp
+The default value is 200M (200 * 1024^2 = 209715200) (200 MiB)\&.
+.RE
+.PP
+\fB\-r, \-\-ratio=\fR\fIRATIO\fR
+.RS 4
+Specifies the assumed compression ratio in percentage for
+\fB\-\-create\fR\&.
+.sp
+The default value is 50 (50 %)\&.
+.RE
+.PP
+\fB\-T, \-\-type=\fR\fITYPE\fR
+.RS 4
+Specifies a compression type for
+\fB\-\-create\fR\&. "gz" means gzip type (suffix is \&.tar\&.gz)\&. "bz2" means bzip2 type (suffix is \&.tar\&.bz2)\&. "xz" means xz type (suffix is \&.tar\&.xz)\&. "no" means no compression\&.
+.sp
+This option is unnecessary for \-\-extract (determine type automatically)\&.
+.sp
+The default value is gz\&.
+.RE
+.PP
+\fB\-I, \-\-use\-compress\-program=\fR\fICOMMAND\fR
+.RS 4
+Specifies a command of compression program\&. Suffix for creating tar files must be specified by
+\fB\-\-type\fR
+option\&. The command must accept \-d option for decompression\&.
+.RE
+.PP
+\fB\-q, \-\-quiet\fR
+.RS 4
+Suppresses non\-error messages\&.
+.RE
+.PP
+\fB\-v, \-\-verbose\fR
+.RS 4
+Displays verbose output\&.
+.RE
+.PP
+\fB\-d, \-\-debug\fR
+.RS 4
+Displays debug output\&.
+.RE
+.PP
+\fB\-?, \-h, \-\-help\fR
+.RS 4
+Displays a list of command options\&.
+.RE
+.SH "EXAMPLES"
+.PP
+Creates archive files from local directories to a Gfarm directory\&. The archived files of this example include dir1 and dir2 as relative path\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+    $ gfptar \-c gfarm:/home/user1/out\&.gfptar \-C /home/user1 \&./dir1 \&./dir2
+  
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+Extract files from a Gfarm directory to a local directory\&. The extracted files of this example are dir1 and dir2\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+    $ gfptar \-x /home/user1/outdir gfarm:/home/user1/out\&.gfptar
+  
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+Creates archive files from Gfarm directories to a Gfarm directory\&. NOTE: If there are many small size files, it may perform better to specify a path on gfarm2fs for
+\fB\-C\fR
+option\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+    $ gfptar \-c gfarm:/home/user1/out\&.gfptar \-C gfarm:/home/user1 \&./dir
+  
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+Extract files from a Gfarm directory to a Gfarm directory\&. NOTE: If there are many small size files, it may perform better to specify a path on gfarm2fs for
+\fB\-x\fR
+option\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+    $ gfptar \-x gfarm:/home/user1/dir2 gfarm:/home/user1/out\&.gfptar
+  
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+Extract a specified file from a Gfarm directory to a local directory\&. The extracted file of this example is dir1/path/to/file only\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+    $ gfptar \-x /home/user1/outdir gfarm:/home/user1/out\&.gfptar dir1/path/to/file1
+  
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.SH "SEE ALSO"
+.PP
+\fBgfreg\fR(1),
+\fBgfexport\fR(1)
