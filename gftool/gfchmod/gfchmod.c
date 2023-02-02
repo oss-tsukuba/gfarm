@@ -56,9 +56,11 @@ gfchmod_plus(char *path, struct gfs_stat *st, void *arg)
 	const char *groupname = a->group;
 
 	e = (opt_follow_symlink ? gfs_chmod : gfs_lchmod)(path, mode);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: %s: %s\n", program_name, path,
 			gfarm_error_string(e));
+		return (e);
+	}
 	if (tsp != NULL) {
 		e = (opt_follow_symlink ? gfs_utimes : gfs_lutimes)(path, tsp);
 		if (e != GFARM_ERR_NO_ERROR) {
