@@ -54,27 +54,9 @@ Quick start
   $ cd gfarm
   $ git clone git@github.com:oss-tsukuba/gfarm2fs.git
 
-  If you will test SASL authentication too, do the followings too
-  under the gfarm directory:
-
-  $ git clone git@github.com:oss-tsukuba/jwt-logon.git
-  $ git clone git@github.com:oss-tsukuba/jwt-agent.git
-  $ git clone git@github.com:oss-tsukuba/cyrus-sasl-xoauth2-idp.git
-  $ git clone git@github.com:scitokens/scitokens-cpp.git
-
-  If you will test keycloak and jwt-server too, do the followings too
-  under the gfarm directory:
-
-  $ git clone -b dev_es256 git@github.com:oss-tsukuba/jwt-server.git
-  (See common/oauth2/README.ja for usage)
-
 4. Edit config.mk
 
   You can override from config-default.mk
-
-  If you will test keycloak and jwt-server, edit config.mk:
-
-  GFDOCKER_SASL_USE_KEYCLOAK = true
 
 5. Setup sudo configuration
 
@@ -106,11 +88,6 @@ Quick start
               - opensuse
           - "do_mount_autofs_indirect: already mounted as other than autofs or failed to unlink entry in tree"
               - centos7
-
-  - to configure kerberos, run the following command.
-    (this is currently tested only on centos8)
-
-	$ make kerberos-setup
 
 Use Rootless mode
 =================
