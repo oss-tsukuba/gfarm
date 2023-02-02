@@ -29,7 +29,7 @@ BASEDIR=dist
 IS_CGROUP_V2_COMMAND="./common/is_cgroup_v2.sh"
 
 REGRESS=${REGRESS:-0}
-SKIP_PKG=${SKIP_PKG:-1}
+SKIP_PKG=${SKIP_PKG:-0}
 
 if ${IS_CGROUP_V2_COMMAND}; then
     echo "unsupported: ${LIST_OLD_SYSTEMD}"
