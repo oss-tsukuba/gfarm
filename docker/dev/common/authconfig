@@ -359,6 +359,8 @@ then
 else
 	gsi_available=false
 fi
+# XXX workaround for 2.7 branch
+gsi_available=true
 
 if gfstatus 2>/dev/null | grep '^client auth sasl ' |
 		grep ': available' >/dev/null
