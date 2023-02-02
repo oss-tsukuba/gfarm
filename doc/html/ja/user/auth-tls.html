@@ -20,9 +20,9 @@ TLS 認証
 <HR>
 <H1>TLS 認証</H1>
 <A href="../../en/user/auth-tls.html">English</A> | 日本語
-<p>
+<P>
 この文書は、Gfarm の TLS 認証で必要な設定について説明します。
-<p>
+<P>
 TLS認証には、
 サーバーとクライアントで秘密鍵を共有する tls_sharedsecret 認証と、
 クライアント証明書を用いる tls_client_certificate 認証の
@@ -75,11 +75,11 @@ gfmd.conf の tls_certificate_file および tls_key_file で設定でき、
 
 既に GSI 認証の設定を完了しているサイトでは、以下のコマンドでシンボリックリンクを張れば設定完了です。
 
-<pre>
+<PRE>
 # mkdir -p /etc/pki/tls/certs /etc/pki/tls/private
 # ln -s /etc/grid-security/hostcert.pem /etc/pki/tls/certs/gfmd.crt
 # ln -s /etc/grid-security/hostkey.pem /etc/pki/tls/private/gfmd.key
-</pre>
+</PRE>
 <BR>
 <LI>gfsd のサービス証明書および秘密鍵
 <BR>
@@ -111,10 +111,10 @@ tls_key_file ディレクティブの設定は効きません。
 また、gfsd でサービス証明書を用いるためには以下の設定の追加が、
 クライアントの gfarm2.conf、gfsd の gfarm2.conf、gfmd の gfmd.conf
 すべてについて必要です。
-<pre>
+<PRE>
 spool_server_cred_type host
 spool_server_cred_service gfsd
-</pre>
+</PRE>
 この設定についても GSI と共通ですので、
 既に GSI 認証の設定を完了しているサイトでは追加設定は不要です。
 </UL>
@@ -168,9 +168,9 @@ tls_certificate_file および tls_key_file で設定でき、
 これらのファイル形式は GSI と共通ですので、
 既に GSI 認証の設定を完了しているサイトでは、以下のコマンドでシンボリックリンクを張れば設定完了です。
 
-<pre>
+<PRE>
 $ ln -s .globus $HOME/.gfarm
-</pre>
+</PRE>
 
 </UL>
 

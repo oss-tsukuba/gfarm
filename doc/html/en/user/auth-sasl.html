@@ -20,11 +20,11 @@ SASL Authentication
 <HR>
 <H1>SASL 認証</H1>
 English | <A href="../../ja/user/auth-sasl.html">Japanese</A>
-<p>
-<p>
+<P>
+<P>
 This document describes the settings required for SASL authentication in Gfarm.
 
-<p>
+<P>
 There are two types of SASL authentication in Gfarm.
 <DL>
   <DT>sasl
@@ -58,19 +58,19 @@ in the Cyrus SASL configuration directory
 In this document, this file will be referred to
 as the "Cyrus SASL configuration file".
 
-<pre>
+<PRE>
 log_level: 7
 mech_list: the SASL authentication mechanisms to be used
 ...If other mechanism-specific settings are required, describe them.
-</pre>
+</PRE>
 
 Multiple mechanisms can be described in mech_list,
 separated by spaces as follows.
-<p>
+<P>
 For example,
-<pre>
+<PRE>
 mech_list: PLAIN XOAUTH2
-</pre>
+</PRE>
 If this file is not present, all SASL mechanisms installed on the system
 are candidates for use.
 <BR>
@@ -79,35 +79,35 @@ so only specify the mechanisms that you actually use.
 
 <H3>Configuration for XOAUTH2 mechanism</H3>
 
-<p>
+<P>
 To use the XOAUTH2 mechanism, install the cyrus-sasl-xoauth2-idp package
 and place the following settings in the Cyrus SASL configuration file
 under the name gfarm.conf.
-<pre>
+<PRE>
 log_level: 7
 mech_list: XOAUTH2
 xoauth2_scope: scope required in JWT, used for server-side validation
 xoauth2_aud: audience required in JWT, used for server-side validation
 xoauth2_user_claim: key name of claim to be used as user ID in JWT
-</pre>
+</PRE>
 
-<p>
+<P>
 Of the above, xoauth2_scope and xoauth2_aud settings can be omitted
 on the client side.
 
-<p>
+<P>
 xoauth2_user_claim setting also can be omitted on the client side,
 if sasl_user is set in the file specified
  by the GFARM_CONFIG_FILE environment variable,
 or in .gfarm2rc in the home directory.
 
-<p>
+<P>
 The server side accesses the IdP,
  but if you need to use a web proxy server for this,
 add the following setting:
-<pre>
+<PRE>
 proxy: http://PROXY-SERVER-NAME:PROXY-PORT-NUMBER/
-</pre>
+</PRE>
 Modify "PROXY-SERVER-NAME" and "PROXY-PORT-NUMBER" as appropriate.
 
 <HR>
@@ -115,18 +115,18 @@ Modify "PROXY-SERVER-NAME" and "PROXY-PORT-NUMBER" as appropriate.
 
 Add the following settings to gfmd.conf for gfmd,
 and gfarm2.conf which is read by gfsd
-<pre>
+<PRE>
 auth enable sasl *
-</pre>
+</PRE>
 or
-<pre>
+<PRE>
 auth enable sasl_auth *
-</pre>
+</PRE>
 
 Also, please add the following settings to limit the mechanisms used.
-<pre>
+<PRE>
 sasl_mechanisms "PLAIN XOAUTH2"
-</pre>
+</PRE>
 
 For security purposes, specify only the mechanism actually used. 
 <BR>
@@ -142,21 +142,21 @@ depending on the SASL mechanism you are using.
 
 <H3>For ANONYMOUS mechanism</H3>
 
-<pre>
+<PRE>
 sasl_mechanisms "ANONYMOUS"
 sasl_user "dummy-user-name"
-</pre>
+</PRE>
 
 Since the anonymous mechanism configuration does not contain
 any user-specific information, it can also be set in gfarm2.conf.
 
 <H3>For PLAIN mechanism</H3>
 
-<pre>
+<PRE>
 sasl_mechanisms "PLAIN"
 sasl_user "USER-NAME"
 sasl_password "PASSWORD"
-</pre>
+</PRE>
 Modify "USER-NAME" and "PASSWORD" as appropriate.
 <P>
 To prevent other users from reading this file,
@@ -164,11 +164,11 @@ set the mode of the file to 0600 or 0400 using the chmod(1) command.
 
 <H3>For LOGIN mechanism</H3>
 
-<pre>
+<PRE>
 sasl_mechanisms "LOGIN"
 sasl_user "USER-NAME"
 sasl_password "PASSWORD"
-</pre>
+</PRE>
 Modify "USER-NAME" and "PASSWORD" as appropriate.
 <P>
 To prevent other users from reading this file,
@@ -176,10 +176,10 @@ set the mode of the file to 0600 or 0400 using the chmod(1) command.
 
 <H3>For XOAUTH2 mechanism</H3>
 
-<pre>
+<PRE>
 sasl_mechanisms "XOAUTH2"
 sasl_user "USER-NAME"
-</pre>
+</PRE>
 Modify "USER-NAME" and "PASSWORD" as appropriate.
 <P>
 If xoauth2_user_claim is set in the Cyrus SASL configuration file,
@@ -187,18 +187,18 @@ the sasl_user specification can be omitted.
 In that case, since there is no user-specific setting,
 only sasl_mechanism can be set in gfarm2.conf.
 
-<p>
+<P>
 In addition, place the access token used by XOAUTH2
 in the file specified by the JWT_FILE environment variable,
 or in the file /tmp/jwt_user_u&lt;YOUR-UNIX-UID$gt;/token.jwt
 if the environment variable is not set.
 To prevent other users from reading this file,
 set the mode of the JWT file to 0600 or 0400 using the chmod(1) command.  
-<p>
+<P>
 The jwt-logon(1) and jwt-agent(1) commands can be used
 to obtain a token and set JWT in the appropriate mode for this file.
 
-<p>
+<P>
 You can also set the JWT contents directly
 by using the sasl_password directive
 in the file specified by the GFARM_CONFIG_FILE environment variable,
