@@ -37,6 +37,12 @@ RUN dnf -y update \
     gsi-openssh-clients \
     && globus-version \
     && dnf -y install \
+    python3 \
+    python3-docopt \
+    python3-schema \
+    python3-tqdm \
+    python3-flake8 \
+    && dnf -y install \
     nc ldns iproute net-tools bind-utils telnet tcpdump \
     gdb strace valgrind inotify-tools libtsan procps-ng \
     man man-pages man-db which \

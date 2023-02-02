@@ -43,6 +43,12 @@ RUN zypper --non-interactive install -y \
     globus-proxy-utils \
     myproxy \
     && globus-version \
+    && zypper --non-interactive install -y \
+    python3 \
+    python3-docopt \
+    python3-schema \
+    python3-tqdm \
+    python3-flake8 \
     && zypper --non-interactive mr -e repo-debug \
     && zypper --non-interactive install -y \
     telnet ncat ldns iproute2 net-tools bind-utils tcpdump \

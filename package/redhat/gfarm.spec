@@ -402,6 +402,7 @@ fi
 %{man_prefix}/man1/gfpconcat.1*
 %{man_prefix}/man1/gfpcopy.1*
 %{man_prefix}/man1/gfprep.1*
+%{man_prefix}/man1/gfptar.1*
 %if %{gfarm_v2_not_yet}
 %{man_prefix}/man1/gfps.1*
 %{man_prefix}/man1/gfpwd.1*
@@ -592,6 +593,7 @@ fi
 %{man_prefix}/ja/man1/gfpconcat.1*
 %{man_prefix}/ja/man1/gfpcopy.1*
 %{man_prefix}/ja/man1/gfprep.1*
+%{man_prefix}/ja/man1/gfptar.1*
 %if %{gfarm_v2_not_yet}
 %{man_prefix}/ja/man1/gfps.1*
 %{man_prefix}/ja/man1/gfpwd.1*
@@ -761,6 +763,7 @@ fi
 %{html_prefix}/en/ref/man1/gfpconcat.1.html
 %{html_prefix}/en/ref/man1/gfpcopy.1.html
 %{html_prefix}/en/ref/man1/gfprep.1.html
+%{html_prefix}/en/ref/man1/gfptar.1.html
 %if %{gfarm_v2_not_yet}
 %{html_prefix}/en/ref/man1/gfps.1.html
 %{html_prefix}/en/ref/man1/gfpwd.1.html
@@ -958,6 +961,7 @@ fi
 %{html_prefix}/ja/ref/man1/gfpconcat.1.html
 %{html_prefix}/ja/ref/man1/gfpcopy.1.html
 %{html_prefix}/ja/ref/man1/gfprep.1.html
+%{html_prefix}/ja/ref/man1/gfptar.1.html
 %if %{gfarm_v2_not_yet}
 %{html_prefix}/ja/ref/man1/gfps.1.html
 %{html_prefix}/ja/ref/man1/gfpwd.1.html
@@ -1190,6 +1194,7 @@ fi
 %{prefix}/bin/gfpcopy-test.sh
 %{prefix}/bin/gfpcopy-stress
 %{prefix}/bin/gfpath
+%{prefix}/bin/gfptar
 %if %{gfarm_v2_not_yet}
 %{prefix}/bin/gfps
 %{prefix}/bin/gfpwd

@@ -7,7 +7,7 @@ COMPOSE=$(make -s ECHO_COMPOSE)
 ROOTDIR=$(make -s ECHO_ROOTDIR)
 GFARM_WORKDIR=/home/user1/gfarm
 GFARM_SRCDIR=$(cd $(realpath .) && cd $ROOTDIR/../.. && realpath .)
-COMPOSE_EXEC="$COMPOSE exec -T client1 bash -c"
+COMPOSE_EXEC="$COMPOSE exec -u user1 -T client1 bash -c"
 
 docker_cp_from() {
     FILE="$1"
@@ -32,7 +32,7 @@ copy_from_service() {
 }
 
 #$COMPOSE_EXEC "xsltproc --version"
-$COMPOSE_EXEC "cd $GFARM_WORKDIR && make man html" > /dev/null 2>&1
+$COMPOSE_EXEC "cd $GFARM_WORKDIR && make man html" # > /dev/null 2>&1
 
 FILES=$($COMPOSE_EXEC "cd $GFARM_WORKDIR && git status -s man/ doc/html/" | grep -v '^??' | awk '{print $2}')
 

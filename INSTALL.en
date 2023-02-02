@@ -119,8 +119,9 @@ globus-gssapi-gsi-devel(*), pkgconfig	(required for --with-globus option)
 postgresql, postgresql-server		(required to execute config-gfarm)
 fuse-devel				(required to build gfarm2fs)
 ganglia-gmond-python		(required to execute config-gf[ms]d-iostat)
+python3, python3-docopt(*), python3-schema(*)	(required to execute gfptar)
 
-(*) Globus packages are included in EPEL.  EPEL packages can be used by
+(*) These packages are included in EPEL.  EPEL packages can be used by
     # yum install epel-release
 
 * Debian Package
@@ -131,5 +132,6 @@ libpq-dev
 libglobus-gssapi-gsi-dev, pkgconf	(required for --with-globus option)
 postgresql, postgresql-client		(required to execute config-gfarm)
 libfuse-dev				(required to build gfarm2fs)
+python3, python3-docopt, python3-schema	(required to execute gfptar)
 
 $Id$
