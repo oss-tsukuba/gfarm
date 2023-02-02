@@ -121,7 +121,7 @@ fuse-devel				(required to build gfarm2fs)
 ganglia-gmond-python		(required to execute config-gf[ms]d-iostat)
 python3, python3-docopt(*), python3-schema(*)	(required to execute gfptar)
 
-(*) Globus packages are included in EPEL.  EPEL packages can be used by
+(*) These packages are included in EPEL.  EPEL packages can be used by
     # yum install epel-release
 
 * Debian Package
