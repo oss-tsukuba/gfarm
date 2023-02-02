@@ -61,8 +61,8 @@ RUN sed -i -e '/override_install_langs/s/$/,ja_JP.utf8/g' /etc/yum.conf \
 # for scitokens-cpp
 RUN ln -s /usr/bin/cmake3 /usr/local/bin/cmake
 
-
-ENV OPENSSL_PACKAGE_NAME="openssl11"
+# not required on 2.7 branch
+#ENV OPENSSL_PACKAGE_NAME="openssl11"
 
 # System independent (see setup-univ.sh)
 
