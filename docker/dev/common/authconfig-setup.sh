@@ -10,9 +10,18 @@ case $# in
 	exit 2;;
 esac
 
+if [ -f /usr/local/etc/gfarm2.conf ]; then
+    conf_dir=/usr/local/etc
+elif [ -f /etc/gfarm2.conf ]; then
+    conf_dir=/etc
+else
+    echo >&2 "$0: FATAL ERROR: cannot find gfarm2.conf"
+    exit 2
+fi
+
 conf_modify()
 {
-    file=/usr/local/etc/$1
+    file="${conf_dir}/$1"
     type=$2
 
     if [ -f "${file}" ]
@@ -25,6 +34,8 @@ conf_modify()
             ' "${file}.bak"
             echo "include /mnt/conf/auth-${type}.conf"
         ) >"${file}"
+    else
+        echo >&2 "$0: ERROR: ${file} not found"
     fi
 }
 

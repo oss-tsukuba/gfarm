@@ -1,0 +1,24 @@
+☆ jwt-server/jwt-logon/jwt-agent 利用方法
+
+・コンテナ ubuntu に user/user でリモートデスクトップ接続できます。
+ 接続後、ブラウザで jwt-server にアクセスすることが可能です。
+
+・デフォルト設定の場合、jwt-server の URL は下記になります。
+
+  https://httpd.test/jwt-server/
+
+・Keycloak には下記のユーザが追加されます。
+
+  user1/PASSWORD
+  user2/PASSWORD
+  user3/PASSWORD
+  user4/PASSWORD
+  ...
+
+・jwt-logon/jwt-agent を利用して JWT を取得することができます。
+
+ ex)
+ $ jwt-logon -s httpd.test -l user1
+  (jwt-serverより取得したパスフレーズを入力)
+
+ 
