@@ -1,0 +1,7 @@
+FROM gfarm-dev:almalinux9-base
+
+# System independent
+ARG GFDOCKER_NUM_JOBS
+ARG GFDOCKER_PRIMARY_USER
+
+RUN "/home/${GFDOCKER_PRIMARY_USER}/gfarm/docker/dev/common/rpm-do-all.sh"

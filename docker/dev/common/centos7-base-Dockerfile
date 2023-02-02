@@ -24,9 +24,11 @@ RUN sed -i -e '/override_install_langs/s/$/,ja_JP.utf8/g' /etc/yum.conf \
     postgresql-server \
     fuse \
     fuse-devel \
+    autofs \
     libacl-devel \
     ruby \
     && yum -y --enablerepo=epel install \
+    openssl11-devel \
     globus-gssapi-gsi-devel \
     globus-simple-ca \
     globus-gsi-cert-utils-progs \
@@ -35,6 +37,18 @@ RUN sed -i -e '/override_install_langs/s/$/,ja_JP.utf8/g' /etc/yum.conf \
     gsi-openssh-clients \
     && globus-version \
     && yum -y install \
+    python3 \
+    python36-docopt \
+    python36-schema \
+    python36-tqdm \
+    && pip3 install flake8 \
+    && yum -y install \
+    krb5-libs krb5-devel krb5-server krb5-workstation \
+    cyrus-sasl cyrus-sasl-lib cyrus-sasl-devel \
+    cyrus-sasl-plain cyrus-sasl-gssapi \
+    golang \
+    gcc-c++ cmake3 sqlite-devel libcurl-devel libuuid-devel \
+    epel-rpm-macros \
     docbook-utils docbook-style-xsl libxslt \
     nc ldns iproute2 net-tools bind-utils telnet tcpdump \
     gdb valgrind strace inotify-tools \
@@ -44,6 +58,11 @@ RUN sed -i -e '/override_install_langs/s/$/,ja_JP.utf8/g' /etc/yum.conf \
     fuse-libs \
     && sed -i 's@^Defaults    secure_path = /sbin:/bin:/usr/sbin:/usr/bin$@Defaults    secure_path = /usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin@' /etc/sudoers
 
+# for scitokens-cpp
+RUN ln -s /usr/bin/cmake3 /usr/local/bin/cmake
+
+
+ENV OPENSSL_PACKAGE_NAME="openssl11"
 
 # System independent (see setup-univ.sh)
 
@@ -56,8 +75,7 @@ ARG GFDOCKER_HOSTNAME_PREFIX_GFMD
 ARG GFDOCKER_HOSTNAME_PREFIX_GFSD
 ARG GFDOCKER_HOSTNAME_SUFFIX
 ARG GFDOCKER_USE_SAN_FOR_GFSD
-COPY . /tmp/gfarm
-COPY gfarm2fs /tmp/gfarm2fs
-RUN "/tmp/gfarm/docker/dev/common/setup-univ.sh"
+COPY --chown=1000:1000 . /work/gfarm
+RUN "/work/gfarm/docker/dev/common/setup-univ.sh"
 
 CMD ["/sbin/init"]

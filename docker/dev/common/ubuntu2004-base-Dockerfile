@@ -30,13 +30,21 @@ RUN yes | unminimize \
     postgresql-client \
     libfuse-dev \
     fuse \
+    autofs \
     libacl1-dev \
     ruby \
     git \
     globus-simple-ca \
     globus-gsi-cert-utils-progs \
     globus-proxy-utils \
+    curl \
     && globus-version \
+    && apt-get -y install \
+    python3 \
+    python3-docopt \
+    python3-schema \
+    python3-tqdm \
+    flake8 \
     && apt-get -y install \
     docbook-utils docbook-xsl xsltproc \
     ncat ldnsutils iproute2 net-tools bind9-dnsutils telnet tcpdump \
@@ -63,8 +71,7 @@ ARG GFDOCKER_HOSTNAME_PREFIX_GFMD
 ARG GFDOCKER_HOSTNAME_PREFIX_GFSD
 ARG GFDOCKER_HOSTNAME_SUFFIX
 ARG GFDOCKER_USE_SAN_FOR_GFSD
-COPY . /tmp/gfarm
-COPY gfarm2fs /tmp/gfarm2fs
-RUN "/tmp/gfarm/docker/dev/common/setup-univ.sh"
+COPY --chown=1000:1000 . /work/gfarm
+RUN "/work/gfarm/docker/dev/common/setup-univ.sh"
 
 CMD ["/sbin/init"]

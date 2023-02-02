@@ -3,10 +3,16 @@ TZ = Asia/Tokyo
 LANG = en_US.UTF-8
 
 DOCKER_CMD = docker
-### Compose v1
-DOCKER_COMPOSE_CMD = docker-compose
+#DOCKER_CMD = podman
+
 ### Compose v2
-#DOCKER_COMPOSE_CMD = docker compose
+DOCKER_COMPOSE_CMD = docker compose
+### Podman Compose
+#DOCKER_COMPOSE_CMD = podman-compose
+### Compose v1 (obsolete)
+#DOCKER_COMPOSE_CMD = docker-compose
+### Compose v1 running on container for Podman (obsolete)
+#DOCKER_COMPOSE_CMD = $(ROOTDIR)/common/compose.sh
 
 #GFDOCKER_PROXY_HOST = 192.168.0.1
 #GFDOCKER_PROXY_PORT = 8080
@@ -55,7 +61,8 @@ GFDOCKER_PLATFORM =
 #GFDOCKER_PLATFORM = linux/386
 #GFDOCKER_PLATFORM = linux/ppc64le
 
-# syntax: sharedsecret, gsi or gsi_auth
+# syntax: sharedsecret, gsi, gsi_auth, tls_sharedsecret or
+#		tls_client_certificate
 GFDOCKER_AUTH_TYPE = gsi_auth
 
 # GFDOCKER_GFMD_JOURNAL_DIR = /var/gfarm-metadata/journal/
@@ -64,6 +71,17 @@ GFDOCKER_GFMD_JOURNAL_DIR = /dev/shm/gfarm-metadata/journal/
 # --no-cache for docker build (0: disable, 1: enable)
 GFDOCKER_NO_CACHE = 0
 SUDO = sudo
+
+# cyrus-sasl-xoauth2-idp
+#
+# GFDOCKER_SASL_MECH_LIST:
+# 	tested mechanisms: ANONYMOUS LOGIN PLAIN XOAUTH2
+#	NOTE: PLAIN and XOAUTH2 are mandatory, do not remove them.
+GFDOCKER_SASL_MECH_LIST = PLAIN XOAUTH2
+GFDOCKER_SASL_LOG_LEVEL = 7
+GFDOCKER_SASL_USE_KEYCLOAK = false
+GFDOCKER_SASL_HPCI_SECET=K0WSOlQTizF7hJ7xOvGRDsD57ME0Vdxz
+GFDOCKER_SASL_PASSPHRASE=gdmyzb3n6bevxjikfo99y5piegtxmwi7
 
 # using port numbers of host OS
 GFDOCKER_HOSTPORT_S3_HTTP = 18080
@@ -81,3 +99,4 @@ GFDOCKER_GFARMS3_FRONT_WEBSERVER=nginx
 
 GFDOCKER_GFARMS3_MYPROXY_SERVER =
 GFDOCKER_GFARMS3_SHARED_DIR = /share
+

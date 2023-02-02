@@ -33,7 +33,7 @@ LOG_LOCAL_ROOT=log.w_root.local
 bin/am_I_gfarmroot
 is_gfarmroot=$?
 
-me=$GFDOCKER_PRIMARY_USER
+me=`gfwhoami`
 gfsdhost=${GFDOCKER_HOSTNAME_PREFIX_GFSD}1${GFDOCKER_HOSTNAME_SUFFIX}
 
 GFARM_TEST_CKSUM_MISMATCH=/tmp/cksum_mismatch

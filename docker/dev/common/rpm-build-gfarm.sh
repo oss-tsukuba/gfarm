@@ -2,24 +2,29 @@
 
 set -eux
 
-cd
+: ${OPENSSL_PACKAGE_NAME:=}
+
+GFDOCKER_SCRIPT_PATH="`dirname $0`"
 
 name=gfarm
-spec=${name}/package/redhat/gfarm.spec
+srcdir=/work/${name}
+spec=${srcdir}/package/redhat/${name}.spec
 
-mkdir -p rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPEC,SPECS,SRPMS}
+WITH_OPENSSL_OPT=
+if [ -n "${OPENSSL_PACKAGE_NAME}" ]; then
+    WITH_OPENSSL_OPT="--with-openssl=${OPENSSL_PACKAGE_NAME}"
+fi
 
 ver=$(grep "^%define ver" ${spec} | awk '{print $3}')
 
-name_ver=${name}-${ver}
-targz=${name_ver}.tar.gz
-cp -a ${name} rpmbuild/SOURCES/${name_ver}  # "mv" is too slow.
+# do not set $GFARM_CONFIGURE_OPTION here, because it makes "rpmbuild -bs"
+# create a wrong SRPM name. i.e. gfarm-gsi-${ver} instead of gfarm-${ver}
+# instead, use -e option to specify $GFARM_CONFIGURE_OPTION at "--rebuild".
 
-(cd rpmbuild/SOURCES/ &&
-  tar --exclude=.svn --exclude=.git --owner=root --group=root -zcvf \
-    ${targz} ${name_ver})
-
-rpmbuild -bs ${spec}
-srpm="rpmbuild/SRPMS/${name_ver}-*.src.rpm"
-GFARM_CONFIGURE_OPTION='--with-globus --enable-xmlattr' \
-  rpmbuild --rebuild ${srpm}
+"${GFDOCKER_SCRIPT_PATH}/rpm-build.sh" \
+	-d "${srcdir}" \
+	-e "GFARM_CONFIGURE_OPTION=
+		--with-globus --enable-xmlattr ${WITH_OPENSSL_OPT}" \
+	-s "${spec}" \
+	-v "${ver}" \
+	"${name}"

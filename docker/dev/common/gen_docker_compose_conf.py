@@ -3,6 +3,7 @@
 from ipaddress import IPv4Network, IPv6Network
 from os import environ
 import sys
+from distutils.util import strtobool
 
 num_gfmds = int(environ['GFDOCKER_NUM_GFMDS'])
 num_gfsds = int(environ['GFDOCKER_NUM_GFSDS'])
@@ -18,6 +19,10 @@ hostname_suffix = environ['GFDOCKER_HOSTNAME_SUFFIX']
 hostport_s3_http = environ['GFDOCKER_HOSTPORT_S3_HTTP']
 hostport_s3_https = environ['GFDOCKER_HOSTPORT_S3_HTTPS']
 hostport_s3_direct = environ['GFDOCKER_HOSTPORT_S3_DIRECT']
+
+is_cgroup_v2 = environ['IS_CGROUP_V2']
+
+use_keycloak = bool(strtobool(environ['GFDOCKER_SASL_USE_KEYCLOAK']))
 
 if ip_version == '4':
     nw = IPv4Network(subnet)
@@ -56,6 +61,16 @@ for i in range(0, num_gfsds):
         next(hi)
     ))
 
+if is_cgroup_v2 == 'true':
+    privileged = 'true'
+    disable_cgroupfs_mount = '#'
+    disable_security_opt = '#'
+    disable_capadd = '#'
+else:
+    privileged = 'false'
+    disable_cgroupfs_mount = ''
+    disable_security_opt = ''
+    disable_capadd = ''
 
 print('''\
 # This file was automatically generated.
@@ -66,24 +81,30 @@ version: "3.4"
 x-common:
   &common
   image: gfarm-dev:${GFDOCKER_PRJ_NAME}
-  volumes:
-    - ./mnt:/mnt:rw
-    - /sys/fs/cgroup:/sys/fs/cgroup:ro
-  security_opt:
-    - seccomp:unconfined
-    - apparmor:unconfined
-  cap_add:
-    - SYS_ADMIN
-    - SYS_PTRACE
-  devices:
-    - /dev/fuse:/dev/fuse
-  privileged: false
-  extra_hosts:
 ''', end='')
 
+print('''\
+  volumes:
+    - ./mnt:/mnt:rw
+    {disable_cgroupfs_mount}- /sys/fs/cgroup:/sys/fs/cgroup:ro
+  {disable_security_opt}security_opt:
+  {disable_security_opt}  - seccomp:unconfined
+  {disable_security_opt}  - apparmor:unconfined
+  {disable_capadd}cap_add:
+  {disable_capadd}  - SYS_ADMIN
+  {disable_capadd}  - SYS_PTRACE
+  devices:
+    - /dev/fuse:/dev/fuse
+  privileged: {privileged}
+  extra_hosts:
+'''.format(disable_cgroupfs_mount=disable_cgroupfs_mount,
+           disable_security_opt=disable_security_opt,
+           disable_capadd=disable_capadd,
+           privileged=privileged),
+      end='')
+
 for h in hosts:
-    print("    - {}:{}".format(h.hostname, str(h.ipaddr)))
-    print("    - {}:{}".format(h.name, str(h.ipaddr)))
+    print('    - "{} {}:{}"'.format(h.hostname, h.name, str(h.ipaddr)))
 
 print('''\
 
@@ -115,6 +136,59 @@ for h in hosts:
     <<: *common
 
 '''.format(h.name, h.hostname, ports, ip_version, str(h.ipaddr)), end='')
+
+if use_keycloak:
+   print('''\
+
+  ubuntu:
+    container_name: ubuntu
+    build: common/oauth2/ubuntu
+    privileged: true
+    networks:
+      gfarm_dev:
+    ports:
+      - "0.0.0.0:13389:3389"
+  httpd:
+    container_name: httpd
+    hostname: httpd{}
+    build: common/oauth2/apache
+    tty: true
+    privileged: true
+    volumes:
+      - ./mnt:/mnt:ro
+    networks:
+      gfarm_dev:
+  tomcat:
+    container_name: tomcat
+    build:
+     context: ../../
+     dockerfile: docker/dev/common/oauth2/tomcat/Dockerfile
+    networks:
+      gfarm_dev:
+    environment:
+      - 'CATALINA_OPTS=-Duser.timezone=Asia/Tokyo'
+  db:
+    container_name: mariadb
+    image: mariadb
+    volumes:
+      - "./common/oauth2/mariadb/initdb.d:/docker-entrypoint-initdb.d"
+    networks:
+      gfarm_dev:
+    environment:
+      - MYSQL_ROOT_PASSWORD=passwd
+      - MYSQL_DATABASE=gfarm
+      - MYSQL_USER=gfarm
+      - MYSQL_PASSWORD=gfarm123
+  keycloak:
+    container_name: keycloak
+    build: common/oauth2/keycloak
+    networks:
+      gfarm_dev:
+    environment:
+      DB_VENDOR: h2
+      KEYCLOAK_USER: admin
+      KEYCLOAK_PASSWORD: admin
+'''.format(hostname_suffix), end='')
 
 print('''\
 
