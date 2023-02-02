@@ -31,14 +31,17 @@ PROXY_URL = http://$(GFDOCKER_PROXY_HOST):$(GFDOCKER_PROXY_PORT)/
 GFDOCKER_USERNAME_PREFIX = user
 GFDOCKER_PRIMARY_USER = $(GFDOCKER_USERNAME_PREFIX)1
 PRIMARY_CLIENT_CONTAINER = $(GFDOCKER_HOSTNAME_PREFIX_CLIENT)1
-TOP = ../../../../..
+TOP = $(ROOTDIR)/../..
+
+#COMPOSE_YML = $(TOP)/docker/dev/docker-compose.yml
+COMPOSE_YML = $(ROOTDIR)/docker-compose.yml
 
 ifneq ($(GFDOCKER_NO_CACHE), 0)
 NO_CACHE = --no-cache
 else
 NO_CACHE =
 endif
-
+DOCKER_BUILD_ENV =
 DOCKER_BUILD_FLAGS = \
 		$(NO_CACHE) \
 		--build-arg TZ='$(TZ)' \
@@ -55,6 +58,13 @@ DOCKER_BUILD_FLAGS = \
 		--build-arg GFDOCKER_USE_SAN_FOR_GFSD='$(GFDOCKER_USE_SAN_FOR_GFSD)'
 
 ifdef GFDOCKER_ENABLE_PROXY
+DOCKER_BUILD_ENV = \
+               http_proxy='$(PROXY_URL)' \
+               https_proxy='$(PROXY_URL)' \
+               no_proxy='$(GFDOCKER_NO_PROXY)' \
+               HTTP_PROXY='$(PROXY_URL)' \
+               HTTPS_PROXY='$(PROXY_URL)' \
+               NO_PROXY='$(GFDOCKER_NO_PROXY)'
 DOCKER_BUILD_FLAGS += \
 		--build-arg http_proxy='$(PROXY_URL)' \
 		--build-arg https_proxy='$(PROXY_URL)' \
@@ -64,19 +74,25 @@ DOCKER_BUILD_FLAGS += \
 		--build-arg NO_PROXY='$(GFDOCKER_NO_PROXY)' \
 		--build-arg GFDOCKER_PROXY_HOST='$(GFDOCKER_PROXY_HOST)' \
 		--build-arg GFDOCKER_PROXY_PORT='$(GFDOCKER_PROXY_PORT)' \
-		--build-arg GFDOCKER_ENABLE_PROXY='$(GFDOCKER_ENABLE_PROXY)'
+		--build-arg GFDOCKER_ENABLE_PROXY='$(GFDOCKER_ENABLE_PROXY)' \
+                --build-arg MAVEN_OPTS='-Dhttp.proxyHost=$(GFDOCKER_PROXY_HOST) \
+                        -Dhttp.proxyPort=$(GFDOCKER_PROXY_PORT) \
+                        -Dhttps.proxyHost=$(GFDOCKER_PROXY_HOST) \
+                        -Dhttps.proxyPort=$(GFDOCKER_PROXY_PORT)'
 endif
 
 IMAGE_BASENAME = gfarm-dev
 
 STOP_TIMEOUT = 3
 
-DOCKER = $(SUDO) $(DOCKER_CMD)
+DOCKER = $(SUDO) $(DOCKER_BUILD_ENV) $(DOCKER_CMD)
 
 GFDOCKER_PRJ_NAME_FULL=gfarm-$(GFDOCKER_PRJ_NAME)
 
-COMPOSE = $(SUDO) COMPOSE_PROJECT_NAME=$(GFDOCKER_PRJ_NAME_FULL) \
-	GFDOCKER_PRJ_NAME=$(GFDOCKER_PRJ_NAME) $(DOCKER_COMPOSE_CMD)
+COMPOSE = $(SUDO) $(DOCKER_BUILD_ENV) \
+	COMPOSE_PROJECT_NAME=$(GFDOCKER_PRJ_NAME_FULL) \
+	GFDOCKER_PRJ_NAME=$(GFDOCKER_PRJ_NAME) $(DOCKER_COMPOSE_CMD) \
+	-f $(COMPOSE_YML)
 CONTSHELL_FLAGS = \
 		--env TZ='$(TZ)' \
 		--env LANG='$(LANG)' \
@@ -93,10 +109,15 @@ CONTSHELL_FLAGS = \
 		--env GFDOCKER_HOSTNAME_PREFIX_GFMD='$(GFDOCKER_HOSTNAME_PREFIX_GFMD)' \
 		--env GFDOCKER_HOSTNAME_PREFIX_GFSD='$(GFDOCKER_HOSTNAME_PREFIX_GFSD)' \
 		--env GFDOCKER_HOSTNAME_PREFIX_CLIENT='$(GFDOCKER_HOSTNAME_PREFIX_CLIENT)' \
-		--env GFDOCKER_HOSTNAME_SUFFIX='$(GFDOCKER_HOSTNAME_SUFFIX)'
+		--env GFDOCKER_HOSTNAME_SUFFIX='$(GFDOCKER_HOSTNAME_SUFFIX)' \
+		--env GFDOCKER_SASL_MECH_LIST='$(GFDOCKER_SASL_MECH_LIST)' \
+		--env GFDOCKER_SASL_LOG_LEVEL='$(GFDOCKER_SASL_LOG_LEVEL)' \
+		--env GFDOCKER_SASL_HPCI_SECET='$(GFDOCKER_SASL_HPCI_SECET)' \
+		--env GFDOCKER_SASL_PASSPHRASE='$(GFDOCKER_SASL_PASSPHRASE)'
 
 ifdef GFDOCKER_ENABLE_PROXY
 CONTSHELL_FLAGS += \
+		--env GFDOCKER_ENABLE_PROXY='$(GFDOCKER_ENABLE_PROXY)' \
 		--env http_proxy='$(PROXY_URL)' \
 		--env https_proxy='$(PROXY_URL)' \
 		--env no_proxy='$(GFDOCKER_NO_PROXY)' \
@@ -137,6 +158,7 @@ help:
 	@echo '  make reborn'
 	@echo '  make start'
 	@echo '  make stop'
+	@echo '  make kerberos-setup'
 	@echo '  make shell'
 	@echo '  make shell-user'
 	@echo '  make shell-root'
@@ -227,9 +249,11 @@ build:
 build-nocache:
 	$(build_nocache)
 
+# --remove-orphans may not be suppported
 define down
-	$(COMPOSE) down --volumes --remove-orphans -t $(STOP_TIMEOUT) \
-		&& rm -f $(TOP)/docker/dev/.shadow.config.mk
+	($(COMPOSE) down --volumes --remove-orphans -t $(STOP_TIMEOUT) \
+	|| $(COMPOSE) down --volumes -t $(STOP_TIMEOUT) || true) \
+	&& rm -f $(TOP)/docker/dev/.shadow.config.mk
 endef
 
 down:
@@ -267,22 +291,33 @@ TOP='$(TOP)' \
 	GFDOCKER_AUTH_TYPE='$(GFDOCKER_AUTH_TYPE)' \
 	GFDOCKER_GFMD_JOURNAL_DIR='$(GFDOCKER_GFMD_JOURNAL_DIR)' \
 	GFDOCKER_PRJ_NAME='$(GFDOCKER_PRJ_NAME)' \
+	GFDOCKER_SASL_USE_KEYCLOAK='$(GFDOCKER_SASL_USE_KEYCLOAK)' \
+	GFDOCKER_SASL_HPCI_SECET='$(GFDOCKER_SASL_HPCI_SECET)' \
+	GFDOCKER_SASL_PASSPHRASE='$(GFDOCKER_SASL_PASSPHRASE)' \
 	'$(TOP)/docker/dev/common/gen.sh'
 	cp $(TOP)/docker/dev/config.mk $(TOP)/docker/dev/.shadow.config.mk
 endef
 
 define up
+mkdir -p $(ROOTDIR)/mnt
+# readable for others
+chmod 755 $(ROOTDIR)/mnt
 $(COMPOSE) up -d --force-recreate\
   && $(CONTSHELL) -c '. ~/gfarm/docker/dev/common/up.rc'
 endef
 
+define authtest
+$(CONTSHELL) -c '~/gfarm/docker/dev/common/authtest.sh'
+endef
+
 define reborn
-	if [ -f $(TOP)/docker/dev/docker-compose.yml ]; then \
+	if [ -f $(COMPOSE_YML) ]; then \
 		$(down); \
 	else \
 		echo 'warn: docker-compose does not exist.' 1>&2; \
 	fi
 	$(gen)
+	$(COMPOSE) ps
 	$(prune)
 	if [ $(USE_NOCACHE) -eq 1 ]; then \
 		$(build_nocache); \
@@ -290,6 +325,11 @@ define reborn
 		$(build); \
 	fi
 	$(up)
+	if "$(GFDOCKER_SASL_USE_KEYCLOAK)"; then \
+		$(COMPOSE) exec $(CONTSHELL_FLAGS) httpd /setup.sh; \
+		$(COMPOSE) exec $(CONTSHELL_FLAGS) keycloak ./setup.sh; \
+	fi
+	$(authtest)
 endef
 
 reborn:
@@ -303,6 +343,7 @@ reborn-nocache: USE_NOCACHE = 1
 reborn-without-build:
 	$(down)
 	$(up)
+	$(authtest)
 
 start:
 	$(COMPOSE) start
@@ -465,6 +506,53 @@ endef
 s3test:
 	$(s3test)
 
+kerberos-setup:
+	$(CONTEXEC_GFMD1) $(SCRIPTS)/kerberos-setup-server.sh
+	for i in $$(seq 1 $(GFDOCKER_NUM_GFMDS)); do \
+	    h="$(GFDOCKER_HOSTNAME_PREFIX_GFMD)$${i}"; \
+	    $(CONTSHELL_COMMON) $${h} $(SCRIPTS)/kerberos-setup-host.sh gfmd; \
+	done
+	for i in $$(seq 1 $(GFDOCKER_NUM_GFSDS)); do \
+	    h="$(GFDOCKER_HOSTNAME_PREFIX_GFSD)$${i}"; \
+	    $(CONTSHELL_COMMON) $${h} $(SCRIPTS)/kerberos-setup-host.sh gfsd; \
+	done
+	for i in $$(seq 1 $(GFDOCKER_NUM_CLIENTS)); do \
+	    h="$(GFDOCKER_HOSTNAME_PREFIX_CLIENT)$${i}"; \
+	    $(CONTSHELL_COMMON) $${h} \
+	        $(SCRIPTS)/kerberos-setup-host.sh client; \
+	done
+
+# DO NOT USE THIS, currently this does not work.
+# on CentOS 8:
+#	kinit: Password incorrect while getting initial credentials
+kerberos-keytab-regen:
+	for i in $$(seq 1 $(GFDOCKER_NUM_CLIENTS)); do \
+	    h="$(GFDOCKER_HOSTNAME_PREFIX_CLIENT)$${i}"; \
+	    if $(CONTSHELL_COMMON) $${h} bash -c \
+	        'kinit -k -t "$(HOME_DIR)/.keytab" "$(GFDOCKER_PRIMARY_USER)" \
+	            2>&1 | grep "Password incorrect" >/dev/null'; \
+	        then \
+	            echo "NOTICE: regenerating $(HOME_DIR)/.keytab on $${h}"; \
+	            $(CONTSHELL_COMMON) $${h} \
+	                $(SCRIPTS)/kerberos-setup-host.sh client; \
+	        fi; \
+	done
+
+# DO NOT USE THIS, because currently kerberos-keytab-regen does not work.
+kerberos-kinit:
+	for i in $$(seq 1 $(GFDOCKER_NUM_CLIENTS)); do \
+	    h="$(GFDOCKER_HOSTNAME_PREFIX_CLIENT)$${i}"; \
+	    echo "on $${h}:"; \
+	    $(CONTSHELL_COMMON) $${h} \
+	        kinit -k -t "$(HOME_DIR)/.keytab" "$(GFDOCKER_PRIMARY_USER)"; \
+	done
+
+kerberos-kdestroy:
+	for i in $$(seq 1 $(GFDOCKER_NUM_CLIENTS)); do \
+	    h="$(GFDOCKER_HOSTNAME_PREFIX_CLIENT)$${i}"; \
+	    $(CONTSHELL_COMMON) $${h} kdestroy; \
+	done
+
 gridftp-setup:
 	$(CONTEXEC_GFMD1) $(SCRIPTS)/gridftp-setup-server.sh
 	$(CONTSHELL) -c '. ~/gfarm/docker/dev/common/gridftp-setup-client.rc'
@@ -477,7 +565,7 @@ NEXTCLOUD_GFARM_SRC = $(ROOTDIR)/mnt/work/nextcloud-gfarm
 NEXTCLOUD_GFARM_CONF = $(ROOTDIR)/common/nextcloud
 
 COMPOSE_NEXTCLOUD = $(COMPOSE) \
-	-f $(TOP)/docker/dev/docker-compose.yml \
+	-f $(COMPOSE_YML) \
 	-f $(NEXTCLOUD_GFARM_SRC)/docker-compose.yml \
 	-f $(NEXTCLOUD_GFARM_CONF)/docker-compose.nextcloud-gfarm.override.yml
 
@@ -600,6 +688,9 @@ rockylinux8:
 almalinux8:
 	$(DOCKER_RUN) -it --rm 'almalinux:8' bash
 
+almalinux9:
+	$(DOCKER_RUN) -it --rm 'almalinux:9' bash
+
 centos8stream:
 	$(DOCKER_RUN) -it --rm 'quay.io/centos/centos:stream8' bash
 
@@ -617,6 +708,9 @@ ubuntu1804:
 
 ubuntu2004:
 	$(DOCKER_RUN) -it --rm 'ubuntu:20.04' bash
+
+ubuntu2204:
+	$(DOCKER_RUN) -it --rm 'ubuntu:22.04' bash
 
 debian10:
 	$(DOCKER_RUN) -it --rm 'debian:buster' bash

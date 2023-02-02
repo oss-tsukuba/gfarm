@@ -11,9 +11,8 @@
 # ARG GFDOCKER_HOSTNAME_PREFIX_GFSD
 # ARG GFDOCKER_HOSTNAME_SUFFIX
 # ARG GFDOCKER_USE_SAN_FOR_GFSD
-# COPY . /tmp/gfarm
-# COPY gfarm2fs /tmp/gfarm2fs
-# RUN "/tmp/gfarm/docker/dev/common/setup-univ.sh"
+# COPY --chown=1000:1000 . /work/gfarm
+# RUN "/work/gfarm/docker/dev/common/setup-univ.sh"
 
 set -eux
 
@@ -28,26 +27,46 @@ set -eux
 : $GFDOCKER_USE_SAN_FOR_GFSD
 
 MY_SHELL=/bin/bash
-USERADD="useradd -m -s "$MY_SHELL" -U"
+HOST_SHARE_DIR=/mnt
+conf_include_dir=${HOST_SHARE_DIR}/conf
+USERADD="useradd -m -s "$MY_SHELL" -U -K UID_MIN=1000 -K GID_MIN=1000"
+SASL_DOMAIN=$(echo "$GFDOCKER_HOSTNAME_SUFFIX" | sed 's/^\.//')
+SASL_PASSWORD_BASE=PASS-
 ca_key_pass=PASSWORD
 GRID_MAPFILE=/etc/grid-security/grid-mapfile
 PRIMARY_HOME=/home/${GFDOCKER_PRIMARY_USER}
-gfarm_src_path="${PRIMARY_HOME}/gfarm"
+gfarm_src_path="/work/gfarm"
+gfarm2fs_src_path="${gfarm_src_path}/gfarm2fs"
+jwt_logon_src_path="${gfarm_src_path}/jwt-logon"
+jwt_agent_src_path="${gfarm_src_path}/jwt-agent"
+cyrus_sasl_xoauth2_idp_src_path="${gfarm_src_path}/cyrus-sasl-xoauth2-idp"
+scitokens_cpp_src_path="${gfarm_src_path}/scitokens-cpp"
 
-# pin UID for user1
+# pin starting UID for user1
 for i in $(seq 1 "$GFDOCKER_NUM_USERS"); do
   $USERADD "${GFDOCKER_USERNAME_PREFIX}${i}";
 done
 
+ln -s ${gfarm_src_path} ${PRIMARY_HOME}/gfarm
+ln -s ${gfarm2fs_src_path} ${PRIMARY_HOME}/gfarm2fs
+# the following directories may not exist
+ln -s ${jwt_logon_src_path} ${PRIMARY_HOME}/jwt-logon
+ln -s ${jwt_agent_src_path} ${PRIMARY_HOME}/jwt-agent
+ln -s ${cyrus_sasl_xoauth2_idp_src_path} ${PRIMARY_HOME}/cyrus-sasl-xoauth2-idp
+ln -s ${scitokens_cpp_src_path} ${PRIMARY_HOME}/scitokens-cpp
+
+# remove untracked files
+(cd ${gfarm_src_path}; git clean -df) || true
+(cd ${gfarm2fs_src_path}; git clean -df) || true
+# the following directories may not exist
+( if cd ${jwt_logon_src_path}; then git clean -df; fi ) || true
+( if cd ${jwt_agent_src_path}; then git clean -df; fi ) || true
+( if cd ${cyrus_sasl_xoauth2_idp_src_path}; then git clean -df; fi ) || true
+( if cd ${scitokens_cpp_src_path}; then git clean -df; fi ) || true
+
 for u in _gfarmmd _gfarmfs; do
   $USERADD "$u"
 done
-
-# "chown -R" is slow.
-rsync -a --chown=${GFDOCKER_PRIMARY_USER}:${GFDOCKER_PRIMARY_USER} \
-      /tmp/gfarm/ "${PRIMARY_HOME}"/gfarm
-rsync -a --chown=${GFDOCKER_PRIMARY_USER}:${GFDOCKER_PRIMARY_USER} \
-      /tmp/gfarm2fs/ "${PRIMARY_HOME}"/gfarm2fs
 
 # for grid-cert-request
 VARADM=/var/adm
@@ -135,6 +154,17 @@ for i in $(seq 1 "$GFDOCKER_NUM_GFSDS"); do
   echo "#${GFSD_SBJ} @host@ ${fqdn}" >> "$GRID_MAPFILE"
 done
 
+name="httpd"
+fqdn="${name}${GFDOCKER_HOSTNAME_SUFFIX}"
+echo "$force_yes" \
+  | grid-cert-request -verbose -nopw -prefix "$name" \
+   -host "$fqdn" -dns "${fqdn},${name}" \
+    -ca "$(cat /ca_hash)"
+grid-ca-sign -in "/etc/grid-security/${name}cert_request.pem" \
+  -out "/etc/grid-security/${name}cert.pem" \
+  -passin pass:"$ca_key_pass" -md $MD -dir ${CA_DIR}
+grid-cert-info -file "/etc/grid-security/${name}cert.pem"
+
 base_ssh_config="${gfarm_src_path}/docker/dev/common/ssh_config"
 echo >> /etc/sudoers
 echo '# for Gfarm' >> /etc/sudoers
@@ -170,7 +200,13 @@ for i in $(seq 1 "$GFDOCKER_NUM_USERS"); do
 
   USER_SBJ=$(grid-cert-info -subject -file "${globus_dir}/usercert.pem")
   echo "${USER_SBJ} ${user}" >> "$GRID_MAPFILE"
+  tls_dir="/home/${user}/.gfarm"
+  ln -s ".globus" "$tls_dir"
 done
+
+# for TLS
+mkdir -p /etc/pki/tls/certs
+ln -s /etc/grid-security/certificates /etc/pki/tls/certs/gfarm
 
 # make ${GFDOCKER_USERNAME_PREFIX}1 accesible to root@...
 root_dotssh=/root/.ssh
@@ -178,7 +214,7 @@ root_authkey="${root_dotssh}/authorized_keys"
 user1="${GFDOCKER_USERNAME_PREFIX}1"
 user1_dotssh="/home/${user1}/.ssh"
 user1_authkey="${user1_dotssh}/authorized_keys"
-mkdir "${root_dotssh}"
+mkdir -p "${root_dotssh}"
 cat "${user1_authkey}" >> "${root_authkey}"
 
 base_gfservicerc="${gfarm_src_path}/docker/dev/common/rc.gfservice"
@@ -193,6 +229,30 @@ for i in $(seq 1 "$GFDOCKER_NUM_USERS"); do
   cp "$base_gfarm2rc" "$gfarm2rc"
   chmod 0644 "$gfarm2rc"
   chown "${user}:${user}" "$gfarm2rc"
+  # use a symbolic link instead of direct referece to ${conf_include_dir},
+  # to access ${HOME}/.gfarm2rc.passwd via relative pathname
+  gfarm2rc_sasl="${gfarm2rc}.sasl"
+  ln -s "${conf_include_dir}/auth-client.sasl.conf" "$gfarm2rc_sasl"
+  gfarm2rc_passwd="${gfarm2rc}.passwd"
+  cp /dev/null "$gfarm2rc_passwd"
+  chmod 0600 "$gfarm2rc_passwd"
+  chown "${user}:${user}" "$gfarm2rc_passwd"
+  echo "sasl_user \"${user}@${SASL_DOMAIN}\"" >>"$gfarm2rc_passwd"
+  echo "sasl_password \"${SASL_PASSWORD_BASE}${user}\"" >>"$gfarm2rc_passwd"
+  if type saslpasswd2 2>/dev/null; then
+    echo "${SASL_PASSWORD_BASE}${user}" |
+      saslpasswd2 -c -u "${SASL_DOMAIN}" "${user}"
+    if [ "${sasl_db:-NOT_SET}" = "NOT_SET" ]; then
+      sasl_db=/etc/sasl2/sasldb2
+      if [ ! -f ${sasl_db} ]; then
+        sasl_db=/etc/sasldb2
+      fi
+    fi
+    chown _gfarmfs "${sasl_db}"
+  fi
+  gfarm2rc_sasl_xoauth2="${gfarm2rc}.sasl.xoauth2"
+  echo "sasl_user \"${user}\"" >>"$gfarm2rc_sasl_xoauth2"
+  chown "${user}:${user}" "$gfarm2rc_sasl_xoauth2"
 done
 
 su - "$GFDOCKER_PRIMARY_USER" -c " \
@@ -202,6 +262,8 @@ su - "$GFDOCKER_PRIMARY_USER" -c " \
     done \
 "
 
+# install /usr/local/bin/authconfig
+cp -p "${gfarm_src_path}/docker/dev/common/authconfig" /usr/local/bin/
 # install /usr/local/bin/hookconfig
 cp -p "${gfarm_src_path}/docker/dev/common/hookconfig" /usr/local/bin/
 
@@ -245,3 +307,26 @@ EOF
 
 chmod +x ${CLEAR_NOLOGIN_SCRIPT}
 systemctl enable ${CLEAR_NOLOGIN}
+
+
+### setup autofs
+GFARM2FS_OPT="auto_uid_min=40000,auto_uid_max=50000,auto_gid_min=40000,auto_gid_max=50000"
+cat <<EOF | sudo dd of=/etc/auto.gfarm
+ROOT -fstype=gfarm2fs,${GFARM2FS_OPT},gfarmfs_root=/,allow_other,default_permissions,username=${user1} :/home/${user1}/.gfarm2rc
+* -fstype=gfarm2fs,${GFARM2FS_OPT},allow_root,username=& :/home/&/.gfarm2rc
+EOF
+
+cat <<EOF | sudo dd oflag=append conv=notrunc of=/etc/auto.master
+/gfarm /etc/auto.gfarm --debug
+EOF
+
+cat <<EOF | sudo dd oflag=append conv=notrunc of=/etc/fuse.conf
+user_allow_other
+EOF
+
+mkdir /gfarm
+systemctl enable autofs
+
+### disable getty
+systemctl mask systemd-logind.service
+systemctl mask getty.target

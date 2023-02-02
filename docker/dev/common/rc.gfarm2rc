@@ -1,3 +1,15 @@
-auth enable sharedsecret *
+#auth enable sharedsecret *
+#auth enable tls_sharedsecret *
+#auth enable tls_client_certificate *
 #auth enable gsi_auth *
 #auth enable gsi *
+#auth enable sasl_auth *
+#auth enable sasl *
+#auth enable kerberos_auth *
+#auth enable kerberos *
+
+include /mnt/conf/auth-client.conf
+
+# symbolic link to /mnt/conf/auth-client.sasl.conf
+# the reason to use symlink is to access .gfarm2rc.passwd via relative pathname
+include .gfarm2rc.sasl

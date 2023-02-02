@@ -1,0 +1,477 @@
+#!/bin/sh
+
+progname=`basename $0`
+auth_config_dir=/mnt/conf
+modify_gfuser=true
+no_restart=false
+internal_call=false
+
+# default: --client-server sharedsecret --server-server all
+client_gfmd=sharedsecret
+client_gfsd=$client_gfmd
+gfmd_gfmd=all
+gfsd_gfmd=all
+gfsd_gfsd=all
+
+usage()
+{
+	echo >&2 "Usage:	${progname} [-n] <option>..."
+	echo >&2 "Usage:	${progname} [-n] <auth_method>"
+	echo >&2 "	this is abbreviation of" \
+			"\"${progname} --client-server <auth_method>\""
+	echo >&2 "options:"
+	echo >&2 "	-n: do not call \"gfuser -m\" to modify X.509 DN"
+	echo >&2 "	--client-server <auth_method>"
+	echo >&2 "		this is abbreviation of" \
+				"--client-gfmd <auth_method>" \
+				"--client-gfsd <auth_method>"
+	echo >&2 "	--server-server <auth_method>"
+	echo >&2 "		this is abbreviation of" \
+				"--gfmd-gfmd <auth_method>" \
+				"--gfsd-gfmd <auth_method>" \
+				"--gfsd-gfsd <auth_method>"
+	echo >&2 "	--client-gfmd <auth_method> (default: sharedsecret)"
+	echo >&2 "	--client-gfsd <auth_method> (default: sharedsecret)"
+	echo >&2 "	--gfmd-gfmd <auth_method> (default: all)"
+	echo >&2 "	--gfsd-gfmd <auth_method> (default: all)"
+	echo >&2 "	--gfsd-gfsd <auth_method> (default: all)"
+	echo >&2 "auth_method:"
+	echo >&2 "	all: enable all auth_methods"
+	echo >&2 "	sharedsecret"
+	echo >&2 "	tls_sharedsecret"
+	echo >&2 "	tls_client_certificate"
+	echo >&2 "	gsi"
+	echo >&2 "	gsi_auth"
+	echo >&2 "	sasl_auth"
+	echo >&2 "	sasl"
+	echo >&2 "	sasl_auth.anonymous"
+	echo >&2 "	sasl_auth.login"
+	echo >&2 "	sasl_auth.plain"
+	echo >&2 "	sasl_auth.xoauth2"
+	echo >&2 "	sasl.anonymous"
+	echo >&2 "	sasl.login"
+	echo >&2 "	sasl.plain"
+	echo >&2 "	sasl.xoauth2"
+	echo >&2 "	kerberos"
+	echo >&2 "	kerberos_auth"
+	echo >&2 "(*) default:" "--client-server sharedsecret" \
+				"--server-server all"
+	echo >&2 "(*) sasl is allowed only for client authentication,"
+	echo >&2 "    thus, use setting like the following:"
+	echo >&2 "	${progname} --client-server sasl.plain" \
+				   "--server-server tls_client_certificate"
+	exit 2
+}
+
+auth_method_check()
+{
+	auth_method="$*"
+	case ${auth_method} in
+	all) :;;
+	sharedsecret) :;;
+	tls_sharedsecret|tls_client_certificate) ;;
+	gsi|gsi_auth) ;;
+	sasl|sasl_auth) ;;
+	sasl.anonymous|sasl_auth.anonymous) ;;
+	sasl.login|sasl_auth.login) ;;
+	sasl.plain|sasl_auth.plain) ;;
+	sasl.xoauth2|sasl_auth.xoauth2) ;;
+	kerberos|kerberos_auth) ;;
+	*)	echo >&2 "${progname}: unknown auth_method <${auth_method}>"
+		usage;;
+	esac
+}
+
+clear_auth_config()
+{
+	config_name=$1
+	printf "" >"${auth_config_dir}/${config_name}.conf"
+}
+
+gen_auth_method()
+{
+	hostname=$1
+	auth_method=$2
+	case ${auth_method} in
+	all)	echo	     "auth enable sharedsecret ${hostname}"
+		if $tls_available; then
+			echo "auth enable tls_sharedsecret ${hostname}"
+			echo "auth enable tls_client_certificate ${hostname}"
+		fi
+		if $gsi_available; then
+			echo "auth enable gsi ${hostname}"
+			echo "auth enable gsi_auth ${hostname}"
+		fi
+		if $sasl_available; then
+			echo "auth enable sasl ${hostname}"
+			echo "auth enable sasl_auth ${hostname}"
+		fi
+		if $krb_available; then
+			echo "auth enable kerberos ${hostname}"
+			echo "auth enable kerberos_auth ${hostname}"
+		fi
+		;;
+	sasl_auth.*)
+		echo "auth enable sasl_auth ${hostname}"
+		;;
+	sasl.*)	echo "auth enable sasl ${hostname}"
+		;;
+	*)	echo "auth enable ${auth_method} ${hostname}"
+		;;
+	esac
+}
+
+gen_auth_config()
+{
+	config_name=$1
+	target=$2
+	auth_method=$3
+	(
+		case ${target} in
+		client)
+			for i in $(seq 1 ${GFDOCKER_NUM_CLIENTS}); do
+				h="${GFDOCKER_HOSTNAME_PREFIX_CLIENT}${i}${GFDOCKER_HOSTNAME_SUFFIX}"
+				gen_auth_method "${h}" "${auth_method}"
+			done
+			;;
+		gfmd)
+			for i in $(seq 1 ${GFDOCKER_NUM_GFMDS}); do
+				h="${GFDOCKER_HOSTNAME_PREFIX_GFMD}${i}${GFDOCKER_HOSTNAME_SUFFIX}"
+				gen_auth_method "${h}" "${auth_method}"
+			done
+			;;
+		gfsd)
+			for i in $(seq 1 ${GFDOCKER_NUM_GFSDS}); do
+				h="${GFDOCKER_HOSTNAME_PREFIX_GFSD}${i}${GFDOCKER_HOSTNAME_SUFFIX}"
+				gen_auth_method "${h}" "${auth_method}"
+			done
+			;;
+		all)
+			gen_auth_method '*' "${auth_method}"
+			;;
+		esac
+	) >>"${auth_config_dir}/${config_name}.conf"
+}
+
+gen_auth_sasl_config()
+{
+	auth_method=$1
+	sasl_mech=$(echo "${auth_method}" | sed 's/sasl[_a-z]*//')
+	config_name=auth-client.sasl
+	(
+		case ${sasl_mech} in
+		''|.|.plain)
+			echo "sasl_mechanisms PLAIN"
+			echo "include .gfarm2rc.passwd"
+			;;
+		.login)
+			echo "sasl_mechanisms LOGIN"
+			echo "include .gfarm2rc.passwd"
+			;;
+		.anonymous)
+			echo "sasl_mechanisms ANONYMOUS"
+			echo "sasl_user dummy_user"
+			;;
+		.xoauth2)
+			echo "sasl_mechanisms XOAUTH2"
+			echo "include .gfarm2rc.sasl.xoauth2"
+			;;
+		*)	echo >&2 "ERROR: unknown sasl_mechanisms <$sasl_mech>"
+			exit 2;;
+		esac
+	) >>"${auth_config_dir}/${config_name}.conf"
+}
+
+gen_cred_config()
+{
+	config_name=$1
+	(
+		echo "spool_server_cred_type host"
+		echo "spool_server_cred_service gfsd"
+	) >>"${auth_config_dir}/${config_name}.conf"
+}
+
+auth_specified=false
+while case $1 in
+	--no-restart)
+		no_restart=true
+		true;;
+	--internal)
+		internal_call=true
+		true;;
+	-n)	modify_gfuser=false
+		true;;
+	--all)
+		a="${2?'missing argument in $1'}"
+		auth_method_check "$2"
+		client_gfmd=$a
+		client_gfsd=$a
+		gfmd_gfmd=$a
+		gfsd_gfmd=$a
+		gfsd_gfsd=$a
+		auth_specified=true
+		shift; true;;
+	--client-server)
+		a="${2?'missing argument in $1'}"
+		auth_method_check "$2"
+		client_gfmd=$a
+		client_gfsd=$a
+		auth_specified=true
+		shift; true;;
+	--server-server)
+		a="${2?'missing argument in $1'}"
+		auth_method_check "$2"
+		gfmd_gfmd=$a
+		gfsd_gfmd=$a
+		gfsd_gfsd=$a
+		auth_specified=true
+		shift; true;;
+	--client-gfmd)
+		a="${2?'missing argument in $1'}"
+		auth_method_check "$2"
+		client_gfmd=$a
+		auth_specified=true
+		shift; true;;
+	--client-gfsd)
+		a="${2?'missing argument in $1'}"
+		auth_method_check "$2"
+		client_gfsd=$a
+		auth_specified=true
+		shift; true;;
+	--gfmd-gfmd)
+		a="${2?'missing argument in $1'}"
+		auth_method_check "$2"
+		gfmd_gfmd=$a
+		auth_specified=true
+		shift; true;;
+	--gfsd-gfmd)
+		a="${2?'missing argument in $1'}"
+		auth_method_check "$2"
+		gfsd_gfmd=$a
+		auth_specified=true
+		shift; true;;
+	--gfsd-gfsd)
+		a="${2?'missing argument in $1'}"
+		auth_method_check "$2"
+		gfsd_gfsd=$a
+		auth_specified=true
+		shift; true;;
+	-*)
+		echo >&2 "${progname}: unknown option $1"
+		usage;;
+	*)
+		false;;
+	esac
+do
+	shift
+done
+
+case $# in
+1)	a="$1"
+	auth_method_check "$1"
+	client_gfmd=$a
+	client_gfsd=$a
+	;;
+*)	if "${auth_specified}"; then
+		:
+	else
+		usage
+	fi
+	;;
+esac
+
+gfuser_4th_needs_x509_dn=false
+gfuser_4th_needs_krb_principal=false
+# currently, kerberos doesn't support service_cred yet
+gfsd_needs_service_cred=false
+gfsd_needs_host_cred=false
+case ${client_gfmd} in
+tls_*|gsi*)
+	gfuser_4th_needs_x509_dn=true
+	gfsd_needs_service_cred=true
+	;;
+kerberos*)
+	gfuser_4th_needs_krb_principal=true
+	gfsd_needs_host_cred=true
+	;;
+sasl*)
+	gfsd_needs_service_cred=true
+	;;
+esac
+case ${client_gfsd} in
+tls_*|gsi*)
+	gfuser_4th_needs_x509_dn=true
+	gfsd_needs_service_cred=true
+	;;
+kerberos*)
+	gfuser_4th_needs_krb_principal=true
+	gfsd_needs_host_cred=true
+	;;
+sasl*)
+	gfsd_needs_service_cred=true
+	;;
+esac
+case ${gfsd_gfmd} in
+tls_*|gsi*|sasl*)
+	gfsd_needs_service_cred=true
+	;;
+kerberos*)
+	gfsd_needs_host_cred=true
+	;;
+esac
+case ${gfsd_gfsd} in
+tls_*|gsi*|sasl*)
+	gfsd_needs_service_cred=true
+	;;
+kerberos*)
+	gfsd_needs_host_cred=true
+	;;
+esac
+if ${gfuser_4th_needs_x509_dn} &&
+   ${gfuser_4th_needs_krb_principal}
+then
+	echo >&2 "${progname}: client-gfmd:${client_gfmd}," \
+		"but client-gfsd:${client_gfsd}," \
+		"this conflicts about the 4th field of gfuser"
+	exit 1
+fi
+if ${gfsd_needs_service_cred} &&
+   ${gfsd_needs_host_cred}
+then
+	echo >&2 "${progname}: gfsd cred type isn't determined"
+	exit 1
+fi
+
+# make sure gfstatus(1) and gfuser(1) work
+$internal_call || $0 --internal -n sharedsecret
+
+if gfstatus 2>/dev/null | grep '^client auth tls ' |
+		grep ': available' >/dev/null
+then
+	tls_available=true
+else
+	tls_available=false
+fi
+if gfstatus 2>/dev/null | grep '^client auth gsi ' |
+		grep ': available' >/dev/null
+then
+	gsi_available=true
+else
+	gsi_available=false
+fi
+# XXX workaround for 2.7 branch
+gsi_available=true
+
+if gfstatus 2>/dev/null | grep '^client auth sasl ' |
+		grep ': available' >/dev/null
+then
+	sasl_available=true
+else
+	sasl_available=false
+fi
+
+if gfstatus 2>/dev/null | grep '^client auth kerberos' |
+		grep ': available' >/dev/null
+then
+	krb_available=true
+else
+	krb_available=false
+fi
+
+if ${modify_gfuser}; then
+	for i in $(seq 1 $GFDOCKER_NUM_USERS); do
+		name="${GFDOCKER_USERNAME_PREFIX}${i}"
+		ghome_dir="/home/${name}"
+		krb_realm=`echo "${GFDOCKER_HOSTNAME_SUFFIX}" | sed 's/^\.//'`
+		krb_principal="${name}@${krb_realm}"
+		x509_dn="/O=Gfarm/OU=GfarmDev/OU=GfarmCA/CN=${name}"
+		if ${gfuser_4th_needs_krb_principal}; then
+			identifier="${krb_principal}"
+		else
+			identifier="${x509_dn}"
+		fi
+		gfuser -m "${name}" "${name}" "${ghome_dir}" "${identifier}"
+	done
+fi
+
+clear_auth_config auth-gfmd
+if [ "${gfmd_gfmd}" != "${gfsd_gfmd}" ]; then
+	gen_auth_config auth-gfmd gfmd "${gfmd_gfmd}"
+	gen_auth_config auth-gfmd gfsd "${gfsd_gfmd}"
+	gen_auth_config auth-gfmd client "all"
+elif [ "${gfmd_gfmd}" = "all" \
+    -o "${gfmd_gfmd}" = "sharedsecret" ]; then
+	gen_auth_config auth-gfmd "all" "all"
+elif [ "${gfmd_gfmd}" = "${client_gfmd}" ]; then
+	gen_auth_config auth-gfmd "all" "${gfmd_gfmd}"
+else
+	gen_auth_config auth-gfmd gfmd "${gfmd_gfmd}"
+	gen_auth_config auth-gfmd gfsd "${gfsd_gfmd}"
+	# use "all" instead of "${client_gfmd}", make it client-controllable
+	gen_auth_config auth-gfmd client "all"
+fi
+if ! ${gfsd_needs_host_cred}; then
+	gen_cred_config auth-gfmd
+fi
+
+clear_auth_config auth-gfsd
+if [ "${gfsd_gfsd}" != "${gfsd_gfmd}" ]; then
+	gen_auth_config auth-gfsd gfmd "${gfsd_gfmd}"
+	gen_auth_config auth-gfsd gfsd "${gfsd_gfsd}"
+	gen_auth_config auth-gfsd client "all"
+elif [ "${gfsd_gfsd}" = "all" \
+    -o "${gfsd_gfsd}" = "sharedsecret" ]; then
+	gen_auth_config auth-gfsd "all" "all"
+elif [ "${gfsd_gfsd}" = "${client_gfmd}" ]; then
+	gen_auth_config auth-gfsd "all" "${gfsd_gfsd}"
+else
+	gen_auth_config auth-gfsd gfmd "${gfsd_gfmd}"
+	gen_auth_config auth-gfsd gfsd "${gfsd_gfsd}"
+	# use "all" instead of "${client_gfsd}", make it client-controllable
+	gen_auth_config auth-gfsd client "all"
+fi
+if ! ${gfsd_needs_host_cred}; then
+	gen_cred_config auth-gfsd
+fi
+
+clear_auth_config auth-client
+clear_auth_config auth-client.sasl
+if [ "${client_gfsd}" = "${client_gfmd}" ]; then
+	gen_auth_config auth-client "all" "${client_gfsd}"
+	case ${client_gfsd} in
+	sasl*)	gen_auth_sasl_config "${client_gfsd}";;
+	esac
+else
+	gen_auth_config auth-client gfmd "${client_gfmd}"
+	gen_auth_config auth-client gfsd "${client_gfsd}"
+	case "${client_gfmd}/${client_gfsd}" in
+	sasl*/sasl*)
+		gfmd_sasl_mech=$(echo "client_gfmd" | sed 's/sasl[_a-z]*//')
+		gfsd_sasl_mech=$(echo "client_gfsd" | sed 's/sasl[_a-z]*//')
+		if [ "gfmd_sasl_mech" != "gfsd_sasl_mech" ]; then
+			echo >&2 "ERROR: mismatch between" \
+				"gfmd sasl_mech=<$gfmd_sasl_mech>" and \
+				"gfsd sasl_mech=<$gfsd_sasl_mech>" 
+			exit 2
+		fi
+		;;
+	esac
+	case ${client_gfmd} in
+	sasl*)	gen_auth_sasl_config "${client_gfmd}";;
+	*)	case ${client_gfsd} in
+		sasl*)	gen_auth_sasl_config "${client_gfsd}";;
+		esac;;
+	esac
+fi
+if ! ${gfsd_needs_host_cred}; then
+	# /usr/local/etc/gfarm2.conf on gfsd hosts is used by
+	# both gfsd and clients, but that's OK in this case.
+	gen_cred_config auth-client
+fi
+
+if "${no_restart}"; then
+	:
+else
+	echo >&2 "restarting servers..."
+	gfservice restart-all
+fi

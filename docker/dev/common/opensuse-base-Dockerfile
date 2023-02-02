@@ -20,12 +20,17 @@ RUN zypper --non-interactive install -y \
     && systemctl enable sshd \
     && zypper --non-interactive install -y \
     libopenssl-devel \
-    postgresql13 \
-    postgresql13-devel \
-    postgresql13-server \
-    postgresql13-server-devel \
+    krb5-devel krb5-server krb5-client \
+    cyrus-sasl cyrus-sasl-devel cyrus-sasl-plain cyrus-sasl-gssapi \
+    go \
+    gcc-c++ cmake3 sqlite-devel libcurl-devel libuuid-devel lsb-release \
+    postgresql14 \
+    postgresql14-devel \
+    postgresql14-server \
+    postgresql14-server-devel \
     fuse \
     fuse-devel \
+    autofs \
     libacl-devel \
     ruby \
     libtool \
@@ -38,6 +43,12 @@ RUN zypper --non-interactive install -y \
     globus-proxy-utils \
     myproxy \
     && globus-version \
+    && zypper --non-interactive install -y \
+    python3 \
+    python3-docopt \
+    python3-schema \
+    python3-tqdm \
+    python3-flake8 \
     && zypper --non-interactive mr -e repo-debug \
     && zypper --non-interactive install -y \
     telnet ncat ldns iproute2 net-tools bind-utils tcpdump \
@@ -46,7 +57,6 @@ RUN zypper --non-interactive install -y \
     nano emacs-nox vim less which \
     libfuse2-debuginfo \
     && sed -i 's@^Defaults secure_path="/usr/sbin:@Defaults secure_path="/usr/local/bin:/usr/sbin:@' /etc/sudoers
-
 
 # System independent (see setup-univ.sh)
 
@@ -59,8 +69,7 @@ ARG GFDOCKER_HOSTNAME_PREFIX_GFMD
 ARG GFDOCKER_HOSTNAME_PREFIX_GFSD
 ARG GFDOCKER_HOSTNAME_SUFFIX
 ARG GFDOCKER_USE_SAN_FOR_GFSD
-COPY . /tmp/gfarm
-COPY gfarm2fs /tmp/gfarm2fs
-RUN "/tmp/gfarm/docker/dev/common/setup-univ.sh"
+COPY --chown=1000:1000 . /work/gfarm
+RUN "/work/gfarm/docker/dev/common/setup-univ.sh"
 
 CMD ["/sbin/init"]

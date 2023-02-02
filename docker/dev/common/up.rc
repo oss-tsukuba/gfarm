@@ -1,4 +1,4 @@
-set -eux
+set -eux -o pipefail
 
 : $GFDOCKER_PRJ_NAME
 : $TZ
@@ -13,11 +13,24 @@ set -eux
 : $GFDOCKER_HOSTNAME_PREFIX_GFSD
 : $GFDOCKER_HOSTNAME_PREFIX_CLIENT
 : $GFDOCKER_HOSTNAME_SUFFIX
+: $GFDOCKER_SASL_MECH_LIST
+: $GFDOCKER_SASL_LOG_LEVEL
+
+# the followings are optional:
+#: $https_proxy
+#: $GFDOCKER_ENABLE_PROXY
 
 PRIMARY_HOME=/home/${GFDOCKER_PRIMARY_USER}
 gfarm_src_path="${PRIMARY_HOME}/gfarm"
+gfarm_src_path="/work/gfarm"
 HOST_SHARE_DIR=/mnt
 SUDO_USER2="sudo sudo -i -u user2"
+SASL_DOMAIN=$(echo "$GFDOCKER_HOSTNAME_SUFFIX" | sed 's/^\.//')
+
+# to change these values, change scripts in ./oauth2/ as well
+GFDOCKER_SASL_XOAUTH2_SCOPE=hpci
+GFDOCKER_SASL_XOAUTH2_AUD=hpci
+GFDOCKER_SASL_XOAUTH2_USER_CLAIM=hpci.id
 
 gfmds=
 gfsds=
@@ -48,8 +61,8 @@ done
 
 ## create directories to keep keys
 for user in $users; do
-  sudo mkdir -p /mnt/${user}
-  sudo chown ${user} /mnt/${user}
+  sudo mkdir -p ${HOST_SHARE_DIR}/${user}
+  sudo chown ${user} ${HOST_SHARE_DIR}/${user}
 done
 
 GFDOCKER_COPY_SHARED_KEY=/usr/local/bin/gfdocker_copy_shared_key
@@ -62,7 +75,7 @@ set -eux
 
 ALLHOSTS="${allhosts}"
 
-BACKUP_KEY_DIR=/mnt/\$(whoami)
+BACKUP_KEY_DIR=${HOST_SHARE_DIR}/\$(whoami)
 BACKUP_KEY=\${BACKUP_KEY_DIR}/gfarm_shared_key
 KEY=~/.gfarm_shared_key
 PERIOD=315360000
@@ -87,9 +100,8 @@ sudo chmod +x ${GFDOCKER_COPY_SHARED_KEY}
 
 # keep ssh host keys only for client1 host
 
-MNT=/mnt
-MNT_SSH_HOST_KEY_DIR=${MNT}/ssh_host_keys
-MNT_SSH_AUTHORIZED_KEYS_FILE=${MNT}/ssh_authorized_keys
+MNT_SSH_HOST_KEY_DIR=${HOST_SHARE_DIR}/ssh_host_keys
+MNT_SSH_AUTHORIZED_KEYS_FILE=${HOST_SHARE_DIR}/ssh_authorized_keys
 SSH_HOST_KEY_DIR=/etc/ssh
 
 if [ ! -d $MNT_SSH_HOST_KEY_DIR ]; then
@@ -143,8 +155,46 @@ for host in $gfmds; do
 set -eux
 ln '/etc/grid-security/${host}cert.pem' /etc/grid-security/hostcert.pem
 ln '/etc/grid-security/${host}key.pem' /etc/grid-security/hostkey.pem
+mkdir -p /etc/pki/tls/private
+ln -s /etc/grid-security/hostcert.pem /etc/pki/tls/certs/gfmd.crt
+ln -s /etc/grid-security/hostkey.pem /etc/pki/tls/private/gfmd.key
 EOF
 done
+
+# create initial /mnt/conf/auth-client*.conf before calling gfservice,
+# because these files are included from $HOME/.gfarm2rc
+conf_include_dir="${HOST_SHARE_DIR}/conf"
+sudo mkdir -p "${conf_include_dir}"
+sudo chown -R "${GFDOCKER_PRIMARY_USER}" "${conf_include_dir}"
+cat <<'_EOF_' > "${conf_include_dir}/auth-client.conf"
+auth enable sharedsecret *
+auth enable gsi_auth *
+_EOF_
+cp /dev/null "${conf_include_dir}/auth-client.sasl.conf"
+
+sasl_installed=false
+if pkg-config --exists libsasl2; then
+  sasl_libdir=$(pkg-config --variable=libdir libsasl2)
+  sasl_plugin_dir=${sasl_libdir}/sasl2
+  # does cyrus-sasl-xoauth2-idp exist?
+  if [ -f "${sasl_plugin_dir}/libxoauth2.so" ]; then
+    sasl_installed=true
+    (
+      cat <<_EOF_
+mech_list: ${GFDOCKER_SASL_MECH_LIST}
+log_level: ${GFDOCKER_SASL_LOG_LEVEL}
+xoauth2_scope: ${GFDOCKER_SASL_XOAUTH2_SCOPE}
+xoauth2_aud: ${GFDOCKER_SASL_XOAUTH2_AUD}
+xoauth2_user_claim: ${GFDOCKER_SASL_XOAUTH2_USER_CLAIM}
+_EOF_
+      if "${GFDOCKER_ENABLE_PROXY:-false}"; then
+	cat <<_EOF_
+proxy: ${https_proxy}
+_EOF_
+      fi
+    ) >/tmp/sasl_gfarm.conf
+  fi
+fi
 
 ## before systemd 235: "rsyslog.service: Failed to kill control group"
 for host in $gfmds $gfsds $clients; do
@@ -155,29 +205,63 @@ for host in $gfmds $gfsds $clients; do
   && ssh "$host" sudo timedatectl set-timezone "${TZ}" \
   && ssh "$host" sudo systemctl restart rsyslog
   ) &
+  ( $sasl_installed &&
+    ssh "$host" sudo sh -c "'cat >${sasl_plugin_dir}/gfarm.conf'" \
+      </tmp/sasl_gfarm.conf ) &
 done
 wait
 
 gfservice -k -d config-all
 
+tls_available=false
+if gfstatus 2>/dev/null | grep '^client auth tls ' | grep ': available'; then
+  tls_available=true
+fi
+
+krb_available=false
+if gfstatus 2>/dev/null | grep '^client auth kerberos' | grep ': available'
+then
+  krb_available=true
+fi
+
+sasl_available=false
+if gfstatus 2>/dev/null | grep '^client auth sasl ' | grep ': available'; then
+  sasl_available=true
+fi
 
 for host in $gfmds; do
-  (gfservice set-gfmd-conf "$host" digest md5 \
-  && gfservice set-gfmd-conf "$host" metadb_server_heartbeat_interval 10 \
-  && gfservice set-gfmd-conf "$host" 'auth enable gsi' '*' \
-  && gfservice set-gfmd-conf "$host" write_verify enable \
-  && gfservice set-gfmd-conf "$host" write_verify_interval 600 \
-  && gfservice restart-gfmd "$host" \
+  (gfservice set-gfmd-conf "$host" digest md5 &&
+   gfservice set-gfmd-conf "$host" metadb_server_heartbeat_interval 10 &&
+   gfservice set-gfmd-conf "$host" 'auth enable gsi' '*' &&
+   if $tls_available; then
+     gfservice set-gfmd-conf "$host" 'auth enable tls_sharedsecret' '*' &&
+     gfservice set-gfmd-conf "$host" 'auth enable tls_client_certificate' '*'
+   fi &&
+   if $sasl_available; then
+     gfservice set-gfmd-conf "$host" 'auth enable sasl_auth' '*' &&
+     gfservice set-gfmd-conf "$host" 'auth enable sasl' '*'
+   fi &&
+   gfservice set-gfmd-conf "$host" write_verify enable &&
+   gfservice set-gfmd-conf "$host" write_verify_interval 600 &&
+   gfservice restart-gfmd "$host"
   ) &
 done
 #wait
 
 for host in $gfsds; do
-  (gfservice set-gfarm-conf "$host" client_digest_check enable \
-  && gfservice set-gfarm-conf "$host" spool_digest_error_check disable \
-  && gfservice set-gfarm-conf "$host" 'auth enable gsi' '*' \
-  && gfservice restart-gfsd "$host" \
-  && ssh "$host" sudo systemctl enable "gfsd-${host}${GFDOCKER_HOSTNAME_SUFFIX}" \
+  (gfservice set-gfarm-conf "$host" client_digest_check enable &&
+   gfservice set-gfarm-conf "$host" spool_digest_error_check disable &&
+   gfservice set-gfarm-conf "$host" 'auth enable gsi' '*' &&
+   if $tls_available; then
+     gfservice set-gfarm-conf "$host" 'auth enable tls_sharedsecret' '*' &&
+     gfservice set-gfarm-conf "$host" 'auth enable tls_client_certificate' '*'
+   fi &&
+   if $sasl_available; then
+     gfservice set-gfarm-conf "$host" 'auth enable sasl_auth' '*' &&
+     gfservice set-gfarm-conf "$host" 'auth enable sasl' '*'
+   fi &&
+   gfservice restart-gfsd "$host" &&
+   ssh "$host" sudo systemctl enable "gfsd-${host}${GFDOCKER_HOSTNAME_SUFFIX}"
   ) &
 done
 #wait
@@ -190,10 +274,12 @@ done
 wait
 
 # copy current configuration files for external containers
-COPY_DIR=/mnt/COPY_DIR
+COPY_DIR=${HOST_SHARE_DIR}/COPY_DIR
 COPY_HOMES="${COPY_DIR}/HOMES"
 
 sudo mkdir -p "${COPY_HOMES}"
+gfsudo gfmkdir /home
+gfsudo gfchown gfarmadm /home
 
 # for external gfarm-s3-minio-web container
 S3_USERMAP="${COPY_DIR}/gfarm-s3-usermap.conf"
@@ -206,30 +292,62 @@ for i in $(seq 1 $GFDOCKER_NUM_USERS); do
   name="${GFDOCKER_USERNAME_PREFIX}${i}"
   from_dir="/home/${name}"
   to_dir="${COPY_HOMES}/${name}"
-  subject="/O=Grid/OU=GlobusTest/OU=GlobusSimpleCA/CN=${name}"
+  subject="/O=Gfarm/OU=GfarmDev/OU=GfarmCA/CN=${name}"
+  ghome_dir="/home/${name}"
 
   # add gfarm user (skip Gfarm admin user)
   if [ "${name}" != "${GFDOCKER_USERNAME_PREFIX}1" ]; then
-    gfuser -c "${name}" "${name}" / "${subject}"
+    gfuser -c "${name}" "${name}" "${ghome_dir}" "${subject}"
   fi
+  gfsudo gfmkdir "${ghome_dir}"
+  gfsudo gfchown "${name}" "${ghome_dir}"
 
   # backup or restore gfarm_shared_key
   sudo sudo -i -u "$name" ${GFDOCKER_COPY_SHARED_KEY}
 
-  # copy home directory
+  # copy home directory to COPY_HOMES
   sudo rsync -av --exclude=gfarm --exclude gfarm2fs --exclude tmp \
+  --exclude rpmbuild \
   "${from_dir}/" "${to_dir}/"
+
+  # add gfarm user for SASL w/ mechanism=PLAIN or LOGOIN
+  if $sasl_available; then
+    sasl_user="${name}@${SASL_DOMAIN}"
+    sasl_home="/home/${sasl_user}"
+    gfuser -c "${sasl_user}" "${sasl_user}" "${sasl_home}" ""
+    gfsudo gfmkdir "${sasl_home}"
+    gfsudo gfchown "${sasl_user}" "${sasl_home}"
+  fi
 
   # add to S3_USERMAP
   echo "${name}:${name}:${S3_ACCESS_KEY_PREFIX}${name}" | \
   sudo dd conv=notrunc oflag=append of="${S3_USERMAP}" > /dev/null 2>&1
 done
 
+if $sasl_available; then
+  sasl_user="${GFDOCKER_PRIMARY_USER}@${SASL_DOMAIN}"
+  gfgroup -a -m gfarmadm "${sasl_user}"
+fi
+
+# add gfarm user for SASL w/ mechanism=ANONYMOUS
+if $sasl_available &&
+   expr "${GFDOCKER_SASL_MECH_LIST}" : '.*ANONYMOUS.*' >/dev/null
+then
+  sasl_user="anonymous"
+  sasl_home="/home/${sasl_user}"
+  gfuser -c "${sasl_user}" "${sasl_user}" "${sasl_home}" ""
+  gfgroup -a -m gfarmadm "${sasl_user}"
+  gfsudo gfmkdir "${sasl_home}"
+  gfsudo gfchown "${sasl_user}" "${sasl_home}"
+fi
+
+### copy certificates
 CERTIFICATES_DIR=/etc/grid-security/certificates
 COPY_CERTIFICATES_DIR="${COPY_DIR}/CERTS"
 sudo rsync -av --delete "${CERTIFICATES_DIR}/" "${COPY_CERTIFICATES_DIR}/"
 
-GFARM2CONF_REGEXP="^system config file: "
+### copy gfarm2.conf
+GFARM2CONF_REGEXP="^system config file *: "
 GFARM2CONF=$(gfstatus | grep "$GFARM2CONF_REGEXP" | sed "s/$GFARM2CONF_REGEXP//")
 COPY_GFARM2CONF=${COPY_DIR}/gfarm2.conf
 sudo cp ${GFARM2CONF} ${COPY_GFARM2CONF}
@@ -259,6 +377,28 @@ if [ $GFDOCKER_NUM_GFMDS -ge 3 ]; then
   gfmdhost -m -C cluster2 ${GFMD_HOSTNAME}
   gfservice start-gfmd ${GFMD_NAME}
 fi
+
+# create the following files:
+#	/mnt/conf/auth-gfmd.conf
+#	/mnt/conf/auth-gfsd.conf
+#	/mnt/conf/auth-client.conf
+authconfig -n all
+
+for host in $gfmds; do
+  ssh "$host" \
+    sudo "${gfarm_src_path}/docker/dev/common/authconfig-setup.sh" gfmd &
+done
+for host in $gfsds; do
+  ssh "$host" \
+    sudo "${gfarm_src_path}/docker/dev/common/authconfig-setup.sh" gfsd &
+done
+# the following setting is not normally used,
+# because $HOME/.gfarm2rc does the job.
+for host in $clients; do
+  ssh "$host" \
+    sudo "${gfarm_src_path}/docker/dev/common/authconfig-setup.sh" client &
+done
+wait
 
 # create the hook files:
 hook_dir="${HOST_SHARE_DIR}/hook"
@@ -293,49 +433,30 @@ wait
 # fix timing problem since the introduction of hookconfig
 sleep 1
 
-set +x
+# for jwt-server HTTPS
+sudo mkdir -p ${HOST_SHARE_DIR}/httpd
+sudo cp /etc/grid-security/httpdcert.pem ${HOST_SHARE_DIR}/httpd/
+sudo cp /etc/grid-security/httpdkey.pem ${HOST_SHARE_DIR}/httpd/
 
-test_auth() {
-  echo "***** $authtype *****"
-  gfmdhost -l
-  gfhost -lv
-  num_gfmdhost=$(gfmdhost | wc -l)
-  num_gfsched=$(gfsched | wc -l)
-  [ $num_gfmdhost -eq $GFDOCKER_NUM_GFMDS ] || exit 1
-  [ $num_gfsched -eq $GFDOCKER_NUM_GFSDS ] || exit 1
-}
+### update CA for OAuth-related web servers
 
-tmp_gfarmconf=$(mktemp)
-for authtype in sharedsecret gsi_auth gsi; do
-  if [ $authtype = sharedsecret ]; then
-    cat <<EOF  > $tmp_gfarmconf
-auth enable sharedsecret *
-auth disable gsi_auth *
-auth disable gsi *
-EOF
-  elif [ $authtype = gsi_auth ]; then
-    cat <<EOF  > $tmp_gfarmconf
-auth disable sharedsecret *
-auth enable gsi_auth *
-auth disable gsi *
-EOF
-  elif [ $authtype = gsi ]; then
-    cat <<EOF  > $tmp_gfarmconf
-auth disable sharedsecret *
-auth disable gsi_auth *
-auth enable gsi *
-EOF
-  fi
-  GFARM_CONFIG_FILE=$tmp_gfarmconf test_auth $authtype
-done
-rm -f $tmp_gfarmconf
+CA_DIR=/root/simple_ca
 
-LOG=/var/log/messages
-SYSLOG=/var/log/syslog
-if [ -f $SYSLOG ]; then
-   LOG=$SYSLOG
-fi
-sudo tail -1 $LOG
-
-date
-echo "GFDOCKER_PRJ_NAME=$GFDOCKER_PRJ_NAME: setup is now complete."
+case $GFDOCKER_PRJ_NAME in
+    centos*-* | almalinux*-* | rockylinux*-*)
+	for host in $clients; do
+	   ssh "$host" sudo cp ${CA_DIR}/cacert.pem /usr/share/pki/ca-trust-source/anchors
+	   ssh "$host" sudo update-ca-trust
+        done
+        ;;
+    ubuntu*-*)
+	for host in $clients; do
+	   ssh "$host" sudo mkdir -p /usr/share/ca-certificates/gfarm
+	   ssh "$host" sudo cp ${CA_DIR}/cacert.pem /usr/share/ca-certificates/gfarm
+	   ssh "$host" sudo "echo 'gfarm/cacert.pem' | sudo tee -a /etc/ca-certificates.conf"
+	   ssh "$host" sudo update-ca-certificates
+        done
+        ;;
+    *)
+	;;
+esac

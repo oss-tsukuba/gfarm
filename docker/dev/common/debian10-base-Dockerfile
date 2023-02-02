@@ -25,6 +25,7 @@ RUN apt-get update \
     postgresql-client \
     libfuse-dev \
     fuse \
+    autofs \
     libacl1-dev \
     ruby \
     git \
@@ -32,6 +33,12 @@ RUN apt-get update \
     globus-gsi-cert-utils-progs \
     globus-proxy-utils \
     && globus-version \
+    && apt-get -y install \
+    python3 \
+    python3-docopt \
+    python3-schema \
+    python3-tqdm \
+    flake8 \
     && sed -i -E "s/# (${LANG})/\1/" /etc/locale.gen \
     && locale-gen \
     && update-locale LANG=${LANG} \
@@ -59,8 +66,7 @@ ARG GFDOCKER_HOSTNAME_PREFIX_GFMD
 ARG GFDOCKER_HOSTNAME_PREFIX_GFSD
 ARG GFDOCKER_HOSTNAME_SUFFIX
 ARG GFDOCKER_USE_SAN_FOR_GFSD
-COPY . /tmp/gfarm
-COPY gfarm2fs /tmp/gfarm2fs
-RUN "/tmp/gfarm/docker/dev/common/setup-univ.sh"
+COPY --chown=1000:1000 . /work/gfarm
+RUN "/work/gfarm/docker/dev/common/setup-univ.sh"
 
 CMD ["/sbin/init"]

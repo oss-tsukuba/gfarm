@@ -12,18 +12,18 @@ if [ "$?" -ne 0 ] || [ "X${flags}" = X ]; then
 fi
 
 SHORT_TIMEOUT_CONF_FILE="${localtmp}/SHORT_timeout.gfarm2.conf"
-if [ X"$GFARM_CONFIG_FILE" != X ]; then
-    conf_file="$GFARM_CONFIG_FILE"
-else
-    conf_file=~/.gfarm2rc
-fi
-if [ -r "$conf_file" ]; then
-    cp "$conf_file" "$SHORT_TIMEOUT_CONF_FILE" || exit
-fi
-cat << __EOF__ >> "$SHORT_TIMEOUT_CONF_FILE" || exit
+cat << __EOF__ > "$SHORT_TIMEOUT_CONF_FILE" || exit
 no_file_system_node_timeout 3
 #log_level debug
 __EOF__
+if [ X"$GFARM_CONFIG_FILE" != X ]; then
+    conf_file="$GFARM_CONFIG_FILE"
+else
+    conf_file=$HOME/.gfarm2rc
+fi
+if [ -r "$conf_file" ]; then
+    echo "include $conf_file" >> "$SHORT_TIMEOUT_CONF_FILE" || exit $exit_fail
+fi
 
 test_readonly_enable() {
   host="$1"
