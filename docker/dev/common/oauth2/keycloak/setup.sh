@@ -1,5 +1,10 @@
 #!/usr/bin/bash
 
+keytool -importkeystore -srckeystore /mnt/keycloak/keycloak.p12 \
+  -srcstoretype PKCS12 -srcstorepass PASSWORD \
+  -destkeystore /opt/jboss/keycloak/standalone/configuration/keycloak.jks \
+  -deststoretype JKS -deststorepass PASSWORD -destkeypass PASSWORD
+
 ignore() {
     echo 1>&2 "ERROR IGNORED"
     # true
