@@ -12,7 +12,22 @@ pad() {
 	echo $d | cut -b -$c
 }
 
+date_string() {
+	while read a b
+	do
+		case $a in
+		\"exp\":|\"iat\":|\"auth_time\":|\"nbf\":)
+			bb=$(echo $b | cut -d, -f 1)
+			[ $b = $bb ] && COMMA= || COMMA=,
+			echo "  "$a $(date --date=@$bb)$COMMA ;;
+		\"*)
+			echo "  "$a $b ;;
+		*)
+			echo $a $b ;;
+		esac
+	done
+}
 for i in 1 2; do
 	data=$(cut -d. -f $i $FILE)
-	pad $data | base64 -d | jq
+	pad $data | base64 -d | jq | date_string
 done
