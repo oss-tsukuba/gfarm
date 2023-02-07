@@ -429,7 +429,7 @@ static void
 db_journal_user_auth_arg_destroy(struct db_user_auth_arg *arg)
 {
 	free(arg->username);
-	free(arg->auth_method);
+	free(arg->auth_id_type);
 	free(arg->auth_user_id);
 	free(arg);
 }
@@ -438,7 +438,7 @@ static void
 db_journal_user_auth_remove_arg_destroy(struct db_user_auth_remove_arg *arg)
 {
 	free(arg->username);
-	free(arg->auth_method);
+	free(arg->auth_id_type);
 	free(arg);
 }
 
@@ -1313,7 +1313,7 @@ db_journal_write_user_auth_size_add(enum journal_operation ope,
 	if ((e = gfp_xdr_send_size_add(sizep,
 		GFM_JOURNAL_USER_AUTH_XDR_FMT,
 		ua->username,
-		ua->auth_method,
+		ua->auth_id_type,
 		ua->auth_user_id)) != GFARM_ERR_NO_ERROR) {
 			GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
 			"gfp_xdr_send_size_add", e, ope);
@@ -1332,7 +1332,7 @@ db_journal_write_user_auth_core(enum journal_operation ope, void *arg)
 	if ((e = gfp_xdr_send(JOURNAL_W_XDR,
 		GFM_JOURNAL_USER_AUTH_XDR_FMT,
 		m->username,
-		m->auth_method,
+		m->auth_id_type,
 		m->auth_user_id)) != GFARM_ERR_NO_ERROR) {
 			GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
 			"gfp_xdr_send", e, ope);
@@ -1359,7 +1359,7 @@ db_journal_read_user_auth(struct gfp_xdr *xdr, enum journal_operation ope,
 	if ((e = gfp_xdr_recv(xdr, 1, &eof,
 	    GFM_JOURNAL_USER_AUTH_XDR_FMT,
 	    &arg->username,
-	    &arg->auth_method,
+	    &arg->auth_id_type,
 	    &arg->auth_user_id)) != GFARM_ERR_NO_ERROR) {
 		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
 		    "gfp_xdr_recv", e, ope);
@@ -1408,7 +1408,7 @@ db_journal_write_user_auth_remove_size_add(enum journal_operation ope,
 	if ((e = gfp_xdr_send_size_add(sizep,
 	    GFM_JOURNAL_USER_AUTH_REMOVE_XDR_FMT,
 	    ua->username,
-	    ua->auth_method)) != GFARM_ERR_NO_ERROR) {
+	    ua->auth_id_type)) != GFARM_ERR_NO_ERROR) {
 		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
 		    "gfp_xdr_send_size_add", e, ope);
 		return (e);
@@ -1426,7 +1426,7 @@ db_journal_write_user_auth_remove_core(enum journal_operation ope, void *arg)
 	if ((e = gfp_xdr_send(JOURNAL_W_XDR,
 	    GFM_JOURNAL_USER_AUTH_REMOVE_XDR_FMT,
 	    m->username,
-	    m->auth_method)) != GFARM_ERR_NO_ERROR) {
+	    m->auth_id_type)) != GFARM_ERR_NO_ERROR) {
 		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
 		    "gfp_xdr_send", e, ope);
 		return (e);
@@ -1461,7 +1461,7 @@ db_journal_read_user_auth_remove(struct gfp_xdr *xdr,
 	if ((e = gfp_xdr_recv(xdr, 1, &eof,
 	    GFM_JOURNAL_USER_AUTH_REMOVE_XDR_FMT,
 	    &arg->username,
-	    &arg->auth_method)) != GFARM_ERR_NO_ERROR) {
+	    &arg->auth_id_type)) != GFARM_ERR_NO_ERROR) {
 		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
 		    "gfp_xdr_recv", e, ope);
 	}

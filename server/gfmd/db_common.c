@@ -43,7 +43,7 @@ db_user_auth_arg_validate(void *vinfo)
 
 	return (
 	    info->username != NULL &&
-	    info->auth_method != NULL &&
+	    info->auth_id_type != NULL &&
 	    info->auth_user_id != NULL
 	);
 }

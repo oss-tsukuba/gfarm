@@ -85,14 +85,14 @@ grpassign_add_group(struct group_assignment *ga)
 }
 
 gfarm_error_t
-user_auth_id_modify(struct user *u, const char *auth_method,
+user_auth_id_modify(struct user *u, const char *auth_id_type,
 	const char *auth_user_id)
 {
 	return (GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t
-user_auth_id_remove(struct user *user, const char *auth_method)
+user_auth_id_remove(struct user *user, const char *auth_id_type)
 {
 	return (GFARM_ERR_NO_ERROR);
 }

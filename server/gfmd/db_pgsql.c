@@ -1991,7 +1991,7 @@ pgsql_user_auth_update(gfarm_uint64_t seqnum, struct db_user_auth_arg *info,
 		return (e);
 	}
 	paramValues[0] = info->username;
-	paramValues[1] = info->auth_method;
+	paramValues[1] = info->auth_id_type;
 	paramValues[2] = info->auth_user_id;
 	res = PQexecParams(conn,
 	    sql,
@@ -2020,7 +2020,7 @@ gfarm_pgsql_user_auth_add(gfarm_uint64_t seqnum,
 	gfarm_error_t e;
 
 	e = pgsql_user_auth_update(seqnum, arg,
-	    "INSERT INTO GfarmUserAuth (username, authMethod, authUserId) "
+	    "INSERT INTO GfarmUserAuth (username, authIDType, authUserId) "
 		"VALUES ($1, $2, $3)",
 	    gfarm_pgsql_check_insert, "pgsql_user_auth_add");
 
@@ -2037,7 +2037,7 @@ gfarm_pgsql_user_auth_modify(gfarm_uint64_t seqnum,
 	e = pgsql_user_auth_update(seqnum, arg,
 	    "UPDATE GfarmUserAuth "
 		"SET authUserId = $3 "
-		"WHERE username = $1 AND authMethod = $2",
+		"WHERE username = $1 AND authIDType = $2",
 	    gfarm_pgsql_check_update_or_delete, "pgsql_user_auth_modify");
 
 	free_arg(arg);
@@ -2052,9 +2052,9 @@ gfarm_pgsql_user_auth_remove(gfarm_uint64_t seqnum,
 	const char *paramValues[2];
 
 	paramValues[0] = arg->username;
-	paramValues[1] = arg->auth_method;
+	paramValues[1] = arg->auth_id_type;
 	e = gfarm_pgsql_update_or_delete(seqnum,
-	    "DELETE FROM GfarmUserAuth WHERE username = $1 AND authMethod = $2",
+	    "DELETE FROM GfarmUserAuth WHERE username = $1 AND authIDType = $2",
 	    2, /* number of params */
 	    NULL, /* param types */
 	    paramValues,
@@ -2083,7 +2083,7 @@ user_auth_info_set_fields_from_copy_binary(
 
 	info->username =
 	    get_string_from_copy_binary(&buf, &residual);
-	info->auth_method =
+	info->auth_id_type =
 	    get_string_from_copy_binary(&buf, &residual);
 	info->auth_user_id =
 	    get_string_from_copy_binary(&buf, &residual);

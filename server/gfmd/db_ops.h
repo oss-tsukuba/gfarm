@@ -40,13 +40,13 @@ struct db_user_modify_arg {
 
 struct db_user_auth_arg {
        char *username;
-       char *auth_method;
+       char *auth_id_type;
        char *auth_user_id;
 };
 
 struct db_user_auth_remove_arg {
        char *username;
-       char *auth_method;
+       char *auth_id_type;
 };
 
 struct db_group_modify_arg {
