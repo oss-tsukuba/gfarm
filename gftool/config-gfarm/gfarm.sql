@@ -32,9 +32,9 @@ CREATE TABLE GfarmUser (
 CREATE TABLE GfarmUserAuth (
        username		   VARCHAR(64)	NOT NULL
               REFERENCES GfarmUser(username) ON DELETE CASCADE,
-       authMethod	  VARCHAR(64)   NOT NULL,
+       authIDType	  VARCHAR(64)   NOT NULL,
        authUserID	  VARCHAR(1024),
-PRIMARY KEY(username, authMethod)
+PRIMARY KEY(username, authIDType)
 );
 
 CREATE TABLE GfarmGroup (

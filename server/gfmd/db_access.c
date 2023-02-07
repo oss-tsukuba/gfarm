@@ -770,7 +770,7 @@ db_user_auth_dup(const struct db_user_auth_arg *ua, size_t size)
 {
 	struct db_user_auth_arg *r;
 	size_t usize = strlen(ua->username) + 1;
-	size_t msize = strlen(ua->auth_method) + 1;
+	size_t msize = strlen(ua->auth_id_type) + 1;
 	size_t asize = strlen(ua->auth_user_id) + 1;
 	size_t sz;
 	int overflow = 0;
@@ -787,11 +787,11 @@ db_user_auth_dup(const struct db_user_auth_arg *ua, size_t size)
 		return (NULL);
 	}
 	r->username = (char *)r + size;
-	r->auth_method = r->username + usize;
-	r->auth_user_id = r->auth_method + msize;
+	r->auth_id_type = r->username + usize;
+	r->auth_user_id = r->auth_id_type + msize;
 
 	strcpy(r->username, ua->username);
-	strcpy(r->auth_method, ua->auth_method);
+	strcpy(r->auth_id_type, ua->auth_id_type);
 	strcpy(r->auth_user_id, ua->auth_user_id);
 	return (r);
 }
@@ -801,7 +801,7 @@ db_user_auth_remove_dup(const struct db_user_auth_remove_arg *ua, size_t size)
 {
 	struct db_user_auth_remove_arg *r;
 	size_t usize = strlen(ua->username) + 1;
-	size_t msize = strlen(ua->auth_method) + 1;
+	size_t msize = strlen(ua->auth_id_type) + 1;
 	size_t sz;
 	int overflow = 0;
 
@@ -818,10 +818,10 @@ db_user_auth_remove_dup(const struct db_user_auth_remove_arg *ua, size_t size)
 		return (NULL);
 	}
 	r->username = (char *)r + size;
-	r->auth_method = r->username + usize;
+	r->auth_id_type = r->username + usize;
 
 	strcpy(r->username, ua->username);
-	strcpy(r->auth_method, ua->auth_method);
+	strcpy(r->auth_id_type, ua->auth_id_type);
 	return (r);
 }
 

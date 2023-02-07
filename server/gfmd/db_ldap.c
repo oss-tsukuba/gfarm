@@ -1552,13 +1552,13 @@ static gfarm_error_t gfarm_ldap_user_auth_set_field(void *info,
 
 struct gfarm_ldap_user_auth_key {
 	const char *username;
-	const char *auth_method;
+	const char *auth_id_type;
 };
 
 static const struct gfarm_ldap_generic_info_ops gfarm_ldap_user_auth_ops = {
 	&db_base_user_auth_arg_ops,
 	"(objectclass=GFarmUserAuth)",
-	"username=%s, authMethod=%s, %s",
+	"username=%s, authIDType=%s, %s",
 	gfarm_ldap_user_auth_make_dn,
 	gfarm_ldap_user_auth_set_field,
 };
@@ -1570,7 +1570,7 @@ gfarm_ldap_user_auth_make_dn(void *vkey)
 	char *dn;
 
 	GFARM_MALLOC_ARRAY(dn, strlen(gfarm_ldap_user_auth_ops.dn_template) +
-		strlen(key->username) + strlen(key->auth_method) +
+		strlen(key->username) + strlen(key->auth_id_type) +
 		strlen(gfarm_ldap_base_dn) + 1);
 	if (dn == NULL) {
 		gflog_debug(GFARM_MSG_UNFIXED,
@@ -1578,7 +1578,7 @@ gfarm_ldap_user_auth_make_dn(void *vkey)
 		return (NULL);
 	}
 	sprintf(dn, gfarm_ldap_user_auth_ops.dn_template,
-		key->username, key->auth_method, gfarm_ldap_base_dn);
+		key->username, key->auth_id_type, gfarm_ldap_base_dn);
 	return (dn);
 }
 
@@ -1596,8 +1596,8 @@ gfarm_ldap_user_auth_set_field(
 		info->username = strdup_log(vals[0], diag);
 		if (info->username == NULL)
 			err = GFARM_ERR_NO_MEMORY;
-	} else if (strcasecmp(attribute, "authMethod") == 0) {
-		if (info->auth_method == NULL)
+	} else if (strcasecmp(attribute, "authIDType") == 0) {
+		if (info->auth_id_type == NULL)
 			err = GFARM_ERR_NO_MEMORY;
 	} else if (strcasecmp(attribute, "authUserId") == 0) {
 		/* XXX FIXME - hack to allow null string */
@@ -1625,7 +1625,7 @@ gfarm_ldap_user_auth_update(
 	struct gfarm_ldap_user_auth_key key;
 
 	key.username = info->username;
-	key.auth_method = info->auth_method;
+	key.auth_id_type = info->auth_id_type;
 
 	i = 0;
 	set_string_mod(&modv[i], mod_op,
@@ -1635,7 +1635,7 @@ gfarm_ldap_user_auth_update(
 	    "username", info->username, &storage[i]);
 	i++;
 	set_string_mod(&modv[i], mod_op,
-	    "authMethod", info->auth_method, &storage[i]);
+	    "authIDType", info->auth_id_type, &storage[i]);
 	i++;
 	/* XXX FIXME - hack to allow null string */
 	set_string_mod(&modv[i], mod_op, "authUserId",
@@ -1676,7 +1676,7 @@ gfarm_ldap_user_auth_remove(gfarm_uint64_t seqnum,
 	struct gfarm_ldap_user_auth_key key;
 
 	key.username = arg->username;
-	key.auth_method = arg->auth_method;
+	key.auth_id_type = arg->auth_id_type;
 
 	e = gfarm_ldap_generic_info_remove(&key, &gfarm_ldap_user_auth_ops);
 	free(arg);

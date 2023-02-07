@@ -192,7 +192,7 @@ db_journal_apply_user_auth_add_or_modify(gfarm_uint64_t seqnum,
 	if (u == NULL)
 		return (GFARM_ERR_NO_SUCH_USER);
 
-	e = user_auth_id_modify(u, arg->auth_method, arg->auth_user_id);
+	e = user_auth_id_modify(u, arg->auth_id_type, arg->auth_user_id);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
@@ -209,7 +209,7 @@ db_journal_apply_user_auth_remove(gfarm_uint64_t seqnum,
 	if (u == NULL)
 		return (GFARM_ERR_NO_SUCH_USER);
 
-	return (user_auth_id_remove(u, arg->auth_method));
+	return (user_auth_id_remove(u, arg->auth_id_type));
 }
 
 /**********************************************************/
