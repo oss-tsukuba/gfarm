@@ -163,6 +163,8 @@ if use_keycloak:
     build:
      context: ../../
      dockerfile: docker/dev/common/oauth2/tomcat/Dockerfile
+    volumes:
+      - ./mnt:/mnt:ro
     networks:
       gfarm_dev:
     environment:
@@ -182,6 +184,8 @@ if use_keycloak:
   keycloak:
     container_name: keycloak
     build: common/oauth2/keycloak
+    volumes:
+      - ./mnt:/mnt:ro
     networks:
       gfarm_dev:
     environment:

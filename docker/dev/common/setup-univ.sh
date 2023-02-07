@@ -165,6 +165,22 @@ grid-ca-sign -in "/etc/grid-security/${name}cert_request.pem" \
   -passin pass:"$ca_key_pass" -md $MD -dir ${CA_DIR}
 grid-cert-info -file "/etc/grid-security/${name}cert.pem"
 
+name="keycloak"
+fqdn="${name}${GFDOCKER_HOSTNAME_SUFFIX}"
+echo "$force_yes" \
+  | grid-cert-request -verbose -nopw -prefix "$name" \
+   -host "$fqdn" -dns "${fqdn},${name}" \
+    -ca "$(cat /ca_hash)"
+grid-ca-sign -in "/etc/grid-security/${name}cert_request.pem" \
+  -out "/etc/grid-security/${name}cert.pem" \
+  -passin pass:"$ca_key_pass" -md $MD -dir ${CA_DIR}
+grid-cert-info -file "/etc/grid-security/${name}cert.pem"
+openssl pkcs12 -export -in "/etc/grid-security/${name}cert.pem" \
+  -name "${name}" -inkey "/etc/grid-security/${name}key.pem" \
+  -passin pass:"$ca_key_pass" \
+  -out "/etc/grid-security/${name}.p12" \
+  -passout pass:"$ca_key_pass"
+
 base_ssh_config="${gfarm_src_path}/docker/dev/common/ssh_config"
 echo >> /etc/sudoers
 echo '# for Gfarm' >> /etc/sudoers

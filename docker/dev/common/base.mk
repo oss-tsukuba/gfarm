@@ -328,6 +328,7 @@ define reborn
 	if "$(GFDOCKER_SASL_USE_KEYCLOAK)"; then \
 		$(COMPOSE) exec $(CONTSHELL_FLAGS) httpd /setup.sh; \
 		$(COMPOSE) exec $(CONTSHELL_FLAGS) keycloak ./setup.sh; \
+		$(COMPOSE) exec $(CONTSHELL_FLAGS) tomcat /setup.sh; \
 	fi
 	$(authtest)
 endef
