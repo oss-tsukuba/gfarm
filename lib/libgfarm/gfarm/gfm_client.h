@@ -117,6 +117,16 @@ gfarm_error_t gfm_client_user_info_modify(struct gfm_connection *,
 	const struct gfarm_user_info *);
 gfarm_error_t gfm_client_user_info_remove(struct gfm_connection *,
 	const char *);
+gfarm_error_t gfm_client_user_info_get_by_auth_id(struct gfm_connection *,
+	const char *, const char *, struct gfarm_user_info *);
+gfarm_error_t gfm_client_user_auth_get(struct gfm_connection *,
+       const char *, const char *, char **);
+gfarm_error_t gfm_client_user_auth_set(struct gfm_connection *,
+	const char *, const char *, const char *);
+gfarm_error_t gfm_client_user_auth_modify(struct gfm_connection *,
+	const char *, const char *, const char *);
+gfarm_error_t gfm_client_user_auth_remove(struct gfm_connection *,
+	const char *, const char *);
 
 gfarm_error_t gfm_client_group_info_get_all(struct gfm_connection *,
 	int *, struct gfarm_group_info **);

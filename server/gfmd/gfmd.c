@@ -209,6 +209,22 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 	case GFM_PROTO_USER_INFO_GET_MY_OWN:
 		e = gfm_server_user_info_get_my_own(peer, from_client, skip);
 		break;
+	case GFM_PROTO_USER_INFO_GET_BY_AUTH_ID:
+		e = gfm_server_user_info_get_by_auth_id(peer,
+				from_client, skip);
+		break;
+	case GFM_PROTO_USER_AUTH_GET:
+		e = gfm_server_user_auth_get(peer, from_client, skip);
+		break;
+	case GFM_PROTO_USER_AUTH_SET:
+		e = gfm_server_user_auth_set(peer, from_client, skip);
+		break;
+	case GFM_PROTO_USER_AUTH_MODIFY:
+		e = gfm_server_user_auth_modify(peer, from_client, skip);
+		break;
+	case GFM_PROTO_USER_AUTH_REMOVE:
+		e = gfm_server_user_auth_remove(peer, from_client, skip);
+		break;
 	case GFM_PROTO_GROUP_INFO_GET_ALL:
 		e = gfm_server_group_info_get_all(peer, from_client, skip);
 		break;

@@ -1741,6 +1741,56 @@ gfm_client_user_info_remove(struct gfm_connection *gfm_server,
 	    GFM_PROTO_USER_INFO_REMOVE, "s/", username));
 }
 
+gfarm_error_t
+gfm_client_user_info_get_by_auth_id(struct gfm_connection *gfm_server,
+	    const char *auth_id_type, const char *auth_user_id,
+	    struct gfarm_user_info *user)
+{
+	return (gfm_client_rpc(gfm_server, 0,
+		GFM_PROTO_USER_INFO_GET_BY_AUTH_ID, "ss/ssss",
+		auth_id_type, auth_user_id,
+		&user->username, &user->realname,
+		&user->homedir, &user->gsi_dn));
+}
+
+gfarm_error_t
+gfm_client_user_auth_get(struct gfm_connection *gfm_server,
+	const char *username, const char *auth_id_type, char **auth_user_idp)
+{
+	return (gfm_client_rpc(gfm_server, 0,
+		GFM_PROTO_USER_AUTH_GET, "ss/s",
+		username, auth_id_type, &auth_user_idp));
+}
+
+gfarm_error_t
+gfm_client_user_auth_set(struct gfm_connection *gfm_server,
+	const char *username, const char *auth_id_type,
+	const char *auth_user_id)
+{
+	return (gfm_client_rpc(gfm_server, 0,
+		GFM_PROTO_USER_AUTH_SET, "sss/",
+		username, auth_id_type, auth_user_id));
+}
+
+gfarm_error_t
+gfm_client_user_auth_modify(struct gfm_connection *gfm_server,
+	const char *username, const char *auth_id_type,
+	const char *auth_user_id)
+{
+	return (gfm_client_rpc(gfm_server, 0,
+		GFM_PROTO_USER_AUTH_MODIFY, "sss/",
+		username, auth_id_type, auth_user_id));
+}
+
+gfarm_error_t
+gfm_client_user_auth_remove(struct gfm_connection *gfm_server,
+	const char *username, const char *auth_id_type)
+{
+	return (gfm_client_rpc(gfm_server, 0,
+		GFM_PROTO_USER_AUTH_REMOVE, "ss/",
+		username, auth_id_type));
+}
+
 static gfarm_error_t
 get_ngroups(struct gfm_connection *gfm_server,
 	int ngroups, struct gfarm_group_info *groups)
