@@ -176,8 +176,7 @@ if use_keycloak:
       gfarm_dev:
     environment:
       - 'CATALINA_OPTS=-Duser.timezone=Asia/Tokyo'
-  db:
-    container_name: mariadb
+  jwt-db:
     image: mariadb
     volumes:
       - "./common/oauth2/mariadb/initdb.d:/docker-entrypoint-initdb.d"
