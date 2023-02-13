@@ -43,6 +43,8 @@ gfarm_auth_request_sasl_common(struct gfp_xdr *conn,
 	int save_errno, eof, r;
 	char self_hsbuf[NI_MAXHOST + NI_MAXSERV];
 	char peer_hsbuf[NI_MAXHOST + NI_MAXSERV];
+	char *self_hs = self_hsbuf;
+	char *peer_hs = peer_hsbuf;
 	sasl_conn_t *sasl_conn;
 	char *mechanism_candidates = NULL;
 	const char *chosen_mechanism = NULL;
@@ -60,7 +62,11 @@ gfarm_auth_request_sasl_common(struct gfp_xdr *conn,
 	save_errno = gfarm_sasl_addr_string(gfp_xdr_fd(conn),
 	    self_hsbuf, sizeof(self_hsbuf),
 	    peer_hsbuf, sizeof(peer_hsbuf), diag);
-	if (save_errno != 0)
+	if (save_errno == EAFNOSUPPORT) {
+		/* sasl_client_new() doesn't work with AF_UNIX */
+		self_hs = NULL;
+		peer_hs = NULL;
+	} else if (save_errno != 0)
 		return (gfarm_errno_to_error(save_errno));
 
 	e = gfp_xdr_tls_alloc(conn, gfp_xdr_fd(conn), GFP_XDR_TLS_INITIATE);
@@ -77,7 +83,7 @@ gfarm_auth_request_sasl_common(struct gfp_xdr *conn,
 	error = gfarm_tls_server_cert_is_ok(conn, service_tag, hostname);
 
 	if (error == GFARM_ERR_NO_ERROR) {
-		r = sasl_client_new("gfarm", hostname, self_hsbuf, peer_hsbuf,
+		r = sasl_client_new("gfarm", hostname, self_hs, peer_hs,
 		    NULL, 0, &sasl_conn);
 		if (r != SASL_OK) {
 			gflog_notice(GFARM_MSG_UNFIXED,
@@ -482,23 +488,33 @@ gfarm_auth_request_sasl_send_server_auth_result(int events, int fd,
 		int save_errno, r;
 		char self_hsbuf[NI_MAXHOST + NI_MAXSERV];
 		char peer_hsbuf[NI_MAXHOST + NI_MAXSERV];
+		char *self_hs = self_hs;
+		char *peer_hs = peer_hs;
 
 		save_errno = gfarm_sasl_addr_string(gfp_xdr_fd(state->conn),
 		    self_hsbuf, sizeof(self_hsbuf),
 		    peer_hsbuf, sizeof(peer_hsbuf), state->diag);
-		if (save_errno != 0) {
+		if (save_errno != 0 && save_errno != EAFNOSUPPORT) {
 			error = gfarm_errno_to_error(save_errno);
-		} else if ((r = sasl_client_new("gfarm", state->hostname,
-		    self_hsbuf, peer_hsbuf, NULL, 0, &state->sasl_conn))
-		    != SASL_OK) {
-			gflog_notice(GFARM_MSG_UNFIXED,
-			    "%s: sasl_client_new(): %s",
-			    state->hostname, sasl_errstring(r, NULL, NULL));
-			/*
-			 * XXX change this to GFARM_ERR_AUTHENTICATION
-			 * if graceful
-			 */
-			error = GFARM_ERR_PROTOCOL_NOT_AVAILABLE;
+		} else {
+			if (save_errno == EAFNOSUPPORT) {
+				/* sasl_client_new() doesn't work w/ AF_UNIX */
+				self_hs = NULL;
+				peer_hs = NULL;
+			}
+			if ((r = sasl_client_new("gfarm", state->hostname,
+			    self_hs, peer_hs, NULL, 0, &state->sasl_conn))
+			    != SASL_OK) {
+				gflog_notice(GFARM_MSG_UNFIXED,
+				    "%s: sasl_client_new(): %s",
+				    state->hostname,
+				    sasl_errstring(r, NULL, NULL));
+				/*
+				 * XXX change this to GFARM_ERR_AUTHENTICATION
+				 * if graceful
+				 */
+				error = GFARM_ERR_PROTOCOL_NOT_AVAILABLE;
+			}
 		}
 	}
 

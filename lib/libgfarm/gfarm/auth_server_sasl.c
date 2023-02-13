@@ -33,6 +33,8 @@ gfarm_authorize_sasl_common(struct gfp_xdr *conn,
 	int save_errno, eof, r, count;
 	char self_hsbuf[NI_MAXHOST + NI_MAXSERV];
 	char peer_hsbuf[NI_MAXHOST + NI_MAXSERV];
+	char *self_hs = self_hsbuf;
+	char *peer_hs = peer_hsbuf;
 	sasl_conn_t *sasl_conn;
 	char *chosen_mechanism = NULL;
 	gfarm_int32_t has_initial_response, result;
@@ -52,7 +54,11 @@ gfarm_authorize_sasl_common(struct gfp_xdr *conn,
 	save_errno = gfarm_sasl_addr_string(gfp_xdr_fd(conn),
 	    self_hsbuf, sizeof(self_hsbuf),
 	    peer_hsbuf, sizeof(peer_hsbuf), diag);
-	if (save_errno != 0)
+	if (save_errno == EAFNOSUPPORT) {
+		/* sasl_server_new() doesn't work with AF_UNIX */
+		self_hs = NULL;
+		peer_hs = NULL;
+	} else if (save_errno != 0)
 		return (gfarm_errno_to_error(save_errno));
 
 	e = gfp_xdr_tls_alloc(conn, gfp_xdr_fd(conn), GFP_XDR_TLS_ACCEPT);
@@ -85,7 +91,7 @@ gfarm_authorize_sasl_common(struct gfp_xdr *conn,
 	}
 
 	r = sasl_server_new("gfarm", gfarm_host_get_self_name(), NULL,
-	    self_hsbuf, peer_hsbuf, NULL, 0, &sasl_conn);
+	    self_hs, peer_hs, NULL, 0, &sasl_conn);
 	if (r != SASL_OK) {
 		gflog_notice(GFARM_MSG_UNFIXED, "sasl_server_new(): %s",
 		    sasl_errstring(r, NULL, NULL));
