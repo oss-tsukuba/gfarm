@@ -459,11 +459,11 @@ case $GFDOCKER_PRJ_NAME in
 	   ssh "$host" sudo update-ca-trust
         done
         ;;
-    ubuntu*-*)
+    ubuntu*-* | debian*-*)
 	for host in $gfmds $gfsds $clients; do
 	   ssh "$host" sudo mkdir -p /usr/share/ca-certificates/gfarm
 	   ssh "$host" sudo cp ${CA_DIR}/cacert.pem /usr/share/ca-certificates/gfarm
-	   ssh "$host" sudo "echo 'gfarm/cacert.pem' | sudo tee -a /etc/ca-certificates.conf"
+	   ssh "$host" "echo 'gfarm/cacert.pem' | sudo tee -a /etc/ca-certificates.conf"
 	   ssh "$host" sudo update-ca-certificates
         done
         ;;
