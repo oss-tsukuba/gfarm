@@ -435,20 +435,20 @@ sleep 1
 
 CA_DIR=/root/simple_ca
 
-# for tomcat
-sudo mkdir -p ${HOST_SHARE_DIR}/tomcat
-sudo cp ${CA_DIR}/cacert.pem ${HOST_SHARE_DIR}/tomcat
+# for jwt-tomcat
+sudo mkdir -p ${HOST_SHARE_DIR}/jwt-tomcat
+sudo cp ${CA_DIR}/cacert.pem ${HOST_SHARE_DIR}/jwt-tomcat
 
 # for jwt-server HTTPS
-sudo mkdir -p ${HOST_SHARE_DIR}/httpd
-sudo cp /etc/grid-security/httpdcert.pem ${HOST_SHARE_DIR}/httpd/
-sudo cp /etc/grid-security/httpdkey.pem ${HOST_SHARE_DIR}/httpd/
+sudo mkdir -p ${HOST_SHARE_DIR}/jwt-server
+sudo cp /etc/grid-security/jwt-servercert.pem ${HOST_SHARE_DIR}/jwt-server/
+sudo cp /etc/grid-security/jwt-serverkey.pem ${HOST_SHARE_DIR}/jwt-server/
 
-# for keycloak HTTPS
-sudo mkdir -p ${HOST_SHARE_DIR}/keycloak
-sudo cp /etc/grid-security/keycloakcert.pem ${HOST_SHARE_DIR}/keycloak/
-sudo cp /etc/grid-security/keycloakkey.pem ${HOST_SHARE_DIR}/keycloak/
-sudo cp /etc/grid-security/keycloak.p12 ${HOST_SHARE_DIR}/keycloak/
+# for jwt-keycloak HTTPS
+sudo mkdir -p ${HOST_SHARE_DIR}/jwt-keycloak
+sudo cp /etc/grid-security/jwt-keycloakcert.pem ${HOST_SHARE_DIR}/jwt-keycloak/
+sudo cp /etc/grid-security/jwt-keycloakkey.pem ${HOST_SHARE_DIR}/jwt-keycloak/
+sudo cp /etc/grid-security/jwt-keycloak.p12 ${HOST_SHARE_DIR}/jwt-keycloak/
 
 ### update CA for OAuth-related web servers
 

@@ -147,17 +147,17 @@ for h in hosts:
 if use_keycloak:
    print('''\
 
-  ubuntu:
-    container_name: ubuntu
+  desktop:
     build: common/oauth2/ubuntu
+    volumes:
+      - ./mnt:/mnt:ro
     networks:
       gfarm_dev:
     ports:
       - "0.0.0.0:13389:3389"
     <<: *common
-  httpd:
-    container_name: httpd
-    hostname: httpd{}
+  jwt-server:
+    hostname: jwt-server{}
     build: common/oauth2/apache
     tty: true
     volumes:
@@ -165,8 +165,7 @@ if use_keycloak:
     networks:
       gfarm_dev:
     <<: *common
-  tomcat:
-    container_name: tomcat
+  jwt-tomcat:
     build:
      context: ../../
      dockerfile: docker/dev/common/oauth2/tomcat/Dockerfile
@@ -187,8 +186,7 @@ if use_keycloak:
       - MYSQL_DATABASE=gfarm
       - MYSQL_USER=gfarm
       - MYSQL_PASSWORD=gfarm123
-  keycloak:
-    container_name: keycloak
+  jwt-keycloak:
     build: common/oauth2/keycloak
     volumes:
       - ./mnt:/mnt:ro
