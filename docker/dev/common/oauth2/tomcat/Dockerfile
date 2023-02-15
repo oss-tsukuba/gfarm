@@ -6,8 +6,10 @@ COPY docker/dev/common/oauth2/tomcat/application.properties /build/src/main/reso
 ARG MAVEN_OPTS
 RUN mvn package
 
-FROM tomcat:9.0.68-jre17
+FROM tomcat:9.0.71-jdk11
 ADD docker/dev/common/oauth2/tomcat/conf/server.xml /usr/local/tomcat/conf/server.xml
-COPY --from=0 /build/target/jwt-server.war /usr/local/tomcat/webapps/jwt-server.war
+COPY --from=0 /build/target/jwt-server.war /usr/local/tomcat/
+
+ADD docker/dev/common/oauth2/tomcat/setup.sh /setup.sh
 
 CMD ["catalina.sh", "run"]

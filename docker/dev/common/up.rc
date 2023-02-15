@@ -433,24 +433,34 @@ wait
 # fix timing problem since the introduction of hookconfig
 sleep 1
 
+CA_DIR=/root/simple_ca
+
+# for tomcat
+sudo mkdir -p ${HOST_SHARE_DIR}/tomcat
+sudo cp ${CA_DIR}/cacert.pem ${HOST_SHARE_DIR}/tomcat
+
 # for jwt-server HTTPS
 sudo mkdir -p ${HOST_SHARE_DIR}/httpd
 sudo cp /etc/grid-security/httpdcert.pem ${HOST_SHARE_DIR}/httpd/
 sudo cp /etc/grid-security/httpdkey.pem ${HOST_SHARE_DIR}/httpd/
 
-### update CA for OAuth-related web servers
+# for keycloak HTTPS
+sudo mkdir -p ${HOST_SHARE_DIR}/keycloak
+sudo cp /etc/grid-security/keycloakcert.pem ${HOST_SHARE_DIR}/keycloak/
+sudo cp /etc/grid-security/keycloakkey.pem ${HOST_SHARE_DIR}/keycloak/
+sudo cp /etc/grid-security/keycloak.p12 ${HOST_SHARE_DIR}/keycloak/
 
-CA_DIR=/root/simple_ca
+### update CA for OAuth-related web servers
 
 case $GFDOCKER_PRJ_NAME in
     centos*-* | almalinux*-* | rockylinux*-*)
-	for host in $clients; do
+	for host in $gfmds $gfsds $clients; do
 	   ssh "$host" sudo cp ${CA_DIR}/cacert.pem /usr/share/pki/ca-trust-source/anchors
 	   ssh "$host" sudo update-ca-trust
         done
         ;;
     ubuntu*-*)
-	for host in $clients; do
+	for host in $gfmds $gfsds $clients; do
 	   ssh "$host" sudo mkdir -p /usr/share/ca-certificates/gfarm
 	   ssh "$host" sudo cp ${CA_DIR}/cacert.pem /usr/share/ca-certificates/gfarm
 	   ssh "$host" sudo "echo 'gfarm/cacert.pem' | sudo tee -a /etc/ca-certificates.conf"
