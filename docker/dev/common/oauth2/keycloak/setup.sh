@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 
-keytool -importkeystore -srckeystore /mnt/keycloak/keycloak.p12 \
+keytool -importkeystore -srckeystore /mnt/jwt-keycloak/jwt-keycloak.p12 \
   -srcstoretype PKCS12 -srcstorepass PASSWORD \
   -destkeystore /opt/jboss/keycloak/standalone/configuration/keycloak.jks \
   -deststoretype JKS -deststorepass PASSWORD -destkeypass PASSWORD
@@ -389,7 +389,7 @@ update_client_scopes "${CLIENT_ID_PUBLIC}" "${DEFAULT_SCOPES}" "${OPTIONAL_SCOPE
 
 create_client_id "$CLIENT_ID_CONFIDENTIAL" \
   -s publicClient=false \
-  -s 'redirectUris=["https://httpd.test/*", "http://httpd.test/*", "https://httpd/*", "http://httpd/*"]' \
+  -s 'redirectUris=["https://jwt-server.test/*", "http://jwt-server.test/*", "https://jwt-server/*", "http://jwt-server/*"]' \
   -s 'attributes."client.offline.session.idle.timeout"="86400"'\
   -s 'attributes."client.offline.session.max.lifespan"="31536000"'
 update_client_scopes "${CLIENT_ID_CONFIDENTIAL}" \

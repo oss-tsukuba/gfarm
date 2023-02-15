@@ -154,7 +154,7 @@ for i in $(seq 1 "$GFDOCKER_NUM_GFSDS"); do
   echo "#${GFSD_SBJ} @host@ ${fqdn}" >> "$GRID_MAPFILE"
 done
 
-name="httpd"
+name="jwt-server"
 fqdn="${name}${GFDOCKER_HOSTNAME_SUFFIX}"
 echo "$force_yes" \
   | grid-cert-request -verbose -nopw -prefix "$name" \
@@ -165,7 +165,7 @@ grid-ca-sign -in "/etc/grid-security/${name}cert_request.pem" \
   -passin pass:"$ca_key_pass" -md $MD -dir ${CA_DIR}
 grid-cert-info -file "/etc/grid-security/${name}cert.pem"
 
-name="keycloak"
+name="jwt-keycloak"
 fqdn="${name}${GFDOCKER_HOSTNAME_SUFFIX}"
 echo "$force_yes" \
   | grid-cert-request -verbose -nopw -prefix "$name" \
