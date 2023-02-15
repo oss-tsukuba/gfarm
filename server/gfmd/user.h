@@ -71,10 +71,7 @@ gfarm_error_t gfm_server_user_info_remove(struct peer *, int, int);
 
 gfarm_error_t gfm_server_user_info_get_by_auth_id(struct peer *, int, int);
 gfarm_error_t gfm_server_user_auth_get(struct peer *, int, int);
-gfarm_error_t gfm_server_user_auth_set(struct peer *, int, int);
 gfarm_error_t gfm_server_user_auth_modify(struct peer *, int, int);
-gfarm_error_t gfm_server_user_auth_remove(struct peer *, int, int);
-
 
 struct group_assignment;
 /* subroutine of grpassign_add(), shouldn't be called from elsewhere */

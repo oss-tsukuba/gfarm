@@ -39,7 +39,12 @@
 #define USER_ID_MAP_SIZE	9239
 
 /* in-core gfarm_user_info */
-enum auth_user_id_type { X509, KERBEROS, SASL, _MAX };
+enum auth_user_id_type {
+	AUTH_USER_ID_TYPE_X509,
+	AUTH_USER_ID_TYPE_KERBEROS,
+	AUTH_USER_ID_TYPE_SASL,
+	AUTH_USER_ID_TYPE_MAX
+};
 
 struct user {
 	struct gfarm_user_info ui;
@@ -53,48 +58,31 @@ struct user {
 	struct tenant *tenant;
 	char *name_in_tenant;
 
-	char **auth_user_id;
+	char *auth_user_id[AUTH_USER_ID_TYPE_MAX];
 };
 
-struct gfarm_auth_user_id_type_name_value {
-	char *name;
-	enum auth_user_id_type auth_user_id_type;
-} gfarm_auth_user_id_type_name_value_table[] = {
-	{"X509",	X509 },
-	{"Kerberos",	KERBEROS },
-	{"SASL",	SASL },
+static const char *const auth_user_id_type_map[AUTH_USER_ID_TYPE_MAX] = {
+	GFARM_AUTH_USER_ID_TYPE_X509,
+	GFARM_AUTH_USER_ID_TYPE_KERBEROS,
+	GFARM_AUTH_USER_ID_TYPE_SASL
 };
 
-char *
+const char *
 gfarm_auth_user_id_type_name(enum auth_user_id_type auth_user_id_type)
 {
-	int i;
-
-	for (i = 0;
-	     i < GFARM_ARRAY_LENGTH(gfarm_auth_user_id_type_name_value_table);
-	     i++) {
-		struct gfarm_auth_user_id_type_name_value *entry =
-		    &gfarm_auth_user_id_type_name_value_table[i];
-
-		if (entry->auth_user_id_type == auth_user_id_type)
-			return (entry->name);
-	}
-	return (NULL);
+	if (auth_user_id_type < 0 || AUTH_USER_ID_TYPE_MAX <= auth_user_id_type)
+		return (NULL);
+	return (auth_user_id_type_map[auth_user_id_type]);
 }
 
 gfarm_error_t
-gfarm_auth_user_id_type_parse(char *name, enum auth_user_id_type *p)
+gfarm_auth_user_id_type_from_name(char *name, enum auth_user_id_type *p)
 {
 	int i;
 
-	for (i = 0;
-	     i < GFARM_ARRAY_LENGTH(gfarm_auth_user_id_type_name_value_table);
-	     i++) {
-		if (strcmp(name,
-			   gfarm_auth_user_id_type_name_value_table[i].name)
-		    == 0) {
-			*p = gfarm_auth_user_id_type_name_value_table[i]
-			  .auth_user_id_type;
+	for (i = 0; i < AUTH_USER_ID_TYPE_MAX; i++) {
+		if (strcmp(name, auth_user_id_type_map[i]) == 0) {
+			*p = (enum auth_user_id_type) i;
 			return (GFARM_ERR_NO_ERROR);
 		}
 	}
@@ -138,33 +126,22 @@ gfarm_hash_user_auth(const void *key, int keylen)
 	int hash;
 
 	hash = gfarm_hash_default(str, strlen(str));
-
-	/** required? */
-	hash ^= ptr->auth_id_type + 0x9e3779b9
-		  + (hash<<6) + (hash>>2);
+	hash = gfarm_hash_add(hash, &ptr->auth_id_type, 1);
 
 	return (hash);
 }
 
 int
-gfarm_hash_key_equal_usre_auth(
+gfarm_hash_key_equal_user_auth(
 	const void *key1, int key1len,
 	const void *key2, int key2len)
 {
 	const struct user_auth_key *ptr1 = key1, *ptr2 = key2;
 	const char *str1 = ptr1->auth_user_id;
 	const char *str2 = ptr2->auth_user_id;
-	int len1, len2;
 
-	/* compare first character of the strings, short-cut in most cases. */
-	if (*str1 != *str2 || ptr1->auth_id_type != ptr2->auth_id_type)
-		return (0);
-	len1 = strlen(str1);
-	len2 = strlen(str2);
-	if (len1 != len2)
-		return (0);
-
-	return (gfarm_hash_key_equal_default(str1, len1, str2, len2));
+	return (strcmp(str1, str2) == 0 &&
+		ptr1->auth_id_type == ptr2->auth_id_type);
 }
 
 /* subroutine of grpassign_add(), shouldn't be called from elsewhere */
@@ -183,13 +160,35 @@ gfarm_error_t
 user_auth_id_modify(struct user *u, const char *auth_id_type,
 	const char *auth_user_id)
 {
-	return (GFARM_ERR_NO_ERROR);
+	enum auth_user_id_type auth_user_id_type = 0;
+	struct db_user_auth_arg arg = {
+		u->ui.username,
+		(char *)auth_id_type,
+		(char *)auth_user_id
+	};
+	gfarm_error_t e;
+
+	if ((e = gfarm_auth_user_id_type_from_name(
+			(char *)auth_id_type,
+			&auth_user_id_type)) == GFARM_ERR_NO_ERROR) {
+		if (u->auth_user_id[auth_user_id_type] == NULL) {
+			return (db_user_auth_add(&arg));
+		} else {
+			return (db_user_auth_modify(&arg));
+		}
+	}
+
+	return (e);
 }
 
 gfarm_error_t
 user_auth_id_remove(struct user *user, const char *auth_id_type)
 {
-	return (GFARM_ERR_NO_ERROR);
+	struct db_user_auth_remove_arg arg = {
+		user->ui.username,
+		(char *)auth_id_type
+	};
+	return (db_user_auth_remove(&arg));
 }
 
 
@@ -367,7 +366,7 @@ user_lookup_auth_id(
 static gfarm_error_t
 user_enter_auth_id(
 	enum auth_user_id_type auth_user_id_type,
-	const char *auth_user_id, struct user *u)
+	char *auth_user_id, struct user *u)
 {
 	struct gfarm_hash_entry *entry;
 	int created;
@@ -402,7 +401,7 @@ user_auth_add_one(void *closure, struct db_user_auth_arg *p)
 	} else {
 		enum auth_user_id_type auth_user_id_type;
 
-		e = gfarm_auth_user_id_type_parse(p->auth_id_type,
+		e = gfarm_auth_user_id_type_from_name(p->auth_id_type,
 					  &auth_user_id_type);
 
 		if (e != GFARM_ERR_NO_ERROR)
@@ -446,6 +445,7 @@ user_tenant_enter(struct gfarm_user_info *ui, struct user **upp)
 			u->ui.username = NULL; /* prevent to free this area */
 			gfarm_user_info_free(&u->ui);
 			u->ui = *ui;
+
 			return (GFARM_ERR_NO_ERROR);
 		} else {
 			gflog_debug(GFARM_MSG_1001492,
@@ -566,6 +566,8 @@ user_tenant_enter(struct gfarm_user_info *ui, struct user **upp)
 	u->tenant = tenant;
 	u->name_in_tenant = name_in_tenant;
 	*(struct user **)gfarm_hash_entry_data(tenant_entry) = u;
+
+	memset(u->auth_user_id, 0, sizeof u->auth_user_id);
 
 	if (upp != NULL)
 		*upp = u;
@@ -1144,7 +1146,7 @@ user_init(void)
 		gfarm_hash_strptr, gfarm_hash_key_equal_strptr);
 	user_id_map =
 	    gfarm_hash_table_alloc(USER_ID_MAP_SIZE,
-		gfarm_hash_user_auth, gfarm_hash_key_equal_usre_auth);
+		gfarm_hash_user_auth, gfarm_hash_key_equal_user_auth);
 	if (user_hashtab == NULL || user_dn_hashtab == NULL ||
 	    user_id_map == NULL)
 		gflog_fatal(GFARM_MSG_1000236, "no memory for user hashtab");
@@ -1810,17 +1812,14 @@ gfm_server_user_info_get_by_auth_id(
 		return (GFARM_ERR_NO_ERROR);
 	}
 
-	e = gfarm_auth_user_id_type_parse(auth_user_id_type_str,
-					  &auth_user_id_type);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED, "invalid auth_user_id_type");
-		return (e);
-	}
-
 	/* XXX FIXME too long giant lock */
 	giant_lock();
 
-	if ((e = rpc_name_with_tenant(peer, from_client,
+	e = gfarm_auth_user_id_type_from_name(auth_user_id_type_str,
+					  &auth_user_id_type);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED, "invalid auth_user_id_type");
+	} else if ((e = rpc_name_with_tenant(peer, from_client,
 	    &name_with_tenant, &process, diag)) != GFARM_ERR_NO_ERROR) {
 		/* nothing to do */
 	} else if ((u = user_lookup_auth_id(auth_user_id_type,
@@ -1855,6 +1854,7 @@ gfm_server_user_auth_get(
 	enum auth_user_id_type auth_user_id_type;
 	struct user *u;
 	struct process *process;
+	struct tenant *tenant;
 	int name_with_tenant;
 	static const char diag[] = "GFM_PROTO_USER_AUTH_GET";
 
@@ -1871,20 +1871,21 @@ gfm_server_user_auth_get(
 		return (GFARM_ERR_NO_ERROR);
 	}
 
-	e = gfarm_auth_user_id_type_parse(auth_user_id_type_str,
-					  &auth_user_id_type);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED, "invalid auth_user_id_type");
-		return (e);
-	}
-
 	/* XXX FIXME too long giant lock */
 	giant_lock();
 
-	if ((e = rpc_name_with_tenant(peer, from_client,
+	tenant = name_with_tenant ? NULL : process_get_tenant(process);
+
+	e = gfarm_auth_user_id_type_from_name(auth_user_id_type_str,
+					  &auth_user_id_type);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED, "invalid auth_user_id_type");
+	} else if ((e = rpc_name_with_tenant(peer, from_client,
 	    &name_with_tenant, &process, diag)) != GFARM_ERR_NO_ERROR) {
 		/* nothing to do */
-	} else if ((u = user_tenant_lookup(username)) == NULL) {
+	} else if ((u = name_with_tenant ?
+			user_tenant_lookup(username) :
+			user_lookup_in_tenant(username, tenant)) == NULL) {
 		e = GFARM_ERR_NO_SUCH_USER;
 	} else
 		e = GFARM_ERR_NO_ERROR;
@@ -1894,7 +1895,8 @@ gfm_server_user_auth_get(
 	} else {
 		/* peer_get_user(peer) is not NULL if from_client */
 		e = gfm_server_put_reply(peer, diag, e, "s",
-			u->auth_user_id[auth_user_id_type]);
+			u->auth_user_id[auth_user_id_type] != NULL ?
+			u->auth_user_id[auth_user_id_type] : "");
 	}
 	giant_unlock();
 	free(username);
@@ -1902,18 +1904,20 @@ gfm_server_user_auth_get(
 	return (e);
 }
 
-static gfarm_error_t
-gfm_server_user_auth_set_and_modify(struct peer *peer,
-				    int from_client, int skip, const char *diag)
+gfarm_error_t
+gfm_server_user_auth_modify(struct peer *peer,
+			    int from_client, int skip)
 {
 	gfarm_error_t e;
 	char *username;
 	char *auth_user_id_type_str;
 	char *auth_user_id;
 	enum auth_user_id_type auth_user_id_type;
-	struct user *u;
+	struct user *u, *user = peer_get_user(peer);
 	struct process *process;
+	struct tenant *tenant;
 	int name_with_tenant;
+	static const char diag[] = "GFM_PROTO_USER_AUTH_MODIFY";
 
 	e = gfm_server_get_request(peer, diag, "sss",
 		   &username, &auth_user_id_type_str, &auth_user_id);
@@ -1929,18 +1933,50 @@ gfm_server_user_auth_set_and_modify(struct peer *peer,
 		return (GFARM_ERR_NO_ERROR);
 	}
 
-	e = gfarm_auth_user_id_type_parse(auth_user_id_type_str,
-					  &auth_user_id_type);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED, "invalid auth_user_id_type");
-		return (e);
-	}
-
 	/* XXX FIXME too long giant lock */
 	giant_lock();
 
-	if ((e = rpc_name_with_tenant(peer, from_client,
-	    &name_with_tenant, &process, diag)) != GFARM_ERR_NO_ERROR) {
+	e = gfarm_auth_user_id_type_from_name(auth_user_id_type_str,
+					  &auth_user_id_type);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED, "invalid auth_user_id_type");
+	} else if (!from_client || user == NULL) {
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		gflog_debug(GFARM_MSG_1003460, "%s: %s", diag,
+			gfarm_error_string(e));
+	} else if ((process = peer_get_process(peer)) == NULL) {
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s): no process",
+			diag, peer_get_username(peer), peer_get_hostname(peer));
+	} else if ((tenant = process_get_tenant(process)) == NULL) {
+		e = GFARM_ERR_INTERNAL_ERROR;
+		gflog_error(GFARM_MSG_UNFIXED, "%s (%s@%s): no tenant: %s",
+			diag, peer_get_username(peer), peer_get_hostname(peer),
+			gfarm_error_string(e));
+	} else if (!user_is_tenant_admin(user, tenant)) {
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s): %s",
+			diag, peer_get_username(peer), peer_get_hostname(peer),
+			gfarm_error_string(e));
+	} else if ((u = user_is_super_admin(user) ?
+			user_tenant_lookup(username) :
+			user_lookup_in_tenant(username, tenant))
+			== NULL) {
+		e = GFARM_ERR_NO_SUCH_USER;
+		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) %s: %s",
+			diag, peer_get_username(peer), peer_get_hostname(peer),
+			username, gfarm_error_string(e));
+	} else if ((e = user_info_verify(&u->ui, diag)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_1003462,
+			"%s: user_info_verify: %s",
+			diag, gfarm_error_string(e));
+	} else if (gfarm_read_only_mode()) {
+		gflog_debug(GFARM_MSG_1005143, "%s (%s@%s) during read_only",
+			diag, peer_get_username(peer), peer_get_hostname(peer));
+		e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
+	} else if ((e = rpc_name_with_tenant(peer, from_client,
+			&name_with_tenant, &process, diag))
+			!= GFARM_ERR_NO_ERROR) {
 		/* nothing to do */
 	} else if ((u = user_tenant_lookup(username)) == NULL) {
 		e = GFARM_ERR_NO_SUCH_USER;
@@ -1948,80 +1984,29 @@ gfm_server_user_auth_set_and_modify(struct peer *peer,
 		e = GFARM_ERR_NO_ERROR;
 
 	if (e == GFARM_ERR_NO_ERROR) {
+
+		if (auth_user_id == NULL || strcmp(auth_user_id, "") == 0) {
+			struct db_user_auth_remove_arg arg = {
+				username,
+				auth_user_id_type_str
+			};
+			user_auth_id_remove(u, auth_user_id_type_str);
+
+			struct user_auth_key key = {
+				auth_user_id_type,
+				auth_user_id
+			};
+			gfarm_hash_purge(user_id_map, &key, sizeof(key));
+		} else {
+			user_auth_id_modify(u,
+				auth_user_id_type_str, auth_user_id);
+			user_enter_auth_id(auth_user_id_type, auth_user_id, u);
+		}
 		free(u->auth_user_id[auth_user_id_type]);
-		u->auth_user_id[auth_user_id_type] = auth_user_id;
-	}
-	giant_unlock();
-
-	free(username);
-	free(auth_user_id_type_str);
-
-	return (gfm_server_put_reply(peer, diag, e, ""));
-}
-
-gfarm_error_t
-gfm_server_user_auth_set(struct peer *peer, int from_client, int skip)
-{
-	static const char diag[] = "GFM_PROTO_USER_AUTH_SET";
-	return (gfm_server_user_auth_set_and_modify(
-	    peer, from_client, skip, diag));
-}
-
-gfarm_error_t
-gfm_server_user_auth_modify(struct peer *peer, int from_client, int skip)
-{
-	static const char diag[] = "GFM_PROTO_USER_AUTH_MODIFY";
-	return (gfm_server_user_auth_set_and_modify(
-	    peer, from_client, skip, diag));
-}
-
-gfarm_error_t
-gfm_server_user_auth_remove(struct peer *peer, int from_client, int skip)
-{
-	gfarm_error_t e;
-	char *username;
-	char *auth_user_id_type_str;
-	enum auth_user_id_type auth_user_id_type;
-	struct user *u;
-	struct process *process;
-	int name_with_tenant;
-	static const char diag[] = "GFM_PROTO_USER_AUTH_REMOVE";
-
-	e = gfm_server_get_request(peer, diag, "ss",
-		   &username, &auth_user_id_type_str);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
-		    "%s request: %s", diag, gfarm_error_string(e));
-		return (e);
-	}
-	if (skip) {
-		free(username);
-		free(auth_user_id_type_str);
-		return (GFARM_ERR_NO_ERROR);
-	}
-
-	e = gfarm_auth_user_id_type_parse(auth_user_id_type_str,
-					  &auth_user_id_type);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED, "invalid auth_user_id_type");
-		return (e);
-	}
-
-	/* XXX FIXME too long giant lock */
-	giant_lock();
-
-	if ((e = rpc_name_with_tenant(peer, from_client,
-	    &name_with_tenant, &process, diag)) != GFARM_ERR_NO_ERROR) {
-		/* nothing to do */
-	} else if ((u = user_tenant_lookup(username)) == NULL) {
-		e = GFARM_ERR_NO_SUCH_USER;
+		u->auth_user_id[auth_user_id_type] = strdup(auth_user_id);
 	} else
-		e = GFARM_ERR_NO_ERROR;
+		free(auth_user_id);
 
-	if (e == GFARM_ERR_NO_ERROR) {
-		free(u->auth_user_id[auth_user_id_type]);
-		u->auth_user_id[auth_user_id_type] = NULL;
-	}
 	giant_unlock();
 
 	free(username);

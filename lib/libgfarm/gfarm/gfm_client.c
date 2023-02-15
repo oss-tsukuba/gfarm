@@ -1759,17 +1759,7 @@ gfm_client_user_auth_get(struct gfm_connection *gfm_server,
 {
 	return (gfm_client_rpc(gfm_server, 0,
 		GFM_PROTO_USER_AUTH_GET, "ss/s",
-		username, auth_id_type, &auth_user_idp));
-}
-
-gfarm_error_t
-gfm_client_user_auth_set(struct gfm_connection *gfm_server,
-	const char *username, const char *auth_id_type,
-	const char *auth_user_id)
-{
-	return (gfm_client_rpc(gfm_server, 0,
-		GFM_PROTO_USER_AUTH_SET, "sss/",
-		username, auth_id_type, auth_user_id));
+		username, auth_id_type, auth_user_idp));
 }
 
 gfarm_error_t
@@ -1780,15 +1770,6 @@ gfm_client_user_auth_modify(struct gfm_connection *gfm_server,
 	return (gfm_client_rpc(gfm_server, 0,
 		GFM_PROTO_USER_AUTH_MODIFY, "sss/",
 		username, auth_id_type, auth_user_id));
-}
-
-gfarm_error_t
-gfm_client_user_auth_remove(struct gfm_connection *gfm_server,
-	const char *username, const char *auth_id_type)
-{
-	return (gfm_client_rpc(gfm_server, 0,
-		GFM_PROTO_USER_AUTH_REMOVE, "ss/",
-		username, auth_id_type));
 }
 
 static gfarm_error_t

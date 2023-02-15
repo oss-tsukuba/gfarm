@@ -1,5 +1,6 @@
 /* for general memory data (including string) */
 int gfarm_hash_default(const void *, int);
+int gfarm_hash_add(int, const void *, int);
 int gfarm_hash_key_equal_default(const void *, int, const void *, int);
 /* for string key (casefold) */
 int gfarm_hash_casefold(const void *, int);

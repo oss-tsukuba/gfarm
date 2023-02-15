@@ -18,8 +18,14 @@
 int
 gfarm_hash_default(const void *key, int keylen)
 {
+	return (gfarm_hash_add(0, key, keylen));
+}
+
+int
+gfarm_hash_add(int initial_hash, const void *key, int keylen)
+{
 	int i;
-	unsigned int hash = 0, g;
+	unsigned int hash = initial_hash, g;
 
 	for (i = 0; i < keylen; i++) {
 		hash = (hash << 4) + ((unsigned char *)key)[i];
