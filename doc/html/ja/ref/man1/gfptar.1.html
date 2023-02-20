@@ -68,9 +68,9 @@
 <dt><span class="term"><em class="parameter"><code>パス名</code></em></span></dt>
 <dd><p>
       ローカルファイルシステム上のファイルやディレクトリを絶対パスまたは相対パスで指定します。
-      そのパスが gfarm2fs のマウントポイントの場合だとしても、
-      gfarm2fs を経由してファイルを操作します。
-      (他の Gfarm コマンドとは挙動が異なります)
+      そのパスが gfarm2fs のマウントポイント上の場合、
+      gfarm2fs を経由せずに tar ファイルを操作します。
+      (tar ファイル以外は、gfarm2fs を経由してファイルを操作します。)
     </p></dd>
 <dt><span class="term"><em class="parameter"><code>gfarm:...</code></em></span></dt>
 <dd><p>

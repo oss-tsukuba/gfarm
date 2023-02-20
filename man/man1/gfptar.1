@@ -81,7 +81,7 @@ must be one of the following formats\&.
 .PP
 \fIpath\-name\fR
 .RS 4
-is a relative path or an absolute path of a local file system\&. Even if the path is a mount point on gfarm2fs, files are copied with passing through the gfarm2fs\&. (It behaves differently from other Gfarm commands\&.)
+is a relative path or an absolute path of a local file system\&. When the path is a mount point on gfarm2fs, tar files are copied without passing through the gfarm2fs\&. (Non\-tar files are operated via gfarm2fs\&.)
 .RE
 .PP
 \fIgfarm:\&.\&.\&.\fR
