@@ -116,9 +116,9 @@
   <listitem>
     <para>
       is a relative path or an absolute path of a local file system.
-      Even if the path is a mount point on gfarm2fs, files are copied with passing
-      through the gfarm2fs.
-      (It behaves differently from other Gfarm commands.)
+      When the path is a mount point on gfarm2fs, tar files are operated
+      without passing through the gfarm2fs.
+      (Non-tar files are operated via gfarm2fs.)
     </para>
   </listitem>
 </varlistentry>

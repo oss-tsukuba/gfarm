@@ -18,6 +18,7 @@
 # flake8 ./gfptar
 
 import os
+import errno
 import stat
 import sys
 import pwd
@@ -343,13 +344,26 @@ class GfURL(metaclass=abc.ABCMeta):
     MAXNAMLEN = 255  # SEE ALSO: dirent.h, gfarm/gfs.h (GFS_MAXNAMLEN)
 
     @staticmethod
-    def init(url):
+    def init(url, use_gfarm_command=False):
         if GfURLGfarm.is_my_URL(url):
             return GfURLGfarm(url)
-        return GfURLLocal(url)
+        gfurl1 = GfURLLocal(url)
+        if not use_gfarm_command:
+            return gfurl1
+        # use_gfarm_command=True: use gf* commands on gfarm2fs
+        gfurl2 = gfurl1.get_gfarm_url_by_gfarm2fs()
+        if gfurl2 is not None:
+            # replace
+            logger.debug('use Gfarm URL(%s) on gfarm2fs', gfurl2.url_str)
+            return gfurl2
+        return gfurl1
 
     def __init__(self, url):
         self._url = urlparse(url)
+
+    @property
+    def basename(self):
+        return os.path.basename(self.path)
 
     @property
     def parent(self):
@@ -941,6 +955,40 @@ class GfURLLocal(GfURL):
     def is_my_URL(cls, url):
         return True
 
+    def get_gfarm_url_by_gfarm2fs(self):
+        # SEE ALSO: lib/libgfarm/gfarm/gfarm_path.c
+        XATTR_GFARM2FS_URL = 'gfarm2fs.url'
+        try:
+            val = os.getxattr(self.url_str, XATTR_GFARM2FS_URL)
+            gfurl = GfURL.init(val.decode(get_encoding()))
+            if gfurl.is_gfarm():
+                return gfurl
+            raise Exception('unexpected Gfarm URL format: ' + gfurl.url_str)
+        except OSError as e:
+            if e.errno == errno.EOPNOTSUPP:
+                return None
+            elif e.errno == errno.ENOENT:
+                # creation mode
+                try:
+                    val = os.getxattr(self.parent.url_str, XATTR_GFARM2FS_URL)
+                    parent_str = val.decode(get_encoding())
+                    gfurl = GfURL.init(os.path.join(parent_str, self.basename))
+                    if gfurl.is_gfarm():
+                        return gfurl
+                    raise Exception('unexpected Gfarm URL format: '
+                                    + gfurl.url_str)
+                except OSError as e2:
+                    if e2.errno == errno.EOPNOTSUPP:
+                        # local filesystem
+                        return None
+                    raise
+                except Exception:
+                    raise
+            else:
+                raise
+        except Exception:
+            raise
+
     def chmod(self, mode, mtime=None, user=None, group=None,
               follow_symlinks=True):
         if follow_symlinks:
@@ -1271,6 +1319,7 @@ class TestGfptar(unittest.TestCase):
     def suite():
         suite = unittest.TestSuite()
         suite.addTest(TestGfptar('test_unhumanize'))
+        suite.addTest(TestGfptar('test_GfURL_use_gfarm_command_for_local'))
         return suite
 
     def test_unhumanize(self):
@@ -1280,6 +1329,11 @@ class TestGfptar(unittest.TestCase):
         self.assertEqual(unhumanize_number('4T'), 4398046511104)
         self.assertEqual(unhumanize_number('5P'), 5629499534213120)
         self.assertEqual(unhumanize_number('6E'), 6917529027641081856)
+
+    def test_GfURL_use_gfarm_command_for_local(self):
+        url = GfURL.init('/tmp', use_gfarm_command=True)
+        self.assertEqual(url.is_local(), True)
+        self.assertEqual(url.path, '/tmp')
 
 
 class GfptarCommand(Command):
@@ -1613,6 +1667,8 @@ class GfptarCommand(Command):
         self.ratio = self.opt['--ratio']
         self.compress_type = self.opt['--type']
         self.compress_prog = self.opt['--use-compress-program']
+        self.disable_gfarm_command = self.opt['--disable-gfarm-command']
+        self.use_gfarm_command = not self.disable_gfarm_command
         self.use_tqdm = self.opt['--use-tqdm']
         if self.compress_type == GfTarFile.COMPRESS_TYPE_NO:
             self.split_size = self.size
@@ -1784,7 +1840,8 @@ class GfptarCommand(Command):
             outname = outname[-outname_max:]
         # ex.: home/user1/dir -> home_user1_dir
         outname = serial_str + outname.replace('/', '_')
-        outurl = GfURL.init(self.outdir_url.url_join(outname))
+        outurl = GfURL.init(self.outdir_url.url_join(outname),
+                            use_gfarm_command=self.use_gfarm_command)
         self.create_a_members_list(outurl, filelist)
         tar = GfTarFile.create_open(outurl, self.compress_type, self.bufsize,
                                     compress_prog=self.compress_prog)
@@ -1843,6 +1900,8 @@ class GfptarCommand(Command):
         member_set = set(members)
         self.compress_prog = self.opt['--use-compress-program']
         self.same_owner = self.opt['--same-owner']
+        self.disable_gfarm_command = self.opt['--disable-gfarm-command']
+        self.use_gfarm_command = not self.disable_gfarm_command
 
         indir_url = GfURL.init(self.indir)
         if not indir_url.is_directory():
@@ -2010,7 +2069,8 @@ class GfptarCommand(Command):
         if self.is_cancelled():
             logger.debug('cancelled (1): name=%s', target)
             return
-        arch_url = GfURL.init(target)
+        arch_url = GfURL.init(target,
+                              use_gfarm_command=self.use_gfarm_command)
         tar = GfTarFile.extract_open(arch_url, self.bufsize,
                                      compress_prog=self.compress_prog)
         while True:
@@ -2188,12 +2248,14 @@ Options:
                             the command must accept -d option for decompression
   --same-owner              extract files with the same ownership
                             (for euid=0 on local, or gfarmroot on Gfarm)
+  --disable-gfarm-command   disable the use of gfreg and gfexport
+                            for tar files on gfarm2fs
   --use-tqdm                use tqdm to show progress (for --create)
   --encoding=CODEC          codec for filename encoding
              (https://docs.python.org/3/library/codecs.html#standard-encodings)
                             [default: utf-8]
   --bufsize=BYTES           buffer size to copy [default: 1M]
-  --test                    test mode
+  --test                    test mode (-q option is recommended)
   --test-workdir-local=DIR  local directory for test [default: /tmp]
   --test-workdir-gfarm=DIR  Gfarm directory for test [default: gfarm:/tmp]
   -q, --quiet               quiet messages
@@ -2246,6 +2308,7 @@ _schema = Schema({
     '--ratio': Use(int),
     '--jobs': Use(int),
     '--use-compress-program': Or(str, None),
+    '--disable-gfarm-command': bool,
     '--same-owner': bool,
     '--use-tqdm': bool,
     '--test': bool,
