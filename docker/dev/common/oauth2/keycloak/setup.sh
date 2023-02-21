@@ -10,6 +10,26 @@ ignore() {
     # true
 }
 
+get_code() {
+    # NOTE: -k: insecure
+    curl -s -k --noproxy '*' -w '%{http_code}' "$1" -o /dev/null
+}
+
+wait_for_keycloak_to_become_ready() {
+    URL="$1"
+    EXPECT_CODE='^[23]0.*$'
+    while :; do
+        if CODE=$(get_code "$URL"); then
+            if [[ "$CODE" =~ ${EXPECT_CODE} ]]; then
+                break
+            fi
+        fi
+        sleep 1
+        echo "waiting for keycloak startup"
+    done
+}
+
+
 KEYCLOAK_HOME=/opt/jboss/keycloak
 KEYCLOAK_REALM=hpci
 KEYCLOAK_ADMIN_REALM=master
@@ -27,6 +47,8 @@ KCADM=${BINDIR}/kcadm.sh
 
 REALM=${KEYCLOAK_REALM}
 ADMIN_REALM=${KEYCLOAK_ADMIN_REALM}
+
+wait_for_keycloak_to_become_ready ${MY_KEYCLOAK_SERVER}
 
 ### login
 
