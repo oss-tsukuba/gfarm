@@ -649,7 +649,7 @@ gfm_client_connection0(struct gfp_cached_connection *cache_entry,
 	/* XXX We should explicitly pass the original global username too. */
 	e = gfarm_auth_request(gfm_server->conn,
 	    GFM_SERVICE_TAG, res->ai_canonname,
-	    res->ai_addr, gfarm_get_auth_id_type(), user, pwd,
+	    res->ai_addr, gfarm_get_auth_id_role(), user, pwd,
 	    &gfm_server->auth_method);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfp_xdr_free(gfm_server->conn);

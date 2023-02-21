@@ -19,8 +19,8 @@ gfarm_authorize_tls_sharedsecret(struct gfp_xdr *conn,
 	char *service_tag, char *hostname,
 	gfarm_error_t (*auth_uid_to_global_user)(void *,
 	    enum gfarm_auth_method, const char *,
-	    enum gfarm_auth_id_type *, char **), void *closure,
-	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
+	    enum gfarm_auth_id_role *, char **), void *closure,
+	enum gfarm_auth_id_role *peer_rolep, char **global_usernamep)
 {
 	gfarm_error_t e;
 
@@ -33,7 +33,7 @@ gfarm_authorize_tls_sharedsecret(struct gfp_xdr *conn,
 	}
 	e = gfarm_authorize_sharedsecret_common(
 	    conn, service_tag, hostname, auth_uid_to_global_user,
-	    closure, "tls_sharedsecret", peer_typep, global_usernamep);
+	    closure, "tls_sharedsecret", peer_rolep, global_usernamep);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfp_xdr_tls_reset(conn); /* is this case graceful? */
 	}
@@ -48,13 +48,13 @@ gfarm_error_t gfarm_authorize_tls_client_certificate(
 	char *service_tag, char *hostname,
 	gfarm_error_t (*auth_uid_to_global_user)(void *,
 	    enum gfarm_auth_method, const char *,
-	    enum gfarm_auth_id_type *, char **), void *closure,
-	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
+	    enum gfarm_auth_id_role *, char **), void *closure,
+	enum gfarm_auth_id_role *peer_rolep, char **global_usernamep)
 {
 	gfarm_error_t e, e2;
 	int eof;
 	gfarm_int32_t req, arg, result;
-	enum gfarm_auth_id_type peer_type;
+	enum gfarm_auth_id_role peer_role;
 	char *global_username = NULL;
 
 	e = gfp_xdr_tls_alloc(conn, gfp_xdr_fd(conn), GFP_XDR_TLS_ACCEPT|
@@ -82,8 +82,8 @@ gfarm_error_t gfarm_authorize_tls_client_certificate(
 		    hostname, gfarm_error_string(arg));
 		gfp_xdr_tls_reset(conn); /* is this case graceful? */
 		return (GFARM_ERR_AUTHENTICATION);
-	} else if (req == GFARM_AUTH_TLS_CLIENT_CERTIFICATE_CLIENT_TYPE) {
-		peer_type = arg;
+	} else if (req == GFARM_AUTH_TLS_CLIENT_CERTIFICATE_CLIENT_ROLE) {
+		peer_role = arg;
 	} else {
 		/* unknown protocol */
 		gflog_warning(GFARM_MSG_UNFIXED,
@@ -94,35 +94,35 @@ gfarm_error_t gfarm_authorize_tls_client_certificate(
 	}
 
 
-	if (peer_type != GFARM_AUTH_ID_TYPE_USER &&
-	    peer_type != GFARM_AUTH_ID_TYPE_SPOOL_HOST &&
-	    peer_type != GFARM_AUTH_ID_TYPE_METADATA_HOST) {
+	if (peer_role != GFARM_AUTH_ID_ROLE_USER &&
+	    peer_role != GFARM_AUTH_ID_ROLE_SPOOL_HOST &&
+	    peer_role != GFARM_AUTH_ID_ROLE_METADATA_HOST) {
 		result = GFARM_AUTH_ERROR_NOT_SUPPORTED;
 	} else {
 		e = (*auth_uid_to_global_user)(closure,
 		    GFARM_AUTH_METHOD_TLS_CLIENT_CERTIFICATE,
-		    peer_type == GFARM_AUTH_ID_TYPE_USER ?
+		    peer_role == GFARM_AUTH_ID_ROLE_USER ?
 		    gfp_xdr_tls_peer_dn_gsi(conn) :
 		    gfp_xdr_tls_peer_dn_common_name(conn),
-		    &peer_type, &global_username);
+		    &peer_role, &global_username);
 		if (e == GFARM_ERR_NO_ERROR) {
-			switch (peer_type) {
-			case GFARM_AUTH_ID_TYPE_UNKNOWN:
+			switch (peer_role) {
+			case GFARM_AUTH_ID_ROLE_UNKNOWN:
 				e = GFARM_ERR_INTERNAL_ERROR;
 				gflog_error(GFARM_MSG_UNFIXED,
 				    "authorize_tls_client_certificate: "
 				    "\"%s\" @ %s: peer type unknown",
 				    gfp_xdr_tls_peer_dn_gsi(conn), hostname);
 				break;
-			case GFARM_AUTH_ID_TYPE_USER:
+			case GFARM_AUTH_ID_ROLE_USER:
 				break;
-			case GFARM_AUTH_ID_TYPE_SPOOL_HOST:
+			case GFARM_AUTH_ID_ROLE_SPOOL_HOST:
 				free(global_username); /* hostname in DN */
 				global_username = strdup(GFSD_USERNAME);
 				if (global_username == NULL)
 					e = GFARM_ERR_NO_MEMORY;
 				break;
-			case GFARM_AUTH_ID_TYPE_METADATA_HOST:
+			case GFARM_AUTH_ID_ROLE_METADATA_HOST:
 				free(global_username); /* hostname in DN */
 				global_username = strdup(GFMD_USERNAME);
 				if (global_username == NULL)
@@ -154,13 +154,13 @@ gfarm_error_t gfarm_authorize_tls_client_certificate(
 		    "(%s@%s) authenticated: auth=%s type:%s DN=\"%s\"",
 		    global_username, hostname,
 		    "tls_client_certificate",
-		    peer_type == GFARM_AUTH_ID_TYPE_USER ? "user" :
-		    peer_type == GFARM_AUTH_ID_TYPE_SPOOL_HOST ? "gfsd" :
-		    peer_type == GFARM_AUTH_ID_TYPE_METADATA_HOST ? "gfmd" :
+		    peer_role == GFARM_AUTH_ID_ROLE_USER ? "user" :
+		    peer_role == GFARM_AUTH_ID_ROLE_SPOOL_HOST ? "gfsd" :
+		    peer_role == GFARM_AUTH_ID_ROLE_METADATA_HOST ? "gfmd" :
 		    "unknown",
 		    gfp_xdr_tls_peer_dn_gsi(conn));
 
-		*peer_typep = peer_type;
+		*peer_rolep = peer_role;
 		*global_usernamep = global_username;
 	} else {
 		gfp_xdr_tls_reset(conn); /* is this case graceful? */

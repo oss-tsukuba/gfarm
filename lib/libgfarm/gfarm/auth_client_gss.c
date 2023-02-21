@@ -39,7 +39,7 @@
 static gfarm_error_t
 gfarm_gss_acquire_initiator_credential(struct gfarm_gss *gss,
 	const char *hostname,
-	enum gfarm_auth_id_type self_type,
+	enum gfarm_auth_id_role self_role,
 	gss_cred_id_t *output_cred, gss_name_t *output_name)
 {
 	char *service_tag;
@@ -50,16 +50,16 @@ gfarm_gss_acquire_initiator_credential(struct gfarm_gss *gss,
 	int ret;
 	gfarm_OM_uint32 e_major, e_minor;
 
-	switch (self_type) {
-	case GFARM_AUTH_ID_TYPE_SPOOL_HOST:
-	case GFARM_AUTH_ID_TYPE_METADATA_HOST:
+	switch (self_role) {
+	case GFARM_AUTH_ID_ROLE_SPOOL_HOST:
+	case GFARM_AUTH_ID_ROLE_METADATA_HOST:
 		/*
 		 * If spool_server_cred_service is specified,
 		 * a service certificate is used.
 		 */
-		if (self_type == GFARM_AUTH_ID_TYPE_SPOOL_HOST) {
+		if (self_role == GFARM_AUTH_ID_ROLE_SPOOL_HOST) {
 			service_tag = GFS_SERVICE_TAG;
-		} else if (self_type == GFARM_AUTH_ID_TYPE_METADATA_HOST) {
+		} else if (self_role == GFARM_AUTH_ID_ROLE_METADATA_HOST) {
 			service_tag = GFM_SERVICE_TAG;
 		} else {
 			assert(0);
@@ -76,7 +76,7 @@ gfarm_gss_acquire_initiator_credential(struct gfarm_gss *gss,
 			return (e);
 		}
 		break;
-	case GFARM_AUTH_ID_TYPE_USER: /* from client */
+	case GFARM_AUTH_ID_ROLE_USER: /* from client */
 		break;
 	default:
 		break;
@@ -129,8 +129,8 @@ gfarm_gss_acquire_initiator_credential(struct gfarm_gss *gss,
 
 gfarm_error_t
 gfarm_auth_request_gss(struct gfp_xdr *conn, struct gfarm_gss *gss,
-	const char *service_tag, const char *hostname, int send_self_type,
-	enum gfarm_auth_id_type self_type, const char *user,
+	const char *service_tag, const char *hostname, int send_self_role,
+	enum gfarm_auth_id_role self_role, const char *user,
 	struct passwd *pwd)
 {
 	int fd = gfp_xdr_fd(conn);
@@ -164,7 +164,7 @@ gfarm_auth_request_gss(struct gfp_xdr *conn, struct gfarm_gss *gss,
 	cred = gss->client_cred_get();
 	if (cred == GSS_C_NO_CREDENTIAL) { /* if not delegated */
 		e = gfarm_gss_acquire_initiator_credential(gss, hostname,
-		    self_type, &cred, &initiator_name);
+		    self_role, &cred, &initiator_name);
 		/* error message already displayed */
 		cred_acquired = 1;
 	} else {
@@ -250,16 +250,16 @@ gfarm_auth_request_gss(struct gfp_xdr *conn, struct gfarm_gss *gss,
 	gfp_xdr_set_secsession(conn, gss, session,
 	    cred_acquired ? cred : GSS_C_NO_CREDENTIAL, initiator_dn);
 
-	/* self_type is not sent in GSI due to protocol compatibility */
-	if (send_self_type) {
+	/* self_role is not sent in GSI due to protocol compatibility */
+	if (send_self_role) {
 		e = gfp_xdr_send(conn, "ii",
-		    (gfarm_int32_t)GFARM_AUTH_GSS_CLIENT_TYPE,
-		    (gfarm_int32_t)self_type);
+		    (gfarm_int32_t)GFARM_AUTH_GSS_CLIENT_ROLE,
+		    (gfarm_int32_t)self_role);
 		if (e == GFARM_ERR_NO_ERROR)
 			e = gfp_xdr_flush(conn);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_UNFIXED,
-			    "sending self_type: %s", gfarm_error_string(e));
+			    "sending self_role: %s", gfarm_error_string(e));
 			gfp_xdr_reset_secsession(conn);
 			return (e);
 		}
@@ -291,10 +291,10 @@ gfarm_auth_request_gss(struct gfp_xdr *conn, struct gfarm_gss *gss,
 struct gfarm_auth_request_gss_state {
 	struct gfarm_eventqueue *q;
 	struct gfarm_event *readable;
-	struct gfarm_event *writable; /* writable!=NULL means send_self_type */
+	struct gfarm_event *writable; /* writable!=NULL means send_self_role */
 	struct gfp_xdr *conn;
 	struct gfarm_gss *gss;
-	enum gfarm_auth_id_type self_type;
+	enum gfarm_auth_id_role self_role;
 	int auth_timeout;
 	void (*continuation)(void *);
 	void *closure;
@@ -343,7 +343,7 @@ gfarm_auth_request_gss_receive_result(int events, int fd, void *closure,
 }
 
 static void
-gfarm_auth_request_gss_send_self_type(int events, int fd, void *closure,
+gfarm_auth_request_gss_send_self_role(int events, int fd, void *closure,
 	const struct timeval *t)
 {
 	struct gfarm_auth_request_gss_state *state = closure;
@@ -351,8 +351,8 @@ gfarm_auth_request_gss_send_self_type(int events, int fd, void *closure,
 	struct timeval timeout;
 
 	state->error = gfp_xdr_send(state->conn, "ii",
-	    (gfarm_int32_t)GFARM_AUTH_GSS_CLIENT_TYPE,
-	    (gfarm_int32_t)state->self_type);
+	    (gfarm_int32_t)GFARM_AUTH_GSS_CLIENT_ROLE,
+	    (gfarm_int32_t)state->self_role);
 	if (state->error == GFARM_ERR_NO_ERROR &&
 	    (state->error = gfp_xdr_flush(state->conn))
 	    == GFARM_ERR_NO_ERROR) {
@@ -400,7 +400,7 @@ gfarm_auth_request_gss_wait_result(void *closure)
 		state->error = GFARM_ERR_OPERATION_NOT_PERMITTED;
 #endif
 	} else {
-		if (state->writable != NULL) { /* i.e. send_self_type? */
+		if (state->writable != NULL) { /* i.e. send_self_role? */
 			rv = gfarm_eventqueue_add_event(state->q,
 			    state->writable, NULL);
 		} else {
@@ -416,8 +416,8 @@ gfarm_auth_request_gss_wait_result(void *closure)
 			    state->cred : GSS_C_NO_CREDENTIAL,
 			    state->initiator_dn);
 			/*
-			 * if send_self_type ?
-			 * go to gfarm_auth_request_gss_send_self_type()
+			 * if send_self_role ?
+			 * go to gfarm_auth_request_gss_send_self_role()
 			 * otherwise
 			 * go to gfarm_auth_request_gss_receive_result()
 			 */
@@ -432,8 +432,8 @@ gfarm_auth_request_gss_wait_result(void *closure)
 gfarm_error_t
 gfarm_auth_request_gss_multiplexed(struct gfarm_eventqueue *q,
 	struct gfp_xdr *conn, struct gfarm_gss *gss,
-	const char *service_tag, const char *hostname, int send_self_type,
-	enum gfarm_auth_id_type self_type, const char *user,
+	const char *service_tag, const char *hostname, int send_self_role,
+	enum gfarm_auth_id_role self_role, const char *user,
 	struct passwd *pwd, int auth_timeout,
 	void (*continuation)(void *), void *closure,
 	void **statepp)
@@ -476,12 +476,12 @@ gfarm_auth_request_gss_multiplexed(struct gfarm_eventqueue *q,
 		e = GFARM_ERR_NO_MEMORY;
 		goto error_free_state;
 	}
-	if (!send_self_type) {
+	if (!send_self_role) {
 		state->writable = NULL;
 	} else {
 		state->writable = gfarm_fd_event_alloc(
 		    GFARM_EVENT_WRITE, sock, NULL, NULL,
-		    gfarm_auth_request_gss_send_self_type, state);
+		    gfarm_auth_request_gss_send_self_role, state);
 		if (state->writable == NULL) {
 			e = GFARM_ERR_NO_MEMORY;
 			gflog_debug(GFARM_MSG_UNFIXED,
@@ -504,7 +504,7 @@ gfarm_auth_request_gss_multiplexed(struct gfarm_eventqueue *q,
 	state->cred = gss->client_cred_get();
 	if (state->cred == GSS_C_NO_CREDENTIAL) { /* if not delegated */
 		e = gfarm_gss_acquire_initiator_credential(gss, hostname,
-		    self_type, &state->cred, &initiator_name);
+		    self_role, &state->cred, &initiator_name);
 		/* error message already displayed */
 		state->cred_acquired = 1;
 	} else {
@@ -556,7 +556,7 @@ gfarm_auth_request_gss_multiplexed(struct gfarm_eventqueue *q,
 	state->q = q;
 	state->conn = conn;
 	state->gss = gss;
-	state->self_type = self_type;
+	state->self_role = self_role;
 	state->auth_timeout = auth_timeout;
 	state->continuation = continuation;
 	state->closure = closure;
@@ -608,12 +608,12 @@ gfarm_auth_result_gss_multiplexed(void *sp)
 
 gfarm_error_t
 gfarm_auth_request_gss_auth(struct gfp_xdr *conn, struct gfarm_gss *gss,
-	const char *service_tag, const char *hostname, int send_self_type,
-	enum gfarm_auth_id_type self_type, const char *user,
+	const char *service_tag, const char *hostname, int send_self_role,
+	enum gfarm_auth_id_role self_role, const char *user,
 	struct passwd *pwd)
 {
 	gfarm_error_t e = gfarm_auth_request_gss(conn, gss,
-	    service_tag, hostname, send_self_type, self_type, user, pwd);
+	    service_tag, hostname, send_self_role, self_role, user, pwd);
 
 	if (e == GFARM_ERR_NO_ERROR)
 		gfp_xdr_downgrade_to_insecure_session(conn);
@@ -623,14 +623,14 @@ gfarm_auth_request_gss_auth(struct gfp_xdr *conn, struct gfarm_gss *gss,
 gfarm_error_t
 gfarm_auth_request_gss_auth_multiplexed(struct gfarm_eventqueue *q,
 	struct gfp_xdr *conn, struct gfarm_gss *gss,
-	const char *service_tag, const char *hostname, int send_self_type,
-	enum gfarm_auth_id_type self_type, const char *user,
+	const char *service_tag, const char *hostname, int send_self_role,
+	enum gfarm_auth_id_role self_role, const char *user,
 	struct passwd *pwd, int auth_timeout,
 	void (*continuation)(void *), void *closure,
 	void **statepp)
 {
 	return (gfarm_auth_request_gss_multiplexed(q, conn, gss,
-	    service_tag, hostname, send_self_type, self_type, user, pwd,
+	    service_tag, hostname, send_self_role, self_role, user, pwd,
 	    auth_timeout,
 	    continuation, closure, statepp));
 }

@@ -35,16 +35,16 @@
 static gfarm_error_t gfarm_authorize_panic(struct gfp_xdr *,
 	char *, char *,
 	gfarm_error_t (*)(void *,
-	    enum gfarm_auth_method, const char *, enum gfarm_auth_id_type *,
+	    enum gfarm_auth_method, const char *, enum gfarm_auth_id_role *,
 	    char **), void *,
-	enum gfarm_auth_id_type *, char **);
+	enum gfarm_auth_id_role *, char **);
 
 gfarm_error_t (*gfarm_authorization_table[])(struct gfp_xdr *,
 	char *, char *,
 	gfarm_error_t (*)(void *,
-	    enum gfarm_auth_method, const char *, enum gfarm_auth_id_type *,
+	    enum gfarm_auth_method, const char *, enum gfarm_auth_id_role *,
 	    char **), void *,
-	enum gfarm_auth_id_type *, char **) = {
+	enum gfarm_auth_id_role *, char **) = {
 	/*
 	 * This table entry should be ordered by enum gfarm_auth_method.
 	 */
@@ -90,8 +90,8 @@ gfarm_authorize_panic(struct gfp_xdr *conn,
 	char *service_tag, char *hostname,
 	gfarm_error_t (*auth_uid_to_global_user)(void *,
 	    enum gfarm_auth_method, const char *,
-	    enum gfarm_auth_id_type *, char **), void *closure,
-	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
+	    enum gfarm_auth_id_role *, char **), void *closure,
+	enum gfarm_auth_id_role *peer_rolep, char **global_usernamep)
 {
 	gflog_fatal(GFARM_MSG_1000021,
 	    "gfarm_authorize: authorization assertion failed");
@@ -433,14 +433,14 @@ gfarm_authorize_sharedsecret_common(struct gfp_xdr *conn,
 	char *service_tag, char *hostname,
 	gfarm_error_t (*auth_uid_to_global_user)(void *,
 	    enum gfarm_auth_method, const char *,
-	    enum gfarm_auth_id_type *, char **), void *closure,
+	    enum gfarm_auth_id_role *, char **), void *closure,
 	const char *auth_method_name,
-	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
+	enum gfarm_auth_id_role *peer_rolep, char **global_usernamep)
 {
 	gfarm_error_t e;
 	char *global_username, *local_username, *buf = NULL;
 	int eof;
-	enum gfarm_auth_id_type peer_type;
+	enum gfarm_auth_id_role peer_role;
 	enum gfarm_auth_error error = GFARM_AUTH_ERROR_DENIED; /* to be safe */
 	struct passwd pwbuf, *pwd;
 
@@ -459,9 +459,9 @@ gfarm_authorize_sharedsecret_common(struct gfp_xdr *conn,
 	}
 
 	if (strcmp(global_username, GFSD_USERNAME) == 0) {
-		peer_type = GFARM_AUTH_ID_TYPE_SPOOL_HOST;
+		peer_role = GFARM_AUTH_ID_ROLE_SPOOL_HOST;
 	} else if (strcmp(global_username, GFMD_USERNAME) == 0) {
-		peer_type = GFARM_AUTH_ID_TYPE_METADATA_HOST;
+		peer_role = GFARM_AUTH_ID_ROLE_METADATA_HOST;
 	} else {
 		/*
 		 * actually, a protocol-level uid is a gfarm global username
@@ -469,10 +469,10 @@ gfarm_authorize_sharedsecret_common(struct gfp_xdr *conn,
 		 * so, the purpose of (*auth_uid_to_global_user)() is
 		 * to verify whether the user does exist or not in this case.
 		 */
-		peer_type = GFARM_AUTH_ID_TYPE_USER;
+		peer_role = GFARM_AUTH_ID_ROLE_USER;
 		e = (*auth_uid_to_global_user)(closure,
 		    GFARM_AUTH_METHOD_SHAREDSECRET,
-		    global_username, &peer_type, NULL);
+		    global_username, &peer_role, NULL);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_notice(GFARM_MSG_UNFIXED,
 			    "(%s@%s) authorize %s: "
@@ -549,8 +549,8 @@ gfarm_authorize_sharedsecret_common(struct gfp_xdr *conn,
 	    global_username, hostname, auth_method_name, local_username);
 
 	free(local_username);
-	if (peer_typep != NULL)
-		*peer_typep = peer_type;
+	if (peer_rolep != NULL)
+		*peer_rolep = peer_role;
 	if (global_usernamep != NULL)
 		*global_usernamep = global_username;
 	else
@@ -565,12 +565,12 @@ gfarm_authorize_sharedsecret(struct gfp_xdr *conn,
 	char *service_tag, char *hostname,
 	gfarm_error_t (*auth_uid_to_global_user)(void *,
 	    enum gfarm_auth_method, const char *,
-	    enum gfarm_auth_id_type *, char **), void *closure,
-	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
+	    enum gfarm_auth_id_role *, char **), void *closure,
+	enum gfarm_auth_id_role *peer_rolep, char **global_usernamep)
 {
 	return (gfarm_authorize_sharedsecret_common(conn,
 	    service_tag, hostname, auth_uid_to_global_user, closure,
-	    "sharedsecret", peer_typep, global_usernamep));
+	    "sharedsecret", peer_rolep, global_usernamep));
 }
 
 /*
@@ -583,8 +583,8 @@ gfarm_authorize_wo_setuid(struct gfp_xdr *conn, char *service_tag,
 	char *hostname, struct sockaddr *addr,
 	gfarm_error_t (*auth_uid_to_global_user)(void *,
 	    enum gfarm_auth_method, const char *,
-	    enum gfarm_auth_id_type *, char **), void *closure,
-	enum gfarm_auth_id_type *peer_typep, char **global_usernamep,
+	    enum gfarm_auth_id_role *, char **), void *closure,
+	enum gfarm_auth_id_role *peer_rolep, char **global_usernamep,
 	enum gfarm_auth_method *auth_methodp)
 {
 	gfarm_error_t e;
@@ -697,7 +697,7 @@ gfarm_authorize_wo_setuid(struct gfp_xdr *conn, char *service_tag,
 
 		e = (*gfarm_authorization_table[method])(conn,
 		    service_tag, hostname, auth_uid_to_global_user, closure,
-		    peer_typep, global_usernamep);
+		    peer_rolep, global_usernamep);
 		if (e != GFARM_ERR_PROTOCOL_NOT_SUPPORTED &&
 		    e != GFARM_ERR_EXPIRED &&
 		    e != GFARM_ERR_AUTHENTICATION) {

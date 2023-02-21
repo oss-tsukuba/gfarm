@@ -23,7 +23,7 @@
 #define staticp	(gfarm_ctxp->auth_client_static)
 
 struct gfarm_auth_client_static {
-	enum gfarm_auth_id_type gfarm_auth_type;
+	enum gfarm_auth_id_role gfarm_auth_role;
 };
 
 gfarm_error_t
@@ -35,7 +35,7 @@ gfarm_auth_client_static_init(struct gfarm_context *ctxp)
 	if (s == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
-	s->gfarm_auth_type = GFARM_AUTH_ID_TYPE_USER;
+	s->gfarm_auth_role = GFARM_AUTH_ID_ROLE_USER;
 
 	ctxp->auth_client_static = s;
 	return (GFARM_ERR_NO_ERROR);
@@ -56,11 +56,11 @@ gfarm_auth_client_static_term(struct gfarm_context *ctxp)
 static const struct gfarm_auth_client_method {
 	enum gfarm_auth_method method;
 	gfarm_error_t (*request)(struct gfp_xdr *,
-		const char *, const char *, enum gfarm_auth_id_type,
+		const char *, const char *, enum gfarm_auth_id_role,
 		const char *, struct passwd *);
 	gfarm_error_t (*request_multiplexed)(struct gfarm_eventqueue *,
 		struct gfp_xdr *, const char *, const char *,
-		enum gfarm_auth_id_type, const char *, struct passwd *, int,
+		enum gfarm_auth_id_role, const char *, struct passwd *, int,
 		void (*)(void *), void *, void **);
 	gfarm_error_t (*result_multiplexed)(void *);
 } gfarm_auth_trial_table[] = {
@@ -118,7 +118,7 @@ static const struct gfarm_auth_client_method {
 gfarm_error_t
 gfarm_auth_request_sharedsecret_common(struct gfp_xdr *conn,
 	const char *service_tag, const char *hostname,
-	enum gfarm_auth_id_type self_type, const char *user,
+	enum gfarm_auth_id_role self_role, const char *user,
 	struct passwd *pwd, int server_is_ok)
 {
 	/*
@@ -136,7 +136,7 @@ gfarm_auth_request_sharedsecret_common(struct gfp_xdr *conn,
 	int eof, key_create = GFARM_AUTH_SHARED_KEY_CREATE;
 	int try = 0;
 
-	/* XXX NOTYET deal with self_type == GFARM_AUTH_ID_TYPE_SPOOL_HOST */
+	/* XXX NOTYET deal with self_role == GFARM_AUTH_ID_ROLE_SPOOL_HOST */
 	home = pwd ? pwd->pw_dir : gfarm_get_local_homedir();
 	if (user == NULL || home == NULL)
 		return (GFARM_ERRMSG_AUTH_REQUEST_SHAREDSECRET_IMPLEMENTATION_ERROR);
@@ -308,17 +308,17 @@ gfarm_auth_request_sharedsecret_common(struct gfp_xdr *conn,
 gfarm_error_t
 gfarm_auth_request_sharedsecret(struct gfp_xdr *conn,
 	const char *service_tag, const char *hostname,
-	enum gfarm_auth_id_type self_type, const char *user,
+	enum gfarm_auth_id_role self_role, const char *user,
 	struct passwd *pwd)
 {
 	return (gfarm_auth_request_sharedsecret_common(
-	    conn, service_tag, hostname, self_type, user, pwd, 1));
+	    conn, service_tag, hostname, self_role, user, pwd, 1));
 }
 
 gfarm_error_t
 gfarm_auth_request(struct gfp_xdr *conn,
 	const char *service_tag, const char *name, struct sockaddr *addr,
-	enum gfarm_auth_id_type self_type, const char *user,
+	enum gfarm_auth_id_role self_role, const char *user,
 	struct passwd *pwd, enum gfarm_auth_method *auth_methodp)
 {
 	gfarm_error_t e, e_save = GFARM_ERR_NO_ERROR;
@@ -338,7 +338,7 @@ gfarm_auth_request(struct gfp_xdr *conn,
 		    name);
 		return (GFARM_ERRMSG_AUTH_METHOD_NOT_AVAILABLE_FOR_THE_HOST);
 	}
-	methods &= gfarm_auth_client_method_get_available(self_type);
+	methods &= gfarm_auth_client_method_get_available(self_role);
 	if (methods == 0) {
 		gflog_debug(GFARM_MSG_1001042,
 			"No usable auth method configured");
@@ -437,7 +437,7 @@ gfarm_auth_request(struct gfp_xdr *conn,
 			    GFARM_ERRMSG_AUTH_REQUEST_IMPLEMENTATION_ERROR);
 		}
 		e = (*gfarm_auth_trial_table[i].request)(conn,
-		    service_tag, name, self_type, user, pwd);
+		    service_tag, name, self_role, user, pwd);
 		if (e == GFARM_ERR_NO_ERROR) {
 			if (auth_methodp != NULL)
 				*auth_methodp = method;
@@ -787,7 +787,7 @@ gfarm_error_t
 gfarm_auth_request_sharedsecret_common_multiplexed(struct gfarm_eventqueue *q,
 	struct gfp_xdr *conn,
 	const char *service_tag, const char *hostname,
-	enum gfarm_auth_id_type self_type, const char *user,
+	enum gfarm_auth_id_role self_role, const char *user,
 	struct passwd *pwd, int server_is_ok, int auth_timeout,
 	void (*continuation)(void *), void *closure,
 	void **statepp)
@@ -797,7 +797,7 @@ gfarm_auth_request_sharedsecret_common_multiplexed(struct gfarm_eventqueue *q,
 	struct gfarm_auth_request_sharedsecret_state *state;
 	int rv, sock = gfp_xdr_fd(conn);
 
-	/* XXX NOTYET deal with self_type == GFARM_AUTH_ID_TYPE_SPOOL_HOST */
+	/* XXX NOTYET deal with self_role == GFARM_AUTH_ID_ROLE_SPOOL_HOST */
 	home = pwd ? pwd->pw_dir : gfarm_get_local_homedir();
 	if (user == NULL || home == NULL) /* not properly initialized */
 		return (GFARM_ERRMSG_AUTH_REQUEST_SHAREDSECRET_MULTIPLEXED_IMPLEMENTATION_ERROR);
@@ -903,7 +903,7 @@ struct gfarm_auth_request_state {
 	const char *name;
 	char *user;
 	struct sockaddr *addr;
-	enum gfarm_auth_id_type self_type;
+	enum gfarm_auth_id_role self_role;
 	struct passwd *pwd;
 	int auth_timeout;
 	void (*continuation)(void *);
@@ -991,7 +991,7 @@ gfarm_auth_request_dispatch_method(int events, int fd, void *closure,
 			state->last_error =
 			    (*gfarm_auth_trial_table[state->auth_method_index].
 			    request_multiplexed)(state->q, state->conn,
-			    state->service_tag, state->name, state->self_type,
+			    state->service_tag, state->name, state->self_role,
 			    state->user, state->pwd, state->auth_timeout,
 			    gfarm_auth_request_dispatch_result, state,
 			    &state->method_state);
@@ -1111,7 +1111,7 @@ gfarm_error_t
 gfarm_auth_request_multiplexed(struct gfarm_eventqueue *q,
 	struct gfp_xdr *conn,
 	const char *service_tag, const char *name, struct sockaddr *addr,
-	enum gfarm_auth_id_type self_type, const char *user,
+	enum gfarm_auth_id_role self_role, const char *user,
 	struct passwd *pwd, int auth_timeout,
 	void (*continuation)(void *), void *closure,
 	struct gfarm_auth_request_state **statepp)
@@ -1131,7 +1131,7 @@ gfarm_auth_request_multiplexed(struct gfarm_eventqueue *q,
 			name);
 		return (GFARM_ERRMSG_AUTH_METHOD_NOT_AVAILABLE_FOR_THE_HOST);
 	}
-	methods &= gfarm_auth_client_method_get_available(self_type);
+	methods &= gfarm_auth_client_method_get_available(self_role);
 	if (methods == 0) {
 		gflog_debug(GFARM_MSG_1001069,
 			"No usable auth method configured");
@@ -1197,7 +1197,7 @@ gfarm_auth_request_multiplexed(struct gfarm_eventqueue *q,
 	state->service_tag = service_tag;
 	state->name = name;
 	state->addr = addr;
-	state->self_type = self_type;
+	state->self_role = self_role;
 	state->pwd = pwd;
 	state->auth_timeout = auth_timeout;
 	state->methods = methods;
@@ -1220,13 +1220,13 @@ gfarm_error_t
 gfarm_auth_request_sharedsecret_multiplexed(struct gfarm_eventqueue *q,
 	struct gfp_xdr *conn,
 	const char *service_tag, const char *hostname,
-	enum gfarm_auth_id_type self_type, const char *user,
+	enum gfarm_auth_id_role self_role, const char *user,
 	struct passwd *pwd, int auth_timeout,
 	void (*continuation)(void *), void *closure,
 	void **statepp)
 {
 	return (gfarm_auth_request_sharedsecret_common_multiplexed(
-	    q, conn, service_tag, hostname, self_type, user, pwd, 1,
+	    q, conn, service_tag, hostname, self_role, user, pwd, 1,
 	    auth_timeout, continuation, closure, statepp));
 }
 
@@ -1249,14 +1249,14 @@ gfarm_auth_result_multiplexed(struct gfarm_auth_request_state *state,
 }
 
 gfarm_error_t
-gfarm_set_auth_id_type(enum gfarm_auth_id_type type)
+gfarm_set_auth_id_role(enum gfarm_auth_id_role role)
 {
-	staticp->gfarm_auth_type = type;
+	staticp->gfarm_auth_role = role;
 	return (GFARM_ERR_NO_ERROR);
 }
 
-enum gfarm_auth_id_type
-gfarm_get_auth_id_type(void)
+enum gfarm_auth_id_role
+gfarm_get_auth_id_role(void)
 {
-	return (staticp->gfarm_auth_type);
+	return (staticp->gfarm_auth_role);
 }

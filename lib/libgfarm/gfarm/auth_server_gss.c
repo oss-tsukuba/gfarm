@@ -47,8 +47,8 @@ gfarm_authorize_gss(struct gfp_xdr *conn, struct gfarm_gss *gss,
 	enum gfarm_auth_method auth_method,
 	gfarm_error_t (*auth_uid_to_global_user)(void *,
 	    enum gfarm_auth_method, const char *,
-	    enum gfarm_auth_id_type *, char **), void *closure,
-	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
+	    enum gfarm_auth_id_role *, char **), void *closure,
+	enum gfarm_auth_id_role *peer_rolep, char **global_usernamep)
 {
 	int eof, gsi_errno = 0, fd = gfp_xdr_fd(conn);
 	gfarm_error_t e, e2;
@@ -62,7 +62,7 @@ gfarm_authorize_gss(struct gfp_xdr *conn, struct gfarm_gss *gss,
 	char *cred_service = gfarm_auth_server_cred_service_get(service_tag);
 	char *cred_name = gfarm_auth_server_cred_name_get(service_tag);
 	gss_cred_id_t cred;
-	enum gfarm_auth_id_type peer_type;
+	enum gfarm_auth_id_role peer_role;
 	gfarm_int32_t req, arg;
 
 	e = gfp_xdr_flush(conn);
@@ -171,9 +171,9 @@ gfarm_authorize_gss(struct gfp_xdr *conn, struct gfarm_gss *gss,
 
 	gfp_xdr_set_secsession(conn, gss, session, GSS_C_NO_CREDENTIAL, NULL);
 
-	/* peer_type is not sent in GSI due to protocol compatibility */
+	/* peer_role is not sent in GSI due to protocol compatibility */
 	if (!send_self_type) {
-		peer_type = GFARM_AUTH_ID_TYPE_UNKNOWN;
+		peer_role = GFARM_AUTH_ID_ROLE_UNKNOWN;
 	} else {
 		e = gfp_xdr_recv(conn, 1, &eof, "ii", &req, &arg);
 		if (e != GFARM_ERR_NO_ERROR || eof) {
@@ -193,8 +193,8 @@ gfarm_authorize_gss(struct gfp_xdr *conn, struct gfarm_gss *gss,
 			/* is this case graceful? */
 			gfp_xdr_reset_secsession(conn);
 			return (GFARM_ERR_AUTHENTICATION);
-		} else if (req == GFARM_AUTH_GSS_CLIENT_TYPE) {
-			peer_type = arg;
+		} else if (req == GFARM_AUTH_GSS_CLIENT_ROLE) {
+			peer_role = arg;
 		} else {
 			/* unknown protocol */
 			gflog_warning(GFARM_MSG_UNFIXED,
@@ -203,9 +203,9 @@ gfarm_authorize_gss(struct gfp_xdr *conn, struct gfarm_gss *gss,
 			gfp_xdr_reset_secsession(conn);
 			return (GFARM_ERR_PROTOCOL);
 		}
-		if (peer_type != GFARM_AUTH_ID_TYPE_USER &&
-		    peer_type != GFARM_AUTH_ID_TYPE_SPOOL_HOST &&
-		    peer_type != GFARM_AUTH_ID_TYPE_METADATA_HOST) {
+		if (peer_role != GFARM_AUTH_ID_ROLE_USER &&
+		    peer_role != GFARM_AUTH_ID_ROLE_SPOOL_HOST &&
+		    peer_role != GFARM_AUTH_ID_ROLE_METADATA_HOST) {
 			e = GFARM_ERR_PROTOCOL;
 			error = GFARM_AUTH_ERROR_NOT_SUPPORTED;
 		}
@@ -219,11 +219,11 @@ gfarm_authorize_gss(struct gfp_xdr *conn, struct gfarm_gss *gss,
 		e = GFARM_ERR_INTERNAL_ERROR;
 	} else if (error == GFARM_AUTH_ERROR_NO_ERROR) {
 		e = (*auth_uid_to_global_user)(closure, auth_method,
-		    distname, &peer_type, &global_username);
+		    distname, &peer_role, &global_username);
 		switch (e) {
 		case GFARM_ERR_NO_ERROR:
-			switch (peer_type) {
-			case GFARM_AUTH_ID_TYPE_UNKNOWN:
+			switch (peer_role) {
+			case GFARM_AUTH_ID_ROLE_UNKNOWN:
 				e = GFARM_ERR_INTERNAL_ERROR;
 				error = GFARM_AUTH_ERROR_INVALID_CREDENTIAL;
 				gflog_error(GFARM_MSG_UNFIXED,
@@ -231,9 +231,9 @@ gfarm_authorize_gss(struct gfp_xdr *conn, struct gfarm_gss *gss,
 				    "GSS authentication: peer type unknown",
 				    distname, hostname);
 				break;
-			case GFARM_AUTH_ID_TYPE_USER:
+			case GFARM_AUTH_ID_ROLE_USER:
 				break;
-			case GFARM_AUTH_ID_TYPE_SPOOL_HOST:
+			case GFARM_AUTH_ID_ROLE_SPOOL_HOST:
 				free(global_username); /* hostname in DN */
 				global_username = strdup(GFSD_USERNAME);
 				if (global_username == NULL) {
@@ -242,7 +242,7 @@ gfarm_authorize_gss(struct gfp_xdr *conn, struct gfarm_gss *gss,
 					 GFARM_AUTH_ERROR_RESOURCE_UNAVAILABLE;
 				}
 				break;
-			case GFARM_AUTH_ID_TYPE_METADATA_HOST:
+			case GFARM_AUTH_ID_ROLE_METADATA_HOST:
 				free(global_username); /* hostname in DN */
 				global_username = strdup(GFMD_USERNAME);
 				if (global_username == NULL) {
@@ -284,7 +284,7 @@ gfarm_authorize_gss(struct gfp_xdr *conn, struct gfarm_gss *gss,
 		    "(%s@%s) authenticated: auth=%s type=%s  DN=\"%s\"",
 		    global_username, hostname,
 		    gfarm_auth_method_name(auth_method),
-		    gfarm_auth_id_type_name(peer_type), distname);
+		    gfarm_auth_id_role_name(peer_role), distname);
 	}
 
 	e2 = gfp_xdr_send(conn, "i", error);
@@ -310,9 +310,9 @@ gfarm_authorize_gss(struct gfp_xdr *conn, struct gfarm_gss *gss,
 		return (e != GFARM_ERR_NO_ERROR ? e : e2);
 	}
 
-	/* determine *peer_typep == GFARM_AUTH_ID_TYPE_SPOOL_HOST */
-	if (peer_typep != NULL)
-		*peer_typep = peer_type;
+	/* determine *peer_rolep == GFARM_AUTH_ID_ROLE_SPOOL_HOST */
+	if (peer_rolep != NULL)
+		*peer_rolep = peer_role;
 	if (global_usernamep != NULL)
 		*global_usernamep = global_username;
 	else
@@ -330,13 +330,13 @@ gfarm_authorize_gss_auth(struct gfp_xdr *conn, struct gfarm_gss *gss,
 	enum gfarm_auth_method auth_method,
 	gfarm_error_t (*auth_uid_to_global_user)(void *,
 	    enum gfarm_auth_method, const char *,
-	    enum gfarm_auth_id_type *, char **), void *closure,
-	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
+	    enum gfarm_auth_id_role *, char **), void *closure,
+	enum gfarm_auth_id_role *peer_rolep, char **global_usernamep)
 {
 	gfarm_error_t e = gfarm_authorize_gss(conn, gss,
 	    service_tag, hostname, send_self_type, auth_method,
 	    auth_uid_to_global_user, closure,
-	    peer_typep, global_usernamep);
+	    peer_rolep, global_usernamep);
 
 	if (e == GFARM_ERR_NO_ERROR)
 		gfp_xdr_downgrade_to_insecure_session(conn);

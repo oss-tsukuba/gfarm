@@ -36,7 +36,7 @@ struct gfarm_auth_sasl_client_static {
 gfarm_error_t
 gfarm_auth_request_sasl_common(struct gfp_xdr *conn,
 	const char *service_tag, const char *hostname,
-	enum gfarm_auth_id_type self_type, const char *user,
+	enum gfarm_auth_id_role self_role, const char *user,
 	struct passwd *pwd, const char *diag)
 {
 	gfarm_error_t e;
@@ -546,7 +546,7 @@ gfarm_error_t
 gfarm_auth_request_sasl_common_multiplexed(struct gfarm_eventqueue *q,
 	struct gfp_xdr *conn,
 	const char *service_tag, const char *hostname,
-	enum gfarm_auth_id_type self_type, const char *user,
+	enum gfarm_auth_id_role self_role, const char *user,
 	struct passwd *pwd, int auth_timeout,
 	void (*continuation)(void *), void *closure,
 	void **statepp, const char *diag)
@@ -652,11 +652,11 @@ gfarm_auth_result_sasl_common_multiplexed(void *sp)
 gfarm_error_t
 gfarm_auth_request_sasl(struct gfp_xdr *conn,
 	const char *service_tag, const char *hostname,
-	enum gfarm_auth_id_type self_type, const char *user,
+	enum gfarm_auth_id_role self_role, const char *user,
 	struct passwd *pwd)
 {
 	return (gfarm_auth_request_sasl_common(conn,
-	    service_tag, hostname, self_type, user, pwd,
+	    service_tag, hostname, self_role, user, pwd,
 	    "gfarm_auth_request_sasl"));
 }
 
@@ -664,13 +664,13 @@ gfarm_error_t
 gfarm_auth_request_sasl_multiplexed(struct gfarm_eventqueue *q,
 	struct gfp_xdr *conn,
 	const char *service_tag, const char *hostname,
-	enum gfarm_auth_id_type self_type, const char *user,
+	enum gfarm_auth_id_role self_role, const char *user,
 	struct passwd *pwd, int auth_timeout,
 	void (*continuation)(void *), void *closure,
 	void **statepp)
 {
 	return (gfarm_auth_request_sasl_common_multiplexed(q, conn,
-	    service_tag, hostname, self_type, user, pwd, auth_timeout,
+	    service_tag, hostname, self_role, user, pwd, auth_timeout,
 	    continuation, closure, statepp,
 	    "gfarm_auth_request_sasl_multiplexed"));
 }
@@ -688,11 +688,11 @@ gfarm_auth_result_sasl_multiplexed(void *sp)
 gfarm_error_t
 gfarm_auth_request_sasl_auth(struct gfp_xdr *conn,
 	const char *service_tag, const char *hostname,
-	enum gfarm_auth_id_type self_type, const char *user,
+	enum gfarm_auth_id_role self_role, const char *user,
 	struct passwd *pwd)
 {
 	gfarm_error_t e = gfarm_auth_request_sasl_common(conn,
-	    service_tag, hostname, self_type, user, pwd,
+	    service_tag, hostname, self_role, user, pwd,
 	    "gfarm_auth_request_sasl_auth");
 
 	if (e == GFARM_ERR_NO_ERROR)
@@ -704,13 +704,13 @@ gfarm_error_t
 gfarm_auth_request_sasl_auth_multiplexed(struct gfarm_eventqueue *q,
 	struct gfp_xdr *conn,
 	const char *service_tag, const char *hostname,
-	enum gfarm_auth_id_type self_type, const char *user,
+	enum gfarm_auth_id_role self_role, const char *user,
 	struct passwd *pwd, int auth_timeout,
 	void (*continuation)(void *), void *closure,
 	void **statepp)
 {
 	return (gfarm_auth_request_sasl_common_multiplexed(q, conn,
-	    service_tag, hostname, self_type, user, pwd, auth_timeout,
+	    service_tag, hostname, self_role, user, pwd, auth_timeout,
 	    continuation, closure, statepp,
 	    "gfarm_auth_request_sasl_auth_multiplexed"));
 }
