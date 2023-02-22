@@ -31,6 +31,7 @@ SASL_DOMAIN=$(echo "$GFDOCKER_HOSTNAME_SUFFIX" | sed 's/^\.//')
 GFDOCKER_SASL_XOAUTH2_SCOPE=hpci
 GFDOCKER_SASL_XOAUTH2_AUD=hpci
 GFDOCKER_SASL_XOAUTH2_USER_CLAIM=hpci.id
+GFDOCKER_SASL_XOAUTH2_ISSUERS=https://jwt-keycloak:8443/auth/realms/hpci
 
 gfmds=
 gfsds=
@@ -186,6 +187,7 @@ log_level: ${GFDOCKER_SASL_LOG_LEVEL}
 xoauth2_scope: ${GFDOCKER_SASL_XOAUTH2_SCOPE}
 xoauth2_aud: ${GFDOCKER_SASL_XOAUTH2_AUD}
 xoauth2_user_claim: ${GFDOCKER_SASL_XOAUTH2_USER_CLAIM}
+xoauth2_issuers: ${GFDOCKER_SASL_XOAUTH2_ISSUERS}
 _EOF_
       if "${GFDOCKER_ENABLE_PROXY:-false}"; then
 	cat <<_EOF_
