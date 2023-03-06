@@ -22,7 +22,7 @@
 
 #define staticp	(gfarm_ctxp->auth_sasl_client_static)
 
-#define SASL_JWT_PATH_ENV	"JWT_USER"
+#define SASL_JWT_PATH_ENV	"JWT_USER_PATH"
 #define SASL_JWT_PATHNAME	"/tmp/jwt_user_u%lu/token.jwt"
 #define SASL_PASSWORD_LEN_MAX	16384	/* enough size to hold OAuth JWT */
 
