@@ -25,7 +25,7 @@ char *program_name = "gfuser";
 #define OP_MODIFY_ENTRY	'm'
 #define OP_DELETE_ENTRY	'd'
 #define OP_LIST_AUTH	'L'
-#define OP_MODIFY_AUTH	'a'
+#define OP_MODIFY_AUTH	'A'
 
 struct gfm_connection *gfm_server;
 
@@ -47,7 +47,7 @@ usage(void)
 	    "\t%s [-P <path>] -L [username ...]\n",
 	    program_name);
 	fprintf(stderr,
-	    "\t%s [-P <path>] -a username auth_id_type auth_id\n",
+	    "\t%s [-P <path>] -A username auth_id_type auth_id\n",
 	    program_name);
 	exit(1);
 }
@@ -57,7 +57,7 @@ display_user(int op, int nusers, char *names[],
 	gfarm_error_t *errs, struct gfarm_user_info *users)
 {
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
-	int i;
+	int i, j;
 	char *auth_id;
 
 	for (i = 0; i < nusers; i++) {
@@ -83,55 +83,24 @@ display_user(int op, int nusers, char *names[],
 			       users[i].username, users[i].realname,
 			       users[i].homedir, users[i].gsi_dn);
 
-			e = gfm_client_user_auth_get(gfm_server,
-				     users[i].username,
-				     GFARM_AUTH_USER_ID_TYPE_X509,
-				     &auth_id);
-			if (e == GFARM_ERR_NO_ERROR) {
-				if (strcmp(auth_id, "") != 0)
-					printf("\t%s:%s",
-					       GFARM_AUTH_USER_ID_TYPE_X509,
-					       auth_id);
-			} else {
-				fprintf(stderr, "%s: %s\n",
-					names[i], gfarm_error_string(e));
-				continue;
+			for (j = 0; j < gfarm_auth_user_id_type_number; j++) {
+				e = gfm_client_user_auth_get(gfm_server,
+					     users[i].username,
+					     gfarm_auth_user_id_type_list[j],
+					     &auth_id);
+				if (e == GFARM_ERR_NO_ERROR) {
+					if (strcmp(auth_id, "") != 0)
+						printf("\t%s:%s\n",
+						gfarm_auth_user_id_type_list[j],
+						auth_id);
+				} else {
+					fprintf(stderr, "%s: %s\n",
+						names[i],
+						gfarm_error_string(e));
+					continue;
+				}
+				free(auth_id);
 			}
-			free(auth_id);
-
-			e = gfm_client_user_auth_get(gfm_server,
-				     users[i].username,
-				     GFARM_AUTH_USER_ID_TYPE_KERBEROS,
-				     &auth_id);
-			if (e == GFARM_ERR_NO_ERROR) {
-				if (strcmp(auth_id, "") != 0)
-					printf("\t%s:%s",
-					       GFARM_AUTH_USER_ID_TYPE_KERBEROS,
-					       auth_id);
-			} else {
-				fprintf(stderr, "%s: %s\n",
-					names[i], gfarm_error_string(e));
-				continue;
-			}
-			free(auth_id);
-
-			e = gfm_client_user_auth_get(gfm_server,
-				     users[i].username,
-				     GFARM_AUTH_USER_ID_TYPE_SASL,
-				     &auth_id);
-			if (e == GFARM_ERR_NO_ERROR) {
-				if (strcmp(auth_id, "") != 0)
-					printf("\t%s:%s",
-					       GFARM_AUTH_USER_ID_TYPE_SASL,
-					       auth_id);
-			} else {
-				fprintf(stderr, "%s: %s\n",
-					names[i], gfarm_error_string(e));
-				continue;
-			}
-			free(auth_id);
-			printf("\n");
-
 			break;
 		}
 		gfarm_user_info_free(&users[i]);
@@ -237,7 +206,7 @@ main(int argc, char **argv)
 		exit(1);
 	}
 
-	while ((c = getopt(argc, argv, "P:cdhlmLa?")) != -1) {
+	while ((c = getopt(argc, argv, "P:cdhlmLA?")) != -1) {
 		switch (c) {
 		case 'P':
 			path = optarg;
@@ -247,7 +216,7 @@ main(int argc, char **argv)
 		case 'l':
 		case 'm':
 		case 'L':
-		case 'a':
+		case 'A':
 			opt_operation = c;
 			break;
 		case 'h':

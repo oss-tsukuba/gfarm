@@ -22,9 +22,9 @@ gfarm_hash_default(const void *key, int keylen)
 }
 
 int
-gfarm_hash_add(int initial_hash, const void *key, int keylen)
+gfarm_hash_add(int initial_hash, const void *key, size_t keylen)
 {
-	int i;
+	size_t i;
 	unsigned int hash = initial_hash, g;
 
 	for (i = 0; i < keylen; i++) {

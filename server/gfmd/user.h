@@ -77,6 +77,5 @@ struct group_assignment;
 /* subroutine of grpassign_add(), shouldn't be called from elsewhere */
 void grpassign_add_group(struct group_assignment *);
 
-gfarm_error_t user_auth_id_modify(struct user *, const char *,
-	const char *);
-gfarm_error_t user_auth_id_remove(struct user *, const char *);
+gfarm_error_t user_auth_id_modify(struct user *, char *, char *);
+gfarm_error_t user_auth_id_remove(struct user *, char *);

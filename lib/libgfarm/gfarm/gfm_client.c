@@ -25,6 +25,7 @@
 #include <gfarm/gflog.h>
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
+
 #include <gfarm/gfs.h>
 #include <gfarm/host_info.h>
 #include <gfarm/user_info.h>
@@ -94,6 +95,14 @@ struct gfm_client_static {
 #define CONNERR_RETRY_COUNT 3
 
 static gfarm_error_t gfm_client_connection_dispose(void *);
+
+char  *gfarm_auth_user_id_type_list[] = {
+	GFARM_AUTH_USER_ID_TYPE_X509,
+	GFARM_AUTH_USER_ID_TYPE_KERBEROS,
+	GFARM_AUTH_USER_ID_TYPE_SASL
+};
+int gfarm_auth_user_id_type_number =
+	GFARM_ARRAY_LENGTH(gfarm_auth_user_id_type_list);
 
 gfarm_error_t
 gfm_client_static_init(struct gfarm_context *ctxp)
