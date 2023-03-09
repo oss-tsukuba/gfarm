@@ -33,7 +33,6 @@ struct gfarm_host_sched_info {
 };
 void gfarm_host_sched_info_free(int, struct gfarm_host_sched_info *);
 
-/* strings for auth_user_id_type */
 extern char *gfarm_auth_user_id_type_list[];
 extern int gfarm_auth_user_id_type_number;
 
