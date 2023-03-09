@@ -5,6 +5,10 @@ set -eux
 CA_DIR=/root/simple_ca
 HOST_SHARE_DIR=/mnt
 
+# for desktop
+sudo mkdir -p ${HOST_SHARE_DIR}/desktop
+sudo cp ${CA_DIR}/cacert.pem ${HOST_SHARE_DIR}/desktop
+
 # for jwt-tomcat
 sudo mkdir -p ${HOST_SHARE_DIR}/jwt-tomcat
 sudo cp ${CA_DIR}/cacert.pem ${HOST_SHARE_DIR}/jwt-tomcat
