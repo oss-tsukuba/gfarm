@@ -56,13 +56,6 @@ if test x"$GCC" = x"yes"; then
 fi
 AC_SUBST(dynamic_ldflags)
 
-AC_PROG_LEX
-# the following definition should not be needed.
-# but there is stupid environment which flex exists but libfl.a doesn't.
-if test x"$LEX" = x"flex"; then
-  AC_CHECK_LIB(fl, yywrap, [LEXLIB=-lfl], [LEXLIB=-ll])
-fi
-
 if mkdir -p . 2>/dev/null; then
   MKDIR_P='mkdir -p'
 else
@@ -115,7 +108,7 @@ void *foo(void *p){ return 0; }]], [[
 	pthread_libs="${pthread_libs} $2"
     ],[
 	if test x"${pthread_specified}" = x"explicit"; then
-	  AC_MSG_ERROR([\"$3\" is specified, but cannot be linked, aborted])
+	  AC_MSG_ERROR(["$3" is specified, but cannot be linked, aborted])
 	fi
     ])
     CPPFLAGS="$CPPFLAGS_SAVE"
@@ -183,7 +176,7 @@ fi
 
 case ${ax_cv_have_pthread} in
 yes)
-  AC_MSG_RESULT([using CFLAGS=\"${pthread_includes}\" and LDLIBS=\"${pthread_libs}\"])
+  AC_MSG_RESULT([using CFLAGS="${pthread_includes}" and LDLIBS="${pthread_libs}"])
   AC_DEFINE(HAVE_PTHREAD, 1, [pthread library exists])
 
   pthread_srcs='${PTHREAD_SRCS}'
@@ -230,7 +223,7 @@ AC_ARG_WITH(openssl,
 ],
 [with_openssl=/usr
 ])
-AC_MSG_RESULT([using \"${with_openssl}\"])
+AC_MSG_RESULT([using "${with_openssl}"])
 
 openssl_libs='-lssl -lcrypto'
 if test x"${with_openssl}" = x"/usr"; then
@@ -349,7 +342,7 @@ AC_ARG_WITH(globus,
 	AC_MSG_RESULT([searched directories are: ${GLBlocation_candidates}])
 	AC_MSG_RESULT([searched flavors are: ${GLBflavor_candidates}])
 	if test -n "$globus_flavor"; then
-		AC_MSG_ERROR([cannot find the globus flavor \"$globus_flavor\", missing include/$globus_flavor/gssapi.h under ${GLBlocation_candidates}.])
+		AC_MSG_ERROR([cannot find the globus flavor "$globus_flavor", missing include/$globus_flavor/gssapi.h under ${GLBlocation_candidates}.])
 	else
 		AC_MSG_ERROR([cannot automatically find include/\${GLOBUS_FLAVOR}/gssapi.h under ${GLBlocation_candidates}, please specify the flavor by --with-globus-flavor=GLOBUS_FLAVOR])
 	fi
@@ -357,11 +350,11 @@ AC_ARG_WITH(globus,
    fi
    f_pthr=`expr "$globus_flavor" : '.*\(pthr\)'`
    if test x"$f_pthr" != xpthr; then
-	AC_MSG_RESULT([bad flavor \"$globus_flavor\"])
+	AC_MSG_RESULT([bad flavor "$globus_flavor"])
 	AC_MSG_ERROR([MT-safe flavor required])
 	exit 1
    fi
-   AC_MSG_RESULT([found in \"${globus_location}\" with \"${globus_flavor}\" flavor])
+   AC_MSG_RESULT([found in "${globus_location}" with "${globus_flavor}" flavor])
 
    globus_includes="-I${globus_location}/include/${globus_flavor}"
    if test x"$globus_libdir" = x; then
@@ -478,7 +471,7 @@ no)
 	ib_rdma=no
 	;;
 *)
-	AC_MSG_ERROR([invalid option \"${ib_rdma}\" options, aborted])
+	AC_MSG_ERROR([invalid option "${ib_rdma}" options, aborted])
 	;;
 esac
 
@@ -499,7 +492,7 @@ dev_list = ibv_get_device_list(NULL);
 	AC_DEFINE(HAVE_INFINIBAND, 1, [support InfiniBand RDMA between client and gfsd])
 ],[
 	LIBS="$LIBS_SAVE"
-	AC_MSG_ERROR([InfiniBand cannot be linked with \"${rdma_includes} ${rdma_libs}\" options, aborted])
+	AC_MSG_ERROR([InfiniBand cannot be linked with "${rdma_includes} ${rdma_libs}" options, aborted])
 ])
 fi
 
@@ -514,7 +507,7 @@ AC_SUBST(rdma_libs)
 
 AC_CHECK_HEADERS(stdio.h)
 if test x"${ac_cv_header_stdio_h}" != x"yes"; then
-	AC_MSG_RESULT([preprocessor option error on: \"$ac_cpp\"])
+	AC_MSG_RESULT([preprocessor option error on: "$ac_cpp"])
 	#exit 1
 fi
 
@@ -522,7 +515,7 @@ fi
 
 AC_CHECK_FUNCS(printf)
 if test x"${ac_cv_func_printf}" != x"yes"; then
-	AC_MSG_RESULT([linker option error on: \"$ac_link\"])
+	AC_MSG_RESULT([linker option error on: "$ac_link"])
 	exit 1
 fi
 
@@ -663,10 +656,10 @@ EVP_MD *md_type = EVP_get_digestbyname("sha1");
 
 EVP_DigestInit_ex(md_ctx, md_type, NULL);
 ]])],[],[
-  AC_MSG_ERROR([OpenSSL cannot be linked with \"${openssl_includes} ${openssl_libs}\" options, aborted])
+  AC_MSG_ERROR([OpenSSL cannot be linked with "${openssl_includes} ${openssl_libs}" options, aborted])
 ])
 
-AC_MSG_RESULT([using \"${openssl_includes} ${openssl_libs}\"])
+AC_MSG_RESULT([using "${openssl_includes} ${openssl_libs}"])
 
 # these functions disappeared since OpenSSL-1.1.0
 AC_CHECK_FUNCS(CRYPTO_set_locking_callback CRYPTO_set_id_callback)
@@ -697,7 +690,7 @@ case ${with_openldap} in
   if test -f "${with_openldap}"/include/ldap.h; then
 	ldap_specified=explicit
   else
-	AC_MSG_ERROR([not found in \"${with_openldap}\", aborted])
+	AC_MSG_ERROR([not found in "${with_openldap}", aborted])
   fi;;
 yes|'')
   for d in /usr/local/openldap /usr/local /usr/pkg /usr
@@ -732,10 +725,10 @@ else
 	LDAP *ldap_server = ldap_open("example.com", 389);
 ]])],[
 	if test x"$4" != x""; then
-		AC_MSG_RESULT([using \"$1 $2 $3\" with \"$4\" for LDAP])
+		AC_MSG_RESULT([using "$1 $2 $3" with "$4" for LDAP])
 		ldap_libs="$2 $3 $4"
 	else
-		AC_MSG_RESULT([using \"$1 $2 $3\" for LDAP])
+		AC_MSG_RESULT([using "$1 $2 $3" for LDAP])
 		ldap_libs="$2 $3"
 	fi
 	ldap_usable=yes
@@ -776,9 +769,9 @@ else
   if test x"${ldap_usable}" != x"yes"; then
     case $ldap_specified in
     explicit)
-	  AC_MSG_ERROR([\"${with_openldap}\" is specified, but cannot be linked, aborted]);;
+	  AC_MSG_ERROR(["${with_openldap}" is specified, but cannot be linked, aborted]);;
     yes)
-	  AC_MSG_RESULT([found in \"${with_openldap}\", but cannot be linked, ignored]);;
+	  AC_MSG_RESULT([found in "${with_openldap}", but cannot be linked, ignored]);;
     esac
   fi
 fi
@@ -828,7 +821,7 @@ case ${with_postgresql} in
   if test -f "${with_postgresql}"/bin/pg_config; then
 	postgresql_specified=explicit
   else
-	AC_MSG_ERROR([not found in \"${with_postgresql}\", aborted])
+	AC_MSG_ERROR([not found in "${with_postgresql}", aborted])
   fi;;
 yes|'')
   for d in /usr/local/pgsql /usr/local /usr/pkg /usr
@@ -886,13 +879,13 @@ else
 	PGresult *res = PQexecParams(conn, "", 0, NULL, NULL, NULL, NULL, 0);
   ]])],[
 	postgresql_usable=yes
-	AC_MSG_RESULT([using \"${with_postgresql}\"])
+	AC_MSG_RESULT([using "${with_postgresql}"])
   ],[
 	case $postgresql_specified in
 	explicit)
-		AC_MSG_ERROR([\"${with_postgresql}\" is specified, but cannot be linked, aborted]);;
+		AC_MSG_ERROR(["${with_postgresql}" is specified, but cannot be linked, aborted]);;
 	yes)
-		AC_MSG_RESULT([found in \"${with_postgresql}\", but cannot be linked, ignored]);;
+		AC_MSG_RESULT([found in "${with_postgresql}", but cannot be linked, ignored]);;
 	esac
   ])
 
