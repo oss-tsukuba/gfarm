@@ -1,3 +1,23 @@
+Release note for Gfarm 2.7.21
+=============================
+
+[2023.3.14]
+
+New command
+* gfptar - parallel tar command
+
+Updated feature
+* gfpcopy - select from all available hosts if all hosts in
+  write_target_domain are readonly
+* config-gfarm - support PostgreSQL 14 or later
+* config-gfarm - sanity check for metadata admin user
+
+Bug fix
+* gfhost - fix segfault when executing gfhost -H host
+* config-gfarm, config-gfsd - fix DEBUG=true does not work
+* gfmd - fix race condition in metadata server management
+* gfmd - fix error message in replication [#1137]
+
 Release note for Gfarm 2.7.20
 =============================
 
@@ -5,7 +25,8 @@ Release note for Gfarm 2.7.20
 
 Updated feature
 * support ARM platform
-* gfpcopy - select from all available hosts if no host available in write_target_domain
+* gfpcopy - select from all available hosts if no host available in
+  write_target_domain
 
 Release note for Gfarm 2.7.19
 =============================
