@@ -1602,20 +1602,20 @@ AC_SUBST(tls_objs)
 ##
 
 ##
-## --disable-check-python-lib: check python library
+## --disable-check-python-mod: check python modules
 ##
-AC_ARG_ENABLE(check-python-lib,
-AS_HELP_STRING([--disable-check-python-lib],[skip checking python libraries [default=enable]]), [], [])
+AC_ARG_ENABLE(check-python-mod,
+AS_HELP_STRING([--disable-check-python-mod],[skip checking python modules [default=enable]]), [], [])
 
-if test "x${enable_check_python_lib}" != "xno"; then
+if test "x${enable_check_python_mod}" != "xno"; then
   ./gftool/gfptar/gfptar -h > /dev/null
   rv=$?
-  AC_MSG_CHECKING([Python libraries])
+  AC_MSG_CHECKING([Python modules])
   if test $rv -eq 0 ; then
     AC_MSG_RESULT([yes])
   else
     AC_MSG_RESULT([no])
-    AC_MSG_ERROR([docopt and schema for Python3 required])
+    AC_MSG_ERROR([Python3 modules (docopt and schema) required])
     exit 1
   fi
 fi
