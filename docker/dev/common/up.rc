@@ -4,11 +4,13 @@ set -eux -o pipefail
 : $TZ
 : $LANG
 : $GFDOCKER_USERNAME_PREFIX
+: $GFDOCKER_TENANTNAME_PREFIX
 : $GFDOCKER_PRIMARY_USER
 : $GFDOCKER_NUM_GFMDS
 : $GFDOCKER_NUM_GFSDS
 : $GFDOCKER_NUM_CLIENTS
 : $GFDOCKER_NUM_USERS
+: $GFDOCKER_NUM_TENANTS
 : $GFDOCKER_HOSTNAME_PREFIX_GFMD
 : $GFDOCKER_HOSTNAME_PREFIX_GFSD
 : $GFDOCKER_HOSTNAME_PREFIX_CLIENT
@@ -20,10 +22,11 @@ set -eux -o pipefail
 #: $https_proxy
 #: $GFDOCKER_ENABLE_PROXY
 
-PRIMARY_HOME=/home/${GFDOCKER_PRIMARY_USER}
-gfarm_src_path="${PRIMARY_HOME}/gfarm"
 gfarm_src_path="/work/gfarm"
-HOST_SHARE_DIR=/mnt
+BASEDIR="${gfarm_src_path}/docker/dev/common"
+FUNCTIONS=${BASEDIR}/functions.sh
+. ${FUNCTIONS}
+
 SUDO_USER2="sudo sudo -i -u user2"
 SASL_DOMAIN=$(echo "$GFDOCKER_HOSTNAME_SUFFIX" | sed 's/^\.//')
 
@@ -53,16 +56,21 @@ for i in $(seq 1 $GFDOCKER_NUM_CLIENTS); do
   clients="${clients} ${name}"
   allhosts="${allhosts} ${name}"
 done
-for i in $(seq 1 $GFDOCKER_NUM_USERS); do
+
+i=0
+for t in $(seq 1 "$GFDOCKER_NUM_TENANTS"); do
+ for u in $(seq 1 "$GFDOCKER_NUM_USERS"); do
+  i=$((i + 1))
   users="${users} ${GFDOCKER_USERNAME_PREFIX}${i}"
+ done
 done
 
 # keep and distribute shared keys
 
 ## create directories to keep keys
 for user in $users; do
-  sudo mkdir -p ${HOST_SHARE_DIR}/${user}
-  sudo chown ${user} ${HOST_SHARE_DIR}/${user}
+  sudo mkdir -p ${MNTDIR}/${user}
+  sudo chown ${user} ${MNTDIR}/${user}
 done
 
 GFDOCKER_COPY_SHARED_KEY=/usr/local/bin/gfdocker_copy_shared_key
@@ -75,7 +83,7 @@ set -eux
 
 ALLHOSTS="${allhosts}"
 
-BACKUP_KEY_DIR=${HOST_SHARE_DIR}/\$(whoami)
+BACKUP_KEY_DIR=${MNTDIR}/\$(whoami)
 BACKUP_KEY=\${BACKUP_KEY_DIR}/gfarm_shared_key
 KEY=~/.gfarm_shared_key
 PERIOD=315360000
@@ -100,8 +108,8 @@ sudo chmod +x ${GFDOCKER_COPY_SHARED_KEY}
 
 # keep ssh host keys only for client1 host
 
-MNT_SSH_HOST_KEY_DIR=${HOST_SHARE_DIR}/ssh_host_keys
-MNT_SSH_AUTHORIZED_KEYS_FILE=${HOST_SHARE_DIR}/ssh_authorized_keys
+MNT_SSH_HOST_KEY_DIR=${MNTDIR}/ssh_host_keys
+MNT_SSH_AUTHORIZED_KEYS_FILE=${MNTDIR}/ssh_authorized_keys
 SSH_HOST_KEY_DIR=/etc/ssh
 
 if [ ! -d $MNT_SSH_HOST_KEY_DIR ]; then
@@ -163,7 +171,7 @@ done
 
 # create initial /mnt/conf/auth-client*.conf before calling gfservice,
 # because these files are included from $HOME/.gfarm2rc
-conf_include_dir="${HOST_SHARE_DIR}/conf"
+conf_include_dir="${MNTDIR}/conf"
 sudo mkdir -p "${conf_include_dir}"
 sudo chown -R "${GFDOCKER_PRIMARY_USER}" "${conf_include_dir}"
 cat <<'_EOF_' > "${conf_include_dir}/auth-client.conf"
@@ -171,6 +179,7 @@ auth enable sharedsecret *
 auth enable gsi_auth *
 _EOF_
 cp /dev/null "${conf_include_dir}/auth-client.sasl.conf"
+cp /dev/null "${conf_include_dir}/local_user_map"
 
 sasl_installed=false
 if pkg-config --exists libsasl2; then
@@ -241,6 +250,8 @@ for host in $gfmds; do
      gfservice set-gfmd-conf "$host" 'auth enable sasl_auth' '*' &&
      gfservice set-gfmd-conf "$host" 'auth enable sasl' '*'
    fi &&
+   gfservice set-gfmd-conf "$host" "local_user_map" \
+     "${conf_include_dir}/local_user_map" &&
    gfservice set-gfmd-conf "$host" write_verify enable &&
    gfservice set-gfmd-conf "$host" write_verify_interval 600 &&
    gfservice restart-gfmd "$host"
@@ -260,6 +271,8 @@ for host in $gfsds; do
      gfservice set-gfarm-conf "$host" 'auth enable sasl_auth' '*' &&
      gfservice set-gfarm-conf "$host" 'auth enable sasl' '*'
    fi &&
+   gfservice set-gfarm-conf "$host" "local_user_map" \
+     "${conf_include_dir}/local_user_map" &&
    gfservice restart-gfsd "$host" &&
    ssh "$host" sudo systemctl enable "gfsd-${host}${GFDOCKER_HOSTNAME_SUFFIX}"
   ) &
@@ -267,19 +280,19 @@ done
 #wait
 
 for host in $clients; do
-  (gfservice set-gfarm-conf "$host" client_digest_check enable \
-  && gfservice set-gfarm-conf "$host" schedule_busy_load_thresh 20 \
+  (gfservice set-gfarm-conf "$host" "local_user_map" \
+     "${conf_include_dir}/local_user_map" &&
+   gfservice set-gfarm-conf "$host" client_digest_check enable &&
+   gfservice set-gfarm-conf "$host" schedule_busy_load_thresh 20
   ) &
 done
 wait
 
 # copy current configuration files for external containers
-COPY_DIR=${HOST_SHARE_DIR}/COPY_DIR
+COPY_DIR=${MNTDIR}/COPY_DIR
 COPY_HOMES="${COPY_DIR}/HOMES"
 
 sudo mkdir -p "${COPY_HOMES}"
-gfsudo gfmkdir /home
-gfsudo gfchown gfarmadm /home
 
 # for external gfarm-s3-minio-web container
 S3_USERMAP="${COPY_DIR}/gfarm-s3-usermap.conf"
@@ -288,58 +301,119 @@ S3_ACCESS_KEY_PREFIX="gfarm_s3_"
 echo "### <Gfarm Username>:<Local Username>:<S3 Accesskey ID>" | \
 sudo dd of="${S3_USERMAP}" > /dev/null 2>&1
 
-for i in $(seq 1 $GFDOCKER_NUM_USERS); do
-  name="${GFDOCKER_USERNAME_PREFIX}${i}"
-  from_dir="/home/${name}"
-  to_dir="${COPY_HOMES}/${name}"
-  subject="/O=Gfarm/OU=GfarmDev/OU=GfarmCA/CN=${name}"
-  ghome_dir="/home/${name}"
+gfsudo gfmkdir /.tenants
+gfsudo gfchmod 000 /.tenants
+gfsudo gfchown gfarmadm:gfarmadm /.tenants
+
+i=0
+for t in $(seq 1 "$GFDOCKER_NUM_TENANTS"); do
+
+ tenant_user_suffix="$(gftenant_user_suffix_from_index $t)"
+ tenant_path_prefix="$(gftenant_path_prefix_from_index $t)"
+
+ for u in $(seq 1 "$GFDOCKER_NUM_USERS"); do
+  i=$((i + 1))
+  unix_username="${GFDOCKER_USERNAME_PREFIX}${i}"
+  from_dir="/home/${unix_username}"
+  to_dir="${COPY_HOMES}/${unix_username}"
+  subject="/O=Gfarm/OU=GfarmDev/OU=GfarmCA/CN=${unix_username}"
+  guser="$(gfuser_from_index $t $u)"
+  ghome_dir="/home/${guser}"
+  case ${tenant_user_suffix} in
+  '') :;;
+  *) echo >>"${conf_include_dir}/local_user_map" \
+	"${guser}${tenant_user_suffix}	${unix_username}";;
+  esac
 
   # add gfarm user (skip Gfarm admin user)
-  if [ "${name}" != "${GFDOCKER_USERNAME_PREFIX}1" ]; then
-    gfuser -c "${name}" "${name}" "${ghome_dir}" "${subject}"
+  if [ "${unix_username}" != "${GFDOCKER_USERNAME_PREFIX}1" ]; then
+    gfuser -c "${guser}${tenant_user_suffix}" "user$u in tenant $t" \
+      "${ghome_dir}" "${subject}"
   fi
-  gfsudo gfmkdir "${ghome_dir}"
-  gfsudo gfchown "${name}" "${ghome_dir}"
+
+  case $u in
+  1)
+    case $t in
+    1) ;;
+    *) gfuser -c "gfarmadm${tenant_user_suffix}" \
+         "Gfarm administrator in tenant $t" '/' ''
+       gfgroup -c "gfarmadm${tenant_user_suffix}" \
+         "gfarmadm${tenant_user_suffix}"
+       gfgroup -c "gfarmroot${tenant_user_suffix}"
+
+       gfsudo gfmkdir "${tenant_path_prefix}"
+       gfsudo gfchmod 0755 "${tenant_path_prefix}"
+       gfsudo gfchown \
+         "gfarmadm${tenant_user_suffix}":"gfarmadm${tenant_user_suffix}" \
+         "${tenant_path_prefix}"
+       ;;
+    esac
+
+    gfsudo gfmkdir "${tenant_path_prefix}/tmp"
+    gfsudo gfchmod 1777 "${tenant_path_prefix}/tmp"
+
+    gfsudo gfmkdir "${tenant_path_prefix}/home"
+    gfsudo gfchmod 0755 "${tenant_path_prefix}/home"
+
+    gfsudo gfchown \
+      "gfarmadm${tenant_user_suffix}":"gfarmadm${tenant_user_suffix}" \
+      "${tenant_path_prefix}/tmp" \
+      "${tenant_path_prefix}/home"
+    ;;
+  esac
+
+  gfsudo gfmkdir -p "${tenant_path_prefix}${ghome_dir}"
+  gfsudo gfchown "${guser}${tenant_user_suffix}" \
+    "${tenant_path_prefix}${ghome_dir}"
 
   # backup or restore gfarm_shared_key
-  sudo sudo -i -u "$name" ${GFDOCKER_COPY_SHARED_KEY}
+  sudo sudo -i -u "$unix_username" ${GFDOCKER_COPY_SHARED_KEY}
 
   # copy home directory to COPY_HOMES
   sudo rsync -av --exclude=gfarm --exclude gfarm2fs --exclude tmp \
-  --exclude rpmbuild \
-  "${from_dir}/" "${to_dir}/"
+    --exclude rpmbuild \
+    "${from_dir}/" "${to_dir}/"
 
-  # add gfarm user for SASL w/ mechanism=PLAIN or LOGOIN
+  # add gfarm user for SASL w/ mechanism=PLAIN or LOGIN
   if $sasl_available; then
-    sasl_user="${name}@${SASL_DOMAIN}"
+    sasl_user="${guser}@${SASL_DOMAIN}"
     sasl_home="/home/${sasl_user}"
-    gfuser -c "${sasl_user}" "${sasl_user}" "${sasl_home}" ""
-    gfsudo gfmkdir "${sasl_home}"
-    gfsudo gfchown "${sasl_user}" "${sasl_home}"
+    gfuser -c "${sasl_user}${tenant_user_suffix}" "${sasl_user} in tenant $t" \
+      "${sasl_home}" ""
+    gfsudo gfmkdir "${tenant_path_prefix}${sasl_home}"
+    gfsudo gfchown "${sasl_user}${tenant_user_suffix}" \
+      "${tenant_path_prefix}${sasl_home}"
+
+    case $u in
+    1) gfgroup -a -m "gfarmadm${tenant_user_suffix}" \
+         "${sasl_user}${tenant_user_suffix}";;
+    esac
+
   fi
 
   # add to S3_USERMAP
-  echo "${name}:${name}:${S3_ACCESS_KEY_PREFIX}${name}" | \
+  echo "${guser}:${unix_username}:${S3_ACCESS_KEY_PREFIX}${unix_username}" | \
   sudo dd conv=notrunc oflag=append of="${S3_USERMAP}" > /dev/null 2>&1
-done
+ done
 
-if $sasl_available; then
-  sasl_user="${GFDOCKER_PRIMARY_USER}@${SASL_DOMAIN}"
-  gfgroup -a -m gfarmadm "${sasl_user}"
-fi
-
-# add gfarm user for SASL w/ mechanism=ANONYMOUS
-if $sasl_available &&
+ # add gfarm user for SASL w/ mechanism=ANONYMOUS
+ if $sasl_available &&
    expr "${GFDOCKER_SASL_MECH_LIST}" : '.*ANONYMOUS.*' >/dev/null
-then
+ then
   sasl_user="anonymous"
   sasl_home="/home/${sasl_user}"
-  gfuser -c "${sasl_user}" "${sasl_user}" "${sasl_home}" ""
-  gfgroup -a -m gfarmadm "${sasl_user}"
-  gfsudo gfmkdir "${sasl_home}"
-  gfsudo gfchown "${sasl_user}" "${sasl_home}"
-fi
+  gfuser -c "${sasl_user}${tenant_user_suffix}" "${sasl_user} in tenant $t" \
+    "${sasl_home}" ""
+  gfgroup -a -m "gfarmadm${tenant_user_suffix}" \
+    "${sasl_user}${tenant_user_suffix}"
+  gfsudo gfmkdir \
+    "${tenant_path_prefix}${sasl_home}"
+  gfsudo gfchown \
+    "${sasl_user}${tenant_user_suffix}" \
+    "${tenant_path_prefix}${sasl_home}"
+ fi
+
+done
 
 ### copy certificates
 CERTIFICATES_DIR=/etc/grid-security/certificates
@@ -386,24 +460,24 @@ authconfig -n all
 
 for host in $gfmds; do
   ssh "$host" \
-    sudo "${gfarm_src_path}/docker/dev/common/authconfig-setup.sh" gfmd &
+    sudo "${BASEDIR}/authconfig-setup.sh" gfmd &
 done
 for host in $gfsds; do
   ssh "$host" \
-    sudo "${gfarm_src_path}/docker/dev/common/authconfig-setup.sh" gfsd &
+    sudo "${BASEDIR}/authconfig-setup.sh" gfsd &
 done
 # the following setting is not normally used,
 # because $HOME/.gfarm2rc does the job.
 for host in $clients; do
   ssh "$host" \
-    sudo "${gfarm_src_path}/docker/dev/common/authconfig-setup.sh" client &
+    sudo "${BASEDIR}/authconfig-setup.sh" client &
 done
 wait
 
 # create the hook files:
-hook_dir="${HOST_SHARE_DIR}/hook"
-memcheck_log_dir="${HOST_SHARE_DIR}/memcheck-results"
-helgrind_log_dir="${HOST_SHARE_DIR}/helgrind-results"
+hook_dir="${MNTDIR}/hook"
+memcheck_log_dir="${MNTDIR}/memcheck-results"
+helgrind_log_dir="${MNTDIR}/helgrind-results"
 sudo mkdir -p "${hook_dir}" "${memcheck_log_dir}" "${helgrind_log_dir}"
 sudo chown "${GFDOCKER_PRIMARY_USER}" "${hook_dir}"
 sudo chown "_gfarmfs":"${GFDOCKER_PRIMARY_USER}" \
@@ -411,7 +485,7 @@ sudo chown "_gfarmfs":"${GFDOCKER_PRIMARY_USER}" \
 sudo chmod ug+w "${memcheck_log_dir}" "${helgrind_log_dir}"
 
 for hook in no-hook memcheck memcheck.not-child helgrind helgrind.not-child; do
-  cp "${gfarm_src_path}/docker/dev/common/${hook}.hook" "${hook_dir}"
+  cp "${BASEDIR}/${hook}.hook" "${hook_dir}"
 done
 
 hookconfig --all no-hook
@@ -419,13 +493,13 @@ hookconfig --all no-hook
 # modify systemd unit files to add a hook
 for host in $gfmds; do
   ssh -n "$host" sudo \
-    "${gfarm_src_path}/docker/dev/common/hookconfig-setup.sh" \
+    "${BASEDIR}/hookconfig-setup.sh" \
     "${host}" "gfmd" &
 done
 
 for host in $gfsds; do
   ssh -n "$host" sudo \
-    "${gfarm_src_path}/docker/dev/common/hookconfig-setup.sh" \
+    "${BASEDIR}/hookconfig-setup.sh" \
     "${host}" "gfsd-${host}${GFDOCKER_HOSTNAME_SUFFIX}" &
 done
 wait
@@ -434,9 +508,9 @@ wait
 sleep 1
 
 # for jwt-server HTTPS
-sudo mkdir -p ${HOST_SHARE_DIR}/httpd
-sudo cp /etc/grid-security/httpdcert.pem ${HOST_SHARE_DIR}/httpd/
-sudo cp /etc/grid-security/httpdkey.pem ${HOST_SHARE_DIR}/httpd/
+sudo mkdir -p ${MNTDIR}/httpd
+sudo cp /etc/grid-security/httpdcert.pem ${MNTDIR}/httpd/
+sudo cp /etc/grid-security/httpdkey.pem ${MNTDIR}/httpd/
 
 ### update CA for OAuth-related web servers
 

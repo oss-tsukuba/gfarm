@@ -2,7 +2,9 @@ set -xu
 
 : $GFDOCKER_PRJ_NAME
 : $GFDOCKER_PRIMARY_USER
+: $GFDOCKER_TENANT_ADMIN_USER
 : $GFDOCKER_HOSTNAME_PREFIX_GFSD
+: $GFDOCKER_HOSTNAME_PREFIX_CLIENT
 : $GFDOCKER_HOSTNAME_SUFFIX
 
 case $# in
@@ -15,6 +17,9 @@ esac
 GFARM_SRCDIR=~/gfarm
 RUN_REGRESS=$GFARM_SRCDIR/docker/dev/common/run_regress.sh
 
+GFARM_SRCDIR_TENANT=/home/${GFDOCKER_TENANT_ADMIN_USER}/gfarm
+RUN_REGRESS_TENANT=$GFARM_SRCDIR_TENANT/docker/dev/common/run_regress.sh
+
 HOST_SHARE_DIR=/mnt
 DATETIME=$(date +%Y%m%d%H%M)
 LOG_PREFIX=${DATETIME}.${GFDOCKER_PRJ_NAME}
@@ -24,27 +29,20 @@ sudo mkdir -p ${LOG_DIR}
 sudo chmod 1777 ${LOG_DIR}
 
 cd $GFARM_SRCDIR/regress
-gfmkdir -p /tmp
-gfchmod 1777 /tmp
 
 LOG_REMOTE_NONROOT=log.wo_root.remote
 LOG_LOCAL_ROOT=log.w_root.local
+LOG_REMOTE_NONROOT_TENANT=log.wo_root.remote.${GFDOCKER_TENANT_ADMIN_USER}
+LOG_LOCAL_ROOT_TENANT=log.w_root.local.${GFDOCKER_TENANT_ADMIN_USER}
 
-bin/am_I_gfarmroot
-is_gfarmroot=$?
-
-me=`gfwhoami`
 gfsdhost=${GFDOCKER_HOSTNAME_PREFIX_GFSD}1${GFDOCKER_HOSTNAME_SUFFIX}
+clienthost=${GFDOCKER_HOSTNAME_PREFIX_CLIENT}1${GFDOCKER_HOSTNAME_SUFFIX}
 
 GFARM_TEST_CKSUM_MISMATCH=/tmp/cksum_mismatch
 
 trap_sigs='1 2 15'
 restore() {
     gfrm -f $GFARM_TEST_CKSUM_MISMATCH
-
-    if [ $is_gfarmroot -ne 0 ]; then
-        gfgroup -r -m gfarmroot $me
-    fi
 }
 trap 'restore' $trap_sigs
 
@@ -65,24 +63,44 @@ EOF
 
 scp $SPOOL_CHECK_CONFIG $gfsdhost:~/gfarm/regress/manual/server/gfsd/spool_check/config.sh
 
-if [ $is_gfarmroot -eq 0 ]; then
-    gfgroup -r -m gfarmroot $me
-fi
 # remote access and non-gfarmroot
-$RUN_REGRESS $GFARM_SRCDIR $LOG_REMOTE_NONROOT $GFARM_TEST_CKSUM_MISMATCH $parallel || true
+$RUN_REGRESS $GFARM_SRCDIR $LOG_REMOTE_NONROOT false \
+	$GFARM_TEST_CKSUM_MISMATCH $parallel || true
 
 # local access and gfarmroot
-gfgroup -a -m gfarmroot $me
-ssh $gfsdhost $RUN_REGRESS $GFARM_SRCDIR $LOG_LOCAL_ROOT $GFARM_TEST_CKSUM_MISMATCH $parallel || true
+ssh $gfsdhost $RUN_REGRESS $GFARM_SRCDIR $LOG_LOCAL_ROOT true \
+	$GFARM_TEST_CKSUM_MISMATCH $parallel || true
+
+# remote access and non-gfarmroot in tenant 2
+sudo su - "${GFDOCKER_TENANT_ADMIN_USER}" \
+    $RUN_REGRESS_TENANT $GFARM_SRCDIR_TENANT $LOG_REMOTE_NONROOT_TENANT false \
+	$GFARM_TEST_CKSUM_MISMATCH $parallel || true
+
+# local access and gfarmroot in tenant 2
+sudo su - "${GFDOCKER_TENANT_ADMIN_USER}" -c "ssh $gfsdhost \
+    $RUN_REGRESS_TENANT $GFARM_SRCDIR_TENANT $LOG_LOCAL_ROOT_TENANT true \
+	$GFARM_TEST_CKSUM_MISMATCH $parallel" || true
 
 restore
 
 scp $gfsdhost:$GFARM_SRCDIR/regress/$LOG_LOCAL_ROOT .
-./addup.sh -v $LOG_REMOTE_NONROOT $LOG_LOCAL_ROOT
-./addup.sh $LOG_REMOTE_NONROOT $LOG_LOCAL_ROOT
+sudo su - "${GFDOCKER_TENANT_ADMIN_USER}" \
+  -c "cat $GFARM_SRCDIR_TENANT/regress/$LOG_REMOTE_NONROOT_TENANT" \
+  >$LOG_REMOTE_NONROOT_TENANT
+sudo su - "${GFDOCKER_TENANT_ADMIN_USER}" \
+  -c "ssh $gfsdhost cat $GFARM_SRCDIR_TENANT/regress/$LOG_LOCAL_ROOT_TENANT" \
+  >$LOG_LOCAL_ROOT_TENANT
+./addup.sh -v $LOG_REMOTE_NONROOT $LOG_LOCAL_ROOT \
+	$LOG_REMOTE_NONROOT_TENANT $LOG_LOCAL_ROOT_TENANT
+./addup.sh $LOG_REMOTE_NONROOT $LOG_LOCAL_ROOT \
+	$LOG_REMOTE_NONROOT_TENANT $LOG_LOCAL_ROOT_TENANT
 res=$?
 
 cp $LOG_REMOTE_NONROOT ${LOG_DIR}/${LOG_PREFIX}.${LOG_REMOTE_NONROOT}
 cp $LOG_LOCAL_ROOT ${LOG_DIR}/${LOG_PREFIX}.${LOG_LOCAL_ROOT}
+cp $LOG_REMOTE_NONROOT_TENANT \
+	${LOG_DIR}/${LOG_PREFIX}.${LOG_REMOTE_NONROOT_TENANT}
+cp $LOG_LOCAL_ROOT_TENANT \
+	${LOG_DIR}/${LOG_PREFIX}.${LOG_LOCAL_ROOT_TENANT}
 
 exit $res

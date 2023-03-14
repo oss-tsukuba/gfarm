@@ -181,7 +181,9 @@ if use_keycloak:
       - MYSQL_PASSWORD=gfarm123
   keycloak:
     container_name: keycloak
-    build: common/oauth2/keycloak
+    build:
+      context: common
+      dockerfile: oauth2/keycloak/Dockerfile
     networks:
       gfarm_dev:
     environment:

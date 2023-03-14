@@ -3,7 +3,9 @@
 # Usage (in *-base-Dockerfile):
 #
 # ARG GFDOCKER_USERNAME_PREFIX
+# ARG GFDOCKER_TENANTNAME_PREFIX
 # ARG GFDOCKER_PRIMARY_USER
+# ARG GFDOCKER_TENANT_ADMIN_USER
 # ARG GFDOCKER_NUM_GFMDS
 # ARG GFDOCKER_NUM_GFSDS
 # ARG GFDOCKER_NUM_USERS
@@ -17,14 +19,23 @@
 set -eux
 
 : $GFDOCKER_USERNAME_PREFIX
+: $GFDOCKER_TENANTNAME_PREFIX
 : $GFDOCKER_PRIMARY_USER
+: $GFDOCKER_TENANT_ADMIN_USER
 : $GFDOCKER_NUM_GFMDS
 : $GFDOCKER_NUM_GFSDS
 : $GFDOCKER_NUM_USERS
+: $GFDOCKER_NUM_TENANTS
 : $GFDOCKER_HOSTNAME_PREFIX_GFMD
 : $GFDOCKER_HOSTNAME_PREFIX_GFSD
 : $GFDOCKER_HOSTNAME_SUFFIX
 : $GFDOCKER_USE_SAN_FOR_GFSD
+
+gfarm_src_path="/work/gfarm"
+gfarm_src2_path="/work/gfarm2"
+BASEDIR="${gfarm_src_path}/docker/dev/common"
+FUNCTIONS=${BASEDIR}/functions.sh
+. ${FUNCTIONS}
 
 MY_SHELL=/bin/bash
 HOST_SHARE_DIR=/mnt
@@ -35,7 +46,7 @@ SASL_PASSWORD_BASE=PASS-
 ca_key_pass=PASSWORD
 GRID_MAPFILE=/etc/grid-security/grid-mapfile
 PRIMARY_HOME=/home/${GFDOCKER_PRIMARY_USER}
-gfarm_src_path="/work/gfarm"
+TENANT_ADMIN_HOME=/home/${GFDOCKER_TENANT_ADMIN_USER}
 gfarm2fs_src_path="${gfarm_src_path}/gfarm2fs"
 jwt_logon_src_path="${gfarm_src_path}/jwt-logon"
 jwt_agent_src_path="${gfarm_src_path}/jwt-agent"
@@ -43,8 +54,12 @@ cyrus_sasl_xoauth2_idp_src_path="${gfarm_src_path}/cyrus-sasl-xoauth2-idp"
 scitokens_cpp_src_path="${gfarm_src_path}/scitokens-cpp"
 
 # pin starting UID for user1
-for i in $(seq 1 "$GFDOCKER_NUM_USERS"); do
+i=0
+for t in $(seq 1 "$GFDOCKER_NUM_TENANTS"); do
+ for u in $(seq 1 "$GFDOCKER_NUM_USERS"); do
+  i=$((i + 1))
   $USERADD "${GFDOCKER_USERNAME_PREFIX}${i}";
+ done
 done
 
 ln -s ${gfarm_src_path} ${PRIMARY_HOME}/gfarm
@@ -63,6 +78,12 @@ ln -s ${scitokens_cpp_src_path} ${PRIMARY_HOME}/scitokens-cpp
 ( if cd ${jwt_agent_src_path}; then git clean -df; fi ) || true
 ( if cd ${cyrus_sasl_xoauth2_idp_src_path}; then git clean -df; fi ) || true
 ( if cd ${scitokens_cpp_src_path}; then git clean -df; fi ) || true
+
+if [ "${GFDOCKER_NUM_TENANTS}" -gt 1 ]; then
+  # for regress
+  ln -s ${gfarm_src2_path} ${TENANT_ADMIN_HOME}/gfarm
+  (cd ${gfarm_src2_path}; git clean -df) || true
+fi
 
 for u in _gfarmmd _gfarmfs; do
   $USERADD "$u"
@@ -165,10 +186,13 @@ grid-ca-sign -in "/etc/grid-security/${name}cert_request.pem" \
   -passin pass:"$ca_key_pass" -md $MD -dir ${CA_DIR}
 grid-cert-info -file "/etc/grid-security/${name}cert.pem"
 
-base_ssh_config="${gfarm_src_path}/docker/dev/common/ssh_config"
+base_ssh_config="${BASEDIR}/ssh_config"
 echo >> /etc/sudoers
 echo '# for Gfarm' >> /etc/sudoers
-for i in $(seq 1 "$GFDOCKER_NUM_USERS"); do
+i=0
+for t in $(seq 1 "$GFDOCKER_NUM_TENANTS"); do
+ for u in $(seq 1 "$GFDOCKER_NUM_USERS"); do
+  i=$((i + 1))
   user="${GFDOCKER_USERNAME_PREFIX}${i}"
   # User account is made by caller of this script.
   # see "Usage (Dockerfile)" for details.
@@ -202,6 +226,7 @@ for i in $(seq 1 "$GFDOCKER_NUM_USERS"); do
   echo "${USER_SBJ} ${user}" >> "$GRID_MAPFILE"
   tls_dir="/home/${user}/.gfarm"
   ln -s ".globus" "$tls_dir"
+ done
 done
 
 # for TLS
@@ -217,18 +242,23 @@ user1_authkey="${user1_dotssh}/authorized_keys"
 mkdir -p "${root_dotssh}"
 cat "${user1_authkey}" >> "${root_authkey}"
 
-base_gfservicerc="${gfarm_src_path}/docker/dev/common/rc.gfservice"
-base_gfarm2rc="${gfarm_src_path}/docker/dev/common/rc.gfarm2rc"
-for i in $(seq 1 "$GFDOCKER_NUM_USERS"); do
-  user="${GFDOCKER_USERNAME_PREFIX}${i}"
-  gfservicerc="/home/${user}/.gfservice"
+base_gfservicerc="${BASEDIR}/rc.gfservice"
+base_gfarm2rc="${BASEDIR}/rc.gfarm2rc"
+i=0
+for t in $(seq 1 "$GFDOCKER_NUM_TENANTS"); do
+ for u in $(seq 1 "$GFDOCKER_NUM_USERS"); do
+  i=$((i + 1))
+  unix_username="${GFDOCKER_USERNAME_PREFIX}${i}"
+  guser="$(gfuser_from_index $t $u)"
+  tenant_user_suffix="$(gftenant_user_suffix_from_index $t)"
+  gfservicerc="/home/${unix_username}/.gfservice"
   cp "$base_gfservicerc" "$gfservicerc"
   chmod 0644 "$gfservicerc"
-  chown "${user}:${user}" "$gfservicerc"
-  gfarm2rc="/home/${user}/.gfarm2rc"
+  chown "${unix_username}:${unix_username}" "$gfservicerc"
+  gfarm2rc="/home/${unix_username}/.gfarm2rc"
   cp "$base_gfarm2rc" "$gfarm2rc"
   chmod 0644 "$gfarm2rc"
-  chown "${user}:${user}" "$gfarm2rc"
+  chown "${unix_username}:${unix_username}" "$gfarm2rc"
   # use a symbolic link instead of direct referece to ${conf_include_dir},
   # to access ${HOME}/.gfarm2rc.passwd via relative pathname
   gfarm2rc_sasl="${gfarm2rc}.sasl"
@@ -236,12 +266,14 @@ for i in $(seq 1 "$GFDOCKER_NUM_USERS"); do
   gfarm2rc_passwd="${gfarm2rc}.passwd"
   cp /dev/null "$gfarm2rc_passwd"
   chmod 0600 "$gfarm2rc_passwd"
-  chown "${user}:${user}" "$gfarm2rc_passwd"
-  echo "sasl_user \"${user}@${SASL_DOMAIN}\"" >>"$gfarm2rc_passwd"
-  echo "sasl_password \"${SASL_PASSWORD_BASE}${user}\"" >>"$gfarm2rc_passwd"
+  chown "${unix_username}:${unix_username}" "$gfarm2rc_passwd"
+  echo >>"$gfarm2rc_passwd" \
+	"sasl_user \"${guser}@${SASL_DOMAIN}${tenant_user_suffix}\""
+  echo >>"$gfarm2rc_passwd" \
+	"sasl_password \"${SASL_PASSWORD_BASE}${unix_username}\""
   if type saslpasswd2 2>/dev/null; then
-    echo "${SASL_PASSWORD_BASE}${user}" |
-      saslpasswd2 -c -u "${SASL_DOMAIN}" "${user}"
+    echo "${SASL_PASSWORD_BASE}${unix_username}" |
+      saslpasswd2 -c -u "${SASL_DOMAIN}${tenant_user_suffix}" "${guser}"
     if [ "${sasl_db:-NOT_SET}" = "NOT_SET" ]; then
       sasl_db=/etc/sasl2/sasldb2
       if [ ! -f ${sasl_db} ]; then
@@ -251,8 +283,9 @@ for i in $(seq 1 "$GFDOCKER_NUM_USERS"); do
     chown _gfarmfs "${sasl_db}"
   fi
   gfarm2rc_sasl_xoauth2="${gfarm2rc}.sasl.xoauth2"
-  echo "sasl_user \"${user}\"" >>"$gfarm2rc_sasl_xoauth2"
-  chown "${user}:${user}" "$gfarm2rc_sasl_xoauth2"
+  echo "sasl_user \"${guser}${tenant_user_suffix}\"" >>"$gfarm2rc_sasl_xoauth2"
+  chown "${unix_username}:${unix_username}" "$gfarm2rc_sasl_xoauth2"
+ done
 done
 
 su - "$GFDOCKER_PRIMARY_USER" -c " \
@@ -263,9 +296,9 @@ su - "$GFDOCKER_PRIMARY_USER" -c " \
 "
 
 # install /usr/local/bin/authconfig
-cp -p "${gfarm_src_path}/docker/dev/common/authconfig" /usr/local/bin/
+cp -p "${BASEDIR}/authconfig" /usr/local/bin/
 # install /usr/local/bin/hookconfig
-cp -p "${gfarm_src_path}/docker/dev/common/hookconfig" /usr/local/bin/
+cp -p "${BASEDIR}/hookconfig" /usr/local/bin/
 
 ### for gfsd certificate ("CN=gfsd/... and subjectAltName")
 if [ ${GFDOCKER_USE_SAN_FOR_GFSD} -eq 1 ]; then

@@ -1,7 +1,11 @@
 #!/bin/sh
 
+BASEDIR=~/gfarm/docker/dev/common
+FUNCTIONS=${BASEDIR}/functions.sh
+. ${FUNCTIONS}
+
 progname=`basename $0`
-auth_config_dir=/mnt/conf
+auth_config_dir="${MNTDIR}/conf"
 modify_gfuser=true
 no_restart=false
 internal_call=false
@@ -377,18 +381,28 @@ else
 fi
 
 if ${modify_gfuser}; then
-	for i in $(seq 1 $GFDOCKER_NUM_USERS); do
-		name="${GFDOCKER_USERNAME_PREFIX}${i}"
-		ghome_dir="/home/${name}"
+	i=0
+	for t in $(seq 1 $GFDOCKER_NUM_TENANTS); do
+	    for u in $(seq 1 $GFDOCKER_NUM_USERS); do
+		i=$((i + 1))
+		unix_username="${GFDOCKER_USERNAME_PREFIX}${i}"
+		guser="$(gfuser_from_index $t $u)"
+		tenant_user_suffix="$(gftenant_user_suffix_from_index $t)"
+		gcos="$(     gfuser -l "${guser}${tenant_user_suffix}" |
+			awk -F: '{print $2}')"
+		ghome_dir="$(gfuser -l "${guser}${tenant_user_suffix}" |
+			awk -F: '{print $3}')"
 		krb_realm=`echo "${GFDOCKER_HOSTNAME_SUFFIX}" | sed 's/^\.//'`
-		krb_principal="${name}@${krb_realm}"
-		x509_dn="/O=Gfarm/OU=GfarmDev/OU=GfarmCA/CN=${name}"
+		krb_principal="${unix_username}@${krb_realm}"
+		x509_dn="/O=Gfarm/OU=GfarmDev/OU=GfarmCA/CN=${unix_username}"
 		if ${gfuser_4th_needs_krb_principal}; then
 			identifier="${krb_principal}"
 		else
 			identifier="${x509_dn}"
 		fi
-		gfuser -m "${name}" "${name}" "${ghome_dir}" "${identifier}"
+		gfuser -m "${guser}${tenant_user_suffix}" \
+			"${gcos}" "${ghome_dir}" "${identifier}"
+	    done
 	done
 fi
 

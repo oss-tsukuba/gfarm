@@ -4,5 +4,5 @@ USER root
 
 RUN microdnf update -y && microdnf install -y jq && microdnf clean all
 
-ADD setup.sh /setup.sh
-
+ADD oauth2/keycloak/setup.sh /setup.sh
+ADD functions.sh /functions.sh

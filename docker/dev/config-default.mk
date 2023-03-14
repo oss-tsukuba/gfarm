@@ -31,6 +31,7 @@ GFDOCKER_NUM_CLIENTS = 2
 
 # number of local/global accounts
 GFDOCKER_NUM_USERS = 4
+GFDOCKER_NUM_TENANTS = 3
 
 # requirements:
 #GFDOCKER_IP_VERSION: syntax: 4 or 6
