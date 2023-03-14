@@ -368,6 +368,7 @@ user_auth_id_modify_internal(struct user *u,
 
 	if (u->auth_user_id[auth_user_id_type] != NULL &&
 		strcmp(u->auth_user_id[auth_user_id_type], auth_user_id) == 0) {
+		*need_to_update_dbp = false;
 		return (GFARM_ERR_NO_ERROR);
 	}
 
