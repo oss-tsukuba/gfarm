@@ -1412,6 +1412,26 @@ if test "${linuxkernel_targets}" = "linux"; then
 else
 	AC_MSG_RESULT([no])
 fi
+
+##
+## --disable-check-python-lib: check python library
+##
+AC_ARG_ENABLE(check-python-lib,
+AS_HELP_STRING([--disable-check-python-lib],[skip checking python libraries [default=enable]]), [], [])
+
+if test "x${enable_check_python_lib}" != "xno"; then
+  ./gftool/gfptar/gfptar -h > /dev/null
+  rv=$?
+  AC_MSG_CHECKING([Python libraries])
+  if test $rv -eq 0 ; then
+    AC_MSG_RESULT([yes])
+  else
+    AC_MSG_RESULT([no])
+    AC_MSG_ERROR([docopt and schema for Python3 required])
+    exit 1
+  fi
+fi
+
 ###
 ### --with-private-srcdir
 ###
