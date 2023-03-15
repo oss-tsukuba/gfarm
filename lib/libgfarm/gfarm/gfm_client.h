@@ -33,6 +33,9 @@ struct gfarm_host_sched_info {
 };
 void gfarm_host_sched_info_free(int, struct gfarm_host_sched_info *);
 
+extern char *gfarm_auth_user_id_type_list[];
+extern int gfarm_auth_user_id_type_number;
+
 int gfm_client_connection_empty(struct gfm_connection *);
 int gfm_client_is_connection_error(gfarm_error_t);
 struct gfp_xdr *gfm_client_connection_conn(struct gfm_connection *);
@@ -117,6 +120,12 @@ gfarm_error_t gfm_client_user_info_modify(struct gfm_connection *,
 	const struct gfarm_user_info *);
 gfarm_error_t gfm_client_user_info_remove(struct gfm_connection *,
 	const char *);
+gfarm_error_t gfm_client_user_info_get_by_auth_id(struct gfm_connection *,
+	const char *, const char *, struct gfarm_user_info *);
+gfarm_error_t gfm_client_user_auth_get(struct gfm_connection *,
+       const char *, const char *, char **);
+gfarm_error_t gfm_client_user_auth_modify(struct gfm_connection *,
+	const char *, const char *, const char *);
 
 gfarm_error_t gfm_client_group_info_get_all(struct gfm_connection *,
 	int *, struct gfarm_group_info **);
