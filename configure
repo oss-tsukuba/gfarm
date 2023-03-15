@@ -821,6 +821,7 @@ enable_getdigest_lock
 enable_linuxkernel
 with_ib_symvers
 with_ib_include
+enable_check_python_mod
 with_private_srcdir
 '
       ac_precious_vars='build_alias
@@ -1469,6 +1470,8 @@ Optional Features:
                           avoid locking for EVP_get_digestbyname()
                           [default=enable]
   --enable-linuxkernel    support Linux kernel module utils.[[default=no]]
+  --disable-check-python-mod
+                          skip checking python modules [default=enable]
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -14969,6 +14972,33 @@ else
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 fi
+
+##
+## --disable-check-python-mod: check python modules
+##
+# Check whether --enable-check-python-mod was given.
+if test ${enable_check_python_mod+y}
+then :
+  enableval=$enable_check_python_mod;
+fi
+
+
+if test "x${enable_check_python_mod}" != "xno"; then
+  ./gftool/gfptar/gfptar -h > /dev/null
+  rv=$?
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking Python modules" >&5
+printf %s "checking Python modules... " >&6; }
+  if test $rv -eq 0 ; then
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+  else
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+    as_fn_error $? "Python3 modules (docopt and schema) required" "$LINENO" 5
+    exit 1
+  fi
+fi
+
 ###
 ### --with-private-srcdir
 ###
