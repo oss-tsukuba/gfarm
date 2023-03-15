@@ -118,8 +118,8 @@ peer_watcher_get_thrpool(struct peer_watcher *pw)
  * peer
  */
 
-#define BACK_CHANNEL_DIAG(peer) (peer_get_auth_id_type(peer) == \
-	GFARM_AUTH_ID_TYPE_SPOOL_HOST ? "back_channel" : "gfmd_channel")
+#define BACK_CHANNEL_DIAG(peer) (peer_get_auth_id_role(peer) == \
+	GFARM_AUTH_ID_ROLE_SPOOL_HOST ? "back_channel" : "gfmd_channel")
 static const char PROTOCOL_ERROR_MUTEX_DIAG[] = "protocol_error_mutex";
 
 struct peer_closing_queue {
@@ -161,7 +161,7 @@ struct peer {
 	 * followings (except protocol_error) are protected by giant lock
 	 */
 
-	enum gfarm_auth_id_type id_type;
+	enum gfarm_auth_id_role id_role;
 	char *username, *hostname;
 	struct user *user;
 	struct abstract_host *host;
@@ -849,14 +849,14 @@ peer_alloc(int fd, struct peer **peerp)
 
 gfarm_error_t
 peer_alloc_with_connection(struct peer **peerp, struct gfp_xdr *conn,
-	struct abstract_host *host, int id_type)
+	struct abstract_host *host, int id_role)
 {
 	gfarm_error_t e;
 
 	if ((e = peer_alloc0(gfp_xdr_fd(conn), peerp, conn))
 	    == GFARM_ERR_NO_ERROR) {
 		(*peerp)->host = host;
-		(*peerp)->id_type = GFARM_AUTH_ID_TYPE_METADATA_HOST;
+		(*peerp)->id_role = GFARM_AUTH_ID_ROLE_METADATA_HOST;
 	}
 	return (e);
 }
@@ -865,27 +865,27 @@ const char *
 peer_get_service_name(struct peer *peer)
 {
 	return (peer == NULL ? "" :
-	    ((peer)->id_type == GFARM_AUTH_ID_TYPE_SPOOL_HOST ?  "gfsd" :
-	    ((peer)->id_type == GFARM_AUTH_ID_TYPE_METADATA_HOST ?
+	    ((peer)->id_role == GFARM_AUTH_ID_ROLE_SPOOL_HOST ?  "gfsd" :
+	    ((peer)->id_role == GFARM_AUTH_ID_ROLE_METADATA_HOST ?
 	    "gfmd" : "")));
 }
 
 /* caller should allocate the storage for username and hostname */
 void
 peer_authorized(struct peer *peer,
-	enum gfarm_auth_id_type id_type, char *username, char *hostname,
+	enum gfarm_auth_id_role id_role, char *username, char *hostname,
 	struct sockaddr *addr, enum gfarm_auth_method auth_method,
 	struct peer_watcher *watcher)
 {
 	struct host *h;
 	struct mdhost *m;
 
-	peer->id_type = id_type;
+	peer->id_role = id_role;
 	peer->user = NULL;
 	peer->username = username;
 
-	switch (id_type) {
-	case GFARM_AUTH_ID_TYPE_USER:
+	switch (id_role) {
+	case GFARM_AUTH_ID_ROLE_USER:
 		peer->user = user_tenant_lookup(username);
 		if (peer->user != NULL) {
 			free(username);
@@ -894,7 +894,7 @@ peer_authorized(struct peer *peer,
 			peer->username = username;
 		/*FALLTHROUGH*/
 
-	case GFARM_AUTH_ID_TYPE_SPOOL_HOST:
+	case GFARM_AUTH_ID_ROLE_SPOOL_HOST:
 		h = host_addr_lookup(hostname, addr);
 		if (h == NULL) {
 			peer->host = NULL;
@@ -903,7 +903,7 @@ peer_authorized(struct peer *peer,
 		}
 		break;
 
-	case GFARM_AUTH_ID_TYPE_METADATA_HOST:
+	case GFARM_AUTH_ID_ROLE_METADATA_HOST:
 		m = mdhost_lookup(hostname);
 		if (m == NULL) {
 			peer->host = NULL;
@@ -923,9 +923,9 @@ peer_authorized(struct peer *peer,
 		peer->hostname = hostname;
 	}
 
-	switch (id_type) {
-	case GFARM_AUTH_ID_TYPE_SPOOL_HOST:
-	case GFARM_AUTH_ID_TYPE_METADATA_HOST:
+	switch (id_role) {
+	case GFARM_AUTH_ID_ROLE_SPOOL_HOST:
+	case GFARM_AUTH_ID_ROLE_METADATA_HOST:
 		if (peer->host == NULL)
 			gflog_notice(GFARM_MSG_1000284,
 			    "unknown host: %s", hostname);
@@ -1223,8 +1223,8 @@ peer_set_host(struct peer *peer, char *hostname)
 	struct mdhost *m;
 	char *aux;
 
-	switch (peer->id_type) {
-	case GFARM_AUTH_ID_TYPE_SPOOL_HOST:
+	switch (peer->id_role) {
+	case GFARM_AUTH_ID_ROLE_SPOOL_HOST:
 		if (peer->host != NULL) { /* already set */
 			gflog_debug(GFARM_MSG_1001585,
 				"peer host is already set");
@@ -1237,7 +1237,7 @@ peer_set_host(struct peer *peer, char *hostname)
 		}
 		peer->host = host_to_abstract_host(h);
 		break;
-	case GFARM_AUTH_ID_TYPE_METADATA_HOST:
+	case GFARM_AUTH_ID_ROLE_METADATA_HOST:
 		if (peer->host != NULL) { /* already set */
 			gflog_debug(GFARM_MSG_1002770,
 				"peer metadata-host is already set");
@@ -1281,10 +1281,10 @@ peer_set_host(struct peer *peer, char *hostname)
 	return (GFARM_ERR_NO_ERROR);
 }
 
-enum gfarm_auth_id_type
-peer_get_auth_id_type(struct peer *peer)
+enum gfarm_auth_id_role
+peer_get_auth_id_role(struct peer *peer)
 {
-	return (peer->id_type);
+	return (peer->id_role);
 }
 
 char *

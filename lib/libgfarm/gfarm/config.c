@@ -3931,7 +3931,7 @@ gfarm_config_set_default_misc(void)
 		    strdup(GFARM_TLS_CA_CERTIFICATE_PATH_DEFAULT);
 	if (gfarm_ctxp->tls_ca_revocation_path == NULL)
 		gfarm_ctxp->tls_ca_revocation_path =
-		    strdup(GFARM_TLS_CA_REVOCATION_PATH_DEFAULT);
+		    strdup(gfarm_ctxp->tls_ca_certificate_path);
 	if (gfarm_ctxp->tls_ca_peer_verify_chain_path == NULL)
 		gfarm_ctxp->tls_ca_peer_verify_chain_path =
 		    strdup(GFARM_TLS_CA_PEER_VERIFY_CHAIN_PATH_DEFAULT);

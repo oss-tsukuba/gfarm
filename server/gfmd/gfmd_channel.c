@@ -984,7 +984,7 @@ gfmdc_connect(void)
 	master = mdhost_lookup_master();
 	if (master == NULL)
 		gflog_fatal(GFARM_MSG_1004737, "no master, abort");
-	gfarm_set_auth_id_type(GFARM_AUTH_ID_TYPE_METADATA_HOST);
+	gfarm_set_auth_id_role(GFARM_AUTH_ID_ROLE_METADATA_HOST);
 	hostname = mdhost_get_name(master);
 	port = mdhost_get_port(master);
 
@@ -1067,7 +1067,7 @@ gfmdc_connect(void)
 	conn = gfm_client_connection_convert_to_xdr(gfm_server);
 	if ((e = peer_alloc_with_connection(&peer, conn,
 	    mdhost_to_abstract_host(rhost),
-	    GFARM_AUTH_ID_TYPE_METADATA_HOST)) != GFARM_ERR_NO_ERROR) {
+	    GFARM_AUTH_ID_ROLE_METADATA_HOST)) != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1002996,
 		    "gfmd_channel(%s) : %s",
 		    hostname, gfarm_error_string(e));
@@ -1113,7 +1113,7 @@ gfmdc_is_master_gfmd_running(void)
 	master = mdhost_lookup_master();
 	if (master == NULL)
 		gflog_fatal(GFARM_MSG_1004738, "no master, abort");
-	gfarm_set_auth_id_type(GFARM_AUTH_ID_TYPE_METADATA_HOST);
+	gfarm_set_auth_id_role(GFARM_AUTH_ID_ROLE_METADATA_HOST);
 	hostname = mdhost_get_name(master);
 	port = mdhost_get_port(master);
 

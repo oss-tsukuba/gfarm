@@ -31,6 +31,7 @@ SASL_DOMAIN=$(echo "$GFDOCKER_HOSTNAME_SUFFIX" | sed 's/^\.//')
 GFDOCKER_SASL_XOAUTH2_SCOPE=hpci
 GFDOCKER_SASL_XOAUTH2_AUD=hpci
 GFDOCKER_SASL_XOAUTH2_USER_CLAIM=hpci.id
+GFDOCKER_SASL_XOAUTH2_ISSUERS=https://jwt-keycloak:8443/auth/realms/hpci
 
 gfmds=
 gfsds=
@@ -186,6 +187,7 @@ log_level: ${GFDOCKER_SASL_LOG_LEVEL}
 xoauth2_scope: ${GFDOCKER_SASL_XOAUTH2_SCOPE}
 xoauth2_aud: ${GFDOCKER_SASL_XOAUTH2_AUD}
 xoauth2_user_claim: ${GFDOCKER_SASL_XOAUTH2_USER_CLAIM}
+xoauth2_issuers: ${GFDOCKER_SASL_XOAUTH2_ISSUERS}
 _EOF_
       if "${GFDOCKER_ENABLE_PROXY:-false}"; then
 	cat <<_EOF_
@@ -435,21 +437,6 @@ sleep 1
 
 CA_DIR=/root/simple_ca
 
-# for tomcat
-sudo mkdir -p ${HOST_SHARE_DIR}/tomcat
-sudo cp ${CA_DIR}/cacert.pem ${HOST_SHARE_DIR}/tomcat
-
-# for jwt-server HTTPS
-sudo mkdir -p ${HOST_SHARE_DIR}/httpd
-sudo cp /etc/grid-security/httpdcert.pem ${HOST_SHARE_DIR}/httpd/
-sudo cp /etc/grid-security/httpdkey.pem ${HOST_SHARE_DIR}/httpd/
-
-# for keycloak HTTPS
-sudo mkdir -p ${HOST_SHARE_DIR}/keycloak
-sudo cp /etc/grid-security/keycloakcert.pem ${HOST_SHARE_DIR}/keycloak/
-sudo cp /etc/grid-security/keycloakkey.pem ${HOST_SHARE_DIR}/keycloak/
-sudo cp /etc/grid-security/keycloak.p12 ${HOST_SHARE_DIR}/keycloak/
-
 ### update CA for OAuth-related web servers
 
 case $GFDOCKER_PRJ_NAME in
@@ -459,11 +446,11 @@ case $GFDOCKER_PRJ_NAME in
 	   ssh "$host" sudo update-ca-trust
         done
         ;;
-    ubuntu*-*)
+    ubuntu*-* | debian*-*)
 	for host in $gfmds $gfsds $clients; do
 	   ssh "$host" sudo mkdir -p /usr/share/ca-certificates/gfarm
 	   ssh "$host" sudo cp ${CA_DIR}/cacert.pem /usr/share/ca-certificates/gfarm
-	   ssh "$host" sudo "echo 'gfarm/cacert.pem' | sudo tee -a /etc/ca-certificates.conf"
+	   ssh "$host" "echo 'gfarm/cacert.pem' | sudo tee -a /etc/ca-certificates.conf"
 	   ssh "$host" sudo update-ca-certificates
         done
         ;;

@@ -78,8 +78,8 @@ print('''\
 
 version: "3.4"
 
-x-common:
-  &common
+x-common-gfarm:
+  &common-gfarm
   image: gfarm-dev:${GFDOCKER_PRJ_NAME}
 ''', end='')
 
@@ -87,18 +87,24 @@ print('''\
   volumes:
     - ./mnt:/mnt:rw
     {disable_cgroupfs_mount}- /sys/fs/cgroup:/sys/fs/cgroup:ro
+  devices:
+    - /dev/fuse:/dev/fuse
+
+'''.format(disable_cgroupfs_mount=disable_cgroupfs_mount),
+      end='')
+
+print('''\
+x-common:
+  &common
   {disable_security_opt}security_opt:
   {disable_security_opt}  - seccomp:unconfined
   {disable_security_opt}  - apparmor:unconfined
   {disable_capadd}cap_add:
   {disable_capadd}  - SYS_ADMIN
   {disable_capadd}  - SYS_PTRACE
-  devices:
-    - /dev/fuse:/dev/fuse
   privileged: {privileged}
   extra_hosts:
-'''.format(disable_cgroupfs_mount=disable_cgroupfs_mount,
-           disable_security_opt=disable_security_opt,
+'''.format(disable_security_opt=disable_security_opt,
            disable_capadd=disable_capadd,
            privileged=privileged),
       end='')
@@ -133,6 +139,7 @@ for h in hosts:
     networks:
       gfarm_dev:
         ipv{}_address: {}
+    <<: *common-gfarm
     <<: *common
 
 '''.format(h.name, h.hostname, ports, ip_version, str(h.ipaddr)), end='')
@@ -140,26 +147,25 @@ for h in hosts:
 if use_keycloak:
    print('''\
 
-  ubuntu:
-    container_name: ubuntu
+  desktop:
     build: common/oauth2/ubuntu
-    privileged: true
-    networks:
-      gfarm_dev:
-    ports:
-      - "0.0.0.0:13389:3389"
-  httpd:
-    container_name: httpd
-    hostname: httpd{}
-    build: common/oauth2/apache
-    tty: true
-    privileged: true
     volumes:
       - ./mnt:/mnt:ro
     networks:
       gfarm_dev:
-  tomcat:
-    container_name: tomcat
+    ports:
+      - "0.0.0.0:13389:3389"
+    <<: *common
+  jwt-server:
+    hostname: jwt-server{}
+    build: common/oauth2/apache
+    tty: true
+    volumes:
+      - ./mnt:/mnt:ro
+    networks:
+      gfarm_dev:
+    <<: *common
+  jwt-tomcat:
     build:
      context: ../../
      dockerfile: docker/dev/common/oauth2/tomcat/Dockerfile
@@ -169,8 +175,7 @@ if use_keycloak:
       gfarm_dev:
     environment:
       - 'CATALINA_OPTS=-Duser.timezone=Asia/Tokyo'
-  db:
-    container_name: mariadb
+  jwt-db:
     image: mariadb
     volumes:
       - "./common/oauth2/mariadb/initdb.d:/docker-entrypoint-initdb.d"
@@ -181,8 +186,7 @@ if use_keycloak:
       - MYSQL_DATABASE=gfarm
       - MYSQL_USER=gfarm
       - MYSQL_PASSWORD=gfarm123
-  keycloak:
-    container_name: keycloak
+  jwt-keycloak:
     build: common/oauth2/keycloak
     volumes:
       - ./mnt:/mnt:ro

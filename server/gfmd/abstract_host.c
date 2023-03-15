@@ -44,16 +44,16 @@ back_channel_type_name(struct peer *peer)
 {
 	if (peer == NULL)
 		return ("*_channel");
-	switch (peer_get_auth_id_type(peer)) {
-	case GFARM_AUTH_ID_TYPE_SPOOL_HOST:
+	switch (peer_get_auth_id_role(peer)) {
+	case GFARM_AUTH_ID_ROLE_SPOOL_HOST:
 		return ("back_channel");
-	case GFARM_AUTH_ID_TYPE_METADATA_HOST:
+	case GFARM_AUTH_ID_ROLE_METADATA_HOST:
 		return ("gfmd_channel");
 	default:
 		gflog_error(GFARM_MSG_1003282,
-		    "(%s@%s) unexpected auth_id_type: %d",
+		    "(%s@%s) unexpected auth_id_role: %d",
 		    peer_get_username(peer), peer_get_hostname(peer),
-		    peer_get_auth_id_type(peer));
+		    peer_get_auth_id_role(peer));
 		abort();
 		return ("unexpected_channel");
 	}

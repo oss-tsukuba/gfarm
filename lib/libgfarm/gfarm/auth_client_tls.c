@@ -57,7 +57,7 @@ gfarm_tls_server_cert_is_ok(struct gfp_xdr *conn, const char *service_tag,
 gfarm_error_t
 gfarm_auth_request_tls_sharedsecret(struct gfp_xdr *conn,
 	const char *service_tag, const char *hostname,
-	enum gfarm_auth_id_type self_type, const char *user,
+	enum gfarm_auth_id_role self_role, const char *user,
 	struct passwd *pwd)
 {
 	gfarm_error_t e;
@@ -71,7 +71,7 @@ gfarm_auth_request_tls_sharedsecret(struct gfp_xdr *conn,
 	e = gfarm_tls_server_cert_is_ok(conn, service_tag, hostname);
 
 	e = gfarm_auth_request_sharedsecret_common(
-	    conn, service_tag, hostname, self_type, user, pwd,
+	    conn, service_tag, hostname, self_role, user, pwd,
 	    e == GFARM_ERR_NO_ERROR);
 
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -91,7 +91,7 @@ gfarm_error_t
 gfarm_auth_request_tls_sharedsecret_multiplexed(struct gfarm_eventqueue *q,
 	struct gfp_xdr *conn,
 	const char *service_tag, const char *hostname,
-	enum gfarm_auth_id_type self_type, const char *user,
+	enum gfarm_auth_id_role self_role, const char *user,
 	struct passwd *pwd, int auth_timeout,
 	void (*continuation)(void *), void *closure,
 	void **statepp)
@@ -119,7 +119,7 @@ gfarm_auth_request_tls_sharedsecret_multiplexed(struct gfarm_eventqueue *q,
 	e = gfarm_tls_server_cert_is_ok(conn, service_tag, hostname);
 
 	e = gfarm_auth_request_sharedsecret_common_multiplexed(
-	    q, conn, service_tag, hostname, self_type, user, pwd,
+	    q, conn, service_tag, hostname, self_role, user, pwd,
 	    e == GFARM_ERR_NO_ERROR, auth_timeout,
 	    continuation, closure, &state->sharedsecret_state);
 
@@ -157,13 +157,13 @@ gfarm_auth_result_tls_sharedsecret_multiplexed(void *sp)
 gfarm_error_t
 gfarm_auth_request_tls_client_certificate(struct gfp_xdr *conn,
 	const char *service_tag, const char *hostname,
-	enum gfarm_auth_id_type self_type, const char *user,
+	enum gfarm_auth_id_role self_role, const char *user,
 	struct passwd *pwd)
 {
 	gfarm_error_t e;
 	int eof;
 	gfarm_int32_t req; /* enum gfarm_auth_tls_client_certificate_request */
-	gfarm_int32_t arg; /* gfarm_error_t or enum gfarm_auth_id_type */
+	gfarm_int32_t arg; /* gfarm_error_t or enum gfarm_auth_id_role */
 	gfarm_int32_t result; /* enum gfarm_auth_error */
 
 	e = gfp_xdr_tls_alloc(conn, gfp_xdr_fd(conn),
@@ -177,8 +177,8 @@ gfarm_auth_request_tls_client_certificate(struct gfp_xdr *conn,
 
 	e = gfarm_tls_server_cert_is_ok(conn, service_tag, hostname);
 	if (e == GFARM_ERR_NO_ERROR) {
-		req = GFARM_AUTH_TLS_CLIENT_CERTIFICATE_CLIENT_TYPE;
-		arg = self_type;
+		req = GFARM_AUTH_TLS_CLIENT_CERTIFICATE_CLIENT_ROLE;
+		arg = self_role;
 	} else {
 		req = GFARM_AUTH_TLS_CLIENT_CERTIFICATE_GIVEUP;
 		arg = e;
@@ -190,9 +190,9 @@ gfarm_auth_request_tls_client_certificate(struct gfp_xdr *conn,
 	if (e != GFARM_ERR_NO_ERROR) {
 		/* this is not gfarceful, but OK because of a network error */
 		gflog_debug(GFARM_MSG_UNFIXED,
-		    "sending self_type failed: %s", gfarm_error_string(e));
+		    "sending self_role failed: %s", gfarm_error_string(e));
 	}
-	if (req != GFARM_AUTH_TLS_CLIENT_CERTIFICATE_CLIENT_TYPE) {
+	if (req != GFARM_AUTH_TLS_CLIENT_CERTIFICATE_CLIENT_ROLE) {
 		/* giveup, due to server cert problem */
 		gfp_xdr_tls_reset(conn); /* is this case graceful? */
 		return (GFARM_ERR_HOSTNAME_MISMATCH);
@@ -273,14 +273,14 @@ gfarm_auth_request_tls_client_certificate_multiplexed(
 	struct gfarm_eventqueue *q,
 	struct gfp_xdr *conn,
 	const char *service_tag, const char *hostname,
-	enum gfarm_auth_id_type self_type, const char *user,
+	enum gfarm_auth_id_role self_role, const char *user,
 	struct passwd *pwd, int auth_timeout,
 	void (*continuation)(void *), void *closure,
 	void **statepp)
 {
 	gfarm_error_t e;
 	gfarm_int32_t req; /* enum gfarm_auth_tls_client_certificate_request */
-	gfarm_int32_t arg; /* gfarm_error_t or enum gfarm_auth_id_type */
+	gfarm_int32_t arg; /* gfarm_error_t or enum gfarm_auth_id_role */
 	struct gfarm_auth_request_tls_client_certificate_state *state;
 	int rv;
 
@@ -305,8 +305,8 @@ gfarm_auth_request_tls_client_certificate_multiplexed(
 
 	e = gfarm_tls_server_cert_is_ok(conn, service_tag, hostname);
 	if (e == GFARM_ERR_NO_ERROR) {
-		req = GFARM_AUTH_TLS_CLIENT_CERTIFICATE_CLIENT_TYPE;
-		arg = self_type;
+		req = GFARM_AUTH_TLS_CLIENT_CERTIFICATE_CLIENT_ROLE;
+		arg = self_role;
 	} else {
 		req = GFARM_AUTH_TLS_CLIENT_CERTIFICATE_GIVEUP;
 		arg = e;
@@ -318,12 +318,12 @@ gfarm_auth_request_tls_client_certificate_multiplexed(
 	if (e != GFARM_ERR_NO_ERROR) {
 		/* this is not gfarceful, but OK because of a network error */
 		gflog_debug(GFARM_MSG_UNFIXED,
-		    "sending self_type failed: %s", gfarm_error_string(e));
+		    "sending self_role failed: %s", gfarm_error_string(e));
 		gfp_xdr_tls_reset(conn); /* is this case graceful? */
 		free(state);
 		return (e);
 	}
-	if (req != GFARM_AUTH_TLS_CLIENT_CERTIFICATE_CLIENT_TYPE) {
+	if (req != GFARM_AUTH_TLS_CLIENT_CERTIFICATE_CLIENT_ROLE) {
 		/* giveup, due to server cert problem */
 		free(state);
 		gfp_xdr_tls_reset(conn); /* is this case graceful? */

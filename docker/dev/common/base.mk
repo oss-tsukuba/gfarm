@@ -298,16 +298,32 @@ TOP='$(TOP)' \
 	cp $(TOP)/docker/dev/config.mk $(TOP)/docker/dev/.shadow.config.mk
 endef
 
-define up
-mkdir -p $(ROOTDIR)/mnt
-# readable for others
-chmod 755 $(ROOTDIR)/mnt
-$(COMPOSE) up -d --force-recreate\
-  && $(CONTSHELL) -c '. ~/gfarm/docker/dev/common/up.rc'
+define authtest
+	$(CONTSHELL) -c '~/gfarm/docker/dev/common/authtest.sh'
 endef
 
-define authtest
-$(CONTSHELL) -c '~/gfarm/docker/dev/common/authtest.sh'
+define up
+	mkdir -p $(ROOTDIR)/mnt
+	# readable for others
+	chmod 755 $(ROOTDIR)/mnt
+	$(COMPOSE) up -d --force-recreate
+	$(eval TMPFILE = $(shell mktemp))
+	# speed-up
+	if "$(GFDOCKER_SASL_USE_KEYCLOAK)"; then \
+		$(CONTSHELL) -c '~/gfarm/docker/dev/common/copy-keys.sh' && \
+		$(COMPOSE) exec $(CONTSHELL_FLAGS) jwt-server /setup.sh && \
+		$(COMPOSE) exec $(CONTSHELL_FLAGS) jwt-keycloak /setup.sh && \
+		$(COMPOSE) exec $(CONTSHELL_FLAGS) jwt-tomcat /setup.sh; \
+	else true; \
+	fi > $(TMPFILE) 2>&1 & \
+	PID=$$!; \
+	$(CONTSHELL) -c '. ~/gfarm/docker/dev/common/up.rc'; \
+	if $(AUTHTEST); then $(authtest); fi; \
+	ERROR=false; \
+	if wait $$PID; then :; \
+	else ERROR=true; cat $(TMPFILE); fi; \
+	rm -f $(TMPFILE); \
+	if $${ERROR}; then exit 1; fi
 endef
 
 define reborn
@@ -319,32 +335,33 @@ define reborn
 	$(gen)
 	$(COMPOSE) ps
 	$(prune)
-	if [ $(USE_NOCACHE) -eq 1 ]; then \
+	if $(USE_NOCACHE); then \
 		$(build_nocache); \
 	else \
 		$(build); \
 	fi
 	$(up)
-	if "$(GFDOCKER_SASL_USE_KEYCLOAK)"; then \
-		$(COMPOSE) exec $(CONTSHELL_FLAGS) httpd /setup.sh; \
-		$(COMPOSE) exec $(CONTSHELL_FLAGS) keycloak ./setup.sh; \
-		$(COMPOSE) exec $(CONTSHELL_FLAGS) tomcat /setup.sh; \
-	fi
-	$(authtest)
 endef
 
 reborn:
 	$(reborn)
-reborn: USE_NOCACHE = 0
+reborn: USE_NOCACHE = false
+reborn: AUTHTEST = true
+
+reborn-without-authtest:
+	$(reborn)
+reborn-without-authtest: USE_NOCACHE = false
+reborn-without-authtest: AUTHTEST = false
 
 reborn-nocache:
 	$(reborn)
-reborn-nocache: USE_NOCACHE = 1
+reborn-nocache: USE_NOCACHE = true
+reborn-nocache: AUTHTEST = true
 
 reborn-without-build:
 	$(down)
 	$(up)
-	$(authtest)
+reborn-without-build: AUTHTEST = true
 
 start:
 	$(COMPOSE) start

@@ -26,14 +26,14 @@
 #include "auth.h"
 
 const char *
-gfarm_auth_id_type_name(enum gfarm_auth_id_type type)
+gfarm_auth_id_role_name(enum gfarm_auth_id_role role)
 {
-	switch (type) {
-	case GFARM_AUTH_ID_TYPE_UNKNOWN: return ("unknown-auth-ID-type");
-	case GFARM_AUTH_ID_TYPE_USER: return ("user");
-	case GFARM_AUTH_ID_TYPE_SPOOL_HOST: return ("gfsd");
-	case GFARM_AUTH_ID_TYPE_METADATA_HOST: return ("gfmd");
-	default: return ("invalid-auth-ID-type");
+	switch (role) {
+	case GFARM_AUTH_ID_ROLE_UNKNOWN: return ("unknown-auth-ID-role");
+	case GFARM_AUTH_ID_ROLE_USER: return ("user");
+	case GFARM_AUTH_ID_ROLE_SPOOL_HOST: return ("gfsd");
+	case GFARM_AUTH_ID_ROLE_METADATA_HOST: return ("gfmd");
+	default: return ("invalid-auth-ID-role");
 	}
 };
 
@@ -354,7 +354,7 @@ gfarm_auth_method_kerberos_available(void)
 
 static gfarm_int32_t
 gfarm_auth_method_get_available(int is_server,
-	enum gfarm_auth_id_type self_type)
+	enum gfarm_auth_id_role self_role)
 {
 	int i;
 	gfarm_int32_t methods;
@@ -394,7 +394,7 @@ gfarm_auth_method_get_available(int is_server,
 			if (is_server) {
 				if (gfarm_auth_server_method_sasl_available())
 					break; /* available */
-			} else if (self_type == GFARM_AUTH_ID_TYPE_USER) {
+			} else if (self_role == GFARM_AUTH_ID_ROLE_USER) {
 				if (gfarm_auth_client_method_sasl_available())
 					break; /* available */
 			}
@@ -412,13 +412,13 @@ gfarm_int32_t
 gfarm_auth_server_method_get_available(void)
 {
 	return (
-	    gfarm_auth_method_get_available(1, GFARM_AUTH_ID_TYPE_UNKNOWN));
+	    gfarm_auth_method_get_available(1, GFARM_AUTH_ID_ROLE_UNKNOWN));
 }
 
 gfarm_int32_t
-gfarm_auth_client_method_get_available(enum gfarm_auth_id_type self_type)
+gfarm_auth_client_method_get_available(enum gfarm_auth_id_role self_role)
 {
-	return (gfarm_auth_method_get_available(0, self_type));
+	return (gfarm_auth_method_get_available(0, self_role));
 }
 
 void

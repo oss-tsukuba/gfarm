@@ -9,6 +9,8 @@ ENV TZ=${TZ}
 ## speedup in Japan
 #RUN sed -i 's@archive.ubuntu.com@ftp.riken.go.jp/Linux@g' /etc/apt/sources.list
 
+ARG USE_GCT_SRC=0
+
 RUN yes | unminimize \
     && apt-get update \
     && apt-get -y upgrade \
@@ -24,7 +26,6 @@ RUN yes | unminimize \
     libssl-dev \
     libldap2-dev \
     libpq-dev \
-    libglobus-gssapi-gsi-dev \
     pkg-config \
     postgresql \
     postgresql-client \
@@ -34,17 +35,67 @@ RUN yes | unminimize \
     libacl1-dev \
     ruby \
     git \
-    globus-simple-ca \
-    globus-gsi-cert-utils-progs \
-    globus-proxy-utils \
     curl \
-    && globus-version \
-    && apt-get -y install \
     python3 \
     python3-docopt \
     python3-schema \
     python3-tqdm \
     flake8 \
+    && if [ ${USE_GCT_SRC} -eq 1 ]; then \
+      apt-get -y install zlib1g-dev libedit-dev libpam0g-dev file \
+      && cd /root \
+      && GCT=gct-6.2.1629922860 \
+      && GCT_PKG=${GCT}.tar.gz \
+      && GCT_URL=https://repo.gridcf.org/gct6/sources/${GCT_PKG} \
+      && curl -fO ${GCT_URL} \
+      && curl -fO ${GCT_URL}.sha512 \
+      && sha512sum -c ${GCT_PKG}.sha512 \
+      && tar xf ${GCT_PKG} \
+      && cd ${GCT} \
+      && sed -i 's;#SHELL = @SH@;SHELL = /bin/bash;' \
+         gsi_openssh/source/Makefile.in \
+      && ./configure \
+        --sysconfdir=/etc \
+        --prefix=/usr/local \
+      && make -j 4 \
+      globus_proxy_utils \
+      globus_gsi_cert_utils \
+      globus_gssapi_gsi \
+      globus_simple_ca \
+      gsi-openssh \
+      myproxy \
+      && make install \
+      && apt-get -y install automake autoconf libtool \
+    ; else \
+      apt-get -y install \
+      libglobus-gssapi-gsi-dev \
+      libglobus-gss-assist-dev \
+      globus-simple-ca \
+      globus-gsi-cert-utils-progs \
+      globus-proxy-utils \
+      myproxy \
+      && apt-get -y install zlib1g-dev libedit-dev libpam0g-dev file \
+      && GSISSH=gsi-openssh-7.5p1c \
+      && GSISSH_PKG=${GSISSH}.tar.gz \
+      && GSISSH_URL=https://repo.gridcf.org/gct6/sources/${GSISSH_PKG} \
+      && curl -fO ${GSISSH_URL} \
+      && curl -fO ${GSISSH_URL}.sha512 \
+      && sha512sum -c ${GSISSH_PKG}.sha512 \
+      && tar xf ${GSISSH_PKG} \
+      && cd ${GSISSH} \
+      && ./configure --prefix=/usr/local --with-gsi \
+      && make -j 4 \
+      && make install-nokeys \
+    ; fi \
+    && apt-get -y install sasl2-bin libsasl2-modules-db libsasl2-dev \
+    libsasl2-modules libsasl2-modules-gssapi-mit \
+    && apt-get -y install g++ cmake libsqlite3-dev \
+    libcurl4-openssl-dev uuid-dev \
+    && apt-get -y install curl \
+    && GO_TAR=go1.20.linux-amd64.tar.gz \
+    && curl -O https://dl.google.com/go/${GO_TAR} \
+    && tar -C /usr/local -xzf ${GO_TAR} \
+    && ln -s /usr/local/go/bin/go /usr/local/bin \
     && apt-get -y install \
     docbook-utils docbook-xsl xsltproc \
     ncat ldnsutils iproute2 net-tools bind9-dnsutils telnet tcpdump \

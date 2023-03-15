@@ -22,7 +22,7 @@
 
 #define staticp	(gfarm_ctxp->auth_sasl_client_static)
 
-#define SASL_JWT_PATH_ENV	"JWT_USER"
+#define SASL_JWT_PATH_ENV	"JWT_USER_PATH"
 #define SASL_JWT_PATHNAME	"/tmp/jwt_user_u%lu/token.jwt"
 #define SASL_PASSWORD_LEN_MAX	16384	/* enough size to hold OAuth JWT */
 
@@ -36,13 +36,15 @@ struct gfarm_auth_sasl_client_static {
 gfarm_error_t
 gfarm_auth_request_sasl_common(struct gfp_xdr *conn,
 	const char *service_tag, const char *hostname,
-	enum gfarm_auth_id_type self_type, const char *user,
+	enum gfarm_auth_id_role self_role, const char *user,
 	struct passwd *pwd, const char *diag)
 {
 	gfarm_error_t e;
 	int save_errno, eof, r;
 	char self_hsbuf[NI_MAXHOST + NI_MAXSERV];
 	char peer_hsbuf[NI_MAXHOST + NI_MAXSERV];
+	char *self_hs = self_hsbuf;
+	char *peer_hs = peer_hsbuf;
 	sasl_conn_t *sasl_conn;
 	char *mechanism_candidates = NULL;
 	const char *chosen_mechanism = NULL;
@@ -60,7 +62,11 @@ gfarm_auth_request_sasl_common(struct gfp_xdr *conn,
 	save_errno = gfarm_sasl_addr_string(gfp_xdr_fd(conn),
 	    self_hsbuf, sizeof(self_hsbuf),
 	    peer_hsbuf, sizeof(peer_hsbuf), diag);
-	if (save_errno != 0)
+	if (save_errno == EAFNOSUPPORT) {
+		/* sasl_client_new() doesn't work with AF_UNIX */
+		self_hs = NULL;
+		peer_hs = NULL;
+	} else if (save_errno != 0)
 		return (gfarm_errno_to_error(save_errno));
 
 	e = gfp_xdr_tls_alloc(conn, gfp_xdr_fd(conn), GFP_XDR_TLS_INITIATE);
@@ -77,7 +83,7 @@ gfarm_auth_request_sasl_common(struct gfp_xdr *conn,
 	error = gfarm_tls_server_cert_is_ok(conn, service_tag, hostname);
 
 	if (error == GFARM_ERR_NO_ERROR) {
-		r = sasl_client_new("gfarm", hostname, self_hsbuf, peer_hsbuf,
+		r = sasl_client_new("gfarm", hostname, self_hs, peer_hs,
 		    NULL, 0, &sasl_conn);
 		if (r != SASL_OK) {
 			gflog_notice(GFARM_MSG_UNFIXED,
@@ -482,23 +488,33 @@ gfarm_auth_request_sasl_send_server_auth_result(int events, int fd,
 		int save_errno, r;
 		char self_hsbuf[NI_MAXHOST + NI_MAXSERV];
 		char peer_hsbuf[NI_MAXHOST + NI_MAXSERV];
+		char *self_hs = self_hs;
+		char *peer_hs = peer_hs;
 
 		save_errno = gfarm_sasl_addr_string(gfp_xdr_fd(state->conn),
 		    self_hsbuf, sizeof(self_hsbuf),
 		    peer_hsbuf, sizeof(peer_hsbuf), state->diag);
-		if (save_errno != 0) {
+		if (save_errno != 0 && save_errno != EAFNOSUPPORT) {
 			error = gfarm_errno_to_error(save_errno);
-		} else if ((r = sasl_client_new("gfarm", state->hostname,
-		    self_hsbuf, peer_hsbuf, NULL, 0, &state->sasl_conn))
-		    != SASL_OK) {
-			gflog_notice(GFARM_MSG_UNFIXED,
-			    "%s: sasl_client_new(): %s",
-			    state->hostname, sasl_errstring(r, NULL, NULL));
-			/*
-			 * XXX change this to GFARM_ERR_AUTHENTICATION
-			 * if graceful
-			 */
-			error = GFARM_ERR_PROTOCOL_NOT_AVAILABLE;
+		} else {
+			if (save_errno == EAFNOSUPPORT) {
+				/* sasl_client_new() doesn't work w/ AF_UNIX */
+				self_hs = NULL;
+				peer_hs = NULL;
+			}
+			if ((r = sasl_client_new("gfarm", state->hostname,
+			    self_hs, peer_hs, NULL, 0, &state->sasl_conn))
+			    != SASL_OK) {
+				gflog_notice(GFARM_MSG_UNFIXED,
+				    "%s: sasl_client_new(): %s",
+				    state->hostname,
+				    sasl_errstring(r, NULL, NULL));
+				/*
+				 * XXX change this to GFARM_ERR_AUTHENTICATION
+				 * if graceful
+				 */
+				error = GFARM_ERR_PROTOCOL_NOT_AVAILABLE;
+			}
 		}
 	}
 
@@ -530,7 +546,7 @@ gfarm_error_t
 gfarm_auth_request_sasl_common_multiplexed(struct gfarm_eventqueue *q,
 	struct gfp_xdr *conn,
 	const char *service_tag, const char *hostname,
-	enum gfarm_auth_id_type self_type, const char *user,
+	enum gfarm_auth_id_role self_role, const char *user,
 	struct passwd *pwd, int auth_timeout,
 	void (*continuation)(void *), void *closure,
 	void **statepp, const char *diag)
@@ -636,11 +652,11 @@ gfarm_auth_result_sasl_common_multiplexed(void *sp)
 gfarm_error_t
 gfarm_auth_request_sasl(struct gfp_xdr *conn,
 	const char *service_tag, const char *hostname,
-	enum gfarm_auth_id_type self_type, const char *user,
+	enum gfarm_auth_id_role self_role, const char *user,
 	struct passwd *pwd)
 {
 	return (gfarm_auth_request_sasl_common(conn,
-	    service_tag, hostname, self_type, user, pwd,
+	    service_tag, hostname, self_role, user, pwd,
 	    "gfarm_auth_request_sasl"));
 }
 
@@ -648,13 +664,13 @@ gfarm_error_t
 gfarm_auth_request_sasl_multiplexed(struct gfarm_eventqueue *q,
 	struct gfp_xdr *conn,
 	const char *service_tag, const char *hostname,
-	enum gfarm_auth_id_type self_type, const char *user,
+	enum gfarm_auth_id_role self_role, const char *user,
 	struct passwd *pwd, int auth_timeout,
 	void (*continuation)(void *), void *closure,
 	void **statepp)
 {
 	return (gfarm_auth_request_sasl_common_multiplexed(q, conn,
-	    service_tag, hostname, self_type, user, pwd, auth_timeout,
+	    service_tag, hostname, self_role, user, pwd, auth_timeout,
 	    continuation, closure, statepp,
 	    "gfarm_auth_request_sasl_multiplexed"));
 }
@@ -672,11 +688,11 @@ gfarm_auth_result_sasl_multiplexed(void *sp)
 gfarm_error_t
 gfarm_auth_request_sasl_auth(struct gfp_xdr *conn,
 	const char *service_tag, const char *hostname,
-	enum gfarm_auth_id_type self_type, const char *user,
+	enum gfarm_auth_id_role self_role, const char *user,
 	struct passwd *pwd)
 {
 	gfarm_error_t e = gfarm_auth_request_sasl_common(conn,
-	    service_tag, hostname, self_type, user, pwd,
+	    service_tag, hostname, self_role, user, pwd,
 	    "gfarm_auth_request_sasl_auth");
 
 	if (e == GFARM_ERR_NO_ERROR)
@@ -688,13 +704,13 @@ gfarm_error_t
 gfarm_auth_request_sasl_auth_multiplexed(struct gfarm_eventqueue *q,
 	struct gfp_xdr *conn,
 	const char *service_tag, const char *hostname,
-	enum gfarm_auth_id_type self_type, const char *user,
+	enum gfarm_auth_id_role self_role, const char *user,
 	struct passwd *pwd, int auth_timeout,
 	void (*continuation)(void *), void *closure,
 	void **statepp)
 {
 	return (gfarm_auth_request_sasl_common_multiplexed(q, conn,
-	    service_tag, hostname, self_type, user, pwd, auth_timeout,
+	    service_tag, hostname, self_role, user, pwd, auth_timeout,
 	    continuation, closure, statepp,
 	    "gfarm_auth_request_sasl_auth_multiplexed"));
 }

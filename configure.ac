@@ -1601,6 +1601,25 @@ AC_SUBST(tls_objs)
 ## TLS support ends here.
 ##
 
+##
+## --disable-check-python-mod: check python modules
+##
+AC_ARG_ENABLE(check-python-mod,
+AS_HELP_STRING([--disable-check-python-mod],[skip checking python modules [default=enable]]), [], [])
+
+if test "x${enable_check_python_mod}" != "xno"; then
+  ./gftool/gfptar/gfptar -h > /dev/null
+  rv=$?
+  AC_MSG_CHECKING([Python modules])
+  if test $rv -eq 0 ; then
+    AC_MSG_RESULT([yes])
+  else
+    AC_MSG_RESULT([no])
+    AC_MSG_ERROR([Python3 modules (docopt and schema) required])
+    exit 1
+  fi
+fi
+
 ###
 ### --with-private-srcdir
 ###

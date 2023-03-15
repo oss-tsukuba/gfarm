@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 
-keytool -importkeystore -srckeystore /mnt/keycloak/keycloak.p12 \
+keytool -importkeystore -srckeystore /mnt/jwt-keycloak/jwt-keycloak.p12 \
   -srcstoretype PKCS12 -srcstorepass PASSWORD \
   -destkeystore /opt/jboss/keycloak/standalone/configuration/keycloak.jks \
   -deststoretype JKS -deststorepass PASSWORD -destkeypass PASSWORD
@@ -9,6 +9,26 @@ ignore() {
     echo 1>&2 "ERROR IGNORED"
     # true
 }
+
+get_code() {
+    # NOTE: -k: insecure
+    curl -s -k --noproxy '*' -w '%{http_code}' "$1" -o /dev/null
+}
+
+wait_for_keycloak_to_become_ready() {
+    URL="$1"
+    EXPECT_CODE='^[23]0.*$'
+    while :; do
+        if CODE=$(get_code "$URL"); then
+            if [[ "$CODE" =~ ${EXPECT_CODE} ]]; then
+                break
+            fi
+        fi
+        sleep 1
+        echo "waiting for keycloak startup"
+    done
+}
+
 
 KEYCLOAK_HOME=/opt/jboss/keycloak
 KEYCLOAK_REALM=hpci
@@ -27,6 +47,8 @@ KCADM=${BINDIR}/kcadm.sh
 
 REALM=${KEYCLOAK_REALM}
 ADMIN_REALM=${KEYCLOAK_ADMIN_REALM}
+
+wait_for_keycloak_to_become_ready ${MY_KEYCLOAK_SERVER}
 
 ### login
 
@@ -389,7 +411,7 @@ update_client_scopes "${CLIENT_ID_PUBLIC}" "${DEFAULT_SCOPES}" "${OPTIONAL_SCOPE
 
 create_client_id "$CLIENT_ID_CONFIDENTIAL" \
   -s publicClient=false \
-  -s 'redirectUris=["https://httpd.test/*", "http://httpd.test/*", "https://httpd/*", "http://httpd/*"]' \
+  -s 'redirectUris=["https://jwt-server.test/*", "http://jwt-server.test/*", "https://jwt-server/*", "http://jwt-server/*"]' \
   -s 'attributes."client.offline.session.idle.timeout"="86400"'\
   -s 'attributes."client.offline.session.max.lifespan"="31536000"'
 update_client_scopes "${CLIENT_ID_CONFIDENTIAL}" \

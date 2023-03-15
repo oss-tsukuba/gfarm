@@ -18,22 +18,22 @@
 #include "gfmd.h"
 
 static gfarm_error_t auth_uid_to_global_username_sharedsecret(
-	void *, const char *, enum gfarm_auth_id_type *, char **);
+	void *, const char *, enum gfarm_auth_id_role *, char **);
 #ifdef HAVE_GSI
 static gfarm_error_t auth_uid_to_global_username_gsi(
-	void *, const char *, enum gfarm_auth_id_type *, char **);
+	void *, const char *, enum gfarm_auth_id_role *, char **);
 #endif
 #ifdef HAVE_KERBEROS
 static gfarm_error_t auth_uid_to_global_username_kerberos(
-	void *, const char *, enum gfarm_auth_id_type *, char **);
+	void *, const char *, enum gfarm_auth_id_role *, char **);
 #endif
 #ifdef HAVE_TLS_1_3
 static gfarm_error_t auth_uid_to_global_username_tls_client_certificate(
-	void *, const char *, enum gfarm_auth_id_type *, char **);
+	void *, const char *, enum gfarm_auth_id_role *, char **);
 #endif
 
 gfarm_error_t (*auth_uid_to_global_username_table[])(
-	void *, const char *, enum gfarm_auth_id_type *, char **) = {
+	void *, const char *, enum gfarm_auth_id_role *, char **) = {
 /*
  * This table entry should be ordered by enum gfarm_auth_method.
  */
@@ -78,15 +78,15 @@ gfarm_error_t (*auth_uid_to_global_username_table[])(
 
 /*
  * cannot use auth_uid_to_global_username_server_auth(),
- * because current GSI protocol doesn't pass auth_user_id_type.
+ * because current GSI protocol doesn't pass auth_user_id_role.
  */
 static gfarm_error_t
 auth_uid_to_global_username_gsi(void *closure,
-	const char *auth_user_id, enum gfarm_auth_id_type *auth_user_id_typep,
+	const char *auth_user_id, enum gfarm_auth_id_role *auth_user_id_rolep,
 	char **global_usernamep)
 {
 	gfarm_error_t e;
-	enum gfarm_auth_id_type auth_user_id_type = *auth_user_id_typep;
+	enum gfarm_auth_id_role auth_user_id_role = *auth_user_id_rolep;
 	char *global_username;
 	struct user *u;
 	char *cn, *hostname = NULL;
@@ -94,13 +94,13 @@ auth_uid_to_global_username_gsi(void *closure,
 	struct mdhost *m;
 	const char diag[] = "auth_uid_to_global_username_gsi";
 
-	assert(auth_user_id_type == GFARM_AUTH_ID_TYPE_UNKNOWN);
+	assert(auth_user_id_role == GFARM_AUTH_ID_ROLE_UNKNOWN);
 	giant_lock();
 	u = user_lookup_gsi_dn(auth_user_id);
 	if (u != NULL) {
 		giant_unlock();
 		/* auth_user_id is a DN */
-		*auth_user_id_typep = GFARM_AUTH_ID_TYPE_USER;
+		*auth_user_id_rolep = GFARM_AUTH_ID_ROLE_USER;
 		if (global_usernamep == NULL)
 			return (GFARM_ERR_NO_ERROR);
 		global_username = strdup_log(user_tenant_name(u), diag);
@@ -118,11 +118,11 @@ auth_uid_to_global_username_gsi(void *closure,
 	}
 
 	if ((e = gfarm_x509_cn_get_hostname(
-	    GFARM_AUTH_ID_TYPE_SPOOL_HOST, cn, &hostname))
+	    GFARM_AUTH_ID_ROLE_SPOOL_HOST, cn, &hostname))
 	    == GFARM_ERR_NO_ERROR &&
 	    (h = host_lookup(hostname)) != NULL) {
 		giant_unlock();
-		*auth_user_id_typep = GFARM_AUTH_ID_TYPE_SPOOL_HOST;
+		*auth_user_id_rolep = GFARM_AUTH_ID_ROLE_SPOOL_HOST;
 		if (global_usernamep == NULL)
 			free(hostname);
 		else
@@ -135,11 +135,11 @@ auth_uid_to_global_username_gsi(void *closure,
 		hostname = NULL;
 	}
 	if ((e = gfarm_x509_cn_get_hostname(
-	    GFARM_AUTH_ID_TYPE_METADATA_HOST, cn, &hostname))
+	    GFARM_AUTH_ID_ROLE_METADATA_HOST, cn, &hostname))
 	    == GFARM_ERR_NO_ERROR &&
 	    (m = mdhost_lookup(hostname)) != NULL) {
 		giant_unlock();
-		*auth_user_id_typep = GFARM_AUTH_ID_TYPE_METADATA_HOST;
+		*auth_user_id_rolep = GFARM_AUTH_ID_ROLE_METADATA_HOST;
 		if (global_usernamep == NULL)
 			free(hostname);
 		else
@@ -162,21 +162,21 @@ auth_uid_to_global_username_gsi(void *closure,
 static gfarm_error_t
 auth_uid_to_global_username_server_auth(void *closure,
 	const char *auth_user_id,
-	gfarm_error_t (*get_hostname)(enum gfarm_auth_id_type, const char *,
+	gfarm_error_t (*get_hostname)(enum gfarm_auth_id_role, const char *,
 	    char **hostnamep),
-	enum gfarm_auth_id_type *auth_user_id_typep,
+	enum gfarm_auth_id_role *auth_user_id_rolep,
 	char **global_usernamep, const char *diag)
 {
 	gfarm_error_t e;
-	enum gfarm_auth_id_type auth_user_id_type = *auth_user_id_typep;
+	enum gfarm_auth_id_role auth_user_id_role = *auth_user_id_rolep;
 	char *global_username;
 	struct user *u;
 	char *hostname;
 	struct host *h;
 	struct mdhost *m;
 
-	switch (auth_user_id_type) {
-	case GFARM_AUTH_ID_TYPE_USER:
+	switch (auth_user_id_role) {
+	case GFARM_AUTH_ID_ROLE_USER:
 		/* auth_user_id is Distinguished Name */
 		giant_lock();
 		u = user_lookup_gsi_dn(auth_user_id);
@@ -198,8 +198,8 @@ auth_uid_to_global_username_server_auth(void *closure,
 			return (GFARM_ERR_NO_MEMORY);
 		*global_usernamep = global_username;
 		return (GFARM_ERR_NO_ERROR);
-	case GFARM_AUTH_ID_TYPE_SPOOL_HOST:
-		e = (*get_hostname)(auth_user_id_type, auth_user_id,
+	case GFARM_AUTH_ID_ROLE_SPOOL_HOST:
+		e = (*get_hostname)(auth_user_id_role, auth_user_id,
 		    &hostname);
 		if (e != GFARM_ERR_NO_ERROR)
 			return (GFARM_ERR_AUTHENTICATION);
@@ -217,8 +217,8 @@ auth_uid_to_global_username_server_auth(void *closure,
 		else
 			*global_usernamep = hostname;
 		return (GFARM_ERR_NO_ERROR);
-	case GFARM_AUTH_ID_TYPE_METADATA_HOST:
-		e = (*get_hostname)(auth_user_id_type, auth_user_id,
+	case GFARM_AUTH_ID_ROLE_METADATA_HOST:
+		e = (*get_hostname)(auth_user_id_role, auth_user_id,
 		    &hostname);
 		if (e != GFARM_ERR_NO_ERROR)
 			return (GFARM_ERR_AUTHENTICATION);
@@ -236,13 +236,13 @@ auth_uid_to_global_username_server_auth(void *closure,
 		else
 			*global_usernamep = hostname;
 		return (GFARM_ERR_NO_ERROR);
-	case GFARM_AUTH_ID_TYPE_UNKNOWN:
+	case GFARM_AUTH_ID_ROLE_UNKNOWN:
 		/*FALLTHROUGH*/
 	default:
 		gflog_debug(GFARM_MSG_UNFIXED,
-		    "auth_uid_to_global_username(id_type:%d, id:%s): "
+		    "auth_uid_to_global_username(id_role:%d, id:%s): "
 		    "unexpected call",
-		    auth_user_id_type, auth_user_id);
+		    auth_user_id_role, auth_user_id);
 		return (GFARM_ERR_AUTHENTICATION);
 	}
 }
@@ -252,12 +252,12 @@ auth_uid_to_global_username_server_auth(void *closure,
 
 static gfarm_error_t
 auth_uid_to_global_username_kerberos(void *closure,
-	const char *auth_user_id, enum gfarm_auth_id_type *auth_user_id_typep,
+	const char *auth_user_id, enum gfarm_auth_id_role *auth_user_id_rolep,
 	char **global_usernamep)
 {
 	return (auth_uid_to_global_username_server_auth(closure,
 	  auth_user_id, gfarm_kerberos_principal_get_hostname,
-	    auth_user_id_typep, global_usernamep,
+	    auth_user_id_rolep, global_usernamep,
 	    "auth_uid_to_global_username_kerberos"));
 }
 
@@ -267,12 +267,12 @@ auth_uid_to_global_username_kerberos(void *closure,
 
 static gfarm_error_t
 auth_uid_to_global_username_tls_client_certificate(void *closure,
-	const char *auth_user_id, enum gfarm_auth_id_type *auth_user_id_typep,
+	const char *auth_user_id, enum gfarm_auth_id_role *auth_user_id_rolep,
 	char **global_usernamep)
 {
 	return (auth_uid_to_global_username_server_auth(closure,
 	  auth_user_id, gfarm_x509_cn_get_hostname,
-	    auth_user_id_typep, global_usernamep,
+	    auth_user_id_rolep, global_usernamep,
 	    "auth_uid_to_global_username_tls_client_certificate"));
 }
 
@@ -280,15 +280,15 @@ auth_uid_to_global_username_tls_client_certificate(void *closure,
 
 static gfarm_error_t
 auth_uid_to_global_username_sharedsecret(void *closure,
-	const char *auth_user_id, enum gfarm_auth_id_type *auth_user_id_typep,
+	const char *auth_user_id, enum gfarm_auth_id_role *auth_user_id_rolep,
 	char **global_usernamep)
 {
-	enum gfarm_auth_id_type auth_user_id_type = *auth_user_id_typep;
+	enum gfarm_auth_id_role auth_user_id_role = *auth_user_id_rolep;
 	char *global_username;
 	struct user *u;
 	const char diag[] = "auth_uid_to_global_username_sharedsecret";
 
-	if (auth_user_id_type != GFARM_AUTH_ID_TYPE_USER)
+	if (auth_user_id_role != GFARM_AUTH_ID_ROLE_USER)
 		return (GFARM_ERR_AUTHENTICATION);
 
 	giant_lock();
@@ -315,17 +315,17 @@ auth_uid_to_global_username_sharedsecret(void *closure,
 
 /*
  * if auth_method is gsi*, kerberos* or tls_client_certificate,
- * gfarm_auth_id_type is GFARM_AUTH_ID_TYPE_{USER,SPOOL_HOST,METADATA_HOST},
- * otherwise gfarm_auth_id_type must be GFARM_AUTH_ID_TYPE_USER.
+ * gfarm_auth_id_role is GFARM_AUTH_ID_ROLE_{USER,SPOOL_HOST,METADATA_HOST},
+ * otherwise gfarm_auth_id_role must be GFARM_AUTH_ID_ROLE_USER.
  *
  * if auth_method is gsi*,
- * *gfarm_auth_id_typep is an output parameter, otherwise an input parameter.
+ * *gfarm_auth_id_rolep is an output parameter, otherwise an input parameter.
  */
 gfarm_error_t
 auth_uid_to_global_username(void *closure,
 	enum gfarm_auth_method auth_method,
 	const char *auth_user_id,
-	enum gfarm_auth_id_type *auth_user_id_typep,
+	enum gfarm_auth_id_role *auth_user_id_rolep,
 	char **global_usernamep)
 {
 	assert(GFARM_ARRAY_LENGTH(auth_uid_to_global_username_table)
@@ -340,8 +340,8 @@ auth_uid_to_global_username(void *closure,
 		    (int)GFARM_ARRAY_LENGTH(
 		    auth_uid_to_global_username_table));
 		return (gfarm_auth_uid_to_global_username_panic(closure,
-		    auth_user_id, auth_user_id_typep, global_usernamep));
+		    auth_user_id, auth_user_id_rolep, global_usernamep));
 	}
 	return (auth_uid_to_global_username_table[auth_method](
-	    closure, auth_user_id, auth_user_id_typep, global_usernamep));
+	    closure, auth_user_id, auth_user_id_rolep, global_usernamep));
 }
