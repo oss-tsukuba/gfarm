@@ -15,6 +15,7 @@ set -eux -o pipefail
 : $GFDOCKER_HOSTNAME_SUFFIX
 : $GFDOCKER_SASL_MECH_LIST
 : $GFDOCKER_SASL_LOG_LEVEL
+: $GFDOCKER_SASL_XOAUTH2_ISSUERS
 
 # the followings are optional:
 #: $https_proxy
@@ -31,7 +32,6 @@ SASL_DOMAIN=$(echo "$GFDOCKER_HOSTNAME_SUFFIX" | sed 's/^\.//')
 GFDOCKER_SASL_XOAUTH2_SCOPE=hpci
 GFDOCKER_SASL_XOAUTH2_AUD=hpci
 GFDOCKER_SASL_XOAUTH2_USER_CLAIM=hpci.id
-GFDOCKER_SASL_XOAUTH2_ISSUERS=https://jwt-keycloak:8443/auth/realms/hpci
 
 gfmds=
 gfsds=
