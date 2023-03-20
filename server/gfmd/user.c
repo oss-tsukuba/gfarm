@@ -366,12 +366,6 @@ user_auth_id_modify_internal(struct user *u,
 	gfarm_error_t e;
 
 
-	if (u->auth_user_id[auth_user_id_type] != NULL &&
-		strcmp(u->auth_user_id[auth_user_id_type], auth_user_id) == 0) {
-		*need_to_update_dbp = false;
-		return (GFARM_ERR_NO_ERROR);
-	}
-
 	new_auth_user_id = strdup_log(auth_user_id,
 				"user_auth_id_modify_internal");
 
@@ -383,6 +377,13 @@ user_auth_id_modify_internal(struct user *u,
 		&auth_user_id_type)) != GFARM_ERR_NO_ERROR) {
 		free(new_auth_user_id);
 		return (e);
+	}
+
+	if (u->auth_user_id[auth_user_id_type] != NULL &&
+		strcmp(u->auth_user_id[auth_user_id_type], auth_user_id) == 0) {
+		*need_to_update_dbp = false;
+		free(new_auth_user_id);
+		return (GFARM_ERR_NO_ERROR);
 	}
 
 	e = user_enter_auth_id(auth_user_id_type,
@@ -925,6 +926,25 @@ user_gsi_dn(struct user *u)
 {
 	return (u != NULL && user_is_valid(u) ?
 	    u->ui.gsi_dn : REMOVED_USER_NAME);
+}
+
+char *
+user_auth_id(struct user *u, char *auth_id_type_str)
+{
+	enum auth_user_id_type auth_user_id_type;
+	gfarm_error_t e;
+
+	e = gfarm_auth_user_id_type_from_name(auth_id_type_str,
+					  &auth_user_id_type);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_warning(GFARM_MSG_UNFIXED,
+			"Invalid auth_user_id_type");
+		return (NULL);
+	}
+
+	return (u != NULL && user_is_valid(u) ?
+		u->auth_user_id[auth_user_id_type] :
+		REMOVED_USER_NAME);
 }
 
 struct quota *

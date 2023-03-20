@@ -19,6 +19,7 @@ char *user_name_in_tenant(struct user *, struct process *);
 char *user_name_in_tenant_even_invalid(struct user *, struct process *);
 char *user_realname(struct user *);
 char *user_gsi_dn(struct user *);
+char *user_auth_id(struct user *, char *);
 struct tenant *user_get_tenant(struct user *);
 const char *user_get_tenant_name(struct user *);
 int user_is_invalid(struct user *);
