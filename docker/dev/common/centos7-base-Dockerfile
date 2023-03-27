@@ -37,6 +37,12 @@ RUN sed -i -e '/override_install_langs/s/$/,ja_JP.utf8/g' /etc/yum.conf \
     gsi-openssh-clients \
     && globus-version \
     && yum -y install \
+    python3 \
+    python36-docopt \
+    python36-schema \
+    python36-tqdm \
+    && pip3 install flake8 \
+    && yum -y install \
     krb5-libs krb5-devel krb5-server krb5-workstation \
     cyrus-sasl cyrus-sasl-lib cyrus-sasl-devel \
     cyrus-sasl-plain cyrus-sasl-gssapi \

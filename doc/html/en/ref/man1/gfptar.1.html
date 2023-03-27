@@ -1,0 +1,210 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfptar</title>
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
+<a name="gfptar.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfptar — archive files in parallel</p>
+</div>
+<div class="refsynopsisdiv">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gfptar</code>  [OPTIONS]  -c <em class="replaceable"><code>outdir</code></em>  [-C <em class="replaceable"><code>basedir</code></em>]  <em class="replaceable"><code>member</code></em>... </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfptar</code>  [OPTIONS]  -x <em class="replaceable"><code>outdir</code></em>   <em class="replaceable"><code>indir</code></em>  [<em class="replaceable"><code>member</code></em>...]</p></div>
+<div class="cmdsynopsis"><p><code class="command">gfptar</code>  [OPTIONS]  -t <em class="replaceable"><code>indir</code></em> </p></div>
+</div>
+<div class="refsect1">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>
+  <span class="command"><strong>gfptar</strong></span>
+  creates archive files to Gfarm, or extracts files from archive files on Gfarm.
+  The archive files consist of multiple tar files and list files of archived members in a directory.
+  Creation or extraction is performed in parallel for each tar file in a directory for archive.
+</p>
+</div>
+<div class="refsect1">
+<a name="operation-mode"></a><h2>OPERATION MODE</h2>
+<div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><code class="option">-c(--create)</code> <em class="parameter"><code>outdir</code></em>
+    <code class="option">-C(--basedir)</code> <em class="parameter"><code>basedir</code></em> <em class="parameter"><code>member...</code></em>
+  </span></dt>
+<dd>
+<p>
+      Create <em class="parameter"><code>outdir</code></em> directory, and create archive files in the new directory.
+    </p>
+<p>
+      <em class="parameter"><code>member...</code></em> (files or directories) in <em class="parameter"><code>basedir</code></em> are archived.
+    </p>
+</dd>
+<dt><span class="term"><code class="option">-x(--extract)</code> <em class="parameter"><code>outdir</code></em>
+    <em class="parameter"><code>indir</code></em> <em class="parameter"><code>[member...]</code></em>
+  </span></dt>
+<dd>
+<p>
+      Create <em class="parameter"><code>outdir</code></em> directory, and extract files from
+      archive files of <em class="parameter"><code>indir</code></em> to the new directory.
+    </p>
+<p>
+      When <em class="parameter"><code>member</code></em>s are specified, only the specified members will be extracted.
+    </p>
+</dd>
+<dt><span class="term"><code class="option">-t(--list)</code> <em class="parameter"><code>indir</code></em></span></dt>
+<dd><p>
+      List the contents of archive files in <em class="parameter"><code>indir</code></em>.
+    </p></dd>
+</dl></div>
+</div>
+<div class="refsect1">
+<a name="path-style"></a><h2>PATH STYLE</h2>
+<p>
+  <em class="parameter"><code>outdir</code></em>, <em class="parameter"><code>indir</code></em>
+  and <em class="parameter"><code>basedir</code></em> must be one of the following formats.
+</p>
+<div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><em class="parameter"><code>path-name</code></em></span></dt>
+<dd><p>
+      is a relative path or an absolute path of a local file system.
+      When the path is a mount point on gfarm2fs, tar files are copied
+      without passing through the gfarm2fs.
+      (Non-tar files are operated via gfarm2fs.)
+    </p></dd>
+<dt><span class="term"><em class="parameter"><code>gfarm:...</code></em></span></dt>
+<dd><p>
+      is a Gfarm URL of a Gfarm file system.
+    </p></dd>
+</dl></div>
+</div>
+<div class="refsect1">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><code class="option">-j, --jobs=</code><em class="parameter"><code>NUM</code></em></span></dt>
+<dd>
+<p>
+    Specifies the maximum number of jobs to create archive files or extract from archive files simultaneously.
+  </p>
+<p>
+    The default value is 4.
+  </p>
+</dd>
+<dt><span class="term"><code class="option">-s, --size=</code><em class="parameter"><code>BYTES</code></em></span></dt>
+<dd>
+<p>
+    Specifies assumed size in bytes per output tar file for <code class="option">--create</code>.
+
+    Since compression ratios vary depending on the content of the file and the compression type,
+    Archive files will be created
+    for each group of files divided by the assumed size calculated considering the assumed compression ratio (--ratio option).
+  </p>
+<p>
+    The default value is 200M (200 * 1024^2 = 209715200) (200 MiB).
+  </p>
+</dd>
+<dt><span class="term"><code class="option">-r, --ratio=</code><em class="parameter"><code>RATIO</code></em></span></dt>
+<dd>
+<p>
+    Specifies the assumed compression ratio in percentage for <code class="option">--create</code>.
+  </p>
+<p>
+    The default value is 50 (50 %).
+  </p>
+</dd>
+<dt><span class="term"><code class="option">-T, --type=</code><em class="parameter"><code>TYPE</code></em></span></dt>
+<dd>
+<p>
+    Specifies a compression type for <code class="option">--create</code>.
+    "gz" means gzip type (suffix is .tar.gz).
+    "bz2" means bzip2 type (suffix is .tar.bz2).
+    "xz" means xz type (suffix is .tar.xz).
+    "no" means no compression.
+  </p>
+<p>
+    This option is unnecessary for --extract (determine type automatically).
+  </p>
+<p>
+    The default value is gz.
+  </p>
+</dd>
+<dt><span class="term"><code class="option">-I, --use-compress-program=</code><em class="parameter"><code>COMMAND</code></em></span></dt>
+<dd><p>
+    Specifies a command of compression program.
+    Suffix for creating tar files must be specified by <code class="option">--type</code> option.
+    The command must accept -d option for decompression.
+  </p></dd>
+<dt><span class="term"><code class="option">-q, --quiet</code></span></dt>
+<dd><p>
+  Suppresses non-error messages.
+</p></dd>
+<dt><span class="term"><code class="option">-v, --verbose</code></span></dt>
+<dd><p>
+  Displays verbose output.
+</p></dd>
+<dt><span class="term"><code class="option">-d, --debug</code></span></dt>
+<dd><p>
+  Displays debug output.
+</p></dd>
+<dt><span class="term"><code class="option">-?, -h, --help</code></span></dt>
+<dd><p>
+  Displays a list of command options.
+</p></dd>
+</dl></div>
+</div>
+<div class="refsect1">
+<a name="examples"></a><h2>EXAMPLES</h2>
+<p>
+  Creates archive files from local directories to a Gfarm directory.
+  The archived files of this example include dir1 and dir2 as relative path.
+  </p>
+<div class="literallayout"><p><br>
+    $ gfptar -c gfarm:/home/user1/out.gfptar -C /home/user1 ./dir1 ./dir2<br>
+  </p></div>
+<p>
+</p>
+<p>
+  Extract files from a Gfarm directory to a local directory.
+  The extracted files of this example are dir1 and dir2.
+  </p>
+<div class="literallayout"><p><br>
+    $ gfptar -x /home/user1/outdir gfarm:/home/user1/out.gfptar<br>
+  </p></div>
+<p>
+</p>
+<p>
+  Creates archive files from Gfarm directories to a Gfarm directory.
+  NOTE: If there are many small size files, it may perform better to specify a path on gfarm2fs for <code class="option">-C</code> option.
+  </p>
+<div class="literallayout"><p><br>
+    $ gfptar -c gfarm:/home/user1/out.gfptar -C gfarm:/home/user1 ./dir<br>
+  </p></div>
+<p>
+</p>
+<p>
+  Extract files from a Gfarm directory to a Gfarm directory.
+  NOTE: If there are many small size files, it may perform better to specify a path on gfarm2fs for <code class="option">-x</code> option.
+  </p>
+<div class="literallayout"><p><br>
+    $ gfptar -x gfarm:/home/user1/dir2 gfarm:/home/user1/out.gfptar<br>
+  </p></div>
+<p>
+</p>
+<p>
+  Extract a specified file from a Gfarm directory to a local directory.
+  The extracted file of this example is dir1/path/to/file only.
+  </p>
+<div class="literallayout"><p><br>
+    $ gfptar -x /home/user1/outdir gfarm:/home/user1/out.gfptar dir1/path/to/file1<br>
+  </p></div>
+<p>
+</p>
+</div>
+<div class="refsect1">
+<a name="see-also"></a><h2>SEE ALSO</h2>
+<p>
+  <span class="citerefentry"><span class="refentrytitle">gfreg</span>(1)</span>,
+  <span class="citerefentry"><span class="refentrytitle">gfexport</span>(1)</span>
+</p>
+</div>
+</div></body>
+</html>

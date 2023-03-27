@@ -1,0 +1,305 @@
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
+<!-- $Id$ -->
+
+<refentry id="gfptar.1">
+
+<refentryinfo><date>29 Jan 2023</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfptar</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id="name">
+<refname>gfptar</refname>
+<refpurpose>ファイルを並列にアーカイブする</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id="synopsis">
+
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfptar</command>
+  <arg choice="opt" rep="norepeat">OPTIONS</arg>
+  <arg choice="plain" rep="norepeat">-c <replaceable>outdir</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-C <replaceable>basedir</replaceable></arg>
+  <arg choice="plain" rep="repeat"><replaceable>member</replaceable></arg>
+</cmdsynopsis>
+
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfptar</command>
+  <arg choice="opt" rep="norepeat">OPTIONS</arg>
+  <arg choice="plain" rep="norepeat">-x <replaceable>outdir</replaceable></arg>
+  <arg choice="plain" rep="norepeat"><replaceable>indir</replaceable></arg>
+  <arg choice="opt" rep="repeat"><replaceable>member</replaceable></arg>
+</cmdsynopsis>
+
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfptar</command>
+  <arg choice="opt" rep="norepeat">OPTIONS</arg>
+  <arg choice="plain" rep="norepeat">-t <replaceable>indir</replaceable></arg>
+</cmdsynopsis>
+
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id="description"><title>DESCRIPTION</title>
+
+<para>
+<command moreinfo="none">gfptar</command>
+は、アーカイブファイルをGfarm上に作成します。また、そのアーカイブファイルからファイルを抽出します。
+作成されるアーカイブファイルは、ディレクトリの中に複数のtarファイルと複数のファイル一覧のファイルで構成されます。
+アーカイブの作成または抽出処理を、アーカイブ用ディレクトリ内のtarファイルごとに並列でおこないます。
+</para>
+
+</refsect1>
+
+<refsect1 id="operation-mode"><title>OPERATION MODE</title>
+<variablelist>
+
+<varlistentry>
+  <term><option>-c(--create)</option> <parameter moreinfo="none">outdir</parameter>
+    <option>-C(--basedir)</option> <parameter moreinfo="none">basedir</parameter> <parameter moreinfo="none">member...</parameter>
+  </term>
+  <listitem>
+    <para>
+      <parameter moreinfo="none">outdir</parameter> ディレクトリを新規に作成し、そのディレクトリにアーカイブファイル群を作成します。
+    </para>
+    <para>
+      <parameter moreinfo="none">basedir</parameter> ディレクトリ以下の <parameter moreinfo="none">member...</parameter>
+      ディレクトリまたはファイルをアーカイブします。
+    </para>
+  </listitem>
+</varlistentry>
+
+<varlistentry>
+  <term><option>-x(--extract)</option> <parameter moreinfo="none">outdir</parameter>
+    <parameter moreinfo="none">indir</parameter> <parameter moreinfo="none">[member...]</parameter>
+  </term>
+  <listitem>
+    <para>
+      <parameter moreinfo="none">outdir</parameter> ディレクトリを新規に作成し、
+      そのディレクトリに <parameter moreinfo="none">indir</parameter> のアーカイブファイル群からファイルを抽出します。
+    </para>
+    <para>
+      一部のファイルのみを抽出するには <parameter moreinfo="none">member</parameter> を指定します。
+    </para>
+  </listitem>
+</varlistentry>
+
+<varlistentry>
+  <term><option>-t(--list)</option> <parameter moreinfo="none">indir</parameter></term>
+  <listitem>
+    <para>
+      <parameter moreinfo="none">inidir</parameter> ディレクトリにあるアーカイブ群の内容一覧を表示します。
+    </para>
+  </listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id="path-stype"><title>PATH STYLE</title>
+
+<para>
+  <parameter moreinfo="none">outdir</parameter> や <parameter moreinfo="none">indir</parameter>、
+  <parameter moreinfo="none">basedir</parameter> には、以下のパス形式を指定できます。
+</para>
+
+<variablelist>
+
+<varlistentry>
+  <term><parameter moreinfo="none">パス名</parameter></term>
+  <listitem>
+    <para>
+      ローカルファイルシステム上のファイルやディレクトリを絶対パスまたは相対パスで指定します。
+      そのパスが gfarm2fs のマウントポイント上の場合、
+      gfarm2fs を経由せずに tar ファイルを操作します。
+      (tar ファイル以外は、gfarm2fs を経由してファイルを操作します。)
+    </para>
+  </listitem>
+</varlistentry>
+
+<varlistentry>
+  <term><parameter moreinfo="none">gfarm:...</parameter></term>
+  <listitem>
+    <para>
+      Gfarm のファイルやディレクトリを Gfarm URL で指定します。
+    </para>
+  </listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id="options"><title>OPTIONS</title>
+<variablelist>
+
+<varlistentry>
+<term><option>-j, --jobs=</option><parameter moreinfo="none">NUM</parameter></term>
+<listitem>
+<para>
+  複数のアーカイブファイルを作成、または複数のアーカイブファイルから抽出するための最大同時処理数を指定します。
+</para>
+<para>
+  デフォルト値は 4 です。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-s, --size=</option><parameter moreinfo="none">BYTES</parameter></term>
+<listitem>
+<para>
+  アーカイブを作成時に、分割されるアーカイブファイル1個あたりの想定サイズを指定します。
+  ファイルの内容や圧縮方法によって圧縮率は異なるため、
+  仮定圧縮率(別オプション --ratio)を考慮して計算された想定サイズで分割されたファイル群ごとにアーカイブファイルを作成します。
+</para>
+<para>
+  デフォルト値は 200M (200 * 1024^2 = 209715200) (200 メビバイト) です。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-r, --ratio=</option><parameter moreinfo="none">RATIO</parameter></term>
+<listitem>
+<para>
+  アーカイブを作成時に、分割されるアーカイブファイルの仮定圧縮率(%)を指定します。
+</para>
+<para>
+  デフォルト値は 50 (50 %)です。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-T, --type=</option><parameter moreinfo="none">TYPE</parameter></term>
+<listitem>
+<para>
+  アーカイブを作成時に、圧縮する形式を指定します。
+  gz は gzip、bz2 は bzip2、xz は xz 形式で圧縮されます。
+  拡張子もそれぞれ tar.gz, tar.bz2, tar,xz になります。
+  no を指定すると圧縮しません。
+</para>
+<para>
+  抽出時にこのオプションは使用されず、形式が自動で認識されます。
+</para>
+<para>
+  デフォルト値は gz です。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-I, --use-compress-program=</option><parameter moreinfo="none">COMMAND</parameter></term>
+<listitem>
+<para>
+  アーカイブを作成時または抽出時に、圧縮・伸張するための外部コマンドを指定します。
+  作成されるアーカイブファイルの拡張子を <option>--type</option> オプションで指定します。
+  抽出時にはそのコマンドに -d オプションが指定されます。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-q, --quiet</option></term>
+<listitem>
+<para>
+  警告を表示しません。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-v, --verbose</option></term>
+<listitem>
+<para>
+  冗長な情報を出力します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-d, --debug</option></term>
+<listitem>
+<para>
+  デバッグ情報を出力します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-?, -h, --help</option></term>
+<listitem>
+<para>
+  コマンドオプションを出力します。
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id="examples"><title>EXAMPLES</title>
+
+<para>
+  ローカルのディレクトリから、Gfarmのディレクトリにアーカイブを作成します。
+  この例では dir1, dir2 以下のファイルが相対パスでアーカイブされます。
+  <literallayout format="linespecific" class="normal">
+    $ gfptar -c gfarm:/home/user1/out.gfptar -C /home/user1 ./dir1 ./dir2
+  </literallayout>
+</para>
+
+<para>
+  Gfarmにあるアーカイブディレクトリから、ローカルのディレクトリに抽出します。
+  この例では outdir 以下に dir1, dir2 が抽出されます。
+  <literallayout format="linespecific" class="normal">
+    $ gfptar -x /home/user1/outdir gfarm:/home/user1/out.gfptar
+  </literallayout>
+</para>
+
+<para>
+  GfarmのディレクトリからGfarmのディレクトリにアーカイブを作成します。
+  注意: 小さいサイズのファイルが多い場合は、
+  gfarm2fs 上のパス名を <option>-C</option> に指定したほうが、性能が良い場合があります。
+  <literallayout format="linespecific" class="normal">
+    $ gfptar -c gfarm:/home/user1/out.gfptar -C gfarm:/home/user1 ./dir
+  </literallayout>
+</para>
+
+<para>
+  GfarmにあるアーカイブディレクトリをGfarmのディレクトリに抽出します。
+  注意: 小さいサイズのファイルが多い場合は、
+  gfarm2fs 上のパス名を <option>-x</option> に指定したほうが、性能が良い場合があります。
+  <literallayout format="linespecific" class="normal">
+    $ gfptar -x gfarm:/home/user1/dir2 gfarm:/home/user1/out.gfptar
+  </literallayout>
+</para>
+
+<para>
+  Gfarmにあるアーカイブディレクトリからローカルのディレクトリに一部のファイルを抽出します。
+  この例では outdir ディレクトリに dir1/path/to/file だけが抽出されます。
+  <literallayout format="linespecific" class="normal">
+    $ gfptar -x /home/user1/outdir gfarm:/home/user1/out.gfptar dir1/path/to/file1
+  </literallayout>
+</para>
+
+</refsect1>
+
+<refsect1 id="see-also"><title>SEE ALSO</title>
+<para>
+  <citerefentry>
+  <refentrytitle>gfreg</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>,
+  <citerefentry>
+  <refentrytitle>gfexport</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>
+</para>
+</refsect1>
+
+</refentry>

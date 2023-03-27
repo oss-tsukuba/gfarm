@@ -33,6 +33,21 @@ RUN apt-get update \
     globus-gsi-cert-utils-progs \
     globus-proxy-utils \
     && globus-version \
+    && apt-get -y install \
+    python3 \
+    python3-docopt \
+    python3-schema \
+    python3-tqdm \
+    flake8 \
+    && apt-get -y install sasl2-bin libsasl2-modules-db libsasl2-dev \
+    libsasl2-modules libsasl2-modules-gssapi-mit \
+    && apt-get -y install g++ cmake libsqlite3-dev \
+    libcurl4-openssl-dev uuid-dev \
+    && apt-get -y install curl \
+    && GO_TAR=go1.20.linux-amd64.tar.gz \
+    && curl -O https://dl.google.com/go/${GO_TAR} \
+    && tar -C /usr/local -xzf ${GO_TAR} \
+    && ln -s /usr/local/go/bin/go /usr/local/bin \
     && sed -i -E "s/# (${LANG})/\1/" /etc/locale.gen \
     && locale-gen \
     && update-locale LANG=${LANG} \

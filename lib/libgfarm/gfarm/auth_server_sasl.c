@@ -25,14 +25,16 @@ gfarm_authorize_sasl_common(struct gfp_xdr *conn,
 	char *service_tag, char *hostname, enum gfarm_auth_method auth_method,
 	gfarm_error_t (*auth_uid_to_global_user)(void *,
 	    enum gfarm_auth_method, const char *,
-	    enum gfarm_auth_id_type *, char **), void *closure,
-	enum gfarm_auth_id_type *peer_typep, char **global_usernamep,
+	    enum gfarm_auth_id_role *, char **), void *closure,
+	enum gfarm_auth_id_role *peer_rolep, char **global_usernamep,
 	const char *diag)
 {
 	gfarm_error_t e;
 	int save_errno, eof, r, count;
 	char self_hsbuf[NI_MAXHOST + NI_MAXSERV];
 	char peer_hsbuf[NI_MAXHOST + NI_MAXSERV];
+	char *self_hs = self_hsbuf;
+	char *peer_hs = peer_hsbuf;
 	sasl_conn_t *sasl_conn;
 	char *chosen_mechanism = NULL;
 	gfarm_int32_t has_initial_response, result;
@@ -40,7 +42,7 @@ gfarm_authorize_sasl_common(struct gfp_xdr *conn,
 	unsigned len;
 	char *response = NULL, *global_username = NULL;
 	size_t rsz = 0;
-	enum gfarm_auth_id_type peer_type = GFARM_AUTH_ID_TYPE_USER;
+	enum gfarm_auth_id_role peer_role = GFARM_AUTH_ID_ROLE_USER;
 
 	/* sanity check, shouldn't happen */
 	if (sasl_server_initialized != GFARM_ERR_NO_ERROR) {
@@ -52,7 +54,11 @@ gfarm_authorize_sasl_common(struct gfp_xdr *conn,
 	save_errno = gfarm_sasl_addr_string(gfp_xdr_fd(conn),
 	    self_hsbuf, sizeof(self_hsbuf),
 	    peer_hsbuf, sizeof(peer_hsbuf), diag);
-	if (save_errno != 0)
+	if (save_errno == EAFNOSUPPORT) {
+		/* sasl_server_new() doesn't work with AF_UNIX */
+		self_hs = NULL;
+		peer_hs = NULL;
+	} else if (save_errno != 0)
 		return (gfarm_errno_to_error(save_errno));
 
 	e = gfp_xdr_tls_alloc(conn, gfp_xdr_fd(conn), GFP_XDR_TLS_ACCEPT);
@@ -85,7 +91,7 @@ gfarm_authorize_sasl_common(struct gfp_xdr *conn,
 	}
 
 	r = sasl_server_new("gfarm", gfarm_host_get_self_name(), NULL,
-	    self_hsbuf, peer_hsbuf, NULL, 0, &sasl_conn);
+	    self_hs, peer_hs, NULL, 0, &sasl_conn);
 	if (r != SASL_OK) {
 		gflog_notice(GFARM_MSG_UNFIXED, "sasl_server_new(): %s",
 		    sasl_errstring(r, NULL, NULL));
@@ -279,7 +285,7 @@ gfarm_authorize_sasl_common(struct gfp_xdr *conn,
 	}
 
 	e = (*auth_uid_to_global_user)(closure, auth_method,
-	    user_id, &peer_type, &global_username);
+	    user_id, &peer_role, &global_username);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "%s@%s: unregistered user: %s", user_id, hostname,
@@ -311,7 +317,7 @@ gfarm_authorize_sasl_common(struct gfp_xdr *conn,
 		return (e);
 	}
 
-	*peer_typep = GFARM_AUTH_ID_TYPE_USER;
+	*peer_rolep = GFARM_AUTH_ID_ROLE_USER;
 	*global_usernamep = global_username;
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -325,13 +331,13 @@ gfarm_authorize_sasl(struct gfp_xdr *conn,
 	char *service_tag, char *hostname,
 	gfarm_error_t (*auth_uid_to_global_user)(void *,
 	    enum gfarm_auth_method, const char *,
-	    enum gfarm_auth_id_type *, char **), void *closure,
-	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
+	    enum gfarm_auth_id_role *, char **), void *closure,
+	enum gfarm_auth_id_role *peer_rolep, char **global_usernamep)
 {
 	return (gfarm_authorize_sasl_common(conn,
 	    service_tag, hostname, GFARM_AUTH_METHOD_SASL,
 	    auth_uid_to_global_user, closure,
-	    peer_typep, global_usernamep,
+	    peer_rolep, global_usernamep,
 	    "gfarm_authorize_sasl"));
 }
 
@@ -344,13 +350,13 @@ gfarm_authorize_sasl_auth(struct gfp_xdr *conn,
 	char *service_tag, char *hostname,
 	gfarm_error_t (*auth_uid_to_global_user)(void *,
 	    enum gfarm_auth_method, const char *,
-	    enum gfarm_auth_id_type *, char **), void *closure,
-	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
+	    enum gfarm_auth_id_role *, char **), void *closure,
+	enum gfarm_auth_id_role *peer_rolep, char **global_usernamep)
 {
 	gfarm_error_t e = gfarm_authorize_sasl_common(conn,
 	    service_tag, hostname, GFARM_AUTH_METHOD_SASL_AUTH,
 	    auth_uid_to_global_user, closure,
-	    peer_typep, global_usernamep,
+	    peer_rolep, global_usernamep,
 	    "gfarm_authorize_sasl_auth");
 
 	if (e == GFARM_ERR_NO_ERROR)

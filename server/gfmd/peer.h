@@ -30,7 +30,7 @@ struct gfp_xdr;
 gfarm_error_t peer_alloc_with_connection(struct peer **, struct gfp_xdr *,
 	struct abstract_host *, int);
 void peer_authorized(struct peer *,
-	enum gfarm_auth_id_type, char *, char *, struct sockaddr *,
+	enum gfarm_auth_id_role, char *, char *, struct sockaddr *,
 	enum gfarm_auth_method, struct peer_watcher *);
 void peer_free(struct peer *);
 void peer_shutdown_all(void);
@@ -52,7 +52,7 @@ struct gfp_xdr_async_peer *peer_get_async(struct peer *);
 void peer_set_free_async(void (*)(struct peer *, struct gfp_xdr_async_peer *));
 
 gfarm_error_t peer_set_host(struct peer *, char *);
-enum gfarm_auth_id_type peer_get_auth_id_type(struct peer *);
+enum gfarm_auth_id_role peer_get_auth_id_role(struct peer *);
 char *peer_get_username(struct peer *);
 const char *peer_get_hostname(struct peer *);
 

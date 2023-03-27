@@ -8,7 +8,7 @@
 gfarm_error_t
 gfarm_auth_request_gsi(struct gfp_xdr *conn,
 	const char *service_tag, const char *hostname,
-	enum gfarm_auth_id_type self_type, const char *user,
+	enum gfarm_auth_id_role self_role, const char *user,
 	struct passwd *pwd)
 {
 	struct gfarm_gss *gss = gfarm_gss_gsi();
@@ -16,7 +16,7 @@ gfarm_auth_request_gsi(struct gfp_xdr *conn,
 	if (gss == NULL)
 		return (GFARM_ERR_INTERNAL_ERROR);
 	return (gfarm_auth_request_gss(conn, gss, service_tag, hostname,
-	    0, self_type, user, pwd));
+	    0, self_role, user, pwd));
 }
 
 /*
@@ -27,7 +27,7 @@ gfarm_error_t
 gfarm_auth_request_gsi_multiplexed(struct gfarm_eventqueue *q,
 	struct gfp_xdr *conn,
 	const char *service_tag, const char *hostname,
-	enum gfarm_auth_id_type self_type, const char *user,
+	enum gfarm_auth_id_role self_role, const char *user,
 	struct passwd *pwd, int auth_timeout,
 	void (*continuation)(void *), void *closure,
 	void **statepp)
@@ -37,7 +37,7 @@ gfarm_auth_request_gsi_multiplexed(struct gfarm_eventqueue *q,
 	if (gss == NULL)
 		return (GFARM_ERR_INTERNAL_ERROR);
 	return (gfarm_auth_request_gss_multiplexed(q, conn, gss, service_tag,
-	    hostname, 0, self_type, user, pwd, auth_timeout,
+	    hostname, 0, self_role, user, pwd, auth_timeout,
 	    continuation, closure, statepp));
 }
 
@@ -54,7 +54,7 @@ gfarm_auth_result_gsi_multiplexed(void *sp)
 gfarm_error_t
 gfarm_auth_request_gsi_auth(struct gfp_xdr *conn,
 	const char *service_tag, const char *hostname,
-	enum gfarm_auth_id_type self_type, const char *user,
+	enum gfarm_auth_id_role self_role, const char *user,
 	struct passwd *pwd)
 {
 	struct gfarm_gss *gss = gfarm_gss_gsi();
@@ -62,14 +62,14 @@ gfarm_auth_request_gsi_auth(struct gfp_xdr *conn,
 	if (gss == NULL)
 		return (GFARM_ERR_INTERNAL_ERROR);
 	return (gfarm_auth_request_gss_auth(conn, gss, service_tag, hostname,
-	    0, self_type, user, pwd));
+	    0, self_role, user, pwd));
 }
 
 gfarm_error_t
 gfarm_auth_request_gsi_auth_multiplexed(struct gfarm_eventqueue *q,
 	struct gfp_xdr *conn,
 	const char *service_tag, const char *hostname,
-	enum gfarm_auth_id_type self_type, const char *user,
+	enum gfarm_auth_id_role self_role, const char *user,
 	struct passwd *pwd, int auth_timeout,
 	void (*continuation)(void *), void *closure,
 	void **statepp)
@@ -79,7 +79,7 @@ gfarm_auth_request_gsi_auth_multiplexed(struct gfarm_eventqueue *q,
 	if (gss == NULL)
 		return (GFARM_ERR_INTERNAL_ERROR);
 	return (gfarm_auth_request_gss_auth_multiplexed(q, conn, gss,
-	    service_tag, hostname, 0, self_type, user, pwd, auth_timeout,
+	    service_tag, hostname, 0, self_role, user, pwd, auth_timeout,
 	    continuation, closure, statepp));
 }
 

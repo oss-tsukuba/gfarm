@@ -17,8 +17,8 @@ gfarm_authorize_kerberos(struct gfp_xdr *conn,
 	char *service_tag, char *hostname,
 	gfarm_error_t (*auth_uid_to_global_user)(void *,
 	    enum gfarm_auth_method, const char *,
-	    enum gfarm_auth_id_type *, char **), void *closure,
-	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
+	    enum gfarm_auth_id_role *, char **), void *closure,
+	enum gfarm_auth_id_role *peer_rolep, char **global_usernamep)
 {
 	struct gfarm_gss *gss = gfarm_gss_kerberos();
 
@@ -28,7 +28,7 @@ gfarm_authorize_kerberos(struct gfp_xdr *conn,
 	return (gfarm_authorize_gss(conn, gss,
 	    service_tag, hostname, 1, GFARM_AUTH_METHOD_KERBEROS,
 	    auth_uid_to_global_user, closure,
-	    peer_typep, global_usernamep));
+	    peer_rolep, global_usernamep));
 }
 
 /*
@@ -40,8 +40,8 @@ gfarm_authorize_kerberos_auth(struct gfp_xdr *conn,
 	char *service_tag, char *hostname,
 	gfarm_error_t (*auth_uid_to_global_user)(void *,
 	    enum gfarm_auth_method, const char *,
-	    enum gfarm_auth_id_type *, char **), void *closure,
-	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
+	    enum gfarm_auth_id_role *, char **), void *closure,
+	enum gfarm_auth_id_role *peer_rolep, char **global_usernamep)
 {
 	struct gfarm_gss *gss = gfarm_gss_kerberos();
 
@@ -51,5 +51,5 @@ gfarm_authorize_kerberos_auth(struct gfp_xdr *conn,
 	return (gfarm_authorize_gss_auth(conn, gss,
 	    service_tag, hostname, 1, GFARM_AUTH_METHOD_KERBEROS_AUTH,
 	    auth_uid_to_global_user, closure,
-	    peer_typep, global_usernamep));
+	    peer_rolep, global_usernamep));
 }

@@ -727,7 +727,7 @@ protocol_service(struct peer *peer)
 	int suspended = 0;
 	static const char diag[] = "protocol_service";
 
-	from_client = peer_get_auth_id_type(peer) == GFARM_AUTH_ID_TYPE_USER;
+	from_client = peer_get_auth_id_role(peer) == GFARM_AUTH_ID_ROLE_USER;
 	if (ps->nesting_level == 0) { /* top level */
 		e = protocol_switch(peer, from_client, 0, 0,
 		    ps->last_sync_request,
@@ -972,7 +972,7 @@ peer_authorize(struct peer *peer)
 {
 	gfarm_error_t e;
 	int rv, saved_errno;
-	enum gfarm_auth_id_type id_type;
+	enum gfarm_auth_id_role id_role;
 	char *username = NULL, *hostname;
 	enum gfarm_auth_method auth_method;
 	struct sockaddr addr;
@@ -1014,13 +1014,13 @@ peer_authorize(struct peer *peer)
 	}
 	e = gfarm_authorize_wo_setuid(peer_get_conn(peer), GFM_SERVICE_TAG,
 	    hostname, &addr, auth_uid_to_global_username, NULL,
-	    &id_type, &username, &auth_method);
+	    &id_role, &username, &auth_method);
 	if (e == GFARM_ERR_NO_ERROR) {
 		protocol_state_init(peer_get_protocol_state(peer));
 
 		giant_lock();
 		peer_authorized(peer,
-		    id_type, username, hostname, &addr, auth_method,
+		    id_role, username, hostname, &addr, auth_method,
 		    sync_protocol_watcher);
 		giant_unlock();
 	} else {

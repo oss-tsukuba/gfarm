@@ -4309,7 +4309,7 @@ replication_src_cksum_error(gfarm_ino_t ino, gfarm_uint64_t gen,
 
 void
 gfs_server_replica_recv(struct gfp_xdr *client,
-	enum gfarm_auth_id_type peer_type, int cksum_protocol)
+	enum gfarm_auth_id_role peer_role, int cksum_protocol)
 {
 	gfarm_error_t e, error;
 	gfarm_int32_t src_err;
@@ -4342,10 +4342,10 @@ gfs_server_replica_recv(struct gfp_xdr *client,
 	else
 		gfs_server_get_request(client, diag, "ll", &ino, &gen);
 	/* from gfsd only */
-	if (peer_type != GFARM_AUTH_ID_TYPE_SPOOL_HOST) {
+	if (peer_role != GFARM_AUTH_ID_ROLE_SPOOL_HOST) {
 		error = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		gflog_debug(GFARM_MSG_1002179,
-			"operation is not permitted(peer_type)");
+			"operation is not permitted(peer_role)");
 		 /* send EOF */
 		e = gfs_sendfile_common(client, &src_err, -1, 0, 0,
 		    NULL, NULL);
@@ -5647,7 +5647,7 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 	int eof;
 	gfarm_int32_t request, last_request = -1;
 	char *aux, addr_string[GFARM_SOCKADDR_STRLEN];
-	enum gfarm_auth_id_type peer_type;
+	enum gfarm_auth_id_role peer_role;
 	enum gfarm_auth_method auth_method;
 
 	(void)gfarm_proctitle_set("client");
@@ -5689,7 +5689,7 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 	e = gfarm_authorize_wo_setuid(client, GFS_SERVICE_TAG,
 	    client_name, client_addr,
 	    gfarm_auth_uid_to_global_username, gfm_server,
-	    &peer_type, &username, &auth_method);
+	    &peer_role, &username, &auth_method);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_notice(GFARM_MSG_1000555, "%s: gfarm_authorize: %s",
 		    client_name, gfarm_error_string(e));
@@ -5770,9 +5770,9 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 		case GFS_PROTO_REPLICA_ADD_FROM:
 			gfs_server_replica_add_from(client); break;
 		case GFS_PROTO_REPLICA_RECV:
-			gfs_server_replica_recv(client, peer_type, 0); break;
+			gfs_server_replica_recv(client, peer_role, 0); break;
 		case GFS_PROTO_REPLICA_RECV_CKSUM:
-			gfs_server_replica_recv(client, peer_type, 1); break;
+			gfs_server_replica_recv(client, peer_role, 1); break;
 		case GFS_PROTO_RDMA_EXCH_INFO:
 			gfs_server_rdma_exch_info(client); break;
 		case GFS_PROTO_RDMA_HELLO:
@@ -7185,7 +7185,7 @@ main(int argc, char **argv)
 			    "fclose(%s)", pid_file);
 	}
 
-	gfarm_set_auth_id_type(GFARM_AUTH_ID_TYPE_SPOOL_HOST);
+	gfarm_set_auth_id_role(GFARM_AUTH_ID_ROLE_SPOOL_HOST);
 	e = connect_gfm_server_at_first("listener");
 	if (e != GFARM_ERR_NO_ERROR)
 		fatal(GFARM_MSG_1003365, "die");

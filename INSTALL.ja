@@ -126,6 +126,7 @@ globus-gssapi-gsi-devel(*), pkgconfig	(--with-globus オプションに必要)
 postgresql, postgresql-server		(config-gfarm の実行に必要)
 fuse-devel				(gfarm2fs の構築に必要)
 ganglia-gmond-python			(config-gf[ms]d-iostat の実行に必要)
+python3, python3-docopt(*), python3-schema(*)	(gfptar の実行に必要)
 
 (*) EPELに含まれます．EPELは以下で利用できます．
     # yum install epel-release
@@ -138,5 +139,6 @@ libpq-dev
 libglobus-gssapi-gsi-dev, pkg-config	(--with-globus オプションに必要)
 postgresql, postgresql-client		(config-gfarm の実行に必要)
 libfuse-dev				(gfarm2fs の構築に必要)
+python3, python3-docopt, python3-schema	(gfptar の実行に必要)
 
 $Id$

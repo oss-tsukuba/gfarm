@@ -81,8 +81,8 @@ fi
 
 if [ -d "/home/${GFDOCKER_PRIMARY_USER}/scitokens-cpp" -a \
      -f /usr/include/sqlite3.h -a \
-     -f /usr/include/curl/curl.h -a \
      -f /usr/include/uuid/uuid.h ] &&
+       [ -f /usr/include/curl/curl.h -o -f /usr/include/x86_64-linux-gnu/curl/curl.h ] && \
    type c++ 2>/dev/null &&
    type cmake 2>/dev/null
 then

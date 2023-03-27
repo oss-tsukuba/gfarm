@@ -1,0 +1,305 @@
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
+<!-- $Id$ -->
+
+<refentry id="gfptar.1">
+
+<refentryinfo><date>29 Jan 2023</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfptar</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id="name">
+<refname>gfptar</refname>
+<refpurpose>archive files in parallel</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id="synopsis">
+
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfptar</command>
+  <arg choice="opt" rep="norepeat">OPTIONS</arg>
+  <arg choice="plain" rep="norepeat">-c <replaceable>outdir</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-C <replaceable>basedir</replaceable></arg>
+  <arg choice="plain" rep="repeat"><replaceable>member</replaceable></arg>
+</cmdsynopsis>
+
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfptar</command>
+  <arg choice="opt" rep="norepeat">OPTIONS</arg>
+  <arg choice="plain" rep="norepeat">-x <replaceable>outdir</replaceable></arg>
+  <arg choice="plain" rep="norepeat"><replaceable>indir</replaceable></arg>
+  <arg choice="opt" rep="repeat"><replaceable>member</replaceable></arg>
+</cmdsynopsis>
+
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfptar</command>
+  <arg choice="opt" rep="norepeat">OPTIONS</arg>
+  <arg choice="plain" rep="norepeat">-t <replaceable>indir</replaceable></arg>
+</cmdsynopsis>
+
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id="description"><title>DESCRIPTION</title>
+
+<para>
+  <command moreinfo="none">gfptar</command>
+  creates archive files to Gfarm, or extracts files from archive files on Gfarm.
+  The archive files consist of multiple tar files and list files of archived members in a directory.
+  Creation or extraction is performed in parallel for each tar file in a directory for archive.
+</para>
+
+</refsect1>
+
+<refsect1 id="operation-mode"><title>OPERATION MODE</title>
+<variablelist>
+
+<varlistentry>
+  <term><option>-c(--create)</option> <parameter moreinfo="none">outdir</parameter>
+    <option>-C(--basedir)</option> <parameter moreinfo="none">basedir</parameter> <parameter moreinfo="none">member...</parameter>
+  </term>
+  <listitem>
+    <para>
+      Create <parameter moreinfo="none">outdir</parameter> directory, and create archive files in the new directory.
+    </para>
+    <para>
+      <parameter moreinfo="none">member...</parameter> (files or directories) in <parameter moreinfo="none">basedir</parameter> are archived.
+    </para>
+  </listitem>
+</varlistentry>
+
+<varlistentry>
+  <term><option>-x(--extract)</option> <parameter moreinfo="none">outdir</parameter>
+    <parameter moreinfo="none">indir</parameter> <parameter moreinfo="none">[member...]</parameter>
+  </term>
+  <listitem>
+    <para>
+      Create <parameter moreinfo="none">outdir</parameter> directory, and extract files from
+      archive files of <parameter moreinfo="none">indir</parameter> to the new directory.
+    </para>
+    <para>
+      When <parameter moreinfo="none">member</parameter>s are specified, only the specified members will be extracted.
+    </para>
+  </listitem>
+</varlistentry>
+
+<varlistentry>
+  <term><option>-t(--list)</option> <parameter moreinfo="none">indir</parameter></term>
+  <listitem>
+    <para>
+      List the contents of archive files in <parameter moreinfo="none">indir</parameter>.
+    </para>
+  </listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id="path-style"><title>PATH STYLE</title>
+
+<para>
+  <parameter moreinfo="none">outdir</parameter>, <parameter moreinfo="none">indir</parameter>
+  and <parameter moreinfo="none">basedir</parameter> must be one of the following formats.
+</para>
+
+<variablelist>
+
+<varlistentry>
+  <term><parameter moreinfo="none">path-name</parameter></term>
+  <listitem>
+    <para>
+      is a relative path or an absolute path of a local file system.
+      When the path is a mount point on gfarm2fs, tar files are operated
+      without passing through the gfarm2fs.
+      (Non-tar files are operated via gfarm2fs.)
+    </para>
+  </listitem>
+</varlistentry>
+
+<varlistentry>
+  <term><parameter moreinfo="none">gfarm:...</parameter></term>
+  <listitem>
+    <para>
+      is a Gfarm URL of a Gfarm file system.
+    </para>
+  </listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id="options"><title>OPTIONS</title>
+<variablelist>
+
+<varlistentry>
+<term><option>-j, --jobs=</option><parameter moreinfo="none">NUM</parameter></term>
+<listitem>
+  <para>
+    Specifies the maximum number of jobs to create archive files or extract from archive files simultaneously.
+  </para>
+  <para>
+    The default value is 4.
+  </para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-s, --size=</option><parameter moreinfo="none">BYTES</parameter></term>
+<listitem>
+  <para>
+    Specifies assumed size in bytes per output tar file for <option>--create</option>.
+
+    Since compression ratios vary depending on the content of the file and the compression type,
+    Archive files will be created
+    for each group of files divided by the assumed size calculated considering the assumed compression ratio (--ratio option).
+  </para>
+  <para>
+    The default value is 200M (200 * 1024^2 = 209715200) (200 MiB).
+  </para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-r, --ratio=</option><parameter moreinfo="none">RATIO</parameter></term>
+<listitem>
+  <para>
+    Specifies the assumed compression ratio in percentage for <option>--create</option>.
+  </para>
+  <para>
+    The default value is 50 (50 %).
+  </para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-T, --type=</option><parameter moreinfo="none">TYPE</parameter></term>
+<listitem>
+  <para>
+    Specifies a compression type for <option>--create</option>.
+    "gz" means gzip type (suffix is .tar.gz).
+    "bz2" means bzip2 type (suffix is .tar.bz2).
+    "xz" means xz type (suffix is .tar.xz).
+    "no" means no compression.
+  </para>
+  <para>
+    This option is unnecessary for --extract (determine type automatically).
+  </para>
+  <para>
+    The default value is gz.
+  </para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-I, --use-compress-program=</option><parameter moreinfo="none">COMMAND</parameter></term>
+<listitem>
+  <para>
+    Specifies a command of compression program.
+    Suffix for creating tar files must be specified by <option>--type</option> option.
+    The command must accept -d option for decompression.
+  </para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-q, --quiet</option></term>
+<listitem>
+<para>
+  Suppresses non-error messages.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-v, --verbose</option></term>
+<listitem>
+<para>
+  Displays verbose output.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-d, --debug</option></term>
+<listitem>
+<para>
+  Displays debug output.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-?, -h, --help</option></term>
+<listitem>
+<para>
+  Displays a list of command options.
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id="examples"><title>EXAMPLES</title>
+
+<para>
+  Creates archive files from local directories to a Gfarm directory.
+  The archived files of this example include dir1 and dir2 as relative path.
+  <literallayout format="linespecific" class="normal">
+    $ gfptar -c gfarm:/home/user1/out.gfptar -C /home/user1 ./dir1 ./dir2
+  </literallayout>
+</para>
+
+<para>
+  Extract files from a Gfarm directory to a local directory.
+  The extracted files of this example are dir1 and dir2.
+  <literallayout format="linespecific" class="normal">
+    $ gfptar -x /home/user1/outdir gfarm:/home/user1/out.gfptar
+  </literallayout>
+</para>
+
+<para>
+  Creates archive files from Gfarm directories to a Gfarm directory.
+  NOTE: If there are many small size files, it may perform better to specify a path on gfarm2fs for <option>-C</option> option.
+  <literallayout format="linespecific" class="normal">
+    $ gfptar -c gfarm:/home/user1/out.gfptar -C gfarm:/home/user1 ./dir
+  </literallayout>
+</para>
+
+<para>
+  Extract files from a Gfarm directory to a Gfarm directory.
+  NOTE: If there are many small size files, it may perform better to specify a path on gfarm2fs for <option>-x</option> option.
+  <literallayout format="linespecific" class="normal">
+    $ gfptar -x gfarm:/home/user1/dir2 gfarm:/home/user1/out.gfptar
+  </literallayout>
+</para>
+
+<para>
+  Extract a specified file from a Gfarm directory to a local directory.
+  The extracted file of this example is dir1/path/to/file only.
+  <literallayout format="linespecific" class="normal">
+    $ gfptar -x /home/user1/outdir gfarm:/home/user1/out.gfptar dir1/path/to/file1
+  </literallayout>
+</para>
+
+</refsect1>
+
+<refsect1 id="see-also"><title>SEE ALSO</title>
+<para>
+  <citerefentry>
+  <refentrytitle>gfreg</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>,
+  <citerefentry>
+  <refentrytitle>gfexport</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>
+</para>
+</refsect1>
+
+</refentry>

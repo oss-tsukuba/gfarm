@@ -71,6 +71,11 @@ gfarm_sasl_addr_string(int fd,
 		return (save_errno);
 	}
 
+	if (self_addr.ss_family == AF_UNIX) {
+		/* sasl_client_new() and sasl_server_new() doesn't work */
+		return (EAFNOSUPPORT);
+	}
+
 	peer_len = sizeof(peer_addr);
 	if (getpeername(fd, (struct sockaddr *)&peer_addr, &peer_len) < 0) {
 		save_errno = errno;

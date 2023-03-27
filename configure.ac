@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT([gfarm], [2.8.0])
+AC_INIT([gfarm],[2.8.0])
 AC_CONFIG_SRCDIR(RELNOTES)
 AC_CONFIG_AUX_DIR(makes)
-AC_CONFIG_HEADER(include/gfarm/gfarm_config.h)
+AC_CONFIG_HEADERS([include/gfarm/gfarm_config.h])
 AC_CONFIG_MACRO_DIR([m4])
 
 # Determine target system
@@ -44,24 +44,17 @@ if test x"$GCC" = x"yes"; then
   AC_MSG_CHECKING([whether gcc accepts -rdynamic])
   LDFLAGS_SAVE="$LDFLAGS"
   LDFLAGS="$LDFLAGS -rdynamic"
-  AC_TRY_LINK([], [
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[
       return 0;
-    ], [
+    ]])],[
       AC_MSG_RESULT([yes])
       dynamic_ldflags="-rdynamic"
-    ], [
+    ],[
       AC_MSG_RESULT([no])
     ])
   LDFLAGS="$LDFLAGS_SAVE"
 fi
 AC_SUBST(dynamic_ldflags)
-
-AC_PROG_LEX
-# the following definition should not be needed.
-# but there is stupid environment which flex exists but libfl.a doesn't.
-if test x"$LEX" = x"flex"; then
-  AC_CHECK_LIB(fl, yywrap, [LEXLIB=-lfl], [LEXLIB=-ll])
-fi
 
 if mkdir -p . 2>/dev/null; then
   MKDIR_P='mkdir -p'
@@ -73,7 +66,7 @@ AC_SUBST(MKDIR_P)
 
 AC_PROG_YACC
 AC_PROG_INSTALL
-AC_PROG_LIBTOOL
+LT_INIT
 
 AC_PATH_PROG([RUBY], [ruby], [/usr/bin/ruby])
 AC_PATH_PROG([PERL], [perl], [/usr/bin/perl])
@@ -102,20 +95,20 @@ if test x"${with_pthread}" != x"no"; then
     CPPFLAGS_SAVE="$CPPFLAGS"
     LIBS_SAVE="$LIBS"
     CPPFLAGS="${pthread_includes} $1 $CPPFLAGS_SAVE"
-    # -R is not portable without libtool, and not necessary for AC_TRY_LINK
+    # -R is not portable without libtool, and not necessary for AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[],[])
     LIBS="`echo $2 | sed 's/-R[[^ ]]*//g'` $LIBS_SAVE"
-    AC_TRY_LINK([
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #include <pthread.h>
 
-void *foo(void *p){ return 0; }],[
+void *foo(void *p){ return 0; }]], [[
 	pthread_t thread_id;
 	pthread_create(&thread_id, NULL, foo, NULL);
-], [	ax_cv_have_pthread=yes
+]])],[	ax_cv_have_pthread=yes
 	pthread_includes="${pthread_includes} $1"
 	pthread_libs="${pthread_libs} $2"
-    ], [
+    ],[
 	if test x"${pthread_specified}" = x"explicit"; then
-	  AC_MSG_ERROR([\"$3\" is specified, but cannot be linked, aborted])
+	  AC_MSG_ERROR(["$3" is specified, but cannot be linked, aborted])
 	fi
     ])
     CPPFLAGS="$CPPFLAGS_SAVE"
@@ -183,7 +176,7 @@ fi
 
 case ${ax_cv_have_pthread} in
 yes)
-  AC_MSG_RESULT([using CFLAGS=\"${pthread_includes}\" and LDLIBS=\"${pthread_libs}\"])
+  AC_MSG_RESULT([using CFLAGS="${pthread_includes}" and LDLIBS="${pthread_libs}"])
   AC_DEFINE(HAVE_PTHREAD, 1, [pthread library exists])
 
   pthread_srcs='${PTHREAD_SRCS}'
@@ -232,7 +225,7 @@ AC_ARG_WITH(openssl,
 ])
 
 PKG_CHECK_MODULES(openssl, ${with_openssl}, [
-  AC_MSG_RESULT([using \"${with_openssl}\"])
+  AC_MSG_RESULT([using "${with_openssl}"])
 
   openssl_libs=$openssl_LIBS
   openssl_includes=$openssl_CFLAGS
@@ -423,7 +416,7 @@ AC_ARG_WITH(globus,
 	AC_MSG_RESULT([searched directories are: ${GLBlocation_candidates}])
 	AC_MSG_RESULT([searched flavors are: ${GLBflavor_candidates}])
 	if test -n "$globus_flavor"; then
-		AC_MSG_ERROR([cannot find the globus flavor \"$globus_flavor\", missing include/$globus_flavor/gssapi.h under ${GLBlocation_candidates}.])
+		AC_MSG_ERROR([cannot find the globus flavor "$globus_flavor", missing include/$globus_flavor/gssapi.h under ${GLBlocation_candidates}.])
 	else
 		AC_MSG_ERROR([cannot automatically find include/\${GLOBUS_FLAVOR}/gssapi.h under ${GLBlocation_candidates}, please specify the flavor by --with-globus-flavor=GLOBUS_FLAVOR])
 	fi
@@ -431,11 +424,11 @@ AC_ARG_WITH(globus,
    fi
    f_pthr=`expr "$globus_flavor" : '.*\(pthr\)'`
    if test x"$f_pthr" != xpthr; then
-	AC_MSG_RESULT([bad flavor \"$globus_flavor\"])
+	AC_MSG_RESULT([bad flavor "$globus_flavor"])
 	AC_MSG_ERROR([MT-safe flavor required])
 	exit 1
    fi
-   AC_MSG_RESULT([found in \"${globus_location}\" with \"${globus_flavor}\" flavor])
+   AC_MSG_RESULT([found in "${globus_location}" with "${globus_flavor}" flavor])
 
    globus_includes="-I${globus_location}/include/${globus_flavor}"
    if test x"$globus_libdir" = x; then
@@ -613,7 +606,7 @@ no)
 	ib_rdma=no
 	;;
 *)
-	AC_MSG_ERROR([invalid option \"${ib_rdma}\" options, aborted])
+	AC_MSG_ERROR([invalid option "${ib_rdma}" options, aborted])
 	;;
 esac
 
@@ -625,16 +618,16 @@ else
 
 	LIBS_SAVE="$LIBS"
 	LIBS="$LIBS $rdma_libs"
-AC_TRY_LINK([
-#include <infiniband/verbs.h>],[
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+#include <infiniband/verbs.h>]], [[
 struct ibv_device **dev_list;
 dev_list = ibv_get_device_list(NULL);
-], [
+]])],[
 	AC_MSG_RESULT([yes])
 	AC_DEFINE(HAVE_INFINIBAND, 1, [support InfiniBand RDMA between client and gfsd])
-], [
+],[
 	LIBS="$LIBS_SAVE"
-	AC_MSG_ERROR([InfiniBand cannot be linked with \"${rdma_includes} ${rdma_libs}\" options, aborted])
+	AC_MSG_ERROR([InfiniBand cannot be linked with "${rdma_includes} ${rdma_libs}" options, aborted])
 ])
 fi
 
@@ -649,7 +642,7 @@ AC_SUBST(rdma_libs)
 
 AC_CHECK_HEADERS(stdio.h)
 if test x"${ac_cv_header_stdio_h}" != x"yes"; then
-	AC_MSG_RESULT([preprocessor option error on: \"$ac_cpp\"])
+	AC_MSG_RESULT([preprocessor option error on: "$ac_cpp"])
 	#exit 1
 fi
 
@@ -657,7 +650,7 @@ fi
 
 AC_CHECK_FUNCS(printf)
 if test x"${ac_cv_func_printf}" != x"yes"; then
-	AC_MSG_RESULT([linker option error on: \"$ac_link\"])
+	AC_MSG_RESULT([linker option error on: "$ac_link"])
 	exit 1
 fi
 
@@ -682,17 +675,17 @@ yes)
   CPPFLAGS="${pthread_includes} $CPPFLAGS"
   LIBS="$LIBS ${pthread_libs}"
 
-  AC_TRY_LINK([
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #   include <pthread.h>
 
-    void test(void){}],[
+    void test(void){}]], [[
       pthread_attr_t at;
       if (pthread_attr_init(&at) == 0)
         pthread_attr_setstacksize(&at, 64 * 1024);
-    ], [
+    ]])],[
       AC_MSG_RESULT([yes])
       AC_DEFINE(HAVE_PTHREAD_ATTR_SETSTACKSIZE, 1, [pthread_attr_setstacksize() exists])
-    ], [
+    ],[
       AC_MSG_RESULT([no])
     ])
 
@@ -708,26 +701,22 @@ esac
 # thus, we need to link ${pthread_libs}, unless libc supplies weak symbols.
 # e.g. using 3rd party pthread library, FreeBSD-4.x, or NetBSD-2.x
 AC_MSG_CHECKING([whether libc supplies weak symbols for pthread])
-AC_TRY_LINK([
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #include <pthread.h>
 
-void init(void){}],[
+void init(void){}]], [[
     pthread_once_t once;
     pthread_once(&once, init);
-], [
+]])],[
 	AC_MSG_RESULT([yes])
-], [
+],[
 	AC_MSG_RESULT([no. WARNING: always link pthread])
 	LIBS="${LIBS} ${pthread_libs}"
 ])
 
 AC_MSG_CHECKING([Linux sendfile])
-AC_TRY_LINK(
-  [#include <sys/sendfile.h>],
-  [sendfile(0, 0, 0, 0)],
-  [AC_MSG_RESULT([yes])
-   AC_DEFINE(HAVE_LINUX_SENDFILE, 1, [support Linux sendfile])],
-  [AC_MSG_RESULT([no])])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <sys/sendfile.h>]], [[sendfile(0, 0, 0, 0)]])],[AC_MSG_RESULT([yes])
+   AC_DEFINE(HAVE_LINUX_SENDFILE, 1, [support Linux sendfile])],[AC_MSG_RESULT([no])])
 
 ### use 64bit off_t, if possible.
 
@@ -791,21 +780,21 @@ AC_MSG_CHECKING([openssl])
 CPPFLAGS_SAVE="$CPPFLAGS"
 LIBS_SAVE="$LIBS"
 CPPFLAGS="${openssl_includes} $CPPFLAGS_SAVE"
-# -R is not portable without libtool, and not necessary for AC_TRY_LINK
+# -R is not portable without libtool, and not necessary for AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[],[])
 LIBS="`echo ${openssl_libs} | sed 's/-R[[^ ]]*//g'` $LIBS_SAVE"
 
-AC_TRY_LINK([
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #include <stdio.h>
-#include <openssl/evp.h>],[
+#include <openssl/evp.h>]], [[
 EVP_MD_CTX *md_ctx = EVP_MD_CTX_create();
 EVP_MD *md_type = EVP_get_digestbyname("sha1");
 
 EVP_DigestInit_ex(md_ctx, md_type, NULL);
-], [], [
-  AC_MSG_ERROR([OpenSSL cannot be linked with \"${openssl_includes} ${openssl_libs}\" options, aborted])
+]])],[],[
+  AC_MSG_ERROR([OpenSSL cannot be linked with "${openssl_includes} ${openssl_libs}" options, aborted])
 ])
 
-AC_MSG_RESULT([using \"${openssl_includes} ${openssl_libs}\"])
+AC_MSG_RESULT([using "${openssl_includes} ${openssl_libs}"])
 
 # these functions disappeared since OpenSSL-1.1.0
 AC_CHECK_FUNCS(CRYPTO_set_locking_callback CRYPTO_set_id_callback)
@@ -839,7 +828,7 @@ case ${with_openldap} in
   if test -f "${with_openldap}"/include/ldap.h; then
 	ldap_specified=explicit
   else
-	AC_MSG_ERROR([not found in \"${with_openldap}\", aborted])
+	AC_MSG_ERROR([not found in "${with_openldap}", aborted])
   fi;;
 yes|'')
   for d in /usr/local/openldap /usr/local /usr/pkg /usr
@@ -865,25 +854,25 @@ else
     CPPFLAGS_SAVE="$CPPFLAGS"
     LIBS_SAVE="$LIBS"
     CPPFLAGS="$1 $CPPFLAGS_SAVE"
-    # -R is not portable without libtool, and not necessary for AC_TRY_LINK
+    # -R is not portable without libtool, and not necessary for AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[],[])
     LIBS="`echo $2 | sed 's/-R[[^ ]]*//g'` $3 $4 ${openssl_libs} $LIBS_SAVE"
 	# OpenLDAP may need OpenSSL due to its SSL/TLS support.
-    AC_TRY_LINK([
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #include <lber.h>
-#include <ldap.h>],[
+#include <ldap.h>]], [[
 	LDAP *ldap_server = ldap_open("example.com", 389);
-], [
+]])],[
 	if test x"$4" != x""; then
-		AC_MSG_RESULT([using \"$1 $2 $3\" with \"$4\" for LDAP])
+		AC_MSG_RESULT([using "$1 $2 $3" with "$4" for LDAP])
 		ldap_libs="$2 $3 $4"
 	else
-		AC_MSG_RESULT([using \"$1 $2 $3\" for LDAP])
+		AC_MSG_RESULT([using "$1 $2 $3" for LDAP])
 		ldap_libs="$2 $3"
 	fi
 	ldap_usable=yes
 	# this needs to be checked here due to settings of $CPPFLAGS and $LIBS
 	AC_CHECK_FUNCS(ldap_memfree ldap_set_option ldap_start_tls_s ldap_perror)
-    ], [])
+    ],[])
     CPPFLAGS="$CPPFLAGS_SAVE"
     LIBS="$LIBS_SAVE"
   ])
@@ -918,9 +907,9 @@ else
   if test x"${ldap_usable}" != x"yes"; then
     case $ldap_specified in
     explicit)
-	  AC_MSG_ERROR([\"${with_openldap}\" is specified, but cannot be linked, aborted]);;
+	  AC_MSG_ERROR(["${with_openldap}" is specified, but cannot be linked, aborted]);;
     yes)
-	  AC_MSG_RESULT([found in \"${with_openldap}\", but cannot be linked, ignored]);;
+	  AC_MSG_RESULT([found in "${with_openldap}", but cannot be linked, ignored]);;
     esac
   fi
 fi
@@ -970,7 +959,7 @@ case ${with_postgresql} in
   if test -f "${with_postgresql}"/bin/pg_config; then
 	postgresql_specified=explicit
   else
-	AC_MSG_ERROR([not found in \"${with_postgresql}\", aborted])
+	AC_MSG_ERROR([not found in "${with_postgresql}", aborted])
   fi;;
 yes|'')
   for d in /usr/local/pgsql /usr/local /usr/pkg /usr
@@ -1018,23 +1007,23 @@ else
   LIBS_SAVE="$LIBS"
 
   CPPFLAGS="${postgresql_includes} $CPPFLAGS_SAVE"
-  # -R is not portable without libtool, and not necessary for AC_TRY_LINK
+  # -R is not portable without libtool, and not necessary for AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[],[])
   LIBS="`echo $postgresql_libs | sed 's/-R[[^ ]]*//g'` $LIBS_SAVE"
 
-  AC_TRY_LINK([
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #include <stdio.h>
-#include <libpq-fe.h>],[
+#include <libpq-fe.h>]], [[
 	PGconn *conn = PQconnectdb("");
 	PGresult *res = PQexecParams(conn, "", 0, NULL, NULL, NULL, NULL, 0);
-  ], [
+  ]])],[
 	postgresql_usable=yes
-	AC_MSG_RESULT([using \"${with_postgresql}\"])
-  ], [
+	AC_MSG_RESULT([using "${with_postgresql}"])
+  ],[
 	case $postgresql_specified in
 	explicit)
-		AC_MSG_ERROR([\"${with_postgresql}\" is specified, but cannot be linked, aborted]);;
+		AC_MSG_ERROR(["${with_postgresql}" is specified, but cannot be linked, aborted]);;
 	yes)
-		AC_MSG_RESULT([found in \"${with_postgresql}\", but cannot be linked, ignored]);;
+		AC_MSG_RESULT([found in "${with_postgresql}", but cannot be linked, ignored]);;
 	esac
   ])
 
@@ -1108,15 +1097,15 @@ hpux)
   ;;
 
 *)
-  AC_TRY_LINK([
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 # include <sys/types.h>
-# include <sys/socket.h>],[
+# include <sys/socket.h>]], [[
   int rv, s = socket(PF_INET, SOCK_STREAM, 0);
   struct sockaddr addr;
   socklen_t len;
 
   rv = getpeername(s, &addr, &len);
-  ], [ax_cv_have_socklen_t=yes], [ax_cv_have_socklen_t=no])
+  ]])],[ax_cv_have_socklen_t=yes],[ax_cv_have_socklen_t=no])
   ;;
 esac
 
@@ -1126,7 +1115,7 @@ else
 
   # determine size of socklen_t
 
-  AC_TRY_RUN([
+  AC_RUN_IFELSE([AC_LANG_SOURCE([[
 # include <sys/types.h>
 # include <sys/socket.h>
 
@@ -1140,7 +1129,7 @@ else
 	else
 		return (1); /* size_t */
   }
-  ], [ax_cv_socklen_t=int], [ax_cv_socklen_t=size_t])
+  ]])],[ax_cv_socklen_t=int],[ax_cv_socklen_t=size_t],[])
 
   AC_MSG_RESULT([$ax_cv_socklen_t])
   AC_DEFINE_UNQUOTED(socklen_t, $ax_cv_socklen_t,
@@ -1152,42 +1141,42 @@ fi
 ######
 
 AC_MSG_CHECKING([struct dirent::d_off])
-AC_TRY_COMPILE([
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <sys/types.h>
-#include <dirent.h>],[
+#include <dirent.h>]], [[
 struct dirent d;
 long off;
 
 off = d.d_off;
-], [ax_cv_have_d_off=yes], [ax_cv_have_d_off=no])
+]])],[ax_cv_have_d_off=yes],[ax_cv_have_d_off=no])
 AC_MSG_RESULT([$ax_cv_have_d_off])
 if test "$ax_cv_have_d_off" = yes; then
   AC_DEFINE(HAVE_D_OFF, 1, [struct dirent has d_off member])
 fi
 
 AC_MSG_CHECKING([struct dirent::d_namlen])
-AC_TRY_COMPILE([
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <sys/types.h>
-#include <dirent.h>],[
+#include <dirent.h>]], [[
 struct dirent d;
 int len;
 
 len = d.d_namlen;
-], [ax_cv_have_d_namlen=yes], [ax_cv_have_d_namlen=no])
+]])],[ax_cv_have_d_namlen=yes],[ax_cv_have_d_namlen=no])
 AC_MSG_RESULT([$ax_cv_have_d_namlen])
 if test "$ax_cv_have_d_namlen" = yes; then
   AC_DEFINE(HAVE_D_NAMLEN, 1, [struct dirent has d_namlen member])
 fi
 
 AC_MSG_CHECKING([struct dirent::d_type])
-AC_TRY_COMPILE([
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <sys/types.h>
-#include <dirent.h>],[
+#include <dirent.h>]], [[
 struct dirent d;
 int len;
 
 len = d.d_type;
-], [ax_cv_have_d_type=yes], [ax_cv_have_d_type=no])
+]])],[ax_cv_have_d_type=yes],[ax_cv_have_d_type=no])
 AC_MSG_RESULT([$ax_cv_have_d_type])
 if test "$ax_cv_have_d_type" = yes; then
   AC_DEFINE(HAVE_D_TYPE, 1, [struct dirent has d_type member])
@@ -1207,9 +1196,9 @@ AC_CHECK_FUNCS(backtrace daemon_symbols clock_gettime fdatasync fdopendir futime
 # AC_CHECK_FUNCS(__builtin_popcountll) doesn't work w/ autoconf-2.69+gcc-2.8.5
 
 AC_MSG_CHECKING([for __builtin_popcountll])
-AC_TRY_LINK([],[
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[
 return (__builtin_popcountll(~0ULL) == 64);
-], [ax_cv___builtin_popcountll=yes], [ax_cv___builtin_popcountll=no])
+]])],[ax_cv___builtin_popcountll=yes],[ax_cv___builtin_popcountll=no])
 AC_MSG_RESULT([$ax_cv___builtin_popcountll])
 if test "$ax_cv___builtin_popcountll" = yes; then
   AC_DEFINE(HAVE___BUILTIN_POPCOUNTLL, 1,
@@ -1232,15 +1221,15 @@ fi
 ### SUSv2 getpwnam_r() has 5 args, but Solaris's only has 4.
 
 AC_MSG_CHECKING([for SUSv2 compliant getpwnam_r])
-AC_TRY_LINK([
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #include <sys/types.h>
-#include <pwd.h>],[
+#include <pwd.h>]], [[
 int rv;
 struct passwd *pwd;
 char buffer[1024];
 
 rv = getpwnam_r("root", pwd, buffer, sizeof buffer, &pwd);
-], [ax_cv_have_getpwnam_r=yes], [ax_cv_have_getpwnam_r=no])
+]])],[ax_cv_have_getpwnam_r=yes],[ax_cv_have_getpwnam_r=no])
 AC_MSG_RESULT([$ax_cv_have_getpwnam_r])
 if test "$ax_cv_have_getpwnam_r" = yes; then
   AC_DEFINE(HAVE_GETPWNAM_R, 1,
@@ -1250,14 +1239,14 @@ fi
 ### SUSv2 getspnam_r() has 5 args, but Solaris's only has 4.
 
 AC_MSG_CHECKING([for SUSv2 compliant getspnam_r])
-AC_TRY_LINK([
-#include <shadow.h>],[
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+#include <shadow.h>]], [[
 int rv;
 struct spwd *sp;
 char buffer[1024];
 
 rv = getspnam_r("root", sp, buffer, sizeof buffer, &sp);
-], [ax_cv_have_getspnam_r=yes], [ax_cv_have_getspnam_r=no])
+]])],[ax_cv_have_getspnam_r=yes],[ax_cv_have_getspnam_r=no])
 AC_MSG_RESULT([$ax_cv_have_getspnam_r])
 if test "$ax_cv_have_getspnam_r" = yes; then
   AC_DEFINE(HAVE_GETSPNAM_R, 1, [5 arguments getspnam_r() exists])
@@ -1266,13 +1255,13 @@ fi
 ### Check whether PTHREAD_PRIO_INHERIT is usable or not
 
 AC_MSG_CHECKING([for PTHREAD_PRIO_INHERIT])
-AC_TRY_COMPILE([
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #define _GNU_SOURCE /* CentOS 6 needs this, although CentOS 7 doesn't */
-#include <pthread.h>],[
+#include <pthread.h>]], [[
 pthread_mutexattr_t attr;
 
 pthread_mutexattr_setprotocol(&attr, PTHREAD_PRIO_INHERIT);
-], [ax_cv_have_pthread_prio_inherit=yes], [ax_cv_have_pthread_prio_inherit=no])
+]])],[ax_cv_have_pthread_prio_inherit=yes],[ax_cv_have_pthread_prio_inherit=no])
 AC_MSG_RESULT([$ax_cv_have_pthread_prio_inherit])
 if test "$ax_cv_have_pthread_prio_inherit" = yes; then
   AC_DEFINE(HAVE_PTHREAD_PRIO_INHERIT, 1, [PTHREAD_PRIO_INHERIT is usable])
@@ -1281,12 +1270,12 @@ fi
 ### Check whether PS_STRINGS is available or not
 
 AC_MSG_CHECKING([for PS_STRINGS])
-AC_TRY_LINK([
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #include <machine/vmparam.h>
-#include <sys/exec.h>],[
+#include <sys/exec.h>]], [[
 PS_STRINGS->ps_nargvstr = 1;
 PS_STRINGS->ps_argvstr = "test";
-], [ax_cv_have_ps_strings=yes], [ax_cv_have_ps_strings=no])
+]])],[ax_cv_have_ps_strings=yes],[ax_cv_have_ps_strings=no])
 AC_MSG_RESULT([$ax_cv_have_ps_strings])
 if test "$ax_cv_have_ps_strings" = yes; then
   AC_DEFINE(HAVE_PS_STRINGS, 1, [PS_STRINGS exists])
@@ -1601,6 +1590,25 @@ AC_SUBST(tls_objs)
 ## TLS support ends here.
 ##
 
+##
+## --disable-check-python-mod: check python modules
+##
+AC_ARG_ENABLE(check-python-mod,
+AS_HELP_STRING([--disable-check-python-mod],[skip checking python modules [default=enable]]), [], [])
+
+if test "x${enable_check_python_mod}" != "xno"; then
+  ./gftool/gfptar/gfptar -h > /dev/null
+  rv=$?
+  AC_MSG_CHECKING([Python modules])
+  if test $rv -eq 0 ; then
+    AC_MSG_RESULT([yes])
+  else
+    AC_MSG_RESULT([no])
+    AC_MSG_ERROR([Python3 modules (docopt and schema) required])
+    exit 1
+  fi
+fi
+
 ###
 ### --with-private-srcdir
 ###
@@ -1660,7 +1668,7 @@ AC_SUBST(optional_targets)
 ##
 
 # The following is for --srcdir option.
-# AC_OUTPUT() assumes that parent directory of the Makefile exists
+# AC_OUTPUT assumes that parent directory of the Makefile exists
 test -d include || mkdir include
 test -d package || mkdir package
 test -d util || mkdir util

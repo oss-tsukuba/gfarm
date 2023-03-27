@@ -20,9 +20,9 @@ TLS Authentication
 <HR>
 <H1>TLS Authentication</H1>
 English | <A href="../../ja/user/auth-tls.html">Japanese</A>
-<p>
+<P>
 This document describes the settings required for TLS authentication in Gfarm.
-<p>
+<P>
 There are two types of TLS authentication:
 tls_sharedsecret authentication,
 in which the server and client share a private key,
@@ -80,11 +80,11 @@ and the default file name is as follows:
 For sites that have already been configured for GSI authentication,
 simply use the following command to create a symbolic link
 to complete the configuration.
-<pre>
+<PRE>
 # mkdir -p /etc/pki/tls/certs /etc/pki/tls/private
 # ln -s /etc/grid-security/hostcert.pem /etc/pki/tls/certs/gfmd.crt
 # ln -s /etc/grid-security/hostkey.pem /etc/pki/tls/private/gfmd.key
-</pre>
+</PRE>
 
 <BR>
 <LI>the service certificate and the private key for gfmd
@@ -115,10 +115,10 @@ for sites that have already completed GSI authentication settings.
 In order to use a service certificate in gfsd,
 the following additional settings are required
 for gfarm2.conf of the client, gfarm2.conf of gfsd, and gfmd.conf of gfmd.
-<pre>
+<PRE>
 spool_server_cred_type host
 spool_server_cred_service gfsd
-</pre>
+</PRE>
 These setting are also common to GSI,
 so sites that have already completed GSI certification
 do not need to make any additional settings.
@@ -173,9 +173,9 @@ and the default file name is as follows in each user's home directory.
 These files are same to GSI,
 so for sites that have already completed GSI certification settings,
 simply create a symbolic link with the following command to complete the setup.
-<pre>
+<PRE>
 $ ln -s .globus $HOME/.gfarm
-</pre>
+</PRE>
 
 </UL>
 
