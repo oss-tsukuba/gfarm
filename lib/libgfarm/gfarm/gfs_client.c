@@ -2722,7 +2722,13 @@ gfs_client_replica_recv_common(struct gfs_connection *gfs_server,
 	return (e);
 }
 
-/* NOTE: must be src_errp != NULL && dst_errp != NULL */
+/*
+ * NOTE:
+ * - must be src_errp != NULL && dst_errp != NULL
+ * - caller should initialize *src_errp and *dst_errp by GFARM_ERR_NO_ERROR
+ * - if the return value of this function or either *src_errp or *dst_errp
+ *   is not GFARM_ERR_NO_ERROR, it means that replication has failed
+ */
 gfarm_error_t
 gfs_client_replica_recv_md(struct gfs_connection *gfs_server,
 	gfarm_int32_t *src_errp, gfarm_int32_t *dst_errp,
@@ -2733,7 +2739,13 @@ gfs_client_replica_recv_md(struct gfs_connection *gfs_server,
 	    local_fd, md_ctx, 0));
 }
 
-/* NOTE: must be src_errp != NULL && dst_errp != NULL */
+/*
+ * NOTE:
+ * - must be src_errp != NULL && dst_errp != NULL
+ * - caller should initialize *src_errp and *dst_errp by GFARM_ERR_NO_ERROR
+ * - if the return value of this function or either *src_errp or *dst_errp
+ *   is not GFARM_ERR_NO_ERROR, it means that replication has failed
+ */
 gfarm_error_t
 gfs_client_replica_recv_cksum_md(struct gfs_connection *gfs_server,
 	gfarm_int32_t *src_errp, gfarm_int32_t *dst_errp,
