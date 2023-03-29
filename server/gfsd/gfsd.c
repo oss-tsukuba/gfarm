@@ -5048,7 +5048,9 @@ gfs_async_server_replication_request(struct gfp_xdr *conn,
 	struct gfarm_hash_entry *q;
 	struct replication_queue_data *qd;
 	struct replication_request *rep;
-	static const char diag[] = "GFS_PROTO_REPLICATION_REQUEST";
+	const char *const diag = handling_cksum_protocol ?
+	    "GFS_PROTO_REPLICATION_CKSUM_REQUEST" :
+	    "GFS_PROTO_REPLICATION_REQUEST";
 
 	if (handling_cksum_protocol) {
 		e = gfs_async_server_get_request(conn, size, diag, "silllsbi",
