@@ -1445,7 +1445,7 @@ gfs_client_vrpc_result(struct gfs_connection *gfs_server, int just,
 	return (GFARM_ERR_NO_ERROR);
 }
 
-gfarm_error_t
+static gfarm_error_t
 gfs_client_rpc_result_w_errcode(struct gfs_connection *gfs_server, int just,
 	gfarm_int32_t *errcodep, const char *format, ...)
 {
@@ -2722,6 +2722,7 @@ gfs_client_replica_recv_common(struct gfs_connection *gfs_server,
 	return (e);
 }
 
+/* NOTE: must be src_errp != NULL && dst_errp != NULL */
 gfarm_error_t
 gfs_client_replica_recv_md(struct gfs_connection *gfs_server,
 	gfarm_int32_t *src_errp, gfarm_int32_t *dst_errp,
@@ -2732,6 +2733,7 @@ gfs_client_replica_recv_md(struct gfs_connection *gfs_server,
 	    local_fd, md_ctx, 0));
 }
 
+/* NOTE: must be src_errp != NULL && dst_errp != NULL */
 gfarm_error_t
 gfs_client_replica_recv_cksum_md(struct gfs_connection *gfs_server,
 	gfarm_int32_t *src_errp, gfarm_int32_t *dst_errp,
