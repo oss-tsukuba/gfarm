@@ -1,3 +1,16 @@
+Release note for Gfarm 2.7.22
+=============================
+
+[2023.3.29]
+
+Updated feature
+* gfsd - more logs to investigate data corruption during network
+  transmission
+
+Bug fix
+* gfsd - fix error messages at source node during replication,
+  introduced in the version 2.7.21
+
 Release note for Gfarm 2.7.21
 =============================
 
