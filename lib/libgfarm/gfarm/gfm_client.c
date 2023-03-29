@@ -866,7 +866,7 @@ gfm_client_connection_and_process_acquire(const char *hostname, int port,
 			    gfarm_error_string(e));
 		} else {
 #ifndef HAVE_GSI
-		  	gfm_client_connection_unlock(gfm_server);
+			gfm_client_connection_unlock(gfm_server);
 			break;
 #else /* HAVE_GSI */
 			if (!GFARM_IS_AUTH_GSI(gfm_server->auth_method) ||
