@@ -1116,7 +1116,7 @@ static void
 sanity_check_ecode(const char *diag, gfarm_int32_t ecode)
 {
 	if (ecode < 0 || ecode >= GFARM_ERR_NUMBER) {
-		gflog_notice(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_1005230,
 		    "%s: unexpected ecode: %d (%s)",
 		    diag, (int)ecode, gfarm_error_string(ecode));
 	}
