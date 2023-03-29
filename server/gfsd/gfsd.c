@@ -1106,6 +1106,16 @@ io_error_check_errno(const char *diag)
 	}
 }
 
+static void
+sanity_check_ecode(const char *diag, gfarm_int32_t ecode)
+{
+	if (ecode < 0 || ecode >= GFARM_ERR_NUMBER) {
+		gflog_notice(GFARM_MSG_UNFIXED,
+		    "%s: unexpected ecode: %d (%s)",
+		    diag, (int)ecode, gfarm_error_string(ecode));
+	}
+}
+
 void
 gfs_server_put_reply_common(struct gfp_xdr *client, const char *diag,
 	gfp_xdr_xid_t xid,
@@ -1118,11 +1128,7 @@ gfs_server_put_reply_common(struct gfp_xdr *client, const char *diag,
 		    diag, (int)ecode, gfarm_error_string(ecode));
 
 	/* sanity check, this shouldn't happen */
-	if (ecode < 0 || ecode >= GFARM_ERR_NUMBER) {
-		gflog_notice(GFARM_MSG_UNFIXED,
-		    "%s: unexpected ecode: %d (%s)",
-		    diag, (int)ecode, gfarm_error_string(ecode));
-	}
+	sanity_check_ecode(diag, ecode);
 
 	e = gfp_xdr_vsend_result(client, 1, ecode, format, app); /*do timeout*/
 	if (e == GFARM_ERR_NO_ERROR)
@@ -1197,11 +1203,7 @@ gfs_async_server_put_reply_common(struct gfp_xdr *client, gfp_xdr_xid_t xid,
 		    diag, (int)ecode, gfarm_error_string(ecode));
 
 	/* sanity check, this shouldn't happen */
-	if (ecode < 0 || ecode >= GFARM_ERR_NUMBER) {
-		gflog_notice(GFARM_MSG_UNFIXED,
-		    "%s: unexpected ecode: %d (%s)",
-		    diag, (int)ecode, gfarm_error_string(ecode));
-	}
+	sanity_check_ecode(diag, ecode);
 
 	e = gfp_xdr_vsend_async_result_notimeout(
 	    client, xid, ecode, format, app);
