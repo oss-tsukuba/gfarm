@@ -2462,8 +2462,19 @@ gfs_recvfile_common(struct gfp_xdr *conn, gfarm_int32_t *dst_errp,
 			e = GFARM_ERR_PROTOCOL;
 			break;
 		}
-		if (size <= 0)
+		if (size <= 0) {
+			if (size < 0) {
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "gfs_recvfile_common: "
+				    "invalid record size %d byte "
+				    "at offset %lld, "
+				    "possible data corruption on the network",
+				    (int)size, (long long)w_off);
+				/* abandon this network connection */
+				e = GFARM_ERR_PROTOCOL;
+			}
 			break;
+		}
 		do {
 			int i, partial;
 			ssize_t rv;
