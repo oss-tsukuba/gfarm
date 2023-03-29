@@ -2466,7 +2466,7 @@ gfs_recvfile_common(struct gfp_xdr *conn, gfarm_int32_t *dst_errp,
 		}
 		if (size <= 0) {
 			if (size < 0) {
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1005229,
 				    "gfs_recvfile_common: "
 				    "invalid record size %d byte "
 				    "at offset %lld, "
