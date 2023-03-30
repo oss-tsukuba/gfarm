@@ -1417,7 +1417,7 @@ sanity_check_rpc_result_errcode(struct gfs_connection *gfs_server,
 	if (errcode >= 0)
 		return; /* OK */
 
-	gflog_error(GFARM_MSG_UNFIXED,
+	gflog_error(GFARM_MSG_1005231,
 	    "%s: unexpected protocol result: %d from %s, "
 	    "possible data corruption on the network or protocol inconsistency"
 	    ", disconnecting",
@@ -1432,7 +1432,7 @@ sanity_check_rpc_result_errcode(struct gfs_connection *gfs_server,
 	gfs_client_purge_from_cache(gfs_server);
 	e = gfp_xdr_shutdown(gfs_server->conn);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_info(GFARM_MSG_UNFIXED, "%s: shutdown: %s",
+		gflog_info(GFARM_MSG_1005232, "%s: shutdown: %s",
 		    diag, gfarm_error_string(e));
 		/*
 		 * do not return `e' as the RPC result,
@@ -2524,7 +2524,7 @@ gfs_recvfile_common(struct gfp_xdr *conn, gfarm_int32_t *dst_errp,
 				/* make sure no one will use this connection */
 				e = gfp_xdr_shutdown(conn);
 				if (e != GFARM_ERR_NO_ERROR) {
-					gflog_info(GFARM_MSG_UNFIXED,
+					gflog_info(GFARM_MSG_1005233,
 					    "%s: shutdown: %s",
 					    diag, gfarm_error_string(e));
 				}
@@ -2544,7 +2544,7 @@ gfs_recvfile_common(struct gfp_xdr *conn, gfarm_int32_t *dst_errp,
 			if (e != GFARM_ERR_NO_ERROR)
 				break;
 			if (partial <= 0) {
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1005234,
 				    "%s: invalid read size %d byte "
 				    "at offset %lld, "
 				    "possible data corruption on the network, "
@@ -2553,7 +2553,7 @@ gfs_recvfile_common(struct gfp_xdr *conn, gfarm_int32_t *dst_errp,
 				/* make sure no one will use this connection */
 				e = gfp_xdr_shutdown(conn);
 				if (e != GFARM_ERR_NO_ERROR) {
-					gflog_info(GFARM_MSG_UNFIXED,
+					gflog_info(GFARM_MSG_1005235,
 					    "%s: shutdown: %s",
 					    diag, gfarm_error_string(e));
 				}
