@@ -1418,10 +1418,10 @@ sanity_check_rpc_result_errcode(struct gfs_connection *gfs_server,
 		return; /* OK */
 
 	gflog_error(GFARM_MSG_UNFIXED,
-	    "%s: unexpected protocol result: %d, "
+	    "%s: unexpected protocol result: %d from %s, "
 	    "possible data corruption on the network "
-	    "or protocol inconsistency",
-	    diag, (int)errcode);
+	    "or protocol inconsistency, disconnect",
+	    diag, (int)errcode, gfs_client_hostname(gfs_server));
 	/*
 	 * using this connection is too dangerous,
 	 * because the cause was either network data corruption
@@ -1470,12 +1470,11 @@ gfs_client_vrpc_result(struct gfs_connection *gfs_server, int just,
 	e = gfp_xdr_vrpc_result(gfs_server->conn, just, 1,
 	    errcodep, &format, app);
 
+	if (IS_CONNECTION_ERROR(e)) {
+		gfs_client_execute_hook_for_connection_error(gfs_server);
+		gfs_client_purge_from_cache(gfs_server);
+	}
 	if (e != GFARM_ERR_NO_ERROR) {
-		if (IS_CONNECTION_ERROR(e)) {
-			gfs_client_execute_hook_for_connection_error(
-			    gfs_server);
-			gfs_client_purge_from_cache(gfs_server);
-		}
 		gflog_debug(GFARM_MSG_1001198,
 			"gfp_xdr_vrpc_result() failed: %s",
 			gfarm_error_string(e));
