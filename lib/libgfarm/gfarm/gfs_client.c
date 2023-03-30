@@ -2640,9 +2640,6 @@ gfs_client_recvfile(struct gfs_connection *gfs_server,
 		    local_w_fd, w_off,
 		    append_mode, md_ctx, md_abortedp, &written);
 		if (IS_CONNECTION_ERROR(e)) {
-			gfs_client_execute_hook_for_connection_error(
-			    gfs_server);
-			gfs_client_purge_from_cache(gfs_server);
 			e2 = GFARM_ERR_NO_ERROR;
 		} else { /* read the rest, even if a local error happens */
 			e2 = gfp_xdr_recv(gfs_server->conn, 0, &eof, "i",
