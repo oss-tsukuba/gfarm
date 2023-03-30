@@ -2493,6 +2493,7 @@ gfs_recvfile_common(struct gfp_xdr *conn, gfarm_int32_t *dst_errp,
 	gfarm_off_t written = 0, written_offset;
 	int md_aborted = 0;
 	int mode_unknown = 1, mode_thread_safe = 1;
+	static const char diag[] = "gfs_recvfile_common()";
 
 	if (append_mode) {
 		mode_unknown = 0;
@@ -2519,6 +2520,13 @@ gfs_recvfile_common(struct gfp_xdr *conn, gfarm_int32_t *dst_errp,
 				    "possible data corruption on the network, "
 				    "disconnecting",
 				    (int)size, (long long)w_off);
+				/* make sure no one will use this connection */
+				e = gfp_xdr_shutdown(conn);
+				if (e != GFARM_ERR_NO_ERROR) {
+					gflog_info(GFARM_MSG_UNFIXED,
+					    "%s: shutdown: %s",
+					    diag, gfarm_error_string(e));
+				}
 				/* abandon this network connection */
 				e = GFARM_ERR_PROTOCOL;
 			}
@@ -2535,6 +2543,20 @@ gfs_recvfile_common(struct gfp_xdr *conn, gfarm_int32_t *dst_errp,
 			if (e != GFARM_ERR_NO_ERROR)
 				break;
 			if (partial <= 0) {
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "%s: invalid read size %d byte "
+				    "at offset %lld, "
+				    "possible data corruption on the network, "
+				    "disconnecting",
+				    diag, (int)partial, (long long)w_off);
+				/* make sure no one will use this connection */
+				e = gfp_xdr_shutdown(conn);
+				if (e != GFARM_ERR_NO_ERROR) {
+					gflog_info(GFARM_MSG_UNFIXED,
+					    "%s: shutdown: %s",
+					    diag, gfarm_error_string(e));
+				}
+				/* abandon this network connection */
 				e = GFARM_ERR_PROTOCOL;
 				break;
 			}
