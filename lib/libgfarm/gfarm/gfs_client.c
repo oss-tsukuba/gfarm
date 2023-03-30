@@ -1419,8 +1419,8 @@ sanity_check_rpc_result_errcode(struct gfs_connection *gfs_server,
 
 	gflog_error(GFARM_MSG_UNFIXED,
 	    "%s: unexpected protocol result: %d, "
-	    "possible data corruption on the network "
-	    "or protocol inconsistency",
+	    "possible data corruption on the network or protocol inconsistency"
+	    ", disconnecting",
 	    diag, (int)errcode);
 	/*
 	 * using this connection is too dangerous,
@@ -2516,7 +2516,8 @@ gfs_recvfile_common(struct gfp_xdr *conn, gfarm_int32_t *dst_errp,
 				    "gfs_recvfile_common: "
 				    "invalid record size %d byte "
 				    "at offset %lld, "
-				    "possible data corruption on the network",
+				    "possible data corruption on the network, "
+				    "disconnecting",
 				    (int)size, (long long)w_off);
 				/* abandon this network connection */
 				e = GFARM_ERR_PROTOCOL;
