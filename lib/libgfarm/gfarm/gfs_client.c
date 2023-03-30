@@ -2512,13 +2512,12 @@ gfs_recvfile_common(struct gfp_xdr *conn, gfarm_int32_t *dst_errp,
 		}
 		if (size <= 0) {
 			if (size < 0) {
-				gflog_error(GFARM_MSG_1005229,
-				    "gfs_recvfile_common: "
-				    "invalid record size %d byte "
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "%s: invalid record size %d byte "
 				    "at offset %lld, "
 				    "possible data corruption on the network, "
 				    "disconnecting",
-				    (int)size, (long long)w_off);
+				    diag, (int)size, (long long)w_off);
 				/* make sure no one will use this connection */
 				e = gfp_xdr_shutdown(conn);
 				if (e != GFARM_ERR_NO_ERROR) {
