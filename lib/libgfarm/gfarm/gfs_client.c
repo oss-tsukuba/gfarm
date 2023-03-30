@@ -1404,11 +1404,54 @@ gfs_client_rpc_request(struct gfs_connection *gfs_server, int command,
 	return (e);
 }
 
+static void
+sanity_check_rpc_result_errcode(struct gfs_connection *gfs_server,
+	gfarm_int32_t errcode, const char *diag)
+{
+	gfarm_error_t e;
+
+	/*
+	 * unfortunately, we cannot check errcode < GFARM_ERR_NUMBER here,
+	 * because server's gfarm version may be higher than this client
+	 */
+	if (errcode >= 0)
+		return; /* OK */
+
+	gflog_error(GFARM_MSG_UNFIXED,
+	    "%s: unexpected protocol result: %d, "
+	    "possible data corruption on the network "
+	    "or protocol inconsistency",
+	    diag, (int)errcode);
+	/*
+	 * using this connection is too dangerous,
+	 * because the cause was either network data corruption
+	 * or protocol inconsistency.
+	 * abandon this network connection,
+	 */
+	gfs_client_execute_hook_for_connection_error(gfs_server);
+	gfs_client_purge_from_cache(gfs_server);
+	e = gfp_xdr_shutdown(gfs_server->conn);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_info(GFARM_MSG_UNFIXED, "%s: shutdown: %s",
+		    diag, gfarm_error_string(e));
+		/*
+		 * do not return `e' as the RPC result,
+		 * because the RPC communication itself was successful
+		 */
+	}
+
+	/*
+	 * do not modify the errcode to a valid value,
+	 * instead, let the caller notice it and report the invalid errcode
+	 */
+}
+
 gfarm_error_t
 gfs_client_vrpc_result(struct gfs_connection *gfs_server, int just,
 	gfarm_int32_t *errcodep, const char *format, va_list *app)
 {
 	gfarm_error_t e;
+	static const char diag[] = "gfs_client_vrpc_result()";
 
 	gfs_client_connection_used(gfs_server);
 
@@ -1427,20 +1470,23 @@ gfs_client_vrpc_result(struct gfs_connection *gfs_server, int just,
 	e = gfp_xdr_vrpc_result(gfs_server->conn, just, 1,
 	    errcodep, &format, app);
 
-	if (IS_CONNECTION_ERROR(e)) {
-		gfs_client_execute_hook_for_connection_error(gfs_server);
-		gfs_client_purge_from_cache(gfs_server);
-	}
 	if (e != GFARM_ERR_NO_ERROR) {
+		if (IS_CONNECTION_ERROR(e)) {
+			gfs_client_execute_hook_for_connection_error(
+			    gfs_server);
+			gfs_client_purge_from_cache(gfs_server);
+		}
 		gflog_debug(GFARM_MSG_1001198,
 			"gfp_xdr_vrpc_result() failed: %s",
 			gfarm_error_string(e));
 		return (e);
 	}
 	/* We just use gfarm_error_t as the errcode */
-	if (*errcodep != GFARM_ERR_NO_ERROR)
+	if (*errcodep != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001199,
 		    "gfp_xdr_vrpc_result() failed errcode=%d", (int)*errcodep);
+		sanity_check_rpc_result_errcode(gfs_server, *errcodep, diag);
+	}
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -1482,6 +1528,7 @@ gfs_client_vrpc(struct gfs_connection *gfs_server, int just, int do_timeout,
 {
 	gfarm_error_t e;
 	int errcode;
+	static const char diag[] = "gfs_client_vrpc()";
 
 	gfs_client_connection_used(gfs_server);
 
@@ -1503,6 +1550,7 @@ gfs_client_vrpc(struct gfs_connection *gfs_server, int just, int do_timeout,
 		 */
 		gflog_debug(GFARM_MSG_1003562, "gfp_xdr_vrpc(%d): errcode=%d",
 		    command, errcode);
+		sanity_check_rpc_result_errcode(gfs_server, errcode, diag);
 		return (errcode);
 	}
 	return (GFARM_ERR_NO_ERROR);
