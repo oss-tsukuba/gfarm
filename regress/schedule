@@ -84,8 +84,10 @@ gftool/gfuser/gfuser-m.sh
 gftool/gfuser/gfuser-m.gsi_dn.toolong.sh
 gftool/gfuser/gfuser-m.self.realname.sh
 gftool/gfuser/gfuser.not-exist.sh
+gftool/gfuser/gfuser.tenant-visibility.sh
 gftool/gfgroup/gfgroup-c.tenant-delimiter.sh
 gftool/gfgroup/gfgroup.not-exist.sh
+gftool/gfgroup/gfgroup.tenant-visibility.sh
 gftool/gfgroup/gfgroup.0-nusers.sh
 gftool/gfjournal/bad_record_crc1.sh
 gftool/gfjournal/bad_record_crc2.sh
