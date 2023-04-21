@@ -191,6 +191,16 @@ if pkg-config --exists libsasl2; then
     sasl_installed=true
     (
       cat <<_EOF_
+xoauth2_user_claim: ${GFDOCKER_SASL_XOAUTH2_USER_CLAIM}
+_EOF_
+      if "${GFDOCKER_ENABLE_PROXY:-false}"; then
+	cat <<_EOF_
+proxy: ${https_proxy}
+_EOF_
+      fi
+    ) >/tmp/sasl_gfarm-client.conf
+    (
+      cat <<_EOF_
 mech_list: ${GFDOCKER_SASL_MECH_LIST}
 log_level: ${GFDOCKER_SASL_LOG_LEVEL}
 xoauth2_scope: ${GFDOCKER_SASL_XOAUTH2_SCOPE}
@@ -217,9 +227,15 @@ for host in $gfmds $gfsds $clients; do
   && ssh "$host" sudo systemctl restart rsyslog
   ) &
   ( $sasl_installed &&
-    ssh "$host" sudo sh -c "'cat >${sasl_plugin_dir}/gfarm.conf'" \
-      </tmp/sasl_gfarm.conf ) &
+    ssh "$host" sudo sh -c "'cat >${sasl_plugin_dir}/gfarm-client.conf'" \
+      </tmp/sasl_gfarm-client.conf ) &
 done
+if $sasl_installed; then
+  for host in $gfmds $gfsds; do
+    ssh "$host" sudo sh -c "'cat >${sasl_plugin_dir}/gfarm.conf'" \
+      </tmp/sasl_gfarm.conf &
+  done
+fi
 wait
 
 gfservice -k -d config-all
