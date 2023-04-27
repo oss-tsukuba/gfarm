@@ -4246,10 +4246,24 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 	}
 
 	if (e == GFARM_ERR_NO_ERROR) {
-		if (fstat(local_fd, &sb) == -1) {
-			e = gfarm_errno_to_error(errno);
+		if (fsync(local_fd) == -1) {
+			save_errno = errno;
+			e = gfarm_errno_to_error(save_errno);
 			if (dst_err == GFARM_ERR_NO_ERROR)
 				dst_err = e; /* invalidate */
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "%s: %lld:%lld fsync(): %s", diag,
+			    (unsigned long long)ino,
+			    (unsigned long long)gen, strerror(save_errno));
+		} else if (fstat(local_fd, &sb) == -1) {
+			save_errno = errno;
+			e = gfarm_errno_to_error(save_errno);
+			if (dst_err == GFARM_ERR_NO_ERROR)
+				dst_err = e; /* invalidate */	
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "%s: %lld:%lld fstat(): %s", diag,
+			    (unsigned long long)ino,
+			    (unsigned long long)gen, strerror(save_errno));
 		} else {
 			filesize = sb.st_size;
 			if (gfarm_write_verify)
@@ -4749,18 +4763,33 @@ replica_receive(struct gfarm_hash_entry *q, struct replication_request *rep,
 		    gfp_conn_hash_hostname(q), gfp_conn_hash_port(q));
 	}
 
-	if (gfarm_write_verify && conn_err == GFARM_ERR_NO_ERROR &&
+	if (conn_err == GFARM_ERR_NO_ERROR &&
 	    src_err == GFARM_ERR_NO_ERROR && dst_err == GFARM_ERR_NO_ERROR) {
-		struct stat st;
+		int save_errno;
 
-		if (fstat(local_fd, &st) == -1) {
-			gflog_error_errno(GFARM_MSG_1004388,
-			    "%s: %s %lld:%lld fstat(): %s", diag, issue_diag,
+		if (fsync(local_fd) == -1) {
+			save_errno = errno;
+			dst_err = gfarm_errno_to_error(save_errno);
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "%s: %s %lld:%lld fsync(): %s",
+			    diag, issue_diag,
 			    (long long)rep->ino, (long long)rep->gen,
-			    strerror(errno));
-		} else {
-			write_verify_request(rep->ino, rep->gen, st.st_mtime,
-			    diag);
+			    strerror(save_errno));
+		} else if (gfarm_write_verify) {
+			struct stat st;
+
+			if (fstat(local_fd, &st) == -1) {
+				save_errno = errno;
+				dst_err = gfarm_errno_to_error(save_errno);
+				gflog_error_errno(GFARM_MSG_1004388,
+				    "%s: %s %lld:%lld fstat(): %s",
+				    diag, issue_diag,
+				    (long long)rep->ino, (long long)rep->gen,
+				    strerror(save_errno));
+			} else {
+				write_verify_request(rep->ino, rep->gen,
+				    st.st_mtime, diag);
+			}
 		}
 	}
 
