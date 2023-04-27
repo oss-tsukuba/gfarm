@@ -4245,14 +4245,17 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 		    diag, issue_diag, ino, gen, host, port);
 	}
 
-	if (fstat(local_fd, &sb) == -1) {
-		e = gfarm_errno_to_error(errno);
-		if (dst_err == GFARM_ERR_NO_ERROR)
-			dst_err = e; /* invalidate */
-	} else {
-		filesize = sb.st_size;
-		if (gfarm_write_verify)
-			write_verify_request(ino, gen, sb.st_mtime, diag);
+	if (e == GFARM_ERR_NO_ERROR) {
+		if (fstat(local_fd, &sb) == -1) {
+			e = gfarm_errno_to_error(errno);
+			if (dst_err == GFARM_ERR_NO_ERROR)
+				dst_err = e; /* invalidate */
+		} else {
+			filesize = sb.st_size;
+			if (gfarm_write_verify)
+				write_verify_request(
+				    ino, gen, sb.st_mtime, diag);
+		}
 	}
  free_server:
 	gfs_client_connection_free(server);
