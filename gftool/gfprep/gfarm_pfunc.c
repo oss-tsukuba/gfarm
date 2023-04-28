@@ -372,6 +372,19 @@ pfunc_write(struct pfunc_file *fp, void *buf, int bufsize, int *wsize)
 }
 
 static gfarm_error_t
+pfunc_fsync(struct pfunc_file *fp)
+{
+	int retv;
+
+	if (fp->gfarm)
+		return (gfs_pio_sync(fp->gfarm));
+	retv = fsync(fp->fd);
+	if (retv == -1)
+		return (gfarm_errno_to_error(errno));
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
 pfunc_close(struct pfunc_file *fp)
 {
 	int retv;
@@ -642,6 +655,7 @@ pfunc_copy_to_gfarm_or_local(gfarm_pfunc_t *handle, FILE *to_parent,
 	struct pfunc_file src_fp, dst_fp;
 	struct pfunc_stat src_st;
 	int flags;
+	int copy_io_ok = 0;
 
 	retv = gfurl_asprintf(&tmp_url, "%s%s", dst_url, tmp_url_suffix);
 	if (retv == -1) {
@@ -750,12 +764,21 @@ pfunc_copy_to_gfarm_or_local(gfarm_pfunc_t *handle, FILE *to_parent,
 		result = PFUNC_RESULT_NG;
 		goto close;
 	}
+	copy_io_ok = 1;
 close:
 	e = pfunc_close(&src_fp);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "ERROR: copy failed: close(%s): %s\n",
 			src_url, gfarm_error_string(e));
 		result = PFUNC_RESULT_NG;
+	}
+	if (copy_io_ok) {
+		e = pfunc_fsync(&dst_fp);
+		if (e != GFARM_ERR_NO_ERROR) {
+			fprintf(stderr, "ERROR: copy failed: fsync(%s): %s\n",
+				tmp_url, gfarm_error_string(e));
+			result = PFUNC_RESULT_NG;
+		}
 	}
 	e = pfunc_close(&dst_fp);
 	if (e != GFARM_ERR_NO_ERROR) {
