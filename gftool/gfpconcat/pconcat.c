@@ -333,6 +333,22 @@ gfpconcat_write(struct gfpconcat_file *fp, void *buf, int bufsize, int *wsize)
 }
 
 static gfarm_error_t
+gfpconcat_fsync(struct gfpconcat_file *fp)
+{
+	int retv;
+
+	if (fp->gf) {
+		return (gfs_pio_sync(fp->gf));
+	}
+	retv = fsync(fp->fd);
+	if (retv == -1) {
+		return (gfarm_errno_to_error(errno));
+	}
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
 gfpconcat_close(struct gfpconcat_file *fp)
 {
 	int retv;
@@ -460,12 +476,17 @@ gfpconcat_gfarm_terminate(struct gfpconcat_option *opt)
 static gfarm_error_t
 gfpconcat_create_empty_file(GFURL url, int mode)
 {
-	gfarm_error_t e;
+	gfarm_error_t e, e2;
 	struct gfpconcat_file fp;
 
 	e = gfpconcat_open(url, O_CREAT | O_WRONLY | O_TRUNC, mode, &fp);
 	if (e == GFARM_ERR_NO_ERROR) {
-		e = gfpconcat_close(&fp);
+		e = gfpconcat_fsync(&fp);
+		gfmsg_error_e(e, "%s: cannot sync", gfurl_url(url));
+		e2 = gfpconcat_close(&fp);
+		if (e == GFARM_ERR_NO_ERROR) {
+			e = e2;
+		}
 	}
 	return (e);
 }
@@ -611,6 +632,11 @@ retry_set_view:
 	}
 
 close_dst_fp:
+	e2 = gfpconcat_fsync(&dst_fp);
+	gfmsg_error_e(e2, "%s: cannot sync", gfurl_url(opt->tmp_url));
+	if (e == GFARM_ERR_NO_ERROR) {
+		e = e2;
+	}
 	e2 = gfpconcat_close(&dst_fp);
 	gfmsg_error_e(e2, "%s: cannot close", gfurl_url(opt->tmp_url));
 	if (e == GFARM_ERR_NO_ERROR) {
