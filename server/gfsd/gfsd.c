@@ -4259,7 +4259,7 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 			save_errno = errno;
 			e = gfarm_errno_to_error(save_errno);
 			if (dst_err == GFARM_ERR_NO_ERROR)
-				dst_err = e; /* invalidate */	
+				dst_err = e; /* invalidate */
 			gflog_error(GFARM_MSG_UNFIXED,
 			    "%s: %lld:%lld fstat(): %s", diag,
 			    (unsigned long long)ino,
