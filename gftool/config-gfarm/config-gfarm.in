@@ -420,10 +420,13 @@ set_first_defaults_$BACKEND_TYPE
 # sysdep_defaults must set: $RC_DIR
 sysdep_defaults
 
+: ${RC_BACKEND:=}
+: ${RC_GFMD:=}
+
 [ X"$RC_BACKEND" = X ] && \
-	: ${RC_BACKEND="$RC_DIR/$RC_BACKEND_BASENAME"}
+	RC_BACKEND="$RC_DIR/$RC_BACKEND_BASENAME"
 [ X"$RC_GFMD" = X ] && \
-	: ${RC_GFMD="$RC_DIR/gfmd"}
+	RC_GFMD="$RC_DIR/gfmd"
 
 : ${START_SERVICE:=true}
 : ${FORCE:=false}
@@ -564,11 +567,15 @@ s|@config_gfarm_backend_log_dir@|$BACKEND_LOG_DIR|g
 s|@config_gfarm_gfmd_pid_file@|$GFMD_PID_FILE|g
 s|@config_gfarm_backend_pid_file@|$BACKEND_PID_FILE|g
 s|@config_gfarm_private_mode@|$PRIVATE_MODE|g
-s|@config_gfarm_usermap_file@|$USERMAP_FILE|g
-s|@config_gfarm_gfsd_config@|$GFSD_CONF|g
 s|@config_gfarm_metadata_replication@|$METADATA_REPLICATION|g
 s|@config_gfarm_metadata_journal_dir@|$METADATA_JOURNAL_DIR|g
 _EOF_
+if $PRIVATE_MODE; then
+		cat <<_EOF_
+s|@config_gfarm_usermap_file@|$USERMAP_FILE|g
+s|@config_gfarm_gfsd_config@|$GFSD_CONF|g
+_EOF_
+fi
 	    ) > $sed_script
 	)
 
