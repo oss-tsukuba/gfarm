@@ -4251,7 +4251,7 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 			e = gfarm_errno_to_error(save_errno);
 			if (dst_err == GFARM_ERR_NO_ERROR)
 				dst_err = e; /* invalidate */
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1005236,
 			    "%s: %lld:%lld fsync(): %s", diag,
 			    (unsigned long long)ino,
 			    (unsigned long long)gen, strerror(save_errno));
@@ -4260,7 +4260,7 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 			e = gfarm_errno_to_error(save_errno);
 			if (dst_err == GFARM_ERR_NO_ERROR)
 				dst_err = e; /* invalidate */
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1005237,
 			    "%s: %lld:%lld fstat(): %s", diag,
 			    (unsigned long long)ino,
 			    (unsigned long long)gen, strerror(save_errno));
@@ -4770,7 +4770,7 @@ replica_receive(struct gfarm_hash_entry *q, struct replication_request *rep,
 		if (fsync(local_fd) == -1) {
 			save_errno = errno;
 			dst_err = gfarm_errno_to_error(save_errno);
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1005238,
 			    "%s: %s %lld:%lld fsync(): %s",
 			    diag, issue_diag,
 			    (long long)rep->ino, (long long)rep->gen,
