@@ -1,0 +1,55 @@
+FROM almalinux:8
+
+ARG USERNAME=foo
+ARG UID=1000
+
+RUN dnf update \
+ && dnf -y upgrade \
+ && dnf -y install git wget rpm-build sudo passwd \
+ && dnf -y install gcc make \
+ && dnf -y install openssl-devel postgresql-devel \
+ && dnf -y install rdma-core-devel \
+ && dnf -y install postgresql postgresql-server \
+ && dnf -y install python3 ruby \
+ && dnf -y install epel-release \
+ && dnf -y install globus-gssapi-gsi-devel \
+ && dnf -y install python3-docopt python3-schema python3-tqdm \
+ && dnf -y install fuse fuse-devel libacl-devel \
+ && dnf -y install libtool cyrus-sasl-devel scitokens-cpp-devel \
+ && dnf -y install procps \
+ && dnf -y install myproxy globus-simple-ca
+
+RUN \
+ # sshd
+ dnf -y install openssh-server \
+ # sshd_config
+ && mv /etc/ssh/sshd_config /etc/ssh/sshd_config.orig \
+ && awk ' \
+    /#PermitEmptyPasswords no/ { print "PermitEmptyPasswords yes"; next } \
+    /UsePAM yes/ { print "UsePAM no"; next } \
+    { print }' /etc/ssh/sshd_config.orig > /etc/ssh/sshd_config \
+ # ssh_config
+ && printf '%s\n' \
+    'Host *' \
+    '    StrictHostKeyChecking no' \
+    > /etc/ssh/ssh_config.d/ignore-host-key.conf \
+ && systemctl enable sshd
+
+RUN useradd -m -u $UID -s /bin/bash $USERNAME \
+ && echo "$USERNAME ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers.d/$USERNAME \
+ # delete passwd
+ && passwd -d $USERNAME
+
+RUN useradd -m _gfarmfs \
+ && useradd -m _gfarmmd
+
+RUN mv /etc/sudoers /etc/sudoers.orig \
+ && awk '/secure_path/ { print $0 ":/usr/local/bin"; next}; {print}' \
+	/etc/sudoers.orig > /etc/sudoers
+
+USER $USERNAME
+RUN cd \
+ && mkdir local
+
+USER root
+CMD ["/sbin/init"]
