@@ -70,7 +70,7 @@ rpmbuild -bs --undefine dist $SPEC
 [ $COPY ] && sudo rm -rf $PKG-$VER > /dev/null 2>&1 || :
 
 #export GFARM_CONFIGURE_OPTION="--with-globus --with-infiniband"
-export GFARM_CONFIGURE_OPTION="--with-globus"
+export GFARM_CONFIGURE_OPTION="--enable-xmlattr --with-globus"
 rpmbuild --rebuild ~/rpmbuild/SRPMS/$PKG-$VER-1.src.rpm > /dev/null
 status=0
 echo Done

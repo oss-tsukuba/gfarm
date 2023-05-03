@@ -10,7 +10,7 @@ cd $PKG
 CONF_OPT=
 case $PKG in
 gfarm)
-	CONF_OPT=--with-globus #--with-infiniband
+	CONF_OPT="--enable-xmlattr --with-globus" #--with-infiniband
 	;;
 gfarm2fs)
 	CONF_OPT=--with-gfarm=/usr/local
