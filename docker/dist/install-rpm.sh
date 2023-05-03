@@ -1,5 +1,7 @@
 #!/bin/sh
 set -xeu
+status=1
+trap '[ $status = 1 ] && echo NG; rm -rf ~/local/rpms; exit $status' 0 1 2 15
 
 : ${PKG:=gfarm}
 
@@ -11,4 +13,5 @@ do
 	echo $h
 	ssh $h sudo rpm -Uvh local/rpms/$PKG-*
 done
-rm -rf ~/local/rpms
+status=0
+echo Done

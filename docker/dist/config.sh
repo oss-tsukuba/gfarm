@@ -1,7 +1,11 @@
 #!/bin/sh
 set -xeu
+status=1
+trap '[ $status = 1 ] && echo NG; rm -f ~/local/gfarm2.conf; exit $status' \
+	0 1 2 15
 
 # master metadata server
+: ${USER:=$(basename $HOME)}
 DN=$(grid-proxy-info -issuer)
 [ X"$DN" = X ] && exit 1
 CONFIG_OPTIONS="-A $USER -r -X -d sha1 -a gsi -D $DN"
@@ -59,7 +63,7 @@ do
 	ssh $h sudo config-gfarm -N $CONFIG_OPTIONS
 	scp -p d $h:
 	ssh $h sudo systemctl start gfarm-pgsql
-	ssh $h sudo gfdump.postgresql -r -f d
+	ssh $h sudo gfdump.postgresql -n -r -f d
 	ssh $h rm d
 	cat <<_EOF_ | ssh $h sudo tee -a $CONFDIR/gfmd.conf > /dev/null
 auth enable sharedsecret *
@@ -77,8 +81,9 @@ do
 	ssh $h sudo cp local/gfarm2.conf $CONFDIR
 
 	ssh $h sudo config-gfsd
-	gfhost -c -a linux -p 600 -n 8 $h
+	gfhost -c -a linux -p 600 -n $(nproc) $h
 	ssh $h sudo systemctl start gfsd
 done
 
-rm ~/local/gfarm2.conf
+status=0
+echo Done

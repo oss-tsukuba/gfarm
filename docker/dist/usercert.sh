@@ -1,8 +1,12 @@
 #!/bin/sh
 set -xeu
+status=1
+trap '[ $status = 1 ] && echo NG; rm ~/local/grid-mapfile; exit $status' \
+	0 1 2 15
 
 PASS=globus
 DIGEST=sha256
+: ${USER:=$(basename $HOME)}
 grid-cert-request -cn $USER -nopw
 echo $PASS | sudo grid-ca-sign -in ~/.globus/usercert_request.pem \
 	 -out ~/.globus/usercert.pem -passin stdin -md $DIGEST
@@ -21,4 +25,5 @@ do
 	ssh $h sudo cp local/grid-mapfile /etc/grid-security
 done
 
-rm ~/local/grid-mapfile
+status=0
+echo Done

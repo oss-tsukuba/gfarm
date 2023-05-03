@@ -1,5 +1,8 @@
 #!/bin/sh
 set -xeu
+status=1
+trap '[ $status = 1 ] && echo NG; rm -f get_gfarm2conf.sh; exit $status' \
+	0 1 2 15
 
 GSICONF=/etc/grid-security/gsi.conf
 grep "NAME_COMPATIBILITY=HYBRID" $GSICONF || {
@@ -23,8 +26,9 @@ cd $OPWD
 [ -f ~/.gfarm2rc.hpci ] ||
 	sh ./get_gfarm2conf.sh -f ~/.gfarm2rc.hpci
 
-rm -f get_gfarm2conf.sh
 
 echo mv ~/.globus ~/.globus.bak
 echo myproxy-logon -s portal.hpci.nii.ac.jp -t 168 -l HPCI-ID
 echo export GFARM_CONFIG_FILE=$HOME/.gfarm2rc.hpci
+status=0
+echo Done

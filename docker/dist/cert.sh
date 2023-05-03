@@ -1,5 +1,7 @@
 #!/bin/sh
 set -xeu
+status=1
+trap '[ $status = 1 ] && echo NG; exit $status' 0 1 2 15
 
 # install and create simple ca
 GSDIR=/etc/grid-security
@@ -69,3 +71,5 @@ do
 	ssh $h sudo chown -R _gfarmfs:_gfarmfs $GSDIR/$SERVICE
 	rm -rf ~/local/$h
 done
+status=0
+echo Done

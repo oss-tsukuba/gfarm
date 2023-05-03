@@ -1,5 +1,7 @@
 #!/bin/sh
 set -xeu
+status=1
+trap '[ $status = 1 ] && echo NG; exit $status' 0 1 2 15
 
 : ${PKG:=gfarm}
 : ${VER:=}
@@ -70,3 +72,5 @@ rpmbuild -bs --undefine dist $SPEC
 #export GFARM_CONFIGURE_OPTION="--with-globus --with-infiniband"
 export GFARM_CONFIGURE_OPTION="--with-globus"
 rpmbuild --rebuild ~/rpmbuild/SRPMS/$PKG-$VER-1.src.rpm > /dev/null
+status=0
+echo Done

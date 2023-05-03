@@ -1,5 +1,7 @@
 #!/bin/sh
 set -xeu
+status=1
+trap '[ $status = 1 ] && echo NG; exit $status' 0 1 2 15
 
 gfdf
 gfhost -lv
@@ -18,3 +20,5 @@ done
 	sleep 1
 	gfmdhost -l
 } || :
+status=0
+echo Done
