@@ -61,15 +61,14 @@ sudo gfdump.postgresql -d -f d
 for h in c2 c3
 do
 	ssh $h sudo config-gfarm -N $CONFIG_OPTIONS
-	scp -p d $h:
-	ssh $h sudo systemctl start gfarm-pgsql
-	ssh $h sudo gfdump.postgresql -n -r -f d
-	ssh $h rm d
 	cat <<_EOF_ | ssh $h sudo tee -a $CONFDIR/gfmd.conf > /dev/null
 auth enable sharedsecret *
 auth enable gsi_auth *
 _EOF_
-	ssh $h sudo systemctl start gfmd
+	scp -p d $h:
+	ssh $h sudo systemctl start gfarm-pgsql
+	ssh $h sudo gfdump.postgresql -r -f d
+	ssh $h rm d
 
 	ssh $h sudo cp local/gfarm2.conf $CONFDIR
 done
