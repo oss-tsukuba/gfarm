@@ -14,9 +14,9 @@ do
 	ssh $h sudo systemctl restart gfmd
 	NOTHEALTHY=1
 done
-[ $NOTHEALTHY = 1 ] && {
+[ $NOTHEALTHY = 0 ] || {
 	sleep 1
 	gfmdhost -l
-} || :
+}
 status=0
 echo Done
