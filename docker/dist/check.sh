@@ -8,13 +8,11 @@ gfhost -lv
 gfmdhost -l
 
 NOTHEALTHY=0
-for h in c2 c3
+for h in $(gfmdhost -l | awk '$1 !~ /^+/ {print $6}')
 do
-	gfmdhost -l | grep $h | grep ^+ > /dev/null || {
-		echo $h: not synchronize, restart
-		ssh $h sudo systemctl restart gfmd
-		NOTHEALTHY=1
-	}
+	echo $h: not synchronize, restart
+	ssh $h sudo systemctl restart gfmd
+	NOTHEALTHY=1
 done
 [ $NOTHEALTHY = 1 ] && {
 	sleep 1
