@@ -3,6 +3,11 @@ set -xeu
 status=1
 trap '[ $status = 1 ] && echo NG; exit $status' 0 1 2 15
 
+[ -d /var/lib/globus/simple_ca/ ] && {
+	status=0
+	exit 0
+}
+
 # install and create simple ca
 GSDIR=/etc/grid-security
 sudo grid-ca-create -noint -subject "cn=CA, ou=GfarmTest, o=Grid" -nobuild
@@ -29,14 +34,14 @@ rm -rf ~/local/certs
 PASS=globus
 DIGEST=sha256
 [ -f $GSDIR/hostcert.pem ] || {
-	yes | sudo grid-cert-request -host c1
+	yes | sudo grid-cert-request -host $HOSTNAME
 	echo $PASS | sudo grid-ca-sign -in $GSDIR/hostcert_request.pem \
 		-out $GSDIR/hostcert.pem -passin stdin -md $DIGEST
 }
 
 SERVICE=gfsd
 [ -f $GSDIR/$SERVICE/${SERVICE}cert.pem ] || {
-	yes | sudo grid-cert-request -service $SERVICE -host c1
+	yes | sudo grid-cert-request -service $SERVICE -host $HOSTNAME
 	echo $PASS | sudo grid-ca-sign \
 		-in $GSDIR/$SERVICE/${SERVICE}cert_request.pem \
 		-out $GSDIR/$SERVICE/${SERVICE}cert.pem \
