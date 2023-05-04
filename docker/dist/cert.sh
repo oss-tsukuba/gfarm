@@ -19,10 +19,14 @@ do
 done
 sudo grid-default-ca -ca $HASH
 
+# copy CA cert
+HOST=$(hostname)
+HOSTS=$(grep -v $HOST ~/.nodelist)
 mkdir -p ~/local/certs
 cp -p $GSDIR/certificates/$HASH.* \
 	$GSDIR/certificates/*.$HASH ~/local/certs
-for h in c2 c3 c4
+
+for h in $HOSTS
 do
 	ssh $h sudo mkdir -p $GSDIR/certificates
 	ssh $h sudo cp local/certs/* $GSDIR/certificates
@@ -34,14 +38,14 @@ rm -rf ~/local/certs
 PASS=globus
 DIGEST=sha256
 [ -f $GSDIR/hostcert.pem ] || {
-	yes | sudo grid-cert-request -host $HOSTNAME
+	yes | sudo grid-cert-request -host $HOST
 	echo $PASS | sudo grid-ca-sign -in $GSDIR/hostcert_request.pem \
 		-out $GSDIR/hostcert.pem -passin stdin -md $DIGEST
 }
 
 SERVICE=gfsd
 [ -f $GSDIR/$SERVICE/${SERVICE}cert.pem ] || {
-	yes | sudo grid-cert-request -service $SERVICE -host $HOSTNAME
+	yes | sudo grid-cert-request -service $SERVICE -host $HOST
 	echo $PASS | sudo grid-ca-sign \
 		-in $GSDIR/$SERVICE/${SERVICE}cert_request.pem \
 		-out $GSDIR/$SERVICE/${SERVICE}cert.pem \
@@ -49,7 +53,7 @@ SERVICE=gfsd
 	sudo chown -R _gfarmfs:_gfarmfs $GSDIR/$SERVICE
 }
 
-for h in c2 c3 c4
+for h in $HOSTS
 do
 	ssh $h test -f $GSDIR/hostcert.pem && continue
 
@@ -62,7 +66,7 @@ do
 	rm -rf ~/local/$h
 done
 
-for h in c2 c3 c4
+for h in $HOSTS
 do
 	ssh $h test -f $GSDIR/$SERVICE/${SERVICE}cert.pem && continue
 

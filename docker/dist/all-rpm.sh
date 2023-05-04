@@ -3,6 +3,7 @@ set -xeu
 status=1
 trap '[ $status = 1 ] && echo NG; exit $status' 0 1 2 15
 
+sh ./setup.sh
 (cd && sh gfarm/docker/dist/mkrpm.sh)
 sh ./install-rpm.sh
 sh ./cert.sh

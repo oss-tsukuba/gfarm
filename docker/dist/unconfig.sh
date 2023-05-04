@@ -11,10 +11,7 @@ done
 
 for UNCONFIG in $d/unconfig-gfsd.sh $d/unconfig-gfarm.sh
 do
-	for h in c1 c2 c3 c4
-	do
-		ssh $h "[ -f $UNCONFIG ] && sudo $UNCONFIG -f || :"
-	done
+	gfarm-prun -a -p "[ -f $UNCONFIG ] && sudo $UNCONFIG -f || :"
 done
 
 status=0

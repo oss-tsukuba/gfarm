@@ -8,7 +8,7 @@ gfhost -lv
 gfmdhost -l
 
 NOTHEALTHY=0
-for h in $(gfmdhost -l | awk '$1 !~ /^+/ {print $6}')
+for h in $(gfmdhost -l | awk '$1 !~ /^\+/ {print $6}')
 do
 	echo $h: not synchronize, restart
 	ssh $h sudo systemctl restart gfmd

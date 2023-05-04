@@ -5,7 +5,7 @@ trap '[ $status = 1 ] && echo NG; rm -f ~/local/gfarm2.conf; exit $status' \
 	0 1 2 15
 
 # master metadata server
-: ${USER:=$(basename $HOME)}
+: ${USER:=$(id -un)}
 DN=$(grid-proxy-info -issuer)
 [ X"$DN" = X ] && exit 1
 CONFIG_OPTIONS="-A $USER -r -X -d sha1 -a gsi -D $DN"
@@ -26,8 +26,12 @@ sudo systemctl start gfarm-pgsql
 sudo systemctl start gfmd
 
 # update gfarm2.conf
+set $(cat ~/.nodelist)
+MASTER=$1
+SSLAVE=$2
+ASLAVE=$3
 cat <<_EOF_ | sudo tee -a $CONFDIR/gfarm2.conf > /dev/null
-metadb_server_list c1:601 c2:601 c3:601
+metadb_server_list $MASTER:601 $SSLAVE:601 $ASLAVE:601
 auth enable sharedsecret *
 auth enable gsi_auth *
 _EOF_
@@ -36,16 +40,15 @@ cp $CONFDIR/gfarm2.conf ~/local/
 # shared keys for users
 gfkey -f -p 31536000
 KEY=.gfarm_shared_key
-for h in c2 c3 c4
-do
-	scp -p ~/$KEY $h:
-done
+gfarm-pcp -p ~/$KEY .
 
 # shared keys for system users
+HOST=$(hostname)
+HOSTS=$(grep -v $HOST ~/.nodelist)
 for u in _gfarmmd _gfarmfs; do
 	sudo -u $u gfkey -f -p 31536000
 	sudo -u $u gfkey -f -p 31536000
-	for h in c2 c3 c4; do
+	for h in $HOSTS; do
 		sudo cat /home/$u/$KEY | \
 			ssh $h sudo -u $u tee /home/$u/$KEY > /dev/null
 		ssh $h sudo -u $u chmod 600 /home/$u/$KEY
@@ -53,12 +56,13 @@ for u in _gfarmmd _gfarmfs; do
 done
 
 # slave metadata servers
-gfmdhost -c c2
-gfmdhost -c c3 -C siteA
+gfmdhost -m $MASTER -C siteA
+gfmdhost -c $SSLAVE -C siteA
+gfmdhost -c $ASLAVE -C siteB
 sleep 3
 sudo gfdump.postgresql -d -f d
 
-for h in c2 c3
+for h in $SSLAVE $ASLAVE
 do
 	ssh $h sudo config-gfarm -N $CONFIG_OPTIONS
 	cat <<_EOF_ | ssh $h sudo tee -a $CONFDIR/gfmd.conf > /dev/null
@@ -75,7 +79,10 @@ done
 sudo rm d
 
 # gfsd
-for h in c2 c3 c4
+set $(cat ~/.nodelist)
+shift
+HOSTS="$*"
+for h in $HOSTS
 do
 	ssh $h sudo cp local/gfarm2.conf $CONFDIR
 

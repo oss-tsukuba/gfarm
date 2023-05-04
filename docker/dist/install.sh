@@ -18,10 +18,9 @@ esac
 ./configure $CONF_OPT
 make clean > /dev/null
 make -j $(nproc) > /dev/null
+sudo make install > /dev/null
 
-for h in c1 c2 c3 c4
-do
-	ssh $h "(cd $PWD; sudo make install > /dev/null)"
-done
+gfarm-prun -p "(cd $PWD; sudo make install > /dev/null)"
+
 status=0
 echo Done

@@ -6,7 +6,7 @@ trap '[ $status = 1 ] && echo NG; rm -f ~/local/grid-mapfile; exit $status' \
 
 PASS=globus
 DIGEST=sha256
-: ${USER:=$(basename $HOME)}
+: ${USER:=$(id -un)}
 
 [ -f ~/.globus/usercert.pem ] && {
 	status=0
@@ -21,15 +21,8 @@ SUB=$(grid-proxy-info -issuer)
 echo \"$SUB\" $USER | sudo tee -a /etc/grid-security/grid-mapfile > /dev/null
 cp /etc/grid-security/grid-mapfile ~/local
 
-for h in c2 c3 c4
-do
-	scp -pr ~/.globus $h:
-done
-
-for h in c2 c3 c4
-do
-	ssh $h sudo cp local/grid-mapfile /etc/grid-security
-done
+gfarm-pcp -p ~/.globus .
+gfarm-prun -p sudo cp local/grid-mapfile /etc/grid-security
 
 status=0
 echo Done
