@@ -5,8 +5,6 @@ trap '[ $status = 1 ] && echo NG; exit $status' 0 1 2 15
 
 : ${PKG:=gfarm}
 
-cd $PKG
-
 CONF_OPT=
 case $PKG in
 gfarm)
