@@ -36,6 +36,8 @@
 
     % docker compose down
 
+If you would like to execute `all.sh` (or `all-rpm.sh`) again, execute `unconfig.sh`.
+
 ## For HPCI Storage
 
     eforxecute all.sh or all-rpm.sh
