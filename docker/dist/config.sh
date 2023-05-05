@@ -47,7 +47,6 @@ HOST=$(hostname)
 HOSTS=$(grep -v $HOST ~/.nodelist)
 for u in _gfarmmd _gfarmfs; do
 	sudo -u $u gfkey -f -p 31536000
-	sudo -u $u gfkey -f -p 31536000
 	for h in $HOSTS; do
 		sudo cat /home/$u/$KEY | \
 			ssh $h sudo -u $u tee /home/$u/$KEY > /dev/null
