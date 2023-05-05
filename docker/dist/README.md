@@ -24,11 +24,10 @@
     % DIST=<distribution> docker compose build
     Ubuntu, AlmaLinux8, and CentOS7 are available.  Default is Ubuntu
     % docker compose up -d
-    % ssh $(docker exec gfarm-c1 hostname -i)
-    For AlmaLinux8, need to wait at least 10 seconds until ssh server is ready
+    % docker exec -it gfarm-c1 sudo -u $USER sh -c "(cd ~/gfarm && /bin/bash)"
 
     (in a container)
-    % cd gfarm/docker/dist
+    % cd docker/dist
     % sh ./all.sh
     or ./all-rpm.sh also available in case of AlmaLinux8 and CentOS7
     This will install and setup Gfarm.  Enjoy!
@@ -40,8 +39,14 @@ If you would like to execute `all.sh` (or `all-rpm.sh`) again, execute `unconfig
 
 ## For HPCI Storage
 
-    eforxecute all.sh or all-rpm.sh
+    execute all.sh or all-rpm.sh
     % sh ./hpci.sh
     % mv ~/.globus ~/.globus.bak
     % myproxy-logon -s portal.hpci.nii.ac.jp -t 168 -l HPCI-ID
     % export GFARM_CONFIG_FILE=$HOME/.gfarm2rc.hpci
+
+## Batch tests
+
+Build, install and setup tests for all distributions.
+
+   % sh ./batchtest.sh
