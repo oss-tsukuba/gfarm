@@ -67,7 +67,7 @@ fi
 mkdir -p ~/rpmbuild/SOURCES
 mv $PKG-$VER.tar.gz ~/rpmbuild/SOURCES/
 rpmbuild -bs --undefine dist $SPEC
-[ $COPY ] && sudo rm -rf $PKG-$VER > /dev/null 2>&1 || :
+$COPY && sudo rm -rf $PKG-$VER > /dev/null 2>&1 || :
 
 #export GFARM_CONFIGURE_OPTION="--with-globus --with-infiniband"
 export GFARM_CONFIGURE_OPTION="--enable-xmlattr --with-globus"
