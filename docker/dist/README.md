@@ -5,19 +5,14 @@
     % git clone https://github.com/oss-tsukuba/gfarm.git
     % cd gfarm
     % git clone https://github.com/oss-tsukuba/gfarm2fs.git
-    % cd docker/dist
 
-## Create RPM packages
+## Explore on virtual clusters by VS Code dev containers
 
-    % sh ./devrpm.sh
-    (in the container)
-    # cd
-    # sh gfarm/docker/dist/mkrpm.sh
-    # Ctrl-D
-
-    % docker cp alma8:/root/rpmbuild/SRPMS/gfarm-$VER-1.src.rpm .
-    % docker stop alma8
-    % docker rm alma8
+- Install VS Code and Remote Containers extension
+- Open this directory
+- Open a command palette by Ctrl+Shift+p and execute "Remote-Containers: Rebulid and Reopen in Container"
+- Open Terminal -> New Terminal
+- follow the instructions below in a container
 
 ## Explore on virtual clusters
 
@@ -50,3 +45,15 @@ If you would like to execute `all.sh` (or `all-rpm.sh`) again, execute `unconfig
 Build, install and setup tests for all distributions.
 
    % sh ./batchtest.sh
+
+## Create RPM packages
+
+    % sh ./devrpm.sh
+    (in the container)
+    # cd
+    # sh gfarm/docker/dist/mkrpm.sh
+    # Ctrl-D
+
+    % docker cp alma8:/root/rpmbuild/SRPMS/gfarm-$VER-1.src.rpm .
+    % docker stop alma8
+    % docker rm alma8
