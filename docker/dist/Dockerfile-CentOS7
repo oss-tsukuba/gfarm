@@ -4,19 +4,23 @@ ARG USERNAME=foo
 ARG UID=1000
 
 RUN yum -y update \
- && yum -y install git wget rpm-build sudo passwd \
- && yum -y install gcc make \
- && yum -y install openssl-devel postgresql-devel \
- && yum -y install rdma-core-devel \
- && yum -y install postgresql postgresql-server \
- && yum -y install python3 ruby \
+ && yum -y install \
+    git wget rpm-build sudo passwd \
+    gcc make \
+    openssl-devel postgresql-devel \
+    rdma-core-devel \
+    postgresql postgresql-server \
+    python3 ruby \
  && yum -y install epel-release \
- && yum -y install globus-gssapi-gsi-devel \
- && yum -y install python36-docopt python36-schema python36-tqdm \
- && yum -y install fuse fuse-devel libacl-devel \
- && yum -y install libtool cyrus-sasl-devel scitokens-cpp-devel \
- && yum -y install procps \
- && yum -y install myproxy globus-simple-ca
+ && yum -y install \
+    globus-gssapi-gsi-devel \
+    python36-docopt python36-schema python36-tqdm \
+ && pip3 install flake8 \
+ && yum -y install \
+    fuse fuse-devel libacl-devel \
+    libtool cyrus-sasl-devel scitokens-cpp-devel \
+    procps \
+    myproxy globus-simple-ca
 
 RUN \
  # sshd
