@@ -25,10 +25,11 @@ gfarm-pcp -p ~/.nodelist .
 # set up certificates
 sh ./cert.sh
 sh ./usercert.sh
+sh ./sharedkey.sh
 
 # set up Gfarm-1 with 5 nodes
 for h in c1 c2 c3 c4 c5; do echo $h; done | \
-	sh ./config.sh - true
+	sh ./config.sh -
 
 # set up Gfarm-2 to Gfarm-4 with 1 node
 for h in c6 c7 c8; do

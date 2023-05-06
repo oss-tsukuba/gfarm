@@ -10,7 +10,6 @@ hostfile=$1
 	hostfile=$TMPF
 	cat > $hostfile
 } || [ -f $hostfile ]
-[ $# -gt 1 ] && init=true || init=false
 
 # master metadata server
 : ${USER:=$(id -un)}
@@ -56,21 +55,6 @@ auth enable sharedsecret *
 auth enable gsi_auth *
 _EOF_
 cp $CONFDIR/gfarm2.conf ~/local/
-
-# shared keys for users
-if $init; then
-gfkey -f -p 31536000
-KEY=.gfarm_shared_key
-gfarm-pcp -p ~/$KEY .
-
-# shared keys for system users
-for u in _gfarmmd _gfarmfs; do
-	sudo -u $u gfkey -f -p 31536000
-	sudo cat /home/$u/$KEY | \
-		gfarm-prun -stdin - "sudo -u $u tee /home/$u/$KEY > /dev/null"
-	gfarm-prun -p sudo -u $u chmod 600 /home/$u/$KEY
-done
-fi
 
 # slave metadata servers
 gfmdhost -m $MASTER -C siteA
