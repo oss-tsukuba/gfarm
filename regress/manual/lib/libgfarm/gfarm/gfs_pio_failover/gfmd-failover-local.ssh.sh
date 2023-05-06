@@ -3,6 +3,7 @@
 : ${CONFIG_PREFIX:=}	# i.e. default is the root directory
 : ${ssh:=ssh}
 : ${priv:=root}
+: ${SUDO:=}
 
 # XXX this assumes that the path of gfjournal is same on the remote host
 : ${gfjournal:=`type gfjournal | awk '{print $NF}'`}
@@ -44,7 +45,8 @@ sync_slave_stopped()
 
 get_seqnum()
 {
-	$ssh $1 -n $gfjournal -m $CONFIG_PREFIX/var/gfarm-metadata/journal/0000000000.gmj
+	$ssh $1 -n $SUDO $gfjournal \
+		-m $CONFIG_PREFIX/var/gfarm-metadata/journal/0000000000.gmj
 }
 
 while
@@ -63,7 +65,7 @@ while
 
 	echo "--- stopping old master ($old_master -> $new_master) ---"
 
-	$ssh $priv@$old_master -n $RC_DIR/gfmd stop
+	$ssh $priv@$old_master -n $SUDO $RC_DIR/gfmd stop
 
 	# there may be one sequence number difference here
 	old_seqnum=`get_seqnum $priv@$old_master`
@@ -71,12 +73,13 @@ while
 	[ X"$new_seqnum" != X"$old_seqnum" ]
 do
 	echo "--- seqnum mismatch $new_seqnum vs $old_seqnum, restarting old master for sync ($old_master -> $new_master) ---"
-	$ssh $priv@$old_master -n $RC_DIR/gfmd start
+	$ssh $priv@$old_master -n $SUDO $RC_DIR/gfmd start
 done
 
 echo "*** switching from $old_master to $new_master ***"
 
-$ssh $priv@$new_master -n 'kill -USR1 `cat '$CONFIG_PREFIX'/var/run/gfmd.pid`'
+$ssh $priv@$new_master -n $SUDO \
+	'kill -USR1 `cat '$CONFIG_PREFIX'/var/run/gfmd.pid`'
 
 while	current=`get_master`
 	[ X"$current" != X"$new_master" ]
@@ -85,7 +88,7 @@ do
 	sleep 1
 done
 
-$ssh $priv@$old_master -n $RC_DIR/gfmd slavestart
+$ssh $priv@$old_master -n $SUDO $RC_DIR/gfmd slavestart
 
 while	sync_slaves_are_not_ready
 do
