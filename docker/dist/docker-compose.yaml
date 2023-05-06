@@ -38,6 +38,22 @@ services:
     <<: *x-common
     hostname: c4
     container_name: gfarm-c4
+  c5:
+    <<: *x-common
+    hostname: c5
+    container_name: gfarm-c5
+  c6:
+    <<: *x-common
+    hostname: c6
+    container_name: gfarm-c6
+  c7:
+    <<: *x-common
+    hostname: c7
+    container_name: gfarm-c7
+  c8:
+    <<: *x-common
+    hostname: c8
+    container_name: gfarm-c8
 
 networks:
   gfarm_net:

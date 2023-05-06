@@ -1,11 +1,20 @@
 #!/bin/sh
 set -xeu
 status=1
-trap '[ $status = 1 ] && echo NG; rm -f ~/local/gfarm2.conf; exit $status' \
-	0 1 2 15
+trap '[ $status = 1 ] && echo NG; rm -f $TMPF ~/local/gfarm2.conf;
+	exit $status' 0 1 2 15
+
+TMPF=/tmp/$(basename $0)-$$
+hostfile=$1
+[ X"$hostfile" = X- ] && {
+	hostfile=$TMPF
+	cat > $hostfile
+} || [ -f $hostfile ]
+[ $# -gt 1 ] && init=true || init=false
 
 # master metadata server
 : ${USER:=$(id -un)}
+grid-proxy-init
 DN=$(grid-proxy-info -issuer)
 [ X"$DN" = X ] && exit 1
 CONFIG_OPTIONS="-A $USER -r -X -d sha1 -a gsi -D $DN"
@@ -26,43 +35,55 @@ sudo systemctl start gfarm-pgsql
 sudo systemctl start gfmd
 
 # update gfarm2.conf
-set $(cat ~/.nodelist)
-MASTER=$1
-SSLAVE=$2
-ASLAVE=$3
+set $(cat $hostfile)
+MASTER=$1 && ML="$MASTER:601"
+if [ $# -gt 1 ]; then
+	shift; SSLAVE=$1; ML="$ML $SSLAVE:601"; GL="$SSLAVE"
+else
+	SSLAVE=; GL="$MASTER"
+fi
+if [ $# -gt 1 ]; then
+	shift; ASLAVE=$1; ML="$ML $ASLAVE:601"; GL="$GL $ASLAVE"
+else
+	ASLAVE=
+fi
+if [ $# -gt 1 ]; then
+	shift; GL="$GL $*"
+fi
 cat <<_EOF_ | sudo tee -a $CONFDIR/gfarm2.conf > /dev/null
-metadb_server_list $MASTER:601 $SSLAVE:601 $ASLAVE:601
+metadb_server_list $ML
 auth enable sharedsecret *
 auth enable gsi_auth *
 _EOF_
 cp $CONFDIR/gfarm2.conf ~/local/
 
 # shared keys for users
+if $init; then
 gfkey -f -p 31536000
 KEY=.gfarm_shared_key
 gfarm-pcp -p ~/$KEY .
 
 # shared keys for system users
-HOST=$(hostname)
-HOSTS=$(grep -v $HOST ~/.nodelist)
 for u in _gfarmmd _gfarmfs; do
 	sudo -u $u gfkey -f -p 31536000
-	for h in $HOSTS; do
-		sudo cat /home/$u/$KEY | \
-			ssh $h sudo -u $u tee /home/$u/$KEY > /dev/null
-		ssh $h sudo -u $u chmod 600 /home/$u/$KEY
-	done
+	sudo cat /home/$u/$KEY | \
+		gfarm-prun -stdin - "sudo -u $u tee /home/$u/$KEY > /dev/null"
+	gfarm-prun -p sudo -u $u chmod 600 /home/$u/$KEY
 done
+fi
 
 # slave metadata servers
 gfmdhost -m $MASTER -C siteA
+if [ X"$SSLAVE" != X ]; then
 gfmdhost -c $SSLAVE -C siteA
-gfmdhost -c $ASLAVE -C siteB
+[ X"$ASLAVE" = X ] || gfmdhost -c $ASLAVE -C siteB
 sleep 3
 sudo gfdump.postgresql -d -f d
 
 for h in $SSLAVE $ASLAVE
 do
+	[ X"$h" = X ] && continue
+
 	ssh $h sudo config-gfarm -N $CONFIG_OPTIONS
 	cat <<_EOF_ | ssh $h sudo tee -a $CONFDIR/gfmd.conf > /dev/null
 auth enable sharedsecret *
@@ -76,12 +97,10 @@ _EOF_
 	ssh $h sudo cp local/gfarm2.conf $CONFDIR
 done
 sudo rm d
+fi
 
 # gfsd
-set $(cat ~/.nodelist)
-shift
-HOSTS="$*"
-for h in $HOSTS
+for h in $GL
 do
 	ssh $h sudo cp local/gfarm2.conf $CONFDIR
 
