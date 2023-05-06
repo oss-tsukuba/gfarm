@@ -21,7 +21,8 @@ cd /etc/grid-security/certificates
 cd $OPWD
 
 [ -f get_gfarm2conf.sh ] ||
-	wget https://www.hpci-office.jp/info/download/attachments/69471402/get_gfarm2conf.sh
+	wget https://www.hpci-office.jp/info/download/attachments/69471402/\
+get_gfarm2conf.sh
 
 [ -f ~/.gfarm2rc.hpci ] ||
 	sh ./get_gfarm2conf.sh -f ~/.gfarm2rc.hpci
