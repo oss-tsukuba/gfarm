@@ -69,7 +69,7 @@ main(argc, argv)
 	char shared_key[GFARM_AUTH_SHARED_KEY_LEN];
 	int mode = GFARM_AUTH_SHARED_KEY_GET;
 	int period = -1;
-	int log_level = -1;
+	int log_level = LOG_NOTICE;
 
 	if (argc >= 1)
 		program_name = basename(argv[0]);
@@ -136,9 +136,8 @@ main(argc, argv)
 	}
 	e = gfarm_config_read();
 	if (e != GFARM_ERR_NO_ERROR) {
-		fprintf(stderr, "%s: %s\n", program_name,
+		gflog_info(GFARM_MSG_UNFIXED, "%s: %s", program_name,
 		    gfarm_error_string(e));
-		exit(1);
 	}
 	home = gfarm_get_local_homedir();
 	e = gfarm_auth_shared_key_get(&expire, shared_key, home, NULL,
