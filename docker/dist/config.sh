@@ -1,10 +1,11 @@
 #!/bin/sh
 set -xeu
 status=1
-trap '[ $status = 1 ] && echo NG; rm -f $TMPF ~/local/gfarm2.conf;
-	exit $status' 0 1 2 15
+PROG=$(basename $0)
+trap '[ $status = 0 ] && echo Done || echo NG: $PROG; \
+	rm -f $TMPF ~/local/gfarm2.conf; exit $status' 0 1 2 15
 
-TMPF=/tmp/$(basename $0)-$$
+TMPF=/tmp/$PROG-$$
 hostfile=$1
 [ X"$hostfile" = X- ] && {
 	hostfile=$TMPF
@@ -13,7 +14,7 @@ hostfile=$1
 
 # master metadata server
 : ${USER:=$(id -un)}
-grid-proxy-init
+grid-proxy-init -q
 DN=$(grid-proxy-info -issuer)
 [ X"$DN" = X ] && exit 1
 CONFIG_OPTIONS="-A $USER -r -X -d sha1 -a gsi -D $DN"
@@ -94,4 +95,3 @@ do
 done
 
 status=0
-echo Done

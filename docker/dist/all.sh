@@ -1,7 +1,8 @@
 #!/bin/sh
 set -xeu
 status=1
-trap 'echo NG; exit $status' 1 2 15
+PROG=$(basename $0)
+trap '[ $status = 0 ] && echo All set || echo NG: $PROG; exit $status' 0 1 2 15
 
 [ $# -gt 0 ] && build_pkg=true || build_pkg=false
 
@@ -23,13 +24,13 @@ fi
 gfarm-pcp -p ~/.nodelist .
 
 # set up certificates
+sh ./key.sh
+sh ./userkey.sh
 sh ./cert.sh
 sh ./usercert.sh
-sh ./sharedkey.sh
 
 # set up Gfarm-1 with 5 nodes
-for h in c1 c2 c3 c4 c5; do echo $h; done | \
-	sh ./config.sh -
+echo c1 c2 c3 c4 c5 | sh ./config.sh -
 
 # set up Gfarm-2 to Gfarm-4 with 1 node
 for h in c6 c7 c8; do
@@ -50,4 +51,4 @@ else
 	(cd ~/gfarm/gfarm2fs && PKG=gfarm2fs sh $DISTDIR/install.sh)
 fi
 
-echo All set
+status=0
