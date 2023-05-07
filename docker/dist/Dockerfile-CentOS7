@@ -11,6 +11,7 @@ RUN yum -y update \
     rdma-core-devel \
     postgresql postgresql-server \
     python3 ruby \
+    libxslt docbook-style-xsl \
  && yum -y install epel-release \
  && yum -y install \
     globus-gssapi-gsi-devel \

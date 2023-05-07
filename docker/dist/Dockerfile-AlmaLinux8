@@ -12,6 +12,7 @@ RUN dnf update \
     rdma-core-devel \
     postgresql postgresql-server \
     python3 ruby \
+    libxslt docbook-style-xsl \
  && dnf -y install epel-release \
  && dnf -y install \
     globus-gssapi-gsi-devel \
