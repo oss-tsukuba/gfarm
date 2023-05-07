@@ -6,20 +6,26 @@ trap '[ $status = 0 ] && echo Done || echo NG: $PROG; \
 	rm -f ~/local/grid-mapfile; exit $status' 0 1 2 15
 
 : ${USER:=$(id -un)}
+SUDO=
+[ $# -eq 0 ] && u=$USER || {
+	u=$1; SUDO="sudo -u $u"
+}
 
-[ -f ~/.globus/usercert.pem ] && {
+[ -f /home/$u/.globus/usercert.pem ] && {
 	status=0
 	exit 0
 }
 
-grid-cert-request -cn $USER -nopw > /dev/null 2>&1
-sh ./cert-sign.sh ~/.globus/usercert_request.pem ~/.globus/usercert.pem
-grid-proxy-init -q
-SUB=$(grid-proxy-info -issuer)
-echo \"$SUB\" $USER | sudo tee -a /etc/grid-security/grid-mapfile > /dev/null
+id $u > /dev/null
+$SUDO grid-cert-request -cn $u -nopw > /dev/null 2>&1
+sh ./cert-sign.sh /home/$u/.globus/usercert_request.pem \
+	/home/$u/.globus/usercert.pem
+$SUDO grid-proxy-init -q
+SUB=$($SUDO grid-proxy-info -issuer)
+echo \"$SUB\" $u | sudo tee -a /etc/grid-security/grid-mapfile > /dev/null
 cp /etc/grid-security/grid-mapfile ~/local
 
-gfarm-pcp -p ~/.globus .
+$SUDO gfarm-pcp -p /home/$u/.globus .
 gfarm-prun -p sudo cp local/grid-mapfile /etc/grid-security
 
 status=0

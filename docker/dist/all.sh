@@ -12,7 +12,7 @@ trap '[ $status = 0 ] && echo All set || echo NG: $PROG; exit $status' 0 1 2 15
 DISTDIR=$PWD
 
 # set up .nodelist
-for h in c1 c2 c3 c4 c5 c6 c7 c8; do echo $h; done > ~/.nodelist
+sh ./setup.sh
 
 # install Gfarm
 if $build_pkg; then
