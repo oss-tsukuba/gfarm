@@ -13,7 +13,7 @@
 <div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p>
-gfarm2.conf is a text file that contains a Gfarm configuration.  
+gfarm2.conf is a text file that contains a Gfarm configuration.
 Gfarm server processes gfmd and gfsd refer to %%SYSCONFDIR%%/gfmd.conf
 and %%SYSCONFDIR%%/gfarm2.conf, respectively, by default.
 Since this configuration file is only read at startup, it is necessary
@@ -129,7 +129,7 @@ This parameter is only available in gfarm2.conf, and ignored in gfmd.conf.
 <p>
 This statement specifies the type of credential used by gfsd for GSI
 authentication.
-This is ignored when you are using <span class="token">sharedsecret</span> 
+This is ignored when you are using <span class="token">sharedsecret</span>
 authentication.
 </p>
 <p>
@@ -152,8 +152,8 @@ side needs to specify the following one line.
 </p></div>
 <p>
 The possible types of <em class="parameter"><code>cred_type</code></em> are
-``<span class="token">self</span>'', 
-``<span class="token">host</span>'', ``<span class="token">user</span>'' and 
+``<span class="token">self</span>'',
+``<span class="token">host</span>'', ``<span class="token">user</span>'' and
 ``<span class="token">mechanism-specific</span>''.
 And those are used with the <span class="token">spool_server_cred_service</span>
 and <span class="token">spool_server_cred_name</span> statements as follows:
@@ -163,7 +163,7 @@ and <span class="token">spool_server_cred_name</span> statements as follows:
 <dd><p>
 This keyword specifies that the certificate that the user currently
 has is used.
-You must not use either the 
+You must not use either the
 <span class="token">spool_server_cred_service</span> or
 <span class="token">spool_server_cred_name</span> statement,
 if you are using this type.
@@ -255,9 +255,9 @@ as a Name Type in GSSAPI (RFC2743/RFC2744).
 This statement specifies the service name of a service certificate
 used by gfsd for GSI authentication, when ``<span class="token">host</span>'' is specified
 in <span class="token">spool_server_cred_type</span> statement.
-This is ignored when you are using <span class="token">sharedsecret</span> 
+This is ignored when you are using <span class="token">sharedsecret</span>
 authentication.
-Please read the description of the <span class="token">spool_server_cred_type</span> 
+Please read the description of the <span class="token">spool_server_cred_type</span>
 statement for details.
 </p></dd>
 <dt><span class="term"><span class="token">spool_server_cred_name</span> <em class="parameter"><code>cred_name</code></em></span></dt>
@@ -265,9 +265,9 @@ statement for details.
 This statement specifies the setting of a certificate used by gfsd
 for GSI authentication. What this setting means depends on the type
 specified in the <span class="token">spool_server_cred_type</span> statement.
-This is ignored when you are using <span class="token">sharedsecret</span> 
+This is ignored when you are using <span class="token">sharedsecret</span>
 authentication.
-Please read the description of the <span class="token">spool_server_cred_type</span> 
+Please read the description of the <span class="token">spool_server_cred_type</span>
 statement for details.
 </p></dd>
 <dt><span class="term"><span class="token">spool_server_back_channel_rcvbuf_limit</span> <em class="parameter"><code>size_limit</code></em></span></dt>
@@ -458,9 +458,9 @@ port number the gfmd is listening on.  The default port number is
 <dd><p>
 This statement specifies the type of credential used by gfmd
 for GSI authentication.
-This is ignored when you are using <span class="token">sharedsecret</span> 
+This is ignored when you are using <span class="token">sharedsecret</span>
 authentication.
-Please read the description of the <span class="token">spool_server_cred_type</span> 
+Please read the description of the <span class="token">spool_server_cred_type</span>
 statement on the configuration of this statement.
 </p></dd>
 <dt><span class="term"><span class="token">metadb_server_cred_service</span> <em class="parameter"><code>cred_service</code></em></span></dt>
@@ -468,9 +468,9 @@ statement on the configuration of this statement.
 This statement specifies the service name of a service certificate
 used by gfmd for GSI authentication, when ``<span class="token">host</span>'' is specified
 in <span class="token">metadb_server_cred_type</span> statement.
-This is ignored when you are using <span class="token">sharedsecret</span> 
+This is ignored when you are using <span class="token">sharedsecret</span>
 authentication.
-Please read the description of the <span class="token">spool_server_cred_type</span> 
+Please read the description of the <span class="token">spool_server_cred_type</span>
 statement on the configuration of this statement.
 </p></dd>
 <dt><span class="term"><span class="token">metadb_server_cred_name</span> <em class="parameter"><code>cred_name</code></em></span></dt>
@@ -478,9 +478,9 @@ statement on the configuration of this statement.
 This statement specifies the setting of a certificate used by gfmd
 for GSI authentication. What this setting means depends on the type
 specified in the <span class="token">metadb_server_cred_type</span> statement.
-This is ignored when you are using <span class="token">sharedsecret</span> 
+This is ignored when you are using <span class="token">sharedsecret</span>
 authentication.
-Please read the description of the <span class="token">spool_server_cred_type</span> 
+Please read the description of the <span class="token">spool_server_cred_type</span>
 statement on the configuration of this statement.
 </p></dd>
 <dt><span class="term"><span class="token">metadb_server_listen_backlog</span> <em class="parameter"><code>number</code></em></span></dt>
@@ -517,7 +517,7 @@ This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 </dd>
 <dt><span class="term"><span class="token">metadb_server_stack_size</span> <em class="parameter"><code>bytes</code></em></span></dt>
 <dd>
-<p>This directive specifies the size of each thread in the gfmd 
+<p>This directive specifies the size of each thread in the gfmd
 metadata server process.  If not specified, the default size of the OS
 is used.
 This parameter is used to cut down the size of virtual memory space
@@ -627,7 +627,7 @@ This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 for gfmd to check availability of each gfsd.  Default is 180 seconds.
 </p>
 <p>
-Until gfarm-2.3.0, this parameter was only available in gfmd.conf, 
+Until gfarm-2.3.0, this parameter was only available in gfmd.conf,
 and ignored in gfarm2.conf. But since gfarm-2.4.0, gfsd also uses
 this parameter to detect whether gfmd is down or not, this parameter
 has to be specified in both gfarm2.conf and gfmd.conf.
@@ -1095,7 +1095,7 @@ the time, in seconds, to wait for data reception via network.
 The default value is 60 seconds.
 This directive is effective in both gfarm2.conf and gfmd.conf.
 </p>
-<p>When a Gfarm application program receives no data from a gfsd 
+<p>When a Gfarm application program receives no data from a gfsd
 filesystem server during the timeout period, it aborts the communication
 with the server, and then it tries to communicate with another server
 to continue the operation.</p>
@@ -2513,12 +2513,12 @@ it takes precedence over this directive.
 </p>
 <p>
 Otherwise,
-if it is client, 
-`<code class="filename">$HOME/.gfarm/usercert.pem</code>'' 
+if it is client,
+`<code class="filename">$HOME/.gfarm/usercert.pem</code>''
 will be used,
 or if it is gfmd,
-``<code class="filename">/etc/pki/tls/certs/gfmd.crt</code>''、
-well be used,
+``<code class="filename">/etc/pki/tls/certs/gfmd.crt</code>''
+will be used,
 or if it is gfsd,
 ``<code class="filename">/etc/pki/tls/certs/gfsd.crt</code>''
 will be used by default.
@@ -2558,7 +2558,7 @@ it takes precedence over this directive.
 </p>
 <p>
 Otherwise,
-if it is client, 
+if it is client,
 ``<code class="filename">$HOME/.gfarm/userkey.pem</code>''
 will be used,
 or if it is gfmd,
@@ -2581,7 +2581,7 @@ corresponding to the root CA certificate for TLS communication.
 </p>
 <p>
 Default is enable, which means that the CRL file does not have to exist.
-This works similarly to the ``SSLCARevocationCheck chain no_crl_for_cert_ok'' 
+This works similarly to the ``SSLCARevocationCheck chain no_crl_for_cert_ok''
 setting in Apache httpd.
 </p>
 <p>For example,</p>
