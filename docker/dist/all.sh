@@ -28,6 +28,7 @@ sh ./key.sh
 sh ./userkey.sh
 sh ./cert.sh
 sh ./usercert.sh
+sh ./tlscert.sh
 
 # set up Gfarm-1 with 5 nodes
 echo c1 c2 c3 c4 c5 | sh ./config.sh -

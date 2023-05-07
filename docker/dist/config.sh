@@ -29,6 +29,8 @@ done
 cat <<_EOF_ | sudo tee -a $CONFDIR/gfmd.conf > /dev/null
 auth enable sharedsecret *
 auth enable gsi_auth *
+auth enable tls_client_certificate *
+auth enable tls_sharedsecret *
 _EOF_
 
 sudo systemctl start gfarm-pgsql
@@ -54,6 +56,8 @@ cat <<_EOF_ | sudo tee -a $CONFDIR/gfarm2.conf > /dev/null
 metadb_server_list $ML
 auth enable sharedsecret *
 auth enable gsi_auth *
+auth enable tls_client_certificate *
+auth enable tls_sharedsecret *
 _EOF_
 cp $CONFDIR/gfarm2.conf ~/local/
 
@@ -73,6 +77,8 @@ do
 	cat <<_EOF_ | ssh $h sudo tee -a $CONFDIR/gfmd.conf > /dev/null
 auth enable sharedsecret *
 auth enable gsi_auth *
+auth enable tls_client_certificate *
+auth enable tls_sharedsecret *
 _EOF_
 	scp -p d $h:
 	ssh $h sudo systemctl start gfarm-pgsql
