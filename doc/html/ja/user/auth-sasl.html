@@ -46,14 +46,16 @@ SASL 認証では TLS で暗号化された通信路を利用するため、あ�
 実施しておく必要があります。
 
 <HR>
-<H2>サーバーとクライアントに共通する設定</H2>
+<H2>サーバー側設定</H2>
+
+<H3>Cyrus SASL の設定</H3>
 
 Cyrus SASL の設定を置くディレクトリ
 (RHEL 系 Linux distribution の場合だと /usr/lib64/sasl2) に
 以下の内容の設定を gfarm.conf という名称で置きます。
 <BR>
 なおこの文書では以降このファイルを
-「Cyrus SASL の設定ファイル」と呼称します。
+「Cyrus SASL のサーバー設定ファイル」と呼称します。
 
 <PRE>
 log_level: 7
@@ -75,13 +77,17 @@ SASL メカニズムすべてが利用候補となります。
 しかしこれはトラブルのもととなりますので、
 実際に利用するメカニズムのみを指定してください。
 
+<P>
+XOAUTH2 を除く各メカニズムに関する設定については、
+Cyrus SASL のドキュメントを参照してください。
+XOAUTH2 メカニズムについては以下を参照してください。
 
-<H3>XOAUTH2 メカニズム用設定</H3>
+<H3>Cyrus SASL XOAUTH2 メカニズム用設定</H3>
 
 <P>
 XOAUTH2 メカニズムを利用する場合、
 cyrus-sasl-xoauth2-idp パッケージをインストールし、
-Cyrus SASL の設定ファイルに
+Cyrus SASL のサーバー設定ファイルに
 以下の内容の設定を gfarm.conf という名称で置きます。
 <PRE>
 log_level: 7
@@ -90,29 +96,24 @@ xoauth2_scope: JWTのサーバー側検証時にJWTへ要求する scope
 xoauth2_aud: JWTのサーバー側検証時にJWTへ要求する audience
 xoauth2_user_claim: JWT中でユーザーIDとして用いるclaimのkey名
 </PRE>
+具体的な設定は OAuth IdP の構成に依存しますが、たとえば以下のようになります。
+<PRE>
+log_level: 7
+mech_list: XOAUTH2
+xoauth2_scope: hpci
+xoauth2_aud: hpci
+xoauth2_user_claim: hpci.id
+</PRE>
 
 <P>
-以上のうちクライアント側では xoauth2_scope および xoauth2_aud の設定は
-省略できます。
-
-<P>
-またクライアント側では、
-環境変数 GFARM_CONFIG_FILE で指定されたファイル、
-あるいはもし環境変数が設定されていない場合の
-ホームディレクトリの .gfarm2rc 内で、
-sasl_user の設定がされている場合には xoauth2_user_claim の設定も
-省略できます。
-
-<P>
-なおサーバー側は IdP へアクセスしますが、このときに Web proxy サーバーを
+サーバー側は OAuth IdP へアクセスしますが、このときに Web proxy サーバーを
 介す必要がある場合にはさらに下記の設定も追加します。
 <PRE>
 proxy: http://proxyサーバー名:proxyポート番号/
 </PRE>
 「proxyサーバー名」および「proxyポート番号」は、適宜修正してください。
 
-<HR>
-<H2>サーバー側設定</H2>
+<H3>Gfarm の設定</H3>
 
 gfmd.conf や gfsd の読む gfarm2.conf に、以下のような設定を追加します。
 <PRE>
@@ -139,6 +140,8 @@ sasl_mechanisms "PLAIN XOAUTH2"
 あるいはもし環境変数が設定されていない場合には
 ホームディレクトリの .gfarm2rc に、
 利用するSASLメカニズムに応じた下記のような設定を行ないます。
+
+「ユーザー名」および「パスワード」部分については適宜変更してください。
 
 <H3>ANONYMOUS メカニズムの場合</H3>
 
@@ -181,13 +184,21 @@ sasl_mechanisms "XOAUTH2"
 sasl_user "ユーザー名"
 </PRE>
 
-Cyrus SASL の設定ファイルに xoauth2_user_claim が設定されている場合は
-sasl_user の指定は省略できます。
-その場合、ユーザ固有の設定はありませんから、sasl_mechanism のみを
-gfarm2.conf に設定することも可能です。
+<P>
+Cyrus SASL の設定を置くディレクトリ
+(RHEL 系 Linux distribution の場合だと /usr/lib64/sasl2) に
+以下の内容の設定を gfarm-client.conf という名称で置くと、
+上記 sasl_user の指定は省略できます。
+<PRE>
+xoauth2_user_claim: JWT中でユーザーIDとして用いるclaimのkey名
+</PRE>
+
+こうするとユーザ固有の設定は不要となりますから、
+.gfarm2rc では特に設定を行なわず、
+sasl_mechanism の設定を gfarm2.conf で行なうことも可能となります。
 
 <P>
-さらに環境変数 JWT_FILE で指定されたファイル、
+さらに環境変数 JWT_USER_PATH で指定されたファイル、
 あるいはもし環境変数が設定されていない場合には
 ファイル /tmp/jwt_user_u＜自身のUNIX_UID＞/token.jwt に、
 XOAUTH2 で用いるアクセストークンを置いてください。
@@ -197,6 +208,10 @@ chmod(1) コマンドを用いて JWT ファイルのモードを 0600 ないし
 <P>
 jwt-logon(1) コマンドや jwt-agent(1) コマンドを用いると、
 トークンを取得してこのファイルに適切なモードで JWT を設定することができます。
+<P>
+環境変数 JWT_USER_PATH に設定されいている値の最初の文字が「!」である場合、
+それ以降の文字列をコマンドと見なして実行し、そのコマンドの出力を
+XOAUTH2 で用いるアクセストークンと見なします。
 
 <P>
 なお環境変数 GFARM_CONFIG_FILE で指定されたファイル、
