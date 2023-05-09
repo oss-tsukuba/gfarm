@@ -1,8 +1,9 @@
 x-common:
   &x-common
+  image: gfarm-${DIST:-ubuntu}
   build:
     context: ../..
-    dockerfile: docker/dist/Dockerfile-${DIST:-Ubuntu}
+    dockerfile: docker/dist/Dockerfile-${DIST:-ubuntu}
     args:
       USERNAME: $USER
   volumes:

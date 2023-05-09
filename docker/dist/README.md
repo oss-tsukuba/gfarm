@@ -16,16 +16,16 @@
 
 ## Explore on virtual clusters
 
-    % DIST=<distribution> docker compose build
-    Ubuntu, AlmaLinux8, and CentOS7 are available.  Default is Ubuntu
-    % docker compose up -d
+    % DIST=<distribution> docker compose up -d
+    ubuntu, almaLinux8, and centOS7 are available.  Default is ubuntu
     % docker exec -it gfarm-c1 sudo -u $USER sh -c "(cd ~/gfarm && /bin/bash)"
 
     (in a container)
     % cd docker/dist
     % sh ./all.sh
-    or ./all-rpm.sh also available in case of AlmaLinux8 and CentOS7
+    or ./all-rpm.sh also available in case of almalinux8 and centos7
     This will install and setup Gfarm.  Enjoy!
+    % sh ./regress.sh
     % Ctrl-D
 
     % docker compose down
@@ -50,7 +50,6 @@ Build, install and setup tests for all distributions.
 
     % sh ./devrpm.sh
     (in the container)
-    # cd
     # sh gfarm/docker/dist/mkrpm.sh
     # Ctrl-D
 
