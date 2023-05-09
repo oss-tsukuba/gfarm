@@ -7,17 +7,16 @@ test()
 {
 	script=$2
 
-	DIST=$1 docker compose build
-	docker compose up -d
+	DIST=$1 docker compose up -d
 	docker exec gfarm-c1 sudo -u $USER \
 		sh -c "(cd /home/$USER/gfarm/docker/dist && sh $script)"
 	docker compose down
 }
 
 # Ubuntu
-test Ubuntu all.sh
+test ubuntu all.sh
 
-for d in AlmaLinux8 CentOS7
+for d in almalinux8 centos7
 do
 	for s in all.sh all-rpm.sh
 	do
