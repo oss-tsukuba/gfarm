@@ -3,8 +3,7 @@ FROM almalinux:8
 ARG USERNAME=foo
 ARG UID=1000
 
-RUN dnf update \
- && dnf -y upgrade \
+RUN dnf -y update \
  && dnf -y install \
     git wget rpm-build sudo passwd \
     gcc make \
