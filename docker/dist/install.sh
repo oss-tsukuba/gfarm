@@ -15,8 +15,20 @@ gfarm2fs)
 	;;
 esac
 
+mode=CONFIGURE
+while [ $# -gt 0 ]
+do
+	case $1 in
+	-m) mode=MAKE ;;
+	*) exit 1 ;;
+	esac
+	shift
+done
+
+if [ $mode = CONFIGURE ]; then
 ./configure $CONF_OPT
 make clean > /dev/null
+fi
 make -j $(nproc) > /dev/null
 sudo make install > /dev/null
 
