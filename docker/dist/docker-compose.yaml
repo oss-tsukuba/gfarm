@@ -1,11 +1,12 @@
-x-common:
-  &x-common
-  image: gfarm-${DIST:-ubuntu}
+x-build: &x-build
   build:
     context: ../..
     dockerfile: docker/dist/Dockerfile-${DIST:-ubuntu}
     args:
       USERNAME: $USER
+
+x-common: &x-common
+  image: gfarm-${DIST:-ubuntu}
   volumes:
     - ../..:/home/$USER/gfarm:cached
     - local:/home/$USER/local:cached
@@ -24,7 +25,7 @@ x-common:
 
 services:
   c1:
-    <<: *x-common
+    <<: [*x-build, *x-common]
     hostname: c1
     container_name: gfarm-c1
   c2:
