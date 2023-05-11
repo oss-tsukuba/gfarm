@@ -3,11 +3,9 @@ set -xeu
 status=1
 trap '[ $status = 1 ] && echo NG; gfrm -f $TFILE; exit $status' 0 1 2 15
 
-export LANG=C
-
 TFILE=/tmp/corrupted-file
-ENV="GFARM_TEST_MDS2=c6:601 GFARM_TEST_MDS3=c7:601 GFARM_TEST_MDS4=c8:601 \
-GFARM_TEST_CKSUM_MISMATCH=$TFILE"
+ENV="LANG=C GFARM_TEST_MDS2=c6:601 GFARM_TEST_MDS3=c7:601 \
+	GFARM_TEST_MDS4=c8:601 GFARM_TEST_CKSUM_MISMATCH=$TFILE"
 export $ENV
 
 cc -O -o corrupt-file corrupt-file.c
