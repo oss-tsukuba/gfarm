@@ -18,7 +18,7 @@
 
     % DIST=<distribution> docker compose up -d
     ubuntu, almalinux8, and centos7 are available.  Default is ubuntu
-    % docker exec -it gfarm-c1 sudo -u $USER sh -c "(cd ~/gfarm && /bin/bash)"
+    % docker exec -u $USER -w ~/gfarm -it gfarm -c1 /bin/bash
 
     (in a container)
     % cd docker/dist
