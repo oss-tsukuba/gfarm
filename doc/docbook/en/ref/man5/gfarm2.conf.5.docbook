@@ -22,7 +22,7 @@
 
 <refsect1 id="description"><title>DESCRIPTION</title>
 <para>
-gfarm2.conf is a text file that contains a Gfarm configuration.  
+gfarm2.conf is a text file that contains a Gfarm configuration.
 Gfarm server processes gfmd and gfsd refer to %%SYSCONFDIR%%/gfmd.conf
 and %%SYSCONFDIR%%/gfarm2.conf, respectively, by default.
 Since this configuration file is only read at startup, it is necessary
@@ -140,7 +140,7 @@ This statement can be specified multiple times to specify multiple spool directo
 </literallayout>
 </listitem>
 </varlistentry>
-  
+
 <varlistentry>
 <term><token>spool_server_listen_address</token> <parameter moreinfo="none">IP-address</parameter></term>
 <listitem>
@@ -187,7 +187,7 @@ This parameter is only available in gfarm2.conf, and ignored in gfmd.conf.
 <para>
 This statement specifies the type of credential used by gfsd for GSI
 authentication.
-This is ignored when you are using <token>sharedsecret</token> 
+This is ignored when you are using <token>sharedsecret</token>
 authentication.
 </para>
 <para>
@@ -210,8 +210,8 @@ side needs to specify the following one line.
 </literallayout>
 <para>
 The possible types of <parameter moreinfo="none">cred_type</parameter> are
-``<token>self</token>'', 
-``<token>host</token>'', ``<token>user</token>'' and 
+``<token>self</token>'',
+``<token>host</token>'', ``<token>user</token>'' and
 ``<token>mechanism-specific</token>''.
 And those are used with the <token>spool_server_cred_service</token>
 and <token>spool_server_cred_name</token> statements as follows:
@@ -223,7 +223,7 @@ and <token>spool_server_cred_name</token> statements as follows:
 <para>
 This keyword specifies that the certificate that the user currently
 has is used.
-You must not use either the 
+You must not use either the
 <token>spool_server_cred_service</token> or
 <token>spool_server_cred_name</token> statement,
 if you are using this type.
@@ -327,9 +327,9 @@ as a Name Type in GSSAPI (RFC2743/RFC2744).
 This statement specifies the service name of a service certificate
 used by gfsd for GSI authentication, when ``<token>host</token>'' is specified
 in <token>spool_server_cred_type</token> statement.
-This is ignored when you are using <token>sharedsecret</token> 
+This is ignored when you are using <token>sharedsecret</token>
 authentication.
-Please read the description of the <token>spool_server_cred_type</token> 
+Please read the description of the <token>spool_server_cred_type</token>
 statement for details.
 </para>
 </listitem>
@@ -342,9 +342,9 @@ statement for details.
 This statement specifies the setting of a certificate used by gfsd
 for GSI authentication. What this setting means depends on the type
 specified in the <token>spool_server_cred_type</token> statement.
-This is ignored when you are using <token>sharedsecret</token> 
+This is ignored when you are using <token>sharedsecret</token>
 authentication.
-Please read the description of the <token>spool_server_cred_type</token> 
+Please read the description of the <token>spool_server_cred_type</token>
 statement for details.
 </para>
 </listitem>
@@ -573,9 +573,9 @@ port number the gfmd is listening on.  The default port number is
 <para>
 This statement specifies the type of credential used by gfmd
 for GSI authentication.
-This is ignored when you are using <token>sharedsecret</token> 
+This is ignored when you are using <token>sharedsecret</token>
 authentication.
-Please read the description of the <token>spool_server_cred_type</token> 
+Please read the description of the <token>spool_server_cred_type</token>
 statement on the configuration of this statement.
 </para>
 </listitem>
@@ -588,9 +588,9 @@ statement on the configuration of this statement.
 This statement specifies the service name of a service certificate
 used by gfmd for GSI authentication, when ``<token>host</token>'' is specified
 in <token>metadb_server_cred_type</token> statement.
-This is ignored when you are using <token>sharedsecret</token> 
+This is ignored when you are using <token>sharedsecret</token>
 authentication.
-Please read the description of the <token>spool_server_cred_type</token> 
+Please read the description of the <token>spool_server_cred_type</token>
 statement on the configuration of this statement.
 </para>
 </listitem>
@@ -603,9 +603,9 @@ statement on the configuration of this statement.
 This statement specifies the setting of a certificate used by gfmd
 for GSI authentication. What this setting means depends on the type
 specified in the <token>metadb_server_cred_type</token> statement.
-This is ignored when you are using <token>sharedsecret</token> 
+This is ignored when you are using <token>sharedsecret</token>
 authentication.
-Please read the description of the <token>spool_server_cred_type</token> 
+Please read the description of the <token>spool_server_cred_type</token>
 statement on the configuration of this statement.
 </para>
 </listitem>
@@ -654,7 +654,7 @@ This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 <varlistentry>
 <term><token>metadb_server_stack_size</token> <parameter moreinfo="none">bytes</parameter></term>
 <listitem>
-<para>This directive specifies the size of each thread in the gfmd 
+<para>This directive specifies the size of each thread in the gfmd
 metadata server process.  If not specified, the default size of the OS
 is used.
 This parameter is used to cut down the size of virtual memory space
@@ -782,7 +782,7 @@ This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 for gfmd to check availability of each gfsd.  Default is 180 seconds.
 </para>
 <para>
-Until gfarm-2.3.0, this parameter was only available in gfmd.conf, 
+Until gfarm-2.3.0, this parameter was only available in gfmd.conf,
 and ignored in gfarm2.conf. But since gfarm-2.4.0, gfsd also uses
 this parameter to detect whether gfmd is down or not, this parameter
 has to be specified in both gfarm2.conf and gfmd.conf.
@@ -1439,7 +1439,7 @@ the time, in seconds, to wait for data reception via network.
 The default value is 60 seconds.
 This directive is effective in both gfarm2.conf and gfmd.conf.
 </para>
-<para>When a Gfarm application program receives no data from a gfsd 
+<para>When a Gfarm application program receives no data from a gfsd
 filesystem server during the timeout period, it aborts the communication
 with the server, and then it tries to communicate with another server
 to continue the operation.</para>
@@ -3191,12 +3191,12 @@ it takes precedence over this directive.
 </para>
 <para>
 Otherwise,
-if it is client, 
-`<filename moreinfo="none">$HOME/.gfarm/usercert.pem</filename>'' 
+if it is client,
+`<filename moreinfo="none">$HOME/.gfarm/usercert.pem</filename>''
 will be used,
 or if it is gfmd,
-``<filename moreinfo="none">/etc/pki/tls/certs/gfmd.crt</filename>''、
-well be used,
+``<filename moreinfo="none">/etc/pki/tls/certs/gfmd.crt</filename>''
+will be used,
 or if it is gfsd,
 ``<filename moreinfo="none">/etc/pki/tls/certs/gfsd.crt</filename>''
 will be used by default.
@@ -3242,7 +3242,7 @@ it takes precedence over this directive.
 </para>
 <para>
 Otherwise,
-if it is client, 
+if it is client,
 ``<filename moreinfo="none">$HOME/.gfarm/userkey.pem</filename>''
 will be used,
 or if it is gfmd,
@@ -3314,7 +3314,7 @@ corresponding to the root CA certificate for TLS communication.
 </para>
 <para>
 Default is enable, which means that the CRL file does not have to exist.
-This works similarly to the ``SSLCARevocationCheck chain no_crl_for_cert_ok'' 
+This works similarly to the ``SSLCARevocationCheck chain no_crl_for_cert_ok''
 setting in Apache httpd.
 </para>
 <para>For example,</para>

@@ -14,3 +14,4 @@ if gfgroup -c DOES-NOT+EXIST 2>&1 | grep 'operation not permitted'
 then
     exit_code=$exit_pass
 fi
+exit $exit_code

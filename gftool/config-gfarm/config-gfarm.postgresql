@@ -8,11 +8,6 @@ usage_postgresql()
 sanity_postgresql()
 {
 	rv=0
-#	case $SCHEMA_VERSION in
-#	1|2)	:;;
-#	*)	echo "ERROR: schema version $SCHEMA_VERSION is not supported" >&2
-#		rv=1;;
-#	esac
 	case $BACKEND_VERSION in
 	[1-6].*|7.[0-3]|unknown)	# 7.3 or before
 		echo "WARNING: PostgreSQL version 7.4 or later required: $BACKEND_VERSION" >&2
@@ -45,7 +40,6 @@ display_plain_params_backend_postgresql()
 	display_plain_param_backend_data_dir
 	display_plain_param_backend_log_dir
 
-#	echo "postgresql schema version    [-S]: $SCHEMA_VERSION"
 	echo "postgresql admin user        [-U]: $BACKEND_ADMIN_USER"
 	echo "postgresql admin password    [-W]: `if [ -r $admin_password ]; then cat $admin_password; else echo '(auto generated)'; fi`"
 	echo "postgresql user              [-u]: $BACKEND_USER"
@@ -62,7 +56,6 @@ display_script_params_backend_postgresql()
 	display_script_param_backend_data_dir
 	display_script_param_backend_log_dir
 
-#	echo "SCHEMA_VERSION=$SCHEMA_VERSION"
 	echo "BACKEND_ADMIN_USER=$BACKEND_ADMIN_USER"
 	echo "BACKEND_ADMIN_PASSWORD='`if [ -r $admin_password ]; then cat $admin_password; else echo \*; fi`'"
 	echo "BACKEND_USER=$BACKEND_USER"
@@ -98,10 +91,6 @@ display_script_params_backend_optional_postgresql()
 parse_argument_postgresql()
 {
 	case "$1" in
-#	  -S) [ $# -ge 2 ] || usage
-#		SCHEMA_VERSION=$2
-#		argshift=1
-#		true;;
 	  -X)
 		SUPPORT_XML_TYPE=yes
 		argshift=0
@@ -151,7 +140,6 @@ set_first_defaults_postgresql()
 
 set_last_defaults_postgresql()
 {
-#	: ${SCHEMA_VERSION:=2}
 	: ${DB_NAME:="gfarm"}
 
 	if [ -w / ]; then # is root?
@@ -501,8 +489,6 @@ _EOF_
 	# -q option for createuser and createdb is obsolete in 8.4
 	$PGSQL_BINDIR/createuser $createuser_option -D $BACKEND_USER
 	$PGSQL_BINDIR/createdb $DB_NAME
-#	$PGSQL_BINDIR/psql -q \
-#		-f "$config_dir/gfarm.schema-$SCHEMA_VERSION.sql" $DB_NAME
 	$PGSQL_BINDIR/psql -q \
 		-f "$config_dir/gfarm.sql" $DB_NAME
 	if [ X"$SUPPORT_XML_TYPE" = X"yes" ]; then
@@ -518,11 +504,6 @@ _EOF_
 		print "    QuotaDirSet, QuotaDirectory, SeqNum, MdHost, "
 		print "    XAttr $XMLATTR_TABLENAME"
 		print "	TO $BACKEND_USER;"
-#		if ($SCHEMA_VERSION > 1) {
-#			print "GRANT SELECT, UPDATE"
-#			print "	ON Host_hostid_seq, Path_pathid_seq"
-#			print "	TO $BACKEND_USER;"
-#		}
 	}
 	FILENAME == "$admin_password" {
 		print "ALTER USER \"$BACKEND_ADMIN_USER\""

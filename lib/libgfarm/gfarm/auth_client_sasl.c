@@ -22,6 +22,8 @@
 
 #define staticp	(gfarm_ctxp->auth_sasl_client_static)
 
+#define SASL_CLIENT_CONF	"gfarm-client"
+
 #define SASL_JWT_PATH_ENV	"JWT_USER_PATH"
 #define SASL_JWT_PATHNAME	"/tmp/jwt_user_u%lu/token.jwt"
 #define SASL_PASSWORD_LEN_MAX	16384	/* enough size to hold OAuth JWT */
@@ -83,7 +85,8 @@ gfarm_auth_request_sasl_common(struct gfp_xdr *conn,
 	error = gfarm_tls_server_cert_is_ok(conn, service_tag, hostname);
 
 	if (error == GFARM_ERR_NO_ERROR) {
-		r = sasl_client_new("gfarm", hostname, self_hs, peer_hs,
+		r = sasl_client_new(SASL_CLIENT_CONF,
+		    hostname, self_hs, peer_hs,
 		    NULL, 0, &sasl_conn);
 		if (r != SASL_OK) {
 			gflog_notice(GFARM_MSG_UNFIXED,
@@ -502,7 +505,8 @@ gfarm_auth_request_sasl_send_server_auth_result(int events, int fd,
 				self_hs = NULL;
 				peer_hs = NULL;
 			}
-			if ((r = sasl_client_new("gfarm", state->hostname,
+			if ((r = sasl_client_new(SASL_CLIENT_CONF,
+			    state->hostname,
 			    self_hs, peer_hs, NULL, 0, &state->sasl_conn))
 			    != SASL_OK) {
 				gflog_notice(GFARM_MSG_UNFIXED,

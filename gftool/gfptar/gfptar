@@ -495,7 +495,7 @@ class GfURL(metaclass=abc.ABCMeta):
     @contextmanager
     @abc.abstractmethod
     def writeopen(self, textmode=False, mode=0o600, mtime=None,
-                  user=None, group=None):
+                  user=None, group=None, use_fsync=True):
         raise NotImplementedError
 
     def tar_add(self, tar, subpath, entry):
@@ -511,10 +511,11 @@ class GfURL(metaclass=abc.ABCMeta):
             tar.addfile(tarinfo)
 
     def copy_from(self, inf, bufsize, mode=None, mtime=0o600,
-                  user=None, group=None):
+                  user=None, group=None, use_fsync=True):
         readlen = 0
         with self.writeopen(mode=mode, mtime=mtime,
-                            user=user, group=group) as outf:
+                            user=user, group=group,
+                            use_fsync=use_fsync) as outf:
             while True:
                 buf = inf.read(bufsize)
                 if not buf:
@@ -914,7 +915,8 @@ class GfURLGfarm(GfURL):
 
     @contextmanager
     def writeopen(self, textmode=False, mode=0o600, mtime=None,
-                  user=None, group=None):
+                  user=None, group=None, use_fsync=True):
+        # TODO XXX use_fsync for gfreg
         gfreg_obj = self.gfreg(textmode=textmode, mode=mode, mtime=mtime,
                                user=user, group=group)
         proc = gfreg_obj.proc
@@ -1162,7 +1164,7 @@ class GfURLLocal(GfURL):
 
     @contextmanager
     def writeopen(self, textmode=False, mode=0o600, mtime=None,
-                  user=None, group=None):
+                  user=None, group=None, use_fsync=True):
         tmpmode = mode | 0o200  # necessary (Permission denied at ex.0o400)
         fd = os.open(path=self.url_str,
                      flags=(os.O_WRONLY | os.O_CREAT | os.O_EXCL),
@@ -1175,6 +1177,9 @@ class GfURLLocal(GfURL):
         try:
             yield f
         finally:
+            if use_fsync:
+                f.flush()
+                os.fsync(f.fileno())
             f.close()
             if mode is not None:
                 self.chmod(mode, mtime=mtime, user=user, group=group)
@@ -1186,7 +1191,8 @@ class GfURLLocal(GfURL):
 
 class GfTarFile(tarfile.TarFile):
     COMPRESS_TYPE_NO = 'no'
-    ATTR_PROC_LIST = '_gfptar_proc_list'  # [(proc, fileobj), ...]
+    ATTR_PROC_LIST = '_gfptar_proc_list'  # [(proc, fileobj, fileobj), ...]
+    USE_FSYNC = 'use_fsync'
 
     @classmethod
     def extract_open(cls, gfurl, bufsize, compress_prog=None):
@@ -1197,6 +1203,7 @@ class GfTarFile(tarfile.TarFile):
             openmode = 'r|*'  # any type (gz, bz2, xz)
         if not gfurl.exists():
             raise FileNotFoundError(gfurl.url_str)
+        # list of tuple(proc, closable obj, synchronizable obj)
         proc_list = []
         if gfurl.is_gfarm():
             if compress_prog:
@@ -1207,16 +1214,16 @@ class GfTarFile(tarfile.TarFile):
                                fileobj=decompress_proc.stdout,
                                bufsize=bufsize)
                 proc_list.append(tuple([gfexport_proc,
-                                        gfexport_proc.stdout]))
+                                        gfexport_proc.stdout, None]))
                 proc_list.append(tuple([decompress_proc,
-                                        decompress_proc.stdout]))
+                                        decompress_proc.stdout, None]))
             else:
                 gfexport_proc = gfurl.gfexport()
                 tar = cls.open(None, mode=openmode,
                                fileobj=gfexport_proc.stdout,
                                bufsize=bufsize)
                 proc_list.append(tuple([gfexport_proc,
-                                        gfexport_proc.stdout]))
+                                        gfexport_proc.stdout, None]))
         else:
             if compress_prog:
                 inf = open(gfurl.url_str, 'rb')
@@ -1224,9 +1231,9 @@ class GfTarFile(tarfile.TarFile):
                 tar = cls.open(None, mode=openmode,
                                fileobj=decompress_proc.stdout,
                                bufsize=bufsize)
-                proc_list.append(tuple([None, inf]))
+                proc_list.append(tuple([None, inf, None]))
                 proc_list.append(tuple([decompress_proc,
-                                        decompress_proc.stdout]))
+                                        decompress_proc.stdout, None]))
             else:
                 tar = GfTarFile.open(gfurl.url_str, mode=openmode,
                                      bufsize=bufsize)
@@ -1234,7 +1241,8 @@ class GfTarFile(tarfile.TarFile):
         return tar
 
     @classmethod
-    def create_open(cls, gfurl, compress_type, bufsize, compress_prog=None):
+    def create_open(cls, gfurl, compress_type, bufsize, compress_prog=None,
+                    use_fsync=True):
         # use Stream (not seekable)
         openmode = 'w|'
         if compress_prog is None \
@@ -1242,6 +1250,7 @@ class GfTarFile(tarfile.TarFile):
             openmode = 'w|' + compress_type
         if gfurl.exists():
             raise FileExistsError(gfurl.url_str)
+        # list of tuple(proc, closable obj, synchronizable obj)
         proc_list = []
         if gfurl.is_gfarm():
             if compress_prog:
@@ -1250,27 +1259,33 @@ class GfTarFile(tarfile.TarFile):
                                              gfreg_obj.stdin)
                 tar = cls.open(None, mode=openmode,
                                fileobj=compress_proc.stdin, bufsize=bufsize)
-                proc_list.append(tuple([compress_proc, compress_proc.stdin]))
-                proc_list.append(tuple([gfreg_obj.proc, gfreg_obj]))
+                proc_list.append(tuple([compress_proc, compress_proc.stdin,
+                                        None]))
+                proc_list.append(tuple([gfreg_obj.proc, gfreg_obj, None]))
             else:
                 gfreg_obj = gfurl.gfreg(mode=0o600)
                 tar = cls.open(None, mode=openmode,
                                fileobj=gfreg_obj.stdin,
                                bufsize=bufsize)
-                proc_list.append(tuple([gfreg_obj.proc, gfreg_obj]))
+                proc_list.append(tuple([gfreg_obj.proc, gfreg_obj, None]))
         else:  # Local
             if compress_prog:
                 outf = open(gfurl.url_str, 'wb')
                 compress_proc = cls.compress(compress_prog, outf)
                 tar = cls.open(None, mode=openmode,
                                fileobj=compress_proc.stdin, bufsize=bufsize)
-                proc_list.append(tuple([compress_proc, compress_proc.stdin]))
-                proc_list.append(tuple([None, outf]))
+                proc_list.append(tuple([compress_proc, compress_proc.stdin,
+                                        None]))
+                proc_list.append(tuple([None, outf, outf]))
             else:
-                tar = cls.open(gfurl.url_str, mode=openmode, bufsize=bufsize)
+                outf = open(gfurl.url_str, 'wb')
+                tar = cls.open(gfurl.url_str, mode=openmode,
+                               fileobj=outf, bufsize=bufsize)
+                proc_list.append(tuple([None, outf, outf]))
             gfurl.chmod(0o600)
         logger.debug('GfTarFile.create_open: %s', gfurl.url_str)
         setattr(tar, cls.ATTR_PROC_LIST, proc_list)
+        setattr(tar, cls.USE_FSYNC, use_fsync)
         return tar
 
     @classmethod
@@ -1294,10 +1309,14 @@ class GfTarFile(tarfile.TarFile):
     # override
     def close(self):
         super().close()
+        use_fsync = getattr(self, self.USE_FSYNC, True)
         proc_list = getattr(self, self.ATTR_PROC_LIST, None)
         if proc_list:
             for proc_tuple in proc_list:
-                proc, close_obj = proc_tuple
+                proc, close_obj, sync_obj = proc_tuple
+                if use_fsync and sync_obj:
+                    sync_obj.flush()
+                    os.fsync(sync_obj.fileno())
                 if close_obj:
                     close_obj.close()
                 if proc is not None:
@@ -1348,6 +1367,8 @@ class GfptarCommand(Command):
         self.bufsize = self.opt['--bufsize']
         self.progress_enabled = self._progress_enabled()
         self.hardlink_warn = True
+        self.disable_fsync = self.opt['--disable-fsync']
+        self.use_fsync = not self.disable_fsync
 
     def getDoc(self) -> str:
         return __doc__
@@ -1578,7 +1599,8 @@ class GfptarCommand(Command):
             if ftype == F:
                 with url.writeopen(textmode=True,
                                    mode=mode,
-                                   mtime=mtime) as f:
+                                   mtime=mtime,
+                                   use_fsync=self.use_fsync) as f:
                     f.write(path)
             elif ftype == D:
                 url.mkdir()
@@ -1862,7 +1884,8 @@ class GfptarCommand(Command):
                             use_gfarm_command=self.use_gfarm_command)
         self.create_a_members_list(outurl, filelist)
         tar = GfTarFile.create_open(outurl, self.compress_type, self.bufsize,
-                                    compress_prog=self.compress_prog)
+                                    compress_prog=self.compress_prog,
+                                    use_fsync=self.use_fsync)
         for entry in filelist:
             if self.is_cancelled():
                 logger.debug('cancelled (2): serial=%04d', serial)
@@ -1891,7 +1914,7 @@ class GfptarCommand(Command):
 
     def create_a_members_list(self, url, filelist):
         outurl = GfURL.init(url.url_str + self.LIST_SUFFIX)
-        with outurl.writeopen(textmode=True) as f:
+        with outurl.writeopen(textmode=True, use_fsync=self.use_fsync) as f:
             for entry in filelist:
                 # ex. "D /path/to/dir"
                 if entry.is_file():
@@ -2144,7 +2167,8 @@ class GfptarCommand(Command):
                 size = outurl.copy_from(inf, self.bufsize,
                                         mode=tarinfo.mode,
                                         mtime=tarinfo.mtime,
-                                        user=user, group=group)
+                                        user=user, group=group,
+                                        use_fsync=self.use_fsync)
                 inf.close()
                 logger.debug('extract,file: %s, %d', tarinfo.name, size)
                 with self.lock():
@@ -2295,6 +2319,7 @@ Options:
                             (for euid=0 on local, or gfarmroot on Gfarm)
   --disable-gfarm-command   disable the use of gfreg and gfexport
                             for tar files on gfarm2fs
+  --disable-fsync           disable calling fsync() before close()
   --use-tqdm                use tqdm to show progress (for --create)
   --encoding=CODEC          codec for filename encoding
              (https://docs.python.org/3/library/codecs.html#standard-encodings)
@@ -2354,6 +2379,7 @@ _schema = Schema({
     '--jobs': Use(int),
     '--use-compress-program': Or(str, None),
     '--disable-gfarm-command': bool,
+    '--disable-fsync': bool,
     '--same-owner': bool,
     '--use-tqdm': bool,
     '--test': bool,
