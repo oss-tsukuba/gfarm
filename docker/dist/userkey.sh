@@ -4,6 +4,7 @@ status=1
 PROG=$(basename $0)
 trap '[ $status = 0 ] && echo Done || echo NG: $PROG; exit $status' 0 1 2 15
 
+: ${USER:=$(id -un)}
 SUDO=
 [ $# -eq 0 ] && u=$USER || {
 	u=$1; SUDO="sudo -u $u"
