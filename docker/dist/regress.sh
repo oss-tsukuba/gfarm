@@ -1,14 +1,15 @@
 #!/bin/sh
 set -xeu
 status=1
-trap '[ $status = 1 ] && echo NG; gfrm -f $TFILE; exit $status' 0 1 2 15
+PROG=$(basename $0)
+trap '[ $status = 0 ] && echo Done || echo NG: $PROG; \
+	gfrm -f $TFILE; exit $status' 0 1 2 15
 
 TFILE=/tmp/corrupted-file
 ENV="LANG=C GFARM_TEST_MDS2=c6:601 GFARM_TEST_MDS3=c7:601 \
 	GFARM_TEST_MDS4=c8:601 GFARM_TEST_CKSUM_MISMATCH=$TFILE"
 export $ENV
 
-cc -O -o corrupt-file corrupt-file.c
 DISTDIR=$PWD
 
 gfmkdir -p /tmp
@@ -23,8 +24,8 @@ create_mismatch_file()
 	gfreg -h c2 ../$FILE1 $TFILE
 	gfrep -qD c3 $TFILE
 	for h in c2 c3; do
-		ssh $h sudo $DISTDIR/corrupt-file \
-			/var/gfarm-spool/$(gfspoolpath $TFILE)
+		echo -n XXX | ssh $h sudo dd conv=notrunc \
+			of=/var/gfarm-spool/$(gfspoolpath $TFILE)
 	done
 }
 
@@ -65,4 +66,3 @@ ssh c2 "(cd gfarm/regress && $ENV ./regress.sh -l $LOG2)"
 ./addup.sh $LOG1 $LOG2 | egrep '(UNSUPPORTED|FAIL)'
 
 status=0
-echo Done
