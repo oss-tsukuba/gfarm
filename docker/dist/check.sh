@@ -1,11 +1,17 @@
 #!/bin/sh
-set -xeu
+set -eu
 status=1
-trap '[ $status = 1 ] && echo NG; exit $status' 0 1 2 15
+PROG=$(basename $0)
+trap '[ $status = 0 ] && echo Done || echo NG: $PROG; exit $status' 0 1 2 15
 
-gfdf
-gfhost -lv
-gfmdhost -l
+cmd() {
+	echo [$*]
+	$*
+}
+
+cmd gfdf
+cmd gfhost -lv
+cmd gfmdhost -l
 
 NOTHEALTHY=0
 for h in $(gfmdhost -l | awk '$1 !~ /^\+/ {print $6}')
@@ -15,8 +21,8 @@ do
 	NOTHEALTHY=1
 done
 [ $NOTHEALTHY = 0 ] || {
+	echo not healthy, check again
 	sleep 1
-	gfmdhost -l
+	cmd gfmdhost -l
 }
 status=0
-echo Done
