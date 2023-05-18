@@ -31,6 +31,8 @@ auth enable sharedsecret *
 auth enable gsi_auth *
 auth enable tls_client_certificate *
 auth enable tls_sharedsecret *
+auth enable sasl *
+auth enable sasl_auth *
 _EOF_
 
 sudo systemctl start gfarm-pgsql
@@ -58,6 +60,8 @@ auth enable sharedsecret *
 auth enable gsi_auth *
 auth enable tls_client_certificate *
 auth enable tls_sharedsecret *
+auth enable sasl *
+auth enable sasl_auth *
 _EOF_
 cp $CONFDIR/gfarm2.conf ~/local/
 
@@ -79,6 +83,8 @@ auth enable sharedsecret *
 auth enable gsi_auth *
 auth enable tls_client_certificate *
 auth enable tls_sharedsecret *
+auth enable sasl *
+auth enable sasl_auth *
 _EOF_
 	scp -p d $h:
 	ssh $h sudo systemctl start gfarm-pgsql

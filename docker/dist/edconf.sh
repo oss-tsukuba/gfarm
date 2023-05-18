@@ -14,7 +14,9 @@ while [ $# -gt 0 ]
 do
 	case $1 in
 	debug)	DEBUG=true ;;
-	sharedsecret|gsi|gsi_auth)
+	sharedsecret|gsi|gsi_auth|\
+	tls_sharedsecret|tls_client_certificate|\
+	sasl|sasl_auth)
 		AUTH="$AUTH $1" ;;
 	*) exit 1 ;;
 	esac
