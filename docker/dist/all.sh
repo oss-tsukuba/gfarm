@@ -11,6 +11,8 @@ trap '[ $status = 0 ] && echo All set || echo NG: $PROG; exit $status' 0 1 2 15
 [ -f ./config.sh ]
 DISTDIR=$PWD
 
+[ -f ~/.gfarm2rc ] && mv ~/.gfarm2rc ~/.gfarm2rc.bak
+
 # set up .nodelist
 sh ./setup.sh
 
