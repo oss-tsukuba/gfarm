@@ -18,18 +18,20 @@
 
     % DIST=<distribution> docker compose up -d
     ubuntu, almalinux8, and centos7 are available.  Default is ubuntu
-    % docker exec -u $USER -w ~/gfarm -it gfarm -c1 /bin/bash
+    % docker exec -u $USER -w /home/$USER/gfarm -it gfarm-c1 /bin/bash
 
     (in a container)
     % cd docker/dist
     % sh ./all.sh
-    or ./all-rpm.sh also available in case of almalinux8 and centos7
+    ./all-rpm.sh also available in case of almalinux8 and centos7
     This will install and setup Gfarm.  Enjoy!
     % Ctrl-D
 
     % docker compose down
 
-If you would like to execute `all.sh` (or `all-rpm.sh`) again, execute `unconfig.sh`.
+When you would like to execute `all.sh` (or `all-rpm.sh`) again, execute `unconfig.sh`.  When you change the source code, execute `docker/dist/install.sh -m` and `restart.sh`.
+
+When you install Gfarm by `all.sh`, `regress.sh` and `failover.sh` are available for tests.
 
 ## For HPCI Storage
 
