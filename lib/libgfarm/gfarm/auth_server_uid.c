@@ -350,8 +350,9 @@ gfarm_auth_uid_to_global_username_by_auth_id(void *closure,
 		auth_user_id_type, auth_user_id, &ui);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
-			"getting user info by auth_user_id (%s) failed: %s",
+			"getting user info by auth_user_id (%s, %s) failed: %s",
 			auth_user_id,
+			auth_user_id_type,
 			gfarm_error_string(e));
 		return (e);
 	}

@@ -10,6 +10,7 @@
 
 
 #include "auth.h"
+#include "user.h"
 
 #include "subr.h"
 #include "host.h"
@@ -270,7 +271,7 @@ auth_uid_to_global_username_kerberos(void *closure,
 		return (GFARM_ERR_AUTHENTICATION);
 
 	giant_lock();
-	u = user_tenant_lookup(auth_user_id);
+	u = user_lookup_auth_id(GFARM_AUTH_USER_ID_TYPE_KERBEROS, auth_user_id);
 	giant_unlock();
 
 	if (u == NULL) {
@@ -279,15 +280,14 @@ auth_uid_to_global_username_kerberos(void *closure,
 		 * to prevent information leak
 		 */
 		gflog_info(GFARM_MSG_UNFIXED,
-		    "unknown user id <%s>", auth_user_id);
+			"unknown user id <%s>, %s", auth_user_id, diag);
 		return (GFARM_ERR_AUTHENTICATION);
 	}
 	if (global_usernamep == NULL)
 		return (GFARM_ERR_NO_ERROR);
-	global_username = strdup_log(
-		user_auth_id(u, GFARM_AUTH_USER_ID_TYPE_KERBEROS), diag);
+	global_username = strdup_log(user_tenant_name(u), diag);
 	if (global_username == NULL)
-		return (GFARM_ERR_NO_MEMORY);
+		return (GFARM_ERR_AUTHENTICATION);
 	*global_usernamep = global_username;
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -360,7 +360,7 @@ auth_uid_to_global_username_sasl(void *closure,
 		return (GFARM_ERR_AUTHENTICATION);
 
 	giant_lock();
-	u = user_tenant_lookup(auth_user_id);
+	u = user_lookup_auth_id(GFARM_AUTH_USER_ID_TYPE_SASL, auth_user_id);
 	giant_unlock();
 
 	if (u == NULL) {
@@ -369,15 +369,14 @@ auth_uid_to_global_username_sasl(void *closure,
 		 * to prevent information leak
 		 */
 		gflog_info(GFARM_MSG_UNFIXED,
-		    "unknown user id <%s>", auth_user_id);
+			"unknown user id <%s>, %s", auth_user_id, diag);
 		return (GFARM_ERR_AUTHENTICATION);
 	}
 	if (global_usernamep == NULL)
 		return (GFARM_ERR_NO_ERROR);
-	global_username = strdup_log(
-		     user_auth_id(u, GFARM_AUTH_USER_ID_TYPE_SASL), diag);
+	global_username = strdup_log(user_tenant_name(u), diag);
 	if (global_username == NULL)
-		return (GFARM_ERR_NO_MEMORY);
+		return (GFARM_ERR_AUTHENTICATION);
 	*global_usernamep = global_username;
 	return (GFARM_ERR_NO_ERROR);
 }

@@ -12,14 +12,13 @@ struct user *user_lookup_in_tenant_including_invalid(
 	const char *, struct tenant *);
 struct user *user_lookup_in_tenant(const char *, struct tenant *);
 struct user *user_lookup_gsi_dn(const char *);
-struct user *user_lookup_auth_id(enum auth_user_id_type, const char *);
+struct user *user_lookup_auth_id(const char *, const char *);
 char *user_tenant_name(struct user *);
 char *user_tenant_name_even_invalid(struct user *);
 char *user_name_in_tenant(struct user *, struct process *);
 char *user_name_in_tenant_even_invalid(struct user *, struct process *);
 char *user_realname(struct user *);
 char *user_gsi_dn(struct user *);
-char *user_auth_id(struct user *, char *);
 struct tenant *user_get_tenant(struct user *);
 const char *user_get_tenant_name(struct user *);
 int user_is_invalid(struct user *);
@@ -80,3 +79,4 @@ void grpassign_add_group(struct group_assignment *);
 
 gfarm_error_t user_auth_id_modify(struct user *, char *, char *);
 gfarm_error_t user_auth_id_remove(struct user *, char *);
+

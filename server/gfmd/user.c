@@ -77,7 +77,7 @@ gfarm_auth_user_id_type_name(enum auth_user_id_type auth_user_id_type)
 }
 
 gfarm_error_t
-gfarm_auth_user_id_type_from_name(char *name, enum auth_user_id_type *p)
+gfarm_auth_user_id_type_from_name(const char *name, enum auth_user_id_type *p)
 {
 	int i;
 
@@ -298,13 +298,21 @@ user_enter_gsi_dn(const char *gsi_dn, struct user *u)
 
 static struct user *
 user_lookup_auth_id_including_invalid(
-	enum auth_user_id_type auth_user_id_type,
+	const char *auth_user_id_type_str,
 	const char *auth_user_id)
 {
 	struct gfarm_hash_entry *entry;
+	enum auth_user_id_type auth_user_id_type;
 
 	if (user_is_null_str(auth_user_id))
 		return (NULL);
+
+	if (gfarm_auth_user_id_type_from_name(
+		auth_user_id_type_str,
+		&auth_user_id_type) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED, "invalid auth_user_id_type");
+		return (NULL);
+	}
 
 	struct user_auth_key key = {
 	  auth_user_id_type,
@@ -319,11 +327,11 @@ user_lookup_auth_id_including_invalid(
 
 struct user *
 user_lookup_auth_id(
-	enum auth_user_id_type auth_user_id_type,
+	const char *auth_user_id_type_str,
 	const char *auth_user_id)
 {
 	struct user *u = user_lookup_auth_id_including_invalid(
-			auth_user_id_type, auth_user_id);
+			auth_user_id_type_str, auth_user_id);
 
 	if (u != NULL && user_is_valid(u))
 		return (u);
@@ -926,25 +934,6 @@ user_gsi_dn(struct user *u)
 {
 	return (u != NULL && user_is_valid(u) ?
 	    u->ui.gsi_dn : REMOVED_USER_NAME);
-}
-
-char *
-user_auth_id(struct user *u, char *auth_id_type_str)
-{
-	enum auth_user_id_type auth_user_id_type;
-	gfarm_error_t e;
-
-	e = gfarm_auth_user_id_type_from_name(auth_id_type_str,
-					  &auth_user_id_type);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_warning(GFARM_MSG_UNFIXED,
-			"Invalid auth_user_id_type");
-		return (NULL);
-	}
-
-	return (u != NULL && user_is_valid(u) ?
-		u->auth_user_id[auth_user_id_type] :
-		REMOVED_USER_NAME);
 }
 
 struct quota *
@@ -1959,7 +1948,6 @@ gfm_server_user_info_get_by_auth_id(
 	gfarm_error_t e;
 	char *auth_user_id_type_str;
 	char *auth_user_id;
-	enum auth_user_id_type auth_user_id_type;
 	struct user *u;
 	struct process *process;
 	struct gfarm_user_info *ui;
@@ -1982,14 +1970,10 @@ gfm_server_user_info_get_by_auth_id(
 	/* XXX FIXME too long giant lock */
 	giant_lock();
 
-	e = gfarm_auth_user_id_type_from_name(auth_user_id_type_str,
-					  &auth_user_id_type);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED, "invalid auth_user_id_type");
-	} else if ((e = rpc_name_with_tenant(peer, from_client,
+	if ((e = rpc_name_with_tenant(peer, from_client,
 	    &name_with_tenant, &process, diag)) != GFARM_ERR_NO_ERROR) {
 		/* nothing to do */
-	} else if ((u = user_lookup_auth_id(auth_user_id_type,
+	} else if ((u = user_lookup_auth_id(auth_user_id_type_str,
 					    auth_user_id)) == NULL) {
 		e = GFARM_ERR_NO_SUCH_USER;
 	} else
@@ -2006,7 +1990,7 @@ gfm_server_user_info_get_by_auth_id(
 		    ui->realname, ui->homedir, ui->gsi_dn);
 	}
 	giant_unlock();
-	free(auth_user_id_type_str);
+
 	free(auth_user_id);
 	return (e);
 }
