@@ -61,10 +61,12 @@ sysdep_defaults_systemd()
 	: ${RC_BACKEND_BASENAME:=}
 	: ${RC_BACKEND_IN="$config_dir/linux/$LINUX_RC_TYPE/$RC_BACKEND_BASENAME.service.in"}
 	: ${RC_GFMD_IN="$config_dir/linux/$LINUX_RC_TYPE/gfmd.service.in"}
+	: ${RC_GFMD_SLAVE_IN="$config_dir/linux/$LINUX_RC_TYPE/gfmd-slave.service.in"}
 	: ${RC_GFSD_IN="$config_dir/linux/$LINUX_RC_TYPE/gfsd.service.in"}
 
 	: ${RC_BACKEND="/etc/systemd/system/$RC_BACKEND_BASENAME.service"}
 	: ${RC_GFMD="/etc/systemd/system/gfmd.service"}
+	: ${RC_GFMD_SLAVE="/etc/systemd/system/gfmd-slave.service"}
 	: ${GFSD_SERVICE_NAME:=}
 	: ${RC_GFSD="/etc/systemd/system/$GFSD_SERVICE_NAME.service"}
 }

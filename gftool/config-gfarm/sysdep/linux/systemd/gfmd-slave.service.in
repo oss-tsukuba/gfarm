@@ -1,0 +1,20 @@
+[Unit]
+Description=Gfarm filesystem slave metaserver
+Requires=gfarm-pgsql.service
+After=gfarm-pgsql.service
+
+[Service]
+Type=forking
+
+User=root
+Group=root
+Environment=GLOBUS_THREAD_MODEL=pthread
+
+ExecStart=@config_gfarm_prefix@/sbin/gfmd -S -P @config_gfarm_gfmd_pid_file@ @config_gfarm_gfmd_option@
+PIDFile=@config_gfarm_gfmd_pid_file@
+
+OOMScoreAdjust=-1000
+TimeoutSec=300
+
+[Install]
+WantedBy=multi-user.target

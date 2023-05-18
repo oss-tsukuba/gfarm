@@ -15,6 +15,7 @@ datadir="@config_gfarm_datadir@"
 config_dir="${datadir}/gfarm/config"
 BACKEND_TYPE="@config_gfarm_backend_type@"
 RC_GFMD="@config_gfarm_rc_gfmd@"
+RC_GFMD_SLAVE="@config_gfarm_rc_gfmd_slave@"
 RC_BACKEND="@config_gfarm_rc_backend@"
 RC_BACKEND_BASENAME="@rc_backend_basename@"
 GFMD_CONF="@config_gfarm_gfmd_config@"
@@ -89,6 +90,8 @@ service_unconfig()
 	service_remove_$BACKEND_TYPE $TEST_OPT "$RC_BACKEND_BASENAME"
 
 	delete_file_or_directory -f $TEST_OPT "$RC_GFMD"
+	[ X"$RC_GFMD_SLAVE" = X ] ||
+		delete_file_or_directory -f $TEST_OPT "$RC_GFMD_SLAVE"
 	delete_file_or_directory -f $TEST_OPT "$RC_BACKEND"
 
 	service_reg

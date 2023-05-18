@@ -422,6 +422,7 @@ sysdep_defaults
 
 : ${RC_BACKEND:=}
 : ${RC_GFMD:=}
+: ${RC_GFMD_SLAVE:=}
 
 [ X"$RC_BACKEND" = X ] && \
 	RC_BACKEND="$RC_DIR/$RC_BACKEND_BASENAME"
@@ -471,6 +472,7 @@ else
 	: ${GFMD_PORT:="601"}
 fi
 : ${RC_GFMD_IN="$config_dir/gfmd.in"}
+: ${RC_GFMD_SLAVE_IN=}
 
 : ${RC_BACKEND_IN="$config_dir/$RC_BACKEND_BASENAME.in"}
 
@@ -554,6 +556,7 @@ unconfig_replace()
 s|@config_gfarm_datadir@|$datadir|g
 s|@config_gfarm_backend_type@|$BACKEND_TYPE|g
 s|@config_gfarm_rc_gfmd@|$RC_GFMD|g
+s|@config_gfarm_rc_gfmd_slave@|$RC_GFMD_SLAVE|g
 s|@config_gfarm_rc_backend@|$RC_BACKEND|g
 s|@rc_backend_basename@|$RC_BACKEND_BASENAME|g
 s|@config_gfarm_gfmd_config@|$GFMD_CONF|g
@@ -715,6 +718,8 @@ if $USE_BACKEND; then
 fi
 create_run_script "$RC_GFMD"	replace "$RC_GFMD_IN"
 $PRIVATE_MODE || service_reg gfmd
+[ X"$RC_GFMD_SLAVE_IN" = X ] ||
+	create_run_script "$RC_GFMD_SLAVE" replace "$RC_GFMD_SLAVE_IN"
 
 apply_configuration_$BACKEND_TYPE
 

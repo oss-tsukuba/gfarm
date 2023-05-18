@@ -6,7 +6,7 @@ ARG UID=1000
 RUN dnf -y update \
  && dnf -y install \
     git wget rpm-build sudo passwd \
-    gcc make \
+    gcc make libtool \
     openssl-devel postgresql-devel \
     rdma-core-devel \
     postgresql postgresql-server \
@@ -17,9 +17,9 @@ RUN dnf -y update \
     globus-gssapi-gsi-devel \
     python3-docopt python3-schema python3-tqdm python3-flake8 \
     fuse fuse-devel libacl-devel \
-    libtool cyrus-sasl-devel scitokens-cpp-devel \
-    procps \
-    myproxy globus-simple-ca
+    procps gdb valgrind \
+    myproxy globus-simple-ca \
+    cyrus-sasl-devel scitokens-cpp-devel
 
 RUN \
  # sshd

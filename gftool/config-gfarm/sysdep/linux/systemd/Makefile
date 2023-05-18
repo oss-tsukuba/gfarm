@@ -10,6 +10,7 @@ datadir=$(default_datadir)/gfarm/config/linux/systemd
 
 DATA =	$(srcdir)/gfarm-pgsql.service.in \
 	$(srcdir)/gfmd.service.in \
+	$(srcdir)/gfmd-slave.service.in \
 	$(srcdir)/gfsd.service.in
 
 include $(top_srcdir)/makes/data.mk

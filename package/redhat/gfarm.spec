@@ -1348,6 +1348,7 @@ fi
 %{share_prefix}/config/linux/suse/gfmd.in
 %{share_prefix}/config/linux/systemd/gfarm-pgsql.service.in
 %{share_prefix}/config/linux/systemd/gfmd.service.in
+%{share_prefix}/config/linux/systemd/gfmd-slave.service.in
 %{share_prefix}/config/slapd.conf-2.0.in
 %{share_prefix}/config/slapd.conf-2.1.in
 %{share_prefix}/config/unconfig-gfarm.sh.in
