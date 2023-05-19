@@ -8,7 +8,9 @@ set -eux
 # : $OPENSSL_PACKAGE_NAME
 
 # this and rpm-install*.sh scripts are using GFDOCKER_PRIMARY_USER
+: $GFDOCKER_NUM_JOBS
 : $GFDOCKER_PRIMARY_USER
+: $GFDOCKER_TENANT_ADMIN_USER
 
 GFDOCKER_SCRIPT_PATH="`dirname $0`"
 

@@ -76,6 +76,10 @@ Quick start
 
   GFDOCKER_SASL_USE_KEYCLOAK = true
 
+  If you use other IdP provider, edit config.mk:
+
+  GFDOCKER_SASL_XOAUTH2_ISSUERS = {IdP URL}
+
 5. Setup sudo configuration
 
   You need to have a privilege to execute sudo.

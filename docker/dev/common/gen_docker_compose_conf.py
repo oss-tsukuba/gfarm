@@ -3,7 +3,6 @@
 from ipaddress import IPv4Network, IPv6Network
 from os import environ
 import sys
-from distutils.util import strtobool
 
 num_gfmds = int(environ['GFDOCKER_NUM_GFMDS'])
 num_gfsds = int(environ['GFDOCKER_NUM_GFSDS'])
@@ -22,7 +21,10 @@ hostport_s3_direct = environ['GFDOCKER_HOSTPORT_S3_DIRECT']
 
 is_cgroup_v2 = environ['IS_CGROUP_V2']
 
-use_keycloak = bool(strtobool(environ['GFDOCKER_SASL_USE_KEYCLOAK']))
+def tobool(s):
+    return s.lower() == 'true'
+
+use_keycloak = tobool(environ['GFDOCKER_SASL_USE_KEYCLOAK'])
 
 if ip_version == '4':
     nw = IPv4Network(subnet)
@@ -187,7 +189,9 @@ if use_keycloak:
       - MYSQL_USER=gfarm
       - MYSQL_PASSWORD=gfarm123
   jwt-keycloak:
-    build: common/oauth2/keycloak
+    build:
+      context: common
+      dockerfile: oauth2/keycloak/Dockerfile
     volumes:
       - ./mnt:/mnt:ro
     networks:

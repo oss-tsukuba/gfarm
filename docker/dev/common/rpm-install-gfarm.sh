@@ -4,6 +4,7 @@ set -eux
 
 : $GFDOCKER_NUM_JOBS
 : $GFDOCKER_PRIMARY_USER
+: $GFDOCKER_TENANT_ADMIN_USER
 
 : ${OPENSSL_PACKAGE_NAME:=}
 
@@ -19,4 +20,7 @@ GFARM_OPT=" --with-globus --enable-xmlattr --enable-xmlattr ${WITH_OPENSSL_OPT}"
 # for regress
 opts="--sysconfdir=/etc --prefix=/usr ${GFARM_OPT}"
 su - "$GFDOCKER_PRIMARY_USER" -c \
+  "cd ~/gfarm && ./configure ${opts} && make -j '${GFDOCKER_NUM_JOBS}'"
+
+su - "$GFDOCKER_TENANT_ADMIN_USER" -c \
   "cd ~/gfarm && ./configure ${opts} && make -j '${GFDOCKER_NUM_JOBS}'"

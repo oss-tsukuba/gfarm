@@ -1,5 +1,17 @@
 #!/usr/bin/bash
 
+set -eux
+
+: $GFDOCKER_USERNAME_PREFIX
+: $GFDOCKER_TENANTNAME_PREFIX
+: $GFDOCKER_NUM_USERS
+: $GFDOCKER_NUM_TENANTS
+: $GFDOCKER_SASL_HPCI_SECET
+
+BASEDIR=$(dirname $(realpath $0))
+FUNCTIONS=${BASEDIR}/functions.sh
+. ${FUNCTIONS}
+
 keytool -importkeystore -srckeystore /mnt/jwt-keycloak/jwt-keycloak.p12 \
   -srcstoretype PKCS12 -srcstorepass PASSWORD \
   -destkeystore /opt/jboss/keycloak/standalone/configuration/keycloak.jks \
@@ -39,7 +51,6 @@ KEYCLOAK_PASSWORD=admin
 CLIENT_ID_PUBLIC="hpci-pub"
 CLIENT_ID_CONFIDENTIAL="hpci-jwt-server"
 HPCI_SECRET=${GFDOCKER_SASL_HPCI_SECET}
-GF_USER=user
 GF_PASSWORD=PASSWORD
 
 BINDIR=${KEYCLOAK_HOME}/bin
@@ -472,7 +483,7 @@ get_user_id()
 {
     local NAME="$1"
     ${KCADM} get users -r ${REALM} | \
-	jq -r '.[] | select(.username == "'${NAME}'") | .id'
+	jq -r '.[] | select(.username == "'"${NAME}"'") | .id'
 }
 
 RECRETE_USER_ID=0
@@ -485,33 +496,39 @@ create_user()
 
     local USER_ID
 
-    USER_ID=$(get_user_id "$USER" || ignore)
+    USER_ID=$(get_user_id "${USER}" || ignore)
     echo "USER_ID:"$USER_ID
     if [ -n "${USER_ID}" -a ${RECRETE_USER_ID} -eq 1 ]; then
-        ${KCADM} delete users/${CLIENT_ID_ID} -r ${REALM}
+        ${KCADM} delete users/${USER_ID} -r ${REALM}
         USER_ID=""
     fi
 
     ${BINDIR}/add-user-keycloak.sh -r $REALM \
-      --user $USER \
-      --password $PASSWORD || ignore
+      --user "${USER}" \
+      --password "${PASSWORD}" || ignore
 }
 
 update_user()
 {
     local USER="$1"
+    local GFARM_USER="$2"
+    shift
     shift
 
     local USER_ID
 
-    USER_ID=$(get_user_id "$USER" || ignore)
-    ARG='attributes."hpci.id"='${USER}
+    USER_ID=$(get_user_id "${USER}" || ignore)
+    ARG='attributes."hpci.id"='"${GFARM_USER}"
     ${KCADM} update users/${USER_ID} -r ${REALM} \
                  -s "${ARG}"
 }
 
-for i in $(seq 1 "$GFDOCKER_NUM_USERS"); do
-  create_user $GF_USER$i $GF_PASSWORD
+i=0
+for t in $(seq 1 "$GFDOCKER_NUM_TENANTS"); do
+ for u in $(seq 1 "$GFDOCKER_NUM_USERS"); do
+  i=$((i + 1))
+  create_user "${GFDOCKER_USERNAME_PREFIX}${i}" "${GF_PASSWORD}"
+ done
 done
 
 ${BINDIR}/jboss-cli.sh -c --command=reload
@@ -524,6 +541,12 @@ ${KCADM} config credentials \
 	 --user ${KEYCLOAK_USER} \
 	 --password ${KEYCLOAK_PASSWORD}
 
-for i in $(seq 1 "$GFDOCKER_NUM_USERS"); do
-  update_user $GF_USER$i
+i=0
+for t in $(seq 1 "$GFDOCKER_NUM_TENANTS"); do
+ for u in $(seq 1 "$GFDOCKER_NUM_USERS"); do
+  i=$((i + 1))
+  guser="$(gfuser_from_index $t $u)"
+  tenant_user_suffix="$(gftenant_user_suffix_from_index $t)"
+  update_user "${GFDOCKER_USERNAME_PREFIX}${i}" "${guser}${tenant_user_suffix}"
+ done
 done

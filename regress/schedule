@@ -1,3 +1,6 @@
+# this should be the first because this does not move to lost+found
+gftool/gfcksum/gfcksum-c.mismatch.sh
+
 lib/libgfarm/gfutil/utf8/utf8_test.sh
 lib/libgfarm/gfarm/gfarm_error_range_alloc/errmsg.sh
 lib/libgfarm/gfarm/gfarm_error_to_errno/all_mapped.sh
@@ -84,8 +87,10 @@ gftool/gfuser/gfuser-m.sh
 gftool/gfuser/gfuser-m.gsi_dn.toolong.sh
 gftool/gfuser/gfuser-m.self.realname.sh
 gftool/gfuser/gfuser.not-exist.sh
+gftool/gfuser/gfuser.tenant-visibility.sh
 gftool/gfgroup/gfgroup-c.tenant-delimiter.sh
 gftool/gfgroup/gfgroup.not-exist.sh
+gftool/gfgroup/gfgroup.tenant-visibility.sh
 gftool/gfgroup/gfgroup.0-nusers.sh
 gftool/gfjournal/bad_record_crc1.sh
 gftool/gfjournal/bad_record_crc2.sh
@@ -171,7 +176,6 @@ gftool/gfchmod/gfchmod-g.sh
 gftool/gfchown/gfchown.sh
 gftool/gfchown/gfchown-h.sh
 gftool/gfcksum/gfcksum-c.sh
-gftool/gfcksum/gfcksum-c.mismatch.sh
 gftool/gfstatus/gfstatus_mds2.sh
 gftool/gfwhoami/gfwhoami.sh
 gftool/gfwhoami/gfwhoami_mds2.sh

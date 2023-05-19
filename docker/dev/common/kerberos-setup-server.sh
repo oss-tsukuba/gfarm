@@ -55,9 +55,13 @@ ${SUDO} systemctl restart kadmin
 ${SUDO} kadmin.local add_principal -pw "${krb_admin_password}" \
     "${krb_admin_user}/admin"
 
-for i in $(seq 1 "$GFDOCKER_NUM_USERS"); do
+i=0
+for t in $(seq 1 "$GFDOCKER_NUM_TENANTS"); do
+  for u in $(seq 1 "$GFDOCKER_NUM_USERS"); do
+    i=$((i + 1))
     user="${GFDOCKER_USERNAME_PREFIX}${i}"
     ${SUDO} kadmin.local add_principal -pw "${krb_user_password}" "${user}"
+  done
 done
 
 ${SUDO} kadmin.local -q list_principals

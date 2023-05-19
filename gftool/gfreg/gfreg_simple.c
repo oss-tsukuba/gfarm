@@ -115,6 +115,13 @@ gfimport_to(int ifd, char *gfarm_url, int mode,
 			gfarm_error_string(e));
 	gfs_profile(gfarm_gettimerval(&t4));
  close:
+	if (e == GFARM_ERR_NO_ERROR) {
+		e = gfs_pio_sync(gf);
+		if (e != GFARM_ERR_NO_ERROR) {
+			fprintf(stderr, "synchronizing %s: %s\n", gfarm_url,
+			    gfarm_error_string(e));
+		}
+	}
 	e2 = gfs_pio_close(gf);
 	if (e2 != GFARM_ERR_NO_ERROR)
 		fprintf(stderr, "closing %s: %s\n", gfarm_url,

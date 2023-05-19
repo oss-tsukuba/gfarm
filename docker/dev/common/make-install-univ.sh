@@ -5,6 +5,8 @@
 # ENV OPENSSL_PACKAGE_NAME (optional)
 # ARG GFDOCKER_NUM_JOBS
 # ARG GFDOCKER_PRIMARY_USER
+# ARG GFDOCKER_TENANT_ADMIN_USER
+# ARG GFDOCKER_NUM_TENANTS
 # ARG GFDOCKER_ENABLE_PROXY
 
 # RUN "/home/${GFDOCKER_PRIMARY_USER}/gfarm/docker/dev/common/make-install-univ.sh"
@@ -16,6 +18,8 @@ GFDOCKER_USE_TSAN=0
 : ${OPENSSL_PACKAGE_NAME:=}
 : $GFDOCKER_NUM_JOBS
 : $GFDOCKER_PRIMARY_USER
+: $GFDOCKER_TENANT_ADMIN_USER
+: $GFDOCKER_NUM_TENANTS
 : ${GFDOCKER_ENABLE_PROXY:=false}
 
 WITH_OPENSSL_OPT=
@@ -33,14 +37,22 @@ GFARM_OPT="--with-globus=/usr --enable-xmlattr ${WITH_OPENSSL_OPT}"
 
 scitokens_prefix=/usr
 
-su - "$GFDOCKER_PRIMARY_USER" -c " \
-  cd ~/gfarm \
-    && (test -f Makefile && make distclean || true) \
-    && eval \"${CFLAGS_ARGS}\" ./configure ${GFARM_OPT} \
-    && make -j '${GFDOCKER_NUM_JOBS}' \
-" \
-  && cd "/home/${GFDOCKER_PRIMARY_USER}/gfarm" \
-  && make install || exit 1
+su - "$GFDOCKER_PRIMARY_USER" -c "
+  cd ~/gfarm &&
+    (test -f Makefile && make distclean || true) &&
+    eval \"${CFLAGS_ARGS}\" ./configure ${GFARM_OPT} &&
+    make -j '${GFDOCKER_NUM_JOBS}'" &&
+  cd "/home/${GFDOCKER_PRIMARY_USER}/gfarm" &&
+  make install || exit 1
+
+if [ "${GFDOCKER_NUM_TENANTS}" -gt 1 ]; then
+  # for regress
+  su - "$GFDOCKER_TENANT_ADMIN_USER" -c "
+    cd ~/gfarm &&
+      (test -f Makefile && make distclean || true) &&
+      eval \"${CFLAGS_ARGS}\" ./configure ${GFARM_OPT} &&
+      make -j '${GFDOCKER_NUM_JOBS}'"
+fi
 
 su - "$GFDOCKER_PRIMARY_USER" -c " \
   cd ~/gfarm2fs \
