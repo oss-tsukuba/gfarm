@@ -40,13 +40,6 @@
 #define USER_ID_MAP_SIZE	9239
 
 /* in-core gfarm_user_info */
-enum auth_user_id_type {
-	AUTH_USER_ID_TYPE_X509,
-	AUTH_USER_ID_TYPE_KERBEROS,
-	AUTH_USER_ID_TYPE_SASL,
-	AUTH_USER_ID_TYPE_MAX
-};
-
 struct user {
 	struct gfarm_user_info ui;
 	struct group_assignment groups;
@@ -277,6 +270,13 @@ user_lookup_gsi_dn(const char *gsi_dn)
 	return (NULL);
 }
 
+struct user *
+user_lookup_by_kerberos_principal(const char *auth_user_id)
+{
+	return (user_lookup_auth_id(AUTH_USER_ID_TYPE_KERBEROS,
+				    auth_user_id));
+}
+
 static gfarm_error_t
 user_enter_gsi_dn(const char *gsi_dn, struct user *u)
 {
@@ -366,12 +366,6 @@ user_auth_id_modify_internal(struct user *u,
 	gfarm_error_t e;
 
 
-	if (u->auth_user_id[auth_user_id_type] != NULL &&
-		strcmp(u->auth_user_id[auth_user_id_type], auth_user_id) == 0) {
-		*need_to_update_dbp = false;
-		return (GFARM_ERR_NO_ERROR);
-	}
-
 	new_auth_user_id = strdup_log(auth_user_id,
 				"user_auth_id_modify_internal");
 
@@ -383,6 +377,13 @@ user_auth_id_modify_internal(struct user *u,
 		&auth_user_id_type)) != GFARM_ERR_NO_ERROR) {
 		free(new_auth_user_id);
 		return (e);
+	}
+
+	if (u->auth_user_id[auth_user_id_type] != NULL &&
+		strcmp(u->auth_user_id[auth_user_id_type], auth_user_id) == 0) {
+		*need_to_update_dbp = false;
+		free(new_auth_user_id);
+		return (GFARM_ERR_NO_ERROR);
 	}
 
 	e = user_enter_auth_id(auth_user_id_type,

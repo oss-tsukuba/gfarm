@@ -303,6 +303,7 @@ for i in $(seq 1 $GFDOCKER_NUM_USERS); do
   fi
   gfsudo gfmkdir "${ghome_dir}"
   gfsudo gfchown "${name}" "${ghome_dir}"
+  gfuser -A ${name} SASL ${name}
 
   # backup or restore gfarm_shared_key
   sudo sudo -i -u "$name" ${GFDOCKER_COPY_SHARED_KEY}
@@ -319,6 +320,7 @@ for i in $(seq 1 $GFDOCKER_NUM_USERS); do
     gfuser -c "${sasl_user}" "${sasl_user}" "${sasl_home}" ""
     gfsudo gfmkdir "${sasl_home}"
     gfsudo gfchown "${sasl_user}" "${sasl_home}"
+    gfuser -A ${sasl_user} SASL ${sasl_user}
   fi
 
   # add to S3_USERMAP
