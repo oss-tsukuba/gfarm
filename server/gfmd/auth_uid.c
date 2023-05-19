@@ -168,11 +168,12 @@ auth_uid_to_global_username_gsi(void *closure,
 static gfarm_error_t
 auth_uid_to_global_username_server_auth(void *closure,
 	const char *auth_user_id,
+	struct user *(*user_lookup_by_auth_user_id)(const char *),
 	gfarm_error_t (*get_hostname)(enum gfarm_auth_id_role, const char *,
 	    char **hostnamep),
 	enum gfarm_auth_id_role *auth_user_id_rolep,
 	char **global_usernamep,
-	struct user *(*user_lookup_by_auth_user_id)(const char *),
+
 	const char *diag)
 {
 	gfarm_error_t e;
@@ -264,9 +265,10 @@ auth_uid_to_global_username_kerberos(void *closure,
 	char **global_usernamep)
 {
 	return (auth_uid_to_global_username_server_auth(closure,
-	  auth_user_id, gfarm_kerberos_principal_get_hostname,
-	    auth_user_id_rolep, global_usernamep,
+	    auth_user_id,
 	    user_lookup_by_kerberos_principal,
+	    gfarm_kerberos_principal_get_hostname,
+	    auth_user_id_rolep, global_usernamep,
 	    "auth_uid_to_global_username_kerberos"));
 }
 
@@ -280,9 +282,10 @@ auth_uid_to_global_username_tls_client_certificate(void *closure,
 	char **global_usernamep)
 {
 	return (auth_uid_to_global_username_server_auth(closure,
-	  auth_user_id, gfarm_x509_cn_get_hostname,
-	    auth_user_id_rolep, global_usernamep,
+	    auth_user_id,
 	    user_lookup_gsi_dn,
+	    gfarm_x509_cn_get_hostname,
+	    auth_user_id_rolep, global_usernamep,
 	    "auth_uid_to_global_username_tls_client_certificate"));
 }
 
