@@ -18,6 +18,7 @@ struct user *user_lookup_in_tenant_including_invalid(
 struct user *user_lookup_in_tenant(const char *, struct tenant *);
 struct user *user_lookup_gsi_dn(const char *);
 struct user *user_lookup_auth_id(enum auth_user_id_type, const char *);
+struct user *user_lookup_by_kerberos_principal(const char *);
 char *user_tenant_name(struct user *);
 char *user_tenant_name_even_invalid(struct user *);
 char *user_name_in_tenant(struct user *, struct process *);

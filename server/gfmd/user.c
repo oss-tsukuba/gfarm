@@ -270,6 +270,13 @@ user_lookup_gsi_dn(const char *gsi_dn)
 	return (NULL);
 }
 
+struct user *
+user_lookup_by_kerberos_principal(const char *auth_user_id)
+{
+	return (user_lookup_auth_id(AUTH_USER_ID_TYPE_KERBEROS,
+				    auth_user_id));
+}
+
 static gfarm_error_t
 user_enter_gsi_dn(const char *gsi_dn, struct user *u)
 {
@@ -919,25 +926,6 @@ user_gsi_dn(struct user *u)
 {
 	return (u != NULL && user_is_valid(u) ?
 	    u->ui.gsi_dn : REMOVED_USER_NAME);
-}
-
-char *
-user_auth_id(struct user *u, char *auth_id_type_str)
-{
-	enum auth_user_id_type auth_user_id_type;
-	gfarm_error_t e;
-
-	e = gfarm_auth_user_id_type_from_name(auth_id_type_str,
-					  &auth_user_id_type);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_warning(GFARM_MSG_UNFIXED,
-			"Invalid auth_user_id_type");
-		return (NULL);
-	}
-
-	return (u != NULL && user_is_valid(u) ?
-		u->auth_user_id[auth_user_id_type] :
-		REMOVED_USER_NAME);
 }
 
 struct quota *

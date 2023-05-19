@@ -171,7 +171,9 @@ auth_uid_to_global_username_server_auth(void *closure,
 	gfarm_error_t (*get_hostname)(enum gfarm_auth_id_role, const char *,
 	    char **hostnamep),
 	enum gfarm_auth_id_role *auth_user_id_rolep,
-	char **global_usernamep, const char *diag)
+	char **global_usernamep,
+	struct user *(*user_lookup_by_auth_user_id)(const char *),
+	const char *diag)
 {
 	gfarm_error_t e;
 	enum gfarm_auth_id_role auth_user_id_role = *auth_user_id_rolep;
@@ -185,7 +187,7 @@ auth_uid_to_global_username_server_auth(void *closure,
 	case GFARM_AUTH_ID_ROLE_USER:
 		/* auth_user_id is Distinguished Name */
 		giant_lock();
-		u = user_lookup_gsi_dn(auth_user_id);
+		u = user_lookup_by_auth_user_id(auth_user_id);
 		giant_unlock();
 
 		if (u == NULL) {
@@ -264,6 +266,7 @@ auth_uid_to_global_username_kerberos(void *closure,
 	return (auth_uid_to_global_username_server_auth(closure,
 	  auth_user_id, gfarm_kerberos_principal_get_hostname,
 	    auth_user_id_rolep, global_usernamep,
+	    user_lookup_by_kerberos_principal,
 	    "auth_uid_to_global_username_kerberos"));
 }
 
@@ -279,6 +282,7 @@ auth_uid_to_global_username_tls_client_certificate(void *closure,
 	return (auth_uid_to_global_username_server_auth(closure,
 	  auth_user_id, gfarm_x509_cn_get_hostname,
 	    auth_user_id_rolep, global_usernamep,
+	    user_lookup_gsi_dn,
 	    "auth_uid_to_global_username_tls_client_certificate"));
 }
 
@@ -344,7 +348,7 @@ auth_uid_to_global_username_sasl(void *closure,
 		 * to prevent information leak
 		 */
 		gflog_info(GFARM_MSG_UNFIXED,
-			   "%s: unknown user id <%s>, %s", diag, auth_user_id);
+			   "%s: unknown user id <%s>", diag, auth_user_id);
 		return (GFARM_ERR_AUTHENTICATION);
 	}
 	if (global_usernamep == NULL)
