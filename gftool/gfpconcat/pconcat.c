@@ -3,6 +3,7 @@
  */
 
 #include <stdio.h>
+#include <stdarg.h> /* gfurl.h: va_list */
 #include <stdlib.h>
 #include <string.h>
 #include <libgen.h>

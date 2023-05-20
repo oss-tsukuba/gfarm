@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdarg.h> /* gfprep.h: va_list */
+#include <stdarg.h> /* gfurl.h: va_list */
 #include <unistd.h>
 #include <pthread.h>
 #include <sys/stat.h>
