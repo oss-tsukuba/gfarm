@@ -23,9 +23,9 @@ sudo grid-default-ca -ca $HASH > /dev/null
 # copy CA cert
 (cd $GSDIR/certificates && tar cf ~/local/certs.tar $HASH.* *.$HASH)
 
-gfarm-prun -p sudo mkdir -p $GSDIR/certificates
-gfarm-prun -p sudo tar xf local/certs.tar -C $GSDIR/certificates
-gfarm-prun -p "sudo grid-default-ca -ca $HASH > /dev/null"
+gfarm-prun -p "sudo mkdir -p $GSDIR/certificates &&
+	sudo tar xf local/certs.tar -C $GSDIR/certificates &&
+	sudo grid-default-ca -ca $HASH > /dev/null"
 rm -f ~/local/certs.tar
 
 # host cert
