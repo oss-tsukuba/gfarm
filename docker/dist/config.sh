@@ -3,9 +3,10 @@ set -xeu
 status=1
 PROG=$(basename $0)
 trap '[ $status = 0 ] && echo Done || echo NG: $PROG; \
-	rm -f $TMPF ~/local/gfarm2.conf; exit $status' 0 1 2 15
+	rm -f $TMPF $TMPCONF; exit $status' 0 1 2 15
 
 TMPF=/tmp/$PROG-$$
+TMPCONF=~/local/gfarm2.conf-$(hostname)-$$
 hostfile=$1
 [ X"$hostfile" = X- ] && {
 	hostfile=$TMPF
@@ -55,7 +56,7 @@ metadb_server_list $ML
 auth enable sharedsecret *
 auth enable gsi_auth *
 _EOF_
-cp $CONFDIR/gfarm2.conf ~/local/
+cp $CONFDIR/gfarm2.conf $TMPCONF
 
 # slave metadata servers
 gfmdhost -m $MASTER -C siteA
@@ -65,33 +66,29 @@ gfmdhost -c $SSLAVE -C siteA
 sleep 3
 sudo gfdump.postgresql -d -f d
 
-for h in $SSLAVE $ASLAVE
-do
-	[ X"$h" = X ] && continue
+for h in $SSLAVE $ASLAVE; do echo $h; done > $TMPF
+gfarm-pcp -h $TMPF d .
+gfarm-prun -p -h $TMPF "
+	sudo config-gfarm -N $CONFIG_OPTIONS &&
+	sudo sh -c \"printf '%s\n' \
+'auth enable sharedsecret *' \
+'auth enable gsi_auth *' >> $CONFDIR/gfmd.conf\" &&
+	sudo systemctl start gfarm-pgsql &&
+	sudo gfdump.postgresql -r -f d &&
+	rm d &&
 
-	ssh $h sudo config-gfarm -N $CONFIG_OPTIONS
-	cat <<_EOF_ | ssh $h sudo tee -a $CONFDIR/gfmd.conf > /dev/null
-auth enable sharedsecret *
-auth enable gsi_auth *
-_EOF_
-	scp -p d $h:
-	ssh $h sudo systemctl start gfarm-pgsql
-	ssh $h sudo gfdump.postgresql -r -f d
-	ssh $h rm d
-
-	ssh $h sudo cp local/gfarm2.conf $CONFDIR
-done
+	sudo cp $TMPCONF $CONFDIR/gfarm2.conf"
 sudo rm d
 fi
 
 # gfsd
-for h in $GL
-do
-	ssh $h sudo cp local/gfarm2.conf $CONFDIR
-
-	ssh $h sudo config-gfsd
+for h in $GL; do echo $h; done > $TMPF
+gfarm-prun -a -p -h $TMPF "
+	sudo cp $TMPCONF $CONFDIR/gfarm2.conf &&
+	sudo config-gfsd"
+for h in $GL; do
 	gfhost -c -a linux -p 600 -n $(nproc) $h
-	ssh $h sudo systemctl start gfsd
 done
+gfarm-prun -a -p -h $TMPF sudo systemctl start gfsd
 
 status=0

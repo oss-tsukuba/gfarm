@@ -32,12 +32,13 @@ sh ./cert.sh
 sh ./usercert.sh
 
 # set up Gfarm-1 with 5 nodes
-echo c1 c2 c3 c4 c5 | sh ./config.sh -
+echo c1 c2 c3 c4 c5 | sh ./config.sh - &
 
 # set up Gfarm-2 to Gfarm-4 with 1 node
 for h in c6 c7 c8; do
-	echo $h | ssh $h sh $PWD/config.sh -
+	echo $h | ssh $h sh $PWD/config.sh - &
 done
+wait
 
 # Check installation
 sh ./check.sh
