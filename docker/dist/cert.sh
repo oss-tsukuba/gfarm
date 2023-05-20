@@ -1,5 +1,5 @@
 #!/bin/sh
-set -xeu
+set -eu
 status=1
 PROG=$(basename $0)
 trap '[ $status = 0 ] && echo Done || echo NG: $PROG; exit $status' 0 1 2 15
@@ -21,21 +21,15 @@ done
 sudo grid-default-ca -ca $HASH > /dev/null
 
 # copy CA cert
-HOST=$(hostname)
-HOSTS=$(grep -v $HOST ~/.nodelist)
-mkdir -p ~/local/certs
-cp -p $GSDIR/certificates/$HASH.* \
-	$GSDIR/certificates/*.$HASH ~/local/certs
+(cd $GSDIR/certificates && tar cf ~/local/certs.tar $HASH.* *.$HASH)
 
-for h in $HOSTS
-do
-	ssh $h sudo mkdir -p $GSDIR/certificates
-	ssh $h sudo cp local/certs/* $GSDIR/certificates
-	ssh $h sudo grid-default-ca -ca $HASH > /dev/null
-done
-rm -rf ~/local/certs
+gfarm-prun -p sudo mkdir -p $GSDIR/certificates
+gfarm-prun -p sudo tar xf local/certs.tar -C $GSDIR/certificates
+gfarm-prun -p "sudo grid-default-ca -ca $HASH > /dev/null"
+rm -f ~/local/certs.tar
 
 # host cert
+HOST=$(hostname)
 [ -f $GSDIR/hostcert.pem ] || {
 	yes | sudo grid-cert-request -host $HOST > /dev/null 2>&1
 	sh ./cert-sign.sh $GSDIR/hostcert_request.pem $GSDIR/hostcert.pem
@@ -50,31 +44,25 @@ SERVICE=gfsd
 	sudo chown -R _gfarmfs:_gfarmfs $GSDIR/$SERVICE
 }
 
-for h in $HOSTS
-do
-	ssh $h test -f $GSDIR/hostcert.pem && continue
+gfarm-prun -p "[ -f $GSDIR/hostcert.pem ] || {
+	h=\$(hostname) &&
+	mkdir -p ~/local/\$h &&
+	yes | sudo grid-cert-request -host \$h > /dev/null 2>&1 &&
+	yes | sudo grid-cert-request -service $SERVICE -host \$h \
+		> /dev/null 2>&1 &&
+	cp $GSDIR/hostcert_request.pem \
+		$GSDIR/$SERVICE/${SERVICE}cert_request.pem local/\$h; }"
 
-	mkdir -p ~/local/$h
-	ssh $h "yes | sudo grid-cert-request -host $h" > /dev/null 2>&1
-	ssh $h cp $GSDIR/hostcert_request.pem local/$h
-	sh ./cert-sign.sh ~/local/$h/hostcert_request.pem \
-		~/local/$h/hostcert.pem
-	ssh $h sudo cp local/$h/hostcert.pem $GSDIR
-	rm -rf ~/local/$h
+for certreq in ~/local/*/*cert_request.pem
+do
+	cert=$(echo $certreq | sed 's/_request//')
+	sh ./cert-sign.sh $certreq $cert
 done
 
-for h in $HOSTS
-do
-	ssh $h test -f $GSDIR/$SERVICE/${SERVICE}cert.pem && continue
+gfarm-prun -p "h=\$(hostname) &&
+	sudo cp local/\$h/hostcert.pem $GSDIR &&
+	sudo cp local/\$h/${SERVICE}cert.pem $GSDIR/$SERVICE &&
+	sudo chown -R _gfarmfs:_gfarmfs $GSDIR/$SERVICE &&
+	rm -rf ~/local/\$h"
 
-	mkdir -p ~/local/$h
-	ssh $h "yes | sudo grid-cert-request -service $SERVICE -host $h" \
-		> /dev/null 2>&1
-	ssh $h cp $GSDIR/$SERVICE/${SERVICE}cert_request.pem local/$h
-	sh ./cert-sign.sh ~/local/$h/${SERVICE}cert_request.pem \
-		~/local/$h/${SERVICE}cert.pem
-	ssh $h sudo cp local/$h/${SERVICE}cert.pem  $GSDIR/$SERVICE
-	ssh $h sudo chown -R _gfarmfs:_gfarmfs $GSDIR/$SERVICE
-	rm -rf ~/local/$h
-done
 status=0
