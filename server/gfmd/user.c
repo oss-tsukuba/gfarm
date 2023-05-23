@@ -372,6 +372,13 @@ user_auth_id_modify_internal(struct user *u,
 	if (new_auth_user_id == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
+	if (strlen(auth_user_id) > GFARM_AUTH_USER_ID_MAX) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		  "user_auth_id_modify, auth_user_id too long, %s",
+		  auth_user_id);
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	}
+
 	if ((e = gfarm_auth_user_id_type_from_name(
 		auth_id_type,
 		&auth_user_id_type)) != GFARM_ERR_NO_ERROR) {
@@ -1618,7 +1625,7 @@ user_info_verify(struct gfarm_user_info *ui, const char *diag)
 	if (strlen(ui->username) > GFARM_LOGIN_NAME_MAX ||
 	    strlen(ui->realname) > GFARM_USER_REALNAME_MAX ||
 	    strlen(ui->homedir) > GFARM_PATH_MAX ||
-	    strlen(ui->gsi_dn) > GFARM_USER_GSI_DN_MAX) {
+	    strlen(ui->gsi_dn) > GFARM_AUTH_USER_ID_MAX) {
 		gflog_debug(GFARM_MSG_1002418,
 		    "%s: invalid user info(%s, %s, %s, %s): argument too long",
 		    diag, ui->username, ui->realname, ui->homedir, ui->gsi_dn);
