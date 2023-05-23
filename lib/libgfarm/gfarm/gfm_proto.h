@@ -440,7 +440,7 @@ enum gfm_proto_command {
 
 #define GFARM_LOGIN_NAME_MAX			64
 #define GFARM_USER_REALNAME_MAX			256
-#define GFARM_USER_GSI_DN_MAX			1024
+#define GFARM_AUTH_USER_ID_MAX			1024
 
 #define GFARM_GROUP_NAME_MAX			8192 /* VOMS needs long name */
 
