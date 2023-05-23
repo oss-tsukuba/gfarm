@@ -52,6 +52,9 @@ usage(void)
 	exit(1);
 }
 
+/*
+ * NOTE: names and errs may be NULL in case of list_all()
+ */
 static gfarm_error_t
 display_user(int op, int nusers, char *names[],
 	gfarm_error_t *errs, struct gfarm_user_info *users)
@@ -94,9 +97,11 @@ display_user(int op, int nusers, char *names[],
 						gfarm_auth_user_id_type_list[j],
 						auth_id);
 				} else {
-					fprintf(stderr, "%s: %s\n",
-						names[i],
-						gfarm_error_string(e));
+					fprintf(stderr,
+					    "%s: auth_type %s: %s\n",
+					    users[i].username,
+					    gfarm_auth_user_id_type_list[j],
+					    gfarm_error_string(e));
 					continue;
 				}
 				free(auth_id);
