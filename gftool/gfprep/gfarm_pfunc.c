@@ -719,7 +719,7 @@ pfunc_copy_to_gfarm_or_local(gfarm_pfunc_t *handle,
 {
 	gfarm_error_t e;
 	int result = PFUNC_RESULT_OK, retv;
-	char *tmp_url;
+	char *tmp_url = NULL;
 	struct pfunc_file src_fp, dst_fp;
 	struct pfunc_stat src_st;
 	int flags;
