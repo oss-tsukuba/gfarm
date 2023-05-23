@@ -74,7 +74,16 @@ gfarm_auth_user_id_type_from_name(char *name, enum auth_user_id_type *p)
 {
 	int i;
 
-	for (i = 0; i < AUTH_USER_ID_TYPE_MAX; i++) {
+#if 0
+	for (i = 0;
+#else
+	/*
+	 * do not use GfarmUserAuth table for X.509 DN mapping for now,
+	 * use gsiDN field of GfarmUser table instead.
+	 */
+	for (i = AUTH_USER_ID_TYPE_KERBEROS;
+#endif
+	     i < AUTH_USER_ID_TYPE_MAX; i++) {
 		if (strcmp(name, auth_user_id_type_map[i]) == 0) {
 			*p = (enum auth_user_id_type) i;
 			return (GFARM_ERR_NO_ERROR);
