@@ -1896,7 +1896,6 @@ quota_set_common(struct peer *peer, int from_client, int skip, int is_group)
 		gflog_debug(GFARM_MSG_1002060,
 			    "%s: !from_client or invalid peer_user"
 			    " or !user_is_admin", diag);
-		goto end;
 	} else if ((process = peer_get_process(peer)) == NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s): no process",
@@ -1915,38 +1914,36 @@ quota_set_common(struct peer *peer, int from_client, int skip, int is_group)
 		    qi.name);
 	} else if ((e = quota_lookup_internal(qi.name, is_group,
 	    tenant, is_super_admin, &n, &q, diag)) != GFARM_ERR_NO_ERROR) {
-		goto end;
+		/* do nothing */
 	} else if (gfarm_read_only_mode()) {
 		e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
 		gflog_debug(GFARM_MSG_1005161, "%s (%s@%s) for "
 		    "name %s during read_only",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    qi.name);
-		goto end;
+	} else {
+		/* set limits */
+		set_limit(q->grace_period, qi.grace_period);
+		set_limit(q->space_soft, qi.space_soft);
+		set_limit(q->space_hard, qi.space_hard);
+		set_limit(q->num_soft, qi.num_soft);
+		set_limit(q->num_hard, qi.num_hard);
+		set_limit(q->phy_space_soft, qi.phy_space_soft);
+		set_limit(q->phy_space_hard, qi.phy_space_hard);
+		set_limit(q->phy_num_soft, qi.phy_num_soft);
+		set_limit(q->phy_num_hard, qi.phy_num_hard);
+
+		/* check softlimit and update exceeded time */
+		quota_softlimit_exceed(q, &need_db_update);
+
+		/* update regardless of need_db_update */
+		if (is_group)
+			e = db_quota_group_set(q, n);
+		else
+			e = db_quota_user_set(q, n);
+		if (e == GFARM_ERR_NO_ERROR)
+			q->on_db = 1;
 	}
-
-	/* set limits */
-	set_limit(q->grace_period, qi.grace_period);
-	set_limit(q->space_soft, qi.space_soft);
-	set_limit(q->space_hard, qi.space_hard);
-	set_limit(q->num_soft, qi.num_soft);
-	set_limit(q->num_hard, qi.num_hard);
-	set_limit(q->phy_space_soft, qi.phy_space_soft);
-	set_limit(q->phy_space_hard, qi.phy_space_hard);
-	set_limit(q->phy_num_soft, qi.phy_num_soft);
-	set_limit(q->phy_num_hard, qi.phy_num_hard);
-
-	/* check softlimit and update exceeded time */
-	quota_softlimit_exceed(q, &need_db_update);
-
-	/* update regardless of need_db_update */
-	if (is_group)
-		e = db_quota_group_set(q, n);
-	else
-		e = db_quota_user_set(q, n);
-	if (e == GFARM_ERR_NO_ERROR)
-		q->on_db = 1;
-end:
 	giant_unlock();
 	free(qi.name);
 	return (gfm_server_put_reply(peer, diag, e, ""));
