@@ -35,9 +35,9 @@
 #include "metadb_server.h"
 #include "db_ops.h"
 
-#define USER_HASHTAB_SIZE	3079	/* prime number */
-#define USER_DN_HASHTAB_SIZE	3079	/* prime number */
-#define USER_ID_MAP_SIZE	9239
+#define USER_HASHTAB_SIZE		3079	/* prime number */
+#define USER_DN_HASHTAB_SIZE		3079	/* prime number */
+#define AUTH_USER_ID_HASHTAB_SIZE	9239	/* prime number */
 
 /* in-core gfarm_user_info */
 struct user {
@@ -115,7 +115,7 @@ char UNKNOWN_USER_NAME[] = "gfarm-unknown-user";
 
 static struct gfarm_hash_table *user_hashtab = NULL;
 static struct gfarm_hash_table *user_dn_hashtab = NULL;
-static struct gfarm_hash_table *user_id_map = NULL;
+static struct gfarm_hash_table *auth_user_id_hashtab = NULL;
 
 struct user_auth_key {
 	enum auth_user_id_type auth_id_type;
@@ -320,7 +320,7 @@ user_lookup_auth_id_including_invalid(
 	  auth_user_id
 	};
 
-	entry = gfarm_hash_lookup(user_id_map, &key, sizeof(key));
+	entry = gfarm_hash_lookup(auth_user_id_hashtab, &key, sizeof(key));
 	if (entry == NULL)
 		return (NULL);
 	return (*(struct user **)gfarm_hash_entry_data(entry));
@@ -355,7 +355,7 @@ user_enter_auth_id(
 	  auth_user_id
 	};
 
-	entry = gfarm_hash_enter(user_id_map,
+	entry = gfarm_hash_enter(auth_user_id_hashtab,
 	    &key, sizeof(key), sizeof(struct user *), &created);
 	if (entry == NULL)
 		return (GFARM_ERR_NO_MEMORY);
@@ -416,7 +416,8 @@ user_auth_id_modify_internal(struct user *u,
 			u->auth_user_id[auth_user_id_type]
 		};
 
-		if (gfarm_hash_purge(user_id_map, &key, sizeof(key)) == 0) {
+		if (gfarm_hash_purge(auth_user_id_hashtab, &key, sizeof(key))
+		    == 0) {
 			gflog_fatal(GFARM_MSG_UNFIXED,
 				"user %s: cannot purge auth_id_type %s",
 				u->ui.username,
@@ -505,7 +506,8 @@ user_auth_id_remove_internal(struct user *user,
 			user->auth_user_id[auth_user_id_type]
 		};
 
-		if (gfarm_hash_purge(user_id_map, &key, sizeof(key)) == 0) {
+		if (gfarm_hash_purge(auth_user_id_hashtab, &key, sizeof(key))
+		    == 0) {
 			gflog_fatal(GFARM_MSG_UNFIXED,
 				"user %s: cannot purge auth_id_type %s",
 				user->ui.username,
@@ -793,7 +795,8 @@ user_remove_internal(const char *username, int update_quota)
 				u->auth_user_id[auth_user_id_type]
 			};
 
-			gfarm_hash_purge(user_id_map, &key, sizeof(key));
+			gfarm_hash_purge(auth_user_id_hashtab,
+			    &key, sizeof(key));
 			free(u->auth_user_id[auth_user_id_type]);
 		}
 	}
@@ -1308,11 +1311,11 @@ user_init(void)
 	user_dn_hashtab =
 	    gfarm_hash_table_alloc(USER_DN_HASHTAB_SIZE,
 		gfarm_hash_strptr, gfarm_hash_key_equal_strptr);
-	user_id_map =
-	    gfarm_hash_table_alloc(USER_ID_MAP_SIZE,
+	auth_user_id_hashtab =
+	    gfarm_hash_table_alloc(AUTH_USER_ID_HASHTAB_SIZE,
 		gfarm_hash_user_auth, gfarm_hash_key_equal_user_auth);
 	if (user_hashtab == NULL || user_dn_hashtab == NULL ||
-	    user_id_map == NULL)
+	    auth_user_id_hashtab == NULL)
 		gflog_fatal(GFARM_MSG_1000236, "no memory for user hashtab");
 
 	e = db_user_load(NULL, user_add_one);
