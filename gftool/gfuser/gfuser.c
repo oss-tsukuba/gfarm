@@ -151,44 +151,6 @@ list(int op, int n, char *names[])
 	return (e);
 }
 
-gfarm_error_t
-list_auth(int op, int n, char *names[])
-{
-	struct gfarm_user_info *users;
-	gfarm_error_t e, *errs;
-
-	GFARM_MALLOC_ARRAY(users, n);
-	GFARM_MALLOC_ARRAY(errs, n);
-	if (users == NULL || errs == NULL) {
-		e = GFARM_ERR_NO_MEMORY;
-	} else if ((e = gfm_client_user_info_get_by_names(
-	    gfm_server, n, (const char **)names, errs, users)) !=
-	    GFARM_ERR_NO_ERROR) {
-		/* nothing to do */
-	} else {
-		e = display_user(op, n, names, errs, users);
-	}
-	free(users);
-	free(errs);
-	return (e);
-}
-
-gfarm_error_t
-list_auth_all(int op)
-{
-	struct gfarm_user_info *users;
-	gfarm_error_t e;
-	int nusers;
-
-	e = gfm_client_user_info_get_all(gfm_server, &nusers, &users);
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
-	e = display_user(op, nusers, NULL, NULL, users);
-
-	free(users);
-	return (e);
-}
-
 int
 main(int argc, char **argv)
 {
@@ -276,9 +238,9 @@ main(int argc, char **argv)
 		break;
 	case OP_LIST_AUTH:
 		if (argc == 0)
-			e = list_auth_all(opt_operation);
+			e = list_all(opt_operation);
 		else
-			e = list_auth(opt_operation, argc, argv);
+			e = list(opt_operation, argc, argv);
 		break;
 	case OP_MODIFY_AUTH:
 		if (argc != 3)
