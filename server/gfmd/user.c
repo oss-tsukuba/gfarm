@@ -74,7 +74,7 @@ gfarm_auth_user_id_type_from_name(char *name, enum auth_user_id_type *p)
 {
 	int i;
 
-#if 0
+#if 0 /* disable "gfuser -A <user> X509 <gsiDN>" for now */
 	for (i = 0;
 #else
 	/*

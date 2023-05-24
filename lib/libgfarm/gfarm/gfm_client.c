@@ -97,7 +97,9 @@ struct gfm_client_static {
 static gfarm_error_t gfm_client_connection_dispose(void *);
 
 char  *gfarm_auth_user_id_type_list[] = {
+#if 0 /* disable "gfuser -A <user> X509 <gsiDN>" for now */
 	GFARM_AUTH_USER_ID_TYPE_X509,
+#endif
 	GFARM_AUTH_USER_ID_TYPE_KERBEROS,
 	GFARM_AUTH_USER_ID_TYPE_SASL
 };
