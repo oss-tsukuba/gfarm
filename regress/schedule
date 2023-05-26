@@ -86,6 +86,9 @@ gftool/gfuser/gfuser-c.tenant-delimiter.sh
 gftool/gfuser/gfuser-m.sh
 gftool/gfuser/gfuser-m.gsi_dn.toolong.sh
 gftool/gfuser/gfuser-m.self.realname.sh
+gftool/gfuser/gfuser-A.sh
+gftool/gfuser/gfuser-A.auth_type.wrong.sh
+gftool/gfuser/gfuser-A.auth_user_id.toolong.sh
 gftool/gfuser/gfuser.not-exist.sh
 gftool/gfuser/gfuser.tenant-visibility.sh
 gftool/gfgroup/gfgroup-c.tenant-delimiter.sh
