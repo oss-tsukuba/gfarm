@@ -53,7 +53,17 @@ gfarm_auth_client_static_term(struct gfarm_context *ctxp)
  */
 #define GFARM_AUTH_METHODS_BUFFER_SIZE	256
 
-static const struct gfarm_auth_client_method {
+static gfarm_error_t gfarm_auth_request_panic(struct gfp_xdr *,
+	const char *, const char *, enum gfarm_auth_id_role,
+	const char *, struct passwd *);
+static gfarm_error_t gfarm_auth_request_panic_multiplexed(
+	struct gfarm_eventqueue *,
+	struct gfp_xdr *, const char *, const char *,
+	enum gfarm_auth_id_role, const char *, struct passwd *, int,
+	void (*)(void *), void *, void **);
+static gfarm_error_t gfarm_auth_result_panic_multiplexed(void *);
+
+struct gfarm_auth_client_method {
 	enum gfarm_auth_method method;
 	gfarm_error_t (*request)(struct gfp_xdr *,
 		const char *, const char *, enum gfarm_auth_id_role,
@@ -63,14 +73,40 @@ static const struct gfarm_auth_client_method {
 		enum gfarm_auth_id_role, const char *, struct passwd *, int,
 		void (*)(void *), void *, void **);
 	gfarm_error_t (*result_multiplexed)(void *);
-} gfarm_auth_trial_table[] = {
-	/*
-	 * This table entry should be prefered order
-	 */
+};
+
+static const struct gfarm_auth_client_method gfarm_auth_client_table[] = {
+	{ GFARM_AUTH_METHOD_NONE,
+	  gfarm_auth_request_panic,
+	  gfarm_auth_request_panic_multiplexed,
+	  gfarm_auth_result_panic_multiplexed },
 	{ GFARM_AUTH_METHOD_SHAREDSECRET,
 	  gfarm_auth_request_sharedsecret,
 	  gfarm_auth_request_sharedsecret_multiplexed,
 	  gfarm_auth_result_sharedsecret_multiplexed },
+	{ GFARM_AUTH_METHOD_GSI_OLD,
+	  gfarm_auth_request_panic,
+	  gfarm_auth_request_panic_multiplexed,
+	  gfarm_auth_result_panic_multiplexed },
+#ifdef HAVE_GSI
+	{ GFARM_AUTH_METHOD_GSI,
+	  gfarm_auth_request_gsi,
+	  gfarm_auth_request_gsi_multiplexed,
+	  gfarm_auth_result_gsi_multiplexed },
+	{ GFARM_AUTH_METHOD_GSI_AUTH,
+	  gfarm_auth_request_gsi_auth,
+	  gfarm_auth_request_gsi_auth_multiplexed,
+	  gfarm_auth_result_gsi_auth_multiplexed },
+#else
+	{ GFARM_AUTH_METHOD_GSI,
+	  gfarm_auth_request_panic,
+	  gfarm_auth_request_panic_multiplexed,
+	  gfarm_auth_result_panic_multiplexed },
+	{ GFARM_AUTH_METHOD_GSI_AUTH,
+	  gfarm_auth_request_panic,
+	  gfarm_auth_request_panic_multiplexed,
+	  gfarm_auth_result_panic_multiplexed },
+#endif /* HAVE_GSI */
 #ifdef HAVE_TLS_1_3
 	{ GFARM_AUTH_METHOD_TLS_SHAREDSECRET,
 	  gfarm_auth_request_tls_sharedsecret,
@@ -80,40 +116,112 @@ static const struct gfarm_auth_client_method {
 	  gfarm_auth_request_tls_client_certificate,
 	  gfarm_auth_request_tls_client_certificate_multiplexed,
 	  gfarm_auth_result_tls_client_certificate_multiplexed },
+#else
+	{ GFARM_AUTH_METHOD_TLS_SHAREDSECRET,
+	  gfarm_auth_request_panic,
+	  gfarm_auth_request_panic_multiplexed,
+	  gfarm_auth_result_panic_multiplexed },
+	{ GFARM_AUTH_METHOD_TLS_CLIENT_CERTIFICATE,
+	  gfarm_auth_request_panic,
+	  gfarm_auth_request_panic_multiplexed,
+	  gfarm_auth_result_panic_multiplexed },
 #endif /* HAVE_TLS_1_3 */
-#ifdef HAVE_GSI
-	{ GFARM_AUTH_METHOD_GSI_AUTH,
-	  gfarm_auth_request_gsi_auth,
-	  gfarm_auth_request_gsi_auth_multiplexed,
-	  gfarm_auth_result_gsi_auth_multiplexed },
-	{ GFARM_AUTH_METHOD_GSI,
-	  gfarm_auth_request_gsi,
-	  gfarm_auth_request_gsi_multiplexed,
-	  gfarm_auth_result_gsi_multiplexed },
-#endif /* HAVE_GSI */
-#if defined(HAVE_CYRUS_SASL) && defined(HAVE_TLS_1_3)
-	{ GFARM_AUTH_METHOD_SASL_AUTH,
-	  gfarm_auth_request_sasl_auth,
-	  gfarm_auth_request_sasl_auth_multiplexed,
-	  gfarm_auth_result_sasl_auth_multiplexed },
-	{ GFARM_AUTH_METHOD_SASL,
-	  gfarm_auth_request_sasl,
-	  gfarm_auth_request_sasl_multiplexed,
-	  gfarm_auth_result_sasl_multiplexed },
-#endif /* defined(HAVE_CYRUS_SASL) && defined(HAVE_TLS_1_3) */
 #ifdef HAVE_KERBEROS
-	{ GFARM_AUTH_METHOD_KERBEROS_AUTH,
-	  gfarm_auth_request_kerberos_auth,
-	  gfarm_auth_request_kerberos_auth_multiplexed,
-	  gfarm_auth_result_kerberos_auth_multiplexed },
 	{ GFARM_AUTH_METHOD_KERBEROS,
 	  gfarm_auth_request_kerberos,
 	  gfarm_auth_request_kerberos_multiplexed,
 	  gfarm_auth_result_kerberos_multiplexed },
+	{ GFARM_AUTH_METHOD_KERBEROS_AUTH,
+	  gfarm_auth_request_kerberos_auth,
+	  gfarm_auth_request_kerberos_auth_multiplexed,
+	  gfarm_auth_result_kerberos_auth_multiplexed },
+#else
+	{ GFARM_AUTH_METHOD_KERBEROS,
+	  gfarm_auth_request_panic,
+	  gfarm_auth_request_panic_multiplexed,
+	  gfarm_auth_result_panic_multiplexed },
+	{ GFARM_AUTH_METHOD_KERBEROS_AUTH,
+	  gfarm_auth_request_panic,
+	  gfarm_auth_request_panic_multiplexed,
+	  gfarm_auth_result_panic_multiplexed },
 #endif /* HAVE_KERBEROS */
-
-	{ GFARM_AUTH_METHOD_NONE,	  NULL, NULL, NULL }	/* sentinel */
+#if defined(HAVE_CYRUS_SASL) && defined(HAVE_TLS_1_3)
+	{ GFARM_AUTH_METHOD_SASL,
+	  gfarm_auth_request_sasl,
+	  gfarm_auth_request_sasl_multiplexed,
+	  gfarm_auth_result_sasl_multiplexed },
+	{ GFARM_AUTH_METHOD_SASL_AUTH,
+	  gfarm_auth_request_sasl_auth,
+	  gfarm_auth_request_sasl_auth_multiplexed,
+	  gfarm_auth_result_sasl_auth_multiplexed },
+#else
+	{ GFARM_AUTH_METHOD_SASL,
+	  gfarm_auth_request_panic,
+	  gfarm_auth_request_panic_multiplexed,
+	  gfarm_auth_result_panic_multiplexed },
+	{ GFARM_AUTH_METHOD_SASL_AUTH,
+	  gfarm_auth_request_panic,
+	  gfarm_auth_request_panic_multiplexed,
+	  gfarm_auth_result_panic_multiplexed },
+#endif /* defined(HAVE_CYRUS_SASL) && defined(HAVE_TLS_1_3) */
 };
+
+/*
+ * gfarm_auth_trial_table[] should be ordered by prefered authentication method
+ */
+enum gfarm_auth_method gfarm_auth_trial_table[] = {
+	GFARM_AUTH_METHOD_SHAREDSECRET,
+#ifdef HAVE_TLS_1_3
+	GFARM_AUTH_METHOD_TLS_SHAREDSECRET,
+	GFARM_AUTH_METHOD_TLS_CLIENT_CERTIFICATE,
+#endif /* HAVE_TLS_1_3 */
+#ifdef HAVE_GSI
+	GFARM_AUTH_METHOD_GSI_AUTH,
+	GFARM_AUTH_METHOD_GSI,
+#endif /* HAVE_GSI */
+#if defined(HAVE_CYRUS_SASL) && defined(HAVE_TLS_1_3)
+	GFARM_AUTH_METHOD_SASL_AUTH,
+	GFARM_AUTH_METHOD_SASL,
+#endif /* defined(HAVE_CYRUS_SASL) && defined(HAVE_TLS_1_3) */
+#ifdef HAVE_KERBEROS
+	GFARM_AUTH_METHOD_KERBEROS_AUTH,
+	GFARM_AUTH_METHOD_KERBEROS,
+#endif /* HAVE_KERBEROS */
+	GFARM_AUTH_METHOD_NONE, /* sentinel */
+};
+
+static gfarm_error_t
+gfarm_auth_request_panic(struct gfp_xdr *conn,
+	const char *service_tag, const char *hostname,
+	enum gfarm_auth_id_role self_role, const char *user,
+	struct passwd *pwd)
+{
+	gflog_fatal(GFARM_MSG_UNFIXED,
+	    "gfarm_auth_request: authorization assertion failed");
+	return (GFARM_ERR_PROTOCOL);
+}
+
+static gfarm_error_t
+gfarm_auth_request_panic_multiplexed(struct gfarm_eventqueue *q,
+	struct gfp_xdr *conn,
+	const char *service_tag, const char *hostname,
+	enum gfarm_auth_id_role self_role, const char *user,
+	struct passwd *pwd, int auth_timeout,
+	void (*continuation)(void *), void *closure,
+	void **statepp)
+{
+	gflog_fatal(GFARM_MSG_UNFIXED,
+	    "gfarm_auth_request_multiplexed: authorization assertion failed");
+	return (GFARM_ERR_PROTOCOL);
+}
+
+static gfarm_error_t
+gfarm_auth_result_panic_multiplexed(void *sp)
+{
+	gflog_fatal(GFARM_MSG_UNFIXED,
+	    "gfarm_auth_result_multiplexed: authorization assertion failed");
+	return (GFARM_ERR_PROTOCOL);
+}
 
 gfarm_error_t
 gfarm_auth_request_sharedsecret_common(struct gfp_xdr *conn,
@@ -369,7 +477,7 @@ gfarm_auth_request(struct gfp_xdr *conn,
 	}
 
 	for (i = 0;; i++) {
-		method = gfarm_auth_trial_table[i].method;
+		method = gfarm_auth_trial_table[i];
 		if (method != GFARM_AUTH_METHOD_NONE &&
 		    (methods & server_methods & (1 << method)) == 0)
 			continue;
@@ -436,7 +544,7 @@ gfarm_auth_request(struct gfp_xdr *conn,
 			return (e_save != GFARM_ERR_NO_ERROR ? e_save :
 			    GFARM_ERRMSG_AUTH_REQUEST_IMPLEMENTATION_ERROR);
 		}
-		e = (*gfarm_auth_trial_table[i].request)(conn,
+		e = (*gfarm_auth_client_table[method].request)(conn,
 		    service_tag, name, self_role, user, pwd);
 		if (e == GFARM_ERR_NO_ERROR) {
 			if (auth_methodp != NULL)
@@ -946,7 +1054,8 @@ gfarm_auth_request_dispatch_result(void *closure)
 {
 	struct gfarm_auth_request_state *state = closure;
 
-	state->last_error = (*gfarm_auth_trial_table[state->auth_method_index].
+	state->last_error = (*gfarm_auth_client_table[
+	    gfarm_auth_trial_table[state->auth_method_index]].
 	    result_multiplexed)(state->method_state);
 	gfarm_auth_request_next_method(state);
 }
@@ -986,10 +1095,11 @@ gfarm_auth_request_dispatch_method(int events, int fd, void *closure,
 	    error != GFARM_AUTH_ERROR_NO_ERROR)
 		state->error = GFARM_ERR_PROTOCOL; /* shouldn't happen */
 	if (state->error == GFARM_ERR_NO_ERROR) {
-		if (gfarm_auth_trial_table[state->auth_method_index].method
+		if (gfarm_auth_trial_table[state->auth_method_index]
 		    != GFARM_AUTH_METHOD_NONE) {
 			state->last_error =
-			    (*gfarm_auth_trial_table[state->auth_method_index].
+			    (*gfarm_auth_client_table[
+			    gfarm_auth_trial_table[state->auth_method_index]].
 			    request_multiplexed)(state->q, state->conn,
 			    state->service_tag, state->name, state->self_role,
 			    state->user, state->pwd, state->auth_timeout,
@@ -1030,11 +1140,10 @@ gfarm_auth_request_loop_ask_method(int events, int fd, void *closure,
 	int rv;
 	struct timeval timeout;
 
-	method = gfarm_auth_trial_table[state->auth_method_index].method;
+	method = gfarm_auth_trial_table[state->auth_method_index];
 	while (method != GFARM_AUTH_METHOD_NONE &&
 	    (state->methods & state->server_methods & (1 << method)) == 0) {
-		method =
-		    gfarm_auth_trial_table[++state->auth_method_index].method;
+		method = gfarm_auth_trial_table[++state->auth_method_index];
 	}
 	state->error = gfp_xdr_send(state->conn, "i", method);
 	if (state->error != GFARM_ERR_NO_ERROR ||
@@ -1239,7 +1348,7 @@ gfarm_auth_result_multiplexed(struct gfarm_auth_request_state *state,
 	if (e == GFARM_ERR_NO_ERROR) {
 		if (auth_methodp != NULL)
 			*auth_methodp = gfarm_auth_trial_table[
-			    state->auth_method_index].method;
+			    state->auth_method_index];
 	}
 	gfarm_event_free(state->readable);
 	gfarm_event_free(state->writable);
