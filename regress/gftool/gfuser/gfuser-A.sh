@@ -17,13 +17,15 @@ else
     exit $exit_unsupported
 fi
 
-trap 'gfuser -d "$user" 2>/dev/null; gfuser -d "$user2" 2>/dev/null; exit $exit_trap' $trap_sigs
+trap 'gfuser -d "$user" 2>/dev/null; gfuser -d "$user2" 2>/dev/null;
+      exit $exit_trap' $trap_sigs
 
 register_or_update() {
     if gfuser -A "$1" "$2" "$3"; then
 	if gfuser -L "$1" |
 		awk -F ':' 'BEGIN { status = 1 }
-		  $0 ~ /^	/ && $1 == "'"	$2"'" && $2 == "'"$3"'" { status = 0 }
+		  $0 ~ /^	/ && $1 == "'"	$2"'" &&
+		  $2 == "'"$3"'" { status = 0 }
 		  END { exit status }'
         then
 	    return $exit_success
@@ -36,14 +38,8 @@ register_or_update() {
 }
 
 prohibit_duplication() {
-    if gfuser -A "$1" "$2" "$3" 2>$localtmp; then
-	return $exit_fail
-    else
-	if grep ': already exists' $localtmp >/dev/null; then
-	    return $exit_success
-	fi
-    fi
-    return $exit_fail
+    ! gfuser -A "$1" "$2" "$3" 2>$localtmp &&
+	grep ': already exists' $localtmp >/dev/null
 }
 
 unregister() {
