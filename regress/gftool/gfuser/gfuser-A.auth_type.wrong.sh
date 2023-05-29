@@ -14,7 +14,8 @@ else
     exit $exit_unsupported
 fi
 
-trap 'gfuser -d "$user" 2>/dev/null; rm -f $localtmp; exit $exit_trap' $trap_sigs
+trap 'gfuser -d "$user" 2>/dev/null; rm -f $localtmp;
+     exit $exit_trap' $trap_sigs
 
 if gfuser -c "$user" "$real" "$home" "$gsi_dn"; then
     if gfuser -A "$user" "WrongType" "$auth_id" 2>$localtmp; then

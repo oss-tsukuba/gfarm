@@ -21,20 +21,12 @@ trap 'gfuser -d "$user" 2>/dev/null; gfuser -d "$user2" 2>/dev/null;
       exit $exit_trap' $trap_sigs
 
 register_or_update() {
-    if gfuser -A "$1" "$2" "$3"; then
-	if gfuser -L "$1" |
-		awk -F ':' 'BEGIN { status = 1 }
-		  $0 ~ /^	/ && $1 == "'"	$2"'" &&
-		  $2 == "'"$3"'" { status = 0 }
-		  END { exit status }'
-        then
-	    return $exit_success
-	else
-	    return $exit_fail
-        fi
-    else
-	return $exit_fail
-    fi
+    gfuser -A "$1" "$2" "$3" &&
+	gfuser -L "$1" |
+	    awk -F ':' 'BEGIN { status = 1 }
+	      $0 ~ /^	/ && $1 == "'"	$2"'" &&
+	      $2 == "'"$3"'" { status = 0 }
+	      END { exit status }'
 }
 
 prohibit_duplication() {
