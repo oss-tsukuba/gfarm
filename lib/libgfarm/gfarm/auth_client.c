@@ -53,6 +53,9 @@ gfarm_auth_client_static_term(struct gfarm_context *ctxp)
  */
 #define GFARM_AUTH_METHODS_BUFFER_SIZE	256
 
+static int gfarm_auth_client_method_is_always_available(
+	enum gfarm_auth_id_role);
+static int gfarm_auth_client_method_is_never_available(enum gfarm_auth_id_role);
 static gfarm_error_t gfarm_auth_request_panic(struct gfp_xdr *,
 	const char *, const char *, enum gfarm_auth_id_role,
 	const char *, struct passwd *);
@@ -65,6 +68,7 @@ static gfarm_error_t gfarm_auth_result_panic_multiplexed(void *);
 
 struct gfarm_auth_client_method {
 	enum gfarm_auth_method method;
+	int (*is_available)(enum gfarm_auth_id_role);
 	gfarm_error_t (*request)(struct gfp_xdr *,
 		const char *, const char *, enum gfarm_auth_id_role,
 		const char *, struct passwd *);
@@ -77,89 +81,108 @@ struct gfarm_auth_client_method {
 
 static const struct gfarm_auth_client_method gfarm_auth_client_table[] = {
 	{ GFARM_AUTH_METHOD_NONE,
+	  gfarm_auth_client_method_is_never_available,
 	  gfarm_auth_request_panic,
 	  gfarm_auth_request_panic_multiplexed,
 	  gfarm_auth_result_panic_multiplexed },
 	{ GFARM_AUTH_METHOD_SHAREDSECRET,
+	  gfarm_auth_client_method_is_always_available,
 	  gfarm_auth_request_sharedsecret,
 	  gfarm_auth_request_sharedsecret_multiplexed,
 	  gfarm_auth_result_sharedsecret_multiplexed },
 	{ GFARM_AUTH_METHOD_GSI_OLD,
+	  gfarm_auth_client_method_is_never_available,
 	  gfarm_auth_request_panic,
 	  gfarm_auth_request_panic_multiplexed,
 	  gfarm_auth_result_panic_multiplexed },
 #ifdef HAVE_GSI
 	{ GFARM_AUTH_METHOD_GSI,
+	  gfarm_auth_client_method_is_gsi_available,
 	  gfarm_auth_request_gsi,
 	  gfarm_auth_request_gsi_multiplexed,
 	  gfarm_auth_result_gsi_multiplexed },
 	{ GFARM_AUTH_METHOD_GSI_AUTH,
+	  gfarm_auth_client_method_is_gsi_available,
 	  gfarm_auth_request_gsi_auth,
 	  gfarm_auth_request_gsi_auth_multiplexed,
 	  gfarm_auth_result_gsi_auth_multiplexed },
 #else
 	{ GFARM_AUTH_METHOD_GSI,
+	  gfarm_auth_client_method_is_never_available,
 	  gfarm_auth_request_panic,
 	  gfarm_auth_request_panic_multiplexed,
 	  gfarm_auth_result_panic_multiplexed },
 	{ GFARM_AUTH_METHOD_GSI_AUTH,
+	  gfarm_auth_client_method_is_never_available,
 	  gfarm_auth_request_panic,
 	  gfarm_auth_request_panic_multiplexed,
 	  gfarm_auth_result_panic_multiplexed },
 #endif /* HAVE_GSI */
 #ifdef HAVE_TLS_1_3
 	{ GFARM_AUTH_METHOD_TLS_SHAREDSECRET,
+	  gfarm_auth_client_method_is_tls_sharedsecret_available,
 	  gfarm_auth_request_tls_sharedsecret,
 	  gfarm_auth_request_tls_sharedsecret_multiplexed,
 	  gfarm_auth_result_tls_sharedsecret_multiplexed },
 	{ GFARM_AUTH_METHOD_TLS_CLIENT_CERTIFICATE,
+	  gfarm_auth_client_method_is_tls_client_certificate_available,
 	  gfarm_auth_request_tls_client_certificate,
 	  gfarm_auth_request_tls_client_certificate_multiplexed,
 	  gfarm_auth_result_tls_client_certificate_multiplexed },
 #else
 	{ GFARM_AUTH_METHOD_TLS_SHAREDSECRET,
+	  gfarm_auth_client_method_is_never_available,
 	  gfarm_auth_request_panic,
 	  gfarm_auth_request_panic_multiplexed,
 	  gfarm_auth_result_panic_multiplexed },
 	{ GFARM_AUTH_METHOD_TLS_CLIENT_CERTIFICATE,
+	  gfarm_auth_client_method_is_never_available,
 	  gfarm_auth_request_panic,
 	  gfarm_auth_request_panic_multiplexed,
 	  gfarm_auth_result_panic_multiplexed },
 #endif /* HAVE_TLS_1_3 */
 #ifdef HAVE_KERBEROS
 	{ GFARM_AUTH_METHOD_KERBEROS,
+	  gfarm_auth_client_method_is_kerberos_available,
 	  gfarm_auth_request_kerberos,
 	  gfarm_auth_request_kerberos_multiplexed,
 	  gfarm_auth_result_kerberos_multiplexed },
 	{ GFARM_AUTH_METHOD_KERBEROS_AUTH,
+	  gfarm_auth_client_method_is_kerberos_available,
 	  gfarm_auth_request_kerberos_auth,
 	  gfarm_auth_request_kerberos_auth_multiplexed,
 	  gfarm_auth_result_kerberos_auth_multiplexed },
 #else
 	{ GFARM_AUTH_METHOD_KERBEROS,
+	  gfarm_auth_client_method_is_never_available,
 	  gfarm_auth_request_panic,
 	  gfarm_auth_request_panic_multiplexed,
 	  gfarm_auth_result_panic_multiplexed },
 	{ GFARM_AUTH_METHOD_KERBEROS_AUTH,
+	  gfarm_auth_client_method_is_never_available,
 	  gfarm_auth_request_panic,
 	  gfarm_auth_request_panic_multiplexed,
 	  gfarm_auth_result_panic_multiplexed },
 #endif /* HAVE_KERBEROS */
 #if defined(HAVE_CYRUS_SASL) && defined(HAVE_TLS_1_3)
 	{ GFARM_AUTH_METHOD_SASL,
+	  gfarm_auth_client_method_is_sasl_available,
 	  gfarm_auth_request_sasl,
 	  gfarm_auth_request_sasl_multiplexed,
 	  gfarm_auth_result_sasl_multiplexed },
 	{ GFARM_AUTH_METHOD_SASL_AUTH,
+	  gfarm_auth_client_method_is_sasl_available,
 	  gfarm_auth_request_sasl_auth,
 	  gfarm_auth_request_sasl_auth_multiplexed,
 	  gfarm_auth_result_sasl_auth_multiplexed },
 #else
 	{ GFARM_AUTH_METHOD_SASL,
+	  gfarm_auth_client_method_is_never_available,
 	  gfarm_auth_request_panic,
 	  gfarm_auth_request_panic_multiplexed,
 	  gfarm_auth_result_panic_multiplexed },
 	{ GFARM_AUTH_METHOD_SASL_AUTH,
+	  gfarm_auth_client_method_is_never_available,
 	  gfarm_auth_request_panic,
 	  gfarm_auth_request_panic_multiplexed,
 	  gfarm_auth_result_panic_multiplexed },
@@ -189,6 +212,37 @@ enum gfarm_auth_method gfarm_auth_trial_table[] = {
 #endif /* HAVE_KERBEROS */
 	GFARM_AUTH_METHOD_NONE, /* sentinel */
 };
+
+gfarm_int32_t
+gfarm_auth_client_method_get_available(enum gfarm_auth_id_role self_role)
+{
+	int i;
+	gfarm_int32_t methods;
+
+	assert(GFARM_AUTH_METHOD_NUMBER <= sizeof(gfarm_int32_t) * CHAR_BIT);
+	assert(GFARM_ARRAY_LENGTH(gfarm_auth_client_table) ==
+	    GFARM_AUTH_METHOD_NUMBER);
+
+	methods = 0;
+	for (i = GFARM_AUTH_METHOD_NONE + 1; i < GFARM_AUTH_METHOD_NUMBER;
+	    i++) {
+		if (gfarm_auth_client_table[i].is_available(self_role))
+			methods |= 1 << i;
+	}
+	return (methods);
+}
+
+static int
+gfarm_auth_client_method_is_always_available(enum gfarm_auth_id_role self_role)
+{
+	return (1);
+}
+
+static int
+gfarm_auth_client_method_is_never_available(enum gfarm_auth_id_role self_role)
+{
+	return (0);
+}
 
 static gfarm_error_t
 gfarm_auth_request_panic(struct gfp_xdr *conn,

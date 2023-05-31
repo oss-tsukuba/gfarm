@@ -1013,9 +1013,10 @@ gfarm_auth_client_sasl_static_init(struct gfarm_context *ctxp)
 }
 
 int
-gfarm_auth_client_method_sasl_available(void)
+gfarm_auth_client_method_is_sasl_available(enum gfarm_auth_id_role self_role)
 {
-	return (staticp->sasl_client_initialized == GFARM_ERR_NO_ERROR);
+	return (staticp->sasl_client_initialized == GFARM_ERR_NO_ERROR &&
+	    self_role == GFARM_AUTH_ID_ROLE_USER);
 }
 
 void

@@ -1,6 +1,13 @@
+/* interface that lib/gfarm/gfsl/ provides to libgfarm/gfarm/ */
+
+struct gfarm_auth_gss_ops;
+
 struct gfarm_gss {
+
+	/* this is an exception: interface that libgfarm/gfarm/ provides */
+	struct gfarm_auth_gss_ops *gfarm_ops;
+
 	const char *protocol;
-	gss_cred_id_t (*client_cred_get)(void);
 
 	void (*gfarmGssPrintMajorStatus)(gfarm_OM_uint32);
 	void (*gfarmGssPrintMinorStatus)(gfarm_OM_uint32);
@@ -96,3 +103,6 @@ struct gfarm_gss {
 
 	int (*gfarmSecSessionGetInitiatorDistName)(gfarmSecSession *, char **);
 };
+
+struct gfarm_gss *gfarm_gss_dlopen(const char *, const char *,
+	struct gfarm_auth_gss_ops *);

@@ -1,13 +1,26 @@
 #include <stdlib.h>
 
+#include <gssapi.h>
+
 #include <gfarm/gfarm.h>
 
+#include "gfsl_secure_session.h"
+#include "gss.h"
+
 #include "auth.h"
+#include "auth_gss.h"
 #include "gfarm_gss.h"
 
 /*
  * server side authentication
  */
+
+int
+gfarm_auth_server_method_is_kerberos_available(void)
+{
+	return (gfarm_gss_kerberos() != NULL);
+}
+
 /*
  * "kerberos" method
  */

@@ -125,6 +125,10 @@ enum gfarm_auth_sasl_step_type {
 	GFARM_AUTH_SASL_STEP_CONTINUE,
 };
 
+int gfarm_auth_client_method_is_avaiable(enum gfarm_auth_method,
+	enum gfarm_auth_id_role);
+int gfarm_auth_server_method_is_avaiable(enum gfarm_auth_method);
+
 /* auth_client */
 
 struct gfp_xdr;
@@ -257,6 +261,7 @@ gfarm_error_t gfarm_auth_request_gsi_multiplexed(struct gfarm_eventqueue *,
 	const char *, struct passwd *, int, void (*)(void *), void *, void **);
 gfarm_error_t gfarm_auth_result_gsi_multiplexed(void *);
 
+int gfarm_auth_client_method_is_gsi_available(enum gfarm_auth_id_role);
 char *gfarm_gsi_client_cred_name(void);
 
 /* auth_client_gsi_auth */
@@ -280,6 +285,7 @@ gfarm_error_t gfarm_auth_request_kerberos_multiplexed(
 gfarm_error_t gfarm_auth_result_kerberos_multiplexed(void *);
 
 char *gfarm_kerberos_client_cred_name(void);
+int gfarm_auth_client_method_is_kerberos_available(enum gfarm_auth_id_role);
 
 /* auth_client_kerberos_auth */
 gfarm_error_t gfarm_auth_request_kerberos_auth(struct gfp_xdr *,
@@ -310,11 +316,13 @@ gfarm_error_t gfarm_auth_request_sasl_auth_multiplexed(
 	const char *, struct passwd *, int, void (*)(void *), void *, void **);
 gfarm_error_t gfarm_auth_result_sasl_auth_multiplexed(void *);
 
-int gfarm_auth_client_method_sasl_available(void);
 int gfarm_sasl_log(void *, int, const char *);
 int gfarm_sasl_addr_string(int, char *, size_t, char *, size_t, const char *);
+int gfarm_auth_client_method_is_sasl_available(enum gfarm_auth_id_role);
 
 /* auth_client_tls_sharedsecret */
+int gfarm_auth_client_method_is_tls_sharedsecret_available(
+	enum gfarm_auth_id_role);
 gfarm_error_t gfarm_auth_request_tls_sharedsecret(struct gfp_xdr *,
 	const char *, const char *, enum gfarm_auth_id_role, const char *,
 	struct passwd *);
@@ -325,7 +333,8 @@ gfarm_error_t gfarm_auth_request_tls_sharedsecret_multiplexed(
 gfarm_error_t gfarm_auth_result_tls_sharedsecret_multiplexed(void *);
 
 /* auth_client_tls_client_certificate */
-
+int gfarm_auth_client_method_is_tls_client_certificate_available(
+	enum gfarm_auth_id_role);
 gfarm_error_t gfarm_auth_request_tls_client_certificate(struct gfp_xdr *,
 	const char *, const char *, enum gfarm_auth_id_role, const char *,
 	struct passwd *);
@@ -375,6 +384,8 @@ gfarm_error_t gfarm_authorize_gsi(struct gfp_xdr *, char *, char *,
 	    char **), void *,
 	enum gfarm_auth_id_role *, char **);
 
+int gfarm_auth_server_method_is_gsi_available(void);
+
 /* auth_server_gsi_auth */
 gfarm_error_t gfarm_authorize_gsi_auth(struct gfp_xdr *, char *, char *,
 	gfarm_error_t (*)(void *,
@@ -388,6 +399,8 @@ gfarm_error_t gfarm_authorize_kerberos(struct gfp_xdr *, char *, char *,
 	    enum gfarm_auth_method, const char *, enum gfarm_auth_id_role *,
 	    char **), void *,
 	enum gfarm_auth_id_role *, char **);
+
+int gfarm_auth_server_method_is_kerberos_available(void);
 
 /* auth_server_kerberos_auth */
 gfarm_error_t gfarm_authorize_kerberos_auth(struct gfp_xdr *, char *, char *,
@@ -411,9 +424,10 @@ gfarm_error_t gfarm_authorize_sasl_auth(struct gfp_xdr *, char *, char *,
 	enum gfarm_auth_id_role *, char **);
 
 void gfarm_sasl_server_init(void);
-int gfarm_auth_server_method_sasl_available(void);
+int gfarm_auth_server_method_is_sasl_available(void);
 
 /* auth_server_tls_sharedsecret */
+int gfarm_auth_server_method_is_tls_sharedsecret_available(void);
 gfarm_error_t gfarm_authorize_tls_sharedsecret(struct gfp_xdr *,
 	char *, char *,
 	gfarm_error_t (*)(void *,
@@ -422,14 +436,10 @@ gfarm_error_t gfarm_authorize_tls_sharedsecret(struct gfp_xdr *,
 	enum gfarm_auth_id_role *, char **);
 
 /* auth_server_tls_client_certificate */
+int gfarm_auth_server_method_is_tls_client_certificate_available(void);
 gfarm_error_t gfarm_authorize_tls_client_certificate(struct gfp_xdr *,
 	char *, char *,
 	gfarm_error_t (*)(void *,
 	    enum gfarm_auth_method, const char *, enum gfarm_auth_id_role *,
 	    char **), void *,
 	enum gfarm_auth_id_role *, char **);
-
-
-/* gss_auth_error */
-void gfarm_auth_set_gss_cred_failed(struct gfarm_gss *);
-gfarm_error_t gfarm_auth_check_gss_cred_failed(void);

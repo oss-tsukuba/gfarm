@@ -383,7 +383,7 @@ gfarm_sasl_server_init(void)
 }
 
 int
-gfarm_auth_server_method_sasl_available(void)
+gfarm_auth_server_method_is_sasl_available(void)
 {
 	return (sasl_server_initialized == GFARM_ERR_NO_ERROR);
 }

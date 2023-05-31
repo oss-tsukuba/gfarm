@@ -54,6 +54,14 @@ gfarm_tls_server_cert_is_ok(struct gfp_xdr *conn, const char *service_tag,
 /*
  * auth_client_tls_sharedsecret
  */
+
+int
+gfarm_auth_client_method_is_tls_sharedsecret_available(
+	enum gfarm_auth_id_role self_role)
+{
+	return (1);
+}
+
 gfarm_error_t
 gfarm_auth_request_tls_sharedsecret(struct gfp_xdr *conn,
 	const char *service_tag, const char *hostname,
@@ -153,6 +161,13 @@ gfarm_auth_result_tls_sharedsecret_multiplexed(void *sp)
 /*
  * auth_client_tls_client_certificate
  */
+
+int
+gfarm_auth_client_method_is_tls_client_certificate_available(
+	enum gfarm_auth_id_role self_role)
+{
+	return (1);
+}
 
 gfarm_error_t
 gfarm_auth_request_tls_client_certificate(struct gfp_xdr *conn,
