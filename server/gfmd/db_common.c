@@ -25,7 +25,12 @@ db_user_auth_arg_free(void *vinfo)
 {
 	struct db_user_auth_arg *info = vinfo;
 
-	db_user_auth_arg_free(info);
+	if (info->username != NULL)
+		free(info->username);
+	if (info->auth_id_type != NULL)
+		free(info->auth_id_type);
+	if (info->auth_user_id != NULL)
+		free(info->auth_user_id);
 }
 
 static void

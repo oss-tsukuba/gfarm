@@ -564,8 +564,15 @@ user_auth_add_one(void *closure, struct db_user_auth_arg *p)
 			gflog_warning(GFARM_MSG_UNFIXED,
 			"user_auth_add_one: %s", gfarm_error_string(e));
 	}
-}
 
+	/* free temporary info */
+	if (p->username != NULL)
+		free(p->username);
+	if (p->auth_id_type != NULL)
+		free(p->auth_id_type);
+	if (p->auth_user_id != NULL)
+		free(p->auth_user_id);
+}
 
 /* memory owner of *ui will be moved, when this function succeeds */
 gfarm_error_t
