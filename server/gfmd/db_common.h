@@ -59,3 +59,5 @@ void db_symlink_callback_trampoline(void *, void *);
 void db_quota_dirset_callback_trampoline(void *, void *);
 void db_quota_dir_callback_trampoline(void *, void *);
 
+void db_user_auth_arg_free(struct db_user_auth_arg *);
+

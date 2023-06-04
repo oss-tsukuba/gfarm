@@ -21,16 +21,18 @@
 /**********************************************************************/
 
 static void
-db_user_auth_arg_free(void *vinfo)
+db_user_auth_arg_free_internal(void *vinfo)
 {
 	struct db_user_auth_arg *info = vinfo;
+	db_user_auth_arg_free(info);
+}
 
-	if (info->username != NULL)
-		free(info->username);
-	if (info->auth_id_type != NULL)
-		free(info->auth_id_type);
-	if (info->auth_user_id != NULL)
-		free(info->auth_user_id);
+void
+db_user_auth_arg_free(struct db_user_auth_arg *info)
+{
+	free(info->username);
+	free(info->auth_id_type);
+	free(info->auth_user_id);
 }
 
 static void
@@ -61,8 +63,8 @@ db_user_auth_callback_trampoline(void *closure, void *vinfo)
 }
 
 const struct gfarm_base_generic_info_ops db_base_user_auth_arg_ops = {
-	sizeof(struct db_inode_dirset_arg),
-	db_user_auth_arg_free,
+	sizeof(struct db_user_auth_arg),
+	db_user_auth_arg_free_internal,
 	db_user_auth_arg_clear,
 	db_user_auth_arg_validate,
 };
