@@ -16,6 +16,7 @@
 
 ## Explore on virtual clusters
 
+    % DIST=<distribution> docker compose build --build-arg UID=$(id -u) c1
     % DIST=<distribution> docker compose up -d
     ubuntu, almalinux8, and centos7 are available.  Default is ubuntu
     % docker exec -u $USER -w /home/$USER/gfarm -it gfarm-c1 /bin/bash
