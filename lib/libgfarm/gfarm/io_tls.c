@@ -278,6 +278,36 @@ static struct gfp_iobuffer_ops gfp_xdr_tls_iobuf_ops = {
  * Gfarm internal APIs
  */
 
+static int
+gfp_xdr_tls_session_create_ctx(int flags, struct tls_session_ctx_struct **ctxp)
+{
+	bool do_mutual_auth =
+		(flags & GFP_XDR_TLS_CLIENT_AUTHENTICATION) != 0;
+	enum tls_role role =
+		(GFP_XDR_TLS_ROLE_IS_INITIATOR(flags)) ?
+		TLS_ROLE_INITIATOR : TLS_ROLE_ACCEPTOR;
+	bool use_proxy_cert =
+		flags & GFP_XDR_TLS_CLIENT_USE_PROXY_CERTIFICATE;
+
+	return (tls_session_create_ctx(ctxp,
+	    role, do_mutual_auth, use_proxy_cert));
+}
+
+int
+gfp_xdr_tls_can_create_session(int flags)
+{
+	gfarm_error_t ret;
+	struct tls_session_ctx_struct *ctx = NULL;
+
+	ret = gfp_xdr_tls_session_create_ctx(flags, &ctx);
+	if (unlikely(ret != GFARM_ERR_NO_ERROR)) {
+		return (0);
+	} else {
+		tls_session_destroy_ctx(ctx);
+		return (1);
+	}
+}
+
 /*
  * An SSL_CTX/SSL constructor
  */
@@ -288,13 +318,6 @@ gfp_xdr_tls_alloc(struct gfp_xdr *conn,	int fd, int flags)
 
 	struct gfp_io_tls *io;
 	struct tls_session_ctx_struct *ctx = NULL;
-	bool do_mutual_auth =
-		(flags & GFP_XDR_TLS_CLIENT_AUTHENTICATION) != 0;
-	enum tls_role role =
-		(GFP_XDR_TLS_ROLE_IS_INITIATOR(flags)) ?
-		TLS_ROLE_INITIATOR : TLS_ROLE_ACCEPTOR;
-	bool use_proxy_cert =
-		flags & GFP_XDR_TLS_CLIENT_USE_PROXY_CERTIFICATE;
 	static const char diag[] = "gfp_xdr_tls_alloc";
 
 	GFARM_MALLOC(io);
@@ -315,8 +338,7 @@ gfp_xdr_tls_alloc(struct gfp_xdr *conn,	int fd, int flags)
 #if 0
 	gfarm_openssl_global_lock(diag);
 #endif
-	ret = tls_session_create_ctx(&ctx, role,
-		do_mutual_auth, use_proxy_cert);
+	ret = gfp_xdr_tls_session_create_ctx(flags, &ctx);
 #if 0
 	gfarm_openssl_global_unlock(diag);
 #endif

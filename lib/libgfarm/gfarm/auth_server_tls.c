@@ -14,6 +14,13 @@
 /*
  * auth_server_tls_sharedsecret
  */
+
+int
+gfarm_auth_server_method_is_tls_sharedsecret_available(void)
+{
+	return (1);
+}
+
 gfarm_error_t
 gfarm_authorize_tls_sharedsecret(struct gfp_xdr *conn,
 	char *service_tag, char *hostname,
@@ -43,6 +50,13 @@ gfarm_authorize_tls_sharedsecret(struct gfp_xdr *conn,
 /*
  * auth_server_tls_client_certificate
  */
+
+int
+gfarm_auth_server_method_is_tls_client_certificate_available(void)
+{
+	return (1);
+}
+
 gfarm_error_t gfarm_authorize_tls_client_certificate(
 	struct gfp_xdr *conn,
 	char *service_tag, char *hostname,

@@ -16,8 +16,6 @@
 #include "thrsubr.h"
 
 #include "gfsl_secure_session.h"
-
-#include "gfarm_gss.h"
 #include "gss.h"
 
 #include "context.h"
@@ -26,22 +24,23 @@
 #include "auth.h"
 #include "auth_gss.h"
 
-/* for auth_common_gsi_static & auth_common_kerberos_static */
-
-struct gfarm_auth_gss_client_cred {
+struct gfarm_auth_common_gss_static {
 	gss_cred_id_t client_cred;
 
 	/* gfarm_gsi_client_cred_name() or gfarm_kerberos_client_cred_name() */
 	pthread_mutex_t client_cred_init_mutex;
 	int client_cred_initialized;
 	char *client_dn;
+
+	/* client credential had a problem? (e.g. expired) */
+	int client_cred_failed;
 };
 
-static gfarm_error_t
-gfarm_auth_gss_client_cred_init(struct gfarm_auth_gss_client_cred **sp,
+gfarm_error_t
+gfarm_auth_common_gss_static_init(struct gfarm_auth_common_gss_static **sp,
 	const char *diag)
 {
-	struct gfarm_auth_gss_client_cred *s;
+	struct gfarm_auth_common_gss_static *s;
 
 	GFARM_MALLOC(s);
 	if (s == NULL)
@@ -54,12 +53,14 @@ gfarm_auth_gss_client_cred_init(struct gfarm_auth_gss_client_cred **sp,
 	s->client_cred_initialized = 0;
 	s->client_dn = NULL;
 
+	s->client_cred_failed = 0;
+
 	*sp = s;
 	return (GFARM_ERR_NO_ERROR);
 }
 
-static void
-gfarm_auth_gss_client_cred_term(struct gfarm_auth_gss_client_cred *s,
+void
+gfarm_auth_common_gss_static_term(struct gfarm_auth_common_gss_static *s,
 	const char *diag)
 {
 	if (s == NULL)
@@ -73,7 +74,7 @@ gfarm_auth_gss_client_cred_term(struct gfarm_auth_gss_client_cred *s,
 
 char *
 gfarm_gss_client_cred_name(struct gfarm_gss *gss,
-	struct gfarm_auth_gss_client_cred *s)
+	struct gfarm_auth_common_gss_static *s)
 {
 	gss_cred_id_t cred = s->client_cred;
 	gss_name_t name;
@@ -118,121 +119,64 @@ gfarm_gss_client_cred_name(struct gfarm_gss *gss,
 	return (client_dn);
 }
 
-#ifdef HAVE_GSI
-
-gfarm_error_t
-gfarm_auth_common_gsi_static_init(struct gfarm_context *ctxp)
+static int
+gfarm_auth_gss_client_credential_available(struct gfarm_gss *gss)
 {
-	static const char diag[] = "gfarm_auth_common_gsi_static_init";
-
-	return (gfarm_auth_gss_client_cred_init(
-	    &ctxp->auth_common_gsi_static, diag));
+	if (gss->gfarmGssAcquireCredential(
+	    NULL, GSS_C_NO_NAME, GSS_C_INITIATE, NULL, NULL, NULL) < 0) {
+		return (0);
+	}
+	return (1);
 }
 
 void
-gfarm_auth_common_gsi_static_term(struct gfarm_context *ctxp)
+gfarm_auth_gss_client_cred_set(struct gfarm_auth_common_gss_static *s,
+	gss_cred_id_t cred)
 {
-	static const char diag[] = "gfarm_auth_common_gsi_static_term";
-
-	gfarm_auth_gss_client_cred_term(ctxp->auth_common_gsi_static, diag);
-}
-
-char *
-gfarm_gsi_client_cred_name(void)
-{
-	struct gfarm_gss *gss = gfarm_gss_gsi();
-
-	if (gss == NULL)
-		return (NULL);
-	return (gfarm_gss_client_cred_name(gss,
-	    gfarm_ctxp->auth_common_gsi_static));
-}
-
-#endif /* HAVE_GSI */
-
-#ifdef HAVE_KERBEROS
-
-gfarm_error_t
-gfarm_auth_common_kerberos_static_init(struct gfarm_context *ctxp)
-{
-	static const char diag[] = "gfarm_auth_common_kerberos_static_init";
-
-	return (gfarm_auth_gss_client_cred_init(
-	    &ctxp->auth_common_kerberos_static, diag));
-}
-
-void
-gfarm_auth_common_kerberos_static_term(struct gfarm_context *ctxp)
-{
-	static const char diag[] = "gfarm_auth_common_kerberos_static_term";
-
-	gfarm_auth_gss_client_cred_term(ctxp->auth_common_kerberos_static,
-	    diag);
-}
-
-char *
-gfarm_kerberos_client_cred_name(void)
-{
-	struct gfarm_gss *gss = gfarm_gss_kerberos();
-
-	if (gss == NULL)
-		return (NULL);
-	return (gfarm_gss_client_cred_name(gss,
-	    gfarm_ctxp->auth_common_kerberos_static));
-}
-
-#endif /* HAVE_KERBEROS */
-
-/*
- * Delegated credential
- */
-
-/*
- * XXX - thread-unsafe interface.  this assumes a single thread server
- * like gfsd and gfarm_gridftp_dsi.  this is not for gfmd.
- */
-#ifdef HAVE_GSI
-
-/* gfarm-gridftp-dsi since v1.0.5 is using this interface */
-void
-gfarm_gsi_client_cred_set(gss_cred_id_t cred)
-{
-	gfarm_ctxp->auth_common_gsi_static->client_cred = cred;
+	s->client_cred = cred;
 }
 
 gss_cred_id_t
-gfarm_gsi_client_cred_get(void)
+gfarm_auth_gss_client_cred_get(struct gfarm_auth_common_gss_static *s)
 {
-	return (gfarm_ctxp->auth_common_gsi_static->client_cred);
+	return (s->client_cred);
 }
-
-/*
- * deprecated. gfarm_gsi_set_delegated_cred() will be removed in future.
- * (gfarm-gridftp-dsi was using this until v1.0.4)
- */
-void
-gfarm_gsi_set_delegated_cred(gss_cred_id_t cred)
-{
-	gfarm_gsi_client_cred_set(cred);
-}
-
-#endif /* HAVE_GSI */
-
-#ifdef HAVE_KERBEROS
 
 void
-gfarm_kerberos_client_cred_set(gss_cred_id_t cred)
+gfarm_auth_gss_client_cred_set_failed(struct gfarm_gss *gss,
+	struct gfarm_auth_common_gss_static *s)
 {
-	gfarm_ctxp->auth_common_kerberos_static->client_cred = cred;
+	s->client_cred_failed = 1;
 }
 
-gss_cred_id_t
-gfarm_kerberos_client_cred_get(void)
+/* to prevent to connect servers with expired client credential */
+gfarm_error_t
+gfarm_auth_gss_client_cred_check_failed(struct gfarm_gss *gss,
+	struct gfarm_auth_common_gss_static *s)
 {
-	return (gfarm_ctxp->auth_common_kerberos_static->client_cred);
+	if (s->client_cred_failed) {
+		if (!gfarm_auth_gss_client_credential_available(gss)) {
+			return (GFARM_ERR_INVALID_CREDENTIAL);
+		}
+		s->client_cred_failed = 0;
+	}
+	return (GFARM_ERR_NO_ERROR);
 }
 
-#endif /* HAVE_GSI */
+/* NOTE: it's OK to pass NULL as gss */
+gfarm_error_t
+gfarm_auth_client_method_gss_protocol_available(struct gfarm_gss *gss,
+	struct gfarm_auth_common_gss_static *s)
+{
+	if (gss == NULL)
+		return (GFARM_ERR_PROTOCOL_NOT_AVAILABLE);
+	if (gfarm_auth_gss_client_credential_available(gss))
+		return (GFARM_ERR_NO_ERROR);
+
+	gss->gfarm_ops->client_cred_set_failed();
+
+	return (GFARM_ERR_INVALID_CREDENTIAL);
+}
 
 gfarm_error_t
 gfarm_gss_client_initialize(struct gfarm_gss *gss)

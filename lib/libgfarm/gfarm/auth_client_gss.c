@@ -28,6 +28,7 @@
 #include "io_gfsl.h"
 #include "auth.h"
 #include "auth_gss.h"
+#include "gfarm_gss.h"
 
 #include "gfm_proto.h" /* for GFM_SERVICE_TAG, XXX layering violation */
 #include "gfs_proto.h" /* for GFS_SERVICE_TAG, XXX layering violation */
@@ -112,7 +113,7 @@ gfarm_gss_acquire_initiator_credential(struct gfarm_gss *gss,
 		 */
 		gflog_debug(GFARM_MSG_1001466,
 		    "acquirement of client credential failed");
-		gfarm_auth_set_gss_cred_failed(gss);
+		gss->gfarm_ops->client_cred_set_failed();
 		return (GFARM_ERR_INVALID_CREDENTIAL);
 #endif
 	}
@@ -161,7 +162,7 @@ gfarm_auth_request_gss(struct gfp_xdr *conn, struct gfarm_gss *gss,
 		    service_tag, hostname, gfarm_error_string(e));
 		return (e);
 	}
-	cred = gss->client_cred_get();
+	cred = gss->gfarm_ops->client_cred_get();
 	if (cred == GSS_C_NO_CREDENTIAL) { /* if not delegated */
 		e = gfarm_gss_acquire_initiator_credential(gss, hostname,
 		    self_role, &cred, &initiator_name);
@@ -170,7 +171,7 @@ gfarm_auth_request_gss(struct gfp_xdr *conn, struct gfarm_gss *gss,
 	} else {
 		if (gss->gfarmGssNewCredentialName(&initiator_name, cred,
 		    &e_major, &e_minor) < 0) {
-			gfarm_auth_set_gss_cred_failed(gss);
+			gss->gfarm_ops->client_cred_set_failed();
 			e = GFARM_ERR_INVALID_CREDENTIAL;
 			if (gflog_auth_get_verbose()) {
 				gflog_error(GFARM_MSG_1004245,
@@ -184,7 +185,7 @@ gfarm_auth_request_gss(struct gfp_xdr *conn, struct gfarm_gss *gss,
 		initiator_dn = gss->gfarmGssNewDisplayName(initiator_name,
 		    &e_major, &e_minor, NULL);
 		if (initiator_dn == NULL) {
-			gfarm_auth_set_gss_cred_failed(gss);
+			gss->gfarm_ops->client_cred_set_failed();
 			e = GFARM_ERR_INVALID_CREDENTIAL;
 			if (gflog_auth_get_verbose()) {
 				gflog_error(GFARM_MSG_1004246,
@@ -501,7 +502,7 @@ gfarm_auth_request_gss_multiplexed(struct gfarm_eventqueue *q,
 	}
 
 	state->cred_acquired = 0;
-	state->cred = gss->client_cred_get();
+	state->cred = gss->gfarm_ops->client_cred_get();
 	if (state->cred == GSS_C_NO_CREDENTIAL) { /* if not delegated */
 		e = gfarm_gss_acquire_initiator_credential(gss, hostname,
 		    self_role, &state->cred, &initiator_name);
@@ -510,7 +511,7 @@ gfarm_auth_request_gss_multiplexed(struct gfarm_eventqueue *q,
 	} else {
 		if (gss->gfarmGssNewCredentialName(&initiator_name,
 		    state->cred, &e_major, &e_minor) < 0) {
-			gfarm_auth_set_gss_cred_failed(gss);
+			gss->gfarm_ops->client_cred_set_failed();
 			e = GFARM_ERR_INVALID_CREDENTIAL;
 			if (gflog_auth_get_verbose()) {
 				gflog_error(GFARM_MSG_1004247,
@@ -525,7 +526,7 @@ gfarm_auth_request_gss_multiplexed(struct gfarm_eventqueue *q,
 		state->initiator_dn = gss->gfarmGssNewDisplayName(
 		    initiator_name, &e_major, &e_minor, NULL);
 		if (state->initiator_dn == NULL) {
-			gfarm_auth_set_gss_cred_failed(gss);
+			gss->gfarm_ops->client_cred_set_failed();
 			e = GFARM_ERR_INVALID_CREDENTIAL;
 			if (gflog_auth_get_verbose()) {
 				gflog_error(GFARM_MSG_1004248,

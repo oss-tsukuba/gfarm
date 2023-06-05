@@ -22,6 +22,8 @@
 
 #include "gfsl_secure_session.h"
 
+#include "gss.h"
+
 #include "liberror.h"
 #include "gfp_xdr.h"
 #include "io_fd.h"
@@ -29,7 +31,6 @@
 #include "auth.h"
 #include "auth_gss.h"
 #include "gfarm_gss.h"
-#include "gss.h"
 
 #include "gfm_proto.h" /* for GFMD_USERNAME, XXX layering violation */
 #include "gfs_proto.h" /* for GFSD_USERNAME, XXX layering violation */

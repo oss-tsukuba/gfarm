@@ -54,6 +54,14 @@ gfarm_tls_server_cert_is_ok(struct gfp_xdr *conn, const char *service_tag,
 /*
  * auth_client_tls_sharedsecret
  */
+
+int
+gfarm_auth_client_method_is_tls_sharedsecret_available(
+	enum gfarm_auth_id_role self_role)
+{
+	return (1);
+}
+
 gfarm_error_t
 gfarm_auth_request_tls_sharedsecret(struct gfp_xdr *conn,
 	const char *service_tag, const char *hostname,
@@ -154,6 +162,19 @@ gfarm_auth_result_tls_sharedsecret_multiplexed(void *sp)
  * auth_client_tls_client_certificate
  */
 
+#define TLS_CLIENT_CERTIFICATE_ALLOC_FLAG \
+	(GFP_XDR_TLS_INITIATE | GFP_XDR_TLS_CLIENT_AUTHENTICATION | \
+	 (gfarm_ctxp->tls_proxy_certificate ? \
+	     GFP_XDR_TLS_CLIENT_USE_PROXY_CERTIFICATE : 0))
+
+int
+gfarm_auth_client_method_is_tls_client_certificate_available(
+	enum gfarm_auth_id_role self_role)
+{
+	return (gfp_xdr_tls_can_create_session(
+	    TLS_CLIENT_CERTIFICATE_ALLOC_FLAG));
+}
+
 gfarm_error_t
 gfarm_auth_request_tls_client_certificate(struct gfp_xdr *conn,
 	const char *service_tag, const char *hostname,
@@ -167,9 +188,7 @@ gfarm_auth_request_tls_client_certificate(struct gfp_xdr *conn,
 	gfarm_int32_t result; /* enum gfarm_auth_error */
 
 	e = gfp_xdr_tls_alloc(conn, gfp_xdr_fd(conn),
-	    GFP_XDR_TLS_INITIATE | GFP_XDR_TLS_CLIENT_AUTHENTICATION |
-	    (gfarm_ctxp->tls_proxy_certificate ?
-	     GFP_XDR_TLS_CLIENT_USE_PROXY_CERTIFICATE : 0));
+	    TLS_CLIENT_CERTIFICATE_ALLOC_FLAG);
 	if (e != GFARM_ERR_NO_ERROR) {
 		/* is this case graceful? */
 		return (e);

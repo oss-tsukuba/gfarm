@@ -8,14 +8,11 @@
 
 #include "gfsl_secure_session.h"
 
-#include "auth.h"
-#include "auth_gss.h"
-#include "gfarm_gss.h"
 #include "gss.h"
 
-static struct gfarm_gss *
+struct gfarm_gss *
 gfarm_gss_dlopen(const char *libname, const char *proto,
-	gss_cred_id_t (*client_cred_get)(void))
+	struct gfarm_auth_gss_ops *gfarm_ops)
 {
 	void *lib = dlopen(libname, RTLD_LAZY|RTLD_LOCAL);
 	struct gfarm_gss *gss;
@@ -28,8 +25,8 @@ gfarm_gss_dlopen(const char *libname, const char *proto,
 		return (NULL);
 	}
 
+	gss->gfarm_ops = gfarm_ops;
 	gss->protocol = proto;
-	gss->client_cred_get = client_cred_get;
 
 #define SYM(s) \
 	gss->s = dlsym(lib, #s); \
@@ -77,48 +74,3 @@ gfarm_gss_dlopen(const char *libname, const char *proto,
 
 	return (NULL);
 }
-
-#ifdef HAVE_GSI
-
-static struct gfarm_gss *libgfsl_gsi;
-
-static void
-libgfsl_gsi_initialize(void)
-{
-	libgfsl_gsi = gfarm_gss_dlopen(LIBGFSL_GSI, "gsi",
-	    gfarm_gsi_client_cred_get);
-}
-
-
-struct gfarm_gss *
-gfarm_gss_gsi(void)
-{
-	static pthread_once_t initialized = PTHREAD_ONCE_INIT;
-
-	pthread_once(&initialized, libgfsl_gsi_initialize);
-	return (libgfsl_gsi);
-}
-
-#endif /* HAVE_GSI */
-
-#ifdef HAVE_KERBEROS
-
-static struct gfarm_gss *libgfsl_kerberos;
-
-static void
-libgfsl_kerberos_initialize(void)
-{
-	libgfsl_kerberos = gfarm_gss_dlopen(LIBGFSL_KERBEROS, "kerberos",
-	    gfarm_kerberos_client_cred_get);
-}
-
-struct gfarm_gss *
-gfarm_gss_kerberos(void)
-{
-	static pthread_once_t initialized = PTHREAD_ONCE_INIT;
-
-	pthread_once(&initialized, libgfsl_kerberos_initialize);
-	return (libgfsl_kerberos);
-}
-
-#endif /* HAVE_KERBEROS */

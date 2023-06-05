@@ -1,9 +1,30 @@
 #include <stdlib.h>
 
+#include <gssapi.h>
+
 #include <gfarm/gfarm.h>
 
+#include "gfsl_secure_session.h"
+#include "gss.h"
+
 #include "auth.h"
+#include "auth_gss.h"
 #include "gfarm_gss.h"
+
+/*
+ * this is similar to gfarm_auth_method_kerberos_available(),
+ * except the client_cred_failed check
+ */
+int
+gfarm_auth_client_method_is_kerberos_available(
+	enum gfarm_auth_id_role self_role)
+{
+	struct gfarm_gss *gss = gfarm_gss_kerberos();
+
+	return (gss != NULL &&
+	    /* prevent to connect servers with expired client credential */
+	    gss->gfarm_ops->client_cred_check_failed() == GFARM_ERR_NO_ERROR);
+}
 
 gfarm_error_t
 gfarm_auth_request_kerberos(struct gfp_xdr *conn,

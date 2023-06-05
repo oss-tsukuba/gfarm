@@ -32,6 +32,8 @@
 #include "gfs_proto.h" /* for GFSD_USERNAME, XXX layering violation */
 #include "gfm_proto.h" /* for GFSM_USERNAME, XXX layering violation */
 
+static int gfarm_auth_server_method_is_always_available(void);
+static int gfarm_auth_server_method_is_never_available(void);
 static gfarm_error_t gfarm_authorize_panic(struct gfp_xdr *,
 	char *, char *,
 	gfarm_error_t (*)(void *,
@@ -39,51 +41,139 @@ static gfarm_error_t gfarm_authorize_panic(struct gfp_xdr *,
 	    char **), void *,
 	enum gfarm_auth_id_role *, char **);
 
-gfarm_error_t (*gfarm_authorization_table[])(struct gfp_xdr *,
-	char *, char *,
-	gfarm_error_t (*)(void *,
-	    enum gfarm_auth_method, const char *, enum gfarm_auth_id_role *,
-	    char **), void *,
-	enum gfarm_auth_id_role *, char **) = {
-	/*
-	 * This table entry should be ordered by enum gfarm_auth_method.
-	 */
-	gfarm_authorize_panic,		/* GFARM_AUTH_METHOD_NONE */
-	gfarm_authorize_sharedsecret,	/* GFARM_AUTH_METHOD_SHAREDSECRET */
-	gfarm_authorize_panic,		/* GFARM_AUTH_METHOD_GSI_OLD */
+struct gfarm_auth_server_method {
+	int (*is_available)(void);
+	gfarm_error_t (*authorize)(struct gfp_xdr *, char *, char *,
+		gfarm_error_t (*)(void *,
+		    enum gfarm_auth_method, const char *,
+		    enum gfarm_auth_id_role *, char **), void *,
+		    enum gfarm_auth_id_role *, char **);
+};
+
+/*
+ * This table entries should be ordered by enum gfarm_auth_method.
+ */
+static const struct gfarm_auth_server_method gfarm_auth_server_table[] = {
+	{ /* GFARM_AUTH_METHOD_NONE */
+		gfarm_auth_server_method_is_never_available,
+		gfarm_authorize_panic,
+	},
+	{ /* GFARM_AUTH_METHOD_SHAREDSECRET */
+		gfarm_auth_server_method_is_always_available,
+		gfarm_authorize_sharedsecret,
+	},
+	{ /* GFARM_AUTH_METHOD_GSI_OLD */
+		gfarm_auth_server_method_is_never_available,
+		gfarm_authorize_panic,
+	},
 #ifdef HAVE_GSI
-	gfarm_authorize_gsi,		/* GFARM_AUTH_METHOD_GSI */
-	gfarm_authorize_gsi_auth,	/* GFARM_AUTH_METHOD_GSI_AUTH */
+	{ /* GFARM_AUTH_METHOD_GSI */
+		gfarm_auth_server_method_is_gsi_available,
+		gfarm_authorize_gsi,
+	},
+	{ /* GFARM_AUTH_METHOD_GSI_AUTH */
+		gfarm_auth_server_method_is_gsi_available,
+		gfarm_authorize_gsi_auth,
+	},
 #else
-	gfarm_authorize_panic,		/* GFARM_AUTH_METHOD_GSI */
-	gfarm_authorize_panic,		/* GFARM_AUTH_METHOD_GSI_AUTH */
+	{ /* GFARM_AUTH_METHOD_GSI */
+		gfarm_auth_server_method_is_never_available,
+		gfarm_authorize_panic,
+	},
+	{ /* GFARM_AUTH_METHOD_GSI_AUTH */
+		gfarm_auth_server_method_is_never_available,
+		gfarm_authorize_panic,
+	},
 #endif
 #ifdef HAVE_TLS_1_3
-	gfarm_authorize_tls_sharedsecret,
-				/* GFARM_AUTH_METHOD_TLS_SHAREDSECRET */
-	gfarm_authorize_tls_client_certificate,
-				/* GFARM_AUTH_METHOD_TLS_CLIENT_CERTIFICATE */
+	{ /* GFARM_AUTH_METHOD_TLS_SHAREDSECRET */
+		gfarm_auth_server_method_is_tls_sharedsecret_available,
+		gfarm_authorize_tls_sharedsecret,
+	},
+	{ /* GFARM_AUTH_METHOD_TLS_CLIENT_CERTIFICATE */
+		gfarm_auth_server_method_is_tls_client_certificate_available,
+		gfarm_authorize_tls_client_certificate,
+	},
 #else
-	gfarm_authorize_panic,
-				/* GFARM_AUTH_METHOD_TLS_SHAREDSECRET */
-	gfarm_authorize_panic,
-				/* GFARM_AUTH_METHOD_TLS_CLIENT_CERTIFICATE */
+	{ /* GFARM_AUTH_METHOD_TLS_SHAREDSECRET */
+		gfarm_auth_server_method_is_never_available,
+		gfarm_authorize_panic,
+	},
+	{ /* GFARM_AUTH_METHOD_TLS_CLIENT_CERTIFICATE */
+		gfarm_auth_server_method_is_never_available,
+		gfarm_authorize_panic,
+	},
 #endif
 #ifdef HAVE_KERBEROS
-	gfarm_authorize_kerberos,	/* GFARM_AUTH_METHOD_KERBEROS */
-	gfarm_authorize_kerberos_auth,	/* GFARM_AUTH_METHOD_KERBEROS_AUTH */
+	{ /* GFARM_AUTH_METHOD_KERBEROS */
+		gfarm_auth_server_method_is_kerberos_available,
+		gfarm_authorize_kerberos,
+	},
+	{ /* GFARM_AUTH_METHOD_KERBEROS_AUTH */
+		gfarm_auth_server_method_is_kerberos_available,
+		gfarm_authorize_kerberos_auth,
+	},
 #else
-	gfarm_authorize_panic,		/* GFARM_AUTH_METHOD_KERBEROS */
-	gfarm_authorize_panic,		/* GFARM_AUTH_METHOD_KERBEROS_AUTH */
+	{ /* GFARM_AUTH_METHOD_KERBEROS */
+		gfarm_auth_server_method_is_never_available,
+		gfarm_authorize_panic,
+	},
+	{ /* GFARM_AUTH_METHOD_KERBEROS_AUTH */
+		gfarm_auth_server_method_is_never_available,
+		gfarm_authorize_panic,
+	},
 #endif
 #if defined(HAVE_CYRUS_SASL) && defined(HAVE_TLS_1_3)
-	gfarm_authorize_sasl,		/* GFARM_AUTH_METHOD_SASL */
-	gfarm_authorize_sasl_auth,	/* GFARM_AUTH_METHOD_SASL_AUTH */
+	{ /* GFARM_AUTH_METHOD_SASL */
+		gfarm_auth_server_method_is_sasl_available,
+		gfarm_authorize_sasl,
+	},
+	{ /* GFARM_AUTH_METHOD_SASL_AUTH */
+		gfarm_auth_server_method_is_sasl_available,
+		gfarm_authorize_sasl_auth,
+	},
 #else
-	gfarm_authorize_panic,		/* GFARM_AUTH_METHOD_SASL */
-	gfarm_authorize_panic,		/* GFARM_AUTH_METHOD_SASL_AUTH */
+	{ /* GFARM_AUTH_METHOD_SASL */
+		gfarm_auth_server_method_is_never_available,
+		gfarm_authorize_panic,
+	},
+	{ /* GFARM_AUTH_METHOD_SASL_AUTH */
+		gfarm_auth_server_method_is_never_available,
+		gfarm_authorize_panic,
+	},
 #endif
 };
+
+gfarm_int32_t
+gfarm_auth_server_method_get_available(void)
+{
+	int i;
+	gfarm_int32_t methods;
+
+	assert(GFARM_AUTH_METHOD_NUMBER <= sizeof(gfarm_int32_t) * CHAR_BIT);
+	assert(GFARM_ARRAY_LENGTH(gfarm_auth_server_table) ==
+	    GFARM_AUTH_METHOD_NUMBER);
+
+	methods = 0;
+	for (i = GFARM_AUTH_METHOD_NONE + 1; i < GFARM_AUTH_METHOD_NUMBER;
+	    i++) {
+		if (gfarm_auth_server_table[i].is_available())
+			methods |= 1 << i;
+	}
+	return (methods);
+}
+
+static int
+gfarm_auth_server_method_is_always_available(void)
+{
+	return (1);
+}
+
+static int
+gfarm_auth_server_method_is_never_available(void)
+{
+	return (0);
+}
 
 static gfarm_error_t
 gfarm_authorize_panic(struct gfp_xdr *conn,
@@ -595,7 +685,7 @@ gfarm_authorize_wo_setuid(struct gfp_xdr *conn, char *service_tag,
 	size_t nmethods;
 	unsigned char methods_buffer[CHAR_BIT * sizeof(gfarm_int32_t)];
 
-	assert(GFARM_ARRAY_LENGTH(gfarm_authorization_table) ==
+	assert(GFARM_ARRAY_LENGTH(gfarm_auth_server_table) ==
 	    GFARM_AUTH_METHOD_NUMBER);
 
 	methods = gfarm_auth_method_get_enabled_by_name_addr(hostname, addr);
@@ -649,7 +739,7 @@ gfarm_authorize_wo_setuid(struct gfp_xdr *conn, char *service_tag,
 		else if (method <= GFARM_AUTH_METHOD_NONE ||
 		    ((1 << method) & methods) == 0)
 			error = GFARM_AUTH_ERROR_DENIED;
-		else if (gfarm_authorization_table[method] ==
+		else if (gfarm_auth_server_table[method].authorize ==
 		    gfarm_authorize_panic)
 			error = GFARM_AUTH_ERROR_NOT_SUPPORTED;
 		else
@@ -695,7 +785,7 @@ gfarm_authorize_wo_setuid(struct gfp_xdr *conn, char *service_tag,
 			return (e);
 		}
 
-		e = (*gfarm_authorization_table[method])(conn,
+		e = (*gfarm_auth_server_table[method].authorize)(conn,
 		    service_tag, hostname, auth_uid_to_global_user, closure,
 		    peer_rolep, global_usernamep);
 		if (e != GFARM_ERR_PROTOCOL_NOT_SUPPORTED &&

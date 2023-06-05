@@ -66,10 +66,10 @@ struct gfarm_context {
 	struct gfarm_auth_config_static *auth_config_static;
 	struct gfarm_auth_common_static *auth_common_static;
 #ifdef HAVE_GSI
-	struct gfarm_auth_gss_client_cred *auth_common_gsi_static;
+	struct gfarm_auth_common_gss_static *auth_common_gsi_static;
 #endif /* HAVE_GSI */
 #ifdef HAVE_KERBEROS
-	struct gfarm_auth_gss_client_cred *auth_common_kerberos_static;
+	struct gfarm_auth_common_gss_static *auth_common_kerberos_static;
 #endif /* HAVE_GSI */
 #if defined(HAVE_CYRUS_SASL) && defined(HAVE_TLS_1_3)
 	struct gfarm_auth_sasl_client_static *auth_sasl_client_static;

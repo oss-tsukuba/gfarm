@@ -408,12 +408,6 @@ gfs_client_connection_alloc(const char *canonical_hostname,
 	struct gfs_connection *gfs_server;
 	int connection_in_progress, sock = -1, is_local = 0;
 
-#ifdef HAVE_GSS
-	/* prevent to connect servers with expired client credential */
-	e = gfarm_auth_check_gss_cred_failed();
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
-#endif
 #ifdef __GNUC__ /* workaround gcc warning: may be used uninitialized */
 	connection_in_progress = 0;
 #endif
