@@ -34,6 +34,7 @@
 #include "process.h"
 #include "metadb_server.h"
 #include "db_ops.h"
+#include "db_common.h"
 
 #define USER_HASHTAB_SIZE		3079	/* prime number */
 #define USER_DN_HASHTAB_SIZE		3079	/* prime number */
@@ -548,7 +549,6 @@ user_auth_id_remove(struct user *user, char *auth_id_type)
 	return (e);
 }
 
-struct db_user_auth_arg;
 void
 user_auth_add_one(void *closure, struct db_user_auth_arg *p)
 {
@@ -564,8 +564,14 @@ user_auth_add_one(void *closure, struct db_user_auth_arg *p)
 			gflog_warning(GFARM_MSG_UNFIXED,
 			"user_auth_add_one: %s", gfarm_error_string(e));
 	}
-}
 
+	/*
+	 * unlike user_add_one(), the memory owner
+	 * of *p is not changed to user.c
+	 * thus, it must be freed here.
+	 */
+	db_user_auth_arg_free(p);
+}
 
 /* memory owner of *ui will be moved, when this function succeeds */
 gfarm_error_t
