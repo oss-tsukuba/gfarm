@@ -82,9 +82,6 @@ struct gfarm_auth_config_static {
 	struct gfarm_auth_config **auth_config_last;
 	struct gfarm_auth_config **auth_config_mark;
 	struct gfarm_auth_cred_config *auth_server_cred_config_list;
-
-	/* authentication credential expired?, and which was the protocol? */
-	struct gfarm_gss *gss_cred_failed;
 };
 
 gfarm_error_t
@@ -100,7 +97,6 @@ gfarm_auth_config_static_init(struct gfarm_context *ctxp)
 	s->auth_config_last = &s->auth_config_list;
 	s->auth_config_mark = &s->auth_config_list;
 	s->auth_server_cred_config_list = NULL;
-	s->gss_cred_failed = NULL;
 
 	ctxp->auth_config_static = s;
 	return (GFARM_ERR_NO_ERROR);
