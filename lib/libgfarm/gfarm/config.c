@@ -1701,7 +1701,7 @@ gfarm_strtoken(char **cursorp, char **tokenp)
 }
 
 static gfarm_error_t
-parse_auth_arguments(char *p, enum gfarm_auth_config_position position,
+parse_auth_arguments(char *p, enum gfarm_config_position position,
 	const char **op)
 {
 #ifndef __KERNEL__	/* parse_auth_arguments */
@@ -3208,7 +3208,7 @@ parse_fatal_action(char *p, int *vp)
 }
 
 static gfarm_error_t parse_one_line(const char *, char *,
-	enum gfarm_auth_config_position, const char *, int, const char **);
+	enum gfarm_config_position, const char *, int, const char **);
 
 static gfarm_error_t
 parse_include(char *p, const char **op, const char *file, int lineno)
@@ -3277,7 +3277,7 @@ parse_include(char *p, const char **op, const char *file, int lineno)
 
 static gfarm_error_t
 parse_one_line(const char *s, char *p,
-	enum gfarm_auth_config_position position, const char *file, int lineno,
+	enum gfarm_config_position position, const char *file, int lineno,
 	const char **op)
 {
 	gfarm_error_t e;
@@ -3792,7 +3792,7 @@ gfarm_config_read_file(FILE *config, int *lineno_p, const char *file)
 		if (e == GFARM_ERR_NO_ERROR) {
 			if (s == NULL) /* blank or comment line */
 				continue;
-			e = parse_one_line(s, p, GFARM_AUTH_CONFIG_AT_TAIL,
+			e = parse_one_line(s, p, GFARM_CONFIG_AT_TAIL,
 			    file, lineno, &o);
 		}
 		if (e != GFARM_ERR_NO_ERROR) {
@@ -4371,7 +4371,7 @@ gfarm_config_copyin_parse(const struct gfarm_config_type *type,
 
 	/* addr may be NULL */
 	(*type->set_default)(addr);
-	e = parse_one_line(type->name, storage->s, GFARM_AUTH_CONFIG_AT_HEAD,
+	e = parse_one_line(type->name, storage->s, GFARM_CONFIG_AT_HEAD,
 	    NULL, 0, &o);
 	return (e);
 }
@@ -4429,7 +4429,7 @@ gfarm_config_client_side_parse_default(
 		return (GFARM_ERR_BAD_ADDRESS);
 
 	(*type->set_default)(addr);
-	e = parse_one_line(type->name, args, GFARM_AUTH_CONFIG_AT_HEAD,
+	e = parse_one_line(type->name, args, GFARM_CONFIG_AT_HEAD,
 	    NULL, 0, &o);
 	if (e != GFARM_ERR_NO_ERROR) {
 		if (o != NULL) {
@@ -4977,7 +4977,7 @@ gfarm_config_apply_to_metadb(char *directive, char *rest_of_line,
 	addr = gfarm_config_addr(type);
 	/* addr may be NULL */
 	(*type->set_default)(addr);
-	e = parse_one_line(directive, rest_of_line, GFARM_AUTH_CONFIG_AT_MARK,
+	e = parse_one_line(directive, rest_of_line, GFARM_CONFIG_AT_MARK,
 	    file, lineno, &o);
 
 	if (e != GFARM_ERR_NO_ERROR) {

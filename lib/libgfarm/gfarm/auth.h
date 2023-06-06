@@ -177,23 +177,19 @@ enum gfarm_auth_id_role gfarm_get_auth_id_role(void);
 
 /* auth_config */
 struct gfarm_hostspec;
+enum gfarm_config_position;
 
 const char *gfarm_auth_id_role_name(enum gfarm_auth_id_role);
 
 char gfarm_auth_method_mnemonic(enum gfarm_auth_method);
 char *gfarm_auth_method_name(enum gfarm_auth_method);
 gfarm_error_t gfarm_auth_method_parse(char *, enum gfarm_auth_method *);
-enum gfarm_auth_config_position {
-	GFARM_AUTH_CONFIG_AT_HEAD,
-	GFARM_AUTH_CONFIG_AT_TAIL,
-	GFARM_AUTH_CONFIG_AT_MARK
-};
 gfarm_error_t gfarm_auth_enable(
 	enum gfarm_auth_method, struct gfarm_hostspec *,
-	enum gfarm_auth_config_position);
+	enum gfarm_config_position);
 gfarm_error_t gfarm_auth_disable(
 	enum gfarm_auth_method, struct gfarm_hostspec *,
-	enum gfarm_auth_config_position);
+	enum gfarm_config_position);
 void gfarm_auth_config_set_mark(void);
 
 /* this i/f have to be changed, if we support more than 31 auth methods */

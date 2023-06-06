@@ -258,7 +258,7 @@ auth_common_gss.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/thrsubr.h \
 	$(GFSL_SRCDIR)/gfsl_secure_session.h gss.h \
 	context.h liberror.h gfpath.h auth.h auth_gss.h
 auth_config.lo: $(GFUTIL_SRCDIR)/gfutil.h \
-	context.h liberror.h hostspec.h auth.h
+	context.h liberror.h hostspec.h auth.h config.h
 auth_server.lo: $(GFUTIL_SRCDIR)/gfutil.h context.h liberror.h hostspec.h auth.h gfp_xdr.h gfs_proto.h gfm_proto.h
 auth_server_kerberos.lo: $(GFSL_SRCDIR)/gfsl_secure_session.h gss.h \
 	auth.h auth_gss.h gfarm_gss.h

@@ -2,6 +2,12 @@
 #define GFARM_F2LL_SCALE		1000LL
 #define GFARM_F2LL_SCALE_SIZE		3
 
+enum gfarm_config_position {
+	GFARM_CONFIG_AT_HEAD,
+	GFARM_CONFIG_AT_TAIL,
+	GFARM_CONFIG_AT_MARK
+};
+
 /* gfsd dependent */
 /* GFS dependent */
 extern int gfarm_spool_server_listen_backlog;
