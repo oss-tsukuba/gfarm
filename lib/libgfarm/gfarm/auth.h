@@ -135,6 +135,11 @@ struct gfp_xdr;
 struct sockaddr;
 struct gfarm_eventqueue;
 struct gfarm_auth_request_state;
+enum gfarm_config_position;
+
+gfarm_error_t gfarm_auth_client_trial_order_set(enum gfarm_auth_method *, int,
+	enum gfarm_config_position);
+gfarm_error_t gfarm_auth_client_trial_order_set_default(void);
 
 gfarm_error_t gfarm_authorize_log_connected(struct gfp_xdr *, char *, char *);
 gfarm_error_t gfarm_auth_request(struct gfp_xdr *,

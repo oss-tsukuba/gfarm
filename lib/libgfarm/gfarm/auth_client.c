@@ -7,10 +7,8 @@
 #include <string.h>
 #include <limits.h>
 #include <pwd.h>
-#include <gfarm/gfarm_config.h>
-#include <gfarm/gflog.h>
-#include <gfarm/error.h>
-#include <gfarm/gfarm_misc.h>
+
+#include <gfarm/gfarm.h>
 
 #include "gfutil.h"
 #include "gfevent.h"
@@ -19,11 +17,13 @@
 #include "liberror.h"
 #include "gfp_xdr.h"
 #include "auth.h"
+#include "config.h"
 
 #define staticp	(gfarm_ctxp->auth_client_static)
 
 struct gfarm_auth_client_static {
 	enum gfarm_auth_id_role gfarm_auth_role;
+	enum gfarm_auth_method *gfarm_auth_trial_order;
 };
 
 gfarm_error_t
@@ -36,6 +36,7 @@ gfarm_auth_client_static_init(struct gfarm_context *ctxp)
 		return (GFARM_ERR_NO_MEMORY);
 
 	s->gfarm_auth_role = GFARM_AUTH_ID_ROLE_USER;
+	s->gfarm_auth_trial_order = NULL;
 
 	ctxp->auth_client_static = s;
 	return (GFARM_ERR_NO_ERROR);
@@ -44,7 +45,12 @@ gfarm_auth_client_static_init(struct gfarm_context *ctxp)
 void
 gfarm_auth_client_static_term(struct gfarm_context *ctxp)
 {
-	free(ctxp->auth_client_static);
+	struct gfarm_auth_client_static *s = ctxp->auth_client_static;
+
+	free(s->gfarm_auth_trial_order);
+	s->gfarm_auth_trial_order = NULL;
+
+	free(s);
 }
 
 /*
@@ -190,9 +196,10 @@ static const struct gfarm_auth_client_method gfarm_auth_client_table[] = {
 };
 
 /*
- * gfarm_auth_trial_table[] should be ordered by prefered authentication method
+ * gfarm_auth_trial_order_default[] should be
+ * ordered by prefered authentication method
  */
-enum gfarm_auth_method gfarm_auth_trial_table[] = {
+enum gfarm_auth_method gfarm_auth_trial_order_default[] = {
 	GFARM_AUTH_METHOD_SHAREDSECRET,
 #ifdef HAVE_TLS_1_3
 	GFARM_AUTH_METHOD_TLS_SHAREDSECRET,
@@ -212,6 +219,57 @@ enum gfarm_auth_method gfarm_auth_trial_table[] = {
 #endif /* HAVE_KERBEROS */
 	GFARM_AUTH_METHOD_NONE, /* sentinel */
 };
+
+gfarm_error_t
+gfarm_auth_client_trial_order_set(enum gfarm_auth_method *order, int n,
+	enum gfarm_config_position position)
+{
+	enum gfarm_auth_method *new_order;
+	int i;
+
+	/*
+	 * parse_auth_trial_order_arguments() checks
+	 * that `n + 1' does not overflow (i.e. n >= GFARM_AUTH_METHOD_NUMBER)
+	 */
+	GFARM_MALLOC_ARRAY(new_order, n + 1);
+	if (new_order == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfarm_auth_client_trial_order_set: "
+		    "no memory for %d authentication methods", n);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	for (i = 0; i < n; i++) {
+		new_order[i] = order[i];
+	}
+	new_order[n] = GFARM_AUTH_METHOD_NONE; /* sentinel */
+
+	free(staticp->gfarm_auth_trial_order);
+	staticp->gfarm_auth_trial_order = new_order;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfarm_auth_client_trial_order_set_default(void)
+{
+	int i, n = GFARM_ARRAY_LENGTH(gfarm_auth_trial_order_default);
+	enum gfarm_auth_method *new_order;
+
+	if (staticp->gfarm_auth_trial_order != NULL)
+		return (GFARM_ERR_NO_ERROR);
+
+	GFARM_MALLOC_ARRAY(new_order, n);
+	if (new_order == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfarm_auth_client_trial_order_set_default: "
+		    "no memory for %d authentication methods", n);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	for (i = 0; i < n; i++) {
+		new_order[i] = gfarm_auth_trial_order_default[i];
+	}
+	staticp->gfarm_auth_trial_order = new_order;
+	return (GFARM_ERR_NO_ERROR);
+}
 
 gfarm_int32_t
 gfarm_auth_client_method_get_available(enum gfarm_auth_id_role self_role)
@@ -531,7 +589,7 @@ gfarm_auth_request(struct gfp_xdr *conn,
 	}
 
 	for (i = 0;; i++) {
-		method = gfarm_auth_trial_table[i];
+		method = staticp->gfarm_auth_trial_order[i];
 		if (method != GFARM_AUTH_METHOD_NONE &&
 		    (methods & server_methods & (1 << method)) == 0)
 			continue;
@@ -1109,7 +1167,7 @@ gfarm_auth_request_dispatch_result(void *closure)
 	struct gfarm_auth_request_state *state = closure;
 
 	state->last_error = (*gfarm_auth_client_table[
-	    gfarm_auth_trial_table[state->auth_method_index]].
+	    staticp->gfarm_auth_trial_order[state->auth_method_index]].
 	    result_multiplexed)(state->method_state);
 	gfarm_auth_request_next_method(state);
 }
@@ -1149,11 +1207,12 @@ gfarm_auth_request_dispatch_method(int events, int fd, void *closure,
 	    error != GFARM_AUTH_ERROR_NO_ERROR)
 		state->error = GFARM_ERR_PROTOCOL; /* shouldn't happen */
 	if (state->error == GFARM_ERR_NO_ERROR) {
-		if (gfarm_auth_trial_table[state->auth_method_index]
+		if (staticp->gfarm_auth_trial_order[state->auth_method_index]
 		    != GFARM_AUTH_METHOD_NONE) {
 			state->last_error =
 			    (*gfarm_auth_client_table[
-			    gfarm_auth_trial_table[state->auth_method_index]].
+			    staticp->gfarm_auth_trial_order[
+				state->auth_method_index]].
 			    request_multiplexed)(state->q, state->conn,
 			    state->service_tag, state->name, state->self_role,
 			    state->user, state->pwd, state->auth_timeout,
@@ -1194,10 +1253,11 @@ gfarm_auth_request_loop_ask_method(int events, int fd, void *closure,
 	int rv;
 	struct timeval timeout;
 
-	method = gfarm_auth_trial_table[state->auth_method_index];
+	method = staticp->gfarm_auth_trial_order[state->auth_method_index];
 	while (method != GFARM_AUTH_METHOD_NONE &&
 	    (state->methods & state->server_methods & (1 << method)) == 0) {
-		method = gfarm_auth_trial_table[++state->auth_method_index];
+		method =
+		    staticp->gfarm_auth_trial_order[++state->auth_method_index];
 	}
 	state->error = gfp_xdr_send(state->conn, "i", method);
 	if (state->error != GFARM_ERR_NO_ERROR ||
@@ -1401,7 +1461,7 @@ gfarm_auth_result_multiplexed(struct gfarm_auth_request_state *state,
 
 	if (e == GFARM_ERR_NO_ERROR) {
 		if (auth_methodp != NULL)
-			*auth_methodp = gfarm_auth_trial_table[
+			*auth_methodp = staticp->gfarm_auth_trial_order[
 			    state->auth_method_index];
 	}
 	gfarm_event_free(state->readable);

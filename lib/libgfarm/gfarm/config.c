@@ -1819,6 +1819,49 @@ parse_auth_arguments(char *p, enum gfarm_config_position position,
 #endif /* __KERNEL__ */
 }
 
+static gfarm_error_t
+parse_auth_trial_order_arguments(char *p,
+	enum gfarm_config_position position, const char **op)
+{
+	gfarm_error_t e;
+	char *tmp;
+	enum gfarm_auth_method trial_order[GFARM_AUTH_METHOD_NUMBER];
+	int n;
+
+	n = 0;
+	for (;;) {
+		if (n >= GFARM_AUTH_METHOD_NUMBER) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "auth_trial_order: too many arguments (%d)", n);
+			return (GFARM_ERRMSG_TOO_MANY_ARGUMENTS);
+		}
+		e = gfarm_strtoken(&p, &tmp);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "auth_trial_order: parsing auth method (%s): %s",
+			    p, gfarm_error_string(e));
+			return (e);
+		}
+		if (tmp == NULL) {
+			if (n > 0)
+				break;
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "auth_trial_order: missing argument");
+			return (GFARM_ERRMSG_MISSING_ARGUMENT);
+		}
+		e = gfarm_auth_method_parse(tmp, &trial_order[n]);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"auth_trial_order: unknown auth method (%s)",
+				tmp);
+			return (GFARM_ERRMSG_UNKNOWN_AUTH_METHOD);
+		}
+		n++;
+	}
+	return (gfarm_auth_client_trial_order_set(trial_order, n, position));
+}
+
+
 #if 0 /* not yet in gfarm v2 */
 static gfarm_error_t
 parse_netparam_arguments(char *p, const char **op)
@@ -3468,6 +3511,8 @@ parse_one_line(const char *s, char *p,
 		e = parse_set_var(p, &gfarm_ctxp->sasl_password);
 	} else if (strcmp(s, o = "auth") == 0) {
 		e = parse_auth_arguments(p, position, &o);
+	} else if (strcmp(s, o = "auth_trial_order") == 0) {
+		e = parse_auth_trial_order_arguments(p, position, &o);
 #if 0 /* not yet in gfarm v2 */
 	} else if (strcmp(s, o = "netparam") == 0) {
 		e = parse_netparam_arguments(p, &o);
@@ -3870,6 +3915,8 @@ error:
 void
 gfarm_config_set_default_misc(void)
 {
+	gfarm_error_t e;
+
 	if (gfarm_ctxp->include_nesting_limit == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->include_nesting_limit =
 		    GFARM_CONFIG_INCLUDE_NESTING_LIMIT_DEFAULT;
@@ -4202,7 +4249,17 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_replicainfo_enabled == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_replicainfo_enabled = GFARM_REPLICAINFO_ENABLED_DEFAULT;
 
-	gfarm_config_set_default_metadb_server();
+	e = gfarm_config_set_default_metadb_server();
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "gfarm_config_set_default_metadb_server: %s",
+		    gfarm_error_string(e));
+
+	e = gfarm_auth_client_trial_order_set_default();
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "gfarm_auth_client_trial_order_set_default: %s",
+		    gfarm_error_string(e));
 }
 
 gfarm_error_t
