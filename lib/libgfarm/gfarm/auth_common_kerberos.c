@@ -13,6 +13,9 @@ gfarm_auth_method_kerberos_available(void)
 
 #else /* HAVE_KERBEROS */
 
+#include <pthread.h>
+#include <assert.h>
+
 #include <gssapi.h>
 
 #include "gfsl_secure_session.h"

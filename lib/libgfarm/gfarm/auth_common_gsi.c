@@ -13,6 +13,9 @@ gfarm_auth_method_gsi_available(void)
 
 #else /* HAVE_GSI */
 
+#include <pthread.h>
+#include <assert.h>
+
 #include <gssapi.h>
 
 #include "gfsl_secure_session.h"
