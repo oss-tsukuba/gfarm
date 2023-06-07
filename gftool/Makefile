@@ -8,7 +8,7 @@ include $(top_srcdir)/makes/var.mk
 PRIVATE_TARGETS = $(PRIVATE_GFTOOL_SUBDIRS)
 PUBLIC_TARGETS =
 
-# gfrep -> gfprep -> gfpconcat -> gfcp order should be keeped,
+# gfrep -> gfprep -> gfpconcat -> gfcp order should be kept,
 # due to the following dependency:
 #	gfprep: depends on gfrep
 #	gfpconcat: depends on gfprep

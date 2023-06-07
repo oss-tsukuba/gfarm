@@ -7,7 +7,7 @@ test()
 {
 	script=$2
 
-	DIST=$1 docker compose build c1
+	DIST=$1 docker compose build --build-arg UID=$(id -u) c1
 	DIST=$1 docker compose up -d
 	docker exec -u $USER -w /home/$USER/gfarm/docker/dist gfarm-c1 \
 		sh $script
