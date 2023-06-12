@@ -1262,6 +1262,7 @@ fi
 %{prefix}/bin/gfperf.rb
 %{prefix}/bin/gfstress.rb
 %{prefix}/bin/gfiops
+%{prefix}/bin/proxy-cert-gen
 %dir %{share_prefix}/config
 %{share_prefix}/config/gfperf-config.yml
 %{share_prefix}/config/gfperf-simple.yml

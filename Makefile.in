@@ -15,6 +15,7 @@ SUBDIRS = \
 	util/ganglia \
 	util/gfservice \
 	util/gfruntest \
+	util/proxy-cert \
 	systest \
 	nls \
 	bench/gfperf \
