@@ -298,19 +298,19 @@ is_file_readable(int fd, const char *file)
 				ret = GFARM_ERR_NO_ERROR;
 			} else {
 				ret = GFARM_ERR_PERMISSION_DENIED;
-				gflog_tls_error(GFARM_MSG_UNFIXED,
+				gflog_tls_debug(GFARM_MSG_UNFIXED,
 					"%s: %s", file,
 					gfarm_error_string(ret));
 
 			}
 		} else {
 			if (errno != 0) {
-				gflog_tls_error(GFARM_MSG_UNFIXED,
+				gflog_tls_debug(GFARM_MSG_UNFIXED,
 					"Failed to stat(\"%s\"): %s",
 					file, strerror(errno));
 				ret = gfarm_errno_to_error(errno);
 			} else {
-				gflog_tls_error(GFARM_MSG_UNFIXED,
+				gflog_tls_debug(GFARM_MSG_UNFIXED,
 					"%s is a directory.", file);
 				ret = GFARM_ERR_IS_A_DIRECTORY;
 			}
@@ -2120,9 +2120,11 @@ tls_session_create_ctx(struct tls_session_ctx_struct **ctxptr,
 			 * We still have a chance to go if we had a
 			 * usable proxy cert.
 			 */
-			gflog_tls_error(GFARM_MSG_UNFIXED,
-				"None of a cert file, a cert chain "
-				"file, and a proxy cert file is specified.");
+			if (gflog_auth_get_verbose()) {
+				gflog_tls_info(GFARM_MSG_UNFIXED,
+				    "None of a cert file, a cert chain file, "
+				    "and a proxy cert file is specified.");
+			}
 			/* Don't overwrite return code ever set */
 			if (ret == GFARM_ERR_UNKNOWN ||
 				ret == GFARM_ERR_NO_ERROR) {
