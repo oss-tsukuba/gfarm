@@ -29,6 +29,11 @@ error() {
     stderr "${_me}: error: $*"
 }
 
+usage() {
+    stderr "Usage: ${_me} [-f] -cert <certficate-file> -key <key-file>"
+    stderr "	 [-out <out-file> -days <days>]"
+}
+
 gen_rnd_string() {
     _ret=1
     _bytes=9
@@ -38,11 +43,11 @@ gen_rnd_string() {
     dd if=/dev/urandom bs=${_bytes} count=1 2>/dev/null | \
 	base64 | sed -e 's:/:~:g'
     _ret=$?
-    
+
     return ${_ret}
 }
 
-#
+#
 
 umask 0077
 
@@ -63,11 +68,13 @@ setup() {
     trap teardown HUP INT QUIT TERM EXIT
 
     if test -z "${EECERT}" -o ! -r "${EECERT}"; then
-	error "invalid end entity certificate: ${EECERT}"
+	error "invalid end entity certificate: \"${EECERT}\""
+	usage
 	exit 1
     fi
-    if test -z "${EEKEY}" -o ! -r "${EECERT}"; then
-	error "invalid end entity private key: ${EECERT}"
+    if test -z "${EEKEY}" -o ! -r "${EEKEY}"; then
+	error "invalid end entity private key: \"${EEKEY}\""
+	usage
 	exit 1
     fi
     if test -d "${OUT_PEM}"; then
@@ -120,7 +127,7 @@ setup() {
 
     return 0
 }
-    
+
 gen_proxy_subject() {
     _eecert="${1}"
     _ret=1
@@ -207,8 +214,8 @@ gen_proxy_cert() {
 
     return ${_ret}
 }
-	    
-#
+
+#
 
 while
     case ${1} in
@@ -231,5 +238,3 @@ done
 
 setup && gen_proxy_cert
 exit $?
-
-
