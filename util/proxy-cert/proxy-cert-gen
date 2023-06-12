@@ -1,0 +1,235 @@
+#!/bin/sh
+
+# Copyright (c) 2023 Motonori "Heita" Hirano
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+_me=`echo "${0}" | awk -F'/' '{ print $NF }'`
+stderr() {
+    echo "$*" 1>&2
+}
+
+error() {
+    stderr "${_me}: error: $*"
+}
+
+gen_rnd_string() {
+    _ret=1
+    _bytes=9
+    if test ! -z "${1}"; then
+	_bytes=${1}
+    fi
+    dd if=/dev/urandom bs=${_bytes} count=1 2>/dev/null | \
+	base64 | sed -e 's:/:~:g'
+    _ret=$?
+    
+    return ${_ret}
+}
+
+#
+
+umask 0077
+
+V3_CONF_SECTION='v3_proxy'
+EECERT=''
+EEKEY=''
+DAYS=7
+OUT_PEM=./proxycert.pem
+doForce=0
+
+teardown() {
+    if test ! -z "${GEN_TMPDIR}" -a -d "${GEN_TMPDIR}"; then
+	rm -rf "${GEN_TMPDIR}"
+    fi
+}
+
+setup() {
+    trap teardown HUP INT QUIT TERM EXIT
+
+    if test -z "${EECERT}" -o ! -r "${EECERT}"; then
+	error "invalid end entity certificate: ${EECERT}"
+	exit 1
+    fi
+    if test -z "${EEKEY}" -o ! -r "${EECERT}"; then
+	error "invalid end entity private key: ${EECERT}"
+	exit 1
+    fi
+    if test -d "${OUT_PEM}"; then
+	error "${OUT_PEM} is a directry."
+	exit 1
+    fi
+    if test -e "${OUT_PEM}" -a ${doForce} -ne 1; then
+	error "${OUT_PEM} still exists."
+	exit 1
+    fi
+
+    SSL_CONF=/etc/pki/tls/openssl.cnf
+    if test ! -f "${SSL_CONF}"; then
+	error "can't open/find default OpenSSL config file: ${SSL_CONF}"
+	exit 1
+    fi
+
+    GEN_TMPDIR="./.${_me}.dir.$$."`gen_rnd_string`
+    rm -rf ${GEN_TMPDIR} && mkdir ${GEN_TMPDIR} && chmod 700 ${GEN_TMPDIR}
+    if test $? -ne 0; then
+	error "can't create a temp. directory: ${GEN_TMPDIR}"
+	rm -rf ${GEN_TMPDIR}
+	exit 1
+    fi
+
+    PROXY_FILE_BODY="proxy."`gen_rnd_string`
+    PROXY_CONF="${GEN_TMPDIR}/${PROXY_FILE_BODY}.openssl.conf"
+    PROXY_CSR="${GEN_TMPDIR}/${PROXY_FILE_BODY}.csr"
+    PROXY_CERT="${GEN_TMPDIR}/${PROXY_FILE_BODY}.crt"
+    PROXY_KEY="${GEN_TMPDIR}/${PROXY_FILE_BODY}.key"
+
+    cp "${SSL_CONF}" "${PROXY_CONF}"
+    if test $? -eq 0 -a -r "${PROXY_CONF}"; then
+	echo "" >> "${PROXY_CONF}"
+	echo "[ ${V3_CONF_SECTION} ]" >> "${PROXY_CONF}"
+	echo "basicConstraints=CA:FALSE" >> "${PROXY_CONF}"
+	echo "nsComment=\"A proxy cert.\"" >> "${PROXY_CONF}"
+	echo "nsCertType=client" >> "${PROXY_CONF}"
+	echo "keyUsage=nonRepudiation,digitalSignature,keyEncipherment" \
+	     >> "${PROXY_CONF}"
+	echo "extendedKeyUsage=clientAuth" >> "${PROXY_CONF}"
+	echo "authorityKeyIdentifier=keyid,issuer:always" >> "${PROXY_CONF}"
+	echo "proxyCertInfo=critical,language:id-ppl-inheritAll" \
+	     >> "${PROXY_CONF}"
+    else
+	error "can't create a temporary OpenSSL conf file: ${PROXY_CONF}"
+	rm -rf ${GEN_TMPDIR}
+	exit 1
+    fi
+
+    return 0
+}
+    
+gen_proxy_subject() {
+    _eecert="${1}"
+    _ret=1
+    if test -r "${_eecert}" -a ! -d "${_eecert}"; then
+	_subj=`openssl x509 -subject -noout -in "${_eecert}" -nameopt compat`
+	if test $? -eq 0 -a ! -z "${_subj}"; then
+	    _rnd=`gen_rnd_string`
+	    if test $? -eq 0; then
+		echo "${_subj}/CN=Proxy-ID-${_rnd}" | sed -e 's:^subject=::'
+		_ret=0
+	    fi
+	fi
+    fi
+    unset _eecert _rnd _subj
+    return ${_ret}
+}
+
+gen_proxy_cert() {
+    _proxy_subj=`gen_proxy_subject ${EECERT}`
+    _pass=`gen_rnd_string`
+    _ret=1
+
+    # gen csr.
+    openssl req -new -passout pass:${_pass} -config ${PROXY_CONF} \
+	    -out ${PROXY_CSR} \
+	    -keyout ${PROXY_KEY}.crypt \
+	    -subj "${_proxy_subj}" > /dev/null 2>&1
+    if test $? -eq 0 -a -r "${PROXY_KEY}.crypt"; then
+	# remove passphrase from the key.
+	openssl rsa -passin pass:${_pass} \
+		-in "${PROXY_KEY}.crypt" \
+		-out "${PROXY_KEY}" > /dev/null 2>&1
+	if test $? -eq 0; then
+	    # check the csr and the decrypted key.
+	    openssl req -text -noout -verify -in "${PROXY_CSR}" \
+		    > /dev/null 2>&1 && \
+		openssl rsa -in "${PROXY_KEY}" -check -noout \
+			> /dev/null 2>&1
+	    if test $? -eq 0; then
+		# sign.
+		openssl x509 -req -CAcreateserial \
+			-extfile "${PROXY_CONF}" \
+			-extensions ${V3_CONF_SECTION} \
+			-in "${PROXY_CSR}" \
+			-CA "${EECERT}" \
+			-CAkey "${EEKEY}" \
+			-days ${DAYS} \
+			-out "${PROXY_CERT}" > /dev/null 2>&1
+		if test $? -eq 0; then
+		    openssl x509 -text -noout -nameopt compat \
+			    -in "${PROXY_CERT}" > /dev/null 2>&1
+		    if test $? -eq 0; then
+			rm -f "${OUT_PEM}"
+			if test $? -eq 0; then
+			    umask 0277
+			    cat "${PROXY_CERT}" \
+				"${PROXY_KEY}" \
+				"${EECERT}" > "${OUT_PEM}"
+			    if test $? -eq 0; then
+				_ret=0
+			    else
+				error "can't concat results."
+			    fi
+			else
+			    error "can't delete ${OUT_PEM}"
+			fi
+		    else
+			error "${PROXY_CERT} verification failure."
+		    fi
+		else
+		    error "${PROXY_CSR} sining failure."
+		fi
+	    else
+		error "${PROXY_CSR} or ${PROXY_KEY} verification failure."
+	    fi
+	else
+	    error "${PDOXY_KEY}.crypt decryption failure."
+	fi
+    else
+	error "${PROXY_CSR} or ${PDOXY_KEY}.crypt generation failure."
+    fi
+
+    unset _proxy_subj _pass
+
+    return ${_ret}
+}
+	    
+#
+
+while
+    case ${1} in
+	-cert)
+	    shift; EECERT=${1};;
+	-key)
+	    shift; EEKEY=${1};;
+	-days)
+	    shift; DAYS=${1};;
+	-out)
+	    shift; OUT_PEM=${1};;
+	-f|-force)
+	    doForce=1;;
+	*)
+	    false;;
+    esac
+do
+    shift
+done
+
+setup && gen_proxy_cert
+exit $?
+
+
