@@ -6,7 +6,7 @@
     % cd gfarm
     % git clone https://github.com/oss-tsukuba/gfarm2fs.git
 
-## Explore on virtual clusters by VS Code dev containers
+## (For VS Code users) Explore on virtual clusters by VS Code dev containers
 
 - Install VS Code and Dev Containers extension
 - Open this directory
@@ -46,7 +46,7 @@ When you install Gfarm by `all.sh`, `regress.sh` and `failover.sh` are available
 
 Build, install and setup tests for all distributions.
 
-   % sh ./batchtest.sh
+    % sh ./batchtest.sh
 
 ## Create RPM packages
 
