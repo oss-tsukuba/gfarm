@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+#include <stdio.h> /* snprintf */
 #include <pwd.h>
 
 #include <gfarm/gfarm.h>
@@ -227,6 +228,10 @@ gfarm_auth_client_trial_order_set(enum gfarm_auth_method *order, int n,
 	enum gfarm_auth_method *new_order;
 	int i;
 
+	if (staticp->gfarm_auth_trial_order != NULL &&
+	    position == GFARM_CONFIG_AT_TAIL)
+		return (GFARM_ERR_NO_ERROR);
+
 	/*
 	 * parse_auth_trial_order_arguments() checks
 	 * that `n + 1' does not overflow (i.e. n >= GFARM_AUTH_METHOD_NUMBER)
@@ -269,6 +274,64 @@ gfarm_auth_client_trial_order_set_default(void)
 	}
 	staticp->gfarm_auth_trial_order = new_order;
 	return (GFARM_ERR_NO_ERROR);
+}
+
+/* returns NULL on error */
+char *
+gfarm_auth_trial_order_string_dup(void)
+{
+	static const char diag[] = "gfarm_auth_trial_order_string_dup";
+	char *s, *method;
+	size_t len;
+	int i, p, mlen;
+	int overflow = 0;
+
+	if (staticp->gfarm_auth_trial_order == NULL) {
+		gflog_error(GFARM_MSG_UNFIXED, "%s: is NULL, shouldn't happen",
+		    diag);
+		s = strdup("");
+		if (s == NULL)
+			gflog_error(GFARM_MSG_UNFIXED, "%s: no memory", diag);
+		return (s);
+	}
+
+	len = 0;
+	for (i = 0;
+	    staticp->gfarm_auth_trial_order[i] != GFARM_AUTH_METHOD_NONE; i++) {
+		method =
+		    gfarm_auth_method_name(staticp->gfarm_auth_trial_order[i]);
+		len = gfarm_size_add(&overflow, len, strlen(method));
+		len = gfarm_size_add(&overflow, len, 1);
+		if (overflow) {
+			gflog_error(GFARM_MSG_UNFIXED, "%s: overflow", diag);
+			return (NULL);
+		}
+	}
+
+	GFARM_MALLOC_ARRAY(s, len);
+	if (s == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: no memory for %zd characters", diag, len);
+		return (NULL);
+	}
+
+	p = 0;
+	for (i = 0;
+	    staticp->gfarm_auth_trial_order[i] != GFARM_AUTH_METHOD_NONE; i++) {
+		method =
+		    gfarm_auth_method_name(staticp->gfarm_auth_trial_order[i]);
+		mlen = snprintf(&s[p], len - p, "%s ", method);
+		if (mlen < 0) {
+			gflog_error_errno(GFARM_MSG_UNFIXED,
+			    "%s: snprintf(%s, %s)", diag, s, method);
+			free(s);
+			return (NULL);
+		}
+		p += mlen;
+	}
+	if (p > 0)
+		s[p - 1] = '\0'; /* remove trailing space */
+	return (s);
 }
 
 gfarm_int32_t

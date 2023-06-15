@@ -4471,6 +4471,18 @@ gfarm_config_copyout_auth(const struct gfarm_config_type *type,
 }
 
 static gfarm_error_t
+gfarm_config_copyout_auth_trial_order(const struct gfarm_config_type *type,
+	union gfarm_config_storage *storage)
+{
+	assert(type->fmt == 's');
+
+	storage->s = gfarm_auth_trial_order_string_dup();
+	if (storage->s == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
 gfarm_config_client_side_parse_default(
 	const struct gfarm_config_type *type, char *args,
 	union gfarm_config_storage *storage)
@@ -4713,6 +4725,11 @@ static const struct gfarm_config_type config_types[] = {
 	  NULL, offsetof(struct gfarm_context, include_nesting_limit) },
 	{ "auth",
 	  FOR_METADB|FOR_CLIENT, SERVER_PARSE(gfarm_config_copyout_auth),
+	  's', gfarm_config_print_string, gfarm_config_set_default_nop, NULL,
+	  NULL, 0 },
+	{ "auth_trial_order",
+	  FOR_METADB|FOR_CLIENT,
+	  SERVER_PARSE(gfarm_config_copyout_auth_trial_order),
 	  's', gfarm_config_print_string, gfarm_config_set_default_nop, NULL,
 	  NULL, 0 },
 	{ "digest",
