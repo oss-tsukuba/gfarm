@@ -49,6 +49,20 @@
     <arg choice="plain" rep="norepeat">-d</arg>
     <arg choice="plain" rep="norepeat">username</arg>
 </cmdsynopsis>
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfuser</command>
+    <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
+    <arg choice="plain" rep="norepeat">-L</arg>
+    <arg choice="opt" rep="repeat"><replaceable>user</replaceable></arg>
+</cmdsynopsis>
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfuser</command>
+    <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
+    <arg choice="plain" rep="norepeat">-A</arg>
+    <arg choice="plain" rep="norepeat">username</arg>
+    <arg choice="plain" rep="norepeat">authentication_method</arg>
+    <arg choice="plain" rep="norepeat">authentication_identifier</arg>
+</cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
@@ -61,6 +75,12 @@ system.  Default action displays all registered users.  When user
 names are specified, specified users are displayed.  Gfarm
 administrator can creates, modifies, and deletes a Gfarm user by -c,
 -m, and -d options, respectively.
+</para>
+<para>
+By specifying the -L option, user identifiers for each authentication
+method are displayed for each Gfarm global user.
+By specifying the -A option, Gfarm administrator can register, modify,
+and delete a user identifier for each authentication method mapping to global username.
 </para>
 
 </refsect1>
@@ -116,6 +136,27 @@ be used by Gfarm administrators.
 <para>
 Deletes a registered user.  This option can be used by Gfarm
 administrators.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-L</option></term>
+<listitem>
+<para>
+Displays verbose information and user identifiers for
+each authentication method of registered users.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-A</option></term>
+<listitem>
+<para>
+Registers, modifies, and deletes a user identifier for each authentication method mapping to Gfarm global username.
+To delete, specify a null string as the user identifier.
+This option can be used by Gfarm administrators.
 </para>
 </listitem>
 </varlistentry>
