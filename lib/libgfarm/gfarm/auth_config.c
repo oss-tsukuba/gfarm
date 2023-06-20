@@ -14,6 +14,7 @@
 #include "liberror.h"
 #include "hostspec.h"
 #include "auth.h"
+#include "config.h"
 
 const char *
 gfarm_auth_id_role_name(enum gfarm_auth_id_role role)
@@ -192,7 +193,7 @@ gfarm_auth_config_add(
 	enum gfarm_auth_config_command command,
 	enum gfarm_auth_method method,
 	struct gfarm_hostspec *hsp,
-	enum gfarm_auth_config_position position)
+	enum gfarm_config_position position)
 {
 	struct gfarm_auth_config *acp;
 
@@ -208,17 +209,17 @@ gfarm_auth_config_add(
 	acp->hostspec = hsp;
 
 	switch (position) {
-	case GFARM_AUTH_CONFIG_AT_HEAD:
+	case GFARM_CONFIG_AT_HEAD:
 		acp->next = staticp->auth_config_list;
 		staticp->auth_config_list = acp;
 		break;
-	case GFARM_AUTH_CONFIG_AT_TAIL:
+	case GFARM_CONFIG_AT_TAIL:
 		if (staticp->auth_config_mark == staticp->auth_config_last)
 			staticp->auth_config_mark = &acp->next;
 		*staticp->auth_config_last = acp;
 		staticp->auth_config_last = &acp->next;
 		break;
-	case GFARM_AUTH_CONFIG_AT_MARK:
+	case GFARM_CONFIG_AT_MARK:
 		if (staticp->auth_config_last == staticp->auth_config_mark)
 			staticp->auth_config_last = &acp->next;
 		acp->next = *staticp->auth_config_mark;
@@ -237,7 +238,7 @@ gfarm_auth_config_set_mark(void)
 
 gfarm_error_t
 gfarm_auth_enable(enum gfarm_auth_method method, struct gfarm_hostspec *hsp,
-	enum gfarm_auth_config_position position)
+	enum gfarm_config_position position)
 {
 	return (gfarm_auth_config_add(GFARM_AUTH_ENABLE,
 	    method, hsp, position));
@@ -245,7 +246,7 @@ gfarm_auth_enable(enum gfarm_auth_method method, struct gfarm_hostspec *hsp,
 
 gfarm_error_t
 gfarm_auth_disable(enum gfarm_auth_method method, struct gfarm_hostspec *hsp,
-	enum gfarm_auth_config_position position)
+	enum gfarm_config_position position)
 {
 	return (gfarm_auth_config_add(GFARM_AUTH_DISABLE,
 	    method, hsp, position));

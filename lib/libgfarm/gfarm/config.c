@@ -1701,7 +1701,7 @@ gfarm_strtoken(char **cursorp, char **tokenp)
 }
 
 static gfarm_error_t
-parse_auth_arguments(char *p, enum gfarm_auth_config_position position,
+parse_auth_arguments(char *p, enum gfarm_config_position position,
 	const char **op)
 {
 #ifndef __KERNEL__	/* parse_auth_arguments */
@@ -1818,6 +1818,49 @@ parse_auth_arguments(char *p, enum gfarm_auth_config_position position,
 	return (GFARM_ERR_NO_ERROR);
 #endif /* __KERNEL__ */
 }
+
+static gfarm_error_t
+parse_auth_trial_order_arguments(char *p,
+	enum gfarm_config_position position, const char **op)
+{
+	gfarm_error_t e;
+	char *tmp;
+	enum gfarm_auth_method trial_order[GFARM_AUTH_METHOD_NUMBER];
+	int n;
+
+	n = 0;
+	for (;;) {
+		if (n >= GFARM_AUTH_METHOD_NUMBER) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "auth_trial_order: too many arguments (%d)", n);
+			return (GFARM_ERRMSG_TOO_MANY_ARGUMENTS);
+		}
+		e = gfarm_strtoken(&p, &tmp);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "auth_trial_order: parsing auth method (%s): %s",
+			    p, gfarm_error_string(e));
+			return (e);
+		}
+		if (tmp == NULL) {
+			if (n > 0)
+				break;
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "auth_trial_order: missing argument");
+			return (GFARM_ERRMSG_MISSING_ARGUMENT);
+		}
+		e = gfarm_auth_method_parse(tmp, &trial_order[n]);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"auth_trial_order: unknown auth method (%s)",
+				tmp);
+			return (GFARM_ERRMSG_UNKNOWN_AUTH_METHOD);
+		}
+		n++;
+	}
+	return (gfarm_auth_client_trial_order_set(trial_order, n, position));
+}
+
 
 #if 0 /* not yet in gfarm v2 */
 static gfarm_error_t
@@ -3208,7 +3251,7 @@ parse_fatal_action(char *p, int *vp)
 }
 
 static gfarm_error_t parse_one_line(const char *, char *,
-	enum gfarm_auth_config_position, const char *, int, const char **);
+	enum gfarm_config_position, const char *, int, const char **);
 
 static gfarm_error_t
 parse_include(char *p, const char **op, const char *file, int lineno)
@@ -3277,7 +3320,7 @@ parse_include(char *p, const char **op, const char *file, int lineno)
 
 static gfarm_error_t
 parse_one_line(const char *s, char *p,
-	enum gfarm_auth_config_position position, const char *file, int lineno,
+	enum gfarm_config_position position, const char *file, int lineno,
 	const char **op)
 {
 	gfarm_error_t e;
@@ -3468,6 +3511,8 @@ parse_one_line(const char *s, char *p,
 		e = parse_set_var(p, &gfarm_ctxp->sasl_password);
 	} else if (strcmp(s, o = "auth") == 0) {
 		e = parse_auth_arguments(p, position, &o);
+	} else if (strcmp(s, o = "auth_trial_order") == 0) {
+		e = parse_auth_trial_order_arguments(p, position, &o);
 #if 0 /* not yet in gfarm v2 */
 	} else if (strcmp(s, o = "netparam") == 0) {
 		e = parse_netparam_arguments(p, &o);
@@ -3792,7 +3837,7 @@ gfarm_config_read_file(FILE *config, int *lineno_p, const char *file)
 		if (e == GFARM_ERR_NO_ERROR) {
 			if (s == NULL) /* blank or comment line */
 				continue;
-			e = parse_one_line(s, p, GFARM_AUTH_CONFIG_AT_TAIL,
+			e = parse_one_line(s, p, GFARM_CONFIG_AT_TAIL,
 			    file, lineno, &o);
 		}
 		if (e != GFARM_ERR_NO_ERROR) {
@@ -3870,6 +3915,8 @@ error:
 void
 gfarm_config_set_default_misc(void)
 {
+	gfarm_error_t e;
+
 	if (gfarm_ctxp->include_nesting_limit == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->include_nesting_limit =
 		    GFARM_CONFIG_INCLUDE_NESTING_LIMIT_DEFAULT;
@@ -4202,7 +4249,17 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_replicainfo_enabled == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_replicainfo_enabled = GFARM_REPLICAINFO_ENABLED_DEFAULT;
 
-	gfarm_config_set_default_metadb_server();
+	e = gfarm_config_set_default_metadb_server();
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "gfarm_config_set_default_metadb_server: %s",
+		    gfarm_error_string(e));
+
+	e = gfarm_auth_client_trial_order_set_default();
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "gfarm_auth_client_trial_order_set_default: %s",
+		    gfarm_error_string(e));
 }
 
 gfarm_error_t
@@ -4371,7 +4428,7 @@ gfarm_config_copyin_parse(const struct gfarm_config_type *type,
 
 	/* addr may be NULL */
 	(*type->set_default)(addr);
-	e = parse_one_line(type->name, storage->s, GFARM_AUTH_CONFIG_AT_HEAD,
+	e = parse_one_line(type->name, storage->s, GFARM_CONFIG_AT_HEAD,
 	    NULL, 0, &o);
 	return (e);
 }
@@ -4414,6 +4471,18 @@ gfarm_config_copyout_auth(const struct gfarm_config_type *type,
 }
 
 static gfarm_error_t
+gfarm_config_copyout_auth_trial_order(const struct gfarm_config_type *type,
+	union gfarm_config_storage *storage)
+{
+	assert(type->fmt == 's');
+
+	storage->s = gfarm_auth_trial_order_string_dup();
+	if (storage->s == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
 gfarm_config_client_side_parse_default(
 	const struct gfarm_config_type *type, char *args,
 	union gfarm_config_storage *storage)
@@ -4429,7 +4498,7 @@ gfarm_config_client_side_parse_default(
 		return (GFARM_ERR_BAD_ADDRESS);
 
 	(*type->set_default)(addr);
-	e = parse_one_line(type->name, args, GFARM_AUTH_CONFIG_AT_HEAD,
+	e = parse_one_line(type->name, args, GFARM_CONFIG_AT_HEAD,
 	    NULL, 0, &o);
 	if (e != GFARM_ERR_NO_ERROR) {
 		if (o != NULL) {
@@ -4656,6 +4725,11 @@ static const struct gfarm_config_type config_types[] = {
 	  NULL, offsetof(struct gfarm_context, include_nesting_limit) },
 	{ "auth",
 	  FOR_METADB|FOR_CLIENT, SERVER_PARSE(gfarm_config_copyout_auth),
+	  's', gfarm_config_print_string, gfarm_config_set_default_nop, NULL,
+	  NULL, 0 },
+	{ "auth_trial_order",
+	  FOR_METADB|FOR_CLIENT,
+	  SERVER_PARSE(gfarm_config_copyout_auth_trial_order),
 	  's', gfarm_config_print_string, gfarm_config_set_default_nop, NULL,
 	  NULL, 0 },
 	{ "digest",
@@ -4977,7 +5051,7 @@ gfarm_config_apply_to_metadb(char *directive, char *rest_of_line,
 	addr = gfarm_config_addr(type);
 	/* addr may be NULL */
 	(*type->set_default)(addr);
-	e = parse_one_line(directive, rest_of_line, GFARM_AUTH_CONFIG_AT_MARK,
+	e = parse_one_line(directive, rest_of_line, GFARM_CONFIG_AT_MARK,
 	    file, lineno, &o);
 
 	if (e != GFARM_ERR_NO_ERROR) {
