@@ -202,22 +202,22 @@ static const struct gfarm_auth_client_method gfarm_auth_client_table[] = {
  */
 enum gfarm_auth_method gfarm_auth_trial_order_default[] = {
 	GFARM_AUTH_METHOD_SHAREDSECRET,
-#ifdef HAVE_TLS_1_3
-	GFARM_AUTH_METHOD_TLS_SHAREDSECRET,
-	GFARM_AUTH_METHOD_TLS_CLIENT_CERTIFICATE,
-#endif /* HAVE_TLS_1_3 */
-#ifdef HAVE_GSI
-	GFARM_AUTH_METHOD_GSI_AUTH,
-	GFARM_AUTH_METHOD_GSI,
-#endif /* HAVE_GSI */
 #if defined(HAVE_CYRUS_SASL) && defined(HAVE_TLS_1_3)
 	GFARM_AUTH_METHOD_SASL_AUTH,
 	GFARM_AUTH_METHOD_SASL,
 #endif /* defined(HAVE_CYRUS_SASL) && defined(HAVE_TLS_1_3) */
+#ifdef HAVE_TLS_1_3
+	GFARM_AUTH_METHOD_TLS_SHAREDSECRET,
+	GFARM_AUTH_METHOD_TLS_CLIENT_CERTIFICATE,
+#endif /* HAVE_TLS_1_3 */
 #ifdef HAVE_KERBEROS
 	GFARM_AUTH_METHOD_KERBEROS_AUTH,
 	GFARM_AUTH_METHOD_KERBEROS,
 #endif /* HAVE_KERBEROS */
+#ifdef HAVE_GSI
+	GFARM_AUTH_METHOD_GSI_AUTH,
+	GFARM_AUTH_METHOD_GSI,
+#endif /* HAVE_GSI */
 	GFARM_AUTH_METHOD_NONE, /* sentinel */
 };
 
