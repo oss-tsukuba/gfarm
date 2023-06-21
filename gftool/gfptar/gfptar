@@ -1173,7 +1173,7 @@ class GfURLLocal(GfURL):
         if textmode:
             f = open(fd, 'wt', encoding=get_encoding(), closefd=True)
         else:
-            f = open(self.url_str, 'wb', closefd=True)
+            f = open(fd, 'wb', closefd=True)
         try:
             yield f
         finally:
