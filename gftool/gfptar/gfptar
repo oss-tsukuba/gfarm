@@ -1877,6 +1877,7 @@ class GfptarCommand(Command):
         for entry in reversed(filelist):
             if entry.is_file():
                 last = entry
+                break
         if last is None or first == last:
             firstpath = first.subpath(self.basedir_url)
             outname = '%s%s' % (firstpath, self.suffix)
