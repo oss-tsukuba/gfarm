@@ -79,7 +79,7 @@ service_unconfig()
 	fi
 
 	service_ctl $TEST_OPT gfmd stop
-	service_stop_$BACKEND_TYPE $TEST_OPT $RC_BACKEND_BASENAME
+	( service_stop_$BACKEND_TYPE $TEST_OPT $RC_BACKEND_BASENAME )
 
 	delete_file_or_directory -f $TEST_OPT "$GFMD_FAILOVER_AGENT_CONF"
 	delete_file_or_directory -f $TEST_OPT "$GFMD_FAILOVER_CONF"
