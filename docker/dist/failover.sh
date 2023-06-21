@@ -2,7 +2,7 @@
 set -xue
 
 gfmkdir -p /tmp
-gfchmod 1777 /tmp
+gfchmod 1777 /tmp || :
 
 cd ~/gfarm/regress/manual/lib/libgfarm/gfarm/gfs_pio_failover
 rm -f gfmd-failover-local.sh
