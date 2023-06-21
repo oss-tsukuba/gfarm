@@ -1725,6 +1725,8 @@ class GfptarCommand(Command):
         self.filelistlist = []
         self.total_size = 0
         self.total_num = 0
+        self.start_time = time.time()
+        self.next_time = self.start_time + 1
         for infile in infiles:
             infile_url = GfURL.init(infile)
             if not infile_url.is_local():
@@ -1742,8 +1744,16 @@ class GfptarCommand(Command):
                 filelist.append(entry)
                 self.total_size += entry.size
                 self.total_num += 1
+                if self.progress_enabled:
+                    now = time.time()
+                    if now >= self.next_time:
+                        self.next_time += 1
+                        self.progress_for_list(now)
             filelist.sort(key=entry_key, reverse=False)
             self.filelistlist.extend(self.schedule(filelist))
+        if self.progress_enabled:
+            self.progress_for_list(time.time())
+            sys.stderr.write('\n')
 
         self.tqdm = None
         self.myprogress = False
@@ -2209,6 +2219,13 @@ class GfptarCommand(Command):
         tar.close()
         with self.lock():
             self.info('extracted(done): {}', arch_url.url_str)
+
+    def progress_for_list(self, now):
+        sec = now - self.start_time
+        sys.stderr.write(f'\rlisting: '
+                         f'num={self.total_num}, '
+                         f'size={self.total_size}, '
+                         f'sec={sec:.0f}')
 
     # lock required
     def progress_for_create(self, now):
