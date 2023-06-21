@@ -1195,7 +1195,7 @@ class GfTarFile(tarfile.TarFile):
     USE_FSYNC = 'use_fsync'
 
     @classmethod
-    def extract_open(cls, gfurl, bufsize, compress_prog=None):
+    def extract_open(cls, gfurl, copybufsize, compress_prog=None):
         # use Stream (not seekable)
         if compress_prog is not None:
             openmode = 'r|'
@@ -1212,7 +1212,7 @@ class GfTarFile(tarfile.TarFile):
                                                  gfexport_proc.stdout)
                 tar = cls.open(None, mode=openmode,
                                fileobj=decompress_proc.stdout,
-                               bufsize=bufsize)
+                               copybufsize=copybufsize)
                 proc_list.append(tuple([gfexport_proc,
                                         gfexport_proc.stdout, None]))
                 proc_list.append(tuple([decompress_proc,
@@ -1221,7 +1221,7 @@ class GfTarFile(tarfile.TarFile):
                 gfexport_proc = gfurl.gfexport()
                 tar = cls.open(None, mode=openmode,
                                fileobj=gfexport_proc.stdout,
-                               bufsize=bufsize)
+                               copybufsize=copybufsize)
                 proc_list.append(tuple([gfexport_proc,
                                         gfexport_proc.stdout, None]))
         else:
@@ -1230,18 +1230,18 @@ class GfTarFile(tarfile.TarFile):
                 decompress_proc = cls.decompress(compress_prog, inf)
                 tar = cls.open(None, mode=openmode,
                                fileobj=decompress_proc.stdout,
-                               bufsize=bufsize)
+                               copybufsize=copybufsize)
                 proc_list.append(tuple([None, inf, None]))
                 proc_list.append(tuple([decompress_proc,
                                         decompress_proc.stdout, None]))
             else:
                 tar = GfTarFile.open(gfurl.url_str, mode=openmode,
-                                     bufsize=bufsize)
+                                     copybufsize=copybufsize)
         setattr(tar, cls.ATTR_PROC_LIST, proc_list)
         return tar
 
     @classmethod
-    def create_open(cls, gfurl, compress_type, bufsize, compress_prog=None,
+    def create_open(cls, gfurl, compress_type, copybufsize, compress_prog=None,
                     use_fsync=True):
         # use Stream (not seekable)
         openmode = 'w|'
@@ -1258,7 +1258,8 @@ class GfTarFile(tarfile.TarFile):
                 compress_proc = cls.compress(compress_prog,
                                              gfreg_obj.stdin)
                 tar = cls.open(None, mode=openmode,
-                               fileobj=compress_proc.stdin, bufsize=bufsize)
+                               fileobj=compress_proc.stdin,
+                               copybufsize=copybufsize)
                 proc_list.append(tuple([compress_proc, compress_proc.stdin,
                                         None]))
                 proc_list.append(tuple([gfreg_obj.proc, gfreg_obj, None]))
@@ -1266,21 +1267,22 @@ class GfTarFile(tarfile.TarFile):
                 gfreg_obj = gfurl.gfreg(mode=0o600)
                 tar = cls.open(None, mode=openmode,
                                fileobj=gfreg_obj.stdin,
-                               bufsize=bufsize)
+                               copybufsize=copybufsize)
                 proc_list.append(tuple([gfreg_obj.proc, gfreg_obj, None]))
         else:  # Local
             if compress_prog:
                 outf = open(gfurl.url_str, 'wb')
                 compress_proc = cls.compress(compress_prog, outf)
                 tar = cls.open(None, mode=openmode,
-                               fileobj=compress_proc.stdin, bufsize=bufsize)
+                               fileobj=compress_proc.stdin,
+                               copybufsize=copybufsize)
                 proc_list.append(tuple([compress_proc, compress_proc.stdin,
                                         None]))
                 proc_list.append(tuple([None, outf, outf]))
             else:
                 outf = open(gfurl.url_str, 'wb')
                 tar = cls.open(gfurl.url_str, mode=openmode,
-                               fileobj=outf, bufsize=bufsize)
+                               fileobj=outf, copybufsize=copybufsize)
                 proc_list.append(tuple([None, outf, outf]))
             gfurl.chmod(0o600)
         logger.debug('GfTarFile.create_open: %s', gfurl.url_str)
