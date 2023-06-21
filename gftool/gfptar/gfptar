@@ -2165,7 +2165,8 @@ class GfptarCommand(Command):
                     continue  # not a target
             # members_num == 0 -> extract all
 
-            outfile = tarinfo.name.lstrip('/')  # relative path only
+            # ex. /a/b/c/ -> a/b/c
+            outfile = tarinfo.name.strip('/')  # relative path only
             url_str = self.outdir_url.url_join(outfile)
             outurl = GfURL.init(url_str)
 
@@ -2182,16 +2183,16 @@ class GfptarCommand(Command):
                                         user=user, group=group,
                                         use_fsync=self.use_fsync)
                 inf.close()
-                logger.debug('extract,file: %s, %d', tarinfo.name, size)
+                logger.debug('extract,file: %s, %d', outfile, size)
                 with self.lock():
-                    self.info('extracted(F): {}', tarinfo.name)
+                    self.info('extracted(F): {}', outfile)
             elif tarinfo.isdir():
                 # NOTE: already created
-                logger.debug('extract,dir: %s', tarinfo.name)
+                logger.debug('extract,dir: %s', outfile)
                 with self.lock():
                     self.dirstat_dict[outfile] = tarinfo
             elif tarinfo.issym():
-                logger.debug('extract,link: %s, %s', tarinfo.name,
+                logger.debug('extract,link: %s, %s', outfile,
                              tarinfo.linkname)
                 outurl.symlink(tarinfo.linkname)
                 if self.same_owner:
@@ -2202,10 +2203,10 @@ class GfptarCommand(Command):
                     outurl.chmod(tarinfo.mode, mtime=tarinfo.mtime,
                                  follow_symlinks=False)
                 with self.lock():
-                    self.info('extracted(S): {}', tarinfo.name)
+                    self.info('extracted(S): {}', outfile)
             else:
                 logger.warning('unsupported type: %s: %s',
-                               tarinfo.name, tarinfo.type)
+                               outfile, tarinfo.type)
             if self.progress_enabled:
                 with self.lock():
                     self.extracted_num += 1
