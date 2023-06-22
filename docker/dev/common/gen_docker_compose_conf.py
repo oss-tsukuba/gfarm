@@ -141,8 +141,7 @@ for h in hosts:
     networks:
       gfarm_dev:
         ipv{}_address: {}
-    <<: *common-gfarm
-    <<: *common
+    <<: [*common-gfarm, *common]
 
 '''.format(h.name, h.hostname, ports, ip_version, str(h.ipaddr)), end='')
 
