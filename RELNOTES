@@ -1,3 +1,22 @@
+Release note for Gfarm 2.7.24
+=============================
+
+[2023.6.24]
+
+Updated feature
+* gfmd - warn when no file system node
+* gfptar - print more detailed progress messages
+* gfkey - gfarm2.conf is not mandatory
+* config-gfarm - introduce gfmd-slave.service to execute gfmd in slave mode
+
+Bug fix
+* gfptar - fix unexpected output filenames
+* gfptar - fix possible no information of the directory
+* gfptar - fix too many open files
+* gfptar - fix possible broken pepe
+* config-gfarm - fix DEBUG=true does not work
+* unconfig-gfarm.sh - do not abort when backend database is already stopped
+
 Release note for Gfarm 2.7.23
 =============================
 

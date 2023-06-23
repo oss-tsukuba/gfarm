@@ -52,6 +52,8 @@ Build, install and setup tests for all distributions.
 
     % sh ./devrpm.sh
     (in the container)
+    # wget https://github.com/oss-tsukuba/gfarm/archive/refs/tags/$VER.tar.gz
+    # mv $VER.tar.gz $PKG-$VER.tar.gz
     # sh gfarm/docker/dist/mkrpm.sh
     # Ctrl-D
 

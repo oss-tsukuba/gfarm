@@ -840,7 +840,7 @@ process_schedule_file(struct process *process, struct peer *peer, int fd,
 	} else {
 		e = inode_schedule_file(fo, peer, np, hostsp);
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1005239,
 			    "%s: %s (user %s inode %lu:%ld)",
 			    diag, gfarm_error_string(e),
 			    user_name_in_tenant(process_get_user(process),
@@ -848,7 +848,7 @@ process_schedule_file(struct process *process, struct peer *peer, int fd,
 			    inode_get_number(fo->inode),
 			    inode_get_gen(fo->inode));
 		else if (*np == 0)
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1005240,
 			    "%s: no file system node (user %s inode %lu:%ld)",
 			    diag,
 			    user_name_in_tenant(process_get_user(process),
