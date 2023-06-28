@@ -1767,11 +1767,11 @@ class GfptarCommand(Command):
                     now = time.time()
                     if now >= self.next_time:
                         self.next_time += 1
-                        self.progress_for_list(now)
+                        self.progress_for_list1(now)
             filelist.sort(key=entry_key, reverse=False)
             self.filelistlist.extend(self.schedule(filelist))
         if self.progress_enabled:
-            self.progress_for_list(time.time())
+            self.progress_for_list1(time.time())
             sys.stderr.write('\n')
 
         self.tqdm = None
@@ -2018,6 +2018,9 @@ class GfptarCommand(Command):
         target_set_all = set()  # all  tar files
         directory_list = []
         self.total_num = 0
+        self.start_time = time.time()
+        self.next_time = self.start_time + 1
+
         for ent in indir_url.listdir(recursive=False):
             if ent.path.endswith(self.LIST_SUFFIX):  # ignored
                 continue
@@ -2042,6 +2045,14 @@ class GfptarCommand(Command):
                     else:
                         if file_type == 'D':
                             directory_list.append(path)
+            if self.progress_enabled:
+                now = time.time()
+                if now >= self.next_time:
+                    self.next_time += 1
+                    self.progress_for_list2(now)
+        if self.progress_enabled:
+            self.progress_for_list2(time.time())
+            sys.stderr.write('\n')
 
         if search_target:
             # selected tar files
@@ -2284,11 +2295,17 @@ class GfptarCommand(Command):
         with self.lock():
             self.info('extracted(done): {}', arch_url.url_str)
 
-    def progress_for_list(self, now):
+    def progress_for_list1(self, now):
         sec = now - self.start_time
         sys.stderr.write(f'\rlisting: '
                          f'num={self.total_num}, '
                          f'size={self.total_size}, '
+                         f'sec={sec:.0f}')
+
+    def progress_for_list2(self, now):
+        sec = now - self.start_time
+        sys.stderr.write(f'\rlisting: '
+                         f'num={self.total_num}, '
                          f'sec={sec:.0f}')
 
     # lock required
