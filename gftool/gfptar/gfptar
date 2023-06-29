@@ -1831,7 +1831,7 @@ class GfptarCommand(Command):
                 if self.progress_enabled:
                     now = time.time()
                     if now >= self.next_time:
-                        self.next_time += 1
+                        self.next_time = now + 1
                         self.progress_for_list1(now)
             filelist.sort(key=entry_key, reverse=False)
             self.filelistlist.extend(self.schedule(filelist))
@@ -2036,7 +2036,7 @@ class GfptarCommand(Command):
                     self.stored_num += 1
                     now = time.time()
                     if now >= self.next_time:
-                        self.next_time += 1
+                        self.next_time = now + 1
                         self.progress_for_create(now)
                 elif self.tqdm:
                     if entry.is_file():
@@ -2131,7 +2131,7 @@ class GfptarCommand(Command):
             if self.progress_enabled:
                 now = time.time()
                 if now >= self.next_time:
-                    self.next_time += 1
+                    self.next_time = now + 1
                     self.progress_for_list2(now)
         if self.progress_enabled:
             self.progress_for_list2(time.time())
@@ -2379,7 +2379,7 @@ class GfptarCommand(Command):
                         self.extracted_size += tarinfo.size
                     now = time.time()
                     if now >= self.next_time:
-                        self.next_time += 1
+                        self.next_time = now + 1
                         self.progress_for_extract(now)
 
         tar.close()
