@@ -39,6 +39,7 @@ from contextlib import contextmanager
 import traceback
 import unittest
 import hashlib
+import signal
 
 from docopt import docopt
 from schema import Schema, Use, Or
@@ -131,8 +132,9 @@ def logger_init(name, loglevel=logging.WARNING, debug=False):
     logger.setLevel(loglevel)
     strm = logging.StreamHandler()  # stderr
     if debug:
-        fmt = '{}:%(levelname)s:L%(lineno)d:%(asctime)s: %(message)s'.format(
-            name)
+        fmt = '%(filename)s:%(levelname)s:L%(lineno)d:' + \
+            '%(asctime)s: %(message)s'
+        fmt = fmt.format(name)
     else:
         fmt = '{}:%(levelname)s: %(message)s'.format(name)
     formatter_strm = logging.Formatter(fmt=fmt, datefmt='%Y%m%d%H%M%S')
@@ -1389,6 +1391,18 @@ class GfptarCommand(Command):
         self.hardlink_warn = True
         self.disable_fsync = self.opt['--disable-fsync']
         self.use_fsync = not self.disable_fsync
+        self.canceled = threading.Event()
+        self._lock = None
+        self.futures = None
+        self.sig_init()
+
+    def sig_init(self):
+        def sig_handler(signum, frame):
+            print('')  # new line
+            self.cancel()
+
+        signal.signal(signal.SIGINT, sig_handler)
+        signal.signal(signal.SIGTERM, sig_handler)
 
     def getDoc(self) -> str:
         return __doc__
@@ -1790,7 +1804,6 @@ class GfptarCommand(Command):
                 self.myprogress = True
 
         self.serial = 0
-        self.cancelled = False
         self.archive_size = 0
         self.stored_size = 0
         self.stored_num = 0
@@ -1813,6 +1826,8 @@ class GfptarCommand(Command):
                   (100 * self.archive_size / self.stored_size,
                    self.archive_size, self.stored_size))
         del self.filelistlist
+        if self.is_canceled():
+            raise self.error_canceled()
 
     def create_tars(self):
         self.lock_init(False)
@@ -1829,17 +1844,19 @@ class GfptarCommand(Command):
                 self.serial += 1
                 t = executor.submit(self.create_a_tar, self.serial, filelist)
                 futures[t] = self.serial
+            self.futures = futures
             for t in concurrent.futures.as_completed(futures, timeout=None):
                 exc = t.exception()
                 if exc:
-                    logger.error('%s: serial=%04d', repr(exc), futures[t])
-                    tb = traceback.TracebackException.from_exception(exc)
-                    logger.debug(''.join(tb.format()))
-                    if not self.is_cancelled():
+                    logger.debug('%s: serial=%04d', repr(exc), futures[t])
+                    if not self.is_canceled():
                         self.cancel()
-                        for t2 in futures:
-                            logger.error("cancel: serial=%04d", futures[t2])
-                            t2.cancel()
+                    if self.verbose or self.debug:
+                        tb = traceback.TracebackException.from_exception(exc)
+                        logger.debug(''.join(tb.format()))
+                    for t2 in futures:
+                        logger.debug("cancel: serial=%04d", futures[t2])
+                        t2.cancel()
                     raise exc
 
     def schedule(self, filelist):
@@ -1861,13 +1878,12 @@ class GfptarCommand(Command):
     def lock_init(self, enable):
         if enable:
             self._lock = threading.Lock()
-        else:
-            self._lock = None
 
     @contextmanager
     def lock(self):
         if self._lock:
-            self._lock.acquire()
+            if not self._lock.acquire(timeout=5):
+                logger.warning('lock: timeout(unexpected)')
         try:
             yield
         finally:
@@ -1876,11 +1892,11 @@ class GfptarCommand(Command):
 
     def cancel(self):
         with self.lock():
-            self.cancelled = True
+            self.canceled.set()
 
-    def is_cancelled(self):
+    def is_canceled(self):
         with self.lock():
-            val = self.cancelled
+            val = self.canceled.is_set()
         return val
 
     def _gfsched_sometimes(self, gfurl):
@@ -1907,9 +1923,18 @@ class GfptarCommand(Command):
         return target_host
 
     def create_a_tar(self, serial, filelist):
+        try:
+            self.create_a_tar0(serial, filelist)
+        except Exception:
+            if self.is_canceled():
+                raise self.error_canceled()
+            else:
+                raise
+
+    def create_a_tar0(self, serial, filelist):
         logger.debug('create_a_tar: start: %04d', serial)
-        if self.is_cancelled():
-            logger.debug('cancelled (1): serial=%04d', serial)
+        if self.is_canceled():
+            logger.debug('canceled (1): serial=%04d', serial)
             return
         first = None
         last = None
@@ -1947,8 +1972,8 @@ class GfptarCommand(Command):
                                     use_fsync=self.use_fsync,
                                     target_host=target_host)
         for entry in filelist:
-            if self.is_cancelled():
-                logger.debug('cancelled (2): serial=%04d', serial)
+            if self.is_canceled():
+                logger.debug('canceled (2): serial=%04d', serial)
                 break
             subpath = entry.subpath(self.basedir_url)
             tar.add_entry(subpath, entry)
@@ -1992,8 +2017,11 @@ class GfptarCommand(Command):
         with self.lock():
             self.info('created(.lst): {}', outurl.url_str)
 
+    def error_canceled(self):
+        return Exception('Canceled')
+
     def error_not_a_gfptar_directory(self, url_str):
-        raise Exception('Not a gfptar-archived directory: ' + url_str)
+        return Exception('Not a gfptar-archived directory: ' + url_str)
 
     def extract(self, outdir, indir, members):
         self.outdir = outdir
@@ -2011,7 +2039,7 @@ class GfptarCommand(Command):
         if not indir_url.exists():
             raise FileNotFoundError(indir_url.url_str)
         if not indir_url.is_directory():
-            self.error_not_a_gfptar_directory(indir_url.url_str)
+            raise self.error_not_a_gfptar_directory(indir_url.url_str)
 
         search_target = len(member_set) > 0
         archive_dict = {}  # member -> (file_type, tar filename)
@@ -2024,17 +2052,21 @@ class GfptarCommand(Command):
         for ent in indir_url.listdir(recursive=False):
             if ent.path.endswith(self.LIST_SUFFIX):  # ignored
                 continue
+            if self.is_canceled():
+                raise self.error_canceled()
             subpath = ent.subpath(indir_url)
             arch_url_str = indir_url.url_join(subpath)
             target_set_all.add(arch_url_str)
             list_url = GfURL.init(arch_url_str + self.LIST_SUFFIX)
             if not list_url.exists():
-                self.error_not_a_gfptar_directory(indir_url.url_str)
+                raise self.error_not_a_gfptar_directory(indir_url.url_str)
             with list_url.readopen(textmode=True) as f:
                 while True:
                     line = f.readline()
                     if not line:
                         break
+                    if self.is_canceled():
+                        raise self.error_canceled()
                     self.total_num += 1
                     line = line.rstrip()
                     # ex. "D /path/to/dir"
@@ -2097,7 +2129,6 @@ class GfptarCommand(Command):
         # self.extract_directories(directory_list)
         self.extract_directories_fast(directory_list)
 
-        self.cancelled = False
         self.extracted_num = 0
         self.extracted_size = 0
         self.start_time = time.time()
@@ -2206,7 +2237,7 @@ class GfptarCommand(Command):
                     logger.error('%s: %s', repr(exc), futures[t])
                     tb = traceback.TracebackException.from_exception(exc)
                     logger.debug(''.join(tb.format()))
-                    if not self.is_cancelled():
+                    if not self.is_canceled():
                         self.cancel()
                         for t2 in futures:
                             logger.error("cancel: name=%s", futures[t2])
@@ -2214,9 +2245,18 @@ class GfptarCommand(Command):
                     raise exc
 
     def extract_from_a_tar(self, serial, target, member_set):
+        try:
+            self.extract_from_a_tar0(serial, target, member_set)
+        except Exception:
+            if self.is_canceled():
+                raise self.error_canceled()
+            else:
+                raise
+
+    def extract_from_a_tar0(self, serial, target, member_set):
         logger.debug('extract_from_a_tar: start: %04d', serial)
-        if self.is_cancelled():
-            logger.debug('cancelled (1): name=%s', target)
+        if self.is_canceled():
+            logger.debug('canceled (1): name=%s', target)
             return
         arch_url = GfURL.init(target,
                               use_gfarm_command=self.use_gfarm_command)
@@ -2225,9 +2265,9 @@ class GfptarCommand(Command):
         members_num = len(member_set)
         index = serial
         while True:
-            if self.is_cancelled():
-                logger.debug('cancelled (2): name=%s', target)
-                return
+            if self.is_canceled():
+                logger.debug('canceled (2): name=%s', target)
+                break
             tarinfo = tar.next()
             if tarinfo is None:
                 break
