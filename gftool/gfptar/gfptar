@@ -1455,6 +1455,15 @@ class GfptarCommand(Command):
         out = execcmd(['gfwhoami'], textmode=True)
         self.gfarm_user = out.strip()
         self.test_unit()
+        self.test_invalid('url', 'gfarm:/tmp', 'dst', True)
+        self.test_invalid('dot1', '.', 'dst', True)
+        self.test_invalid('dot2', '', 'dst', False)
+        self.test_invalid('dot3', './', 'dst', False)
+        self.test_invalid('dot4', '././././', 'dst', False)
+        self.test_invalid('dotdot1', '..', 'dst', True)
+        self.test_invalid('dotdot2', '../', 'dst', False)
+        self.test_invalid('dotdot3', '../abc', 'dst', False)
+        self.test_invalid('dotdot4', './..', 'dst', False)
         self.test_opt_pattern()
         self.test_specified_dir()
 
@@ -1513,6 +1522,40 @@ class GfptarCommand(Command):
         self.opt['--jobs'] = save_opt_jobs
         self.opt['--type'] = save_opt_type
         self.opt['--use-compress-program'] = save_opt_compress_prog
+
+    def test_invalid(self, name, src, dst, for_gfarm):
+        testname = f'gfptar-test-invalid-{name}'
+        d_name = f'{testname}-{self.gfarm_user}-{self.uid}-{self.pid}'
+
+        if for_gfarm:
+            workdir = os.path.join(self.opt['--test-workdir-gfarm'], d_name)
+        else:
+            workdir = os.path.join(self.opt['--test-workdir-local'], d_name)
+        workdir_url = GfURL.init(workdir)
+        workdir_url.mkdir()
+
+        testsrc_name = src
+        # srcdir = workdir_url.url_join(testsrc_name)
+        # srcdir_url = GfURL.init(srcdir)
+        # srcdir_url.mkdir()
+
+        test1_name = dst
+        test1_dir = workdir_url.url_join(test1_name)
+
+        ok = False
+        try:
+            self.create(test1_dir, workdir, [testsrc_name])
+        except Exception as e:
+            if str(e).startswith('specifying '):
+                ok = True
+            else:
+                raise
+
+        workdir_url.remove_tree(remove_readonly=True)
+        if ok:
+            print(testname + ' ... PASS')
+        else:
+            print(testname + ' ... FAIL (unexpected success)')
 
     def test_simple(self, name):
         testname = f'gfptar-test-simple-{name}'
@@ -1763,10 +1806,18 @@ class GfptarCommand(Command):
         for infile in infiles:
             infile_url = GfURL.init(infile)
             if not infile_url.is_local():
-                raise Exception('a relative path is required '
+                raise Exception('specifying a relative path is required '
                                 'instead of a URL: ' + infile)
             infile = infile_url.path  # normalize and ignore scheme
             infile = infile.lstrip('/')  # relative path only
+            if infile.startswith('./'):
+                infile = infile[2:]
+            if infile == '' or infile == '.':
+                raise Exception('specifying current directory (.) '
+                                + 'as members is not allowed: ' + infile)
+            if infile == '..' or infile.startswith('../'):
+                raise Exception('specifying parent directory (..) '
+                                + 'as members is not allowed: ' + infile)
             filelist = []
             url_str = os.path.join(self.basedir_url.url_str, infile)
             gfurl = GfURL.init(url_str)
