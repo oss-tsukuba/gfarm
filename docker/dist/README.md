@@ -18,7 +18,7 @@
 
     % DIST=<distribution> docker compose build --build-arg UID=$(id -u) c1
     % DIST=<distribution> docker compose up -d
-    ubuntu, almalinux8, and centos7 are available.  Default is ubuntu
+    ubuntu, almalinux8, and centos7 are available.  If DIST is omitted, ubuntu is used
     % docker exec -u $USER -w /home/$USER/gfarm -it gfarm-c1 /bin/bash
 
     (in a container)
@@ -30,7 +30,9 @@
 
     % docker compose down
 
-When you would like to execute `all.sh` (or `all-rpm.sh`) again, execute `unconfig.sh`.  When you change the source code, execute `docker/dist/install.sh -m` and `restart.sh`.
+When you would like to execute `all.sh` (or `all-rpm.sh`) again, execute `unconfig.sh`.
+
+When you change the source code, execute `docker/dist/install.sh -m` in the top source directory and `restart.sh`.
 
 When you install Gfarm by `all.sh`, `regress.sh` and `failover.sh` are available for tests.
 
