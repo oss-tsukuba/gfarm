@@ -32,7 +32,8 @@ struct gfp_xdr;
 	 (e) == GFARM_ERR_SOCKET_IS_NOT_CONNECTED || \
 	 (e) == GFARM_ERR_OPERATION_TIMED_OUT || \
 	 (e) == GFARM_ERR_CONNECTION_REFUSED || \
-	 (e) == GFARM_ERR_NO_ROUTE_TO_HOST)
+	 (e) == GFARM_ERR_NO_ROUTE_TO_HOST || \
+	 (e) == GFARM_ERR_TLS_RUNTIME_ERROR)
 
 gfarm_error_t gfp_xdr_new(struct gfp_iobuffer_ops *, void *, int, int,
 	struct gfp_xdr **);

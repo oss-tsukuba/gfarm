@@ -7382,9 +7382,7 @@ main(int argc, char **argv)
 	/*
 	 * We don't want SIGPIPE, but want EPIPE on write(2)/close(2).
 	 */
-	if (signal(SIGPIPE, SIG_IGN) == SIG_ERR)
-		gflog_fatal_errno(GFARM_MSG_1002404,
-		    "signal(SIGPIPE, SIG_IGN)");
+	gfarm_sigpipe_ignore();
 
 	/* call before start_back_channel_server() */
 	if (gfarm_write_verify)

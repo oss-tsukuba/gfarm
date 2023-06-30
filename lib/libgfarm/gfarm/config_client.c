@@ -225,6 +225,14 @@ gfarm_initialize(int *argcp, char ***argvp)
 #endif
 	gfarm_schedule_init();
 
+	/*
+	 * In general, libraries shouldn't ignore SIGPIPE, because it breaks
+	 * CLI programs that expect SIGPIPE in a command pipeline.
+	 * Howerver, since OpenSSL SSL_write() does not use MSG_NOSIGNAL flag,
+	 * gfmd failover will not work unless SIGPIPE is ignored.
+	 */
+	gfarm_sigpipe_ignore();
+
 	return (GFARM_ERR_NO_ERROR);
 }
 #endif /* __KERNEL__ */
@@ -278,6 +286,7 @@ gfarm_error_t
 gfarm_terminate(void)
 {
 	gfs_profile(gfs_display_timers());
+	gfarm_sigpipe_restore();
 	gfs_client_terminate();
 	gfm_client_terminate();
 	gflog_terminate();

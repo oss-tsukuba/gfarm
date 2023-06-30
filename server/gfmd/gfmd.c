@@ -1978,6 +1978,7 @@ main(int argc, char **argv)
 	 * We don't want SIGPIPE, but want EPIPE on write(2)/close(2).
 	 */
 	gfarm_sigpipe_ignore();
+
 	/*
 	 * Initialize a signal mask before creating threads, since
 	 * newly created threads inherit this signal mask.

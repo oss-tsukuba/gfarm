@@ -50,6 +50,7 @@ long gfarm_random(void);
 /* send_no_sigpipe */
 
 void gfarm_sigpipe_ignore(void);
+void gfarm_sigpipe_restore(void);
 ssize_t gfarm_send_no_sigpipe(int, const void *, size_t);
 
 /* sleep */
