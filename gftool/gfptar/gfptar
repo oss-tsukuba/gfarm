@@ -39,6 +39,7 @@ from contextlib import contextmanager
 import traceback
 import unittest
 import hashlib
+import signal
 
 from docopt import docopt
 from schema import Schema, Use, Or
@@ -131,8 +132,9 @@ def logger_init(name, loglevel=logging.WARNING, debug=False):
     logger.setLevel(loglevel)
     strm = logging.StreamHandler()  # stderr
     if debug:
-        fmt = '{}:%(levelname)s:L%(lineno)d:%(asctime)s: %(message)s'.format(
-            name)
+        fmt = '%(filename)s:%(levelname)s:L%(lineno)d:' + \
+            '%(asctime)s: %(message)s'
+        fmt = fmt.format(name)
     else:
         fmt = '{}:%(levelname)s: %(message)s'.format(name)
     formatter_strm = logging.Formatter(fmt=fmt, datefmt='%Y%m%d%H%M%S')
@@ -495,7 +497,7 @@ class GfURL(metaclass=abc.ABCMeta):
     @contextmanager
     @abc.abstractmethod
     def writeopen(self, textmode=False, mode=0o600, mtime=None,
-                  user=None, group=None, use_fsync=True):
+                  user=None, group=None, use_fsync=True, hostname=None):
         raise NotImplementedError
 
     def tar_add(self, tar, subpath, entry):
@@ -511,11 +513,11 @@ class GfURL(metaclass=abc.ABCMeta):
             tar.addfile(tarinfo)
 
     def copy_from(self, inf, bufsize, mode=None, mtime=0o600,
-                  user=None, group=None, use_fsync=True):
+                  user=None, group=None, use_fsync=True, hostname=None):
         readlen = 0
         with self.writeopen(mode=mode, mtime=mtime,
                             user=user, group=group,
-                            use_fsync=use_fsync) as outf:
+                            use_fsync=use_fsync, hostname=hostname) as outf:
             while True:
                 buf = inf.read(bufsize)
                 if not buf:
@@ -842,8 +844,23 @@ class GfURLGfarm(GfURL):
                     raise AssertionError
                 first = False
 
+    def gfsched(self, is_file=False, write_mode=False, number=None):
+        args = ['gfsched']
+        if is_file:
+            args.append('-f')
+            args.append(self.url_str)
+        else:
+            args.append('-P')
+            args.append(self.url_str)
+        if write_mode is not None:
+            args.append('-w')
+        if number is not None:
+            args.append('-n')
+            args.append(str(number))
+        return [line for line in execcmd_readline(args)]
+
     def gfreg(self, textmode=False, mode=None, mtime=None,
-              user=None, group=None):
+              user=None, group=None, hostname=None):
         class Gfreg():
             def __init__(self, url, proc, stdin):
                 self.url = url
@@ -878,7 +895,10 @@ class GfURLGfarm(GfURL):
             if group is not None:
                 args.append('-g')
                 args.append(group)
-        args.append('-')
+        if hostname:
+            args.append('-h')
+            args.append(hostname)
+        args.append('-')  # stdin
         args.append(self.url_str)
         if textmode:
             encoding = get_encoding()
@@ -915,10 +935,10 @@ class GfURLGfarm(GfURL):
 
     @contextmanager
     def writeopen(self, textmode=False, mode=0o600, mtime=None,
-                  user=None, group=None, use_fsync=True):
-        # TODO XXX use_fsync for gfreg
+                  user=None, group=None, use_fsync=True, hostname=None):
+        # TODO XXX add gfreg option for use_fsync
         gfreg_obj = self.gfreg(textmode=textmode, mode=mode, mtime=mtime,
-                               user=user, group=group)
+                               user=user, group=group, hostname=hostname)
         proc = gfreg_obj.proc
         try:
             yield gfreg_obj.stdin
@@ -1164,7 +1184,7 @@ class GfURLLocal(GfURL):
 
     @contextmanager
     def writeopen(self, textmode=False, mode=0o600, mtime=None,
-                  user=None, group=None, use_fsync=True):
+                  user=None, group=None, use_fsync=True, hostname=None):
         tmpmode = mode | 0o200  # necessary (Permission denied at ex.0o400)
         fd = os.open(path=self.url_str,
                      flags=(os.O_WRONLY | os.O_CREAT | os.O_EXCL),
@@ -1242,7 +1262,7 @@ class GfTarFile(tarfile.TarFile):
 
     @classmethod
     def create_open(cls, gfurl, compress_type, copybufsize, compress_prog=None,
-                    use_fsync=True):
+                    use_fsync=True, target_host=None):
         # use Stream (not seekable)
         openmode = 'w|'
         if compress_prog is None \
@@ -1254,7 +1274,7 @@ class GfTarFile(tarfile.TarFile):
         proc_list = []
         if gfurl.is_gfarm():
             if compress_prog:
-                gfreg_obj = gfurl.gfreg(mode=0o600)
+                gfreg_obj = gfurl.gfreg(mode=0o600, hostname=target_host)
                 compress_proc = cls.compress(compress_prog,
                                              gfreg_obj.stdin)
                 tar = cls.open(None, mode=openmode,
@@ -1264,7 +1284,7 @@ class GfTarFile(tarfile.TarFile):
                                         None]))
                 proc_list.append(tuple([gfreg_obj.proc, gfreg_obj, None]))
             else:
-                gfreg_obj = gfurl.gfreg(mode=0o600)
+                gfreg_obj = gfurl.gfreg(mode=0o600, hostname=target_host)
                 tar = cls.open(None, mode=openmode,
                                fileobj=gfreg_obj.stdin,
                                copybufsize=copybufsize)
@@ -1371,6 +1391,18 @@ class GfptarCommand(Command):
         self.hardlink_warn = True
         self.disable_fsync = self.opt['--disable-fsync']
         self.use_fsync = not self.disable_fsync
+        self.canceled = threading.Event()
+        self._lock = None
+        self.futures = None
+        self.sig_init()
+
+    def sig_init(self):
+        def sig_handler(signum, frame):
+            print('')  # new line
+            self.cancel()
+
+        signal.signal(signal.SIGINT, sig_handler)
+        signal.signal(signal.SIGTERM, sig_handler)
 
     def getDoc(self) -> str:
         return __doc__
@@ -1423,6 +1455,15 @@ class GfptarCommand(Command):
         out = execcmd(['gfwhoami'], textmode=True)
         self.gfarm_user = out.strip()
         self.test_unit()
+        self.test_invalid('url', 'gfarm:/tmp', 'dst', True)
+        self.test_invalid('dot1', '.', 'dst', True)
+        self.test_invalid('dot2', '', 'dst', False)
+        self.test_invalid('dot3', './', 'dst', False)
+        self.test_invalid('dot4', '././././', 'dst', False)
+        self.test_invalid('dotdot1', '..', 'dst', True)
+        self.test_invalid('dotdot2', '../', 'dst', False)
+        self.test_invalid('dotdot3', '../abc', 'dst', False)
+        self.test_invalid('dotdot4', './..', 'dst', False)
         self.test_opt_pattern()
         self.test_specified_dir()
 
@@ -1481,6 +1522,40 @@ class GfptarCommand(Command):
         self.opt['--jobs'] = save_opt_jobs
         self.opt['--type'] = save_opt_type
         self.opt['--use-compress-program'] = save_opt_compress_prog
+
+    def test_invalid(self, name, src, dst, for_gfarm):
+        testname = f'gfptar-test-invalid-{name}'
+        d_name = f'{testname}-{self.gfarm_user}-{self.uid}-{self.pid}'
+
+        if for_gfarm:
+            workdir = os.path.join(self.opt['--test-workdir-gfarm'], d_name)
+        else:
+            workdir = os.path.join(self.opt['--test-workdir-local'], d_name)
+        workdir_url = GfURL.init(workdir)
+        workdir_url.mkdir()
+
+        testsrc_name = src
+        # srcdir = workdir_url.url_join(testsrc_name)
+        # srcdir_url = GfURL.init(srcdir)
+        # srcdir_url.mkdir()
+
+        test1_name = dst
+        test1_dir = workdir_url.url_join(test1_name)
+
+        ok = False
+        try:
+            self.create(test1_dir, workdir, [testsrc_name])
+        except Exception as e:
+            if str(e).startswith('specifying '):
+                ok = True
+            else:
+                raise
+
+        workdir_url.remove_tree(remove_readonly=True)
+        if ok:
+            print(testname + ' ... PASS')
+        else:
+            print(testname + ' ... FAIL (unexpected success)')
 
     def test_simple(self, name):
         testname = f'gfptar-test-simple-{name}'
@@ -1711,6 +1786,7 @@ class GfptarCommand(Command):
         self.compress_prog = self.opt['--use-compress-program']
         self.disable_gfarm_command = self.opt['--disable-gfarm-command']
         self.use_gfarm_command = not self.disable_gfarm_command
+        self.gfsched_interval = self.opt['--gfsched-interval']
         self.use_tqdm = self.opt['--use-tqdm']
         if self.compress_type == GfTarFile.COMPRESS_TYPE_NO:
             self.split_size = self.size
@@ -1730,10 +1806,18 @@ class GfptarCommand(Command):
         for infile in infiles:
             infile_url = GfURL.init(infile)
             if not infile_url.is_local():
-                raise Exception('a relative path is required '
+                raise Exception('specifying a relative path is required '
                                 'instead of a URL: ' + infile)
             infile = infile_url.path  # normalize and ignore scheme
             infile = infile.lstrip('/')  # relative path only
+            if infile.startswith('./'):
+                infile = infile[2:]
+            if infile == '' or infile == '.':
+                raise Exception('specifying current directory (.) '
+                                + 'as members is not allowed: ' + infile)
+            if infile == '..' or infile.startswith('../'):
+                raise Exception('specifying parent directory (..) '
+                                + 'as members is not allowed: ' + infile)
             filelist = []
             url_str = os.path.join(self.basedir_url.url_str, infile)
             gfurl = GfURL.init(url_str)
@@ -1747,12 +1831,12 @@ class GfptarCommand(Command):
                 if self.progress_enabled:
                     now = time.time()
                     if now >= self.next_time:
-                        self.next_time += 1
-                        self.progress_for_list(now)
+                        self.next_time = now + 1
+                        self.progress_for_list1(now)
             filelist.sort(key=entry_key, reverse=False)
             self.filelistlist.extend(self.schedule(filelist))
         if self.progress_enabled:
-            self.progress_for_list(time.time())
+            self.progress_for_list1(time.time())
             sys.stderr.write('\n')
 
         self.tqdm = None
@@ -1771,12 +1855,14 @@ class GfptarCommand(Command):
                 self.myprogress = True
 
         self.serial = 0
-        self.cancelled = False
         self.archive_size = 0
         self.stored_size = 0
         self.stored_num = 0
         self.start_time = time.time()
         self.next_time = self.start_time + 1
+        self.next_gfsched = 0
+        self.gfsched_list = None
+
         if self.MT_enabled():
             self.create_tars_MT()
         else:
@@ -1791,6 +1877,8 @@ class GfptarCommand(Command):
                   (100 * self.archive_size / self.stored_size,
                    self.archive_size, self.stored_size))
         del self.filelistlist
+        if self.is_canceled():
+            raise self.error_canceled()
 
     def create_tars(self):
         self.lock_init(False)
@@ -1807,17 +1895,19 @@ class GfptarCommand(Command):
                 self.serial += 1
                 t = executor.submit(self.create_a_tar, self.serial, filelist)
                 futures[t] = self.serial
+            self.futures = futures
             for t in concurrent.futures.as_completed(futures, timeout=None):
                 exc = t.exception()
                 if exc:
-                    logger.error('%s: serial=%04d', repr(exc), futures[t])
-                    tb = traceback.TracebackException.from_exception(exc)
-                    logger.debug(''.join(tb.format()))
-                    if not self.is_cancelled():
+                    logger.debug('%s: serial=%04d', repr(exc), futures[t])
+                    if not self.is_canceled():
                         self.cancel()
-                        for t2 in futures:
-                            logger.error("cancel: serial=%04d", futures[t2])
-                            t2.cancel()
+                    if self.verbose or self.debug:
+                        tb = traceback.TracebackException.from_exception(exc)
+                        logger.debug(''.join(tb.format()))
+                    for t2 in futures:
+                        logger.debug("cancel: serial=%04d", futures[t2])
+                        t2.cancel()
                     raise exc
 
     def schedule(self, filelist):
@@ -1839,13 +1929,12 @@ class GfptarCommand(Command):
     def lock_init(self, enable):
         if enable:
             self._lock = threading.Lock()
-        else:
-            self._lock = None
 
     @contextmanager
     def lock(self):
         if self._lock:
-            self._lock.acquire()
+            if not self._lock.acquire(timeout=5):
+                logger.warning('lock: timeout(unexpected)')
         try:
             yield
         finally:
@@ -1854,17 +1943,49 @@ class GfptarCommand(Command):
 
     def cancel(self):
         with self.lock():
-            self.cancelled = True
+            self.canceled.set()
 
-    def is_cancelled(self):
+    def is_canceled(self):
         with self.lock():
-            val = self.cancelled
+            val = self.canceled.is_set()
         return val
 
+    def _gfsched_sometimes(self, gfurl):
+        # gfurl.is_gfarm() is True
+        with self.lock():
+            now = time.time()
+            if now >= self.next_gfsched:
+                self.gfsched_list = gfurl.gfsched(write_mode=True,
+                                                  number=self.jobs)
+                # prevent IndexError
+                self.gfsched_list = self.gfsched_list[:self.jobs]
+                logger.debug("update gfsched_list")
+                self.next_gfsched = now + self.gfsched_interval
+
+    def select_a_target_host(self, outurl, index):
+        if not outurl.is_gfarm():
+            return None
+        if self.jobs <= 1:
+            return None
+        self._gfsched_sometimes(outurl)
+        with self.lock():
+            target_host = self.gfsched_list[index % len(self.gfsched_list)]
+        logger.debug("selected target_host: %s", target_host)
+        return target_host
+
     def create_a_tar(self, serial, filelist):
+        try:
+            self.create_a_tar0(serial, filelist)
+        except Exception:
+            if self.is_canceled():
+                raise self.error_canceled()
+            else:
+                raise
+
+    def create_a_tar0(self, serial, filelist):
         logger.debug('create_a_tar: start: %04d', serial)
-        if self.is_cancelled():
-            logger.debug('cancelled (1): serial=%04d', serial)
+        if self.is_canceled():
+            logger.debug('canceled (1): serial=%04d', serial)
             return
         first = None
         last = None
@@ -1895,13 +2016,15 @@ class GfptarCommand(Command):
         outname = serial_str + outname.replace('/', '_')
         outurl = GfURL.init(self.outdir_url.url_join(outname),
                             use_gfarm_command=self.use_gfarm_command)
-        self.create_a_members_list(outurl, filelist)
+        target_host = self.select_a_target_host(outurl, serial)
+        self.create_a_members_list(outurl, filelist, target_host)
         tar = GfTarFile.create_open(outurl, self.compress_type, self.bufsize,
                                     compress_prog=self.compress_prog,
-                                    use_fsync=self.use_fsync)
+                                    use_fsync=self.use_fsync,
+                                    target_host=target_host)
         for entry in filelist:
-            if self.is_cancelled():
-                logger.debug('cancelled (2): serial=%04d', serial)
+            if self.is_canceled():
+                logger.debug('canceled (2): serial=%04d', serial)
                 break
             subpath = entry.subpath(self.basedir_url)
             tar.add_entry(subpath, entry)
@@ -1913,7 +2036,7 @@ class GfptarCommand(Command):
                     self.stored_num += 1
                     now = time.time()
                     if now >= self.next_time:
-                        self.next_time += 1
+                        self.next_time = now + 1
                         self.progress_for_create(now)
                 elif self.tqdm:
                     if entry.is_file():
@@ -1925,9 +2048,10 @@ class GfptarCommand(Command):
             self.info('created(.tar): {}', outurl.url_str)
             self.archive_size += tar_size
 
-    def create_a_members_list(self, url, filelist):
+    def create_a_members_list(self, url, filelist, target_host):
         outurl = GfURL.init(url.url_str + self.LIST_SUFFIX)
-        with outurl.writeopen(textmode=True, use_fsync=self.use_fsync) as f:
+        with outurl.writeopen(textmode=True, use_fsync=self.use_fsync,
+                              hostname=target_host) as f:
             for entry in filelist:
                 # ex. "D /path/to/dir"
                 if entry.is_file():
@@ -1941,10 +2065,14 @@ class GfptarCommand(Command):
                 subpath = entry.subpath(self.basedir_url)
                 f.write(subpath)
                 f.write('\n')
-        self.info('created(.lst): {}', outurl.url_str)
+        with self.lock():
+            self.info('created(.lst): {}', outurl.url_str)
+
+    def error_canceled(self):
+        return Exception('Canceled')
 
     def error_not_a_gfptar_directory(self, url_str):
-        raise Exception('Not a gfptar-archived directory: ' + url_str)
+        return Exception('Not a gfptar-archived directory: ' + url_str)
 
     def extract(self, outdir, indir, members):
         self.outdir = outdir
@@ -1956,32 +2084,40 @@ class GfptarCommand(Command):
         self.same_owner = self.opt['--same-owner']
         self.disable_gfarm_command = self.opt['--disable-gfarm-command']
         self.use_gfarm_command = not self.disable_gfarm_command
+        self.gfsched_interval = self.opt['--gfsched-interval']
 
         indir_url = GfURL.init(self.indir)
         if not indir_url.exists():
             raise FileNotFoundError(indir_url.url_str)
         if not indir_url.is_directory():
-            self.error_not_a_gfptar_directory(indir_url.url_str)
+            raise self.error_not_a_gfptar_directory(indir_url.url_str)
 
         search_target = len(member_set) > 0
         archive_dict = {}  # member -> (file_type, tar filename)
         target_set_all = set()  # all  tar files
         directory_list = []
         self.total_num = 0
+        self.start_time = time.time()
+        self.next_time = self.start_time + 1
+
         for ent in indir_url.listdir(recursive=False):
             if ent.path.endswith(self.LIST_SUFFIX):  # ignored
                 continue
+            if self.is_canceled():
+                raise self.error_canceled()
             subpath = ent.subpath(indir_url)
             arch_url_str = indir_url.url_join(subpath)
             target_set_all.add(arch_url_str)
             list_url = GfURL.init(arch_url_str + self.LIST_SUFFIX)
             if not list_url.exists():
-                self.error_not_a_gfptar_directory(indir_url.url_str)
+                raise self.error_not_a_gfptar_directory(indir_url.url_str)
             with list_url.readopen(textmode=True) as f:
                 while True:
                     line = f.readline()
                     if not line:
                         break
+                    if self.is_canceled():
+                        raise self.error_canceled()
                     self.total_num += 1
                     line = line.rstrip()
                     # ex. "D /path/to/dir"
@@ -1992,6 +2128,14 @@ class GfptarCommand(Command):
                     else:
                         if file_type == 'D':
                             directory_list.append(path)
+            if self.progress_enabled:
+                now = time.time()
+                if now >= self.next_time:
+                    self.next_time = now + 1
+                    self.progress_for_list2(now)
+        if self.progress_enabled:
+            self.progress_for_list2(time.time())
+            sys.stderr.write('\n')
 
         if search_target:
             # selected tar files
@@ -2036,12 +2180,14 @@ class GfptarCommand(Command):
         # self.extract_directories(directory_list)
         self.extract_directories_fast(directory_list)
 
-        self.cancelled = False
         self.extracted_num = 0
         self.extracted_size = 0
         self.start_time = time.time()
         self.next_time = self.start_time + 1
         self.dirstat_dict = {}
+        self.next_gfsched = 0
+        self.gfsched_list = None
+
         if self.MT_enabled():
             self.extract_from_archives_MT(target_list, member_set)
         else:
@@ -2117,19 +2263,23 @@ class GfptarCommand(Command):
 
     def extract_from_archives(self, target_list, member_set):
         self.lock_init(False)
+        serial = 0
         for target in target_list:
             logger.debug('target_set: %s', target)
-            self.extract_from_a_tar(target, member_set)
+            serial += 1
+            self.extract_from_a_tar(serial, target, member_set)
 
     def extract_from_archives_MT(self, target_list, member_set):
         self.lock_init(True)
         with concurrent.futures.ThreadPoolExecutor(
                 max_workers=self.jobs) as executor:
             futures = {}
+            serial = 0
             for target in target_list:
                 logger.debug('target_set: %s', target)
+                serial += 1
                 t = executor.submit(self.extract_from_a_tar,
-                                    target, member_set)
+                                    serial, target, member_set)
                 futures[t] = target
 
             for t in concurrent.futures.as_completed(futures, timeout=None):
@@ -2138,26 +2288,37 @@ class GfptarCommand(Command):
                     logger.error('%s: %s', repr(exc), futures[t])
                     tb = traceback.TracebackException.from_exception(exc)
                     logger.debug(''.join(tb.format()))
-                    if not self.is_cancelled():
+                    if not self.is_canceled():
                         self.cancel()
                         for t2 in futures:
                             logger.error("cancel: name=%s", futures[t2])
                             t2.cancel()
                     raise exc
 
-    def extract_from_a_tar(self, target, member_set):
-        if self.is_cancelled():
-            logger.debug('cancelled (1): name=%s', target)
+    def extract_from_a_tar(self, serial, target, member_set):
+        try:
+            self.extract_from_a_tar0(serial, target, member_set)
+        except Exception:
+            if self.is_canceled():
+                raise self.error_canceled()
+            else:
+                raise
+
+    def extract_from_a_tar0(self, serial, target, member_set):
+        logger.debug('extract_from_a_tar: start: %04d', serial)
+        if self.is_canceled():
+            logger.debug('canceled (1): name=%s', target)
             return
         arch_url = GfURL.init(target,
                               use_gfarm_command=self.use_gfarm_command)
         tar = GfTarFile.extract_open(arch_url, self.bufsize,
                                      compress_prog=self.compress_prog)
         members_num = len(member_set)
+        index = serial
         while True:
-            if self.is_cancelled():
-                logger.debug('cancelled (2): name=%s', target)
-                return
+            if self.is_canceled():
+                logger.debug('canceled (2): name=%s', target)
+                break
             tarinfo = tar.next()
             if tarinfo is None:
                 break
@@ -2172,6 +2333,8 @@ class GfptarCommand(Command):
             outurl = GfURL.init(url_str)
 
             if tarinfo.isfile():
+                target_host = self.select_a_target_host(outurl, index)
+                index += 1
                 user = None
                 group = None
                 if self.same_owner:
@@ -2182,7 +2345,8 @@ class GfptarCommand(Command):
                                         mode=tarinfo.mode,
                                         mtime=tarinfo.mtime,
                                         user=user, group=group,
-                                        use_fsync=self.use_fsync)
+                                        use_fsync=self.use_fsync,
+                                        hostname=target_host)
                 inf.close()
                 logger.debug('extract,file: %s, %d', outfile, size)
                 with self.lock():
@@ -2215,18 +2379,24 @@ class GfptarCommand(Command):
                         self.extracted_size += tarinfo.size
                     now = time.time()
                     if now >= self.next_time:
-                        self.next_time += 1
+                        self.next_time = now + 1
                         self.progress_for_extract(now)
 
         tar.close()
         with self.lock():
             self.info('extracted(done): {}', arch_url.url_str)
 
-    def progress_for_list(self, now):
+    def progress_for_list1(self, now):
         sec = now - self.start_time
         sys.stderr.write(f'\rlisting: '
                          f'num={self.total_num}, '
                          f'size={self.total_size}, '
+                         f'sec={sec:.0f}')
+
+    def progress_for_list2(self, now):
+        sec = now - self.start_time
+        sys.stderr.write(f'\rlisting: '
+                         f'num={self.total_num}, '
                          f'sec={sec:.0f}')
 
     # lock required
@@ -2341,6 +2511,8 @@ Options:
   --disable-gfarm-command   disable the use of gfreg and gfexport
                             for tar files on gfarm2fs
   --disable-fsync           disable calling fsync() before close()
+  --gfsched-interval=SEC    interval of updating candidate hosts to write
+                            (for Gfarm URL only) [default: 120]
   --use-tqdm                use tqdm to show progress (for --create)
   --encoding=CODEC          codec for filename encoding
              (https://docs.python.org/3/library/codecs.html#standard-encodings)
@@ -2401,6 +2573,7 @@ _schema = Schema({
     '--use-compress-program': Or(str, None),
     '--disable-gfarm-command': bool,
     '--disable-fsync': bool,
+    '--gfsched-interval': Use(int),
     '--same-owner': bool,
     '--use-tqdm': bool,
     '--test': bool,
