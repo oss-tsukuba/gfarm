@@ -20,7 +20,7 @@ RUN apt-get update \
     xsltproc docbook-xsl \
     python3-docopt python3-schema python3-tqdm flake8 \
     fuse libfuse-dev libacl1-dev \
-    gdb valgrind \
+    gdb valgrind rsyslog \
     myproxy globus-simple-ca \
     libsasl2-dev sasl2-bin libscitokens-dev
 
@@ -58,4 +58,4 @@ RUN cd \
  && mkdir local
 
 USER root
-CMD service ssh start && sleep infinity
+CMD service ssh start && systemctl start rsyslog && sleep infinity
