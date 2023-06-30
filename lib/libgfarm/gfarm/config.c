@@ -31,6 +31,7 @@
 #include "hash.h"
 #include "lru_cache.h"
 #include "msgdigest.h"
+#include "thrsubr.h"
 
 #include "context.h"
 #include "liberror.h"
@@ -1116,7 +1117,6 @@ static int journal_sync_file = GFARM_CONFIG_MISC_DEFAULT;
 static int journal_sync_slave_timeout = GFARM_CONFIG_MISC_DEFAULT;
 static int metadb_server_slave_replication_timeout = GFARM_CONFIG_MISC_DEFAULT;
 static int metadb_server_slave_max_size = GFARM_CONFIG_MISC_DEFAULT;
-static int metadb_server_force_slave = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_replica_check = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_replica_check_remove = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_replica_check_remove_grace_used_space_ratio =
@@ -1128,6 +1128,10 @@ int gfarm_replica_check_sleep_time = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_replica_check_yield_time = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_replica_check_minimum_interval = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_replicainfo_enabled = GFARM_CONFIG_MISC_DEFAULT;
+
+static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+static const char mutex_label[] = "config";
+static int metadb_server_force_slave = GFARM_CONFIG_MISC_DEFAULT;
 
 void
 gfarm_config_clear(void)
@@ -1437,13 +1441,23 @@ gfarm_get_metadb_server_slave_max_size(void)
 int
 gfarm_get_metadb_server_force_slave(void)
 {
-	return (metadb_server_force_slave);
+	int force_slave;
+	static const char diag[] = "get_metadb_server_force_slave";
+
+	gfarm_mutex_lock(&mutex, diag, mutex_label);
+	force_slave = metadb_server_force_slave;
+	gfarm_mutex_unlock(&mutex, diag, mutex_label);
+	return (force_slave);
 }
 
 void
 gfarm_set_metadb_server_force_slave(int slave)
 {
+	static const char diag[] = "set_metadb_server_force_slave";
+
+	gfarm_mutex_lock(&mutex, diag, mutex_label);
 	metadb_server_force_slave = slave;
+	gfarm_mutex_unlock(&mutex, diag, mutex_label);
 }
 
 char *
@@ -3247,6 +3261,7 @@ parse_one_line(const char *s, char *p,
 {
 	gfarm_error_t e;
 	const char *o;
+	static const char diag[] = "parse_one_line";
 
 	if (strcmp(s, o = "include") == 0) {
 		e = parse_include(p, &o, file, lineno);
@@ -3635,7 +3650,9 @@ parse_one_line(const char *s, char *p,
 	} else if (strcmp(s, o = "metadb_server_slave_max_size") == 0) {
 		e = parse_set_misc_int(p, &metadb_server_slave_max_size);
 	} else if (strcmp(s, o = "metadb_server_force_slave") == 0) {
+		gfarm_mutex_lock(&mutex, diag, mutex_label);
 		e = parse_set_misc_enabled(p, &metadb_server_force_slave);
+		gfarm_mutex_unlock(&mutex, diag, mutex_label);
 	} else if (strcmp(s, o = "network_receive_timeout") == 0) {
 		e = parse_set_misc_int(p, &gfarm_ctxp->network_receive_timeout);
 	} else if (strcmp(s, o = "network_send_timeout") == 0) {
@@ -3796,6 +3813,8 @@ error:
 void
 gfarm_config_set_default_misc(void)
 {
+	static const char diag[] = "config_set_default_misc";
+
 	if (gfarm_ctxp->include_nesting_limit == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->include_nesting_limit =
 		    GFARM_CONFIG_INCLUDE_NESTING_LIMIT_DEFAULT;
@@ -4035,9 +4054,12 @@ gfarm_config_set_default_misc(void)
 	if (metadb_server_slave_max_size == GFARM_CONFIG_MISC_DEFAULT)
 		metadb_server_slave_max_size =
 		    GFARM_METADB_SERVER_SLAVE_MAX_SIZE_DEFAULT;
-	if (metadb_server_force_slave == GFARM_CONFIG_MISC_DEFAULT)
+	if (metadb_server_force_slave == GFARM_CONFIG_MISC_DEFAULT) {
+		gfarm_mutex_lock(&mutex, diag, mutex_label);
 		metadb_server_force_slave =
 		    GFARM_METADB_SERVER_FORCE_SLAVE_DEFAULT;
+		gfarm_mutex_unlock(&mutex, diag, mutex_label);
+	}
 	if (gfarm_metadb_server_nfs_root_squash_support
 	    == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_metadb_server_nfs_root_squash_support =

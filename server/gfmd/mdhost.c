@@ -905,6 +905,7 @@ mdhost_has_async_replication_target(void)
 		mdhost_table_rwlock_unlock(diag);
 		return (ret);
 	}
+	/* locking order violation happens when failover happens */
 	mdhost_mutex_lock(mmh, diag);
 	FOREACH_MDHOST(it) {
 		mh = mdhost_iterator_access(&it);
