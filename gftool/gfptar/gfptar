@@ -1778,7 +1778,6 @@ class GfptarCommand(Command):
     def create(self, outdir, basedir, infiles):
         self.outdir = outdir
         self.outdir_url = GfURL.init(outdir)
-        self.outdir_url.create_new_dir()
         self.basedir_url = GfURL.init(basedir)
         self.size = self.opt['--size']
         self.ratio = self.opt['--ratio']
@@ -1863,6 +1862,7 @@ class GfptarCommand(Command):
         self.next_gfsched = 0
         self.gfsched_list = None
 
+        self.outdir_url.create_new_dir()
         if self.MT_enabled():
             self.create_tars_MT()
         else:
@@ -2017,7 +2017,6 @@ class GfptarCommand(Command):
         outurl = GfURL.init(self.outdir_url.url_join(outname),
                             use_gfarm_command=self.use_gfarm_command)
         target_host = self.select_a_target_host(outurl, serial)
-        self.create_a_members_list(outurl, filelist, target_host)
         tar = GfTarFile.create_open(outurl, self.compress_type, self.bufsize,
                                     compress_prog=self.compress_prog,
                                     use_fsync=self.use_fsync,
@@ -2044,6 +2043,7 @@ class GfptarCommand(Command):
 
         tar.close()
         tar_size = outurl.get_size()
+        self.create_a_members_list(outurl, filelist, target_host)
         with self.lock():
             self.info('created(.tar): {}', outurl.url_str)
             self.archive_size += tar_size
@@ -2077,7 +2077,6 @@ class GfptarCommand(Command):
     def extract(self, outdir, indir, members):
         self.outdir = outdir
         self.outdir_url = GfURL.init(outdir)
-        self.outdir_url.create_new_dir()
         self.indir = indir
         member_set = set(members)
         self.compress_prog = self.opt['--use-compress-program']
@@ -2177,6 +2176,7 @@ class GfptarCommand(Command):
         del target_set
         target_list.sort()
 
+        self.outdir_url.create_new_dir()
         # self.extract_directories(directory_list)
         self.extract_directories_fast(directory_list)
 
