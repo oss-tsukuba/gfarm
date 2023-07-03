@@ -220,11 +220,12 @@ Gfarm-S3-MinIO
 
 1. preparation: clone gfarm-s3-minio-web and gfarm-s3-minio
 
+  (on host OS)
   $ mkdir -p docker/dev/mnt/work
   $ cd docker/dev/mnt/work
   $ git clone git@github.com:oss-tsukuba/gfarm-s3-minio-web.git
   $ cd gfarm-s3-minio-web
-  $ git checkout develop
+  $ git checkout master
   $ cd ..
   $ git clone git@github.com:oss-tsukuba/gfarm-s3-minio.git
   $ cd gfarm-s3-minio
@@ -232,9 +233,11 @@ Gfarm-S3-MinIO
 
 2. to install gfarm-s3 into running client1 container
 
-  $ cd (docker/dev dir)
-  $ cd dist/centos7/src
+  (on host OS)
+  $ cd docker/dev/dist/ubuntu2204/src
+  $ make reborn  # if containers are not created
   $ make s3setup
+  (WebUI password for user1 and user2 are displayed)
 
 3. to access
 
@@ -252,8 +255,9 @@ Gfarm-S3-MinIO
   - copy "Access Key ID" to clipboard later.
   - copy "Secret Access Key" to clipboard later.
 
-  (S3 client from client1)
+  (on host OS)
   $ make shell
+  (in client1 container)
   $ aws configure
   ### set "Access Key ID" and "Secret Access Key"
   $ aws s3 --endpoint-url http://{IP address of host OS}:18080 \
@@ -265,15 +269,14 @@ Gfarm-S3-MinIO
 
 4. to run s3 unit test
 
-  $ cd docker/dev/dist/centos7/src
-  $ make s3setup
+  (on host OS)
   $ make s3test
 
 5. update gfarm-s3-minio or gfarm-s3-minio-web
 
   $ cd docker/dev/mnt/work/
   ### edit or update gfarm-s3-minio and gfarm-s3-minio-web
-  $ cd docker/dev/dist/centos7/src
+  $ cd docker/dev/dist/ubuntu2204/src
   $ make s3update
 
 
