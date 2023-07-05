@@ -5,15 +5,38 @@
 #include <unistd.h>
 #include <errno.h>
 
+#include <gfarm/gflog.h>
+
 #ifndef __KERNEL__	/* gfarm_sigpipe_ignore  ???*/
 static int sigpipe_is_ignored = 0;
+static struct sigaction old_sigpipe;
 
 void
 gfarm_sigpipe_ignore(void)
 {
-	signal(SIGPIPE, SIG_IGN);
-	sigpipe_is_ignored = 1;
+	struct sigaction new_act;
+
+	memset(&new_act, 0, sizeof(new_act));
+	new_act.sa_handler = SIG_IGN;
+	if (sigaction(SIGPIPE, &new_act, &old_sigpipe) == -1) {
+		/* this shouldn't happen */
+		gflog_error_errno(GFARM_MSG_UNFIXED,
+		    "signal(SIGPIPE, SIG_IGN)");
+	} else {
+		sigpipe_is_ignored = 1;
+	}
 }
+
+void
+gfarm_sigpipe_restore(void)
+{
+	if (sigaction(SIGPIPE, &old_sigpipe, NULL) == -1) {
+		/* this shouldn't happen */
+		gflog_error_errno(GFARM_MSG_UNFIXED,
+		    "restoring old SIGPIPE handler");
+	}
+}
+
 #endif /* __KERNEL__ */
 
 ssize_t
