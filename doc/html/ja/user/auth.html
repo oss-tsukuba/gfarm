@@ -204,9 +204,6 @@ authディレクティブの次のパラメータには認証方式か「*」を
 authディレクティブの次のパラメータには対象となるホストのホスト名ないし
 IPアドレスを以下のいずれかの形式で記載します。
 
-<P>
-authディレクティブの三番目の欄には以下のいずれかを記載できます。
-
 <TABLE>
 <THEAD>
   <TR>
@@ -248,7 +245,7 @@ authディレクティブの三番目の欄には以下のいずれかを記載�
 auth ディレクトリは記述の順番に意味があり、上から適用されていきます。
 このため以下の例だと
 <PRE>
-auth enable * 192.168.121.0/24
+auth enable * 192.168.0.0/24
 auth disable * .blacklist.example.net
 auth enable tls_client_certificate *
 </PRE>
@@ -262,7 +259,7 @@ auth enable tls_client_certificate *
 <PRE>
 auth enable tls_client_certificate *
 auth disable * .blacklist.example.net
-auth enable * 192.168.121.0/24
+auth enable * 192.168.0.0/24
 </PRE>
 下記の意味になってしまいます。
 <UL>
