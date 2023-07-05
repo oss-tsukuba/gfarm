@@ -5,6 +5,7 @@
     % git clone https://github.com/oss-tsukuba/gfarm.git
     % cd gfarm
     % git clone https://github.com/oss-tsukuba/gfarm2fs.git
+    % cd docker/dist
 
 ## (For VS Code users) Explore on virtual clusters by VS Code dev containers
 
@@ -18,7 +19,7 @@
 
     % DIST=<distribution> docker compose build --build-arg UID=$(id -u) c1
     % DIST=<distribution> docker compose up -d
-    ubuntu, almalinux8, and centos7 are available.  Default is ubuntu
+    ubuntu, almalinux8, and centos7 are available as $DIST.  Default is ubuntu
     % docker exec -u $USER -w /home/$USER/gfarm -it gfarm-c1 /bin/bash
 
     (in a container)
