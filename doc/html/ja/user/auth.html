@@ -1,0 +1,281 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD>
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<META http-equiv="Content-Style-Type" content="text/css">
+<TITLE>認証設定</TITLE>
+
+<STYLE type="text/css">
+<!-- /* BEGIN ... hide style from old browser */
+
+pre { background:#e0ffff; margin-left: 2em; margin-right: 2em }
+
+table { border-collapse: collapse; }
+thead { background:#e0e0e0; }
+th { border: solid 1px; padding: 0.5em; }
+td { border: solid 1px; padding: 0.5em; }
+td.speed { text-align: right; }
+
+     /* END ... hide style from old browser */ -->
+</STYLE>
+
+</HEAD>
+<BODY><A href="http://oss-tsukuba.org/software/gfarm">
+<IMG alt="[GFARM LOGO]" src="../../pic/gfarm-logo.gif" align=right border=0></A>
+<A href="../../index.html">文書集</A> &gt;
+<A href="index.html">ユーザーズマニュアル</A> &gt;
+認証設定
+
+<HR>
+<H1>認証設定</H1>
+<A href="../../en/user/auth.html">English</A> | 日本語
+<P>
+この文書は、Gfarm の 認証に関する概要を説明します。
+<P>
+
+<HR>
+<H2>認証方式の種類</H2>
+以下の認証方式が存在します。
+
+<DL>
+<DT>sharedsecret
+  <DD>共有鍵認証です。平文で通信を行ないます。
+<DT>tls_sharedsecret
+  <DD>TLSで暗号化された通信路上の共有鍵認証です。
+<DT>tls_client_certificate
+  <DD>TLSで暗号化された通信路上のクライアント証明書を用いた認証です。
+<DT>sasl
+  <DD>TLSで暗号化された通信路上のSASL認証です。<BR>
+      SASL認証の場合、gfmdやgfsdのようなサーバ側は通信のイニシエータ側に
+      なれません。このため、サーバ間認証については sasl / sasl_auth 以外の
+      認証方式を設定する必要があります。
+<DT>sasl_auth
+  <DD>TLSで暗号化された通信路上でSASL認証を行ない、
+      認証完了後は平文で通信します。
+<DT>kerberos
+  <DD>Kerberos認証を用いた暗号化通信です。
+<DT>kerberos_auth
+  <DD>Kerberos認証を行ない、認証完了後は平文で通信します。
+<DT>gsi
+  <DD>GSI (Grid Security Infrastructure) に基づいた暗号化された通信路上の
+      クライアント証明書を用いた認証です。
+<DT>gsi_auth
+  <DD>GSI認証を行ない、認証完了後は平文で通信します。
+</DL>
+
+<P>
+各認証方式を表にまとめると下記の通りとなります。
+
+<TABLE>
+<THEAD>
+  <TR>
+    <TH>名称</TH>
+    <TH>ニーモニック</TH>
+    <TH>暗号化</TH>
+    <TH>相互認証</TH>
+    <TH>サーバ間認証</TH>
+    <TH>ドキュメント</TH>
+  </TR>
+</THEAD>
+<TBODY>
+  <TR>
+    <TD>sharedsecret</TD>
+    <TD>s</TD>
+    <TD>×</TD>
+    <TD>×</TD>
+    <TD>○</TD>
+    <TD><A HREF="auth-sharedsecret.html">auth-sharedsecret.html</A></TD>
+  </TR>
+  <TR>
+    <TD>tls_sharedsecret</TD>
+    <TD>S</TD>
+    <TD>○</TD>
+    <TD>○</TD>
+    <TD>○</TD>
+    <TD><A HREF="auth-tls.html">auth-tls.html</A></TD>
+  </TR>
+  <TR>
+    <TD>tls_client_certificate</TD>
+    <TD>T</TD>
+    <TD>○</TD>
+    <TD>○</TD>
+    <TD>○</TD>
+    <TD><A HREF="auth-tls.html">auth-tls.html</A></TD>
+  </TR>
+  <TR>
+    <TD>sasl_auth</TD>
+    <TD>a</TD>
+    <TD>×</TD>
+    <TD>○</TD>
+    <TD>×</TD>
+    <TD><A HREF="auth-sasl.html">auth-sasl.html</A></TD>
+  </TR>
+  <TR>
+    <TD>sasl</TD>
+    <TD>A</TD>
+    <TD>○</TD>
+    <TD>○</TD>
+    <TD>×</TD>
+    <TD><A HREF="auth-sasl.html">auth-sasl.html</A></TD>
+  </TR>
+  <TR>
+    <TD>kerberos_auth</TD>
+    <TD>k</TD>
+    <TD>×</TD>
+    <TD>○</TD>
+    <TD>○</TD>
+    <TD><A HREF="auth-kerberos.html">auth-kerberos.html</A></TD>
+  </TR>
+  <TR>
+    <TD>kerberos</TD>
+    <TD>K</TD>
+    <TD>○</TD>
+    <TD>○</TD>
+    <TD>○</TD>
+    <TD><A HREF="auth-kerberos.html">auth-kerberos.html</A></TD>
+  </TR>
+  <TR>
+    <TD>gsi_auth</TD>
+    <TD>g</TD>
+    <TD>×</TD>
+    <TD>○</TD>
+    <TD>○</TD>
+    <TD><A HREF="auth-gsi.html">auth-gsi.html</A></TD>
+  </TR>
+  <TR>
+    <TD>gsi</TD>
+    <TD>G</TD>
+    <TD>○</TD>
+    <TD>○</TD>
+    <TD>○</TD>
+    <TD><A HREF="auth-gsi.html">auth-gsi.html</A></TD>
+  </TR>
+</TBODY>
+</TABLE>
+
+<P>
+ニーモニックは、「gfhost -l」コマンド出力の第二欄で認証方式を示すために
+用いられる形式です。
+暗号化通信には大文字を、平文通信には小文字を割り当てています。
+
+<P>
+平文での通信は盗聴やTCPのコネクション ハイジャックといった攻撃に対して
+脆弱であるため、
+広域での利用時には暗号化された通信を用いる認証方式の利用を推奨します。
+平文による通信は、サイト内での利用時に性能を追及したい場合のために
+用意していますが、近年のCPUには暗号化のための命令セットが用意されているため、
+暗号通信を用いた場合も必ずしも性能が大きく低下するとは限りません。
+
+<P>
+Gfarm のサーバーは認証されたクライアントからのみ接続を許します
+(ただし health check 用に gfsd のロードアベレージを取得する UDP 通信のみは
+ 例外で 認証なしで動作します)。
+この認証時に、逆方向の認証すなわちクライアントがサーバーを認証するか否かは
+認証方式に依存します。
+これを表の相互認証の項に記載しています。
+相互認証を行なわない場合、DNS spoofing、BGP経路ハイジャック、ARP spoofing と
+いった手段でサーバーを詐称する攻撃に対して脆弱であるため、
+特に広域での利用時には相互認証を行なう認証方式の利用を推奨します。
+
+<P>
+サーバー間認証の項には、gfmdおよびgfsdのようなサーバー間の認証において
+利用できるか否かを記載しています。
+
+<HR>
+<H2>認証方式の設定</H2>
+
+<H3>初期設定</H3>
+
+初期設定で config-gfarm を行なう際に指定した -a オプションによって
+以下のような認証方式の設定が gfmd.conf および gfarm2.conf に対して
+行なわれます。
+<PRE>
+auth enable sharedsecret *
+</PRE>
+これは config-gfarm のデフォルトである -a sharedsecret の例で、
+全てのサイトに対して sharedsecret を認証方式として用います。
+
+<P>
+authディレクティブの最初のパラメータには
+enable か disable のいずれかを記載します。
+<P>
+authディレクティブの次のパラメータには認証方式か「*」を記載します。
+「*」の場合はすべての認証方式を意味します。
+<P>
+authディレクティブの次のパラメータには対象となるホストのホスト名ないし
+IPアドレスを以下のいずれかの形式で記載します。
+
+<P>
+authディレクティブの三番目の欄には以下のいずれかを記載できます。
+
+<TABLE>
+<THEAD>
+  <TR>
+    <TH>ホスト指定形式</TH>
+    <TH>例</TH>
+    <TH>意味</TH>
+  </TR>
+</THEAD>
+<TBODY>
+  <TR>
+    <TD>*</TD>
+    <TD>*</TD>
+    <TD>すべてのホスト</TD>
+  </TR>
+  <TR>
+    <TD>ホスト名</TD>
+    <TD>host1.example.net</TD>
+    <TD>指定したホスト</TD>
+  </TR>
+  <TR>
+    <TD>.ドメイン名</TD>
+    <TD>.example.net</TD>
+    <TD>指定したドメインに属するホスト</TD>
+  </TR>
+  <TR>
+    <TD>IPV4アドレス</TD>
+    <TD>192.168.0.1</TD>
+    <TD>指定したIPアドレスのホスト</TD>
+  </TR>
+  <TR>
+    <TD>IPV4アドレス/ネットマスク</TD>
+    <TD>192.168.0.0/24</TD>
+    <TD>指定したIPアドレスの範囲に適合するホスト</TD>
+  </TR>
+</TBODY>
+</TABLE>
+
+<P>
+auth ディレクトリは記述の順番に意味があり、上から適用されていきます。
+このため以下の例だと
+<PRE>
+auth enable * 192.168.121.0/24
+auth disable * .blacklist.example.net
+auth enable tls_client_certificate *
+</PRE>
+次の意味になりますが
+<UL>
+<LI>192.168.0.0/24 は全ての認証方式を許す
+<LI>blacklist.example.net ドメインに属するホストは認証を許さない
+<LI>それ以外はすべて tls_client_certificate を用いる
+</UL>
+以下の例だと
+<PRE>
+auth enable tls_client_certificate *
+auth disable * .blacklist.example.net
+auth enable * 192.168.121.0/24
+</PRE>
+下記の意味になってしまいます。
+<UL>
+<LI>すべてのホストについて tls_client_certificate のみを許す
+</UL>
+
+<HR>
+<H2>SEE ALSO</H2>
+<A HREF="../ref/man5/gfarm2.conf.5.html">gfarm2.conf(5)</A>
+
+<HR>
+
+<ADDRESS><A href="http://oss-tsukuba.org/software/gfarm">Gfarm File System</A> &lt;<TT>gfarmfs at gmail.com</TT>&gt;</ADDRESS>
+
+</BODY>
+</HTML>

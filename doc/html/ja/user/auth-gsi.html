@@ -1,0 +1,62 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD>
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<META http-equiv="Content-Style-Type" content="text/css">
+<TITLE>GSI 認証</TITLE>
+
+<STYLE type="text/css">
+<!-- /* BEGIN ... hide style from old browser */
+pre { background:#e0ffff; margin-left: 2em; margin-right: 2em }
+     /* END ... hide style from old browser */ -->
+</STYLE>
+
+</HEAD>
+<BODY><A href="http://oss-tsukuba.org/software/gfarm">
+<IMG alt="[GFARM LOGO]" src="../../pic/gfarm-logo.gif" align=right border=0></A>
+<A href="../../index.html">文書集</A> &gt;
+<A href="index.html">ユーザーズマニュアル</A> &gt;
+GSI 認証
+
+<HR>
+<H1>GSI 認証設定</H1>
+<A href="../../en/user/auth-gsi.html">English</A> | 日本語
+<P>
+この文書は、Gfarm の GSI 認証で必要な設定について説明します。
+<P>
+
+<H2>config-gfarm</H2>
+
+以下のように -a オプションで gsi ないし gsi_auth を指定して初期設定します．
+<PRE>
+# config-gfarm -t -A &gt;global_admin_name&lt; -a gsi_auth -D &gt;Subject DN&lt;
+</PRE>
+
+-D オプションでは Gfarm ファイルし捨て無管理者の
+X.509 クライアント証明書の Subject Name を指定します。
+
+<P>
+指定認証方式に関する詳細は gfarm2.conf(5) の
+マニュアルページあるいは Gfarm-FAQ.ja を参照してください．
+
+<P>
+もしデフォルト値が適切でない場合には，表示されるオプションを指定して設
+定を変更できます．適切な設定になったら，config-gfarm コマンドのオプショ
+ンから -t を取り除いて実行します．
+
+<P>
+GSI認証を用いるためには，ホスト証明書やクライアント証明書を用意した上で
+各種設定を行なう必要がありますが，ここではその説明を省略しますので
+「<A HREF="https://gridcf.org/gct-docs/latest/gsic/admin/index.html">
+GSI C Admin Guide</A>」を参照して下さい．
+</P>
+
+<HR>
+<H2>SEE ALSO</H2>
+<A HREF="../ref/man5/gfarm2.conf.5.html">gfarm2.conf(5)</A>
+
+<HR>
+
+<ADDRESS><A href="http://oss-tsukuba.org/software/gfarm">Gfarm File System</A> &lt;<TT>gfarmfs at gmail.com</TT>&gt;</ADDRESS>
+
+</BODY>
+</HTML>
