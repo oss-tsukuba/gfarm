@@ -363,7 +363,8 @@ class GfURL(metaclass=abc.ABCMeta):
         return gfurl1
 
     def __init__(self, url):
-        self._url = urlparse(url)
+        # allow_fragments=False : allow "#filename"
+        self._url = urlparse(url, allow_fragments=False)
 
     @property
     def basename(self):
@@ -831,6 +832,8 @@ class GfURLGfarm(GfURL):
                                        nlink, inum, name)
                 if first and name == '.':
                     path = dirname
+                elif '/' in name:  # "name" is fullpath of a file
+                    path = name
                 else:
                     path = dirname + '/' + name
                 # path is Gfarm URL (gfarm:/...)
@@ -1146,6 +1149,9 @@ class GfURLLocal(GfURL):
                              self.uid2name(st.st_uid),
                              self.gid2name(st.st_gid),
                              st.st_size, st.st_mtime, '')
+            file_type = self._toFileType(st)
+            if file_type != GfURLEntry.TYPE_DIR:
+                return
 
         first = False
         for entry in os.scandir(path):
@@ -1464,6 +1470,7 @@ class GfptarCommand(Command):
         self.test_invalid('dotdot2', '../', 'dst', False)
         self.test_invalid('dotdot3', '../abc', 'dst', False)
         self.test_invalid('dotdot4', './..', 'dst', False)
+        self.test_member()
         self.test_opt_pattern()
         self.test_specified_dir()
 
@@ -1645,6 +1652,54 @@ class GfptarCommand(Command):
         else:
             logger.error_exit(1, testname + ' ... FAIL')
 
+    def test_member(self):
+        testname = 'gfptar-test-member'
+        d_name = f'{testname}-{self.gfarm_user}-{self.uid}-{self.pid}'
+        workdir_local = os.path.join(self.opt['--test-workdir-local'], d_name)
+        workdir_gfarm = os.path.join(self.opt['--test-workdir-gfarm'], d_name)
+        workdir_local_url = GfURL.init(workdir_local)
+        workdir_gfarm_url = GfURL.init(workdir_gfarm)
+        workdir_local_url.mkdir()
+        workdir_gfarm_url.mkdir()
+
+        testsrc_name = 'test-src'
+        srcdir_local = workdir_local_url.url_join(testsrc_name)
+        srcdir_gfarm = workdir_gfarm_url.url_join(testsrc_name)
+        self.test_prepare_srcdir(srcdir_local)
+        self.test_prepare_srcdir(srcdir_gfarm)
+
+        test1_name = 'test-1-create'
+        test1_dir_gfarm = workdir_gfarm_url.url_join(test1_name)
+        test2_name = 'test-2-extract'
+        test2_dir_gfarm = workdir_gfarm_url.url_join(test2_name)
+        test3_name = 'test-3-create'
+        test3_dir_local = workdir_local_url.url_join(test3_name)
+        test4_name = 'test-4-extract'
+        test4_dir_local = workdir_local_url.url_join(test4_name)
+
+        # pick files as members (SEE ALSO: test_prepare_srcdir)
+        files = ['file1', 'dir1/readonly/file#2']
+
+        # Gfarm -> Gfarm(tar)
+        self.create(test1_dir_gfarm, srcdir_gfarm, files)
+        # Gfarm(tar) -> Gfarm
+        self.extract(test2_dir_gfarm, test1_dir_gfarm, files)
+
+        # Local -> Local(tar)
+        self.create(test3_dir_local, srcdir_local, files)
+        # Local(tar) -> Local
+        self.extract(test4_dir_local, test3_dir_local, files)
+
+        for f in files:
+            g_member = GfURL.init(os.path.join(test2_dir_gfarm, f))
+            l_member = GfURL.init(os.path.join(test4_dir_local, f))
+            if not g_member.compare_data(l_member):
+                logger.error_exit(1, testname
+                                  + '... FAIL (data mismatch)')
+        print(testname + ' ... PASS')
+        workdir_local_url.remove_tree(remove_readonly=True)
+        workdir_gfarm_url.remove_tree(remove_readonly=True)
+
     def test_prepare_srcdir(self, dir_url_str):
         F = 'file'
         D = 'directory'
@@ -1655,7 +1710,7 @@ class GfptarCommand(Command):
             (F, 'file1', 0o664, 1234567890, None),
             (D, 'dir1', 0o715, 2234567890, None),
             (D, 'dir1/readonly', 0o700, 3234567891, None),  # chmod 500 later
-            (F, 'dir1/readonly/file2', 0o456, 4234567892, None),
+            (F, 'dir1/readonly/file#2', 0o456, 4234567892, None),
             (D, 'dir1/ディレクトリ 2', 0o755, 5234567890, None),
             (F, 'dir1/ディレクトリ 2/ファイル 2', 0o400, 6234567890, None),
             (S, 'dir1/ディレクトリ 2/シンボリックリンク 2',
@@ -1802,6 +1857,8 @@ class GfptarCommand(Command):
         self.total_num = 0
         self.start_time = time.time()
         self.next_time = self.start_time + 1
+
+        filelist = []
         for infile in infiles:
             infile_url = GfURL.init(infile)
             if not infile_url.is_local():
@@ -1817,7 +1874,6 @@ class GfptarCommand(Command):
             if infile == '..' or infile.startswith('../'):
                 raise Exception('specifying parent directory (..) '
                                 + 'as members is not allowed: ' + infile)
-            filelist = []
             url_str = os.path.join(self.basedir_url.url_str, infile)
             gfurl = GfURL.init(url_str)
             logger.debug('listdir: %s', gfurl.url_str)
@@ -1832,8 +1888,8 @@ class GfptarCommand(Command):
                     if now >= self.next_time:
                         self.next_time = now + 1
                         self.progress_for_list1(now)
-            filelist.sort(key=entry_key, reverse=False)
-            self.filelistlist.extend(self.schedule(filelist))
+        filelist.sort(key=entry_key, reverse=False)
+        self.filelistlist = self.schedule(filelist)
         if self.progress_enabled:
             self.progress_for_list1(time.time())
             sys.stderr.write('\n')
@@ -1873,7 +1929,7 @@ class GfptarCommand(Command):
         if self.tqdm:
             self.tqdm.close()
         if not self.quiet and self.stored_size > 0:
-            print('compression ratio result: %.2f %% (%d/%d)' %
+            print('compression ratio: %.2f %% (%d/%d)' %
                   (100 * self.archive_size / self.stored_size,
                    self.archive_size, self.stored_size))
         del self.filelistlist
@@ -2093,7 +2149,7 @@ class GfptarCommand(Command):
 
         search_target = len(member_set) > 0
         archive_dict = {}  # member -> (file_type, tar filename)
-        target_set_all = set()  # all  tar files
+        target_set_all = set()  # all tar files
         directory_list = []
         self.total_num = 0
         self.start_time = time.time()
@@ -2140,6 +2196,12 @@ class GfptarCommand(Command):
             # selected tar files
             target_set = set()
             directory_set = set()
+            new_member_set = set()
+            for member in member_set:
+                m = GfURL.init(member, local=True)
+                new_member_set.add(m.path)  # normalized
+            member_set = new_member_set
+
             for member in member_set:
                 type_arch = archive_dict.get(member, None)
                 if type_arch is None:
@@ -2177,6 +2239,8 @@ class GfptarCommand(Command):
         target_list.sort()
 
         self.outdir_url.create_new_dir()
+
+        self.created_directory_set = set()
         # self.extract_directories(directory_list)
         self.extract_directories_fast(directory_list)
 
@@ -2209,11 +2273,12 @@ class GfptarCommand(Command):
             except Exception:
                 dir_url.makedirs()
             self.info('prepare_dir: {}', dir_url.url_str)
+            self.created_directory_set.add(dir_url.path)
 
     def extract_directories_fast(self, directory_list):
         # faster implementation for gfmkdir
         directory_list.sort(reverse=True)
-        created = set()
+        created = self.created_directory_set
         for d in directory_list:
             url_str = self.outdir_url.url_join(d)
             dir_url = GfURL.init(url_str)
@@ -2238,7 +2303,6 @@ class GfptarCommand(Command):
                         continue
                     created.add(path)
                     self.info('prepare_dir: {}', path)
-        del created
 
     def update_stat_for_directories(self, directory_list, member_set):
         # process from leaves
@@ -2331,6 +2395,15 @@ class GfptarCommand(Command):
             outfile = tarinfo.name.strip('/')  # relative path only
             url_str = self.outdir_url.url_join(outfile)
             outurl = GfURL.init(url_str)
+
+            parent = outurl.parent
+            with self.lock():
+                exist_dir = parent.path in self.created_directory_set
+            if not exist_dir:
+                if not parent.exists():
+                    parent.makedirs()
+                with self.lock():
+                    self.created_directory_set.add(parent.path)
 
             if tarinfo.isfile():
                 target_host = self.select_a_target_host(outurl, index)
