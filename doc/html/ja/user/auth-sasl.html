@@ -95,6 +95,7 @@ mech_list: XOAUTH2
 xoauth2_scope: JWTのサーバー側検証時にJWTへ要求する scope
 xoauth2_aud: JWTのサーバー側検証時にJWTへ要求する audience
 xoauth2_user_claim: JWT中でユーザーIDとして用いるclaimのkey名
+xoauth2_issuers: 信頼できるJWT発行サーバのURLのリスト
 </PRE>
 具体的な設定は OAuth IdP の構成に依存しますが、たとえば以下のようになります。
 <PRE>
@@ -103,7 +104,13 @@ mech_list: XOAUTH2
 xoauth2_scope: hpci
 xoauth2_aud: hpci
 xoauth2_user_claim: hpci.id
+xoauth2_issuers: https://keycloak.example.com/auth/realms/hpci https://keycloak.example.org/auth/realms/hpci
 </PRE>
+
+xoauth2_issuers を設定しない場合、
+どのサーバが発行した JWT でも受け入れます。
+しかしこれはセキュリティ的に危険ですので、
+必ず信頼できるサーバのみに制限するように設定してください。
 
 <P>
 サーバー側は OAuth IdP へアクセスしますが、このときに Web proxy サーバーを
