@@ -97,6 +97,12 @@ main(int argc, char *argv[])
 		usage();
 	}
 
+	/*
+	 * libgfarm ignores SIGPIPE since gfarm-2.8.
+	 * this API makes gfexport(1) stop at EPIPE error.
+	 */
+	gfs_set_return_on_write_error(1);
+
 	for (i = 0; i < argc; i++) {
 		e = gfarm_realpath_by_gfarm2fs(argv[i], &realpath);
 		if (e == GFARM_ERR_NO_ERROR) {
