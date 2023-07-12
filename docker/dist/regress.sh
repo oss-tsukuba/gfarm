@@ -61,7 +61,7 @@ create_mismatch_file
 gfsudo ./regress.sh -l $LOG1
 
 create_mismatch_file
-ssh c2 "(cd gfarm/regress && $ENV ./regress.sh -l $LOG2)"
+ssh c2 "(grid-proxy-init -q; cd gfarm/regress && $ENV ./regress.sh -l $LOG2)"
 
 ./addup.sh $LOG1 $LOG2 | egrep '(UNSUPPORTED|FAIL)'
 
