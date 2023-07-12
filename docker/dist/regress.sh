@@ -13,7 +13,7 @@ export $ENV
 DISTDIR=$PWD
 
 gfmkdir -p /tmp
-gfchmod 1777 /tmp
+gfchmod 1777 /tmp || :
 
 cd ~/gfarm/regress
 make all
