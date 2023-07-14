@@ -409,6 +409,8 @@ list_files(char *prefix, int n, char **files, int *need_newline)
 			columns = 1;
 		lines = (n + columns - 1) / columns;
 		for (i = 0; i < lines; i++) {
+			if (ferror(stdout))
+				break;
 			for (j = 0; j < columns; j++) {
 				int len_suffix = 0;
 				k = i + j * lines;
@@ -442,6 +444,8 @@ list_files(char *prefix, int n, char **files, int *need_newline)
 		}
 	} else {
 		for (i = 0; i < n; i++) {
+			if (ferror(stdout))
+				break;
 			if (option_directory_quota) {
 				if (ls[i].dirset_user == NULL ||
 				    ls[i].dirset_name == NULL)
@@ -553,7 +557,7 @@ list_dir(char *prefix, char *dirname, int *need_newline)
 	    GFARM_STRINGLIST_STRARRAY(names), need_newline);
 	if (e_save == GFARM_ERR_NO_ERROR)
 		e_save = e;
-	if (option_recursive) {
+	if (option_recursive & !ferror(stdout)) {
 		int i;
 
 		for (i = 0; i < gfarm_stringlist_length(&names); i++) {
@@ -597,6 +601,8 @@ list_dirs(char *prefix, int n, char **dirs, int *need_newline)
 
 	string_sort(n, dirs);
 	for (i = 0; i < n; i++) {
+		if (ferror(stdout))
+			break;
 		if (*need_newline) {
 			printf("\n");
 			*need_newline = 0;
@@ -611,6 +617,26 @@ list_dirs(char *prefix, int n, char **dirs, int *need_newline)
 }
 
 gfarm_error_t
+check_stdout(gfarm_error_t e)
+{
+	errno = 0;
+	fflush(stdout);
+	if (errno != 0) {
+		int save_errno = errno;
+
+		e = gfarm_errno_to_error(save_errno);
+		fprintf(stderr, "%s: stdout: %s\n", program_name,
+		    strerror(save_errno));
+		return (e);
+	}
+	if (ferror(stdout)) { /* this does not set errno */
+		fprintf(stderr, "%s: stdout: output error\n", program_name);
+		return (GFARM_ERR_UNKNOWN);
+	}
+	return (e);
+}
+
+gfarm_error_t
 list(gfarm_stringlist *paths, gfs_glob_t *types, int *need_newline)
 {
 	gfarm_error_t e, e_save = GFARM_ERR_NO_ERROR;
@@ -618,8 +644,9 @@ list(gfarm_stringlist *paths, gfs_glob_t *types, int *need_newline)
 	int i, nfiles, ndirs;
 
 	if (option_directory_itself) {
-		return (list_files("", gfarm_stringlist_length(paths),
-		    GFARM_STRINGLIST_STRARRAY(*paths), need_newline));
+		return (check_stdout(
+		    list_files("", gfarm_stringlist_length(paths),
+		    GFARM_STRINGLIST_STRARRAY(*paths), need_newline)));
 	}
 
 	e = gfarm_stringlist_init(&dirs);
@@ -655,7 +682,9 @@ list(gfarm_stringlist *paths, gfs_glob_t *types, int *need_newline)
 	}
 	gfarm_stringlist_free(&files);
 
-	if (nfiles == 0 && ndirs == 1) {
+	if (ferror(stdout)) {
+		/* skip directory listing */
+	} else if (nfiles == 0 && ndirs == 1) {
 		e = list_dir("", gfarm_stringlist_elem(&dirs, 0),
 		    need_newline);
 		/* warning is already printed in list_dir() */
@@ -668,7 +697,7 @@ list(gfarm_stringlist *paths, gfs_glob_t *types, int *need_newline)
 		e_save = e;
 	gfarm_stringlist_free(&dirs);
 
-	return (e_save);
+	return (check_stdout(e_save));
 }
 
 void
