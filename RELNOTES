@@ -1,3 +1,18 @@
+Release note for Gfarm 2.7.25
+=============================
+
+[2023.7.14]
+
+Updated feature
+* gfptar - distribute target tar files
+* gfptar - support files as members
+* gfptar - can be interrupted
+* gfptar - display more detailed progress messages
+
+Bug fix
+* gfptar - do not leave a destination directory when an error occurs
+* gfmd - fix data race when a slave is promoted to a master
+
 Release note for Gfarm 2.7.24
 =============================
 
