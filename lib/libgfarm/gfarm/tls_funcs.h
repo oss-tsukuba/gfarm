@@ -3123,8 +3123,7 @@ bailout:
 	if (ret != GFARM_ERR_NO_ERROR) {
 		/* to make negotiation graceful */
 		if (!negotiation_sent) {
-			e = gfp_xdr_send(conn, "i",
-			    (gfarm_int32_t)GFARM_ERR_NO_ERROR);
+			e = gfp_xdr_send(conn, "i", ret);
 			if (e == GFARM_ERR_NO_ERROR)
 				e = gfp_xdr_flush(conn);
 			negotiation_sent = true;
