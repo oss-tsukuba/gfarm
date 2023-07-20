@@ -2961,18 +2961,21 @@ done:
 }
 
 static inline gfarm_error_t
-tls_session_establish(struct tls_session_ctx_struct *ctx, int fd)
+tls_session_establish(struct tls_session_ctx_struct *ctx, int fd,
+	struct gfp_xdr *conn, gfarm_error_t prior_error)
 {
-	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
+	gfarm_error_t e, ret = GFARM_ERR_UNKNOWN;
 	struct sockaddr sa;
 	socklen_t salen = sizeof(sa);
-	int pst = -1;
+	int eof, pst = -1;
+	bool negotiation_sent = false, negotiation_received = false;
+	gfarm_int32_t negotiation_error;
 	typedef int (*tls_handshake_proc_t)(SSL *ssl);
 	tls_handshake_proc_t p = NULL;
 	SSL *ssl = NULL;
 
 	errno = 0;
-	if (likely(fd >= 0 &&
+	if (likely(prior_error == GFARM_ERR_NO_ERROR && fd >= 0 &&
 		(pst = getpeername(fd, &sa, &salen)) == 0 &&
 		ctx != NULL)) {
 
@@ -2990,6 +2993,29 @@ tls_session_establish(struct tls_session_ctx_struct *ctx, int fd)
 			int st;
 			int ssl_err;
 			bool do_cont = false;
+
+			e = gfp_xdr_send(conn, "i",
+			    (gfarm_int32_t)GFARM_ERR_NO_ERROR);
+			if (e == GFARM_ERR_NO_ERROR)
+				e = gfp_xdr_flush(conn);
+			negotiation_sent = true;
+			if (e == GFARM_ERR_NO_ERROR) {
+				e = gfp_xdr_recv(conn, 0, &eof, "i",
+				    &negotiation_error);
+				negotiation_received = true;
+			}
+			if (e != GFARM_ERR_NO_ERROR) {
+				ret = e;
+				goto bailout;
+			}
+			if (eof) {
+				ret = GFARM_ERR_UNEXPECTED_EOF;
+				goto bailout;
+			}
+			if (negotiation_error != GFARM_ERR_NO_ERROR) {
+				ret = negotiation_error;
+				goto bailout;
+			}
 
 			ctx->is_handshake_tried_ = true;
 			p = (ctx->role_ == TLS_ROLE_SERVER) ?
@@ -3094,6 +3120,22 @@ retry:
 	}
 
 bailout:
+	if (ret != GFARM_ERR_NO_ERROR) {
+		/* to make negotiation graceful */
+		if (!negotiation_sent) {
+			e = gfp_xdr_send(conn, "i",
+			    (gfarm_int32_t)GFARM_ERR_NO_ERROR);
+			if (e == GFARM_ERR_NO_ERROR)
+				e = gfp_xdr_flush(conn);
+			negotiation_sent = true;
+		}
+		if (!negotiation_received) {
+			e = gfp_xdr_recv(conn, 0, &eof, "i",
+			    &negotiation_error);
+			negotiation_received = true;
+		}
+	}
+
 	return (ret);
 }
 

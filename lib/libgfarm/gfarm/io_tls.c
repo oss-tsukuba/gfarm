@@ -321,8 +321,10 @@ gfp_xdr_tls_alloc(struct gfp_xdr *conn,	int fd, int flags)
 	static const char diag[] = "gfp_xdr_tls_alloc";
 
 	GFARM_MALLOC(io);
-	if (io == NULL)
+	if (io == NULL) {
+		/* It's OK to make all authentcation fail in this case */
 		return (GFARM_ERR_NO_MEMORY);
+	}
 	gfarm_mutex_init(&io->mutex, diag, mutex_what);
 
 	/*
@@ -343,14 +345,14 @@ gfp_xdr_tls_alloc(struct gfp_xdr *conn,	int fd, int flags)
 	gfarm_openssl_global_unlock(diag);
 #endif
 
-	if (unlikely(ret != GFARM_ERR_NO_ERROR)) {
-		/* do nothing */
-	} else if (unlikely(ctx == NULL)) {
+	if (unlikely(ret == GFARM_ERR_NO_ERROR && ctx == NULL)) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "tls_session_create_ctx: ctx == NULL, should not happen");
 		ret = GFARM_ERR_INTERNAL_ERROR;
 	} else {
 		io->ctx = ctx;
 
-		ret = tls_session_establish(ctx, fd);
+		ret = tls_session_establish(ctx, fd, conn, ret);
 
 		if (likely(ret == GFARM_ERR_NO_ERROR))
 			gfp_xdr_set(conn, &gfp_xdr_tls_iobuf_ops, io, fd);
