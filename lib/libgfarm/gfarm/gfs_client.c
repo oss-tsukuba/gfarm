@@ -96,6 +96,8 @@ struct gfs_connection {
 struct gfs_client_static {
 	struct gfp_conn_cache server_cache;
 	gfarm_error_t (*hook_for_connection_error)(struct gfs_connection *);
+
+	int return_on_write_error;
 };
 
 #define SERVER_HASHTAB_SIZE	3079	/* prime number */
@@ -122,6 +124,8 @@ gfs_client_static_init(struct gfarm_context *ctxp)
 		&ctxp->gfsd_connection_cache);
 	s->hook_for_connection_error = NULL;
 
+	s->return_on_write_error = 0;
+
 	ctxp->gfs_client_static = s;
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -136,6 +140,16 @@ gfs_client_static_term(struct gfarm_context *ctxp)
 
 	gfp_conn_cache_term(&s->server_cache);
 	free(s);
+}
+
+int
+gfs_set_return_on_write_error(int return_on_write_error)
+{
+	struct gfs_client_static *s = gfarm_ctxp->gfs_client_static;
+	int old = s->return_on_write_error;
+
+	s->return_on_write_error = return_on_write_error;
+	return (old);
 }
 
 /*
@@ -2476,6 +2490,11 @@ gfs_sendfile_common(struct gfp_xdr *conn, gfarm_int32_t *src_errp,
  * *dst_errp: set even if an error happens.
  * *md_abortedp: set even if an error happens.
  * *recvp: set even if an error happens.
+ *
+ * NOTE:
+ * if gfarm_ctxp->gfs_client_static->return_on_write_error &&
+ *     *dst_errp != GFARM_ERR_NO_ERRROR,
+ * then this gfs connection is broken, and the caller should check that.
  */
 gfarm_error_t
 gfs_recvfile_common(struct gfp_xdr *conn, gfarm_int32_t *dst_errp,
@@ -2488,6 +2507,7 @@ gfs_recvfile_common(struct gfp_xdr *conn, gfarm_int32_t *dst_errp,
 	gfarm_off_t written = 0, written_offset;
 	int md_aborted = 0;
 	int mode_unknown = 1, mode_thread_safe = 1;
+	struct gfs_client_static *s = gfarm_ctxp->gfs_client_static;
 	static const char diag[] = "gfs_recvfile_common()";
 
 	if (append_mode) {
@@ -2617,12 +2637,26 @@ gfs_recvfile_common(struct gfp_xdr *conn, gfarm_int32_t *dst_errp,
 				gfarm_iostat_local_add(
 				    GFARM_IOSTAT_IO_WBYTES, rv);
 			}
+			if (s->return_on_write_error &&
+			    e_write != GFARM_ERR_NO_ERROR) {
+				/*
+				 * protocol interaction was aborted,
+				 * make sure no one will use this connection
+				 */
+				(void)gfp_xdr_shutdown(conn);
+				break;
+			}
 			if (md_ctx != NULL && !md_aborted)
 				EVP_DigestUpdate(
 				    md_ctx, buffer, partial);
 		} while (size > 0);
 		if (e != GFARM_ERR_NO_ERROR)
 			break;
+		if (s->return_on_write_error &&
+		    e_write != GFARM_ERR_NO_ERROR) {
+			/* protocol interaction was aborted */
+			break;
+		}
 	}
 	if (dst_errp != NULL)
 		*dst_errp = e_write;
@@ -2688,6 +2722,7 @@ gfs_client_recvfile(struct gfs_connection *gfs_server,
 	gfarm_int32_t dst_err = GFARM_ERR_NO_ERROR;
 	gfarm_off_t written = 0;
 	int eof;
+	struct gfs_client_static *s = gfarm_ctxp->gfs_client_static;
 
 	gfs_client_connection_lock(gfs_server);
 	if ((e = gfs_client_rpc_wo_lock(gfs_server, 0,
@@ -2702,7 +2737,14 @@ gfs_client_recvfile(struct gfs_connection *gfs_server,
 		e = gfs_recvfile_common(gfs_server->conn, &dst_err,
 		    local_w_fd, w_off,
 		    append_mode, md_ctx, md_abortedp, &written);
-		if (IS_CONNECTION_ERROR(e)) {
+		/*
+		 * if s->return_on_write_error &&
+		 *    dst_err != GFARM_ERR_NO_ERROR,
+		 * then the gfs protocol interaction was aborted
+		 */
+		if ((s->return_on_write_error &&
+		     dst_err != GFARM_ERR_NO_ERROR) ||
+		    IS_CONNECTION_ERROR(e)) {
 			e2 = GFARM_ERR_NO_ERROR;
 		} else { /* read the rest, even if a local error happens */
 			e2 = gfp_xdr_recv(gfs_server->conn, 0, &eof, "i",
@@ -2710,7 +2752,9 @@ gfs_client_recvfile(struct gfs_connection *gfs_server,
 			if (e2 == GFARM_ERR_NO_ERROR && eof)
 				e2 = GFARM_ERR_PROTOCOL;
 		}
-		if (IS_CONNECTION_ERROR(e) || IS_CONNECTION_ERROR(e2)) {
+		if ((s->return_on_write_error &&
+		     dst_err != GFARM_ERR_NO_ERROR) ||
+		    IS_CONNECTION_ERROR(e) || IS_CONNECTION_ERROR(e2)) {
 			gfs_client_execute_hook_for_connection_error(
 			    gfs_server);
 			gfs_client_purge_from_cache(gfs_server);
@@ -2741,7 +2785,8 @@ gfs_client_replica_recv_common(struct gfs_connection *gfs_server,
 	gfarm_int32_t *cksum_result_flagsp,
 	int local_fd, EVP_MD_CTX *md_ctx, int cksum_protocol)
 {
-	gfarm_error_t e, e_rpc;
+	gfarm_error_t e, e_rpc, dst_err = GFARM_ERR_NO_ERROR;
+	struct gfs_client_static *s = gfarm_ctxp->gfs_client_static;
 
 	gfs_client_connection_lock(gfs_server);
 
@@ -2767,11 +2812,15 @@ gfs_client_replica_recv_common(struct gfs_connection *gfs_server,
 		return (e);
 	}
 
-	e = gfs_recvfile_common(gfs_server->conn, dst_errp,
+	e = gfs_recvfile_common(gfs_server->conn, &dst_err,
 	    local_fd, 0, 0, md_ctx, NULL, NULL);
-	if (IS_CONNECTION_ERROR(e)) {
-		gfs_client_execute_hook_for_connection_error(gfs_server);
-		gfs_client_purge_from_cache(gfs_server);
+	/*
+	 * if s->return_on_write_error && dst_err != GFARM_ERR_NO_ERROR,
+	 * then the gfs protocol interaction was aborted
+	 */
+	if ((s->return_on_write_error && dst_err != GFARM_ERR_NO_ERROR) ||
+	    IS_CONNECTION_ERROR(e)) {
+		e_rpc = GFARM_ERR_NO_ERROR;
 	} else { /* read the rest, even if a local error happens */
 		if (cksum_protocol) {
 			e_rpc = gfs_client_rpc_result_w_errcode(gfs_server, 0,
@@ -2785,6 +2834,11 @@ gfs_client_replica_recv_common(struct gfs_connection *gfs_server,
 		if (e == GFARM_ERR_NO_ERROR)
 			e = e_rpc;
 	}
+	if ((s->return_on_write_error && dst_err != GFARM_ERR_NO_ERROR) ||
+	    IS_CONNECTION_ERROR(e) || IS_CONNECTION_ERROR(e_rpc)) {
+		gfs_client_execute_hook_for_connection_error(gfs_server);
+		gfs_client_purge_from_cache(gfs_server);
+	}
 	gfs_client_connection_unlock(gfs_server);
 
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -2792,6 +2846,8 @@ gfs_client_replica_recv_common(struct gfs_connection *gfs_server,
 		    "receiving client replica failed: %s",
 		    gfarm_error_string(e));
 	}
+	if (dst_errp != NULL)
+		*dst_errp = dst_err;
 	return (e);
 }
 

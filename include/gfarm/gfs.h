@@ -113,6 +113,13 @@ gfarm_error_t gfs_stat_copy(struct gfs_stat *, const struct gfs_stat *);
 void gfs_client_connection_gc(void);
 
 /*
+ * libgfarm ignores SIGPIPE since gfarm-2.8.
+ * this API makes CLI programs like gfexport(1) stop at EPIPE error,
+ * and returns an old value.
+ */
+int gfs_set_return_on_write_error(int);
+
+/*
  * File operations
  */
 
