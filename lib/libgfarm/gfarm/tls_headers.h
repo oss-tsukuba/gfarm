@@ -49,6 +49,7 @@
 #endif /* ! TLS_TEST */
 #include "iobuffer.h"
 #include "gfp_xdr.h"
+#include "auth.h"
 #include "config.h"
 
 #include "io_tls.h"

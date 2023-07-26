@@ -2975,7 +2975,9 @@ tls_session_establish(struct tls_session_ctx_struct *ctx, int fd,
 	SSL *ssl = NULL;
 
 	errno = 0;
-	if (likely(prior_error == GFARM_ERR_NO_ERROR && fd >= 0 &&
+	if (unlikely(prior_error != GFARM_ERR_NO_ERROR)) {
+		ret = prior_error;
+	} else if (likely(fd >= 0 &&
 		(pst = getpeername(fd, &sa, &salen)) == 0 &&
 		ctx != NULL)) {
 
@@ -3121,6 +3123,17 @@ retry:
 
 bailout:
 	if (ret != GFARM_ERR_NO_ERROR) {
+		/*
+		 * For example, if there is a problem in a certificate,
+		 * ret == GFARM_ERR_INVALID_ARGUMENT, but that does not match
+		 * GFARM_AUTH_ERR_TRY_NEXT_METHOD().
+		 * By setting ret to GFARM_ERR_TLS_RUNTIME_ERROR,
+		 * we will let it try the next authentication method.
+		 */
+		if (!IS_CONNECTION_ERROR(ret) &&
+		    !GFARM_AUTH_ERR_TRY_NEXT_METHOD(ret))
+			ret = GFARM_ERR_TLS_RUNTIME_ERROR;
+
 		/* to make negotiation graceful */
 		if (!negotiation_sent) {
 			e = gfp_xdr_send(conn, "i", ret);

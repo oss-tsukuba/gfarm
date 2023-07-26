@@ -788,9 +788,7 @@ gfarm_authorize_wo_setuid(struct gfp_xdr *conn, char *service_tag,
 		e = (*gfarm_auth_server_table[method].authorize)(conn,
 		    service_tag, hostname, auth_uid_to_global_user, closure,
 		    peer_rolep, global_usernamep);
-		if (e != GFARM_ERR_PROTOCOL_NOT_SUPPORTED &&
-		    e != GFARM_ERR_EXPIRED &&
-		    e != GFARM_ERR_AUTHENTICATION) {
+		if (!GFARM_AUTH_ERR_TRY_NEXT_METHOD(e)) {
 			/* protocol error, or success */
 			if (e == GFARM_ERR_NO_ERROR) {
 				if (auth_methodp != NULL)
