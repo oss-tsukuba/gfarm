@@ -293,21 +293,6 @@ gfp_xdr_tls_session_create_ctx(int flags, struct tls_session_ctx_struct **ctxp)
 	    role, do_mutual_auth, use_proxy_cert));
 }
 
-int
-gfp_xdr_tls_can_create_session(int flags)
-{
-	gfarm_error_t ret;
-	struct tls_session_ctx_struct *ctx = NULL;
-
-	ret = gfp_xdr_tls_session_create_ctx(flags, &ctx);
-	if (unlikely(ret != GFARM_ERR_NO_ERROR)) {
-		return (0);
-	} else {
-		tls_session_destroy_ctx(ctx);
-		return (1);
-	}
-}
-
 /*
  * An SSL_CTX/SSL constructor
  */

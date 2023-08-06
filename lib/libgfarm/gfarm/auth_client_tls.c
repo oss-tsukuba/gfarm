@@ -171,8 +171,7 @@ int
 gfarm_auth_client_method_is_tls_client_certificate_available(
 	enum gfarm_auth_id_role self_role)
 {
-	return (gfp_xdr_tls_can_create_session(
-	    TLS_CLIENT_CERTIFICATE_ALLOC_FLAG));
+	return (1);
 }
 
 gfarm_error_t

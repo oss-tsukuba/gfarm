@@ -1672,6 +1672,124 @@ done:
 	return (ret);
 }
 
+static gfarm_error_t
+tls_verify_callback_simple(int ok, X509_STORE_CTX *store_ctx)
+{
+	int error;
+
+	if (ok)
+		return (ok);
+
+	error = X509_STORE_CTX_get_error(store_ctx);
+
+	/* XXX: layering violation: should use ctx->do_allow_no_crls */
+	if (error == X509_V_ERR_UNABLE_TO_GET_CRL &&
+	    gfarm_ctxp->tls_allow_no_crl) {
+		/* CRL error recovery */
+		X509_STORE_CTX_set_error(store_ctx, X509_V_OK);
+		return (1);
+	}
+
+	if (gflog_auth_get_verbose()) {
+		int depth = X509_STORE_CTX_get_error_depth(store_ctx);
+		X509 *cert = X509_STORE_CTX_get_current_cert(store_ctx);
+		X509_NAME *sn = X509_get_subject_name(cert);
+		char dnbuf[4096], *dn = dnbuf;
+
+		if (get_peer_dn_gsi_ish(sn, &dn, sizeof(dnbuf)) !=
+		    GFARM_ERR_NO_ERROR)
+			dn = "<unprintable_subject_name>";
+		gflog_tls_error(GFARM_MSG_UNFIXED,
+		    "self certificate verification error: "
+		    "depth %d, cert \"%s\": error %d (%s)",
+		    depth, dn, error, X509_verify_cert_error_string(error));
+	}
+	return (0);
+}
+
+static inline gfarm_error_t
+tls_verify_self_certificate(SSL_CTX *ssl_ctx)
+{
+	X509_STORE *cert_store;
+	X509_VERIFY_PARAM *tmpvpm = NULL;
+	X509 *self_cert;
+	STACK_OF(X509) *chain;
+	X509_STORE_CTX *store_ctx;
+	int st;
+
+	tls_runtime_flush_error();
+
+	cert_store = SSL_CTX_get_cert_store(ssl_ctx);
+	if (cert_store == NULL) {
+		gflog_tls_error(GFARM_MSG_UNFIXED,
+		    "verify self certificate: "
+		    "SSL_CTX_get_cert_store() failed");
+		return (GFARM_ERR_TLS_RUNTIME_ERROR);
+	}
+	tmpvpm = X509_STORE_get0_param(cert_store);
+	if (tmpvpm != NULL) {
+		/* keep the flags match with tls_session_create_ctx() */
+
+		unsigned long flags = 0;
+
+		flags |= (X509_V_FLAG_CRL_CHECK |
+				X509_V_FLAG_CRL_CHECK_ALL);
+
+		/*
+		 * XXX: layering violation:
+		 * should use GFP_XDR_TLS_CLIENT_USE_PROXY_CERTIFICATE
+		 */
+		if (gfarm_ctxp->tls_proxy_certificate)
+			flags |= X509_V_FLAG_ALLOW_PROXY_CERTS;
+
+		st = X509_VERIFY_PARAM_set_flags(tmpvpm, flags);
+		if (st != 1) {
+			gflog_tls_error(GFARM_MSG_UNFIXED,
+			    "verify self certificate: "
+			    "X509_VERIFY_PARAM_set_flags() failed");
+			return (GFARM_ERR_TLS_RUNTIME_ERROR);
+		}
+	}
+	X509_STORE_set_verify_cb(cert_store, tls_verify_callback_simple);
+
+	self_cert = SSL_CTX_get0_certificate(ssl_ctx);
+
+	st = SSL_CTX_get0_chain_certs(ssl_ctx, &chain);
+	if (st != 1) {
+		gflog_tls_error(GFARM_MSG_UNFIXED,
+		    "verify self certificate: "
+		    "SSL_CTX_get0_chain_certs() failed");
+		return (GFARM_ERR_TLS_RUNTIME_ERROR);
+	}
+
+	store_ctx = X509_STORE_CTX_new();
+	if (store_ctx == NULL) {
+		gflog_tls_error(GFARM_MSG_UNFIXED,
+		    "verify self certificate: "
+		    "X509_STORE_CTX_new() failed");
+		return (GFARM_ERR_TLS_RUNTIME_ERROR);
+	}
+
+	st = X509_STORE_CTX_init(store_ctx, cert_store, self_cert, chain);
+	if (st != 1) {
+		gflog_tls_error(GFARM_MSG_UNFIXED,
+		    "verify self certificate: X509_STORE_CTX_init() failed");
+	} else {
+		st = X509_verify_cert(store_ctx);
+		if (st != 1 && gflog_auth_get_verbose()) {
+			/*
+			 * this is usually unnecessary,
+			 * because tls_verify_callback_simple() shows it.
+			 */
+			gflog_tls_debug(GFARM_MSG_UNFIXED,
+			    "self certificate verification error");
+		}
+	}
+	X509_STORE_CTX_free(store_ctx);
+
+	return (st == 1 ? GFARM_ERR_NO_ERROR : GFARM_ERR_TLS_RUNTIME_ERROR);
+}
+
 /*
  * Internal TLS context constructor/destructor
  */
@@ -2527,6 +2645,12 @@ runtime_init:
 				ret = GFARM_ERR_TLS_RUNTIME_ERROR;
 				goto bailout;
 			}
+		}
+
+		if (need_self_cert) {
+			ret = tls_verify_self_certificate(ssl_ctx);
+			if (ret != GFARM_ERR_NO_ERROR)
+				goto bailout;
 		}
 
 	} else {
