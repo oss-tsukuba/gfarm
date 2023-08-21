@@ -9,6 +9,10 @@ CONF_OPT=
 case $PKG in
 gfarm)
 	CONF_OPT="--enable-xmlattr --with-globus" #--with-infiniband
+	if grep "CentOS Linux release 7" /etc/system-release > /dev/null
+	then
+		CONF_OPT="$CONF_OPT --with-openssl=openssl11"
+	fi
 	;;
 gfarm2fs)
 	CONF_OPT=--with-gfarm=/usr/local
