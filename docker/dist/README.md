@@ -5,7 +5,6 @@
     % git clone https://github.com/oss-tsukuba/gfarm.git
     % cd gfarm
     % git clone https://github.com/oss-tsukuba/gfarm2fs.git
-    % cd docker/dist
 
 ## (For VS Code users) Explore on virtual clusters by VS Code dev containers
 
