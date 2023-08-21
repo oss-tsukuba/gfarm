@@ -58,6 +58,7 @@ LOG1=log.w_root.remote-$DATE
 LOG2=log.wo_root.local-$DATE
 
 create_mismatch_file
+grid-proxy-init -q || :
 gfsudo ./regress.sh -l $LOG1
 
 create_mismatch_file

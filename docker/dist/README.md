@@ -17,6 +17,7 @@
 
 ## Explore on virtual clusters
 
+    % cd docker/dist
     % DIST=<distribution> docker compose build --build-arg UID=$(id -u) c1
     % DIST=<distribution> docker compose up -d
     ubuntu, almalinux8, and centos7 are available as $DIST.  Default is ubuntu
