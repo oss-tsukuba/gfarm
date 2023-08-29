@@ -457,34 +457,28 @@ user_auth_id_modify(struct user *user, char *auth_id_type,
 
 	if (e == GFARM_ERR_INVALID_ARGUMENT) {
 		gflog_fatal(GFARM_MSG_UNFIXED,
-			"user %s: unknown auth_id_type %s, \
-			slave gfmd is older than gfmd",
-			user->ui.username,
-			auth_id_type);
+		    "user %s: unknown auth_id_type %s, "
+		    "slave gfmd is older than master gfmd",
+		    user->ui.username, auth_id_type);
 	} else if (e == GFARM_ERR_ALREADY_EXISTS) {
 		gflog_fatal(GFARM_MSG_UNFIXED,
-			"user %s: unexpected inconsistency, \
-			adding duplicate auth_user_id_type %s, \
-			auth_user_id %s",
-			user->ui.username,
-			auth_id_type,
-			auth_user_id);
+		    "user %s: unexpected inconsistency, "
+		    "adding duplicate auth_user_id_type %s, "
+		    "auth_user_id %s",
+		    user->ui.username, auth_id_type, auth_user_id);
 	} else if (e == GFARM_ERR_NO_MEMORY) {
 		gflog_fatal(GFARM_MSG_UNFIXED,
-			"user %s: no memory error, \
-			modify auth_user_id_type %s, \
-			auth_user_id %s",
-			user->ui.username,
-			auth_id_type,
-			auth_user_id);
+		    "user %s: no memory error, "
+		    "modify auth_user_id_type %s, "
+		    "auth_user_id %s",
+		    user->ui.username, auth_id_type, auth_user_id);
 	} else if (e != GFARM_ERR_NO_ERROR) {
 		gflog_fatal(GFARM_MSG_UNFIXED,
-			"user %s: unknown error , \
-			modify auth_user_id_type %s, \
-			auth_user_id %s",
-			user->ui.username,
-			auth_id_type,
-			auth_user_id);
+		    "user %s: unknown error , "
+		    "modify auth_user_id_type %s, "
+		    "auth_user_id %s: %s",
+		    user->ui.username, auth_id_type, auth_user_id,
+		    gfarm_error_string(e));
 	}
 
 	return (e);
@@ -540,16 +534,15 @@ user_auth_id_remove(struct user *user, char *auth_id_type)
 
 	if (e == GFARM_ERR_INVALID_ARGUMENT) {
 		gflog_fatal(GFARM_MSG_UNFIXED,
-			"user %s: unknown auth_id_type %s,\
-			slave gfmd is older than gfmd",
-			user->ui.username,
-			auth_id_type);
+		    "user %s: unknown auth_id_type %s, "
+		    "slave gfmd is older than master gfmd",
+		    user->ui.username, auth_id_type);
 	} else if (e != GFARM_ERR_NO_ERROR) {
 		gflog_fatal(GFARM_MSG_UNFIXED,
-			"user %s: unknown error,\
-			modify auth_user_id_type %s",
-			user->ui.username,
-			auth_id_type);
+		    "user %s: unknown error, "
+		    "modify auth_user_id_type %s: %s",
+		    user->ui.username, auth_id_type,
+		    gfarm_error_string(e));
 	}
 
 	return (e);
@@ -576,8 +569,9 @@ user_auth_id_remove_with_db(struct user *user, char *auth_id_type)
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_error(GFARM_MSG_UNFIXED,
 			     "user %s: remove auth_user_id db failed, "
-			     "auth_user_id_type %s",
-			     user->ui.username, auth_id_type);
+			     "auth_user_id_type %s: %s",
+			     user->ui.username, auth_id_type,
+			    gfarm_error_string(e));
 		}
 	}
 	return (e);
@@ -2218,25 +2212,29 @@ gfm_server_user_auth_modify(struct peer *peer,
 
 					if (e != GFARM_ERR_NO_ERROR) {
 						gflog_error(GFARM_MSG_UNFIXED,
-						 "user %s:\
-						 add auth_user_id db failed,\
-						 auth_user_id_type %s\
-						 auth_user_id %s",
-						 u->ui.username,
-						 auth_user_id_type_str,
-						 auth_user_id);
+						    "user %s: "
+						    "add auth_user_id db "
+						    "failed, "
+						    "auth_user_id_type %s, "
+						    "auth_user_id %s: %s",
+						    u->ui.username,
+						    auth_user_id_type_str,
+						    auth_user_id,
+						    gfarm_error_string(e));
 					}
 				} else {
 					e = db_user_auth_modify(&arg);
 					if (e != GFARM_ERR_NO_ERROR) {
 						gflog_error(GFARM_MSG_UNFIXED,
-						 "user %s:\
-						 modify auth_user_id db failed,\
-						 auth_user_id_type %s\
-						 auth_user_id %s",
-						 u->ui.username,
-						 auth_user_id_type_str,
-						 auth_user_id);
+						    "user %s: "
+						    "modify auth_user_id db "
+						    "failed, "
+						    "auth_user_id_type %s, "
+						    "auth_user_id %s: %s",
+						    u->ui.username,
+						    auth_user_id_type_str,
+						    auth_user_id,
+						    gfarm_error_string(e));
 					}
 				}
 			}

@@ -350,11 +350,9 @@ gfarm_auth_uid_to_global_username_by_auth_id(void *closure,
 		auth_user_id_type, auth_user_id, &ui);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
-			"getting user info by auth_user_id, type:%s, \
-auth_user_id:%s) failed: %s",
-			auth_user_id_type,
-			auth_user_id,
-			gfarm_error_string(e));
+		    "getting user info by auth_user_id, "
+		    "type:%s, auth_user_id:%s, failed: %s",
+		     auth_user_id_type, auth_user_id, gfarm_error_string(e));
 		return (e);
 	}
 	if (global_usernamep == NULL) {
