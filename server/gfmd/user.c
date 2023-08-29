@@ -56,7 +56,7 @@ struct user {
 	char *auth_user_id[AUTH_USER_ID_TYPE_MAX];
 };
 
-static const char *const auth_user_id_type_map[AUTH_USER_ID_TYPE_MAX] = {
+static char *const auth_user_id_type_map[AUTH_USER_ID_TYPE_MAX] = {
 	GFARM_AUTH_USER_ID_TYPE_X509,
 	GFARM_AUTH_USER_ID_TYPE_KERBEROS,
 	GFARM_AUTH_USER_ID_TYPE_SASL
@@ -555,6 +555,34 @@ user_auth_id_remove(struct user *user, char *auth_id_type)
 	return (e);
 }
 
+static gfarm_error_t
+user_auth_id_remove_with_db(struct user *user, char *auth_id_type)
+{
+	gfarm_error_t e;
+	bool need_to_update_db = false;
+
+	e = user_auth_id_remove_internal(user, auth_id_type,
+	    &need_to_update_db);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	if (need_to_update_db) {
+		struct db_user_auth_remove_arg arg = {
+			user->ui.username,
+			auth_id_type
+		};
+
+		e = db_user_auth_remove(&arg);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_error(GFARM_MSG_UNFIXED,
+			     "user %s: remove auth_user_id db failed, "
+			     "auth_user_id_type %s",
+			     user->ui.username, auth_id_type);
+		}
+	}
+	return (e);
+}
+
 void
 user_auth_add_one(void *closure, struct db_user_auth_arg *p)
 {
@@ -773,7 +801,7 @@ user_enter_in_tenant(struct gfarm_user_info *ui, struct tenant *tenant,
 }
 
 static gfarm_error_t
-user_remove_internal(const char *username, int update_quota)
+user_remove_internal(const char *username, int update_ancillary)
 {
 	struct gfarm_hash_entry *entry;
 	struct user *u;
@@ -797,24 +825,19 @@ user_remove_internal(const char *username, int update_quota)
 		gfarm_hash_purge(user_dn_hashtab,
 		    &u->ui.gsi_dn, sizeof(u->ui.gsi_dn));
 
-	for (auth_user_id_type = 0;
-		auth_user_id_type < AUTH_USER_ID_TYPE_MAX;
-		auth_user_id_type++) {
+	if (update_ancillary) {
+		for (auth_user_id_type = 0;
+		    auth_user_id_type < AUTH_USER_ID_TYPE_MAX;
+		    auth_user_id_type++) {
 
-		if (u->auth_user_id[auth_user_id_type] != NULL) {
-			struct user_auth_key key = {
-				auth_user_id_type,
-				u->auth_user_id[auth_user_id_type]
-			};
-
-			gfarm_hash_purge(auth_user_id_hashtab,
-			    &key, sizeof(key));
-			free(u->auth_user_id[auth_user_id_type]);
+			if (u->auth_user_id[auth_user_id_type] != NULL) {
+				user_auth_id_remove_with_db(u,
+				    auth_user_id_type_map[auth_user_id_type]);
+			}
 		}
-	}
 
-	if (update_quota)
 		quota_user_remove(u);
+	}
 
 	/* free group assignment */
 	while ((ga = u->groups.group_next) != &u->groups)
@@ -2172,28 +2195,8 @@ gfm_server_user_auth_modify(struct peer *peer,
 		e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
 	} else {
 		if (auth_user_id == NULL || strcmp(auth_user_id, "") == 0) {
-			bool need_to_update_db = false;
-			e = user_auth_id_remove_internal(u,
-				auth_user_id_type_str, &need_to_update_db);
-
-			if (e == GFARM_ERR_NO_ERROR &&
-				need_to_update_db) {
-
-				struct db_user_auth_remove_arg arg = {
-					u->ui.username,
-					auth_user_id_type_str
-				};
-				e = db_user_auth_remove(&arg);
-
-				if (e != GFARM_ERR_NO_ERROR) {
-					gflog_error(GFARM_MSG_UNFIXED,
-					 "user %s:\
-					 remove auth_user_id db failed,\
-					 auth_user_id_type %s",
-					 u->ui.username,
-					 auth_user_id_type_str);
-				}
-			}
+			e = user_auth_id_remove_with_db(
+			    u, auth_user_id_type_str);
 		} else {
 			bool need_to_update_db = false;
 			bool need_to_add = false;
