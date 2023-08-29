@@ -45,7 +45,7 @@ RUN apt-get update \
     libcurl4-openssl-dev uuid-dev \
     && apt-get -y install curl \
     && GO_TAR=go1.20.linux-amd64.tar.gz \
-    && curl -O https://dl.google.com/go/${GO_TAR} \
+    && curl -fLO https://go.dev/dl/${GO_TAR} \
     && tar -C /usr/local -xzf ${GO_TAR} \
     && ln -s /usr/local/go/bin/go /usr/local/bin \
     && sed -i -E "s/# (${LANG})/\1/" /etc/locale.gen \

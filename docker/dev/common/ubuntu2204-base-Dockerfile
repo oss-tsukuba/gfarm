@@ -78,8 +78,8 @@ RUN yes | unminimize \
       && GSISSH=gsi-openssh-7.5p1c \
       && GSISSH_PKG=${GSISSH}.tar.gz \
       && GSISSH_URL=https://repo.gridcf.org/gct6/sources/${GSISSH_PKG} \
-      && curl -fO ${GSISSH_URL} \
-      && curl -fO ${GSISSH_URL}.sha512 \
+      && curl -fLO ${GSISSH_URL} \
+      && curl -fLO ${GSISSH_URL}.sha512 \
       && sha512sum -c ${GSISSH_PKG}.sha512 \
       && tar xf ${GSISSH_PKG} \
       && cd ${GSISSH} \
@@ -91,9 +91,8 @@ RUN yes | unminimize \
     libsasl2-modules libsasl2-modules-gssapi-mit \
     && apt-get -y install g++ cmake libsqlite3-dev \
     libcurl4-openssl-dev uuid-dev \
-    && apt-get -y install curl \
     && GO_TAR=go1.20.linux-amd64.tar.gz \
-    && curl -O https://dl.google.com/go/${GO_TAR} \
+    && curl -fLO https://go.dev/dl/${GO_TAR} \
     && tar -C /usr/local -xzf ${GO_TAR} \
     && ln -s /usr/local/go/bin/go /usr/local/bin \
     && apt-get -y install \
