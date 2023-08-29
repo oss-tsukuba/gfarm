@@ -283,8 +283,14 @@ user_lookup_gsi_dn(const char *gsi_dn)
 struct user *
 user_lookup_by_kerberos_principal(const char *auth_user_id)
 {
-	return (user_lookup_auth_id(AUTH_USER_ID_TYPE_KERBEROS,
-				    auth_user_id));
+	struct user *u =
+	    user_lookup_auth_id(AUTH_USER_ID_TYPE_KERBEROS, auth_user_id);
+
+	/*
+	 * if auth_user_id is not registered in the GfarmUserAuth table,
+	 * treat auth_user_id as a Gfarm global username
+	 */
+	return (u != NULL ? u : user_tenant_lookup(auth_user_id));
 }
 
 static gfarm_error_t
@@ -1995,8 +2001,14 @@ gfm_server_user_info_get_by_auth_id(
 	} else if ((e = rpc_name_with_tenant(peer, from_client,
 	    &name_with_tenant, &process, diag)) != GFARM_ERR_NO_ERROR) {
 		/* nothing to do */
-	} else if ((u = user_lookup_auth_id(auth_user_id_type,
-					    auth_user_id)) == NULL) {
+	} else if (
+	    (u = user_lookup_auth_id(auth_user_id_type, auth_user_id)) == NULL
+	    &&
+	    /*
+	     * if auth_user_id is not registered in the GfarmUserAuth table,
+	     * treat auth_user_id as a Gfarm global username
+	     */
+	    (u = user_tenant_lookup(auth_user_id)) == NULL) {
 		e = GFARM_ERR_NO_SUCH_USER;
 	} else
 		e = GFARM_ERR_NO_ERROR;

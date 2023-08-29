@@ -343,6 +343,13 @@ auth_uid_to_global_username_sasl(void *closure,
 
 	giant_lock();
 	u = user_lookup_auth_id(AUTH_USER_ID_TYPE_SASL, auth_user_id);
+	if (u == NULL) {
+		/*
+		 * if auth_user_id is not registered in the GfarmUserAuth
+		 * table, treat auth_user_id as a Gfarm global username
+		 */
+		u = user_tenant_lookup(auth_user_id);
+	}
 	giant_unlock();
 
 	if (u == NULL) {
