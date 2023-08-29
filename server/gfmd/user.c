@@ -2076,11 +2076,6 @@ gfm_server_user_auth_get(
 		gflog_error(GFARM_MSG_UNFIXED, "%s (%s@%s): no tenant: %s",
 			diag, peer_get_username(peer), peer_get_hostname(peer),
 			gfarm_error_string(e));
-	} else if (!user_is_tenant_admin(user, tenant)) {
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s): %s",
-			diag, peer_get_username(peer), peer_get_hostname(peer),
-			gfarm_error_string(e));
 	} else if ((u = user_is_super_admin(user) ?
 			user_tenant_lookup(username) :
 			user_lookup_in_tenant(username, tenant))
@@ -2175,11 +2170,7 @@ gfm_server_user_auth_modify(struct peer *peer,
 		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) during read_only",
 			diag, peer_get_username(peer), peer_get_hostname(peer));
 		e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
-	} else
-		e = GFARM_ERR_NO_ERROR;
-
-	if (e == GFARM_ERR_NO_ERROR) {
-
+	} else {
 		if (auth_user_id == NULL || strcmp(auth_user_id, "") == 0) {
 			bool need_to_update_db = false;
 			e = user_auth_id_remove_internal(u,
@@ -2189,7 +2180,7 @@ gfm_server_user_auth_modify(struct peer *peer,
 				need_to_update_db) {
 
 				struct db_user_auth_remove_arg arg = {
-					username,
+					u->ui.username,
 					auth_user_id_type_str
 				};
 				e = db_user_auth_remove(&arg);
@@ -2199,7 +2190,7 @@ gfm_server_user_auth_modify(struct peer *peer,
 					 "user %s:\
 					 remove auth_user_id db failed,\
 					 auth_user_id_type %s",
-					 user->ui.username,
+					 u->ui.username,
 					 auth_user_id_type_str);
 				}
 			}
@@ -2214,7 +2205,7 @@ gfm_server_user_auth_modify(struct peer *peer,
 				need_to_update_db) {
 
 				struct db_user_auth_arg arg = {
-					username,
+					u->ui.username,
 					auth_user_id_type_str,
 					auth_user_id
 				};
@@ -2228,7 +2219,7 @@ gfm_server_user_auth_modify(struct peer *peer,
 						 add auth_user_id db failed,\
 						 auth_user_id_type %s\
 						 auth_user_id %s",
-						 user->ui.username,
+						 u->ui.username,
 						 auth_user_id_type_str,
 						 auth_user_id);
 					}
@@ -2240,7 +2231,7 @@ gfm_server_user_auth_modify(struct peer *peer,
 						 modify auth_user_id db failed,\
 						 auth_user_id_type %s\
 						 auth_user_id %s",
-						 user->ui.username,
+						 u->ui.username,
 						 auth_user_id_type_str,
 						 auth_user_id);
 					}
