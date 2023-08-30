@@ -69,7 +69,7 @@ if [ ${server_fail_flag} -ne 1 ]; then
 	--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
 	--allow_no_crl > /dev/null 2>&1
 	client_exitstatus=$?
-	
+
 	if [ ${client_exitstatus} -ne 2 -a ${client_exitstatus} -ne 3 ]; then
 		wait_server ${server_pid}
 	fi
@@ -87,7 +87,7 @@ if [ ${server_fail_flag} -ne 1 ]; then
 	if [ ${debug_flag} -eq 1 ]; then
 		echo "server:${server_exitstatus}"
 		echo "client:${client_exitstatus}"
-	fi 
+	fi
 	cat ${logfile} | grep "warning" > /dev/null 2>&1
 	output_warning=$?
 	if [ ${output_warning} -ne 0 \
@@ -141,7 +141,7 @@ if [ ${server_fail_flag} -ne 1 ]; then
 	--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all \
 	--allow_no_crl > /dev/null 2>&1
 	client_exitstatus=$?
-	
+
 	if [ ${client_exitstatus} -ne 2 -a ${client_exitstatus} -ne 3 ]; then
 		wait_server ${server_pid}
 	fi
@@ -159,7 +159,7 @@ if [ ${server_fail_flag} -ne 1 ]; then
 	if [ ${debug_flag} -eq 1 ]; then
 		echo "server:${server_exitstatus}"
 		echo "client:${client_exitstatus}"
-	fi 
+	fi
 	cat ${logfile} | grep "warning" > /dev/null 2>&1
 	output_warning=$?
 	if [ ${output_warning} -eq 0 \
@@ -223,7 +223,7 @@ if [ ${server_fail_flag} -ne 1 ]; then
 	if [ ${debug_flag} -eq 1 ]; then
 		echo "server:${server_exitstatus}"
 		echo "client:${client_exitstatus}"
-	fi 
+	fi
 
 	expected_server_result=`cat ${expected_result_csv} | \
 			grep -E "^${test_id}" | \
@@ -296,7 +296,7 @@ if [ ${server_fail_flag} -ne 1 ]; then
 	if [ ${debug_flag} -eq 1 ]; then
 		echo "server:${server_exitstatus}"
 		echo "client:${client_exitstatus}"
-	fi 
+	fi
 
 	expected_server_result=`cat ${expected_result_csv} | \
 			grep -E "^${test_id}" | \

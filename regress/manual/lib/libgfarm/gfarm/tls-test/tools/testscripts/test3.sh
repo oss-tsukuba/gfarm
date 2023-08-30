@@ -91,12 +91,12 @@ run_test "3-3" \
 	--tls_key_file ${ENV_DIR}/A/client/client.key \
 	--tls_ca_certificate_path ${ENV_DIR}/A/cacerts_all" ${debug_flag}
 
-if [ $? -ne 0 ]; then 
+if [ $? -ne 0 ]; then
 	fail_flag=1
 fi
 
-if [ ${fail_flag} -eq 0 ]; then 
-	_ret=0  
+if [ ${fail_flag} -eq 0 ]; then
+	_ret=0
 fi
 
 exit ${_ret}

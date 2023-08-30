@@ -42,13 +42,13 @@ ${TOP_DIR}/tls-test --mutual_authentication \
 --allow_no_crl 2>/dev/null
 client_exitstatus=$?
 
-if [ ${debug_flag} -eq 1 ]; then 
+if [ ${debug_flag} -eq 1 ]; then
         echo "client:${client_exitstatus}"
 fi
 expected_client_result=`cat ${expected_result_csv} | \
                 grep -E "^${test_id}," | \
                 awk -F "," '{print $3}' | sed 's:\r$::'`
-if [ "${client_exitstatus}" = "${expected_client_result}" ]; then 
+if [ "${client_exitstatus}" = "${expected_client_result}" ]; then
         echo "${test_id}:	PASS"
 else
         echo "${test_id}:	FAIL"
@@ -65,13 +65,13 @@ ${TOP_DIR}/tls-test --mutual_authentication \
 --allow_no_crl 2>/dev/null
 client_exitstatus=$?
 
-if [ ${debug_flag} -eq 1 ]; then 
+if [ ${debug_flag} -eq 1 ]; then
         echo "client:${client_exitstatus}"
 fi
 expected_client_result=`cat ${expected_result_csv} | \
                 grep -E "^${test_id}," | \
                 awk -F "," '{print $3}' | sed 's:\r$::'`
-if [ "${client_exitstatus}" = "${expected_client_result}" ]; then 
+if [ "${client_exitstatus}" = "${expected_client_result}" ]; then
         echo "${test_id}:	PASS"
 else
         echo "${test_id}:	FAIL"
@@ -88,13 +88,13 @@ ${TOP_DIR}/tls-test --mutual_authentication \
 --allow_no_crl 2>/dev/null
 client_exitstatus=$?
 
-if [ ${debug_flag} -eq 1 ]; then 
+if [ ${debug_flag} -eq 1 ]; then
         echo "client:${client_exitstatus}"
 fi
 expected_client_result=`cat ${expected_result_csv} | \
                 grep -E "^${test_id}," | \
                 awk -F "," '{print $3}' | sed 's:\r$::'`
-if [ "${client_exitstatus}" = "${expected_client_result}" ]; then 
+if [ "${client_exitstatus}" = "${expected_client_result}" ]; then
         echo "${test_id}:	PASS"
 else
         echo "${test_id}:	FAIL"
@@ -111,13 +111,13 @@ ${TOP_DIR}/tls-test --mutual_authentication \
 --allow_no_crl 2>/dev/null
 client_exitstatus=$?
 
-if [ ${debug_flag} -eq 1 ]; then 
+if [ ${debug_flag} -eq 1 ]; then
         echo "client:${client_exitstatus}"
 fi
 expected_client_result=`cat ${expected_result_csv} | \
                 grep -E "^${test_id}," | \
                 awk -F "," '{print $3}' | sed 's:\r$::'`
-if [ "${client_exitstatus}" = "${expected_client_result}" ]; then 
+if [ "${client_exitstatus}" = "${expected_client_result}" ]; then
         echo "${test_id}:	PASS"
 else
         echo "${test_id}:	FAIL"

@@ -3511,7 +3511,8 @@ TLS通信において、proxy 証明書の利用を禁止したい場合に disa
 	&lt;tls_allow_no_crl_statement&gt; |
 	&lt;tls_key_update_statement&gt; |
 	&lt;tls_build_chain_local_statement&gt; |
-	&lt;tls_proxy_certificate_statement&gt; </literallayout></listitem>
+	&lt;tls_proxy_certificate_statement&gt;
+</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>

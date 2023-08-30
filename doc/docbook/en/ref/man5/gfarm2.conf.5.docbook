@@ -3556,7 +3556,8 @@ In this case, look for the client certificate in the following order:
 	&lt;tls_allow_no_crl_statement&gt; |
 	&lt;tls_key_update_statement&gt; |
 	&lt;tls_build_chain_local_statement&gt; |
-	&lt;tls_proxy_certificate_statement&gt; </literallayout></listitem>
+	&lt;tls_proxy_certificate_statement&gt;
+</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>

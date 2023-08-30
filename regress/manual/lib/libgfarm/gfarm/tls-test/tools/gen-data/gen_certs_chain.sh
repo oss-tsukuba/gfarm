@@ -191,7 +191,7 @@ make_client_chain
 if [ $? -ne 0 ]; then
     echo "make_client_chain failed" >&2
     exit 1
-fi 
+fi
 
 make_server_chain
 if [ $? -ne 0 ]; then

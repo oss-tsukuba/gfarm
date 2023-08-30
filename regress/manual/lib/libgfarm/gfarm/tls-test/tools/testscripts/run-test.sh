@@ -258,7 +258,7 @@ elif [ ${exec_test_num} -eq 0 ]; then
 	total_pass_num=`expr ${total_tests_num} - ${total_fail_num}`
 	echo ""
 	echo "PASS:	${total_pass_num}/${total_tests_num}"
-	echo "FAIL:	${total_fail_num}/${total_tests_num}"	
+	echo "FAIL:	${total_fail_num}/${total_tests_num}"
 fi
 
 exit ${_ret}

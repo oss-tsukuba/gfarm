@@ -1284,20 +1284,20 @@ int
 gfarmSecSessionGetInitiatorName(gfarmSecSession *ssPtr, gss_name_t *namePtr)
 {
     if (ssPtr->iOa == GFARM_SS_INITIATOR) {
-	return -1;
+	return (-1);
     }
     *namePtr = ssPtr->iOaInfo.acceptor.initiatorName;
-    return 1;
+    return (1);
 }
 
 int
 gfarmSecSessionGetInitiatorDistName(gfarmSecSession *ssPtr, char **distNamePtr)
 {
     if (ssPtr->iOa == GFARM_SS_INITIATOR) {
-	return -1;
+	return (-1);
     }
     *distNamePtr = ssPtr->iOaInfo.acceptor.initiatorDistName;
-    return 1;
+    return (1);
 }
 
 int

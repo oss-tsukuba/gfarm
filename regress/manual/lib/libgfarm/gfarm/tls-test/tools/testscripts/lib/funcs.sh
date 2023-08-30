@@ -290,7 +290,7 @@ shutdown_server(){
         do
                 netstat -an | grep LISTEN | grep :12345 \
                         > /dev/null 2>&1
-                if [ $? -ne 0 ]; then 
+                if [ $? -ne 0 ]; then
                         break
                 fi
         done

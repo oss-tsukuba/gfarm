@@ -7,7 +7,7 @@
     ```
     Usage: gen_certs_all.sh [OPTION]...
     Generate certificates & Concatenate certificates.
-    
+
       OPTION:
         -o OUTPUT_DIR              Output dir. (default: /home/hoge/dev-env/tools/gen_certificate/out)
         -n INTER_CA_NUM            Number of Intermediate CA.
@@ -37,13 +37,13 @@
 
     ```
     % ./gen_certs_all.sh
-    
+
     # Case where you want to change the subject of
     # Server certificate and Client certificate.
     # default: Server certificate: /C=JP/ST=Tokyo/O=SRA/CN=gfarm_server1.sra.co.jp
     #          Client certificate: /C=JP/ST=Tokyo/O=SRA/CN=gfarm_client1.sra.co.jp
     % ./gen_certs_all.sh -S "/C=JP/ST=Tokyo/..." -C "/C=JP/ST=Tokyo/..."
-    
+
     # Case of specifying the password of the client's encrypted private key.
     # default: test
     % ./gen_certs_all.sh -P
@@ -56,20 +56,20 @@
     # CAs.
     % ls  out/cas
     client  inter_ca_1  inter_ca_2  inter_ca_3  root_ca  server
-    
+
     # root certificate、all intermediate certificates.
     % ls out/cacerts_all/
     41911cec.0  4784710c.0  4fb34984.0  b8df251b.0  inter_ca_1.crt  inter_ca_2.crt  inter_ca_3.crt  root_ca.crt
-    
+
     # root certificate only.
     % ls out/cacerts_root/
     41911cec.0  root_ca.crt
-    
+
     # server certificate
     # server_cat_all.crt is all concatenated.
     % ls out/server/
     server.crt  server.key  server_cat_all.crt
-    
+
     # client certificate
     # client_cat_all.crt is all concatenated.
     # client_encrypted.key is the encrypted private key.
@@ -85,7 +85,7 @@ These are run through `gen_certs_all.sh`.
     ```
     Usage: gen_cert.sh [OPTION]...
     Generate a certificate.
-    
+
       OPTION:
         -r                   Generate Root certificate. (default)
         -i                   Generate Intermediate certificate. (Required opts: -x, -I)
@@ -114,9 +114,9 @@ These are run through `gen_certs_all.sh`.
     % ./gen_hash_cert_files.sh -h
     Usage: gen_hash_cert_files.sh [OPTION]... CERTS_DIR
     Generate a hash file of certificate.
-    
+
       CERTS_DIR:     Certificates directory.
-    
+
       OPTION:
         -h           Help.
     ```
@@ -127,10 +127,10 @@ These are run through `gen_certs_all.sh`.
     % ./cat_cert.sh -h
     Usage: cat_cert.sh [OPTION]... CERTS...
     Concatenate certificates.
-    
+
       CERTS:               List of certificates to concat.
                            Specify in the order of concatenation toward Root certificate.
-    
+
       OPTION:
         -o OUTPUT_FILE     Output file (default: ./cat.crt)
         -h                 Help.

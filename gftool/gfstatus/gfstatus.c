@@ -347,7 +347,7 @@ main(int argc, char *argv[])
 
 	if (op == OP_PRINT_STATIC_CONFIG) {
 		print_static_config();
-		return 0;
+		return (0);
 	}
 
 	e = gfarm_initialize(&argc, &argv);
