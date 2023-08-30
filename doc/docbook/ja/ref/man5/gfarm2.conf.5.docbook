@@ -1011,15 +1011,15 @@ PostgreSQLサーバーが動作しているホスト名を指定します。
 キーワードを指定します。
 第2引数の<parameter moreinfo="none">認証方法</parameter>部には、
 <token>sharedsecret</token>、
-<token>tls_sharedsecret</token>、
-<token>tls_client_certificate</token>、
-<token>gsi_auth</token>、
-<token>gsi</token>、
 <token>sasl_auth</token>、
 <token>sasl</token>、
-<token>kerberos_auth</token>
+<token>tls_sharedsecret</token>、
+<token>tls_client_certificate</token>、
+<token>kerberos_auth</token>、
+<token>kerberos</token>、
+<token>gsi_auth</token>、
 ないし
-<token>kerberos</token>
+<token>gsi</token>
 キーワードを指定します。
 第3引数には、<parameter moreinfo="none">ホスト指定</parameter>を記述します。</para>
 
@@ -1035,14 +1035,14 @@ PostgreSQLサーバーが動作しているホスト名を指定します。
 <para>認証方法が異なるものに関しては、指定の順序は意味がありません。
 複数の認証方法が候補となった場合、
 <token>sharedsecret</token>、
-<token>tls_sharedsecret</token>、
-<token>tls_client_certificate</token>、
-<token>gsi_auth</token>、
-<token>gsi</token>
 <token>sasl_auth</token>、
 <token>sasl</token>
+<token>tls_sharedsecret</token>、
+<token>tls_client_certificate</token>、
 <token>kerberos_auth</token>、
-<token>kerberos</token> 認証
+<token>kerberos</token>、
+<token>gsi_auth</token>、
+<token>gsi</token> 認証
 の順序で試みます。</para>
 
 <para>
@@ -3221,7 +3221,7 @@ gfsd の場合 ``<filename moreinfo="none">/etc/pki/tls/private/gfsd.key</filena
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
-	tls_certificate_key /etc/pki/tls/certs/myself.key
+	tls_key_file /etc/pki/tls/certs/myself.key
 </literallayout>
 </listitem>
 </varlistentry>
@@ -3757,7 +3757,7 @@ TLS通信において、proxy 証明書の利用を禁止したい場合に disa
 
 <varlistentry>
 <term>&lt;auth_method&gt; ::=</term>
-<listitem><literallayout format="linespecific" class="normal">"sharedsecret" | "tls_sharedsecret" | "tls_client_certificate" | "gsi_auth" | "gsi" | "kerberos_auth" | "kerberos"</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"sharedsecret" | "sasl_auth" | "sasl" | "tls_sharedsecret" | "tls_client_certificate" | "kerberos_auth" | "kerberos" | "gsi_auth" | "gsi"</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>

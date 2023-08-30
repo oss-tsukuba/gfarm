@@ -1041,13 +1041,15 @@ communicating with the host(s) specified by the third argument.</para>
 The second argument, <parameter moreinfo="none">auth method</parameter>, should be
 the
 <token>sharedsecret</token>,
+<token>sasl_auth</token>,
+<token>sasl</token>,
 <token>tls_sharedsecret</token>,
 <token>tls_client_certificate</token>,
+<token>kerberos_auth</token>,
+<token>kerberos</token>,
 <token>gsi_auth</token>,
-<token>gsi</token>,
-<token>kerberos_auth</token>
 or
-<token>kerberos</token>
+<token>gsi</token>
 keyword.
 The third argument specifies the host(s) by using <parameter moreinfo="none">Host
 specification</parameter>.</para>
@@ -1068,13 +1070,15 @@ tried.</para>
 not relevant.  When there are several candidates for the authentication
 method for the host, the order of the authentication trial is
 <token>sharedsecret</token>,
+<token>sasl_auth</token>,
+<token>sasl</token>,
 <token>tls_sharedsecret</token>,
 <token>tls_client_certificate</token>,
-<token>gsi_auth</token>,
-<token>gsi</token>,
 <token>kerberos_auth</token>,
+<token>kerberos</token>,
+<token>gsi_auth</token>,
 and then
-<token>kerberos</token>.
+<token>gsi</token>.
 </para>
 
 <para>The GSI methods are available if and only if the
@@ -3254,7 +3258,7 @@ will be used by default.
 </para>
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
-	tls_certificate_key /etc/pki/tls/certs/myself.key
+	tls_key_file /etc/pki/tls/certs/myself.key
 </literallayout>
 </listitem>
 </varlistentry>
@@ -3802,7 +3806,7 @@ In this case, look for the client certificate in the following order:
 
 <varlistentry>
 <term>&lt;auth_method&gt; ::=</term>
-<listitem><literallayout format="linespecific" class="normal">"sharedsecret" | "tls_sharedsecret" | "tls_client_certificate" | "gsi_auth" | "gsi" | "kerberos_auth" | "kerberos"</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"sharedsecret" | "sasl_auth" | "sasl" | "tls_sharedsecret" | "tls_client_certificate" | "kerberos_auth" | "kerberos" | "gsi_auth" | "gsi"</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
