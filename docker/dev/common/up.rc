@@ -380,6 +380,11 @@ for t in $(seq 1 "$GFDOCKER_NUM_TENANTS"); do
     ;;
   esac
 
+  # add auth_user_id for SASL w/ mechanism=XOAUTH2
+  gfuser -A \
+    "${guser}${tenant_user_suffix}" SASL \
+    "${guser}${tenant_user_suffix}"
+
   gfsudo gfmkdir -p "${tenant_path_prefix}${ghome_dir}"
   gfsudo gfchown "${guser}${tenant_user_suffix}" \
     "${tenant_path_prefix}${ghome_dir}"
@@ -398,6 +403,9 @@ for t in $(seq 1 "$GFDOCKER_NUM_TENANTS"); do
     sasl_home="/home/${sasl_user}"
     gfuser -c "${sasl_user}${tenant_user_suffix}" "${sasl_user} in tenant $t" \
       "${sasl_home}" ""
+    gfuser -A \
+      "${sasl_user}${tenant_user_suffix}" SASL \
+      "${sasl_user}${tenant_user_suffix}"
     gfsudo gfmkdir "${tenant_path_prefix}${sasl_home}"
     gfsudo gfchown "${sasl_user}${tenant_user_suffix}" \
       "${tenant_path_prefix}${sasl_home}"
@@ -422,6 +430,9 @@ for t in $(seq 1 "$GFDOCKER_NUM_TENANTS"); do
   sasl_home="/home/${sasl_user}"
   gfuser -c "${sasl_user}${tenant_user_suffix}" "${sasl_user} in tenant $t" \
     "${sasl_home}" ""
+  gfuser -A \
+    "${sasl_user}${tenant_user_suffix}" SASL \
+    "${sasl_user}${tenant_user_suffix}"
   gfgroup -a -m "gfarmadm${tenant_user_suffix}" \
     "${sasl_user}${tenant_user_suffix}"
   gfsudo gfmkdir \

@@ -99,6 +99,34 @@ empty_user_load(void *closure,
 /**********************************************************************/
 
 static gfarm_error_t
+empty_user_auth_add(gfarm_uint64_t seqnum, struct db_user_auth_arg *arg)
+{
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+empty_user_auth_modify(gfarm_uint64_t seqnum, struct db_user_auth_arg *arg)
+{
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+empty_user_auth_remove(gfarm_uint64_t seqnum,
+		struct db_user_auth_remove_arg *arg)
+{
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+empty_user_auth_load(void *closure,
+	void (*callback)(void *, struct db_user_auth_arg *))
+{
+	return (GFARM_ERR_NO_ERROR);
+}
+
+/**********************************************************************/
+
+static gfarm_error_t
 empty_group_add(gfarm_uint64_t seqnum, struct gfarm_group_info *info)
 {
 	return (GFARM_ERR_NO_ERROR);
@@ -436,6 +464,11 @@ const struct db_ops empty_ops = {
 	empty_user_modify,
 	empty_user_remove,
 	empty_user_load,
+
+	empty_user_auth_add,
+	empty_user_auth_modify,
+	empty_user_auth_remove,
+	empty_user_auth_load,
 
 	empty_group_add,
 	empty_group_modify,

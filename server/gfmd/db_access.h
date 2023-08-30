@@ -33,6 +33,14 @@ gfarm_error_t db_user_modify(const struct gfarm_user_info *, int);
 gfarm_error_t db_user_remove(const char *);
 gfarm_error_t db_user_load(void *, void (*)(void *, struct gfarm_user_info *));
 
+struct db_user_auth_arg;
+struct db_user_auth_remove_arg;
+gfarm_error_t db_user_auth_add(const struct db_user_auth_arg *);
+gfarm_error_t db_user_auth_modify(const struct db_user_auth_arg *);
+gfarm_error_t db_user_auth_remove(const struct db_user_auth_remove_arg *);
+gfarm_error_t db_user_auth_load(void *,
+	void (*)(void *, struct db_user_auth_arg *));
+
 #define DB_USER_MOD_REALNAME		1
 #define DB_USER_MOD_HOMEDIR		2
 #define DB_USER_MOD_GSI_DN		4

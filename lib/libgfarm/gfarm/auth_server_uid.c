@@ -29,6 +29,10 @@ static gfarm_error_t gfarm_auth_uid_to_global_username_kerberos(
 static gfarm_error_t gfarm_auth_uid_to_global_username_tls_client_certificate(
 	void *, const char *, enum gfarm_auth_id_role *, char **);
 #endif
+#if defined(HAVE_CYRUS_SASL) && defined(HAVE_TLS_1_3)
+static gfarm_error_t gfarm_auth_uid_to_global_username_sasl(
+	void *, const char *, enum gfarm_auth_id_role *, char **);
+#endif
 
 gfarm_error_t (*gfarm_auth_uid_to_global_username_table[])(
 	void *, const char *, enum gfarm_auth_id_role *, char **) = {
@@ -64,8 +68,8 @@ gfarm_error_t (*gfarm_auth_uid_to_global_username_table[])(
  gfarm_auth_uid_to_global_username_panic,   /*GFARM_AUTH_METHOD_KERBEROS_AUTH*/
 #endif
 #if defined(HAVE_CYRUS_SASL) && defined(HAVE_TLS_1_3)
- gfarm_auth_uid_to_global_username_sharedsecret, /*GFARM_AUTH_METHOD_SASL*/
- gfarm_auth_uid_to_global_username_sharedsecret,/*GFARM_AUTH_METHOD_SASL_AUTH*/
+ gfarm_auth_uid_to_global_username_sasl, /*GFARM_AUTH_METHOD_SASL*/
+ gfarm_auth_uid_to_global_username_sasl,/*GFARM_AUTH_METHOD_SASL_AUTH*/
 #else
  gfarm_auth_uid_to_global_username_panic,	/*GFARM_AUTH_METHOD_KERBEROS*/
  gfarm_auth_uid_to_global_username_panic,   /*GFARM_AUTH_METHOD_KERBEROS_AUTH*/
@@ -330,6 +334,45 @@ gfarm_auth_uid_to_global_username_gsi(void *closure,
 
 #endif /* HAVE_GSI */
 
+#if defined(HAVE_KERBEROS) || defined(HAVE_CYRUS_SASL)
+
+static gfarm_error_t
+gfarm_auth_uid_to_global_username_by_auth_id(void *closure,
+	const char *auth_user_id_type,
+	const char *auth_user_id, char **global_usernamep)
+{
+	struct gfm_connection *gfm_server = closure;
+	gfarm_error_t e;
+	char *global_username;
+	struct gfarm_user_info ui;
+
+	e = gfm_client_user_info_get_by_auth_id(gfm_server,
+		auth_user_id_type, auth_user_id, &ui);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "getting user info by auth_user_id, "
+		    "type:%s, auth_user_id:%s, failed: %s",
+		     auth_user_id_type, auth_user_id, gfarm_error_string(e));
+		return (e);
+	}
+	if (global_usernamep == NULL) {
+		gfarm_user_info_free(&ui);
+		return (GFARM_ERR_NO_ERROR);
+	}
+	global_username = strdup(ui.username);
+	gfarm_user_info_free(&ui);
+	if (global_username == NULL) {
+		gflog_debug(GFARM_MSG_1001479,
+			"allocation of 'global_username' failed: %s",
+			gfarm_error_string(GFARM_ERR_NO_MEMORY));
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	*global_usernamep = global_username;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+#endif /* defined(HAVE_KERBEROS) || defined(HAVE_CYRUS_SASL) */
+
 #ifdef HAVE_KERBEROS
 
 gfarm_error_t
@@ -415,8 +458,9 @@ gfarm_auth_uid_to_global_username_kerberos(void *closure,
 
 	switch (auth_user_id_role) {
 	case GFARM_AUTH_ID_ROLE_USER:
-		return (gfarm_auth_uid_to_global_username_by_dn(
-		    closure, auth_user_id, global_usernamep));
+		return (gfarm_auth_uid_to_global_username_by_auth_id(
+			closure, GFARM_AUTH_USER_ID_TYPE_KERBEROS,
+			auth_user_id, global_usernamep));
 	case GFARM_AUTH_ID_ROLE_SPOOL_HOST:
 		e = gfarm_kerberos_principal_get_hostname(auth_user_id_role,
 		    auth_user_id, &hostname);
@@ -570,6 +614,29 @@ gfarm_auth_uid_to_global_username_sharedsecret(void *closure,
 	*global_usernamep = global_username;
 	return (GFARM_ERR_NO_ERROR);
 }
+
+#if defined(HAVE_CYRUS_SASL) && defined(HAVE_TLS_1_3)
+
+static gfarm_error_t
+gfarm_auth_uid_to_global_username_sasl(void *closure,
+	const char *auth_user_id, enum gfarm_auth_id_role *auth_user_id_rolep,
+	char **global_usernamep)
+{
+	enum gfarm_auth_id_role auth_user_id_role = *auth_user_id_rolep;
+
+	if (auth_user_id_role != GFARM_AUTH_ID_ROLE_USER) {
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "auth_uid_to_global_username(id_role:%d, id:%s): "
+		    "unexpected call", auth_user_id_role, auth_user_id);
+		return (GFARM_ERR_NO_SUCH_USER);
+	}
+
+	return (gfarm_auth_uid_to_global_username_by_auth_id(
+		closure, GFARM_AUTH_USER_ID_TYPE_SASL,
+		auth_user_id, global_usernamep));
+}
+
+#endif /* defined(HAVE_CYRUS_SASL) && defined(HAVE_TLS_1_3) */
 
 /*
  * if auth_method is gsi*, kerberos* or tls_client_certificate,

@@ -766,6 +766,118 @@ db_user_load(void *closure, void (*callback)(void *, struct gfarm_user_info *))
 }
 
 void *
+db_user_auth_dup(const struct db_user_auth_arg *ua, size_t size)
+{
+	struct db_user_auth_arg *r;
+	size_t usize = strlen(ua->username) + 1;
+	size_t msize = strlen(ua->auth_id_type) + 1;
+	size_t asize = strlen(ua->auth_user_id) + 1;
+	size_t sz;
+	int overflow = 0;
+
+#ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
+	r = NULL;
+#endif
+	sz = gfarm_size_add(&overflow, size, usize + msize + asize);
+	if (!overflow)
+		r = malloc(sz);
+	if (overflow || r == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of 'db_user_auth_arg' failed or overflow");
+		return (NULL);
+	}
+	r->username = (char *)r + size;
+	r->auth_id_type = r->username + usize;
+	r->auth_user_id = r->auth_id_type + msize;
+
+	strcpy(r->username, ua->username);
+	strcpy(r->auth_id_type, ua->auth_id_type);
+	strcpy(r->auth_user_id, ua->auth_user_id);
+	return (r);
+}
+
+void *
+db_user_auth_remove_dup(const struct db_user_auth_remove_arg *ua, size_t size)
+{
+	struct db_user_auth_remove_arg *r;
+	size_t usize = strlen(ua->username) + 1;
+	size_t msize = strlen(ua->auth_id_type) + 1;
+	size_t sz;
+	int overflow = 0;
+
+#ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
+	r = NULL;
+#endif
+	sz = gfarm_size_add(&overflow, size, usize + msize);
+	if (!overflow)
+		r = malloc(sz);
+	if (overflow || r == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of 'db_user_auth_remove_arg'"
+			"failed or overflow");
+		return (NULL);
+	}
+	r->username = (char *)r + size;
+	r->auth_id_type = r->username + usize;
+
+	strcpy(r->username, ua->username);
+	strcpy(r->auth_id_type, ua->auth_id_type);
+	return (r);
+}
+
+
+gfarm_error_t
+db_user_auth_add(const struct db_user_auth_arg *arg)
+{
+	struct db_user_auth_arg *m = db_user_auth_dup(arg, sizeof(*arg));
+
+	if (m == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED, "db_user_auth_dup() failed");
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	return (db_enter_sn((dbq_entry_func_t)ops->user_auth_add, m));
+}
+
+gfarm_error_t
+db_user_auth_modify(const struct db_user_auth_arg *arg)
+{
+	struct db_user_auth_arg *m = db_user_auth_dup(arg, sizeof(*arg));
+
+	if (m == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED, "db_user_auth_dup() failed");
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	return (db_enter_sn((dbq_entry_func_t)ops->user_auth_modify, m));
+}
+
+gfarm_error_t
+db_user_auth_remove(const struct db_user_auth_remove_arg *arg)
+{
+	struct db_user_auth_remove_arg *m = db_user_auth_remove_dup(arg,
+		sizeof(*arg));
+
+	if (m == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"db_user_auth_remove_dup() failed");
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	return (db_enter_sn((dbq_entry_func_t)ops->user_auth_remove, m));
+}
+
+gfarm_error_t
+db_user_auth_load(void *closure,
+	void (*callback)(void *, struct db_user_auth_arg *))
+{
+	gfarm_error_t e;
+	static const char diag[] = "db_user_auth_load";
+
+	gfarm_mutex_lock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
+	e = ((*ops->user_auth_load)(closure, callback));
+	gfarm_mutex_unlock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
+	return (e);
+}
+
+void *
 db_group_dup(const struct gfarm_group_info *gi, size_t size)
 {
 	struct gfarm_group_info *r;

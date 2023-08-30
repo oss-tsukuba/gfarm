@@ -494,6 +494,19 @@ print_obj(enum journal_operation ope, void *obj)
 		print_fsngroup_modify(m->hostname, m->fsngroupname);
 		break;
 	}
+	case GFM_JOURNAL_USER_AUTH_ADD:
+	case GFM_JOURNAL_USER_AUTH_MODIFY: {
+		struct db_user_auth_arg *m = obj;
+		printf("username=%s;auth_id_type=%s;auth_user_id=%s",
+		    m->username, m->auth_id_type, m->auth_user_id);
+		break;
+	}
+	case GFM_JOURNAL_USER_AUTH_REMOVE: {
+		struct db_user_auth_remove_arg *m = obj;
+		printf("username=%s;auth_id_type=%s",
+		    m->username, m->auth_id_type);
+		break;
+	}
 	default:
 		break;
 	}

@@ -1976,6 +1976,140 @@ gfarm_pgsql_user_load(void *closure,
 /**********************************************************************/
 
 static gfarm_error_t
+pgsql_user_auth_update(gfarm_uint64_t seqnum, struct db_user_auth_arg *info,
+	const char *sql,
+	gfarm_error_t (*check)(PGresult *, const char *, const char *),
+	const char *diag)
+{
+	PGresult *res;
+	const char *paramValues[3];
+	gfarm_error_t e;
+
+	if ((e = gfarm_pgsql_start(diag)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfarm_pgsql_start() failed");
+		return (e);
+	}
+	paramValues[0] = info->username;
+	paramValues[1] = info->auth_id_type;
+	paramValues[2] = info->auth_user_id;
+	res = PQexecParams(conn,
+	    sql,
+	    3, /* number of params */
+	    NULL, /* param types */
+	    paramValues,
+	    NULL, /* param lengths */
+	    NULL, /* param formats */
+	    0); /* ask for text results */
+	if ((e = (*check)(res, sql, diag))
+	    == GFARM_ERR_DB_ACCESS_SHOULD_BE_RETRIED)
+		return (e);
+	PQclear(res);
+
+	if (e == GFARM_ERR_NO_ERROR)
+		e = gfarm_pgsql_commit_sn(seqnum, diag);
+	else
+		gfarm_pgsql_rollback(diag);
+	return (e);
+}
+
+static gfarm_error_t
+gfarm_pgsql_user_auth_add(gfarm_uint64_t seqnum,
+	struct db_user_auth_arg *arg)
+{
+	gfarm_error_t e;
+
+	e = pgsql_user_auth_update(seqnum, arg,
+	    "INSERT INTO GfarmUserAuth (username, authIDType, authUserId) "
+		"VALUES ($1, $2, $3)",
+	    gfarm_pgsql_check_insert, "pgsql_user_auth_add");
+
+	free_arg(arg);
+	return (e);
+}
+
+static gfarm_error_t
+gfarm_pgsql_user_auth_modify(gfarm_uint64_t seqnum,
+	struct db_user_auth_arg *arg)
+{
+	gfarm_error_t e;
+
+	e = pgsql_user_auth_update(seqnum, arg,
+	    "UPDATE GfarmUserAuth "
+		"SET authUserId = $3 "
+		"WHERE username = $1 AND authIDType = $2",
+	    gfarm_pgsql_check_update_or_delete, "pgsql_user_auth_modify");
+
+	free_arg(arg);
+	return (e);
+}
+
+static gfarm_error_t
+gfarm_pgsql_user_auth_remove(gfarm_uint64_t seqnum,
+	struct db_user_auth_remove_arg *arg)
+{
+	gfarm_error_t e;
+	const char *paramValues[2];
+
+	paramValues[0] = arg->username;
+	paramValues[1] = arg->auth_id_type;
+	e = gfarm_pgsql_update_or_delete(seqnum,
+	    "DELETE FROM GfarmUserAuth WHERE username = $1 AND authIDType = $2",
+	    2, /* number of params */
+	    NULL, /* param types */
+	    paramValues,
+	    NULL, /* param lengths */
+	    NULL, /* param formats */
+	    0, /* ask for text results */
+	    "pgsql_user_auth_remove");
+
+	free_arg(arg);
+	return (e);
+}
+
+static void
+user_auth_info_set_fields_from_copy_binary(
+	const char *buf, int residual, void *vinfo)
+{
+	struct db_user_auth_arg *info = vinfo;
+	uint16_t num_fields;
+
+	COPY_BINARY(num_fields, buf, residual,
+	    "pgsql_user_auth_dir_load: field number");
+	num_fields = ntohs(num_fields);
+	if (num_fields < 3) /* allow fields addition in future */
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "pgsql_user_auth_load: fields = %d", num_fields);
+
+	info->username =
+	    get_string_from_copy_binary(&buf, &residual);
+	info->auth_id_type =
+	    get_string_from_copy_binary(&buf, &residual);
+	info->auth_user_id =
+	    get_string_from_copy_binary(&buf, &residual);
+}
+
+static gfarm_error_t
+gfarm_pgsql_user_auth_load(void *closure,
+	void (*callback)(void *, struct db_user_auth_arg *))
+{
+	struct db_inode_dirset_arg tmp_info;
+	struct db_user_auth_trampoline_closure c;
+
+	c.closure = closure;
+	c.callback = callback;
+
+	return (gfarm_pgsql_generic_load(
+	    "COPY GfarmUserAuth TO STDOUT BINARY",
+	    &tmp_info, db_user_auth_callback_trampoline, &c,
+	    &db_base_user_auth_arg_ops,
+	    user_auth_info_set_fields_from_copy_binary,
+	    "pgsql_user_auth_load"));
+}
+
+/**********************************************************************/
+
+static gfarm_error_t
 group_info_set_fields_with_grouping(
 	PGresult *res, int startrow, int nusers, void *vinfo)
 {
@@ -4283,6 +4417,11 @@ const struct db_ops db_pgsql_ops = {
 	gfarm_pgsql_user_modify,
 	gfarm_pgsql_user_remove,
 	gfarm_pgsql_user_load,
+
+	gfarm_pgsql_user_auth_add,
+	gfarm_pgsql_user_auth_modify,
+	gfarm_pgsql_user_auth_remove,
+	gfarm_pgsql_user_auth_load,
 
 	gfarm_pgsql_group_add,
 	gfarm_pgsql_group_modify,
