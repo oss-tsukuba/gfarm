@@ -30,9 +30,9 @@ and tls_client_certificate authentication, which uses a client certificate.
 
 <HR>
 <H2><A NAME="TLS-common-setting">
-    Common settings for tls_sharedsecret authentication,
-    tls_client_certificate authentication,
-    sasl authentication and sasl_auth authentication</A></H2>
+    Common settings for tls_sharedsecret,
+    tls_client_certificate,
+    sasl_auth and sasl authentications</A></H2>
 
 The following settings are common to the two TLS authentication methods,
 sasl authentication method and sasl_auth authentication method.
@@ -104,8 +104,8 @@ When gfsd is initially configured using the config-gfsd command,
 the tls_certificate_file and tls_key_file directives have no effect
 because the following locations are set via these environment variables:
 <TABLE>
-<TR><TH>service certificate</TH><TD>/etc/grid-security/gfsd*/gfsdcert.pem</TD></TR>
-<TR><TH>private key</TH>	<TD>/etc/grid-security/gfsd*/gfsdkey.pem</TD></TR>
+<TR><TH>service certificate</TH><TD>/etc/grid-security/gfsd/gfsdcert.pem</TD></TR>
+<TR><TH>private key</TH>	<TD>/etc/grid-security/gfsd/gfsdkey.pem</TD></TR>
 </TABLE>
 
 Since these path names are the same as those for GSI authentication,

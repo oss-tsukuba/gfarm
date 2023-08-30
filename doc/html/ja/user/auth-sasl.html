@@ -207,7 +207,7 @@ sasl_mechanism の設定を gfarm2.conf で行なうことも可能となりま�
 <P>
 さらに環境変数 JWT_USER_PATH で指定されたファイル、
 あるいはもし環境変数が設定されていない場合には
-ファイル /tmp/jwt_user_u＜自身のUNIX_UID＞/token.jwt に、
+ファイル /tmp/jwt_user_u&lt;自身のUNIX_UID&gt;/token.jwt に、
 XOAUTH2 で用いるアクセストークンを置いてください。
 このファイルが他のユーザーに読みとられないように、
 chmod(1) コマンドを用いて JWT ファイルのモードを 0600 ないし 0400 に
