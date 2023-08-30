@@ -13,8 +13,6 @@
 
 struct gfp_xdr;
 
-int gfp_xdr_tls_can_create_session(int);
-
 gfarm_error_t gfp_xdr_tls_alloc(struct gfp_xdr *, int, int);
 	/* gfp_xdr_tls_alloc(conn, fd, flags) */
 

@@ -1672,6 +1672,124 @@ done:
 	return (ret);
 }
 
+static gfarm_error_t
+tls_verify_callback_simple(int ok, X509_STORE_CTX *store_ctx)
+{
+	int error;
+
+	if (ok)
+		return (ok);
+
+	error = X509_STORE_CTX_get_error(store_ctx);
+
+	/* XXX: layering violation: should use ctx->do_allow_no_crls */
+	if (error == X509_V_ERR_UNABLE_TO_GET_CRL &&
+	    gfarm_ctxp->tls_allow_no_crl) {
+		/* CRL error recovery */
+		X509_STORE_CTX_set_error(store_ctx, X509_V_OK);
+		return (1);
+	}
+
+	if (gflog_auth_get_verbose()) {
+		int depth = X509_STORE_CTX_get_error_depth(store_ctx);
+		X509 *cert = X509_STORE_CTX_get_current_cert(store_ctx);
+		X509_NAME *sn = X509_get_subject_name(cert);
+		char dnbuf[4096], *dn = dnbuf;
+
+		if (get_peer_dn_gsi_ish(sn, &dn, sizeof(dnbuf)) !=
+		    GFARM_ERR_NO_ERROR)
+			dn = "<unprintable_subject_name>";
+		gflog_tls_error(GFARM_MSG_UNFIXED,
+		    "self certificate verification error: "
+		    "depth %d, cert \"%s\": error %d (%s)",
+		    depth, dn, error, X509_verify_cert_error_string(error));
+	}
+	return (0);
+}
+
+static inline gfarm_error_t
+tls_verify_self_certificate(SSL_CTX *ssl_ctx)
+{
+	X509_STORE *cert_store;
+	X509_VERIFY_PARAM *tmpvpm = NULL;
+	X509 *self_cert;
+	STACK_OF(X509) *chain;
+	X509_STORE_CTX *store_ctx;
+	int st;
+
+	tls_runtime_flush_error();
+
+	cert_store = SSL_CTX_get_cert_store(ssl_ctx);
+	if (cert_store == NULL) {
+		gflog_tls_error(GFARM_MSG_UNFIXED,
+		    "verify self certificate: "
+		    "SSL_CTX_get_cert_store() failed");
+		return (GFARM_ERR_TLS_RUNTIME_ERROR);
+	}
+	tmpvpm = X509_STORE_get0_param(cert_store);
+	if (tmpvpm != NULL) {
+		/* keep the flags match with tls_session_create_ctx() */
+
+		unsigned long flags = 0;
+
+		flags |= (X509_V_FLAG_CRL_CHECK |
+				X509_V_FLAG_CRL_CHECK_ALL);
+
+		/*
+		 * XXX: layering violation:
+		 * should use GFP_XDR_TLS_CLIENT_USE_PROXY_CERTIFICATE
+		 */
+		if (gfarm_ctxp->tls_proxy_certificate)
+			flags |= X509_V_FLAG_ALLOW_PROXY_CERTS;
+
+		st = X509_VERIFY_PARAM_set_flags(tmpvpm, flags);
+		if (st != 1) {
+			gflog_tls_error(GFARM_MSG_UNFIXED,
+			    "verify self certificate: "
+			    "X509_VERIFY_PARAM_set_flags() failed");
+			return (GFARM_ERR_TLS_RUNTIME_ERROR);
+		}
+	}
+	X509_STORE_set_verify_cb(cert_store, tls_verify_callback_simple);
+
+	self_cert = SSL_CTX_get0_certificate(ssl_ctx);
+
+	st = SSL_CTX_get0_chain_certs(ssl_ctx, &chain);
+	if (st != 1) {
+		gflog_tls_error(GFARM_MSG_UNFIXED,
+		    "verify self certificate: "
+		    "SSL_CTX_get0_chain_certs() failed");
+		return (GFARM_ERR_TLS_RUNTIME_ERROR);
+	}
+
+	store_ctx = X509_STORE_CTX_new();
+	if (store_ctx == NULL) {
+		gflog_tls_error(GFARM_MSG_UNFIXED,
+		    "verify self certificate: "
+		    "X509_STORE_CTX_new() failed");
+		return (GFARM_ERR_TLS_RUNTIME_ERROR);
+	}
+
+	st = X509_STORE_CTX_init(store_ctx, cert_store, self_cert, chain);
+	if (st != 1) {
+		gflog_tls_error(GFARM_MSG_UNFIXED,
+		    "verify self certificate: X509_STORE_CTX_init() failed");
+	} else {
+		st = X509_verify_cert(store_ctx);
+		if (st != 1 && gflog_auth_get_verbose()) {
+			/*
+			 * this is usually unnecessary,
+			 * because tls_verify_callback_simple() shows it.
+			 */
+			gflog_tls_debug(GFARM_MSG_UNFIXED,
+			    "self certificate verification error");
+		}
+	}
+	X509_STORE_CTX_free(store_ctx);
+
+	return (st == 1 ? GFARM_ERR_NO_ERROR : GFARM_ERR_TLS_RUNTIME_ERROR);
+}
+
 /*
  * Internal TLS context constructor/destructor
  */
@@ -2529,6 +2647,12 @@ runtime_init:
 			}
 		}
 
+		if (need_self_cert) {
+			ret = tls_verify_self_certificate(ssl_ctx);
+			if (ret != GFARM_ERR_NO_ERROR)
+				goto bailout;
+		}
+
 	} else {
 		gflog_tls_error(GFARM_MSG_UNFIXED,
 			"Failed to create a SSL_CTX.");
@@ -2964,18 +3088,23 @@ done:
 }
 
 static inline gfarm_error_t
-tls_session_establish(struct tls_session_ctx_struct *ctx, int fd)
+tls_session_establish(struct tls_session_ctx_struct *ctx, int fd,
+	struct gfp_xdr *conn, gfarm_error_t prior_error)
 {
-	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
+	gfarm_error_t e, ret = GFARM_ERR_UNKNOWN;
 	struct sockaddr sa;
 	socklen_t salen = sizeof(sa);
-	int pst = -1;
+	int eof, pst = -1;
+	bool negotiation_sent = false, negotiation_received = false;
+	gfarm_int32_t negotiation_error;
 	typedef int (*tls_handshake_proc_t)(SSL *ssl);
 	tls_handshake_proc_t p = NULL;
 	SSL *ssl = NULL;
 
 	errno = 0;
-	if (likely(fd >= 0 &&
+	if (unlikely(prior_error != GFARM_ERR_NO_ERROR)) {
+		ret = prior_error;
+	} else if (likely(fd >= 0 &&
 		(pst = getpeername(fd, &sa, &salen)) == 0 &&
 		ctx != NULL)) {
 
@@ -2993,6 +3122,29 @@ tls_session_establish(struct tls_session_ctx_struct *ctx, int fd)
 			int st;
 			int ssl_err;
 			bool do_cont = false;
+
+			e = gfp_xdr_send(conn, "i",
+			    (gfarm_int32_t)GFARM_ERR_NO_ERROR);
+			if (e == GFARM_ERR_NO_ERROR)
+				e = gfp_xdr_flush(conn);
+			negotiation_sent = true;
+			if (e == GFARM_ERR_NO_ERROR) {
+				e = gfp_xdr_recv(conn, 0, &eof, "i",
+				    &negotiation_error);
+				negotiation_received = true;
+			}
+			if (e != GFARM_ERR_NO_ERROR) {
+				ret = e;
+				goto bailout;
+			}
+			if (eof) {
+				ret = GFARM_ERR_UNEXPECTED_EOF;
+				goto bailout;
+			}
+			if (negotiation_error != GFARM_ERR_NO_ERROR) {
+				ret = negotiation_error;
+				goto bailout;
+			}
 
 			ctx->is_handshake_tried_ = true;
 			p = (ctx->role_ == TLS_ROLE_SERVER) ?
@@ -3097,6 +3249,32 @@ retry:
 	}
 
 bailout:
+	if (ret != GFARM_ERR_NO_ERROR) {
+		/*
+		 * For example, if there is a problem in a certificate,
+		 * ret == GFARM_ERR_INVALID_ARGUMENT, but that does not match
+		 * GFARM_AUTH_ERR_TRY_NEXT_METHOD().
+		 * By setting ret to GFARM_ERR_TLS_RUNTIME_ERROR,
+		 * we will let it try the next authentication method.
+		 */
+		if (!IS_CONNECTION_ERROR(ret) &&
+		    !GFARM_AUTH_ERR_TRY_NEXT_METHOD(ret))
+			ret = GFARM_ERR_TLS_RUNTIME_ERROR;
+
+		/* to make negotiation graceful */
+		if (!negotiation_sent) {
+			e = gfp_xdr_send(conn, "i", ret);
+			if (e == GFARM_ERR_NO_ERROR)
+				e = gfp_xdr_flush(conn);
+			negotiation_sent = true;
+		}
+		if (!negotiation_received) {
+			e = gfp_xdr_recv(conn, 0, &eof, "i",
+			    &negotiation_error);
+			negotiation_received = true;
+		}
+	}
+
 	return (ret);
 }
 
