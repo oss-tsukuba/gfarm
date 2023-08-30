@@ -65,7 +65,7 @@ Quick start
   If you will test keycloak and jwt-server too, do the followings too
   under the gfarm directory:
 
-  $ git clone -b dev_es256 git@github.com:oss-tsukuba/jwt-server.git
+  $ git clone git@github.com:oss-tsukuba/jwt-server.git
   (See common/oauth2/README.ja for usage)
 
 4. Edit config.mk
