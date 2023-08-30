@@ -33,7 +33,6 @@ PUBLIC_SRCS  =
 PUBLIC_OBJS  =
 
 SRCS =	$(GFMD_COMMON_SRCS) \
-	db_common.c \
 	db_journal.c \
 	fs.c \
 	failover_notify.c \
@@ -41,7 +40,6 @@ SRCS =	$(GFMD_COMMON_SRCS) \
 	gfmd.c \
 	$(ldap_srcs) $(postgresql_srcs) $(optional_srcs)
 OBJS =	$(GFMD_COMMON_OBJS) \
-	db_common.o \
 	db_journal.o \
 	fs.o \
 	failover_notify.o \

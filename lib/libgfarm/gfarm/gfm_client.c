@@ -25,6 +25,7 @@
 #include <gfarm/gflog.h>
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
+
 #include <gfarm/gfs.h>
 #include <gfarm/host_info.h>
 #include <gfarm/user_info.h>
@@ -94,6 +95,16 @@ struct gfm_client_static {
 #define CONNERR_RETRY_COUNT 3
 
 static gfarm_error_t gfm_client_connection_dispose(void *);
+
+char  *gfarm_auth_user_id_type_list[] = {
+#if 0 /* disable "gfuser -A <user> X509 <gsiDN>" for now */
+	GFARM_AUTH_USER_ID_TYPE_X509,
+#endif
+	GFARM_AUTH_USER_ID_TYPE_KERBEROS,
+	GFARM_AUTH_USER_ID_TYPE_SASL
+};
+int gfarm_auth_user_id_type_number =
+	GFARM_ARRAY_LENGTH(gfarm_auth_user_id_type_list);
 
 gfarm_error_t
 gfm_client_static_init(struct gfarm_context *ctxp)
@@ -1782,6 +1793,37 @@ gfm_client_user_info_remove(struct gfm_connection *gfm_server,
 {
 	return (gfm_client_rpc(gfm_server, 0,
 	    GFM_PROTO_USER_INFO_REMOVE, "s/", username));
+}
+
+gfarm_error_t
+gfm_client_user_info_get_by_auth_id(struct gfm_connection *gfm_server,
+	    const char *auth_id_type, const char *auth_user_id,
+	    struct gfarm_user_info *user)
+{
+	return (gfm_client_rpc(gfm_server, 0,
+		GFM_PROTO_USER_INFO_GET_BY_AUTH_ID, "ss/ssss",
+		auth_id_type, auth_user_id,
+		&user->username, &user->realname,
+		&user->homedir, &user->gsi_dn));
+}
+
+gfarm_error_t
+gfm_client_user_auth_get(struct gfm_connection *gfm_server,
+	const char *username, const char *auth_id_type, char **auth_user_idp)
+{
+	return (gfm_client_rpc(gfm_server, 0,
+		GFM_PROTO_USER_AUTH_GET, "ss/s",
+		username, auth_id_type, auth_user_idp));
+}
+
+gfarm_error_t
+gfm_client_user_auth_modify(struct gfm_connection *gfm_server,
+	const char *username, const char *auth_id_type,
+	const char *auth_user_id)
+{
+	return (gfm_client_rpc(gfm_server, 0,
+		GFM_PROTO_USER_AUTH_MODIFY, "sss/",
+		username, auth_id_type, auth_user_id));
 }
 
 static gfarm_error_t

@@ -4,6 +4,12 @@ void user_initial_entry(void);
 struct process;
 struct tenant;
 struct user;
+enum auth_user_id_type {
+	AUTH_USER_ID_TYPE_X509,
+	AUTH_USER_ID_TYPE_KERBEROS,
+	AUTH_USER_ID_TYPE_SASL,
+	AUTH_USER_ID_TYPE_MAX
+};
 struct user *user_tenant_lookup_including_invalid(const char *);
 struct user *user_tenant_lookup(const char *);
 struct user *user_tenant_lookup_or_enter_invalid(const char *);
@@ -11,12 +17,15 @@ struct user *user_lookup_in_tenant_including_invalid(
 	const char *, struct tenant *);
 struct user *user_lookup_in_tenant(const char *, struct tenant *);
 struct user *user_lookup_gsi_dn(const char *);
+struct user *user_lookup_auth_id(enum auth_user_id_type, const char *);
+struct user *user_lookup_by_kerberos_principal(const char *);
 char *user_tenant_name(struct user *);
 char *user_tenant_name_even_invalid(struct user *);
 char *user_name_in_tenant(struct user *, struct process *);
 char *user_name_in_tenant_even_invalid(struct user *, struct process *);
 char *user_realname(struct user *);
 char *user_gsi_dn(struct user *);
+char *user_auth_id(struct user *, char *);
 struct tenant *user_get_tenant(struct user *);
 const char *user_get_tenant_name(struct user *);
 int user_is_invalid(struct user *);
@@ -67,6 +76,13 @@ gfarm_error_t gfm_server_user_info_set(struct peer *, int, int);
 gfarm_error_t gfm_server_user_info_modify(struct peer *, int, int);
 gfarm_error_t gfm_server_user_info_remove(struct peer *, int, int);
 
+gfarm_error_t gfm_server_user_info_get_by_auth_id(struct peer *, int, int);
+gfarm_error_t gfm_server_user_auth_get(struct peer *, int, int);
+gfarm_error_t gfm_server_user_auth_modify(struct peer *, int, int);
+
 struct group_assignment;
 /* subroutine of grpassign_add(), shouldn't be called from elsewhere */
 void grpassign_add_group(struct group_assignment *);
+
+gfarm_error_t user_auth_id_modify(struct user *, char *, char *);
+gfarm_error_t user_auth_id_remove(struct user *, char *);

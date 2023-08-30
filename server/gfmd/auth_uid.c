@@ -8,6 +8,7 @@
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gfs.h>
 
+
 #include "auth.h"
 
 #include "subr.h"
@@ -16,6 +17,7 @@
 #include "user.h"
 #include "group.h"
 #include "gfmd.h"
+#include "gfm_proto.h"
 
 static gfarm_error_t auth_uid_to_global_username_sharedsecret(
 	void *, const char *, enum gfarm_auth_id_role *, char **);
@@ -29,6 +31,10 @@ static gfarm_error_t auth_uid_to_global_username_kerberos(
 #endif
 #ifdef HAVE_TLS_1_3
 static gfarm_error_t auth_uid_to_global_username_tls_client_certificate(
+	void *, const char *, enum gfarm_auth_id_role *, char **);
+#endif
+#if defined(HAVE_CYRUS_SASL) && defined(HAVE_TLS_1_3)
+static gfarm_error_t auth_uid_to_global_username_sasl(
 	void *, const char *, enum gfarm_auth_id_role *, char **);
 #endif
 
@@ -66,8 +72,8 @@ gfarm_error_t (*auth_uid_to_global_username_table[])(
  gfarm_auth_uid_to_global_username_panic, /*GFARM_AUTH_METHOD_KERBEROS_AUTH*/
 #endif
 #if defined(HAVE_CYRUS_SASL) && defined(HAVE_TLS_1_3)
- auth_uid_to_global_username_sharedsecret,	/*GFARM_AUTH_METHOD_SASL*/
- auth_uid_to_global_username_sharedsecret,	/*GFARM_AUTH_METHOD_SASL_AUTH*/
+ auth_uid_to_global_username_sasl,	/*GFARM_AUTH_METHOD_SASL*/
+ auth_uid_to_global_username_sasl,	/*GFARM_AUTH_METHOD_SASL_AUTH*/
 #else
  gfarm_auth_uid_to_global_username_panic,	/*GFARM_AUTH_METHOD_SASL*/
  gfarm_auth_uid_to_global_username_panic,	/*GFARM_AUTH_METHOD_SASL_AUTH*/
@@ -162,10 +168,13 @@ auth_uid_to_global_username_gsi(void *closure,
 static gfarm_error_t
 auth_uid_to_global_username_server_auth(void *closure,
 	const char *auth_user_id,
+	struct user *(*user_lookup_by_auth_user_id)(const char *),
 	gfarm_error_t (*get_hostname)(enum gfarm_auth_id_role, const char *,
 	    char **hostnamep),
 	enum gfarm_auth_id_role *auth_user_id_rolep,
-	char **global_usernamep, const char *diag)
+	char **global_usernamep,
+
+	const char *diag)
 {
 	gfarm_error_t e;
 	enum gfarm_auth_id_role auth_user_id_role = *auth_user_id_rolep;
@@ -179,7 +188,7 @@ auth_uid_to_global_username_server_auth(void *closure,
 	case GFARM_AUTH_ID_ROLE_USER:
 		/* auth_user_id is Distinguished Name */
 		giant_lock();
-		u = user_lookup_gsi_dn(auth_user_id);
+		u = user_lookup_by_auth_user_id(auth_user_id);
 		giant_unlock();
 
 		if (u == NULL) {
@@ -256,7 +265,9 @@ auth_uid_to_global_username_kerberos(void *closure,
 	char **global_usernamep)
 {
 	return (auth_uid_to_global_username_server_auth(closure,
-	  auth_user_id, gfarm_kerberos_principal_get_hostname,
+	    auth_user_id,
+	    user_lookup_by_kerberos_principal,
+	    gfarm_kerberos_principal_get_hostname,
 	    auth_user_id_rolep, global_usernamep,
 	    "auth_uid_to_global_username_kerberos"));
 }
@@ -271,7 +282,9 @@ auth_uid_to_global_username_tls_client_certificate(void *closure,
 	char **global_usernamep)
 {
 	return (auth_uid_to_global_username_server_auth(closure,
-	  auth_user_id, gfarm_x509_cn_get_hostname,
+	    auth_user_id,
+	    user_lookup_gsi_dn,
+	    gfarm_x509_cn_get_hostname,
 	    auth_user_id_rolep, global_usernamep,
 	    "auth_uid_to_global_username_tls_client_certificate"));
 }
@@ -312,6 +325,52 @@ auth_uid_to_global_username_sharedsecret(void *closure,
 	*global_usernamep = global_username;
 	return (GFARM_ERR_NO_ERROR);
 }
+
+#ifdef HAVE_CYRUS_SASL
+
+static gfarm_error_t
+auth_uid_to_global_username_sasl(void *closure,
+	const char *auth_user_id, enum gfarm_auth_id_role *auth_user_id_rolep,
+	char **global_usernamep)
+{
+	enum gfarm_auth_id_role auth_user_id_role = *auth_user_id_rolep;
+	char *global_username;
+	struct user *u;
+	const char diag[] = "auth_uid_to_global_username_sasl";
+
+	if (auth_user_id_role != GFARM_AUTH_ID_ROLE_USER)
+		return (GFARM_ERR_AUTHENTICATION);
+
+	giant_lock();
+	u = user_lookup_auth_id(AUTH_USER_ID_TYPE_SASL, auth_user_id);
+	if (u == NULL) {
+		/*
+		 * if auth_user_id is not registered in the GfarmUserAuth
+		 * table, treat auth_user_id as a Gfarm global username
+		 */
+		u = user_tenant_lookup(auth_user_id);
+	}
+	giant_unlock();
+
+	if (u == NULL) {
+		/*
+		 * do not return GFARM_ERR_NO_SUCH_USER
+		 * to prevent information leak
+		 */
+		gflog_info(GFARM_MSG_UNFIXED,
+			   "%s: unknown user id <%s>", diag, auth_user_id);
+		return (GFARM_ERR_AUTHENTICATION);
+	}
+	if (global_usernamep == NULL)
+		return (GFARM_ERR_NO_ERROR);
+	global_username = strdup_log(user_tenant_name(u), diag);
+	if (global_username == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	*global_usernamep = global_username;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+#endif /* HAVE_CYRUS_SASL */
 
 /*
  * if auth_method is gsi*, kerberos* or tls_client_certificate,

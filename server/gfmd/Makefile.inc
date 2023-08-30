@@ -7,6 +7,7 @@ GFMD_COMMON_SRCS = \
 	$(GFMD_SRCDIR)/rpcsubr.c \
 	$(GFMD_SRCDIR)/watcher.c \
 	$(GFMD_SRCDIR)/journal_file.c \
+	$(GFMD_SRCDIR)/db_common.c \
 	$(GFMD_SRCDIR)/db_access.c \
 	$(GFMD_SRCDIR)/db_journal_apply.c \
 	$(GFMD_SRCDIR)/db_none.c \
@@ -44,6 +45,7 @@ GFMD_COMMON_OBJS = \
 	$(GFMD_BUILDDIR)/rpcsubr.o \
 	$(GFMD_BUILDDIR)/watcher.o \
 	$(GFMD_BUILDDIR)/journal_file.o \
+	$(GFMD_BUILDDIR)/db_common.o \
 	$(GFMD_BUILDDIR)/db_access.o \
 	$(GFMD_BUILDDIR)/db_journal_apply.o \
 	$(GFMD_BUILDDIR)/db_none.o \
