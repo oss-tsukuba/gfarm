@@ -53,9 +53,4 @@ RUN mv /usr/bin/grid-cert-request /usr/bin/grid-cert-request.orig \
 RUN useradd -m _gfarmfs \
  && useradd -m _gfarmmd
 
-USER $USERNAME
-RUN cd \
- && mkdir local
-
-USER root
 CMD service ssh start && systemctl start rsyslog && sleep infinity

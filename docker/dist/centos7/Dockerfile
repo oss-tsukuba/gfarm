@@ -52,9 +52,4 @@ RUN mv /etc/sudoers /etc/sudoers.orig \
  && awk '/secure_path/ { print $0 ":/usr/local/bin"; next}; {print}' \
         /etc/sudoers.orig > /etc/sudoers
 
-USER $USERNAME
-RUN cd \
- && mkdir local
-
-USER root
 CMD ["/sbin/init"]
