@@ -330,7 +330,9 @@ gfp_xdr_tls_alloc(struct gfp_xdr *conn,	int fd, int flags)
 	gfarm_openssl_global_unlock(diag);
 #endif
 
-	if (unlikely(ret == GFARM_ERR_NO_ERROR && ctx == NULL)) {
+	if (unlikely(ret != GFARM_ERR_NO_ERROR)) {
+		/* do nothing */
+	} else if (unlikely(ctx == NULL)) {
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "tls_session_create_ctx: ctx == NULL, should not happen");
 		ret = GFARM_ERR_INTERNAL_ERROR;

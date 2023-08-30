@@ -3113,6 +3113,8 @@ tls_session_establish(struct tls_session_ctx_struct *ctx, int fd,
 		 */
 		ret = tls_session_setup_ssl(ctx);
 		if (unlikely(ret != GFARM_ERR_NO_ERROR || ctx->ssl_ == NULL)) {
+			if (ret == GFARM_ERR_NO_ERROR)
+				ret = GFARM_ERR_INTERNAL_ERROR;
 			goto bailout;
 		}
 		ssl = ctx->ssl_;
@@ -3129,7 +3131,7 @@ tls_session_establish(struct tls_session_ctx_struct *ctx, int fd,
 				e = gfp_xdr_flush(conn);
 			negotiation_sent = true;
 			if (e == GFARM_ERR_NO_ERROR) {
-				e = gfp_xdr_recv(conn, 0, &eof, "i",
+				e = gfp_xdr_recv(conn, 1, &eof, "i",
 				    &negotiation_error);
 				negotiation_received = true;
 			}
@@ -3269,7 +3271,7 @@ bailout:
 			negotiation_sent = true;
 		}
 		if (!negotiation_received) {
-			e = gfp_xdr_recv(conn, 0, &eof, "i",
+			e = gfp_xdr_recv(conn, 1, &eof, "i",
 			    &negotiation_error);
 			negotiation_received = true;
 		}
