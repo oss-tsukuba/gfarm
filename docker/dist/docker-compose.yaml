@@ -1,7 +1,7 @@
 x-build: &x-build
   build:
     context: ../..
-    dockerfile: docker/dist/Dockerfile-${DIST:-ubuntu}
+    dockerfile: docker/dist/${DIST:-ubuntu}/Dockerfile
     args:
       USERNAME: $USER
 
