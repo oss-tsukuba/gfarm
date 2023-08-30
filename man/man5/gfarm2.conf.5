@@ -1052,13 +1052,14 @@ disable
 keyword\&. The second argument,
 \fIauth method\fR, should be the
 sharedsecret,
+sasl_auth,
+sasl,
 tls_sharedsecret,
 tls_client_certificate,
-gsi_auth,
-gsi,
-kerberos_auth
-or
-kerberos
+kerberos_auth,
+kerberos,
+gsi_auth, or
+gsi
 keyword\&. The third argument specifies the host(s) by using
 \fIHost specification\fR\&.
 .sp
@@ -1074,12 +1075,14 @@ This process takes place on both client and server sides\&. Candidates for authe
 .sp
 The order of statements with different authentication methods is not relevant\&. When there are several candidates for the authentication method for the host, the order of the authentication trial is
 sharedsecret,
+sasl_auth,
+sasl,
 tls_sharedsecret,
 tls_client_certificate,
-gsi_auth,
-gsi,
-kerberos_auth, and then
-kerberos\&.
+kerberos_auth,
+kerberos,
+gsi_auth, and then
+gsi\&.
 .sp
 The GSI methods are available if and only if the \-\-with\-globus option is specified at configuration\&. When the methods are not available, an
 auth
@@ -3161,7 +3164,7 @@ For example,
 .RS 4
 .\}
 .nf
-	tls_certificate_key /etc/pki/tls/certs/myself\&.key
+	tls_key_file /etc/pki/tls/certs/myself\&.key
 .fi
 .if n \{\
 .RE
@@ -3449,7 +3452,7 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 	<tls_allow_no_crl_statement> |
 	<tls_key_update_statement> |
 	<tls_build_chain_local_statement> |
-	<tls_proxy_certificate_statement> 
+	<tls_proxy_certificate_statement>
 .fi
 .if n \{\
 .RE
@@ -4135,7 +4138,7 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 .RS 4
 .\}
 .nf
-"sharedsecret" | "tls_sharedsecret" | "tls_client_certificate" | "gsi_auth" | "gsi" | "kerberos_auth" | "kerberos"
+"sharedsecret" | "sasl_auth" | "sasl" | "tls_sharedsecret" | "tls_client_certificate" | "kerberos_auth" | "kerberos" | "gsi_auth" | "gsi"
 .fi
 .if n \{\
 .RE

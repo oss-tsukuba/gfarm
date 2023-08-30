@@ -801,15 +801,15 @@ PostgreSQLサーバーが動作しているホスト名を指定します。
 キーワードを指定します。
 第2引数の<em class="parameter"><code>認証方法</code></em>部には、
 <span class="token">sharedsecret</span>、
-<span class="token">tls_sharedsecret</span>、
-<span class="token">tls_client_certificate</span>、
-<span class="token">gsi_auth</span>、
-<span class="token">gsi</span>、
 <span class="token">sasl_auth</span>、
 <span class="token">sasl</span>、
-<span class="token">kerberos_auth</span>
+<span class="token">tls_sharedsecret</span>、
+<span class="token">tls_client_certificate</span>、
+<span class="token">kerberos_auth</span>、
+<span class="token">kerberos</span>、
+<span class="token">gsi_auth</span>、
 ないし
-<span class="token">kerberos</span>
+<span class="token">gsi</span>
 キーワードを指定します。
 第3引数には、<em class="parameter"><code>ホスト指定</code></em>を記述します。</p>
 <p>この文は複数指定可能です。各認証方法ごとに、先頭から順にホスト指定に
@@ -822,14 +822,14 @@ PostgreSQLサーバーが動作しているホスト名を指定します。
 <p>認証方法が異なるものに関しては、指定の順序は意味がありません。
 複数の認証方法が候補となった場合、
 <span class="token">sharedsecret</span>、
-<span class="token">tls_sharedsecret</span>、
-<span class="token">tls_client_certificate</span>、
-<span class="token">gsi_auth</span>、
-<span class="token">gsi</span>
 <span class="token">sasl_auth</span>、
 <span class="token">sasl</span>
+<span class="token">tls_sharedsecret</span>、
+<span class="token">tls_client_certificate</span>、
 <span class="token">kerberos_auth</span>、
-<span class="token">kerberos</span> 認証
+<span class="token">kerberos</span>、
+<span class="token">gsi_auth</span>、
+<span class="token">gsi</span> 認証
 の順序で試みます。</p>
 <p>
 また
@@ -2540,7 +2540,7 @@ gfsd の場合 ``<code class="filename">/etc/pki/tls/private/gfsd.key</code>''
 </p>
 <p>例:</p>
 <div class="literallayout"><p><br>
-	tls_certificate_key /etc/pki/tls/certs/myself.key<br>
+	tls_key_file /etc/pki/tls/certs/myself.key<br>
 </p></div>
 </dd>
 <dt><span class="term"><span class="token">tls_allow_no_crl</span> <em class="parameter"><code>有効性</code></em></span></dt>
@@ -2769,7 +2769,8 @@ TLS通信において、proxy 証明書の利用を禁止したい場合に disa
 	&lt;tls_allow_no_crl_statement&gt; |<br>
 	&lt;tls_key_update_statement&gt; |<br>
 	&lt;tls_build_chain_local_statement&gt; |<br>
-	&lt;tls_proxy_certificate_statement&gt; </p></div></dd>
+	&lt;tls_proxy_certificate_statement&gt;<br>
+</p></div></dd>
 <dt><span class="term">&lt;include_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"include" &lt;pathname&gt;</p></div></dd>
 <dt><span class="term">&lt;include_nesting_limit_statement&gt; ::=</span></dt>
@@ -2867,7 +2868,7 @@ TLS通信において、proxy 証明書の利用を禁止したい場合に disa
 <dt><span class="term">&lt;auth_command&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"enable" | "disable"</p></div></dd>
 <dt><span class="term">&lt;auth_method&gt; ::=</span></dt>
-<dd><div class="literallayout"><p>"sharedsecret" | "tls_sharedsecret" | "tls_client_certificate" | "gsi_auth" | "gsi" | "kerberos_auth" | "kerberos"</p></div></dd>
+<dd><div class="literallayout"><p>"sharedsecret" | "sasl_auth" | "sasl" | "tls_sharedsecret" | "tls_client_certificate" | "kerberos_auth" | "kerberos" | "gsi_auth" | "gsi"</p></div></dd>
 <dt><span class="term">&lt;shared_key_file_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"shared_key_file" &lt;pathname&gt;</p></div></dd>
 <dt><span class="term">&lt;digest_statement&gt; ::=</span></dt>

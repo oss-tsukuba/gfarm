@@ -963,15 +963,14 @@ auth \fI有効性\fR\ \& \fI認証方法\fR\ \& \fIホスト指定\fR
 第1引数の\fI有効性\fR部には、enableないしdisable
 キーワードを指定します。 第2引数の\fI認証方法\fR部には、
 sharedsecret、
-tls_sharedsecret、
-tls_client_certificate、
-gsi_auth、
-gsi、
 sasl_auth、
 sasl、
-kerberos_auth
-ないし
-kerberos
+tls_sharedsecret、
+tls_client_certificate、
+kerberos_auth、
+kerberos、
+gsi_auth、 ないし
+gsi
 キーワードを指定します。 第3引数には、\fIホスト指定\fRを記述します。
 .sp
 この文は複数指定可能です。各認証方法ごとに、先頭から順にホスト指定に 適合するかどうか調べ、有効であるとの指定に適合した場合、その認証方法が 利用候補になります。有効であるとの指定に適合しない場合や、あるいは 有効であるとの指定に適合するよりも前に無効であるとの指定に適合した 場合、その認証方法は、候補になりません。
@@ -980,14 +979,14 @@ kerberos
 .sp
 認証方法が異なるものに関しては、指定の順序は意味がありません。 複数の認証方法が候補となった場合、
 sharedsecret、
-tls_sharedsecret、
-tls_client_certificate、
-gsi_auth、
-gsi
 sasl_auth、
 sasl
+tls_sharedsecret、
+tls_client_certificate、
 kerberos_auth、
-kerberos
+kerberos、
+gsi_auth、
+gsi
 認証 の順序で試みます。
 .sp
 また
@@ -3020,7 +3019,7 @@ TLS認証で自身が利用する証明書に対応する秘密鍵のファイ�
 .RS 4
 .\}
 .nf
-	tls_certificate_key /etc/pki/tls/certs/myself\&.key
+	tls_key_file /etc/pki/tls/certs/myself\&.key
 .fi
 .if n \{\
 .RE
@@ -3307,7 +3306,7 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 	<tls_allow_no_crl_statement> |
 	<tls_key_update_statement> |
 	<tls_build_chain_local_statement> |
-	<tls_proxy_certificate_statement> 
+	<tls_proxy_certificate_statement>
 .fi
 .if n \{\
 .RE
@@ -3993,7 +3992,7 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .RS 4
 .\}
 .nf
-"sharedsecret" | "tls_sharedsecret" | "tls_client_certificate" | "gsi_auth" | "gsi" | "kerberos_auth" | "kerberos"
+"sharedsecret" | "sasl_auth" | "sasl" | "tls_sharedsecret" | "tls_client_certificate" | "kerberos_auth" | "kerberos" | "gsi_auth" | "gsi"
 .fi
 .if n \{\
 .RE
