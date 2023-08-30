@@ -1,7 +1,7 @@
 #!/bin/sh
 set -xeu
 
-docker build -f Dockerfile-AlmaLinux8-single ../.. -t alma8
+docker build -f Dockerfile ../.. -t alma8
 docker run -d -v /sys/fs/cgroup:/sys/fs/cgroup:ro --cap-add=SYS_ADMIN \
 	--device=/dev/fuse --name alma8 alma8
 docker exec -w /root -it alma8 /bin/bash
