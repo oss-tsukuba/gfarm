@@ -44,7 +44,13 @@ dirset_add_to(const char *username, const char *dirsetname, const char *dir)
 			free(realpath);
 			return (e);
 		}
-		username = gfm_client_username_in_tenant(gfm_server);
+		e = gfm_client_get_username_in_tenant(gfm_server, &username);
+		if (e != GFARM_ERR_NO_ERROR) {
+			fprintf(stderr,
+			    "%s: failed to get self user name: %s\n",
+			    program_name, gfarm_error_string(e));
+			exit(EXIT_FAILURE);
+		}
 	}
 
 	e = gfs_dirquota_add(dir, username, dirsetname);
@@ -361,9 +367,16 @@ main(int argc, char **argv)
 	if (opt_username == NULL && op_mode != OP_ADD_TO) {
 		if (opt_all_user)
 			opt_username = ALL_USERS;
-		else
-			opt_username =
-			    gfm_client_username_in_tenant(gfm_server);
+		else {
+			e = gfm_client_get_username_in_tenant(gfm_server,
+			    &opt_username);
+			if (e != GFARM_ERR_NO_ERROR) {
+				fprintf(stderr,
+				    "%s: failed to get self user name: %s\n",
+				    program_name, gfarm_error_string(e));
+				exit(EXIT_FAILURE);
+			}
+		}
 	}
 
 	switch (op_mode) {

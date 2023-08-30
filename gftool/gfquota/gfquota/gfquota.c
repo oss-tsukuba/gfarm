@@ -305,8 +305,16 @@ main(int argc, char **argv)
 
 	switch (mode) {
 	case OPT_DIRSET:
-		if (*name == '\0')
-			name = gfm_client_username_in_tenant(gfm_server);
+		if (*name == '\0') {
+			e = gfm_client_get_username_in_tenant(gfm_server,
+			    &name);
+			if (e != GFARM_ERR_NO_ERROR) {
+				fprintf(stderr,
+				    "%s: failed to get self user name: %s\n",
+				    program_name, gfarm_error_string(e));
+				exit(EXIT_FAILURE);
+			}
+		}
 		e = gfm_client_quota_dirset_get(gfm_server,
 		    name, dirsetname, &limit_info, &usage_info, &grace_info,
 		    &flags);

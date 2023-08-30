@@ -332,8 +332,15 @@ main(int argc, char **argv)
 	}
 	free(realpath);
 
-	if (opt_user == NULL)
-		opt_user = gfm_client_username_in_tenant(gfm_server);
+	if (opt_user == NULL) {
+		e = gfm_client_get_username_in_tenant(gfm_server, &opt_user);
+		if (e != GFARM_ERR_NO_ERROR) {
+			fprintf(stderr,
+			    "%s: failed to get self user name: %s\n",
+			    program_name, gfarm_error_string(e));
+			exit(EXIT_FAILURE);
+		}
+	}
 
 	e = gfm_client_process_fd_info(gfm_server,
 	    opt_gfsd_domain, opt_user_host_domain, opt_user, opt_flags,

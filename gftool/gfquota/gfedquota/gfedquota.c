@@ -225,11 +225,23 @@ main(int argc, char **argv)
 		e = gfm_client_quota_group_set(gfm_server, &qi);
 	} else if (dirsetname != NULL && groupname == NULL) {
 		struct gfarm_quota_limit_info li;
+		const char *uname;
+
+		if (username != NULL)
+			uname = username;
+		else {
+			e = gfm_client_get_username_in_tenant(gfm_server,
+			    &uname);
+			if (e != GFARM_ERR_NO_ERROR) {
+				fprintf(stderr,
+				    "%s: failed to get self user name: %s\n",
+				    program_name, gfarm_error_string(e));
+				exit(EXIT_FAILURE);
+			}
+		}
 
 		gfarm_quota_set_info_to_limit_info(&qi, &li);
-		e = gfm_client_quota_dirset_set(gfm_server,
-		    username != NULL ? username :
-		    gfm_client_username_in_tenant(gfm_server),
+		e = gfm_client_quota_dirset_set(gfm_server, uname,
 		    dirsetname, &li);
 	} else
 		usage();
