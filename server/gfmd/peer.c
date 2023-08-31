@@ -1373,7 +1373,7 @@ peer_unset_pending_new_generation_by_fd(
 		return;
 
 	if (peer->process == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005490,
 		    "gfsd connection is lost during GFM_PROTO_CLOSE_WRITE: "
 		    "fd %d, host %s, but process is not set: %s",
 		    fd, peer_get_hostname(peer), gfarm_error_string(reason));

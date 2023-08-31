@@ -782,7 +782,7 @@ db_user_auth_dup(const struct db_user_auth_arg *ua, size_t size)
 	if (!overflow)
 		r = malloc(sz);
 	if (overflow || r == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005376,
 			"allocation of 'db_user_auth_arg' failed or overflow");
 		return (NULL);
 	}
@@ -812,7 +812,7 @@ db_user_auth_remove_dup(const struct db_user_auth_remove_arg *ua, size_t size)
 	if (!overflow)
 		r = malloc(sz);
 	if (overflow || r == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005377,
 			"allocation of 'db_user_auth_remove_arg'"
 			"failed or overflow");
 		return (NULL);
@@ -832,7 +832,7 @@ db_user_auth_add(const struct db_user_auth_arg *arg)
 	struct db_user_auth_arg *m = db_user_auth_dup(arg, sizeof(*arg));
 
 	if (m == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED, "db_user_auth_dup() failed");
+		gflog_debug(GFARM_MSG_1005378, "db_user_auth_dup() failed");
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	return (db_enter_sn((dbq_entry_func_t)ops->user_auth_add, m));
@@ -844,7 +844,7 @@ db_user_auth_modify(const struct db_user_auth_arg *arg)
 	struct db_user_auth_arg *m = db_user_auth_dup(arg, sizeof(*arg));
 
 	if (m == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED, "db_user_auth_dup() failed");
+		gflog_debug(GFARM_MSG_1005379, "db_user_auth_dup() failed");
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	return (db_enter_sn((dbq_entry_func_t)ops->user_auth_modify, m));
@@ -857,7 +857,7 @@ db_user_auth_remove(const struct db_user_auth_remove_arg *arg)
 		sizeof(*arg));
 
 	if (m == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005380,
 			"db_user_auth_remove_dup() failed");
 		return (GFARM_ERR_NO_MEMORY);
 	}

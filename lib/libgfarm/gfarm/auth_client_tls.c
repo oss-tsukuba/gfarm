@@ -22,14 +22,14 @@ gfarm_tls_server_cert_is_ok(struct gfp_xdr *conn, const char *service_tag,
 
 	if ((peer_cn = gfp_xdr_tls_peer_dn_common_name(conn)) == NULL) {
 		/* this shouldn't happen, raise alert */
-		gflog_auth_warning(GFARM_MSG_UNFIXED,
+		gflog_auth_warning(GFARM_MSG_1005302,
 		    "%s: missing hostname in TLS server certificate",
 		    hostname);
 		return (GFARM_ERR_HOSTNAME_MISMATCH);
 	} else if ((e = gfarm_x509_cn_get_service_hostname(
 	    service_tag, peer_cn, &peer_hostname)) != GFARM_ERR_NO_ERROR) {
 		/* server cert is invalid? raise alert */
-		gflog_auth_warning(GFARM_MSG_UNFIXED,
+		gflog_auth_warning(GFARM_MSG_1005303,
 		    "%s: '%s' service is expected "
 		    "in TLS server certificate <%s>",
 		    hostname, service_tag, peer_cn);
@@ -38,7 +38,7 @@ gfarm_tls_server_cert_is_ok(struct gfp_xdr *conn, const char *service_tag,
 
 	if (strcasecmp(peer_hostname, hostname) != 0) {
 		/* server cert is invalid? raise alert */
-		gflog_auth_warning(GFARM_MSG_UNFIXED,
+		gflog_auth_warning(GFARM_MSG_1005304,
 		    "%s: %s service - host '%s' is expected but '%s' "
 		    "in TLS server certificate <%s>",
 		    hostname, service_tag, hostname, peer_hostname, peer_cn);
@@ -110,7 +110,7 @@ gfarm_auth_request_tls_sharedsecret_multiplexed(struct gfarm_eventqueue *q,
 	GFARM_MALLOC(state);
 	if (state == NULL) {
 		/* XXX this is NOT graceful */
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005305,
 		    "gfarm_auth_request_tls_sharedsecret_multiplexed: %s",
 		    gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
@@ -207,7 +207,7 @@ gfarm_auth_request_tls_client_certificate(struct gfp_xdr *conn,
 		e = gfp_xdr_flush(conn);
 	if (e != GFARM_ERR_NO_ERROR) {
 		/* this is not gfarceful, but OK because of a network error */
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005306,
 		    "sending self_role failed: %s", gfarm_error_string(e));
 	}
 	if (req != GFARM_AUTH_TLS_CLIENT_CERTIFICATE_CLIENT_ROLE) {
@@ -220,11 +220,11 @@ gfarm_auth_request_tls_client_certificate(struct gfp_xdr *conn,
 	    != GFARM_ERR_NO_ERROR || eof) {
 		if (e == GFARM_ERR_NO_ERROR) /* i.e. eof */
 			e = GFARM_ERR_UNEXPECTED_EOF;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005307,
 		    "receiving tls_client_certificate result failed: %s",
 		    gfarm_error_string(e));
 	} else if (result != GFARM_AUTH_ERROR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005308,
 		    "Authentication failed: %d", (int)result);
 		e = GFARM_ERR_AUTHENTICATION;
 	} else {
@@ -262,7 +262,7 @@ gfarm_auth_request_tls_client_certificate_receive_result(int events, int fd,
 	if ((events & GFARM_EVENT_TIMEOUT) != 0) {
 		assert(events == GFARM_EVENT_TIMEOUT);
 		state->error = GFARM_ERR_OPERATION_TIMED_OUT;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005309,
 		    "receiving tls_client_certificate result failed: %s",
 		    gfarm_error_string(state->error));
 		if (state->continuation != NULL)
@@ -274,11 +274,11 @@ gfarm_auth_request_tls_client_certificate_receive_result(int events, int fd,
 	if (state->error != GFARM_ERR_NO_ERROR || eof) {
 		if (state->error == GFARM_ERR_NO_ERROR) /* i.e. eof */
 			state->error = GFARM_ERR_UNEXPECTED_EOF;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005310,
 		    "receiving tls_client_certificate result failed: %s",
 		    gfarm_error_string(state->error));
 	} else if (state->result != GFARM_AUTH_ERROR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005311,
 		    "Authentication failed: %d", (int)state->result);
 		state->error = GFARM_ERR_AUTHENTICATION;
 	}
@@ -305,7 +305,7 @@ gfarm_auth_request_tls_client_certificate_multiplexed(
 	GFARM_MALLOC(state);
 	if (state == NULL) {
 		/* XXX this is NOT graceful */
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005312,
 		    "gfarm_auth_request_tls_client_certificate_multiplexed: "
 		    "%s", gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
@@ -335,7 +335,7 @@ gfarm_auth_request_tls_client_certificate_multiplexed(
 		e = gfp_xdr_flush(conn);
 	if (e != GFARM_ERR_NO_ERROR) {
 		/* this is not gfarceful, but OK because of a network error */
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005313,
 		    "sending self_role failed: %s", gfarm_error_string(e));
 		gfp_xdr_tls_reset(conn); /* is this case graceful? */
 		free(state);
@@ -360,14 +360,14 @@ gfarm_auth_request_tls_client_certificate_multiplexed(
 	if (state->readable == NULL) {
 		/* XXX this is NOT graceful */
 		e = GFARM_ERR_NO_MEMORY;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005314,
 		    "allocation of 'readable' failed: %s",
 		    gfarm_error_string(e));
 	} else if ((rv = gfarm_eventqueue_add_event(q, state->readable, NULL))
 	    != 0) {
 		e = gfarm_errno_to_error(rv);
 		/* XXX this is NOT graceful */
-		gflog_debug(GFARM_MSG_UNFIXED, "addition of event failed: %s",
+		gflog_debug(GFARM_MSG_1005315, "addition of event failed: %s",
 		    strerror(rv));
 	} else {
 		state->q = q;

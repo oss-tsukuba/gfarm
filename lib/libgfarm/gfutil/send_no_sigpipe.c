@@ -20,7 +20,7 @@ gfarm_sigpipe_ignore(void)
 	new_act.sa_handler = SIG_IGN;
 	if (sigaction(SIGPIPE, &new_act, &old_sigpipe) == -1) {
 		/* this shouldn't happen */
-		gflog_error_errno(GFARM_MSG_UNFIXED,
+		gflog_error_errno(GFARM_MSG_1005241,
 		    "signal(SIGPIPE, SIG_IGN)");
 	} else {
 		sigpipe_is_ignored = 1;
@@ -32,7 +32,7 @@ gfarm_sigpipe_restore(void)
 {
 	if (sigaction(SIGPIPE, &old_sigpipe, NULL) == -1) {
 		/* this shouldn't happen */
-		gflog_error_errno(GFARM_MSG_UNFIXED,
+		gflog_error_errno(GFARM_MSG_1005242,
 		    "restoring old SIGPIPE handler");
 	}
 }

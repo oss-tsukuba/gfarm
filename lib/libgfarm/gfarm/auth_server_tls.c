@@ -33,7 +33,7 @@ gfarm_authorize_tls_sharedsecret(struct gfp_xdr *conn,
 
 	e = gfp_xdr_tls_alloc(conn, gfp_xdr_fd(conn), GFP_XDR_TLS_ACCEPT);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_notice(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_1005316,
 		    "failed to establish SSL connection");
 		/* is this case graceful? */
 		return (e);
@@ -76,7 +76,7 @@ gfarm_error_t gfarm_authorize_tls_client_certificate(
 	    (gfarm_ctxp->tls_proxy_certificate ?
 	     GFP_XDR_TLS_CLIENT_USE_PROXY_CERTIFICATE : 0));
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_notice(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_1005317,
 		    "failed to establish SSL connection");
 		/* is this case graceful? */
 		return (e);
@@ -91,7 +91,7 @@ gfarm_error_t gfarm_authorize_tls_client_certificate(
 	}
 	if (req == GFARM_AUTH_TLS_CLIENT_CERTIFICATE_GIVEUP) {
 		/* server cert is invalid? raise alert */
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1005318,
 		    "%s: does not accept my certificate: %s",
 		    hostname, gfarm_error_string(arg));
 		gfp_xdr_tls_reset(conn); /* is this case graceful? */
@@ -100,7 +100,7 @@ gfarm_error_t gfarm_authorize_tls_client_certificate(
 		peer_role = arg;
 	} else {
 		/* unknown protocol */
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1005319,
 		    "unknown authentication request: 0x%x (0x%x)",
 		(int)req, (int)arg);
 		gfp_xdr_tls_reset(conn); /* is this case graceful? */
@@ -123,7 +123,7 @@ gfarm_error_t gfarm_authorize_tls_client_certificate(
 			switch (peer_role) {
 			case GFARM_AUTH_ID_ROLE_UNKNOWN:
 				e = GFARM_ERR_INTERNAL_ERROR;
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1005320,
 				    "authorize_tls_client_certificate: "
 				    "\"%s\" @ %s: peer type unknown",
 				    gfp_xdr_tls_peer_dn_gsi(conn), hostname);
@@ -164,7 +164,7 @@ gfarm_error_t gfarm_authorize_tls_client_certificate(
 	if (e == GFARM_ERR_NO_ERROR) {
 		/* succeed, do logging */
 
-		gflog_notice(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_1005321,
 		    "(%s@%s) authenticated: auth=%s type:%s DN=\"%s\"",
 		    global_username, hostname,
 		    "tls_client_certificate",

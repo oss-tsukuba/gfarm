@@ -46,7 +46,7 @@ gfarm_sasl_log(void *context, int sasl_priority, const char *message)
 		prio = LOG_DEBUG;
 		break;
 	}
-	gflog_message(GFARM_MSG_UNFIXED, prio, __FILE__, __LINE__, __func__,
+	gflog_message(GFARM_MSG_1005366, prio, __FILE__, __LINE__, __func__,
 	    "SASL: %s", message);
 
 	return (SASL_OK);
@@ -66,7 +66,7 @@ gfarm_sasl_addr_string(int fd,
 	self_len = sizeof(self_addr);
 	if (getsockname(fd, (struct sockaddr *)&self_addr, &self_len) < 0) {
 		save_errno = errno;
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005367,
 		    "%s: getsockname: %s", diag, strerror(save_errno));
 		return (save_errno);
 	}
@@ -79,7 +79,7 @@ gfarm_sasl_addr_string(int fd,
 	peer_len = sizeof(peer_addr);
 	if (getpeername(fd, (struct sockaddr *)&peer_addr, &peer_len) < 0) {
 		save_errno = errno;
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005368,
 		    "%s: getpeername: %s", diag, strerror(save_errno));
 		return (save_errno);
 	}
@@ -92,7 +92,7 @@ gfarm_sasl_addr_string(int fd,
 #endif
 	    0));
 	if (ni_error != 0) { /* shouldn't happen */
-		gflog_notice(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_1005369,
 		    "%s: getnameinfo(peer): %s", diag, gai_strerror(ni_error));
 		strcpy(self_hbuf, "unknown_addr");
 		strcpy(self_sbuf, "unknown_port");
@@ -107,7 +107,7 @@ gfarm_sasl_addr_string(int fd,
 #endif
 	    0));
 	if (ni_error != 0) { /* shouldn't happen */
-		gflog_notice(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_1005370,
 		    "%s: getnameinfo(peer): %s", diag, gai_strerror(ni_error));
 		strcpy(peer_hbuf, "unknown_addr");
 		strcpy(peer_sbuf, "unknown_port");

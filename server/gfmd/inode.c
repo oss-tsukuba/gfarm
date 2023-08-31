@@ -2695,7 +2695,7 @@ inode_new_generation_by_fd_finish(struct inode *inode, struct peer *peer,
 
 	if (close_mode == INODE_CLOSE_V2_8) {
 		if (gfarm_read_only_mode()) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1005469,
 			    "inode %llu:%llu host %s user %s "
 			    "gfmd became read_only during generation update, "
 			    "metadata update size %llu is lost",
@@ -2714,7 +2714,7 @@ inode_new_generation_by_fd_finish(struct inode *inode, struct peer *peer,
 	 * maybe it's better to keep old replica in update_replicas()?
 	 */
 	if (gfarm_read_only_mode()) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005470,
 		    "inode %llu:%llu host %s user %s "
 		    "gfmd became read_only during generation update, "
 		    "replica status update is lost",
@@ -2798,7 +2798,7 @@ inode_new_generation_by_cookie_finish(struct inode *inode,
 		}
 	} else if (close_mode == INODE_CLOSE_V2_8) {
 		if (gfarm_read_only_mode()) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1005471,
 			    "GFM_PROTO_GENERATION_UPDATED_BY_COOKIE_V2_8: "
 			    "inode %llu:%llu host %s user %s: "
 			    "gfmd became read_only during generation update, "
@@ -2811,7 +2811,7 @@ inode_new_generation_by_cookie_finish(struct inode *inode,
 			inode_metadata_update(inode, size, atime, mtime);
 		}
 	} else { /* shouldn't happen */
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1005472,
 		    "invalid close_mode %d", close_mode);
 	}
 	/*
@@ -2820,7 +2820,7 @@ inode_new_generation_by_cookie_finish(struct inode *inode,
 	 * maybe it's better to keep old replica in update_replicas()?
 	 */
 	if (gfarm_read_only_mode()) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005473,
 		    "inode %llu:%llu host %s user %s: "
 		    "gfmd became read_only during generation update, "
 		    "replica status update is lost",
@@ -3496,7 +3496,7 @@ inode_lookup_root(struct process *process, int op, struct inode **inp)
 		return (GFARM_ERR_STALE_FILE_HANDLE); /* XXX never happen */
 	}
 	if (inode->i_gen != process_get_root_igen(process)) {
-		gflog_debug(GFARM_MSG_UNFIXED, "inode_lookup_root(): "
+		gflog_debug(GFARM_MSG_1005474, "inode_lookup_root(): "
 		    "user %s's root inode %llu expects gen %llu, but %llu",
 		    user_tenant_name(process_get_user(process)),
 		    (long long)process_get_root_inum(process),

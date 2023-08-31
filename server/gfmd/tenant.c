@@ -54,7 +54,7 @@ tenant_lookup_or_enter(const char *tenant_name, struct tenant **tp)
 	GFARM_MALLOC(t);
 	if (t == NULL) {
 		free(name);
-		gflog_debug(GFARM_MSG_UNFIXED, "no memory for new tenant");
+		gflog_debug(GFARM_MSG_1005381, "no memory for new tenant");
 		return (GFARM_ERR_NO_MEMORY);
 	}
 
@@ -64,12 +64,12 @@ tenant_lookup_or_enter(const char *tenant_name, struct tenant **tp)
 	if (entry == NULL) {
 		free(name);
 		free(t);
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005382,
 			"no memory for tenant hashtab entry");
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	if (!created) {
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1005383,
 		    "tenant '%s' already exists, possibly missing giant_lock",
 		    tenant_name);
 	}
@@ -113,7 +113,7 @@ tenant_default(void)
 	struct tenant *def = tenant_lookup("");
 
 	if (def == NULL)
-		gflog_fatal(GFARM_MSG_UNFIXED, "default tenant not found");
+		gflog_fatal(GFARM_MSG_1005384, "default tenant not found");
 	return (def);
 }
 
@@ -124,5 +124,5 @@ tenant_init(void)
 	    gfarm_hash_table_alloc(TENANT_HASHTAB_SIZE,
 		gfarm_hash_strptr, gfarm_hash_key_equal_strptr);
 	if (tenant_hashtab == NULL)
-		gflog_fatal(GFARM_MSG_UNFIXED, "no memory for tenant hashtab");
+		gflog_fatal(GFARM_MSG_1005385, "no memory for tenant hashtab");
 }

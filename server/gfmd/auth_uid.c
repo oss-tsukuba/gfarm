@@ -196,7 +196,7 @@ auth_uid_to_global_username_server_auth(void *closure,
 			 * do not return GFARM_ERR_NO_SUCH_USER
 			 * to prevent information leak
 			 */
-			gflog_info(GFARM_MSG_UNFIXED,
+			gflog_info(GFARM_MSG_1005508,
 			    "unknown user id <%s>", auth_user_id);
 			return (GFARM_ERR_AUTHENTICATION);
 		}
@@ -216,7 +216,7 @@ auth_uid_to_global_username_server_auth(void *closure,
 		h = host_lookup(hostname);
 		giant_unlock();
 		if (h == NULL) {
-			gflog_info(GFARM_MSG_UNFIXED,
+			gflog_info(GFARM_MSG_1005509,
 			    "unknown gfsd <%s>", hostname);
 			free(hostname);
 			return (GFARM_ERR_AUTHENTICATION);
@@ -235,7 +235,7 @@ auth_uid_to_global_username_server_auth(void *closure,
 		m = mdhost_lookup(hostname);
 		giant_unlock();
 		if (m == NULL) {
-			gflog_info(GFARM_MSG_UNFIXED,
+			gflog_info(GFARM_MSG_1005510,
 			    "unknown gfmd <%s>", hostname);
 			free(hostname);
 			return (GFARM_ERR_AUTHENTICATION);
@@ -248,7 +248,7 @@ auth_uid_to_global_username_server_auth(void *closure,
 	case GFARM_AUTH_ID_ROLE_UNKNOWN:
 		/*FALLTHROUGH*/
 	default:
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005511,
 		    "auth_uid_to_global_username(id_role:%d, id:%s): "
 		    "unexpected call",
 		    auth_user_id_role, auth_user_id);
@@ -313,7 +313,7 @@ auth_uid_to_global_username_sharedsecret(void *closure,
 		 * do not return GFARM_ERR_NO_SUCH_USER
 		 * to prevent information leak
 		 */
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1005512,
 		    "unknown user id <%s>", auth_user_id);
 		return (GFARM_ERR_AUTHENTICATION);
 	}
@@ -357,7 +357,7 @@ auth_uid_to_global_username_sasl(void *closure,
 		 * do not return GFARM_ERR_NO_SUCH_USER
 		 * to prevent information leak
 		 */
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1005513,
 			   "%s: unknown user id <%s>", diag, auth_user_id);
 		return (GFARM_ERR_AUTHENTICATION);
 	}
@@ -393,7 +393,7 @@ auth_uid_to_global_username(void *closure,
 	if (auth_method < GFARM_AUTH_METHOD_NONE ||
 	    auth_method >=
 	    GFARM_ARRAY_LENGTH(auth_uid_to_global_username_table)) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005514,
 		    "auth_uid_to_global_username: method=%d/%d",
 		    auth_method,
 		    (int)GFARM_ARRAY_LENGTH(

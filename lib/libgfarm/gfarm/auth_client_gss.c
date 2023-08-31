@@ -259,7 +259,7 @@ gfarm_auth_request_gss(struct gfp_xdr *conn, struct gfarm_gss *gss,
 		if (e == GFARM_ERR_NO_ERROR)
 			e = gfp_xdr_flush(conn);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1005292,
 			    "sending self_role: %s", gfarm_error_string(e));
 			gfp_xdr_reset_secsession(conn);
 			return (e);
@@ -485,7 +485,7 @@ gfarm_auth_request_gss_multiplexed(struct gfarm_eventqueue *q,
 		    gfarm_auth_request_gss_send_self_role, state);
 		if (state->writable == NULL) {
 			e = GFARM_ERR_NO_MEMORY;
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1005293,
 				"allocation of 'writable' failed: %s",
 				gfarm_error_string(e));
 			goto error_free_readable;

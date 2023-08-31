@@ -1525,7 +1525,7 @@ gfm_server_fchown(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((tenant = process_get_tenant(process)) == NULL) {
 		e = GFARM_ERR_INTERNAL_ERROR;
-		gflog_error(GFARM_MSG_UNFIXED, "%s (%s@%s): no tenant: %s",
+		gflog_error(GFARM_MSG_1005499, "%s (%s@%s): no tenant: %s",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    gfarm_error_string(e));
 	} else if ((user = process_get_user(process)) == NULL) {
@@ -1546,14 +1546,14 @@ gfm_server_fchown(struct peer *peer, int from_client, int skip)
 	} else if (!(is_super_admin = user_is_super_admin(user)) &&
 	    strchr(username, GFARM_TENANT_DELIMITER) != NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005500,
 		    "%s (%s@%s) '%s': '+' is not allowed as user name",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    username);
 	} else if (!is_super_admin &&
 	    strchr(groupname, GFARM_TENANT_DELIMITER) != NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005501,
 		    "%s (%s@%s) '%s': '+' is not allowed as group name",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    groupname);
@@ -3459,7 +3459,7 @@ gfm_server_close_write_common(const char *diag,
 					arg->atime = NULL;
 					arg->mtime = NULL;
 				} else { /* shouldn't happen */
-					gflog_fatal(GFARM_MSG_UNFIXED,
+					gflog_fatal(GFARM_MSG_1005502,
 					    "invalid close_mode %d",
 					    close_mode);
 				}
@@ -3590,7 +3590,7 @@ gfm_server_close_write_v2_8(struct peer *peer, int from_client, int skip,
 	if (e_rpc == GFARM_ERR_NO_ERROR && gfarm_ctxp->file_trace &&
 	    (flags & GFM_PROTO_CLOSE_WRITE_GENERATION_UPDATE_NEEDED) != 0 &&
 	    trace_log != NULL) {
-		gflog_trace(GFARM_MSG_UNFIXED, "%s", trace_log);
+		gflog_trace(GFARM_MSG_1005503, "%s", trace_log);
 		free(trace_log);
 	}
 	if (e_rpc == GFARM_ERR_NO_ERROR && e_ret != GFARM_ERR_NO_ERROR) {
@@ -3599,7 +3599,7 @@ gfm_server_close_write_v2_8(struct peer *peer, int from_client, int skip,
 		 * but there is no guarantee that this error is logged.
 		 * because network communication error may happen later.
 		 */
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005504,
 		    "%s: inode %lld generation %lld -> %lld: %s", diag,
 		    (long long)inum, (long long)old_gen, (long long)new_gen,
 		    gfarm_error_string(e_ret));
@@ -3842,7 +3842,7 @@ gfm_server_fhclose_write_common(struct peer *peer, int from_client,
 				arg->atime = NULL;
 				arg->mtime = NULL;
 			} else { /* shouldn't happen */
-				gflog_fatal(GFARM_MSG_UNFIXED,
+				gflog_fatal(GFARM_MSG_1005505,
 				    "invalid close_mode %d", close_mode);
 			}
 			arg->old_gen = *old_genp; /* for logging */
@@ -4063,7 +4063,7 @@ gfm_server_generation_updated_v2_8(
 	e = gfm_server_get_request(peer, diag, "illili", &result, &size,
 	    &atime.tv_sec, &atime.tv_nsec, &mtime.tv_sec, &mtime.tv_nsec);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s request failed: %s",
+		gflog_debug(GFARM_MSG_1005506, "%s request failed: %s",
 		    diag, gfarm_error_string(e));
 		return (e);
 	}
@@ -4146,7 +4146,7 @@ generation_updated_by_cookie_common(struct peer *peer, int from_client,
 		} else { /* shouldn't happen */
 			new_size = 0;
 			old_size = 0;
-			gflog_fatal(GFARM_MSG_UNFIXED,
+			gflog_fatal(GFARM_MSG_1005507,
 			    "invalid close_mode %d", close_mode);
 		}
 

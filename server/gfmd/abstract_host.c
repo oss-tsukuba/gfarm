@@ -659,7 +659,7 @@ async_channel_service(struct abstract_host *host,
 		if (avail == -1) {
 			int save_errno = errno;
 
-			gflog_debug_errno(GFARM_MSG_UNFIXED,
+			gflog_debug_errno(GFARM_MSG_1005456,
 			    "async_channel_service:poll()");
 			return (gfarm_errno_to_error(save_errno));
 		}

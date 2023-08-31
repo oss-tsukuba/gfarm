@@ -93,7 +93,7 @@ gfarm_gss_client_cred_name(struct gfarm_gss *gss,
 	if (gss->gfarmGssNewCredentialName(&name, cred, &e_major, &e_minor)
 	    < 0) {
 		s->client_dn = NULL;
-		gflog_auth_notice(GFARM_MSG_UNFIXED,
+		gflog_auth_notice(GFARM_MSG_1005294,
 		    "gfarm_gss_client_cred_name() for %s: "
 		    "cannot acquire initiator credential",
 		    gss->protocol);
@@ -105,7 +105,7 @@ gfarm_gss_client_cred_name(struct gfarm_gss *gss,
 		s->client_dn = gss->gfarmGssNewDisplayName(
 		    name, &e_major, &e_minor, NULL);
 		if (s->client_dn == NULL && gflog_auth_get_verbose()) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1005295,
 			    "cannot convert initiator credential for %s "
 			    "to string", gss->protocol);
 			gss->gfarmGssPrintMajorStatus(e_major);

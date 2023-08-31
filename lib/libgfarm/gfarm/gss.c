@@ -31,7 +31,7 @@ gfarm_gss_dlopen(const char *libname, const char *proto,
 #define SYM(s) \
 	gss->s = dlsym(lib, #s); \
 	if (gss->s == NULL) { \
-		gflog_warning(GFARM_MSG_UNFIXED, "%s: symbol %s not found", \
+		gflog_warning(GFARM_MSG_1005291, "%s: symbol %s not found", \
 		    libname, #s); \
 		break; \
 	}

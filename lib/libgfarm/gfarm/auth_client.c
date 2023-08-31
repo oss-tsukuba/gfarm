@@ -238,7 +238,7 @@ gfarm_auth_client_trial_order_set(enum gfarm_auth_method *order, int n,
 	 */
 	GFARM_MALLOC_ARRAY(new_order, n + 1);
 	if (new_order == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005251,
 		    "gfarm_auth_client_trial_order_set: "
 		    "no memory for %d authentication methods", n);
 		return (GFARM_ERR_NO_MEMORY);
@@ -264,7 +264,7 @@ gfarm_auth_client_trial_order_set_default(void)
 
 	GFARM_MALLOC_ARRAY(new_order, n);
 	if (new_order == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005252,
 		    "gfarm_auth_client_trial_order_set_default: "
 		    "no memory for %d authentication methods", n);
 		return (GFARM_ERR_NO_MEMORY);
@@ -287,11 +287,11 @@ gfarm_auth_trial_order_string_dup(void)
 	int overflow = 0;
 
 	if (staticp->gfarm_auth_trial_order == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED, "%s: is NULL, shouldn't happen",
+		gflog_error(GFARM_MSG_1005253, "%s: is NULL, shouldn't happen",
 		    diag);
 		s = strdup("");
 		if (s == NULL)
-			gflog_error(GFARM_MSG_UNFIXED, "%s: no memory", diag);
+			gflog_error(GFARM_MSG_1005254, "%s: no memory", diag);
 		return (s);
 	}
 
@@ -303,14 +303,14 @@ gfarm_auth_trial_order_string_dup(void)
 		len = gfarm_size_add(&overflow, len, strlen(method));
 		len = gfarm_size_add(&overflow, len, 1);
 		if (overflow) {
-			gflog_error(GFARM_MSG_UNFIXED, "%s: overflow", diag);
+			gflog_error(GFARM_MSG_1005255, "%s: overflow", diag);
 			return (NULL);
 		}
 	}
 
 	GFARM_MALLOC_ARRAY(s, len);
 	if (s == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005256,
 		    "%s: no memory for %zd characters", diag, len);
 		return (NULL);
 	}
@@ -322,7 +322,7 @@ gfarm_auth_trial_order_string_dup(void)
 		    gfarm_auth_method_name(staticp->gfarm_auth_trial_order[i]);
 		mlen = snprintf(&s[p], len - p, "%s ", method);
 		if (mlen < 0) {
-			gflog_error_errno(GFARM_MSG_UNFIXED,
+			gflog_error_errno(GFARM_MSG_1005257,
 			    "%s: snprintf(%s, %s)", diag, s, method);
 			free(s);
 			return (NULL);
@@ -371,7 +371,7 @@ gfarm_auth_request_panic(struct gfp_xdr *conn,
 	enum gfarm_auth_id_role self_role, const char *user,
 	struct passwd *pwd)
 {
-	gflog_fatal(GFARM_MSG_UNFIXED,
+	gflog_fatal(GFARM_MSG_1005258,
 	    "gfarm_auth_request: authorization assertion failed");
 	return (GFARM_ERR_PROTOCOL);
 }
@@ -385,7 +385,7 @@ gfarm_auth_request_panic_multiplexed(struct gfarm_eventqueue *q,
 	void (*continuation)(void *), void *closure,
 	void **statepp)
 {
-	gflog_fatal(GFARM_MSG_UNFIXED,
+	gflog_fatal(GFARM_MSG_1005259,
 	    "gfarm_auth_request_multiplexed: authorization assertion failed");
 	return (GFARM_ERR_PROTOCOL);
 }
@@ -393,7 +393,7 @@ gfarm_auth_request_panic_multiplexed(struct gfarm_eventqueue *q,
 static gfarm_error_t
 gfarm_auth_result_panic_multiplexed(void *sp)
 {
-	gflog_fatal(GFARM_MSG_UNFIXED,
+	gflog_fatal(GFARM_MSG_1005260,
 	    "gfarm_auth_result_multiplexed: authorization assertion failed");
 	return (GFARM_ERR_PROTOCOL);
 }

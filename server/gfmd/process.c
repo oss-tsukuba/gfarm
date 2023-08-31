@@ -174,7 +174,7 @@ process_alloc(struct user *user,
 
 	e = inode_lookup_user_root(user, &root_inode);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1005484,
 		    "user %s: process_alloc failed, tenant root: %s",
 		    user_tenant_name(user), gfarm_error_string(e));
 		return (e);
@@ -743,7 +743,7 @@ process_new_generation_by_fd_abort(struct process *process, struct peer *peer,
 	    &fo, diag);
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005485,
 		    "%s: gfsd connection to %s is lost (%s) "
 		    "during GFM_PROTO_CLOSE_WRITE: "
 		    "fd %d: %s",
@@ -755,7 +755,7 @@ process_new_generation_by_fd_abort(struct process *process, struct peer *peer,
 	e = process_new_generation_done(process, peer, fd,
 	    INODE_CLOSE_V2_4, reason, 0, NULL, NULL, diag);
 
-	gflog_error(GFARM_MSG_UNFIXED,
+	gflog_error(GFARM_MSG_1005486,
 	    "%s: gfsd connection to %s is lost (%s) "
 	    "during GFM_PROTO_CLOSE_WRITE: "
 	    "inode %lld:%lld may be lost. (size:%lld): %s",
@@ -2126,16 +2126,16 @@ gfm_server_process_fd_info(struct peer *peer, int from_client, int skip)
 		    diag, gfarm_error_string(e));
 	} else if ((process = peer_get_process(peer)) == NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s): no process",
+		gflog_debug(GFARM_MSG_1005487, "%s (%s@%s): no process",
 		    diag, peer_get_username(peer), peer_get_hostname(peer));
 	} else if ((tenant = process_get_tenant(process)) == NULL) {
 		e = GFARM_ERR_INTERNAL_ERROR;
-		gflog_error(GFARM_MSG_UNFIXED, "%s (%s@%s): no tenant: %s",
+		gflog_error(GFARM_MSG_1005488, "%s (%s@%s): no tenant: %s",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    gfarm_error_string(e));
 	} else if ((e = process_fd_info_lookup_user(proc_username,
 	    tenant, user, &proc_user)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s): user='%s': %s",
+		gflog_debug(GFARM_MSG_1005489, "%s (%s@%s): user='%s': %s",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    proc_username, gfarm_error_string(e));
 	} else if ((flags & ~GFM_PROTO_PROCESS_FD_FLAG_MASK) != 0) {

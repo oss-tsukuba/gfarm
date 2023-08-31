@@ -1683,11 +1683,11 @@ quota_get_common(struct peer *peer, int from_client, int skip, int is_group)
 			    "%s: !from_client or invalid peer_user ", diag);
 	} else if ((process = peer_get_process(peer)) == NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s): no process",
+		gflog_debug(GFARM_MSG_1005461, "%s (%s@%s): no process",
 		    diag, peer_get_username(peer), peer_get_hostname(peer));
 	} else if ((tenant = process_get_tenant(process)) == NULL) {
 		e = GFARM_ERR_INTERNAL_ERROR;
-		gflog_error(GFARM_MSG_UNFIXED, "%s (%s@%s): no tenant: %s",
+		gflog_error(GFARM_MSG_1005462, "%s (%s@%s): no tenant: %s",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    gfarm_error_string(e));
 	} else if (db_state != GFARM_ERR_NO_ERROR) {
@@ -1697,7 +1697,7 @@ quota_get_common(struct peer *peer, int from_client, int skip, int is_group)
 	} else if (!(is_super_admin = user_is_super_admin(peer_user)) &&
 	    strchr(name, GFARM_TENANT_DELIMITER) != NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005463,
 		    "%s (%s@%s) '%s': '+' is not allowed as user/group name",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    name);
@@ -1898,17 +1898,17 @@ quota_set_common(struct peer *peer, int from_client, int skip, int is_group)
 			    " or !user_is_admin", diag);
 	} else if ((process = peer_get_process(peer)) == NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s): no process",
+		gflog_debug(GFARM_MSG_1005464, "%s (%s@%s): no process",
 		    diag, peer_get_username(peer), peer_get_hostname(peer));
 	} else if ((tenant = process_get_tenant(process)) == NULL) {
 		e = GFARM_ERR_INTERNAL_ERROR;
-		gflog_error(GFARM_MSG_UNFIXED, "%s (%s@%s): no tenant: %s",
+		gflog_error(GFARM_MSG_1005465, "%s (%s@%s): no tenant: %s",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    gfarm_error_string(e));
 	} else if (!(is_super_admin = user_is_super_admin(peer_user)) &&
 	    strchr(qi.name, GFARM_TENANT_DELIMITER) != NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005466,
 		    "%s (%s@%s) '%s': '+' is not allowed as user/group name",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    qi.name);

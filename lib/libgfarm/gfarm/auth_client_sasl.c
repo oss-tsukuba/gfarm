@@ -56,7 +56,7 @@ gfarm_auth_request_sasl_common(struct gfp_xdr *conn,
 
 	/* sanity check, shouldn't happen */
 	if (staticp->sasl_client_initialized != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED, "sasl_client_initialized: %s",
+		gflog_error(GFARM_MSG_1005322, "sasl_client_initialized: %s",
 		    gfarm_error_string(staticp->sasl_client_initialized));
 		return (staticp->sasl_client_initialized);
 	}
@@ -89,7 +89,7 @@ gfarm_auth_request_sasl_common(struct gfp_xdr *conn,
 		    hostname, self_hs, peer_hs,
 		    NULL, 0, &sasl_conn);
 		if (r != SASL_OK) {
-			gflog_notice(GFARM_MSG_UNFIXED,
+			gflog_notice(GFARM_MSG_1005323,
 			    "%s: sasl_client_new(): %s",
 			    hostname, sasl_errstring(r, NULL, NULL));
 			/*
@@ -156,7 +156,7 @@ gfarm_auth_request_sasl_common(struct gfp_xdr *conn,
 	free(mechanism_candidates);
 	if (r != SASL_OK && r != SASL_CONTINUE) {
 		if (gflog_auth_get_verbose()) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1005324,
 			    "%s: sasl_client_start(): %s",
 			    hostname, sasl_errstring(r, NULL, NULL));
 		}
@@ -171,7 +171,7 @@ gfarm_auth_request_sasl_common(struct gfp_xdr *conn,
 	}
 
 	if (gflog_auth_get_verbose()) {
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1005325,
 		    "%s: SASL using mechanism %s", hostname, chosen_mechanism);
 	}
 
@@ -213,7 +213,7 @@ gfarm_auth_request_sasl_common(struct gfp_xdr *conn,
 			len = 0; /* defensive programming */
 		free(response);
 		if (r != SASL_OK && r != SASL_CONTINUE) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1005326,
 			    "%s: sasl_client_step(): %s",
 			    hostname, sasl_errstring(r, NULL, NULL));
 			sasl_dispose(&sasl_conn);
@@ -282,7 +282,7 @@ gfarm_auth_request_sasl_step(int events, int fd, void *closure,
 	if ((events & GFARM_EVENT_TIMEOUT) != 0) {
 		assert(events == GFARM_EVENT_TIMEOUT);
 		state->error = GFARM_ERR_OPERATION_TIMED_OUT;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005327,
 		    "%s: receiving step_type: %s",
 		    state->diag, gfarm_error_string(state->error));
 		if (state->continuation != NULL)
@@ -314,7 +314,7 @@ gfarm_auth_request_sasl_step(int events, int fd, void *closure,
 			state->len = 0; /* defensive programming */
 		free(response);
 		if (r != SASL_OK && r != SASL_CONTINUE) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1005328,
 			    "%s: sasl_client_step(): %s",
 			    state->hostname, sasl_errstring(r, NULL, NULL));
 			/*
@@ -404,7 +404,7 @@ gfarm_auth_request_sasl_receive_mechanisms(int events, int fd, void *closure,
 	if ((events & GFARM_EVENT_TIMEOUT) != 0) {
 		assert(events == GFARM_EVENT_TIMEOUT);
 		state->error = GFARM_ERR_OPERATION_TIMED_OUT;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005329,
 		    "%s: receiving mechanisms: %s",
 		    state->diag, gfarm_error_string(state->error));
 		if (state->continuation != NULL)
@@ -444,7 +444,7 @@ gfarm_auth_request_sasl_receive_mechanisms(int events, int fd, void *closure,
 		free(mechanism_candidates);
 		if (r != SASL_OK && r != SASL_CONTINUE) {
 			if (gflog_auth_get_verbose()) {
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1005330,
 				    "%s: sasl_client_start(): %s",
 				    state->hostname,
 				    sasl_errstring(r, NULL, NULL));
@@ -509,7 +509,7 @@ gfarm_auth_request_sasl_send_server_auth_result(int events, int fd,
 			    state->hostname,
 			    self_hs, peer_hs, NULL, 0, &state->sasl_conn))
 			    != SASL_OK) {
-				gflog_notice(GFARM_MSG_UNFIXED,
+				gflog_notice(GFARM_MSG_1005331,
 				    "%s: sasl_client_new(): %s",
 				    state->hostname,
 				    sasl_errstring(r, NULL, NULL));
@@ -561,7 +561,7 @@ gfarm_auth_request_sasl_common_multiplexed(struct gfarm_eventqueue *q,
 
 	/* sanity check, shouldn't happen */
 	if (staticp->sasl_client_initialized != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED, "sasl_client_initialized: %s",
+		gflog_error(GFARM_MSG_1005332, "sasl_client_initialized: %s",
 		    gfarm_error_string(staticp->sasl_client_initialized));
 		return (staticp->sasl_client_initialized);
 	}
@@ -574,7 +574,7 @@ gfarm_auth_request_sasl_common_multiplexed(struct gfarm_eventqueue *q,
 
 	GFARM_MALLOC(state);
 	if (state == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005333,
 		    "%s: auth state allocation: %s",
 		    diag, gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
@@ -584,7 +584,7 @@ gfarm_auth_request_sasl_common_multiplexed(struct gfarm_eventqueue *q,
 	    GFARM_EVENT_WRITE, gfp_xdr_fd(conn), NULL, NULL,
 	    gfarm_auth_request_sasl_send_server_auth_result, state);
 	if (state->writable == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005334,
 		    "%s: writable event allocation: %s",
 		    diag, gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		free(state);
@@ -600,7 +600,7 @@ gfarm_auth_request_sasl_common_multiplexed(struct gfarm_eventqueue *q,
 	    gfp_xdr_recv_is_ready_call, conn,
 	    gfarm_auth_request_sasl_receive_mechanisms, state);
 	if (state->readable == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005335,
 		    "%s: readable event allocation: %s",
 		    diag, gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		free(state);
@@ -610,7 +610,7 @@ gfarm_auth_request_sasl_common_multiplexed(struct gfarm_eventqueue *q,
 	rv = gfarm_eventqueue_add_event(q, state->writable, NULL);
 	if (rv != 0) {
 		e = gfarm_errno_to_error(rv);
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005336,
 		    "%s: gfarm_eventqueue_add_event: %s",
 		    diag, gfarm_error_string(e));
 		free(state);
@@ -746,10 +746,10 @@ sasl_getrealm(void *context, int id, const char **availrealms,
 	switch (id) {
 	case SASL_CB_GETREALM:
 		if (gflog_auth_get_verbose()) {
-			gflog_info(GFARM_MSG_UNFIXED,
+			gflog_info(GFARM_MSG_1005337,
 			    "SASL: available realms:");
 			while (*availrealms) {
-				gflog_info(GFARM_MSG_UNFIXED,
+				gflog_info(GFARM_MSG_1005338,
 				    "SASL: available realm <%s>",
 				    *availrealms);
 				availrealms++;
@@ -758,7 +758,7 @@ sasl_getrealm(void *context, int id, const char **availrealms,
 		r = gfarm_ctxp->sasl_realm;
 		if (r == NULL) {
 			if (gflog_auth_get_verbose()) {
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1005339,
 				    "sasl_realm: not set");
 			}
 			return (SASL_FAIL);
@@ -788,7 +788,7 @@ sasl_getsimple(void *context, int id, const char **resultp, unsigned *lenp)
 		r = gfarm_ctxp->sasl_user;
 		if (r == NULL) {
 			if (gflog_auth_get_verbose()) {
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1005340,
 				    "sasl_authname: not set");
 			}
 			return (SASL_FAIL);
@@ -798,7 +798,7 @@ sasl_getsimple(void *context, int id, const char **resultp, unsigned *lenp)
 		r = gfarm_ctxp->sasl_user;
 		if (r == NULL) {
 			if (gflog_auth_get_verbose()) {
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1005341,
 				    "sasl_user: not set");
 			}
 			return (SASL_FAIL);
@@ -823,7 +823,7 @@ gfarm_sasl_secret_password_set_by_string(char *s)
 
 	if (sizeof(staticp->sasl_secret_password_storage)
 	    <= offsetof(sasl_secret_t, data) + len) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005342,
 		    "%zd bytes 'sasl_password' is too long, "
 		    "please increase SASL_PASSWORD_LEN_MAX (%zu)",
 		    len, sizeof(staticp->sasl_secret_password_storage));
@@ -865,7 +865,7 @@ gfarm_sasl_secret_password_set_by_jwt_file(void)
 				e = gfarm_errno_to_error(errno);
 
 			if (e != GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY)
-				gflog_warning(GFARM_MSG_UNFIXED, "file %s: %s",
+				gflog_warning(GFARM_MSG_1005343, "file %s: %s",
 				    filename, gfarm_error_string(e));
 
 			return (e);
@@ -874,7 +874,7 @@ gfarm_sasl_secret_password_set_by_jwt_file(void)
 		e = gfarm_errno_to_error(errno);
 
 		if (e != GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY)
-			gflog_warning(GFARM_MSG_UNFIXED, "file %s: %s",
+			gflog_warning(GFARM_MSG_1005344, "file %s: %s",
 			    filename, gfarm_error_string(e));
 
 		return (e);
@@ -887,7 +887,7 @@ gfarm_sasl_secret_password_set_by_jwt_file(void)
 	if (fgets(password,
 	    sizeof(staticp->sasl_secret_password_storage) -
 	    offsetof(sasl_secret_t, data), fp) == NULL) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1005345,
 		    "Contents of \"%s\" is empty", filename);
 		if (popened)
 			pclose(fp);
@@ -901,7 +901,7 @@ gfarm_sasl_secret_password_set_by_jwt_file(void)
 		password[len - 1] = '\0';
 		r->len = len - 1;
 		if (getc(fp) != EOF) {
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1005346,
 			    "file %s: second line is ignored", filename);
 		}
 		e = GFARM_ERR_NO_ERROR;
@@ -910,7 +910,7 @@ gfarm_sasl_secret_password_set_by_jwt_file(void)
 		e = GFARM_ERR_NO_ERROR;
 	} else if (len >= sizeof(staticp->sasl_secret_password_storage) -
 	    offsetof(sasl_secret_t, data) - 1) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005347,
 		    "file %s is too large, "
 		    "please increase SASL_PASSWORD_LEN_MAX (%zu)",
 		    filename,
@@ -918,7 +918,7 @@ gfarm_sasl_secret_password_set_by_jwt_file(void)
 		e = GFARM_ERR_VALUE_TOO_LARGE_TO_BE_STORED_IN_DATA_TYPE;
 	} else {
 		/* shouldn't happen */
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1005348,
 		    "file %s: partial read happens", filename);
 		r->len = len;
 		e = GFARM_ERR_NO_ERROR;
@@ -953,7 +953,7 @@ sasl_getsecret(
 			e = gfarm_sasl_secret_password_set_by_jwt_file();
 			if (e == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY) {
 				if (gflog_auth_get_verbose()) {
-					gflog_error(GFARM_MSG_UNFIXED,
+					gflog_error(GFARM_MSG_1005349,
 					    "sasl_password: not set");
 				}
 			}
@@ -967,7 +967,7 @@ sasl_getsecret(
 		    (sasl_secret_t *)staticp->sasl_secret_password_storage;
 		break;
 	default:
-		gflog_notice(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_1005350,
 		    "sasl_getsecret(): unknown callback id 0x%x", id);
 		return (SASL_BADPARAM);
 	}
@@ -998,7 +998,7 @@ gfarm_auth_client_sasl_static_init(struct gfarm_context *ctxp)
 
 	if (r != SASL_OK) {
 		if (gflog_auth_get_verbose()) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1005351,
 			    "sasl_client_init(): %s",
 			    sasl_errstring(r, NULL, NULL));
 		}

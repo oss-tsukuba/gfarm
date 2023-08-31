@@ -115,7 +115,7 @@ rpc_name_with_tenant(struct peer *peer, int from_client,
 	peer_user = peer_get_user(peer); /* not NULL if from_client */
 	if (peer_user == NULL) {
 		e = GFARM_ERR_INTERNAL_ERROR;
-		gflog_error(GFARM_MSG_UNFIXED, "%s (@%s) no user: %s",
+		gflog_error(GFARM_MSG_1005374, "%s (@%s) no user: %s",
 		    diag, peer_get_hostname(peer), gfarm_error_string(e));
 		return (e);
 	}
@@ -123,7 +123,7 @@ rpc_name_with_tenant(struct peer *peer, int from_client,
 	process = peer_get_process(peer);
 	if (process == NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s): no process",
+		gflog_debug(GFARM_MSG_1005375, "%s (%s@%s): no process",
 		    diag, peer_get_username(peer), peer_get_hostname(peer));
 		return (e);
 	}

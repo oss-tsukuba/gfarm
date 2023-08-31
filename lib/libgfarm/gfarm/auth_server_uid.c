@@ -172,13 +172,13 @@ gfarm_x509_cn_get_service_hostname(
 		/* "host/" prefix in CN can be omitted */
 		hostname = strdup(cn);
 	} else {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005268,
 		    "service:%s, cn=\"%s\": service not match",
 		    serv_service, cn);
 		return (GFARM_ERR_NO_SUCH_OBJECT);
 	}
 	if (hostname == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005269,
 		    "service:%s, cn=\"%s\": no memory", serv_service, cn);
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -269,7 +269,7 @@ gfarm_auth_uid_to_global_username_gsi(void *closure,
 	char *cn, *hostname;
 
 	if (auth_user_id_role != GFARM_AUTH_ID_ROLE_UNKNOWN) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1005270,
 		    "auth_uid_to_global_username(id_role:%d, id:%s): "
 		    "unexpected call", auth_user_id_role, auth_user_id);
 		return (GFARM_ERR_NO_SUCH_USER);
@@ -349,7 +349,7 @@ gfarm_auth_uid_to_global_username_by_auth_id(void *closure,
 	e = gfm_client_user_info_get_by_auth_id(gfm_server,
 		auth_user_id_type, auth_user_id, &ui);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005271,
 		    "getting user info by auth_user_id, "
 		    "type:%s, auth_user_id:%s, failed: %s",
 		     auth_user_id_type, auth_user_id, gfarm_error_string(e));
@@ -400,7 +400,7 @@ gfarm_kerberos_principal_get_service_hostname(
 			hlen = at - principal;
 		GFARM_MALLOC_ARRAY(hostname, hlen);
 		if (hostname == NULL) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1005272,
 			    "service:%s, principal=\"%s\": no memory",
 			    serv_service, principal);
 			return (GFARM_ERR_NO_MEMORY);
@@ -409,7 +409,7 @@ gfarm_kerberos_principal_get_service_hostname(
 		hostname[hlen] = '\0';
 		hostname = strdup(principal + serv_service_len + 1);
 	} else {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005273,
 		    "service:%s, principal=\"%s\": service not match",
 		    serv_service, principal);
 		return (GFARM_ERR_NO_SUCH_OBJECT);
@@ -485,7 +485,7 @@ gfarm_auth_uid_to_global_username_kerberos(void *closure,
 			gfarm_metadb_server_free(&mdhost);
 		break;
 	default:
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1005274,
 		    "auth_uid_to_global_username_kerberos(id_role:%d, id:%s): "
 		    "unexpected call", auth_user_id_role, auth_user_id);
 		return (GFARM_ERR_NO_SUCH_USER);
@@ -546,7 +546,7 @@ gfarm_auth_uid_to_global_username_tls_client_certificate(void *closure,
 			gfarm_metadb_server_free(&mdhost);
 		break;
 	default:
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1005275,
 		    "auth_uid_to_global_username(id_role:%d, id:%s): "
 		    "unexpected call", auth_user_id_role, auth_user_id);
 		return (GFARM_ERR_NO_SUCH_USER);
@@ -574,7 +574,7 @@ gfarm_auth_uid_to_global_username_sharedsecret(void *closure,
 	struct gfarm_user_info ui;
 
 	if (auth_user_id_role != GFARM_AUTH_ID_ROLE_USER) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1005276,
 		    "auth_uid_to_global_username(id_role:%d, id:%s): "
 		    "unexpected call", auth_user_id_role, auth_user_id);
 		return (GFARM_ERR_NO_SUCH_USER);
@@ -625,7 +625,7 @@ gfarm_auth_uid_to_global_username_sasl(void *closure,
 	enum gfarm_auth_id_role auth_user_id_role = *auth_user_id_rolep;
 
 	if (auth_user_id_role != GFARM_AUTH_ID_ROLE_USER) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1005277,
 		    "auth_uid_to_global_username(id_role:%d, id:%s): "
 		    "unexpected call", auth_user_id_role, auth_user_id);
 		return (GFARM_ERR_NO_SUCH_USER);

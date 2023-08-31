@@ -46,7 +46,7 @@ gfarm_authorize_sasl_common(struct gfp_xdr *conn,
 
 	/* sanity check, shouldn't happen */
 	if (sasl_server_initialized != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED, "sasl_server_initialized: %s",
+		gflog_error(GFARM_MSG_1005352, "sasl_server_initialized: %s",
 		    gfarm_error_string(sasl_server_initialized));
 		return (sasl_server_initialized);
 	}
@@ -63,7 +63,7 @@ gfarm_authorize_sasl_common(struct gfp_xdr *conn,
 
 	e = gfp_xdr_tls_alloc(conn, gfp_xdr_fd(conn), GFP_XDR_TLS_ACCEPT);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_notice(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_1005353,
 		    "failed to establish SSL connection");
 		/* is this case graceful? */
 		return (e);
@@ -83,7 +83,7 @@ gfarm_authorize_sasl_common(struct gfp_xdr *conn,
 	}
 	if (result != GFARM_ERR_NO_ERROR) {
 		/* server cert is invalid? raise alert */
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1005354,
 		    "%s: does not accept my certificate: %s",
 		    hostname, gfarm_error_string(result));
 		gfp_xdr_tls_reset(conn); /* is this case graceful? */
@@ -93,7 +93,7 @@ gfarm_authorize_sasl_common(struct gfp_xdr *conn,
 	r = sasl_server_new("gfarm", gfarm_host_get_self_name(), NULL,
 	    self_hs, peer_hs, NULL, 0, &sasl_conn);
 	if (r != SASL_OK) {
-		gflog_notice(GFARM_MSG_UNFIXED, "sasl_server_new(): %s",
+		gflog_notice(GFARM_MSG_1005355, "sasl_server_new(): %s",
 		    sasl_errstring(r, NULL, NULL));
 		gfp_xdr_tls_reset(conn); /* is this case graceful? */
 		return (GFARM_ERR_AUTHENTICATION);
@@ -109,7 +109,7 @@ gfarm_authorize_sasl_common(struct gfp_xdr *conn,
 		r = sasl_listmech(sasl_conn, NULL, NULL, " ", NULL,
 		    &data, &len, &count);
 		if (r != SASL_OK) {
-			gflog_error(GFARM_MSG_UNFIXED, "sasl_listmech(): %s",
+			gflog_error(GFARM_MSG_1005356, "sasl_listmech(): %s",
 			    sasl_errstring(r, NULL, NULL));
 			data = ""; /* mechanism_candidates == "" means error */
 			len = 0;
@@ -125,7 +125,7 @@ gfarm_authorize_sasl_common(struct gfp_xdr *conn,
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	if (gflog_auth_get_verbose()) {
-		gflog_info(GFARM_MSG_UNFIXED, "SASL: propose mechanisms <%s>",
+		gflog_info(GFARM_MSG_1005357, "SASL: propose mechanisms <%s>",
 		    data);
 	}
 
@@ -179,7 +179,7 @@ gfarm_authorize_sasl_common(struct gfp_xdr *conn,
 
 	if (gfarm_ctxp->sasl_mechanisms != NULL &&
 	    strcasecmp(chosen_mechanism, gfarm_ctxp->sasl_mechanisms) != 0) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005358,
 		    "%s: SASL mechanism does not match. \"%s\" vs \"%s\"",
 		    hostname, gfarm_ctxp->sasl_mechanisms, chosen_mechanism);
 		/* XXX FIXME is this graceful? */
@@ -200,7 +200,7 @@ gfarm_authorize_sasl_common(struct gfp_xdr *conn,
 	free(chosen_mechanism);
 	chosen_mechanism = response = NULL;
 	if (r != SASL_OK && r != SASL_CONTINUE) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005359,
 		    "%s: SASL negotiation: %s", hostname,
 		    sasl_errstring(r, NULL, NULL));
 		e = gfp_xdr_send(conn, "i",
@@ -242,7 +242,7 @@ gfarm_authorize_sasl_common(struct gfp_xdr *conn,
 		free(response);
 		response = NULL;
 		if (r != SASL_OK && r != SASL_CONTINUE) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1005360,
 			    "%s: SASL negotiation: %s", peer_hsbuf,
 			    sasl_errstring(r, NULL, NULL));
 			e = gfp_xdr_send(conn, "i",
@@ -256,7 +256,7 @@ gfarm_authorize_sasl_common(struct gfp_xdr *conn,
 	}
 
 	if (r != SASL_OK) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005361,
 		    "%s: SASL: incorrect authentication: %s", hostname,
 		    sasl_errstring(r, NULL, NULL));
 		e = gfp_xdr_send(conn, "i",
@@ -272,7 +272,7 @@ gfarm_authorize_sasl_common(struct gfp_xdr *conn,
 	    (const void **)&user_id);
 
 	if (r != SASL_OK) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005362,
 		    "%s: SASL: SASL_USERNAME: %s", hostname,
 		    sasl_errstring(r, NULL, NULL));
 		e = gfp_xdr_send(conn, "i",
@@ -287,7 +287,7 @@ gfarm_authorize_sasl_common(struct gfp_xdr *conn,
 	e = (*auth_uid_to_global_user)(closure, auth_method,
 	    user_id, &peer_role, &global_username);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005363,
 		    "%s@%s: unregistered user: %s", user_id, hostname,
 		    sasl_errstring(r, NULL, NULL));
 		e = gfp_xdr_send(conn, "i",
@@ -301,7 +301,7 @@ gfarm_authorize_sasl_common(struct gfp_xdr *conn,
 
 	sasl_dispose(&sasl_conn); /* user_id is freed here */
 
-	gflog_notice(GFARM_MSG_UNFIXED,
+	gflog_notice(GFARM_MSG_1005364,
 	    "(%s@%s) authenticated: auth=%s type:user",
 	    global_username, hostname,
 	    auth_method == GFARM_AUTH_METHOD_SASL ? "sasl" :
@@ -374,7 +374,7 @@ gfarm_sasl_server_init(void)
 	int r = sasl_server_init(callbacks, "gfarm");
 
 	if (r != SASL_OK) {
-		gflog_notice(GFARM_MSG_UNFIXED, "sasl_server_init(): %s",
+		gflog_notice(GFARM_MSG_1005365, "sasl_server_init(): %s",
 		    sasl_errstring(r, NULL, NULL));
 		sasl_server_initialized = GFARM_ERR_UNKNOWN;
 		return;

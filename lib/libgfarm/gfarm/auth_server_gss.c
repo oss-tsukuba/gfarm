@@ -188,7 +188,7 @@ gfarm_authorize_gss(struct gfp_xdr *conn, struct gfarm_gss *gss,
 		}
 		if (req == GFARM_AUTH_GSS_GIVEUP) {
 			/* this shouldn't happen for now */
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1005296,
 			    "client does not accept me: %s",
 			    gfarm_error_string(arg));
 			/* is this case graceful? */
@@ -198,7 +198,7 @@ gfarm_authorize_gss(struct gfp_xdr *conn, struct gfarm_gss *gss,
 			peer_role = arg;
 		} else {
 			/* unknown protocol */
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1005297,
 			    "unknown authentication request: 0x%x (0x%x)",
 			(int)req, (int)arg);
 			gfp_xdr_reset_secsession(conn);
@@ -213,7 +213,7 @@ gfarm_authorize_gss(struct gfp_xdr *conn, struct gfarm_gss *gss,
 	}
 
 	if (gss->gfarmSecSessionGetInitiatorDistName(session, &distname) < 0) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005298,
 		    "GFSL: unexpected session state");
 		distname = "<not-known>";
 		error = GFARM_AUTH_ERROR_NOT_SUPPORTED;
@@ -227,7 +227,7 @@ gfarm_authorize_gss(struct gfp_xdr *conn, struct gfarm_gss *gss,
 			case GFARM_AUTH_ID_ROLE_UNKNOWN:
 				e = GFARM_ERR_INTERNAL_ERROR;
 				error = GFARM_AUTH_ERROR_INVALID_CREDENTIAL;
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1005299,
 				    "authorize_gss: \"%s\" @ %s: "
 				    "GSS authentication: peer type unknown",
 				    distname, hostname);
@@ -268,7 +268,7 @@ gfarm_authorize_gss(struct gfp_xdr *conn, struct gfarm_gss *gss,
 			    e == GFARM_ERR_AUTHENTICATION ?
 			    " (possibly unregistered user/host)" : "");
 		default:
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1005300,
 			    "authorize_gss: \"%s\" @ %s: error: %s",
 			    distname, hostname, gfarm_error_string(e));
 			e = GFARM_ERR_AUTHENTICATION;
@@ -281,7 +281,7 @@ gfarm_authorize_gss(struct gfp_xdr *conn, struct gfarm_gss *gss,
 		/* assert(error == GFARM_AUTH_ERROR_NO_ERROR); */
 
 		/* succeed, do logging */
-		gflog_notice(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_1005301,
 		    "(%s@%s) authenticated: auth=%s type=%s  DN=\"%s\"",
 		    global_username, hostname,
 		    gfarm_auth_method_name(auth_method),

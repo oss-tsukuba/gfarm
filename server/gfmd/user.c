@@ -389,7 +389,7 @@ user_auth_id_modify_internal(struct user *u,
 		return (GFARM_ERR_NO_MEMORY);
 
 	if (strlen(auth_user_id) > GFARM_AUTH_USER_ID_MAX) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005386,
 		  "user_auth_id_modify, auth_user_id too long, %s",
 		  auth_user_id);
 		return (GFARM_ERR_INVALID_ARGUMENT);
@@ -425,7 +425,7 @@ user_auth_id_modify_internal(struct user *u,
 
 		if (gfarm_hash_purge(auth_user_id_hashtab, &key, sizeof(key))
 		    == 0) {
-			gflog_fatal(GFARM_MSG_UNFIXED,
+			gflog_fatal(GFARM_MSG_1005387,
 				"user %s: cannot purge auth_id_type %s",
 				u->ui.username,
 				auth_id_type);
@@ -456,24 +456,24 @@ user_auth_id_modify(struct user *user, char *auth_id_type,
 		&need_to_add);
 
 	if (e == GFARM_ERR_INVALID_ARGUMENT) {
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1005388,
 		    "user %s: unknown auth_id_type %s, "
 		    "slave gfmd is older than master gfmd",
 		    user->ui.username, auth_id_type);
 	} else if (e == GFARM_ERR_ALREADY_EXISTS) {
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1005389,
 		    "user %s: unexpected inconsistency, "
 		    "adding duplicate auth_user_id_type %s, "
 		    "auth_user_id %s",
 		    user->ui.username, auth_id_type, auth_user_id);
 	} else if (e == GFARM_ERR_NO_MEMORY) {
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1005390,
 		    "user %s: no memory error, "
 		    "modify auth_user_id_type %s, "
 		    "auth_user_id %s",
 		    user->ui.username, auth_id_type, auth_user_id);
 	} else if (e != GFARM_ERR_NO_ERROR) {
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1005391,
 		    "user %s: unknown error , "
 		    "modify auth_user_id_type %s, "
 		    "auth_user_id %s: %s",
@@ -509,7 +509,7 @@ user_auth_id_remove_internal(struct user *user,
 
 		if (gfarm_hash_purge(auth_user_id_hashtab, &key, sizeof(key))
 		    == 0) {
-			gflog_fatal(GFARM_MSG_UNFIXED,
+			gflog_fatal(GFARM_MSG_1005392,
 				"user %s: cannot purge auth_id_type %s",
 				user->ui.username,
 				auth_id_type);
@@ -533,12 +533,12 @@ user_auth_id_remove(struct user *user, char *auth_id_type)
 		auth_id_type, &need_to_update_db);
 
 	if (e == GFARM_ERR_INVALID_ARGUMENT) {
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1005393,
 		    "user %s: unknown auth_id_type %s, "
 		    "slave gfmd is older than master gfmd",
 		    user->ui.username, auth_id_type);
 	} else if (e != GFARM_ERR_NO_ERROR) {
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1005394,
 		    "user %s: unknown error, "
 		    "modify auth_user_id_type %s: %s",
 		    user->ui.username, auth_id_type,
@@ -567,7 +567,7 @@ user_auth_id_remove_with_db(struct user *user, char *auth_id_type)
 
 		e = db_user_auth_remove(&arg);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1005395,
 			     "user %s: remove auth_user_id db failed, "
 			     "auth_user_id_type %s: %s",
 			     user->ui.username, auth_id_type,
@@ -589,7 +589,7 @@ user_auth_add_one(void *closure, struct db_user_auth_arg *p)
 		e = user_auth_id_modify(u,
 			p->auth_id_type, p->auth_user_id);
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1005396,
 			"user_auth_add_one: %s", gfarm_error_string(e));
 	}
 
@@ -648,7 +648,7 @@ user_tenant_enter(struct gfarm_user_info *ui, struct user **upp)
 
 		name_in_tenant = malloc(len + 1);
 		if (name_in_tenant == NULL) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1005397,
 			    "user_tenant_enter(%s): no memory", ui->username);
 			return (GFARM_ERR_NO_MEMORY);
 		}
@@ -710,12 +710,12 @@ user_tenant_enter(struct gfarm_user_info *ui, struct user **upp)
 		    &name_in_tenant, sizeof(name_in_tenant),
 		    sizeof(struct user **), &created);
 		if (tenant_entry == NULL) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1005398,
 			    "no memory for user %s in tenant %s",
 			    name_in_tenant, tenant_name);
 			e = GFARM_ERR_NO_MEMORY;
 		} else if (!created) {
-			gflog_fatal(GFARM_MSG_UNFIXED,
+			gflog_fatal(GFARM_MSG_1005399,
 			    "user %s already exists in tenant %s, "
 			    "possibly missing giant_lock",
 			    name_in_tenant, tenant_name);
@@ -725,7 +725,7 @@ user_tenant_enter(struct gfarm_user_info *ui, struct user **upp)
 	}
 	if (*user_hashtab_ref_in_tenant == NULL ||
 	    e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005400,
 		    "no meory for user_hashtab of user %s tenant %s",
 		    name_in_tenant, tenant_name);
 		if (!user_is_null_str(u->ui.gsi_dn)) {
@@ -1353,7 +1353,7 @@ user_init(void)
 		    "loading users: %s", gfarm_error_string(e));
 	e = db_user_auth_load(NULL, user_auth_add_one);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005401,
 		    "loading user_auth: %s", gfarm_error_string(e));
 }
 
@@ -1523,7 +1523,7 @@ gfm_server_user_info_get_by_names(struct peer *peer, int from_client, int skip)
 
 	if (no_memory) {
 		e = GFARM_ERR_NO_MEMORY;
-		gflog_error(GFARM_MSG_UNFIXED, "%s (%s@%s): %s",
+		gflog_error(GFARM_MSG_1005402, "%s (%s@%s): %s",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    gfarm_error_string(e));
 	} else if ((e = rpc_name_with_tenant(peer, from_client,
@@ -1641,13 +1641,13 @@ gfm_server_user_info_get_my_own(
 	/* XXX FIXME too long giant lock */
 	giant_lock();
 	if (!from_client) {
-		gflog_info(GFARM_MSG_UNFIXED, "%s: not from client (%s)",
+		gflog_info(GFARM_MSG_1005403, "%s: not from client (%s)",
 		    diag, user == NULL ? "(null)" : user_tenant_name(user));
 		e = gfm_server_put_reply(peer, diag,
 		    GFARM_ERR_OPERATION_NOT_PERMITTED, "");
 	} else if (user == NULL) {
 		/* shouldn't happen */
-		gflog_error(GFARM_MSG_UNFIXED, "%s: user is NULL", diag);
+		gflog_error(GFARM_MSG_1005404, "%s: user is NULL", diag);
 		e = gfm_server_put_reply(peer, diag,
 			GFARM_ERR_INTERNAL_ERROR, "");
 	} else {
@@ -1708,22 +1708,22 @@ gfm_server_user_info_set(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((process = peer_get_process(peer)) == NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s): no process",
+		gflog_debug(GFARM_MSG_1005405, "%s (%s@%s): no process",
 		    diag, peer_get_username(peer), peer_get_hostname(peer));
 	} else if ((tenant = process_get_tenant(process)) == NULL) {
 		e = GFARM_ERR_INTERNAL_ERROR;
-		gflog_error(GFARM_MSG_UNFIXED, "%s (%s@%s): no tenant: %s",
+		gflog_error(GFARM_MSG_1005406, "%s (%s@%s): no tenant: %s",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    gfarm_error_string(e));
 	} else if (!user_is_tenant_admin(user, tenant)) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s): %s",
+		gflog_debug(GFARM_MSG_1005407, "%s (%s@%s): %s",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    gfarm_error_string(e));
 	} else if (!(is_super_admin = user_is_super_admin(user)) &&
 	    strchr(ui.username, GFARM_TENANT_DELIMITER) != NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005408,
 		    "%s (%s@%s) '%s': '+' is not allowed as user name",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    ui.username);
@@ -1850,16 +1850,16 @@ gfm_server_user_info_modify(struct peer *peer, int from_client, int skip)
 		    gfarm_error_string(e));
 	} else if ((process = peer_get_process(peer)) == NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s): no process",
+		gflog_debug(GFARM_MSG_1005409, "%s (%s@%s): no process",
 		    diag, peer_get_username(peer), peer_get_hostname(peer));
 	} else if ((tenant = process_get_tenant(process)) == NULL) {
 		e = GFARM_ERR_INTERNAL_ERROR;
-		gflog_error(GFARM_MSG_UNFIXED, "%s (%s@%s): no tenant: %s",
+		gflog_error(GFARM_MSG_1005410, "%s (%s@%s): no tenant: %s",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    gfarm_error_string(e));
 	} else if (!user_is_tenant_admin(user, tenant)) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s): %s",
+		gflog_debug(GFARM_MSG_1005411, "%s (%s@%s): %s",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    gfarm_error_string(e));
 	} else if ((u = user_is_super_admin(user) ?
@@ -1867,7 +1867,7 @@ gfm_server_user_info_modify(struct peer *peer, int from_client, int skip)
 	    user_lookup_in_tenant(ui.username, tenant))
 	    == NULL) {
 		e = GFARM_ERR_NO_SUCH_USER;
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) %s: %s",
+		gflog_debug(GFARM_MSG_1005412, "%s (%s@%s) %s: %s",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    ui.username, gfarm_error_string(e));
 	} else if ((e = user_info_verify(&ui, diag)) != GFARM_ERR_NO_ERROR) {
@@ -1930,17 +1930,17 @@ gfm_server_user_info_remove(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((process = peer_get_process(peer)) == NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s): no process",
+		gflog_debug(GFARM_MSG_1005413, "%s (%s@%s): no process",
 		    diag, peer_get_username(peer), peer_get_hostname(peer));
 	} else if ((tenant = process_get_tenant(process)) == NULL) {
 		e = GFARM_ERR_INTERNAL_ERROR;
-		gflog_error(GFARM_MSG_UNFIXED, "%s (%s@%s): no tenant: %s",
+		gflog_error(GFARM_MSG_1005414, "%s (%s@%s): no tenant: %s",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    gfarm_error_string(e));
 	} else if (!(is_super_admin = user_is_super_admin(user)) &&
 	    strchr(username, GFARM_TENANT_DELIMITER) != NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005415,
 		    "%s (%s@%s) '%s': '+' is not allowed as user name",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    username);
@@ -1954,7 +1954,7 @@ gfm_server_user_info_remove(struct peer *peer, int from_client, int skip)
 		else
 			e = user_remove_in_tenant(username, tenant);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1005416,
 			    "%s (%s@%s) '%s': %s", diag,
 			    peer_get_username(peer), peer_get_hostname(peer),
 			    username, gfarm_error_string(e));
@@ -1998,7 +1998,7 @@ gfm_server_user_info_get_by_auth_id(
 	e = gfm_server_get_request(peer, diag, "ss",
 				   &auth_user_id_type_str, &auth_user_id);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005417,
 		    "%s request: %s", diag, gfarm_error_string(e));
 		return (e);
 	}
@@ -2014,7 +2014,7 @@ gfm_server_user_info_get_by_auth_id(
 	e = gfarm_auth_user_id_type_from_name(auth_user_id_type_str,
 					  &auth_user_id_type);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED, "invalid auth_user_id_type");
+		gflog_debug(GFARM_MSG_1005418, "invalid auth_user_id_type");
 	} else if ((e = rpc_name_with_tenant(peer, from_client,
 	    &name_with_tenant, &process, diag)) != GFARM_ERR_NO_ERROR) {
 		/* nothing to do */
@@ -2062,7 +2062,7 @@ gfm_server_user_auth_get(
 	e = gfm_server_get_request(peer, diag, "ss",
 				   &username, &auth_user_id_type_str);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005419,
 		    "%s request: %s", diag, gfarm_error_string(e));
 		return (e);
 	}
@@ -2079,18 +2079,18 @@ gfm_server_user_auth_get(
 					  &auth_user_id_type);
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED, "invalid auth_user_id_type");
+		gflog_debug(GFARM_MSG_1005420, "invalid auth_user_id_type");
 	} else if (!from_client || user == NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED, "%s: %s", diag,
+		gflog_debug(GFARM_MSG_1005421, "%s: %s", diag,
 			gfarm_error_string(e));
 	} else if ((process = peer_get_process(peer)) == NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s): no process",
+		gflog_debug(GFARM_MSG_1005422, "%s (%s@%s): no process",
 			diag, peer_get_username(peer), peer_get_hostname(peer));
 	} else if ((tenant = process_get_tenant(process)) == NULL) {
 		e = GFARM_ERR_INTERNAL_ERROR;
-		gflog_error(GFARM_MSG_UNFIXED, "%s (%s@%s): no tenant: %s",
+		gflog_error(GFARM_MSG_1005423, "%s (%s@%s): no tenant: %s",
 			diag, peer_get_username(peer), peer_get_hostname(peer),
 			gfarm_error_string(e));
 	} else if ((u = user_is_super_admin(user) ?
@@ -2098,11 +2098,11 @@ gfm_server_user_auth_get(
 			user_lookup_in_tenant(username, tenant))
 			== NULL) {
 		e = GFARM_ERR_NO_SUCH_USER;
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) %s: %s",
+		gflog_debug(GFARM_MSG_1005424, "%s (%s@%s) %s: %s",
 			diag, peer_get_username(peer), peer_get_hostname(peer),
 			username, gfarm_error_string(e));
 	} else if (gfarm_read_only_mode()) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) during read_only",
+		gflog_debug(GFARM_MSG_1005425, "%s (%s@%s) during read_only",
 			diag, peer_get_username(peer), peer_get_hostname(peer));
 		e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
 	} else
@@ -2139,7 +2139,7 @@ gfm_server_user_auth_modify(struct peer *peer,
 	e = gfm_server_get_request(peer, diag, "sss",
 		   &username, &auth_user_id_type_str, &auth_user_id);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005426,
 		    "%s request: %s", diag, gfarm_error_string(e));
 		return (e);
 	}
@@ -2156,23 +2156,23 @@ gfm_server_user_auth_modify(struct peer *peer,
 	e = gfarm_auth_user_id_type_from_name(auth_user_id_type_str,
 					  &auth_user_id_type);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED, "invalid auth_user_id_type");
+		gflog_debug(GFARM_MSG_1005427, "invalid auth_user_id_type");
 	} else if (!from_client || user == NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED, "%s: %s", diag,
+		gflog_debug(GFARM_MSG_1005428, "%s: %s", diag,
 			gfarm_error_string(e));
 	} else if ((process = peer_get_process(peer)) == NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s): no process",
+		gflog_debug(GFARM_MSG_1005429, "%s (%s@%s): no process",
 			diag, peer_get_username(peer), peer_get_hostname(peer));
 	} else if ((tenant = process_get_tenant(process)) == NULL) {
 		e = GFARM_ERR_INTERNAL_ERROR;
-		gflog_error(GFARM_MSG_UNFIXED, "%s (%s@%s): no tenant: %s",
+		gflog_error(GFARM_MSG_1005430, "%s (%s@%s): no tenant: %s",
 			diag, peer_get_username(peer), peer_get_hostname(peer),
 			gfarm_error_string(e));
 	} else if (!user_is_tenant_admin(user, tenant)) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s): %s",
+		gflog_debug(GFARM_MSG_1005431, "%s (%s@%s): %s",
 			diag, peer_get_username(peer), peer_get_hostname(peer),
 			gfarm_error_string(e));
 	} else if ((u = user_is_super_admin(user) ?
@@ -2180,11 +2180,11 @@ gfm_server_user_auth_modify(struct peer *peer,
 			user_lookup_in_tenant(username, tenant))
 			== NULL) {
 		e = GFARM_ERR_NO_SUCH_USER;
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) %s: %s",
+		gflog_debug(GFARM_MSG_1005432, "%s (%s@%s) %s: %s",
 			diag, peer_get_username(peer), peer_get_hostname(peer),
 			username, gfarm_error_string(e));
 	} else if (gfarm_read_only_mode()) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) during read_only",
+		gflog_debug(GFARM_MSG_1005433, "%s (%s@%s) during read_only",
 			diag, peer_get_username(peer), peer_get_hostname(peer));
 		e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
 	} else {
@@ -2211,7 +2211,7 @@ gfm_server_user_auth_modify(struct peer *peer,
 					e = db_user_auth_add(&arg);
 
 					if (e != GFARM_ERR_NO_ERROR) {
-						gflog_error(GFARM_MSG_UNFIXED,
+						gflog_error(GFARM_MSG_1005434,
 						    "user %s: "
 						    "add auth_user_id db "
 						    "failed, "
@@ -2225,7 +2225,7 @@ gfm_server_user_auth_modify(struct peer *peer,
 				} else {
 					e = db_user_auth_modify(&arg);
 					if (e != GFARM_ERR_NO_ERROR) {
-						gflog_error(GFARM_MSG_UNFIXED,
+						gflog_error(GFARM_MSG_1005435,
 						    "user %s: "
 						    "modify auth_user_id db "
 						    "failed, "

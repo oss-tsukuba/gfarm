@@ -214,7 +214,7 @@ group_tenant_enter(char *groupname, struct group **gpp)
 
 		name_in_tenant = malloc(len + 1);
 		if (name_in_tenant == NULL) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1005436,
 			    "user_tenant_enter(%s): no memory", groupname);
 			return (GFARM_ERR_NO_MEMORY);
 		}
@@ -268,12 +268,12 @@ group_tenant_enter(char *groupname, struct group **gpp)
 		    &name_in_tenant, sizeof(name_in_tenant),
 		    sizeof(struct group **), &created);
 		if (tenant_entry == NULL) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1005437,
 			    "no memory for group %s in tenant %s",
 			    name_in_tenant, tenant_name);
 			e = GFARM_ERR_NO_MEMORY;
 		} else if (!created) {
-			gflog_fatal(GFARM_MSG_UNFIXED,
+			gflog_fatal(GFARM_MSG_1005438,
 			    "group %s already exists in tenant %s, "
 			    "possibly missing giant_lock",
 			    name_in_tenant, tenant_name);
@@ -283,7 +283,7 @@ group_tenant_enter(char *groupname, struct group **gpp)
 	}
 	if (*group_hashtab_ref_in_tenant == NULL ||
 	    e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005439,
 		    "no meory for group_hashtab of group %s tenant %s",
 		    name_in_tenant, tenant_name);
 		gfarm_hash_purge(group_hashtab, &groupname, sizeof(groupname));
@@ -910,7 +910,7 @@ gfm_server_group_info_get_by_names(struct peer *peer,
 
 	if (no_memory) {
 		e = GFARM_ERR_NO_MEMORY;
-		gflog_error(GFARM_MSG_UNFIXED, "%s (%s@%s): %s",
+		gflog_error(GFARM_MSG_1005440, "%s (%s@%s): %s",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    gfarm_error_string(e));
 	} else {
@@ -1031,7 +1031,7 @@ group_info_add_tenant(struct gfarm_group_info *gi, struct tenant *tenant,
 
 	for (i = 0; i < gi->nusers; i++) {
 		if (strchr(gi->usernames[i], GFARM_TENANT_DELIMITER) != NULL) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1005441,
 			    "%s (%s@%s) group '%s', user '%s': "
 			    "'+' is not allowed as user name",
 			    diag,
@@ -1116,22 +1116,22 @@ gfm_server_group_info_set(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((process = peer_get_process(peer)) == NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s): no process",
+		gflog_debug(GFARM_MSG_1005442, "%s (%s@%s): no process",
 		    diag, peer_get_username(peer), peer_get_hostname(peer));
 	} else if ((tenant = process_get_tenant(process)) == NULL) {
 		e = GFARM_ERR_INTERNAL_ERROR;
-		gflog_error(GFARM_MSG_UNFIXED, "%s (%s@%s): no tenant: %s",
+		gflog_error(GFARM_MSG_1005443, "%s (%s@%s): no tenant: %s",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    gfarm_error_string(e));
 	} else if (!user_is_tenant_admin(user, tenant)) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s): %s",
+		gflog_debug(GFARM_MSG_1005444, "%s (%s@%s): %s",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    gfarm_error_string(e));
 	} else if (!(is_super_admin = user_is_super_admin(user)) &&
 	    strchr(gi.groupname, GFARM_TENANT_DELIMITER) != NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005445,
 		    "%s (%s@%s) '%s': '+' is not allowed as group name",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    gi.groupname);
@@ -1148,7 +1148,7 @@ gfm_server_group_info_set(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_INVALID_ARGUMENT;
 	} else if (!is_super_admin && (e = group_info_add_tenant(&gi, tenant,
 	    peer, diag)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005446,
 		    "group_info_add_tenant() failed: %s",
 		    gfarm_error_string(e));
 	} else if ((e = group_user_tenant_check(&gi, diag))
@@ -1252,16 +1252,16 @@ gfm_server_group_info_modify(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((process = peer_get_process(peer)) == NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s): no process",
+		gflog_debug(GFARM_MSG_1005447, "%s (%s@%s): no process",
 		    diag, peer_get_username(peer), peer_get_hostname(peer));
 	} else if ((tenant = process_get_tenant(process)) == NULL) {
 		e = GFARM_ERR_INTERNAL_ERROR;
-		gflog_error(GFARM_MSG_UNFIXED, "%s (%s@%s): no tenant: %s",
+		gflog_error(GFARM_MSG_1005448, "%s (%s@%s): no tenant: %s",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    gfarm_error_string(e));
 	} else if (!user_is_tenant_admin(user, tenant)) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s): %s",
+		gflog_debug(GFARM_MSG_1005449, "%s (%s@%s): %s",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    gfarm_error_string(e));
 	} else if ((group = (is_super_admin = user_is_super_admin(user)) ?
@@ -1272,7 +1272,7 @@ gfm_server_group_info_modify(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_NO_SUCH_GROUP;
 	} else if (!is_super_admin && (e = group_info_add_tenant(&gi, tenant,
 	    peer, diag)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005450,
 		    "group_info_add_tenant() failed: %s",
 		    gfarm_error_string(e));
 	} else if ((e = group_user_tenant_check(&gi, diag))
@@ -1327,16 +1327,16 @@ gfm_server_group_info_remove(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((process = peer_get_process(peer)) == NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s): no process",
+		gflog_debug(GFARM_MSG_1005451, "%s (%s@%s): no process",
 		    diag, peer_get_username(peer), peer_get_hostname(peer));
 	} else if ((tenant = process_get_tenant(process)) == NULL) {
 		e = GFARM_ERR_INTERNAL_ERROR;
-		gflog_error(GFARM_MSG_UNFIXED, "%s (%s@%s): no tenant: %s",
+		gflog_error(GFARM_MSG_1005452, "%s (%s@%s): no tenant: %s",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    gfarm_error_string(e));
 	} else if (!user_is_tenant_admin(user, tenant)) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s): %s",
+		gflog_debug(GFARM_MSG_1005453, "%s (%s@%s): %s",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    gfarm_error_string(e));
 	} else if (!tenant_needs_chroot(tenant) && (
@@ -1350,7 +1350,7 @@ gfm_server_group_info_remove(struct peer *peer, int from_client, int skip)
 	} else if (!(is_super_admin = user_is_super_admin(user)) &&
 	    strchr(groupname, GFARM_TENANT_DELIMITER) != NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005454,
 		    "%s (%s@%s) '%s': '+' is not allowed as group name",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    groupname);
@@ -1364,7 +1364,7 @@ gfm_server_group_info_remove(struct peer *peer, int from_client, int skip)
 		else
 			e = group_remove_in_tenant(groupname, tenant);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1005455,
 			    "%s (%s@%s) '%s': %s", diag,
 			    peer_get_username(peer), peer_get_hostname(peer),
 			    groupname, gfarm_error_string(e));

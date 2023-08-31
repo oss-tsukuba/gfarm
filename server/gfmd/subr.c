@@ -462,13 +462,13 @@ alloc_name_with_tenant(const char *name, const char *tenant_name,
 	/* NOTE: strlen(existing_string) + 2 never overflows */
 	sz = gfarm_size_add(&overflow, strlen(name) + 2, strlen(tenant_name));
 	if (overflow) {
-		gflog_error(GFARM_MSG_UNFIXED, "%s: overflow for name %s%c%s",
+		gflog_error(GFARM_MSG_1005371, "%s: overflow for name %s%c%s",
 		    diag, name, GFARM_TENANT_DELIMITER, tenant_name);
 		return (NULL);
 	}
 	GFARM_MALLOC_ARRAY(name_with_tenant, sz);
 	if (name_with_tenant == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED, "%s: no memory for name %s%c%s",
+		gflog_error(GFARM_MSG_1005372, "%s: no memory for name %s%c%s",
 		    diag, name, GFARM_TENANT_DELIMITER, tenant_name);
 		return (NULL);
 	}
@@ -491,7 +491,7 @@ alloc_name_without_tenant(const char *name, const char *diag)
 	/* "len + 1" shouldn't overflow */
 	GFARM_MALLOC_ARRAY(name_without_tenant, len + 1);
 	if (name_without_tenant == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005373,
 		    "%s: no memory to allocate name %s without %s",
 		    diag, name, delim);
 		return (NULL);

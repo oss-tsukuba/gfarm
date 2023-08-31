@@ -52,14 +52,14 @@ gfarm_config_pathname_for_client(const char *name, const char *diag,
 	len = gfarm_size_add(&overflow, len, 2); /* '/' + '\0' */
 	if (overflow) {
 		e = GFARM_ERR_VALUE_TOO_LARGE_TO_BE_STORED_IN_DATA_TYPE;
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s/%s): %s",
+		gflog_debug(GFARM_MSG_1005249, "%s (%s/%s): %s",
 		    diag, home, name, gfarm_error_string(e));
 		return (e);
 	}
 	GFARM_MALLOC_ARRAY(pathname, strlen(home) + 1 + strlen(name) + 1);
 	if (pathname == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s/%s): %s",
+		gflog_debug(GFARM_MSG_1005250, "%s (%s/%s): %s",
 		    diag, home, name, gfarm_error_string(e));
 		return (e);
 	}

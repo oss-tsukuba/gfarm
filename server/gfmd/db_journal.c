@@ -1315,7 +1315,7 @@ db_journal_write_user_auth_size_add(enum journal_operation ope,
 		ua->username,
 		ua->auth_id_type,
 		ua->auth_user_id)) != GFARM_ERR_NO_ERROR) {
-			GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+			GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1005491,
 			"gfp_xdr_send_size_add", e, ope);
 		return (e);
 	}
@@ -1334,7 +1334,7 @@ db_journal_write_user_auth_core(enum journal_operation ope, void *arg)
 		m->username,
 		m->auth_id_type,
 		m->auth_user_id)) != GFARM_ERR_NO_ERROR) {
-			GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+			GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1005492,
 			"gfp_xdr_send", e, ope);
 		return (e);
 	}
@@ -1351,7 +1351,7 @@ db_journal_read_user_auth(struct gfp_xdr *xdr, enum journal_operation ope,
 
 	GFARM_MALLOC(arg);
 	if (arg == NULL) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1005493,
 		    "GFARM_MALLOC", GFARM_ERR_NO_MEMORY, ope);
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -1361,7 +1361,7 @@ db_journal_read_user_auth(struct gfp_xdr *xdr, enum journal_operation ope,
 	    &arg->username,
 	    &arg->auth_id_type,
 	    &arg->auth_user_id)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1005494,
 		    "gfp_xdr_recv", e, ope);
 	}
 	if (e == GFARM_ERR_NO_ERROR)
@@ -1409,7 +1409,7 @@ db_journal_write_user_auth_remove_size_add(enum journal_operation ope,
 	    GFM_JOURNAL_USER_AUTH_REMOVE_XDR_FMT,
 	    ua->username,
 	    ua->auth_id_type)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1005495,
 		    "gfp_xdr_send_size_add", e, ope);
 		return (e);
 	}
@@ -1427,7 +1427,7 @@ db_journal_write_user_auth_remove_core(enum journal_operation ope, void *arg)
 	    GFM_JOURNAL_USER_AUTH_REMOVE_XDR_FMT,
 	    m->username,
 	    m->auth_id_type)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1005496,
 		    "gfp_xdr_send", e, ope);
 		return (e);
 	}
@@ -1454,7 +1454,7 @@ db_journal_read_user_auth_remove(struct gfp_xdr *xdr,
 
 	GFARM_MALLOC(arg);
 	if (arg == NULL) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1005497,
 		    "GFARM_MALLOC", GFARM_ERR_NO_MEMORY, ope);
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -1462,7 +1462,7 @@ db_journal_read_user_auth_remove(struct gfp_xdr *xdr,
 	    GFM_JOURNAL_USER_AUTH_REMOVE_XDR_FMT,
 	    &arg->username,
 	    &arg->auth_id_type)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1005498,
 		    "gfp_xdr_recv", e, ope);
 	}
 	if (e == GFARM_ERR_NO_ERROR)

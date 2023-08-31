@@ -331,7 +331,7 @@ xattr_check_root_ea(struct inode *inode, const char *attrname,
 		return (0);
 
 	if (memchr(*valuep, GFARM_TENANT_DELIMITER, *sizep) != NULL) {
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1005457,
 		    "%s (%s@%s) tried to set xattr %s to '%.*s'",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    attrname, (int)*sizep, *(char **)valuep);
@@ -450,7 +450,7 @@ xattr_set(int xmlMode, struct peer *peer, struct tenant *tenant,
 		} else if (xattr_check_root_ea(inode, attrname, valuep, sizep,
 		    peer, &e, diag)) {
 			if (e != GFARM_ERR_NO_ERROR) {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1005458,
 				    "xattr_check_root_ea(): %s",
 				    gfarm_error_string(e));
 				return (e);
@@ -568,7 +568,7 @@ gfm_server_setxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 	db_waitctx_init(waitctx);
 	giant_lock();
 	if (!from_client) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005459,
 		    "%s: from gfsd %s", diag, peer_get_hostname(peer));
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((process = peer_get_process(peer)) == NULL) {
@@ -577,7 +577,7 @@ gfm_server_setxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((tenant = process_get_tenant(process)) == NULL) {
 		e = GFARM_ERR_INTERNAL_ERROR;
-		gflog_error(GFARM_MSG_UNFIXED, "%s (%s@%s): no tenant: %s",
+		gflog_error(GFARM_MSG_1005460, "%s (%s@%s): no tenant: %s",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    gfarm_error_string(e));
 	} else if ((e = peer_fdpair_get_current(peer, &fd)) !=

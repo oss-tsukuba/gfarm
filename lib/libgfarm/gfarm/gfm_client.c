@@ -208,19 +208,19 @@ gfm_client_get_username_in_tenant(struct gfm_connection *gfm_server,
 
 	if ((e = gfm_client_user_info_get_my_own_request(gfm_server))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1005278,
 		    "%s: user_info_get_my_own request: %s",
 		    diag, gfarm_error_string(e));
 	} else if ((e = gfm_client_user_info_get_my_own_result(gfm_server,
 	    &user)) != GFARM_ERR_NO_ERROR) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1005279,
 		    "%s: user_info_get_my_own result: %s",
 		    diag, gfarm_error_string(e));
 	} else {
 		if ((username_in_tenant =
 		    gfarm_alloc_name_in_tenant(user.username)) == NULL) {
 			e = GFARM_ERR_NO_MEMORY;
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1005280,
 			    "%s: no memory for username <%s>",
 			    diag, user.username);
 		} else { /* cache the result */
@@ -865,40 +865,40 @@ gfm_client_process_initialize(struct gfm_connection *gfm_server)
 
 	if ((e = gfm_client_compound_begin_request(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1005281,
 		    "%s: compound_begin request: %s",
 		    diag, gfarm_error_string(e));
 	else if ((e = gfm_client_process_alloc_request(gfm_server,
 	    GFM_PROTO_PROCESS_KEY_TYPE_SHAREDSECRET,
 	    gfm_server->pid_key,
 	    GFM_PROTO_PROCESS_KEY_LEN_SHAREDSECRET)) != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1005282,
 		    "%s: process_alloc request: %s",
 		    diag, gfarm_error_string(e));
 	else if ((e = gfm_client_user_info_get_my_own_request(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1005283,
 		    "%s: user_info_get_my_own request: %s",
 		    diag, gfarm_error_string(e));
 	else if ((e = gfm_client_compound_end_request(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1005284,
 		    "%s: compound_end request: %s",
 		    diag, gfarm_error_string(e));
 
 	else if ((e = gfm_client_compound_begin_result(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1005285,
 		    "%s: compound_begin result: %s",
 		    diag, gfarm_error_string(e));
 	else if ((e = gfm_client_process_alloc_result(gfm_server,
 	    &gfm_server->pid)) != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1005286,
 		    "%s: process_alloc result: %s",
 		    diag, gfarm_error_string(e));
 	else if ((e = gfm_client_user_info_get_my_own_result(gfm_server,
 	    &user)) != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1005287,
 		    "%s: user_info_get_my_own result: %s",
 		    diag, gfarm_error_string(e));
 	else {
@@ -906,19 +906,19 @@ gfm_client_process_initialize(struct gfm_connection *gfm_server)
 
 		if ((e = gfm_client_compound_end_result(gfm_server))
 		    != GFARM_ERR_NO_ERROR)
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1005288,
 			    "%s: compound_end request: %s",
 			    diag, gfarm_error_string(e));
 		else if ((e = gfp_cached_connection_set_username(
 		    gfm_server->cache_entry, user.username))
 		    != GFARM_ERR_NO_ERROR) {
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1005289,
 			    "%s: setting global username: %s",
 			    diag, gfarm_error_string(e));
 		} else if ((username_in_tenant =
 		    gfarm_alloc_name_in_tenant(user.username)) == NULL) {
 			e = GFARM_ERR_NO_MEMORY;
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1005290,
 			    "%s: no memory for username <%s>",
 			    diag, user.username);
 		} else {

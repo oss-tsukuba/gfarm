@@ -536,13 +536,13 @@ gfarm_authorize_sharedsecret_common(struct gfp_xdr *conn,
 
 	e = gfp_xdr_recv(conn, 0, &eof, "s", &global_username);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1005261,
 		    "%s: authorize %s: reading username",
 		    hostname, auth_method_name);
 		return (e);
 	}
 	if (eof) {
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1005262,
 		    "%s: authorize %s: unexpected EOF",
 		    hostname, auth_method_name);
 		return (GFARM_ERR_PROTOCOL);
@@ -564,7 +564,7 @@ gfarm_authorize_sharedsecret_common(struct gfp_xdr *conn,
 		    GFARM_AUTH_METHOD_SHAREDSECRET,
 		    global_username, &peer_role, NULL);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_notice(GFARM_MSG_UNFIXED,
+			gflog_notice(GFARM_MSG_1005263,
 			    "(%s@%s) authorize %s: "
 			    "the global username isn't registered in gfmd: %s",
 			    global_username, hostname, auth_method_name,
@@ -583,7 +583,7 @@ gfarm_authorize_sharedsecret_common(struct gfp_xdr *conn,
 		e = gfarm_global_to_local_username_by_url(GFARM_PATH_ROOT,
 		    global_username, &local_username);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1005264,
 			    "(%s@%s) authorize %s: "
 			    "cannot map global username into local username: "
 			    "%s",
@@ -600,7 +600,7 @@ gfarm_authorize_sharedsecret_common(struct gfp_xdr *conn,
 	} else {
 		GFARM_MALLOC_ARRAY(buf, gfarm_ctxp->getpw_r_bufsz);
 		if (buf == NULL) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1005265,
 			    "(%s@%s) %s: authorize %s: %s",
 			    global_username, hostname, auth_method_name,
 			    local_username, gfarm_error_string(e));
@@ -608,7 +608,7 @@ gfarm_authorize_sharedsecret_common(struct gfp_xdr *conn,
 			error = GFARM_AUTH_ERROR_RESOURCE_UNAVAILABLE;
 		} else if (getpwnam_r(local_username, &pwbuf, buf,
 		    gfarm_ctxp->getpw_r_bufsz, &pwd) != 0 || pwd == NULL) {
-			gflog_notice(GFARM_MSG_UNFIXED,
+			gflog_notice(GFARM_MSG_1005266,
 			    "(%s@%s) %s: authorize %s: "
 			    "local account doesn't exist",
 			    global_username, hostname, auth_method_name,
@@ -634,7 +634,7 @@ gfarm_authorize_sharedsecret_common(struct gfp_xdr *conn,
 	assert(local_username != NULL);
 
 	/* succeed, do logging */
-	gflog_notice(GFARM_MSG_UNFIXED,
+	gflog_notice(GFARM_MSG_1005267,
 	    "(%s@%s) authenticated: auth=%s local_user=%s",
 	    global_username, hostname, auth_method_name, local_username);
 

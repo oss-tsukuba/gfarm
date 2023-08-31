@@ -493,7 +493,7 @@ dirset_user_lookup(const char *username, struct peer *peer, struct user **up,
 	peer_user = peer_get_user(peer); /* not NULL if from_client */
 	if (peer_user == NULL) {
 		e = GFARM_ERR_INTERNAL_ERROR;
-		gflog_error(GFARM_MSG_UNFIXED, "%s (@%s) no user: %s",
+		gflog_error(GFARM_MSG_1005475, "%s (@%s) no user: %s",
 		    diag, peer_get_hostname(peer), gfarm_error_string(e));
 		return (e);
 	}
@@ -501,7 +501,7 @@ dirset_user_lookup(const char *username, struct peer *peer, struct user **up,
 	process = peer_get_process(peer);
 	if (process == NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s): no process",
+		gflog_debug(GFARM_MSG_1005476, "%s (%s@%s): no process",
 		    diag, peer_get_username(peer), peer_get_hostname(peer));
 		return (e);
 	}
@@ -509,7 +509,7 @@ dirset_user_lookup(const char *username, struct peer *peer, struct user **up,
 	tenant = process_get_tenant(process);
 	if (tenant == NULL) {
 		e = GFARM_ERR_INTERNAL_ERROR;
-		gflog_error(GFARM_MSG_UNFIXED, "%s (%s@%s): no tenant: %s",
+		gflog_error(GFARM_MSG_1005477, "%s (%s@%s): no tenant: %s",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    gfarm_error_string(e));
 		return (e);
@@ -546,7 +546,7 @@ dirset_all_users_or_lookup(int all_users,
 	peer_user = peer_get_user(peer); /* not NULL if from_client */
 	if (peer_user == NULL) {
 		e = GFARM_ERR_INTERNAL_ERROR;
-		gflog_error(GFARM_MSG_UNFIXED, "%s (@%s) no user: %s",
+		gflog_error(GFARM_MSG_1005478, "%s (@%s) no user: %s",
 		    diag, peer_get_hostname(peer), gfarm_error_string(e));
 		return (e);
 	}
@@ -554,7 +554,7 @@ dirset_all_users_or_lookup(int all_users,
 	process = peer_get_process(peer);
 	if (process == NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s): no process",
+		gflog_debug(GFARM_MSG_1005479, "%s (%s@%s): no process",
 		    diag, peer_get_username(peer), peer_get_hostname(peer));
 		return (e);
 	}
@@ -562,7 +562,7 @@ dirset_all_users_or_lookup(int all_users,
 	tenant = process_get_tenant(process);
 	if (tenant == NULL) {
 		e = GFARM_ERR_INTERNAL_ERROR;
-		gflog_error(GFARM_MSG_UNFIXED, "%s (%s@%s): no tenant: %s",
+		gflog_error(GFARM_MSG_1005480, "%s (%s@%s): no tenant: %s",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    gfarm_error_string(e));
 		return (e);
@@ -744,11 +744,11 @@ gfm_server_dirset_info_list(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((process = peer_get_process(peer)) == NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s): no process",
+		gflog_debug(GFARM_MSG_1005481, "%s (%s@%s): no process",
 		    diag, peer_get_username(peer), peer_get_hostname(peer));
 	} else if ((tenant = process_get_tenant(process)) == NULL) {
 		e = GFARM_ERR_INTERNAL_ERROR;
-		gflog_error(GFARM_MSG_UNFIXED, "%s (%s@%s): no tenant: %s",
+		gflog_error(GFARM_MSG_1005482, "%s (%s@%s): no tenant: %s",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    gfarm_error_string(e));
 	} else if ((e = dirset_all_users_or_lookup(all_users, username, peer,
@@ -1114,7 +1114,7 @@ gfm_server_dirset_dir_list(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((tenant = process_get_tenant(process)) == NULL) {
 		e = GFARM_ERR_INTERNAL_ERROR;
-		gflog_error(GFARM_MSG_UNFIXED, "%s (%s@%s): no tenant: %s",
+		gflog_error(GFARM_MSG_1005483, "%s (%s@%s): no tenant: %s",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    gfarm_error_string(e));
 	} else if ((e = dirset_all_users_or_lookup(all_users, username, peer,

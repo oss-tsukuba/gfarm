@@ -164,7 +164,7 @@ tty_get_passwd(char *buf, size_t maxlen, const char *prompt, int *lenptr)
 				ret = GFARM_ERR_NO_ERROR;
 			} else {
 				if (s_errno != 0) {
-					gflog_tls_error(GFARM_MSG_UNFIXED,
+					gflog_tls_error(GFARM_MSG_1005517,
 						"Failed to get a password: %s",
 						strerror(s_errno));
 					ret = gfarm_errno_to_error(s_errno);
@@ -173,12 +173,12 @@ tty_get_passwd(char *buf, size_t maxlen, const char *prompt, int *lenptr)
 		} else {
 ttyerr:
 			ret = gfarm_errno_to_error(s_errno);
-			gflog_tls_error(GFARM_MSG_UNFIXED,
+			gflog_tls_error(GFARM_MSG_1005518,
 				"stdin is not a terminal: %s",
 				gfarm_error_string(ret));
 		}
 	} else {
-		gflog_tls_error(GFARM_MSG_UNFIXED,
+		gflog_tls_error(GFARM_MSG_1005519,
 			"Invalid buffer and/or buffer length "
 			"for password input: %p, %zu", buf, maxlen);
 		ret = GFARM_ERR_INVALID_ARGUMENT;
@@ -236,7 +236,7 @@ is_user_in_group(uid_t uid, gid_t gid)
 				} else {
 					if (errno != 0) {
 						gflog_tls_error(
-							GFARM_MSG_UNFIXED,
+							GFARM_MSG_1005520,
 							"Failed to acquire a "
 							"group entry for "
 							"gid %d: %s",
@@ -245,7 +245,7 @@ is_user_in_group(uid_t uid, gid_t gid)
 							errno);
 					} else {
 						gflog_tls_error(
-							GFARM_MSG_UNFIXED,
+							GFARM_MSG_1005521,
 							"Can't find the group "
 							"%d.", gid);
 						ret = gfarm_errno_to_error(
@@ -255,13 +255,13 @@ is_user_in_group(uid_t uid, gid_t gid)
 			}
 		} else {
 			if (errno != 0) {
-				gflog_tls_error(GFARM_MSG_UNFIXED,
+				gflog_tls_error(GFARM_MSG_1005522,
 					"Failed to acquire a passwd entry "
 					"for uid %d: %s",
 					uid, strerror(errno));
 				ret = gfarm_errno_to_error(errno);
 			} else {
-				gflog_tls_error(GFARM_MSG_UNFIXED,
+				gflog_tls_error(GFARM_MSG_1005523,
 					"Can't find the user %d.", uid);
 				ret = GFARM_ERR_INVALID_ARGUMENT;
 			}
@@ -298,25 +298,25 @@ is_file_readable(int fd, const char *file)
 				ret = GFARM_ERR_NO_ERROR;
 			} else {
 				ret = GFARM_ERR_PERMISSION_DENIED;
-				gflog_tls_debug(GFARM_MSG_UNFIXED,
+				gflog_tls_debug(GFARM_MSG_1005524,
 					"%s: %s", file,
 					gfarm_error_string(ret));
 
 			}
 		} else {
 			if (errno != 0) {
-				gflog_tls_debug(GFARM_MSG_UNFIXED,
+				gflog_tls_debug(GFARM_MSG_1005525,
 					"Failed to stat(\"%s\"): %s",
 					file, strerror(errno));
 				ret = gfarm_errno_to_error(errno);
 			} else {
-				gflog_tls_debug(GFARM_MSG_UNFIXED,
+				gflog_tls_debug(GFARM_MSG_1005526,
 					"%s is a directory.", file);
 				ret = GFARM_ERR_IS_A_DIRECTORY;
 			}
 		}
 	} else {
-		gflog_tls_error(GFARM_MSG_UNFIXED,
+		gflog_tls_error(GFARM_MSG_1005527,
 			"Specified filename is nul or "
 			"file invalid file descriptor.");
 		ret = GFARM_ERR_INVALID_ARGUMENT;
@@ -351,7 +351,7 @@ is_valid_prvkey_file_permission(int fd, const char *file)
 					  S_IRUSR) != 0))) {
 					ret = GFARM_ERR_NO_ERROR;
 				} else {
-					gflog_tls_error(GFARM_MSG_UNFIXED,
+					gflog_tls_error(GFARM_MSG_1005528,
 						"The file perrmssion of the "
 						"specified file \"%s\" is "
 						"open too widely. It would "
@@ -364,7 +364,7 @@ is_valid_prvkey_file_permission(int fd, const char *file)
 #undef GFMERR_PKEY_PERM
 				}
 			} else {
-				gflog_tls_error(GFARM_MSG_UNFIXED,
+				gflog_tls_error(GFARM_MSG_1005529,
 					"This process is about to read other "
 					"uid(%d)'s private key file \"%s\", "
 					"which is strongly discouraged even "
@@ -378,18 +378,18 @@ is_valid_prvkey_file_permission(int fd, const char *file)
 			}
 		} else {
 			if (errno != 0) {
-				gflog_tls_debug(GFARM_MSG_UNFIXED,
+				gflog_tls_debug(GFARM_MSG_1005530,
 					"Can't access %s: %s",
 					file, strerror(errno));
 				ret = gfarm_errno_to_error(errno);
 			} else {
-				gflog_tls_error(GFARM_MSG_UNFIXED,
+				gflog_tls_error(GFARM_MSG_1005531,
 					"%s is a directory, not a file", file);
 				ret = GFARM_ERR_IS_A_DIRECTORY;
 			}
 		}
 	} else {
-		gflog_tls_error(GFARM_MSG_UNFIXED,
+		gflog_tls_error(GFARM_MSG_1005532,
 			"Specified filename is nul or "
 			"file invalid file descriptor.");
 		ret = GFARM_ERR_INVALID_ARGUMENT;
@@ -420,24 +420,24 @@ is_valid_cert_store_dir(const char *dir)
 				ret = GFARM_ERR_NO_ERROR;
 			} else {
 				ret = GFARM_ERR_PERMISSION_DENIED;
-				gflog_tls_error(GFARM_MSG_UNFIXED,
+				gflog_tls_error(GFARM_MSG_1005533,
 					"%s: %s", dir,
 					gfarm_error_string(ret));
 			}
 		} else {
 			if (errno != 0) {
-				gflog_tls_error(GFARM_MSG_UNFIXED,
+				gflog_tls_error(GFARM_MSG_1005534,
 					"Can't access to %s: %s",
 					dir, strerror(errno));
 				ret = gfarm_errno_to_error(errno);
 			} else {
-				gflog_tls_error(GFARM_MSG_UNFIXED,
+				gflog_tls_error(GFARM_MSG_1005535,
 					"%s is not a directory.", dir);
 				ret = GFARM_ERR_NOT_A_DIRECTORY;
 			}
 		}
 	} else {
-		gflog_tls_error(GFARM_MSG_UNFIXED,
+		gflog_tls_error(GFARM_MSG_1005536,
 			"Specified CA cert directory name is nul.");
 		ret = GFARM_ERR_INVALID_ARGUMENT;
 	}
@@ -604,12 +604,12 @@ get_peer_dn(X509_NAME *pn, int mode, char **nameptr, int maxlen)
 		} else {
 			if (buf == NULL && len > 0) {
 				ret = GFARM_ERR_NO_MEMORY;
-				gflog_tls_error(GFARM_MSG_UNFIXED,
+				gflog_tls_error(GFARM_MSG_1005537,
 					"Can't allocate a %d bytes buffer for "
 					"a peer SubjectDN.", len);
 			} else if (len <= 0) {
 				ret = GFARM_ERR_INTERNAL_ERROR;
-				gflog_tls_error(GFARM_MSG_UNFIXED,
+				gflog_tls_error(GFARM_MSG_1005538,
 					"Failed to acquire a length of peer "
 					"SubjectDN.");
 			}
@@ -617,7 +617,7 @@ get_peer_dn(X509_NAME *pn, int mode, char **nameptr, int maxlen)
 	} else {
 		if (bio == NULL) {
 			ret = GFARM_ERR_NO_MEMORY;
-			gflog_tls_error(GFARM_MSG_UNFIXED,
+			gflog_tls_error(GFARM_MSG_1005539,
 				"Can't allocate a BIO.");
 		} else {
 			ret = GFARM_ERR_INVALID_ARGUMENT;
@@ -690,7 +690,7 @@ get_peer_dn_gsi_ish(X509_NAME *pn, char **nameptr, int maxlen)
 					*nameptr = dn;
 				} else {
 					ret = GFARM_ERR_NO_MEMORY;
-					gflog_tls_error(GFARM_MSG_UNFIXED,
+					gflog_tls_error(GFARM_MSG_1005540,
 						"Can't allocate a buffer for "
 						"a GSI-compat SubjectDN.");
 				}
@@ -699,7 +699,7 @@ get_peer_dn_gsi_ish(X509_NAME *pn, char **nameptr, int maxlen)
 			if (unlikely(ret == GFARM_ERR_NO_ERROR &&
 					cnp == NULL)) {
 				ret = GFARM_ERR_INVALID_CREDENTIAL;
-				gflog_tls_error(GFARM_MSG_UNFIXED,
+				gflog_tls_error(GFARM_MSG_1005541,
 					"A SubjectDN \"%s\" has no CN.", buf);
 			}
 		}
@@ -747,7 +747,7 @@ get_peer_cn(X509_NAME *pn, char **nameptr, int maxlen, bool allow_many_cn)
 					} else {
 						ret = GFARM_ERR_NO_MEMORY;
 						gflog_tls_error(
-							GFARM_MSG_UNFIXED,
+							GFARM_MSG_1005542,
 							"Can't allocate a "
 							"buffer for a CN.");
 						*nameptr = NULL;
@@ -759,11 +759,11 @@ get_peer_cn(X509_NAME *pn, char **nameptr, int maxlen, bool allow_many_cn)
 			}
 		} else if (pos >= 0 && pos2 >= 0) {
 			ret = GFARM_ERR_INVALID_CREDENTIAL;
-			gflog_tls_notice(GFARM_MSG_UNFIXED,
+			gflog_tls_notice(GFARM_MSG_1005543,
 				"More than one CNs are included.");
 		} else if (pos == -1 || pos == -2) {
 			ret = GFARM_ERR_INVALID_CREDENTIAL;
-			gflog_tls_notice(GFARM_MSG_UNFIXED,
+			gflog_tls_notice(GFARM_MSG_1005544,
 				"No CN is included.");
 		}
 	} else {
@@ -849,7 +849,7 @@ iterate_file_in_a_dir(const char *dir,
 		   (d = opendir(dir)) == NULL || errno != 0)) {
 		if (errno != 0) {
 			ret = gfarm_errno_to_error(errno);
-			gflog_tls_error(GFARM_MSG_UNFIXED,
+			gflog_tls_error(GFARM_MSG_1005545,
 				"Can't open a directory %s: %s", dir,
 				gfarm_error_string(ret));
 		} else {
@@ -889,7 +889,7 @@ iterate_file_in_a_dir(const char *dir,
 				 * ignore errors. iterate all the files.
 				 */
 			} else {
-				gflog_tls_warning(GFARM_MSG_UNFIXED,
+				gflog_tls_warning(GFARM_MSG_1005546,
 					"Skip to treat %s.", filebuf);
 				continue;
 			}
@@ -898,7 +898,7 @@ iterate_file_in_a_dir(const char *dir,
 				ret = GFARM_ERR_NO_ERROR;
 			} else {
 				ret = gfarm_errno_to_error(errno);
-				gflog_tls_error(GFARM_MSG_UNFIXED,
+				gflog_tls_error(GFARM_MSG_1005547,
 					"readdir(3) error: %s (%d)",
 					gfarm_error_string(ret), errno);
 			}
@@ -949,11 +949,11 @@ tls_load_prvkey(const char *file, EVP_PKEY **keyptr)
 				int rsn = ERR_GET_REASON(ERR_peek_error());
 				if (rsn == PEM_R_BAD_DECRYPT ||
 					rsn == EVP_R_BAD_DECRYPT) {
-					gflog_tls_error(GFARM_MSG_UNFIXED,
+					gflog_tls_error(GFARM_MSG_1005548,
 						"Wrong passphrase for "
 						"private key file %s.", file);
 				} else {
-					gflog_tls_error(GFARM_MSG_UNFIXED,
+					gflog_tls_error(GFARM_MSG_1005549,
 						"Can't read a PEM format "
 						"private key from %s.", file);
 				}
@@ -961,7 +961,7 @@ tls_load_prvkey(const char *file, EVP_PKEY **keyptr)
 			}
 		} else {
 			if (errno != 0) {
-				gflog_tls_error(GFARM_MSG_UNFIXED,
+				gflog_tls_error(GFARM_MSG_1005550,
 					"Can't open %s: %s", file,
 					strerror(errno));
 				ret = gfarm_errno_to_error(errno);
@@ -1023,7 +1023,7 @@ accumulate_x509_names_from_file(const char *file,
 				}
 				total_certs++;
 				if (do_dbg_msg == true) {
-					gflog_tls_debug(GFARM_MSG_UNFIXED,
+					gflog_tls_debug(GFARM_MSG_1005551,
 						"push a cert \"%s\" to a "
 						"stack from %s.", b, file);
 				}
@@ -1039,7 +1039,7 @@ accumulate_x509_names_from_file(const char *file,
 					X509_NAME_free(xndup);
 				}
 				if (do_dbg_msg == true) {
-					gflog_tls_debug(GFARM_MSG_UNFIXED,
+					gflog_tls_debug(GFARM_MSG_1005552,
 						"failed to push a cert \"%s\" "
 						"to a stack from %s.",
 						b, file);
@@ -1049,11 +1049,11 @@ accumulate_x509_names_from_file(const char *file,
 				ret = GFARM_ERR_TLS_RUNTIME_ERROR;
 				if (xn != NULL && got_dn ==
 					GFARM_ERR_NO_ERROR) {
-					gflog_tls_error(GFARM_MSG_UNFIXED,
+					gflog_tls_error(GFARM_MSG_1005553,
 						"Can't add a cert \"%s\" "
 						"from %s.", b, file);
 				} else {
-					gflog_tls_error(GFARM_MSG_UNFIXED,
+					gflog_tls_error(GFARM_MSG_1005554,
 						"Can't add a cert from %s.",
 						file);
 				}
@@ -1074,14 +1074,14 @@ accumulate_x509_names_from_file(const char *file,
 				*n_added = total_certs;
 			}
 			if (total_certs == 0) {
-				gflog_tls_warning(GFARM_MSG_UNFIXED,
+				gflog_tls_warning(GFARM_MSG_1005555,
 					"No cert is added from %s.", file);
 			}
 		}
 	} else {
 		if (is_valid_string(file) == true && fd == NULL) {
 			ret = gfarm_errno_to_error(errno);
-			gflog_tls_error(GFARM_MSG_UNFIXED,
+			gflog_tls_error(GFARM_MSG_1005556,
 				"Can't open %s: %s.",
 				file, gfarm_error_string(ret));
 		} else {
@@ -1176,7 +1176,7 @@ tls_set_ca_path(SSL_CTX *ssl_ctx,
 				NULL, ca_path) == 1)) {
 			ret = GFARM_ERR_NO_ERROR;
 		} else {
-			gflog_tls_error(GFARM_MSG_UNFIXED,
+			gflog_tls_error(GFARM_MSG_1005557,
 				"Failed to set CA path to a SSL_CTX.");
 			ret = GFARM_ERR_TLS_RUNTIME_ERROR;
 			goto done;
@@ -1200,14 +1200,14 @@ tls_set_ca_path(SSL_CTX *ssl_ctx,
 				}
 			} else {
 				if (ca_list == NULL) {
-					gflog_tls_error(GFARM_MSG_UNFIXED,
+					gflog_tls_error(GFARM_MSG_1005558,
 						"Can't allocate "
 						"STACK_OF(X509_NAME).");
 					ret = GFARM_ERR_NO_MEMORY;
 					goto done;
 				} else if (ret == GFARM_ERR_NO_ERROR &&
 						ncerts == 0) {
-					gflog_tls_warning(GFARM_MSG_UNFIXED,
+					gflog_tls_warning(GFARM_MSG_1005559,
 						"No cert file is "
 						"added as a valid cert under "
 						"%s directory.", dir);
@@ -1246,14 +1246,14 @@ done:
 					ssl_ctx, ch) == 1)) {
 				ret = GFARM_ERR_NO_ERROR;
 			} else {
-				gflog_tls_error(GFARM_MSG_UNFIXED,
+				gflog_tls_error(GFARM_MSG_1005560,
 					"Failed to set a CA chain path to a "
 					"SSL_CTX");
 				ret = GFARM_ERR_TLS_RUNTIME_ERROR;
 				goto done;
 			}
 		} else {
-			gflog_tls_error(GFARM_MSG_UNFIXED,
+			gflog_tls_error(GFARM_MSG_1005561,
 				"Failed to load a CA cnain path");
 			ret = GFARM_ERR_TLS_RUNTIME_ERROR;
 			goto done;
@@ -1261,7 +1261,7 @@ done:
 	} else {
 		if (ch == NULL) {
 			ret = GFARM_ERR_NO_MEMORY;
-			gflog_tls_error(GFARM_MSG_UNFIXED,
+			gflog_tls_error(GFARM_MSG_1005562,
 				"Can't allocate a X509_STORE: %s",
 				gfarm_error_string(ret));
 		} else {
@@ -1281,14 +1281,14 @@ done:
 					ssl_ctx, ve) == 1)) {
 				ret = GFARM_ERR_NO_ERROR;
 			} else {
-				gflog_tls_error(GFARM_MSG_UNFIXED,
+				gflog_tls_error(GFARM_MSG_1005563,
 					"Failed to set a CA verify path to a "
 					"SSL_CTX");
 				ret = GFARM_ERR_TLS_RUNTIME_ERROR;
 				goto done;
 			}
 		} else {
-			gflog_tls_error(GFARM_MSG_UNFIXED,
+			gflog_tls_error(GFARM_MSG_1005564,
 				"Failed to load a CA verify path");
 			ret = GFARM_ERR_TLS_RUNTIME_ERROR;
 			goto done;
@@ -1296,7 +1296,7 @@ done:
 	} else {
 		if (ch == NULL) {
 			ret = GFARM_ERR_NO_MEMORY;
-			gflog_tls_error(GFARM_MSG_UNFIXED,
+			gflog_tls_error(GFARM_MSG_1005565,
 				"Can't allocate a X509_STORE: %s",
 				gfarm_error_string(ret));
 		} else {
@@ -1358,7 +1358,7 @@ tls_add_extra_certs(SSL_CTX *ssl_ctx, const char *file, int *n_added)
 					NULL)) {
 					get_peer_dn_gsi_ish(xn,
 						&bp, sizeof(b));
-					gflog_tls_debug(GFARM_MSG_UNFIXED,
+					gflog_tls_debug(GFARM_MSG_1005566,
 						"Add a cert \"%s\" from %s.",
 						b, file);
 				}
@@ -1368,11 +1368,11 @@ tls_add_extra_certs(SSL_CTX *ssl_ctx, const char *file, int *n_added)
 				if (xn != NULL) {
 					get_peer_dn_gsi_ish(xn,
 						&bp, sizeof(b));
-					gflog_tls_error(GFARM_MSG_UNFIXED,
+					gflog_tls_error(GFARM_MSG_1005567,
 						"Can't add a cert \"%s\" "
 						"from %s.", b, file);
 				} else {
-					gflog_tls_error(GFARM_MSG_UNFIXED,
+					gflog_tls_error(GFARM_MSG_1005568,
 						"Can't add a cert from %s.",
 						file);
 				}
@@ -1386,7 +1386,7 @@ tls_add_extra_certs(SSL_CTX *ssl_ctx, const char *file, int *n_added)
 				*n_added = n_certs;
 			}
 			if (n_certs == 0) {
-				gflog_tls_warning(GFARM_MSG_UNFIXED,
+				gflog_tls_warning(GFARM_MSG_1005569,
 					"No cert is added from %s.", file);
 			}
 		} else {
@@ -1397,7 +1397,7 @@ tls_add_extra_certs(SSL_CTX *ssl_ctx, const char *file, int *n_added)
 			ret = GFARM_ERR_INVALID_ARGUMENT;
 		} else if (fd == NULL) {
 			ret = gfarm_errno_to_error(errno);
-			gflog_tls_error(GFARM_MSG_UNFIXED,
+			gflog_tls_error(GFARM_MSG_1005570,
 				"Can't open %s: %s.",
 				file, gfarm_error_string(ret));
 		}
@@ -1497,19 +1497,19 @@ tls_set_revoke_path(SSL_CTX *ssl_ctx, const char *revoke_path)
 			if (likely(st == 1)) {
 				ret = GFARM_ERR_NO_ERROR;
 			} else {
-				gflog_tls_error(GFARM_MSG_UNFIXED,
+				gflog_tls_error(GFARM_MSG_1005571,
 					"Failed to set CRL flags "
 					"to an X509_STORE.");
 				ret = GFARM_ERR_TLS_RUNTIME_ERROR;
 			}
 		} else {
-			gflog_tls_error(GFARM_MSG_UNFIXED,
+			gflog_tls_error(GFARM_MSG_1005572,
 				"Failed to set CRL path to an SSL_CTX.");
 			ret = GFARM_ERR_TLS_RUNTIME_ERROR;
 		}
 	} else if (ret != GFARM_ERR_NO_ERROR) {
 		if (tls_has_runtime_error() == true) {
-			gflog_tls_error(GFARM_MSG_UNFIXED,
+			gflog_tls_error(GFARM_MSG_1005573,
 				"Failed to get current X509_STORE from "
 				"an SSL_CTX.");
 			ret = GFARM_ERR_TLS_RUNTIME_ERROR;
@@ -1583,12 +1583,12 @@ tls_verify_callback_body(int ok, X509_STORE_CTX *sctx)
 							ctx->proxy_issuer_,
 							&bp, sizeof(b));
 						gflog_tls_debug(
-							GFARM_MSG_UNFIXED,
+							GFARM_MSG_1005574,
 							"got proxy issure: "
 							"\"%s\"", b);
 					}
 				} else {
-					gflog_tls_error(GFARM_MSG_UNFIXED,
+					gflog_tls_error(GFARM_MSG_1005575,
 						"Can't acquire an issure name "
 						"of the proxy cert.");
 					/* make the auth failure. */
@@ -1604,7 +1604,7 @@ tls_verify_callback_body(int ok, X509_STORE_CTX *sctx)
 				/*
 				 * Must not happen.
 				 */
-				gflog_tls_warning(GFARM_MSG_UNFIXED,
+				gflog_tls_warning(GFARM_MSG_1005576,
 					"Something wrong: got a proxy cert "
 					"and it's authorized by the verify "
 					"flags, but Gfarm itself doesn't "
@@ -1664,7 +1664,7 @@ done:
 			dn = NULL;
 		}
 
-		gflog_tls_debug(GFARM_MSG_UNFIXED, "depth %d; ok %d -> %d; "
+		gflog_tls_debug(GFARM_MSG_1005577, "depth %d; ok %d -> %d; "
 			" cert \"%s\"; error %d -> %d: error string \"%s.\"",
 			vdepth, org_ok, ok, dn, org_verr, verr, verrstr);
 	}
@@ -1699,7 +1699,7 @@ tls_verify_callback_simple(int ok, X509_STORE_CTX *store_ctx)
 		if (get_peer_dn_gsi_ish(sn, &dn, sizeof(dnbuf)) !=
 		    GFARM_ERR_NO_ERROR)
 			dn = "<unprintable_subject_name>";
-		gflog_tls_error(GFARM_MSG_UNFIXED,
+		gflog_tls_error(GFARM_MSG_1005578,
 		    "self certificate verification error: "
 		    "depth %d, cert \"%s\": error %d (%s)",
 		    depth, dn, error, X509_verify_cert_error_string(error));
@@ -1721,7 +1721,7 @@ tls_verify_self_certificate(SSL_CTX *ssl_ctx)
 
 	cert_store = SSL_CTX_get_cert_store(ssl_ctx);
 	if (cert_store == NULL) {
-		gflog_tls_error(GFARM_MSG_UNFIXED,
+		gflog_tls_error(GFARM_MSG_1005579,
 		    "verify self certificate: "
 		    "SSL_CTX_get_cert_store() failed");
 		return (GFARM_ERR_TLS_RUNTIME_ERROR);
@@ -1744,7 +1744,7 @@ tls_verify_self_certificate(SSL_CTX *ssl_ctx)
 
 		st = X509_VERIFY_PARAM_set_flags(tmpvpm, flags);
 		if (st != 1) {
-			gflog_tls_error(GFARM_MSG_UNFIXED,
+			gflog_tls_error(GFARM_MSG_1005580,
 			    "verify self certificate: "
 			    "X509_VERIFY_PARAM_set_flags() failed");
 			return (GFARM_ERR_TLS_RUNTIME_ERROR);
@@ -1756,7 +1756,7 @@ tls_verify_self_certificate(SSL_CTX *ssl_ctx)
 
 	st = SSL_CTX_get0_chain_certs(ssl_ctx, &chain);
 	if (st != 1) {
-		gflog_tls_error(GFARM_MSG_UNFIXED,
+		gflog_tls_error(GFARM_MSG_1005581,
 		    "verify self certificate: "
 		    "SSL_CTX_get0_chain_certs() failed");
 		return (GFARM_ERR_TLS_RUNTIME_ERROR);
@@ -1764,7 +1764,7 @@ tls_verify_self_certificate(SSL_CTX *ssl_ctx)
 
 	store_ctx = X509_STORE_CTX_new();
 	if (store_ctx == NULL) {
-		gflog_tls_error(GFARM_MSG_UNFIXED,
+		gflog_tls_error(GFARM_MSG_1005582,
 		    "verify self certificate: "
 		    "X509_STORE_CTX_new() failed");
 		return (GFARM_ERR_TLS_RUNTIME_ERROR);
@@ -1772,7 +1772,7 @@ tls_verify_self_certificate(SSL_CTX *ssl_ctx)
 
 	st = X509_STORE_CTX_init(store_ctx, cert_store, self_cert, chain);
 	if (st != 1) {
-		gflog_tls_error(GFARM_MSG_UNFIXED,
+		gflog_tls_error(GFARM_MSG_1005583,
 		    "verify self certificate: X509_STORE_CTX_init() failed");
 	} else {
 		st = X509_verify_cert(store_ctx);
@@ -1781,7 +1781,7 @@ tls_verify_self_certificate(SSL_CTX *ssl_ctx)
 			 * this is usually unnecessary,
 			 * because tls_verify_callback_simple() shows it.
 			 */
-			gflog_tls_debug(GFARM_MSG_UNFIXED,
+			gflog_tls_debug(GFARM_MSG_1005584,
 			    "self certificate verification error");
 		}
 	}
@@ -1947,7 +1947,7 @@ tls_session_setup_ssl(struct tls_session_ctx_struct *ctx)
 						TLS1_3_VERSION)) != 1 ||
 					(osst = SSL_set_max_proto_version(ssl,
 						TLS1_3_VERSION)) != 1)) {
-				gflog_tls_error(GFARM_MSG_UNFIXED,
+				gflog_tls_error(GFARM_MSG_1005585,
 					"Failed to set an SSL "
 					"only using TLSv1.3.");
 				ret = GFARM_ERR_TLS_RUNTIME_ERROR;
@@ -1957,7 +1957,7 @@ tls_session_setup_ssl(struct tls_session_ctx_struct *ctx)
 					TLS1_3_VERSION ||
 					(osst = SSL_get_max_proto_version(
 						ssl)) != TLS1_3_VERSION) {
-					gflog_tls_error(GFARM_MSG_UNFIXED,
+					gflog_tls_error(GFARM_MSG_1005586,
 						"Failed to check if the SSL "
 						"only using TLSv1.3.");
 					ret = GFARM_ERR_TLS_RUNTIME_ERROR;
@@ -1977,7 +1977,7 @@ tls_session_setup_ssl(struct tls_session_ctx_struct *ctx)
 			tls_runtime_flush_error();
 			osst = SSL_set_app_data(ssl, ctx);
 			if (osst != 1) {
-				gflog_tls_error(GFARM_MSG_UNFIXED,
+				gflog_tls_error(GFARM_MSG_1005587,
 					"Failed to set an arg for the verify "
 					"callback");
 				ret = GFARM_ERR_TLS_RUNTIME_ERROR;
@@ -2004,7 +2004,7 @@ tls_session_setup_ssl(struct tls_session_ctx_struct *ctx)
 					ssl) == 1)) {
 				ret = GFARM_ERR_NO_ERROR;
 			} else {
-				gflog_tls_error(GFARM_MSG_UNFIXED,
+				gflog_tls_error(GFARM_MSG_1005588,
 					"Failed to set a "
 					"server SSL to use "
 					"post-handshake.");
@@ -2073,7 +2073,7 @@ tls_session_create_ctx(struct tls_session_ctx_struct **ctxptr,
 	 * Parameter check
 	 */
 	if (unlikely(ctxptr == NULL)) {
-		gflog_tls_error(GFARM_MSG_UNFIXED,
+		gflog_tls_error(GFARM_MSG_1005589,
 			"return pointer is NULL.");
 		ret = GFARM_ERR_INVALID_ARGUMENT;
 		goto bailout;
@@ -2081,7 +2081,7 @@ tls_session_create_ctx(struct tls_session_ctx_struct **ctxptr,
 		*ctxptr = NULL;
 	}
 	if (unlikely(role != TLS_ROLE_SERVER && role != TLS_ROLE_CLIENT)) {
-		gflog_tls_error(GFARM_MSG_UNFIXED,
+		gflog_tls_error(GFARM_MSG_1005590,
 			"fatal: invalid TLS role.");
 		ret = GFARM_ERR_INVALID_ARGUMENT;
 		goto bailout;
@@ -2103,7 +2103,7 @@ tls_session_create_ctx(struct tls_session_ctx_struct **ctxptr,
 	 * Gfarm context check
 	 */
 	if (unlikely(gfarm_ctxp == NULL)) {
-		gflog_tls_error(GFARM_MSG_UNFIXED,
+		gflog_tls_error(GFARM_MSG_1005591,
 			"fatal: NULL gfarm_ctxp.");
 		ret = GFARM_ERR_INTERNAL_ERROR;
 		goto bailout;
@@ -2122,18 +2122,18 @@ tls_session_create_ctx(struct tls_session_ctx_struct **ctxptr,
 		ca_path = strdup(tmp);
 		if (unlikely(ca_path == NULL)) {
 			ret = GFARM_ERR_NO_MEMORY;
-			gflog_tls_error(GFARM_MSG_UNFIXED,
+			gflog_tls_error(GFARM_MSG_1005592,
 				"Can't duplicate a CA certs directory "
 				" name: %s", gfarm_error_string(ret));
 			goto bailout;
 		}
 	} else {
 		if (tmp == NULL) {
-			gflog_tls_error(GFARM_MSG_UNFIXED,
+			gflog_tls_error(GFARM_MSG_1005593,
 				"A CA cert path is not specified.");
 			ret = GFARM_ERR_INVALID_ARGUMENT;
 		} else {
-			gflog_tls_error(GFARM_MSG_UNFIXED,
+			gflog_tls_error(GFARM_MSG_1005594,
 				"Failed to check a CA certs directory %s: %s",
 				tmp, gfarm_error_string(ret));
 		}
@@ -2149,7 +2149,7 @@ tls_session_create_ctx(struct tls_session_ctx_struct **ctxptr,
 		revoke_path = strdup(tmp);
 		if (unlikely(revoke_path == NULL)) {
 			ret = GFARM_ERR_NO_MEMORY;
-			gflog_tls_error(GFARM_MSG_UNFIXED,
+			gflog_tls_error(GFARM_MSG_1005595,
 				"Can't duplicate a revoked CA certs "
 				"directory name: %s",
 				gfarm_error_string(ret));
@@ -2157,7 +2157,7 @@ tls_session_create_ctx(struct tls_session_ctx_struct **ctxptr,
 		}
 	} else {
 		if (tmp != NULL) {
-			gflog_tls_warning(GFARM_MSG_UNFIXED,
+			gflog_tls_warning(GFARM_MSG_1005596,
 				"Failed to check revoked certs directory "
 				"%s: %s", tmp, gfarm_error_string(ret));
 		}
@@ -2172,7 +2172,7 @@ tls_session_create_ctx(struct tls_session_ctx_struct **ctxptr,
 		acceptable_ca_path = strdup(tmp);
 		if (unlikely(acceptable_ca_path == NULL)) {
 			ret = GFARM_ERR_NO_MEMORY;
-			gflog_tls_error(GFARM_MSG_UNFIXED,
+			gflog_tls_error(GFARM_MSG_1005597,
 				"Can't duplicate an acceptable CA "
 				"certs directory nmae: %s",
 				gfarm_error_string(ret));
@@ -2180,7 +2180,7 @@ tls_session_create_ctx(struct tls_session_ctx_struct **ctxptr,
 		}
 	} else {
 		if (tmp != NULL) {
-			gflog_tls_warning(GFARM_MSG_UNFIXED,
+			gflog_tls_warning(GFARM_MSG_1005598,
 				"Failed to check peer certs verification "
 				"directory %s: %s",
 				tmp, gfarm_error_string(ret));
@@ -2214,7 +2214,7 @@ tls_session_create_ctx(struct tls_session_ctx_struct **ctxptr,
 			cert_chain_file = strdup(tmp_cert_chain_file);
 			if (unlikely(cert_chain_file == NULL)) {
 				ret = GFARM_ERR_NO_MEMORY;
-				gflog_tls_warning(GFARM_MSG_UNFIXED,
+				gflog_tls_warning(GFARM_MSG_1005599,
 					"can't duplicate a cert chain "
 					"filename: %s",
 					gfarm_error_string(ret));
@@ -2226,7 +2226,7 @@ tls_session_create_ctx(struct tls_session_ctx_struct **ctxptr,
 			cert_file = strdup(tmp_cert_file);
 			if (unlikely(cert_file == NULL)) {
 				ret = GFARM_ERR_NO_MEMORY;
-				gflog_tls_warning(GFARM_MSG_UNFIXED,
+				gflog_tls_warning(GFARM_MSG_1005600,
 					"Can't duplicate a cert filename: %s",
 					gfarm_error_string(ret));
 			}
@@ -2239,7 +2239,7 @@ tls_session_create_ctx(struct tls_session_ctx_struct **ctxptr,
 			 * usable proxy cert.
 			 */
 			if (gflog_auth_get_verbose()) {
-				gflog_tls_info(GFARM_MSG_UNFIXED,
+				gflog_tls_info(GFARM_MSG_1005601,
 				    "None of a cert file, a cert chain file, "
 				    "and a proxy cert file is specified.");
 			}
@@ -2258,7 +2258,7 @@ tls_session_create_ctx(struct tls_session_ctx_struct **ctxptr,
 			prvkey_file = strdup(tmp_prvkey_file);
 			if (unlikely(prvkey_file == NULL)) {
 				ret = GFARM_ERR_NO_MEMORY;
-				gflog_tls_error(GFARM_MSG_UNFIXED,
+				gflog_tls_error(GFARM_MSG_1005602,
 					"Can't duplicate a private key "
 					"filename: %s",
 					gfarm_error_string(ret));
@@ -2269,7 +2269,7 @@ tls_session_create_ctx(struct tls_session_ctx_struct **ctxptr,
 			 * We still have a chance to go if we had a
 			 * usable proxy cert.
 			 */
-			gflog_tls_error(GFARM_MSG_UNFIXED,
+			gflog_tls_error(GFARM_MSG_1005603,
 				"A private key file is not specified.");
 			ret = GFARM_ERR_INVALID_ARGUMENT;
 			goto bailout;
@@ -2293,7 +2293,7 @@ tls_session_create_ctx(struct tls_session_ctx_struct **ctxptr,
 			(is_valid_string(cert_file) != true &&
 			is_valid_string(cert_chain_file) != true) ||
 			is_valid_string(prvkey_file) != true)) {
-			gflog_tls_error(GFARM_MSG_UNFIXED,
+			gflog_tls_error(GFARM_MSG_1005604,
 				"As a TLS server, at least a CA ptth, a cert "
 				"file/cert chain file and a private key file "
 				"must be presented.");
@@ -2315,7 +2315,7 @@ tls_session_create_ctx(struct tls_session_ctx_struct **ctxptr,
 				is_valid_string(prvkey_file) == true)) {
 				goto runtime_init;
 			} else {
-				gflog_tls_error(GFARM_MSG_UNFIXED,
+				gflog_tls_error(GFARM_MSG_1005605,
 					"For TLS client auth, at least "
 					"a CA ptth, a cert file/cert chain "
 					"file and a private key file, or a "
@@ -2325,7 +2325,7 @@ tls_session_create_ctx(struct tls_session_ctx_struct **ctxptr,
 			}
 		} else {
 			if (unlikely(is_valid_string(ca_path) != true)) {
-				gflog_tls_error(GFARM_MSG_UNFIXED,
+				gflog_tls_error(GFARM_MSG_1005606,
 					"At least a CA path must be "
 					"specified.");
 				goto bailout;
@@ -2339,7 +2339,7 @@ runtime_init:
 	 */
 	if (unlikely((ret = tls_session_runtime_initialize())
 		!= GFARM_ERR_NO_ERROR)) {
-		gflog_tls_error(GFARM_MSG_UNFIXED,
+		gflog_tls_error(GFARM_MSG_1005607,
 			"TLS runtime library initialization failed.");
 		goto bailout;
 	}
@@ -2350,7 +2350,7 @@ runtime_init:
 		 */
 		ret = tls_load_prvkey(prvkey_file, &prvkey);
 		if (unlikely(ret != GFARM_ERR_NO_ERROR || prvkey == NULL)) {
-			gflog_tls_error(GFARM_MSG_UNFIXED,
+			gflog_tls_error(GFARM_MSG_1005608,
 				"Can't load a private key file \"%s\".",
 				prvkey_file);
 			goto bailout;
@@ -2389,7 +2389,7 @@ runtime_init:
 					TLS1_3_VERSION)) != 1 ||
 			     (osst = SSL_CTX_set_max_proto_version(ssl_ctx,
 					TLS1_3_VERSION)) != 1)) {
-			gflog_tls_error(GFARM_MSG_UNFIXED,
+			gflog_tls_error(GFARM_MSG_1005609,
 					"Failed to set an SSL_CTX "
 					"only using TLSv1.3.");
 			ret = GFARM_ERR_TLS_RUNTIME_ERROR;
@@ -2399,7 +2399,7 @@ runtime_init:
 				TLS1_3_VERSION ||
 				(osst = SSL_CTX_get_max_proto_version(
 						ssl_ctx)) != TLS1_3_VERSION) {
-				gflog_tls_error(GFARM_MSG_UNFIXED,
+				gflog_tls_error(GFARM_MSG_1005610,
 					"Failed to check if the SSL_CTX "
 					"only using TLSv1.3.");
 				ret = GFARM_ERR_TLS_RUNTIME_ERROR;
@@ -2448,7 +2448,7 @@ runtime_init:
 			tls_runtime_flush_error();
 			if (unlikely(SSL_CTX_set_ciphersuites(ssl_ctx,
 						ciphersuites) != 1)) {
-				gflog_tls_error(GFARM_MSG_UNFIXED,
+				gflog_tls_error(GFARM_MSG_1005611,
 					"Failed to set ciphersuites "
 					"\"%s\" to the SSL_CTX.",
 					ciphersuites);
@@ -2473,7 +2473,7 @@ runtime_init:
 					}
 				} else if (sk_X509_NAME_num(
 						   trust_ca_list) <= 0) {
-					gflog_tls_warning(GFARM_MSG_UNFIXED,
+					gflog_tls_warning(GFARM_MSG_1005612,
 						"No cert is collected "
 						"in %s for peer chain "
 						"verifiation.",
@@ -2501,27 +2501,27 @@ runtime_init:
 				if (is_valid_string(cert_file) == true &&
 					is_valid_string(cert_chain_file) ==
 					true) {
-					gflog_tls_error(GFARM_MSG_UNFIXED,
+					gflog_tls_error(GFARM_MSG_1005613,
 						"Can't load both %s and %s: "
 						"%s.",
 						cert_file, cert_chain_file,
 						gfarm_error_string(ret));
 				} else if (is_valid_string(cert_file) ==
 						true) {
-					gflog_tls_error(GFARM_MSG_UNFIXED,
+					gflog_tls_error(GFARM_MSG_1005614,
 						"Can't load %s: %s.",
 						cert_file,
 						gfarm_error_string(ret));
 				} else if (is_valid_string(cert_chain_file) ==
 						true) {
-					gflog_tls_error(GFARM_MSG_UNFIXED,
+					gflog_tls_error(GFARM_MSG_1005615,
 						"Can't load %s: %s.",
 						cert_chain_file,
 						gfarm_error_string(ret));
 				}
 				goto bailout;
 			} else if (unlikely(n_certs == 0)) {
-				gflog_tls_error(GFARM_MSG_UNFIXED,
+				gflog_tls_error(GFARM_MSG_1005616,
 					"No cert is load both %s and %s: %s.",
 					cert_file, cert_chain_file,
 					gfarm_error_string(ret));
@@ -2534,7 +2534,7 @@ runtime_init:
 			tls_runtime_flush_error();
 			osst = SSL_CTX_use_PrivateKey(ssl_ctx, prvkey);
 			if (unlikely(osst != 1)) {
-				gflog_tls_error(GFARM_MSG_UNFIXED,
+				gflog_tls_error(GFARM_MSG_1005617,
 					"Can't set a private key to a "
 					"SSL_CTX.");
 				/* ?? GFARM_ERRMSG_TLS_IBVALID_KEY ?? */
@@ -2549,7 +2549,7 @@ runtime_init:
 			tls_runtime_flush_error();
 			osst = SSL_CTX_check_private_key(ssl_ctx);
 			if (unlikely(osst != 1)) {
-				gflog_tls_error(GFARM_MSG_UNFIXED,
+				gflog_tls_error(GFARM_MSG_1005618,
 					"Wrong private key file for the "
 					"current certificate.");
 				ret = GFARM_ERR_TLS_RUNTIME_ERROR;
@@ -2580,7 +2580,7 @@ runtime_init:
 				tls_runtime_flush_error();
 				osst = SSL_CTX_build_cert_chain(ssl_ctx, 0);
 				if (unlikely(osst != 1)) {
-					gflog_tls_error(GFARM_MSG_UNFIXED,
+					gflog_tls_error(GFARM_MSG_1005619,
 						"Can't build a certificate "
 						"chain.");
 					ret = GFARM_ERR_TLS_RUNTIME_ERROR;
@@ -2639,7 +2639,7 @@ runtime_init:
 			tls_runtime_flush_error();
 			osst = X509_VERIFY_PARAM_set_flags(tmpvpm, flags);
 			if (unlikely(osst != 1)) {
-				gflog_tls_error(GFARM_MSG_UNFIXED,
+				gflog_tls_error(GFARM_MSG_1005620,
 					"Failed to set CRL check, etc. flags "
 					"to a X509_VERIFY_PARAM");
 				ret = GFARM_ERR_TLS_RUNTIME_ERROR;
@@ -2654,7 +2654,7 @@ runtime_init:
 		}
 
 	} else {
-		gflog_tls_error(GFARM_MSG_UNFIXED,
+		gflog_tls_error(GFARM_MSG_1005621,
 			"Failed to create a SSL_CTX.");
 		ret = GFARM_ERR_TLS_RUNTIME_ERROR;
 		goto bailout;
@@ -2702,7 +2702,7 @@ runtime_init:
 		ret = GFARM_ERR_NO_ERROR;
 		goto ok;
 	} else {
-		gflog_tls_error(GFARM_MSG_UNFIXED,
+		gflog_tls_error(GFARM_MSG_1005622,
 			"Can't allocate a TLS session context.");
 		ret = GFARM_ERR_NO_MEMORY;
 	}
@@ -2807,7 +2807,7 @@ tls_session_io_continuable(int sslerr, struct tls_session_ctx_struct *ctx,
 		    GFARM_ERR_UNEXPECTED_EOF :
 		    GFARM_ERR_TLS_RUNTIME_ERROR;
 		ctx->is_got_fatal_ssl_error_ = true;
-		gflog_tls_error(GFARM_MSG_UNFIXED,
+		gflog_tls_error(GFARM_MSG_1005623,
 		    "TLS error during %s", diag);
 		break;
 
@@ -2828,7 +2828,7 @@ tls_session_io_continuable(int sslerr, struct tls_session_ctx_struct *ctx,
 			 * done BEFORE gfp_* thingies call this
 			 * function.
 			 */
-			gflog_tls_error(GFARM_MSG_UNFIXED,
+			gflog_tls_error(GFARM_MSG_1005624,
 				    "The TLS handshake must be done before "
 				    "begining data I/O in Gfarm.");
 			ctx->last_gfarm_error_ = GFARM_ERR_INTERNAL_ERROR;
@@ -2839,7 +2839,7 @@ tls_session_io_continuable(int sslerr, struct tls_session_ctx_struct *ctx,
 		break;
 
 	default:
-		gflog_tls_error(GFARM_MSG_UNFIXED,
+		gflog_tls_error(GFARM_MSG_1005625,
 			"All the TLS I/O error must be handled, but got "
 			"TLS I/O error %d.", sslerr);
 		ctx->last_gfarm_error_ = GFARM_ERR_INTERNAL_ERROR;
@@ -2860,7 +2860,7 @@ tls_session_wait_io(struct tls_session_ctx_struct *ctx,
 	char *method = NULL;
 
 	if (gflog_auth_get_verbose()) {
-		gflog_tls_debug(GFARM_MSG_UNFIXED, "%s(): wait enter.",
+		gflog_tls_debug(GFARM_MSG_1005626, "%s(): wait enter.",
 			__func__);
 	}
 
@@ -2931,7 +2931,7 @@ tls_session_wait_io(struct tls_session_ctx_struct *ctx,
 	ctx->last_gfarm_error_ = ret;
 
 	if (gflog_auth_get_verbose()) {
-		gflog_tls_debug(GFARM_MSG_UNFIXED, "%s(): wait (%s) end : %s",
+		gflog_tls_debug(GFARM_MSG_1005627, "%s(): wait (%s) end : %s",
 			__func__, method, gfarm_error_string(ret));
 	}
 
@@ -3048,7 +3048,7 @@ tls_session_verify(struct tls_session_ctx_struct *ctx, bool *is_verified)
 				v = true;
 			} else {
 				v = false;
-				gflog_tls_notice(GFARM_MSG_UNFIXED,
+				gflog_tls_notice(GFARM_MSG_1005628,
 					"Certificate verification failed: %s",
 					X509_verify_cert_error_string(vres));
 				ret = ctx->last_gfarm_error_ =
@@ -3058,7 +3058,7 @@ tls_session_verify(struct tls_session_ctx_struct *ctx, bool *is_verified)
 			ctx->is_verified_ = v;
 		} else {
 			ret = GFARM_ERR_TLS_RUNTIME_ERROR;
-			gflog_tls_notice(GFARM_MSG_UNFIXED,
+			gflog_tls_notice(GFARM_MSG_1005629,
 				"Failed to acquire peer certificate.");
 		}
 	} else {
@@ -3175,12 +3175,12 @@ retry:
 				} else {
 					ret = ctx->last_gfarm_error_;
 				}
-				gflog_tls_notice(GFARM_MSG_UNFIXED,
+				gflog_tls_notice(GFARM_MSG_1005630,
 					"SSL handshake failed: %s",
 					gfarm_error_string(ret));
 			}
 		} else {
-			gflog_tls_error(GFARM_MSG_UNFIXED,
+			gflog_tls_error(GFARM_MSG_1005631,
 				"Failed to set a file "
 				"descriptor %d to an SSL.", fd);
 			ret = GFARM_ERR_TLS_RUNTIME_ERROR;
@@ -3189,24 +3189,24 @@ retry:
 		if (pst != 0 && errno != 0) {
 			ret = gfarm_errno_to_error(errno);
 			if (errno == ENOTCONN) {
-				gflog_tls_notice(GFARM_MSG_UNFIXED,
+				gflog_tls_notice(GFARM_MSG_1005632,
 					"The file descriptor %d is not yet "
 					"connected: %s",
 					fd, gfarm_error_string(ret));
 			} else if (errno == ENOTSOCK) {
-				gflog_tls_error(GFARM_MSG_UNFIXED,
+				gflog_tls_error(GFARM_MSG_1005633,
 					"The file descriptor %d is not a "
 					"socket: %s",
 					fd, gfarm_error_string(ret));
 			} else {
-				gflog_tls_notice(GFARM_MSG_UNFIXED,
+				gflog_tls_notice(GFARM_MSG_1005634,
 					"Failed to check connection status of "
 					"the file descriptor %d: %s",
 					fd, gfarm_error_string(ret));
 			}
 		} else { /* fd < 0 || ctx == NULL */
 			ret = GFARM_ERR_INTERNAL_ERROR; /* shouldn't happen */
-			gflog_tls_error(GFARM_MSG_UNFIXED,
+			gflog_tls_error(GFARM_MSG_1005635,
 				"The tls context is not initialized.");
 		}
 	}
@@ -3218,7 +3218,7 @@ retry:
 			ret = ctx->last_gfarm_error_ =
 				GFARM_ERR_AUTHENTICATION;
 			if (is_valid_string(ctx->peer_dn_oneline_) == true) {
-				gflog_tls_notice(GFARM_MSG_UNFIXED,
+				gflog_tls_notice(GFARM_MSG_1005636,
 					"Authentication failed between peer: "
 					"'%s' with %s.",
 					ctx->peer_cn_,
@@ -3226,7 +3226,7 @@ retry:
 						"proxy certificate" :
 						"end-entity certificate");
 			} else {
-				gflog_tls_notice(GFARM_MSG_UNFIXED,
+				gflog_tls_notice(GFARM_MSG_1005637,
 					"Authentication failed "
 					"(no cert acquired.)");
 			}
@@ -3234,7 +3234,7 @@ retry:
 
 		if (is_valid_string(ctx->peer_dn_oneline_) == true &&
 			gflog_auth_get_verbose()) {
-			gflog_tls_debug(GFARM_MSG_UNFIXED,
+			gflog_tls_debug(GFARM_MSG_1005638,
 				"Authentication between \"%s\" %s and a "
 				"TLS session %s with %s.",
 				ctx->peer_dn_gsi_,
@@ -3245,7 +3245,7 @@ retry:
 				(ctx->is_got_proxy_cert_ == true) ?
 					"proxy certificate" :
 					"end-entity certificate");
-			gflog_tls_debug(GFARM_MSG_UNFIXED,
+			gflog_tls_debug(GFARM_MSG_1005639,
 				"peer CN \"%s\"", tls_session_peer_cn(ctx));
 		}
 	}
@@ -3302,7 +3302,7 @@ tls_session_update_key(struct tls_session_ctx_struct *ctx, int delta)
 				SSL_KEY_UPDATE_REQUESTED) == 1)) {
 			ret = ctx->last_gfarm_error_ = GFARM_ERR_NO_ERROR;
 			if (gflog_auth_get_verbose()) {
-				gflog_tls_debug(GFARM_MSG_UNFIXED,
+				gflog_tls_debug(GFARM_MSG_1005640,
 					"TLS shared key updated after "
 					" %zu bytes I/O.",
 					ctx->io_key_update_accum_);
@@ -3314,7 +3314,7 @@ tls_session_update_key(struct tls_session_ctx_struct *ctx, int delta)
 			 *	what to do when SSL_key_update()
 			 *	failure.
 			 */
-			gflog_tls_warning(GFARM_MSG_UNFIXED,
+			gflog_tls_warning(GFARM_MSG_1005641,
 				"SSL_update_key() failed but we don't know "
 				"how to deal with it.");
 			ret = ctx->last_gfarm_error_ =
@@ -3347,7 +3347,7 @@ tls_session_read(struct tls_session_ctx_struct *ctx, void *buf, int len,
 		bool continuable;
 
 		if (gflog_auth_get_verbose()) {
-			gflog_tls_debug(GFARM_MSG_UNFIXED,
+			gflog_tls_debug(GFARM_MSG_1005642,
 				"%s(%s): about to read %d (remains %d)",
 				__func__, ctx->peer_cn_, len,
 				SSL_pending(ssl));
@@ -3362,7 +3362,7 @@ tls_session_read(struct tls_session_ctx_struct *ctx, void *buf, int len,
 
 retry:
 		if (gflog_auth_get_verbose()) {
-			gflog_tls_debug(GFARM_MSG_UNFIXED,
+			gflog_tls_debug(GFARM_MSG_1005643,
 				"%s(%s): read %d/%d", __func__,
 				ctx->peer_cn_, n, len);
 		}
@@ -3393,7 +3393,7 @@ retry:
 		}
 
 		if (gflog_auth_get_verbose()) {
-			gflog_tls_debug(GFARM_MSG_UNFIXED,
+			gflog_tls_debug(GFARM_MSG_1005644,
 				"%s(%s): read done %d (remains %d) : %s",
 				__func__, ctx->peer_cn_, n, SSL_pending(ssl),
 				gfarm_error_string(ret));
@@ -3426,7 +3426,7 @@ tls_session_write(struct tls_session_ctx_struct *ctx, const void *buf, int len,
 		bool continuable;
 
 		if (gflog_auth_get_verbose()) {
-			gflog_tls_debug(GFARM_MSG_UNFIXED,
+			gflog_tls_debug(GFARM_MSG_1005645,
 				"%s(%s): about to write %d", __func__,
 				ctx->peer_cn_, len);
 		}
@@ -3440,7 +3440,7 @@ tls_session_write(struct tls_session_ctx_struct *ctx, const void *buf, int len,
 
 retry:
 		if (gflog_auth_get_verbose()) {
-			gflog_tls_debug(GFARM_MSG_UNFIXED,
+			gflog_tls_debug(GFARM_MSG_1005646,
 				"%s(%s): write %d/%d", __func__,
 				ctx->peer_cn_, n, len);
 		}
@@ -3471,7 +3471,7 @@ retry:
 		}
 
 		if (gflog_auth_get_verbose()) {
-			gflog_tls_debug(GFARM_MSG_UNFIXED,
+			gflog_tls_debug(GFARM_MSG_1005647,
 				"%s(%s): write done %d : %s", __func__,
 				ctx->peer_cn_, n, gfarm_error_string(ret));
 		}
@@ -3533,7 +3533,7 @@ tls_session_shutdown(struct tls_session_ctx_struct *ctx)
 	}
 
 	if (gflog_auth_get_verbose()) {
-		gflog_tls_debug(GFARM_MSG_UNFIXED,
+		gflog_tls_debug(GFARM_MSG_1005648,
 			"%s(%s): about to shutdown SSL.",
 			__func__, ctx->peer_cn_);
 	}
@@ -3550,7 +3550,7 @@ tls_session_shutdown(struct tls_session_ctx_struct *ctx)
 		int st = SSL_shutdown(ssl);
 
 		if (gflog_auth_get_verbose()) {
-			gflog_tls_debug(GFARM_MSG_UNFIXED,
+			gflog_tls_debug(GFARM_MSG_1005649,
 				"%s(%s): shutdown SSL issued : %s",
 				__func__, ctx->peer_cn_,
 				(st == 1) ? "OK" : "NG");
@@ -3573,7 +3573,7 @@ tls_session_shutdown(struct tls_session_ctx_struct *ctx)
 			ret = tls_session_read(ctx, buf, sizeof(buf), &s_n);
 
 			if (gflog_auth_get_verbose()) {
-				gflog_tls_debug(GFARM_MSG_UNFIXED,
+				gflog_tls_debug(GFARM_MSG_1005650,
 					"%s(%s): shutdown SSL replies read "
 					"%d : %s", __func__, ctx->peer_cn_,
 					s_n, gfarm_error_string(ret));
@@ -3598,7 +3598,7 @@ tls_session_shutdown(struct tls_session_ctx_struct *ctx)
 	ctx->last_gfarm_error_ = ret;
 
 	if (gflog_auth_get_verbose()) {
-		gflog_tls_debug(GFARM_MSG_UNFIXED,
+		gflog_tls_debug(GFARM_MSG_1005651,
 			"%s(%s): shutdown SSL done : %s",
 			__func__, ctx->peer_cn_,
 			gfarm_error_string(ret));

@@ -1986,7 +1986,7 @@ pgsql_user_auth_update(gfarm_uint64_t seqnum, struct db_user_auth_arg *info,
 	gfarm_error_t e;
 
 	if ((e = gfarm_pgsql_start(diag)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005515,
 			"gfarm_pgsql_start() failed");
 		return (e);
 	}
@@ -2078,7 +2078,7 @@ user_auth_info_set_fields_from_copy_binary(
 	    "pgsql_user_auth_dir_load: field number");
 	num_fields = ntohs(num_fields);
 	if (num_fields < 3) /* allow fields addition in future */
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1005516,
 		    "pgsql_user_auth_load: fields = %d", num_fields);
 
 	info->username =

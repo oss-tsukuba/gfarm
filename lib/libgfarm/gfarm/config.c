@@ -1845,13 +1845,13 @@ parse_auth_trial_order_arguments(char *p,
 	n = 0;
 	for (;;) {
 		if (n >= GFARM_AUTH_METHOD_NUMBER) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1005243,
 			    "auth_trial_order: too many arguments (%d)", n);
 			return (GFARM_ERRMSG_TOO_MANY_ARGUMENTS);
 		}
 		e = gfarm_strtoken(&p, &tmp);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1005244,
 			    "auth_trial_order: parsing auth method (%s): %s",
 			    p, gfarm_error_string(e));
 			return (e);
@@ -1859,13 +1859,13 @@ parse_auth_trial_order_arguments(char *p,
 		if (tmp == NULL) {
 			if (n > 0)
 				break;
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1005245,
 			    "auth_trial_order: missing argument");
 			return (GFARM_ERRMSG_MISSING_ARGUMENT);
 		}
 		e = gfarm_auth_method_parse(tmp, &trial_order[n]);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1005246,
 				"auth_trial_order: unknown auth method (%s)",
 				tmp);
 			return (GFARM_ERRMSG_UNKNOWN_AUTH_METHOD);
@@ -4272,13 +4272,13 @@ gfarm_config_set_default_misc(void)
 
 	e = gfarm_config_set_default_metadb_server();
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1005247,
 		    "gfarm_config_set_default_metadb_server: %s",
 		    gfarm_error_string(e));
 
 	e = gfarm_auth_client_trial_order_set_default();
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1005248,
 		    "gfarm_auth_client_trial_order_set_default: %s",
 		    gfarm_error_string(e));
 }
