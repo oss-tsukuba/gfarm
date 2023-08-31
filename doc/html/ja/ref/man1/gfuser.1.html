@@ -2,22 +2,24 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfuser</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 </head>
-<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfuser">
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
 <a name="gfuser.1"></a><div class="titlepage"></div>
 <div class="refnamediv">
 <a name="name"></a><h2>Name</h2>
 <p>gfuser — Gfarm ユーザ管理コマンド</p>
 </div>
-<div class="refsynopsisdiv" title="Synopsis">
+<div class="refsynopsisdiv">
 <a name="synopsis"></a><h2>Synopsis</h2>
 <div class="cmdsynopsis"><p><code class="command">gfuser</code>  [-P <em class="replaceable"><code>path</code></em>] [-l] [<em class="replaceable"><code>user</code></em>...]</p></div>
 <div class="cmdsynopsis"><p><code class="command">gfuser</code>  [-P <em class="replaceable"><code>path</code></em>]  -c   username   realname   homedir   gsi_dn </p></div>
 <div class="cmdsynopsis"><p><code class="command">gfuser</code>  [-P <em class="replaceable"><code>path</code></em>]  -m   username   realname   homedir   gsi_dn </p></div>
 <div class="cmdsynopsis"><p><code class="command">gfuser</code>  [-P <em class="replaceable"><code>path</code></em>]  -d   username </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfuser</code>  [-P <em class="replaceable"><code>path</code></em>]  -L  [<em class="replaceable"><code>user</code></em>...]</p></div>
+<div class="cmdsynopsis"><p><code class="command">gfuser</code>  [-P <em class="replaceable"><code>path</code></em>]  -A   username   authentication_method   authentication_identifier </p></div>
 </div>
-<div class="refsect1" title="DESCRIPTION">
+<div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p>Gfarm ファイルシステムにおける利用ユーザの管理を行います．
 デフォルトでは登録ユーザを表示します．
@@ -26,10 +28,18 @@ Gfarmファイルシステムの管理者は，-c，-m，-d
 オプションを指定することにより，それぞれユーザの登録，
 登録情報変更，登録削除を行うことができます．
 </p>
+<p>
+-Lオプションを指定することにより，各Gfarmグローバルユーザーに対して，
+それぞれの認証方式におけるユーザ識別子を表示します．
+Gfarmファイルシステムの管理者は，
+-Aオプションに認証方式とユーザ識別子を指定することにより，
+それぞれの認証方式におけるユーザ識別子をグローバルユーザ名に対して登録，
+変更，削除することができます．
+</p>
 </div>
-<div class="refsect1" title="OPTIONS">
+<div class="refsect1">
 <a name="options"></a><h2>OPTIONS</h2>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="option">-P</code> <em class="parameter"><code>パス名</code></em></span></dt>
 <dd><p>
 	このコマンドがアクセスするメタデータサーバを特定するための
@@ -62,11 +72,19 @@ Gfarmの管理者が実行可能です．
 消去したいグローバルユーザ名を指定します．
 Gfarmの管理者が実行可能です．
 </p></dd>
+<dt><span class="term"><code class="option">-L</code></span></dt>
+<dd><p>登録ユーザの情報，および認証方式毎のユーザ識別子を表示します．</p></dd>
+<dt><span class="term"><code class="option">-A</code></span></dt>
+<dd><p>
+認証方式に対するユーザ識別子の登録，変更，削除を行います．
+削除するにはユーザ識別子に空文字列を指定します．
+Gfarmの管理者が実行可能です．
+</p></dd>
 <dt><span class="term"><code class="option">-?</code></span></dt>
 <dd><p>引数オプションを表示します．</p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="SEE ALSO">
+<div class="refsect1">
 <a name="see-also"></a><h2>SEE ALSO</h2>
 <p>
   <span class="citerefentry"><span class="refentrytitle">gfgroup</span>(1)</span>

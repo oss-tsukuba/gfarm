@@ -1,7 +1,7 @@
 '\" t
 .\"     Title: gfuser
-.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
 .\"      Date: 20 Jan 2010
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
@@ -38,11 +38,16 @@ gfuser \- Gfarm user maintenance command
 \fBgfuser\fR [\-P\ \fIpath\fR] \-m username realname homedir gsi_dn
 .HP \w'\fBgfuser\fR\ 'u
 \fBgfuser\fR [\-P\ \fIpath\fR] \-d username
+.HP \w'\fBgfuser\fR\ 'u
+\fBgfuser\fR [\-P\ \fIpath\fR] \-L [\fIuser\fR...]
+.HP \w'\fBgfuser\fR\ 'u
+\fBgfuser\fR [\-P\ \fIpath\fR] \-A username authentication_method authentication_identifier
 .SH "DESCRIPTION"
 .PP
-
 \fBgfuser\fR
 manages Gfarm global users in Gfarm file system\&. Default action displays all registered users\&. When user names are specified, specified users are displayed\&. Gfarm administrator can creates, modifies, and deletes a Gfarm user by \-c, \-m, and \-d options, respectively\&.
+.PP
+By specifying the \-L option, user identifiers for each authentication method are displayed for each Gfarm global user\&. By specifying the \-A option, Gfarm administrator can register, modify, and delete a user identifier for each authentication method mapping to global username\&.
 .SH "OPTIONS"
 .PP
 \fB\-P\fR \fIpath\fR
@@ -70,11 +75,20 @@ Replaces a user information of the specified global user with specified real nam
 Deletes a registered user\&. This option can be used by Gfarm administrators\&.
 .RE
 .PP
+\fB\-L\fR
+.RS 4
+Displays verbose information and user identifiers for each authentication method of registered users\&.
+.RE
+.PP
+\fB\-A\fR
+.RS 4
+Registers, modifies, and deletes a user identifier for each authentication method mapping to Gfarm global username\&. To delete, specify a null string as the user identifier\&. This option can be used by Gfarm administrators\&.
+.RE
+.PP
 \fB\-?\fR
 .RS 4
 Displays a list of command options\&.
 .RE
 .SH "SEE ALSO"
 .PP
-
 \fBgfgroup\fR(1)

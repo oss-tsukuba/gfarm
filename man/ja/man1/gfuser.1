@@ -1,7 +1,7 @@
 '\" t
 .\"     Title: gfuser
-.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
 .\"      Date: 20 Jan 2010
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
@@ -38,9 +38,15 @@ gfuser \- Gfarm ユーザ管理コマンド
 \fBgfuser\fR [\-P\ \fIpath\fR] \-m username realname homedir gsi_dn
 .HP \w'\fBgfuser\fR\ 'u
 \fBgfuser\fR [\-P\ \fIpath\fR] \-d username
+.HP \w'\fBgfuser\fR\ 'u
+\fBgfuser\fR [\-P\ \fIpath\fR] \-L [\fIuser\fR...]
+.HP \w'\fBgfuser\fR\ 'u
+\fBgfuser\fR [\-P\ \fIpath\fR] \-A username authentication_method authentication_identifier
 .SH "DESCRIPTION"
 .PP
 Gfarm ファイルシステムにおける利用ユーザの管理を行います． デフォルトでは登録ユーザを表示します． ユーザ名が指定されたら，指定されたユーザを表示します． Gfarmファイルシステムの管理者は，\-c，\-m，\-d オプションを指定することにより，それぞれユーザの登録， 登録情報変更，登録削除を行うことができます．
+.PP
+\-Lオプションを指定することにより，各Gfarmグローバルユーザーに対して， それぞれの認証方式におけるユーザ識別子を表示します． Gfarmファイルシステムの管理者は， \-Aオプションに認証方式とユーザ識別子を指定することにより， それぞれの認証方式におけるユーザ識別子をグローバルユーザ名に対して登録， 変更，削除することができます．
 .SH "OPTIONS"
 .PP
 \fB\-P\fR \fIパス名\fR
@@ -68,11 +74,20 @@ Gfarm ファイルシステムにおける利用ユーザの管理を行いま�
 登録ユーザの情報を消去します． 消去したいグローバルユーザ名を指定します． Gfarmの管理者が実行可能です．
 .RE
 .PP
+\fB\-L\fR
+.RS 4
+登録ユーザの情報，および認証方式毎のユーザ識別子を表示します．
+.RE
+.PP
+\fB\-A\fR
+.RS 4
+認証方式に対するユーザ識別子の登録，変更，削除を行います． 削除するにはユーザ識別子に空文字列を指定します． Gfarmの管理者が実行可能です．
+.RE
+.PP
 \fB\-?\fR
 .RS 4
 引数オプションを表示します．
 .RE
 .SH "SEE ALSO"
 .PP
-
 \fBgfgroup\fR(1)

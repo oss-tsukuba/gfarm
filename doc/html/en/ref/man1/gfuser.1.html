@@ -2,22 +2,24 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfuser</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 </head>
-<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfuser">
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
 <a name="gfuser.1"></a><div class="titlepage"></div>
 <div class="refnamediv">
 <a name="name"></a><h2>Name</h2>
 <p>gfuser — Gfarm user maintenance command</p>
 </div>
-<div class="refsynopsisdiv" title="Synopsis">
+<div class="refsynopsisdiv">
 <a name="synopsis"></a><h2>Synopsis</h2>
 <div class="cmdsynopsis"><p><code class="command">gfuser</code>  [-P <em class="replaceable"><code>path</code></em>] [-l] [<em class="replaceable"><code>user</code></em>...]</p></div>
 <div class="cmdsynopsis"><p><code class="command">gfuser</code>  [-P <em class="replaceable"><code>path</code></em>]  -c   username   realname   homedir   gsi_dn </p></div>
 <div class="cmdsynopsis"><p><code class="command">gfuser</code>  [-P <em class="replaceable"><code>path</code></em>]  -m   username   realname   homedir   gsi_dn </p></div>
 <div class="cmdsynopsis"><p><code class="command">gfuser</code>  [-P <em class="replaceable"><code>path</code></em>]  -d   username </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfuser</code>  [-P <em class="replaceable"><code>path</code></em>]  -L  [<em class="replaceable"><code>user</code></em>...]</p></div>
+<div class="cmdsynopsis"><p><code class="command">gfuser</code>  [-P <em class="replaceable"><code>path</code></em>]  -A   username   authentication_method   authentication_identifier </p></div>
 </div>
-<div class="refsect1" title="DESCRIPTION">
+<div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p>
 <span class="command"><strong>gfuser</strong></span> manages Gfarm global users in Gfarm file
@@ -26,10 +28,16 @@ names are specified, specified users are displayed.  Gfarm
 administrator can creates, modifies, and deletes a Gfarm user by -c,
 -m, and -d options, respectively.
 </p>
+<p>
+By specifying the -L option, user identifiers for each authentication
+method are displayed for each Gfarm global user.
+By specifying the -A option, Gfarm administrator can register, modify,
+and delete a user identifier for each authentication method mapping to global username.
+</p>
 </div>
-<div class="refsect1" title="OPTIONS">
+<div class="refsect1">
 <a name="options"></a><h2>OPTIONS</h2>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="option">-P</code> <em class="parameter"><code>path</code></em></span></dt>
 <dd><p>
 	This option specifies a pathname or a Gfarm URL to identify
@@ -56,11 +64,22 @@ be used by Gfarm administrators.
 Deletes a registered user.  This option can be used by Gfarm
 administrators.
 </p></dd>
+<dt><span class="term"><code class="option">-L</code></span></dt>
+<dd><p>
+Displays verbose information and user identifiers for
+each authentication method of registered users.
+</p></dd>
+<dt><span class="term"><code class="option">-A</code></span></dt>
+<dd><p>
+Registers, modifies, and deletes a user identifier for each authentication method mapping to Gfarm global username.
+To delete, specify a null string as the user identifier.
+This option can be used by Gfarm administrators.
+</p></dd>
 <dt><span class="term"><code class="option">-?</code></span></dt>
 <dd><p>Displays a list of command options.</p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="SEE ALSO">
+<div class="refsect1">
 <a name="see-also"></a><h2>SEE ALSO</h2>
 <p>
   <span class="citerefentry"><span class="refentrytitle">gfgroup</span>(1)</span>
