@@ -3204,8 +3204,8 @@ retry:
 					"the file descriptor %d: %s",
 					fd, gfarm_error_string(ret));
 			}
-		} else {
-			ret = GFARM_ERR_INVALID_ARGUMENT;
+		} else { /* fd < 0 || ctx == NULL */
+			ret = GFARM_ERR_INTERNAL_ERROR; /* shouldn't happen */
 			gflog_tls_error(GFARM_MSG_UNFIXED,
 				"The tls context is not initialized.");
 		}
