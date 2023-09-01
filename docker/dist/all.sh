@@ -37,8 +37,8 @@ fi
 
 # install jwt-parse
 PKG=jwt-parse; export PKG
-(cd ~/gfarm/util/$PKG && sudo make install &&
- gfarm-prun -p "(cd gfarm/util/$PKG && sudo make install)")
+(cd ~/gfarm/util/$PKG && sudo make install > /dev/null &&
+ gfarm-prun -p "(cd gfarm/util/$PKG && sudo make install > /dev/null)")
 
 # install jwt-logon
 PKG=jwt-logon; export PKG
@@ -47,8 +47,9 @@ if $build_pkg; then
 	(cd ~/gfarm && sh $DISTDIR/mkrpm.sh)
 	sh ./install-rpm.sh
 else
-	(cd ~/gfarm/$PKG && sudo make PREFIX=/usr/local install &&
-	 gfarm-prun -p "(cd gfarm/$PKG && sudo make PREFIX=/usr/local install)")
+	(cd ~/gfarm/$PKG && sudo make PREFIX=/usr/local install > /dev/null &&
+	 gfarm-prun -p "(cd gfarm/$PKG && sudo make PREFIX=/usr/local install
+		 > /dev/null)")
 fi
 
 # install jwt-agent
@@ -58,8 +59,10 @@ if $build_pkg; then
 	(cd ~/gfarm && sh $DISTDIR/mkrpm.sh)
 	sh ./install-rpm.sh
 else
-	(cd ~/gfarm/$PKG && make && sudo make PREFIX=/usr/local install &&
-	 gfarm-prun -p "(cd gfarm/$PKG && sudo make PREFIX=/usr/local install)")
+	(cd ~/gfarm/$PKG && make > /dev/null &&
+	 sudo make PREFIX=/usr/local install > /dev/null &&
+	 gfarm-prun -p "(cd gfarm/$PKG && sudo make PREFIX=/usr/local install
+		 > /dev/null)")
 fi
 
 # install cyrus-sasl-xoauth2-idp
@@ -72,8 +75,8 @@ if $build_pkg; then
 else
 	(cd ~/gfarm/$PKG && ./autogen.sh &&
 	 ./configure --libdir=$sasl_libdir &&
-	 make && sudo make install &&
-	 gfarm-prun -p "(cd gfarm/$PKG && sudo make install)")
+	 make > /dev/null && sudo make install > /dev/null &&
+	 gfarm-prun -p "(cd gfarm/$PKG && sudo make install > /dev/null)")
 fi
 
 cat <<EOF | sudo tee $sasl_libdir/sasl2/gfarm.conf > /dev/null
@@ -92,7 +95,7 @@ gfarm-prun -p sudo cp local/gfarm*.conf $sasl_libdir/sasl2
 rm ~/local/gfarm*.conf
 # XXX - SASL XOAUTH2 fails in gfsd on ubuntu due to the error
 # "unable to open Berkeley db /etc/sasldb2: Permission denied"
-gfarm-prun -p -a sudo chown _gfarmfs /etc/sasldb2
+gfarm-prun -p -a "sudo chown _gfarmfs /etc/sasldb2 > /dev/null 2>&1"
 
 # set up certificates
 sh ./key.sh
