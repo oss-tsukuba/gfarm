@@ -788,7 +788,7 @@ sasl_getsimple(void *context, int id, const char **resultp, unsigned *lenp)
 		r = gfarm_ctxp->sasl_user;
 		if (r == NULL) {
 			if (gflog_auth_get_verbose()) {
-				gflog_error(GFARM_MSG_1005340,
+				gflog_debug(GFARM_MSG_1005340,
 				    "sasl_authname: not set");
 			}
 			return (SASL_FAIL);

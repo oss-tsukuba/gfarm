@@ -25,6 +25,75 @@ else
 fi
 gfarm-pcp -p ~/.nodelist .
 
+# install Gfarm2fs
+PKG=gfarm2fs; export PKG
+[ -d ~/gfarm/$PKG ] || git clone https://github.com/oss-tsukuba/$PKG.git
+if $build_pkg; then
+	(cd ~/gfarm && sh $DISTDIR/mkrpm.sh)
+	sh ./install-rpm.sh
+else
+	(cd ~/gfarm/$PKG && sh $DISTDIR/install.sh)
+fi
+
+# install jwt-parse
+PKG=jwt-parse; export PKG
+(cd ~/gfarm/util/$PKG && sudo make install &&
+ gfarm-prun -p "(cd gfarm/util/$PKG && sudo make install)")
+
+# install jwt-logon
+PKG=jwt-logon; export PKG
+[ -d ~/gfarm/$PKG ] || git clone https://github.com/oss-tsukuba/$PKG.git
+if $build_pkg; then
+	(cd ~/gfarm && sh $DISTDIR/mkrpm.sh)
+	sh ./install-rpm.sh
+else
+	(cd ~/gfarm/$PKG && sudo make PREFIX=/usr/local install &&
+	 gfarm-prun -p "(cd gfarm/$PKG && sudo make PREFIX=/usr/local install)")
+fi
+
+# install jwt-agent
+PKG=jwt-agent; export PKG
+[ -d ~/gfarm/$PKG ] || git clone https://github.com/oss-tsukuba/$PKG.git
+if $build_pkg; then
+	(cd ~/gfarm && sh $DISTDIR/mkrpm.sh)
+	sh ./install-rpm.sh
+else
+	(cd ~/gfarm/$PKG && make && sudo make PREFIX=/usr/local install &&
+	 gfarm-prun -p "(cd gfarm/$PKG && sudo make PREFIX=/usr/local install)")
+fi
+
+# install cyrus-sasl-xoauth2-idp
+PKG=cyrus-sasl-xoauth2-idp; export PKG
+sasl_libdir=$(pkg-config --variable=libdir libsasl2)
+[ -d ~/gfarm/$PKG ] || git clone https://github.com/oss-tsukuba/$PKG.git
+if $build_pkg; then
+	(cd ~/gfarm && sh $DISTDIR/mkrpm.sh)
+	sh ./install-rpm.sh
+else
+	(cd ~/gfarm/$PKG && ./autogen.sh &&
+	 ./configure --libdir=$sasl_libdir &&
+	 make && sudo make install &&
+	 gfarm-prun -p "(cd gfarm/$PKG && sudo make install)")
+fi
+
+cat <<EOF | sudo tee $sasl_libdir/sasl2/gfarm.conf > /dev/null
+log_level: 7
+mech_list: XOAUTH2 ANONYMOUS
+xoauth2_scope: hpci
+xoauth2_aud: hpci
+xoauth2_user_claim: hpci.id
+EOF
+cat <<EOF | sudo tee $sasl_libdir/sasl2/gfarm-client.conf > /dev/null
+xoauth2_user_claim: hpci.id
+EOF
+
+cp $sasl_libdir/sasl2/gfarm*.conf ~/local
+gfarm-prun -p sudo cp local/gfarm*.conf $sasl_libdir/sasl2
+rm ~/local/gfarm*.conf
+# XXX - SASL XOAUTH2 fails in gfsd on ubuntu due to the error
+# "unable to open Berkeley db /etc/sasldb2: Permission denied"
+gfarm-prun -p -a sudo chown _gfarmfs /etc/sasldb2
+
 # set up certificates
 sh ./key.sh
 sh ./userkey.sh
@@ -46,13 +115,5 @@ sh ./check.sh
 for h in c6 c7 c8; do
 	ssh $h sh $PWD/check.sh
 done
-
-# install Gfarm2fs
-if $build_pkg; then
-	(cd ~/gfarm && PKG=gfarm2fs sh $DISTDIR/mkrpm.sh)
-	PKG=gfarm2fs sh ./install-rpm.sh
-else
-	(cd ~/gfarm/gfarm2fs && PKG=gfarm2fs sh $DISTDIR/install.sh)
-fi
 
 status=0

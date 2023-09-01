@@ -1,3 +1,3 @@
 #!/bin/sh
 
-gfarm-prun -v sudo egrep \'\(warn\|err\)\' /var/log/syslog
+gfarm-prun -v -a sudo egrep \'\(warn\|err\)\' /var/log/syslog
