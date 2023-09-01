@@ -2805,7 +2805,7 @@ tls_session_io_continuable(int sslerr, struct tls_session_ctx_struct *ctx,
 		if (BIO_eof(SSL_get_rbio(ctx->ssl_))) {
 			ctx->last_gfarm_error_ =
 			    GFARM_ERR_UNEXPECTED_EOF;
-			gflog_tls_info(GFARM_MSG_UNFIXED,
+			gflog_tls_info(GFARM_MSG_1005652,
 			    "TLS EOF during %s", diag);
 		} else  {
 			ctx->last_gfarm_error_ =
