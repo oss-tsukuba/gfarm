@@ -22,7 +22,9 @@ RUN apt-get update \
     fuse libfuse-dev libacl1-dev \
     gdb valgrind rsyslog \
     myproxy globus-simple-ca \
-    libsasl2-dev sasl2-bin libscitokens-dev
+    libkrb5-dev \
+    libsasl2-dev sasl2-bin libscitokens-dev \
+    golang jq
 
 RUN \
   # sshd

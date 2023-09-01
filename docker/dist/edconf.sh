@@ -10,6 +10,7 @@ done
 
 DEBUG=false
 AUTH=
+SASL=
 while [ $# -gt 0 ]
 do
 	case $1 in
@@ -18,6 +19,23 @@ do
 	tls_sharedsecret|tls_client_certificate|\
 	sasl|sasl_auth)
 		AUTH="$AUTH $1" ;;
+	xoauth2|oauth2)
+		: ${JWT_USER_PATH:=/tmp/jwt_user_u$(id -u)/token.jwt}
+		if jwt-parse $JWT_USER_PATH > /dev/null; then
+			:
+		else
+			echo "no token"
+			exit 1
+		fi
+		AUTH="$AUTH sasl"
+		SASL="sasl_mechanisms XOAUTH2" ;;
+	anonymous)
+		gfuser anonymous > /dev/null 2>&1 || {
+			gfuser -c anonymous anon / ""
+			gfgroup -m -a gfarmadm anonymous
+		}
+		AUTH="$AUTH sasl"
+		SASL="sasl_mechanisms ANONYMOUS\nsasl_user dummy" ;;
 	*) exit 1 ;;
 	esac
 	shift
@@ -45,6 +63,11 @@ fi
 		echo "auth enable $a *" >> $GFCONF
 	done
 	awk '/^auth/ {print "auth disable", $3, $4}' $SYSCONF >> $GFCONF
+}
+[ X"$SASL" = X ] || {
+	cp -p $GFCONF $GFCONF.bak
+	sed '/^sasl/d' $GFCONF.bak > $GFCONF
+	/usr/bin/echo -e $SASL >> $GFCONF
 }
 
 echo [~/.gfarm2rc]

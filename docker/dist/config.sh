@@ -34,6 +34,8 @@ auth enable tls_client_certificate *
 auth enable tls_sharedsecret *
 auth enable sasl *
 auth enable sasl_auth *
+auth enable kerberos *
+auth enable kerberos_auth *
 _EOF_
 
 sudo systemctl start gfarm-pgsql
@@ -63,6 +65,8 @@ auth enable tls_client_certificate *
 auth enable tls_sharedsecret *
 auth enable sasl *
 auth enable sasl_auth *
+auth enable kerberos *
+auth enable kerberos_auth *
 _EOF_
 cp $CONFDIR/gfarm2.conf $TMPCONF
 
@@ -84,7 +88,9 @@ gfarm-prun -p -h $TMPF "
 'auth enable tls_client_certificate *' \
 'auth enable tls_sharedsecret *' \
 'auth enable sasl *' \
-'auth enable sasl_auth *' >> $CONFDIR/gfmd.conf\" &&
+'auth enable sasl_auth *' \
+'auth enable kerberos *' \
+'auth enable kerberos_auth *' >> $CONFDIR/gfmd.conf\" &&
 	sudo systemctl start gfarm-pgsql &&
 	sudo gfdump.postgresql -r -f d &&
 	rm d &&

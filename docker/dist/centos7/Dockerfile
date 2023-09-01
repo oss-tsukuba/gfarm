@@ -22,7 +22,8 @@ RUN yum -y update \
     procps valgrind \
     myproxy globus-simple-ca \
     openssl11-devel \
-    cyrus-sasl-devel scitokens-cpp-devel
+    cyrus-sasl-devel scitokens-cpp-devel \
+    golang jq
 
 RUN \
  # sshd

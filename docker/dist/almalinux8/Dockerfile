@@ -19,7 +19,8 @@ RUN dnf -y update \
     fuse fuse-devel libacl-devel \
     procps gdb valgrind \
     myproxy globus-simple-ca \
-    cyrus-sasl-devel scitokens-cpp-devel
+    cyrus-sasl-devel scitokens-cpp-devel \
+    golang jq
 
 RUN \
  # sshd
