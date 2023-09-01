@@ -7,7 +7,7 @@
 ## (For VS Code users) Explore on virtual clusters by VS Code dev containers
 
 - Install VS Code and Dev Containers extension
-- Open this directory
+- Open gfarm/ directory
 - Open a command palette by Ctrl+Shift+p and execute "Dev Containers: Rebulid and Reopen in Container"
 - Open Terminal -> New Terminal
 - follow the instructions below in a container
