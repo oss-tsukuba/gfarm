@@ -2802,17 +2802,18 @@ tls_session_io_continuable(int sslerr, struct tls_session_ctx_struct *ctx,
 		/*
 		 * TLS runtime error
 		 */
-		ctx->last_gfarm_error_ =
-		    BIO_eof(SSL_get_rbio(ctx->ssl_)) ?
-		    GFARM_ERR_UNEXPECTED_EOF :
-		    GFARM_ERR_TLS_RUNTIME_ERROR;
-		ctx->is_got_fatal_ssl_error_ = true;
-		if (ctx->last_gfarm_error_ == GFARM_ERR_UNEXPECTED_EOF)
+		if (BIO_eof(SSL_get_rbio(ctx->ssl_))) {
+			ctx->last_gfarm_error_ =
+			    GFARM_ERR_UNEXPECTED_EOF;
 			gflog_tls_info(GFARM_MSG_UNFIXED,
 			    "TLS EOF during %s", diag);
-		else
+		} else  {
+			ctx->last_gfarm_error_ =
+			    GFARM_ERR_TLS_RUNTIME_ERROR;
 			gflog_tls_error(GFARM_MSG_1005623,
 			    "TLS error during %s", diag);
+		}
+		ctx->is_got_fatal_ssl_error_ = true;
 		break;
 
 	case SSL_ERROR_ZERO_RETURN:
