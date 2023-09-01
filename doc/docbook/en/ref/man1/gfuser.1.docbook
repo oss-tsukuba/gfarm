@@ -156,6 +156,7 @@ each authentication method of registered users.
 <para>
 Registers, modifies, and deletes a user identifier for each authentication method mapping to Gfarm global username.
 To delete, specify a null string as the user identifier.
+SASL and Kerberos are available for a authentication method.
 This option can be used by Gfarm administrators.
 </para>
 </listitem>
