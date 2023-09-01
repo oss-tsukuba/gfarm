@@ -326,7 +326,7 @@ auth_uid_to_global_username_sharedsecret(void *closure,
 	return (GFARM_ERR_NO_ERROR);
 }
 
-#ifdef HAVE_CYRUS_SASL
+#if defined(HAVE_CYRUS_SASL) && defined(HAVE_TLS_1_3)
 
 static gfarm_error_t
 auth_uid_to_global_username_sasl(void *closure,
