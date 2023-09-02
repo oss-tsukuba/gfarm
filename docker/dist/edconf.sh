@@ -20,13 +20,7 @@ do
 	sasl|sasl_auth)
 		AUTH="$AUTH $1" ;;
 	xoauth2|oauth2)
-		: ${JWT_USER_PATH:=/tmp/jwt_user_u$(id -u)/token.jwt}
-		if jwt-parse $JWT_USER_PATH > /dev/null; then
-			:
-		else
-			echo "no token"
-			exit 1
-		fi
+		jwt-parse > /dev/null
 		AUTH="$AUTH sasl"
 		SASL="sasl_mechanisms XOAUTH2" ;;
 	anonymous)

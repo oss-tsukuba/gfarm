@@ -35,11 +35,6 @@ else
 	(cd ~/gfarm/$PKG && sh $DISTDIR/install.sh)
 fi
 
-# install jwt-parse
-PKG=jwt-parse; export PKG
-(cd ~/gfarm/util/$PKG && sudo make install > /dev/null &&
- gfarm-prun -p "(cd gfarm/util/$PKG && sudo make install > /dev/null)")
-
 # install jwt-logon
 PKG=jwt-logon; export PKG
 [ -d ~/gfarm/$PKG ] || git clone https://github.com/oss-tsukuba/$PKG.git
