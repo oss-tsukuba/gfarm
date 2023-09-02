@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>22 Sep 2022</date></refentryinfo>
+<refentryinfo><date>2 Sep 2023</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -1043,7 +1043,9 @@ PostgreSQLサーバーが動作しているホスト名を指定します。
 <token>kerberos</token>、
 <token>gsi_auth</token>、
 <token>gsi</token> 認証
-の順序で試みます。</para>
+の順序で試みます。
+この順序は  <token>auth_trial_order</token> ディレクティブで変更できます。
+</para>
 
 <para>
 また
@@ -1075,6 +1077,40 @@ GSIは利用できません。この場合、<token>gsi</token>および
 それ以外の全てのホストには<token>gsi</token>認証のみを試みます。
 すなわち、ホスト192.168.0.100と192.168.0.101の2つのホストは、
 <token>gsi</token>認証のみを試みることになります。</para>
+
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>auth_trial_order</token> <parameter moreinfo="none">認証方式</parameter>...</term>
+<listitem>
+<para>
+クライアントが試行する認証方法の順序を変更します。
+引数には、試行する順番で認証方法を羅列します。
+</para>
+
+<para>
+クライアントが参照する gfarm2.conf に記載した場合、
+クライアントと gfsd、
+および クライアントと gfmd の間の接続で試行する認証方式を設定します。
+</para>
+
+<para>
+gfsd が参照する gfarm2.conf に記載した場合、
+gfsd と gfmd、
+および gfsd どうしの間の接続で試行する認証方式を設定します。
+</para>
+
+<para>
+gfmd.conf に記載した場合、
+スレーブ gfmd と マスター gfmd の間の接続で試行する認証方式を設定します。
+</para>
+
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	auth_trial_order sharedsecret sasl_auth sasl tls_sharedsecret tls_client_certificate kerberos_auth kerberos gsi_auth gsi
+</literallayout>
+<para>上記はデフォルトと同じ順序で試行する場合の設定です。</para>
 
 </listitem>
 </varlistentry>
@@ -3346,6 +3382,23 @@ TLS通信において、proxy 証明書の利用を禁止したい場合に disa
 </listitem>
 </varlistentry>
 
+<varlistentry>
+<term><token>tls_security_level</token> <parameter moreinfo="none">数</parameter></term>
+<listitem>
+<para>
+OpenSSL の security_level 機能の数値を指定します。
+指定可能な値とそれぞれの意味は OpenSSL のドキュメント
+<ulink url="https://www.cyrusimap.org/sasl/sasl/authentication_mechanisms.html"/>
+を参照してください。
+</para>
+<para>このパラメータのデフォルトは OpenSSL のコンパイル時に決まります。</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	tls_security_level 2
+</literallayout>
+</listitem>
+</varlistentry>
+
 </variablelist>
 </refsect1>
 
@@ -3402,6 +3455,7 @@ TLS通信において、proxy 証明書の利用を禁止したい場合に disa
 	&lt;postgresql_password_statement&gt; |
 	&lt;postgresql_conninfo_statement&gt; |
 	&lt;auth_statement&gt; |
+	&lt;auth_trial_order_statement&gt; |
 	&lt;shared_key_file_statement&gt; |
 	&lt;digest_statement&gt; |
 	&lt;directory_quota_count_per_user_limit_statement&gt; |
@@ -3511,7 +3565,8 @@ TLS通信において、proxy 証明書の利用を禁止したい場合に disa
 	&lt;tls_allow_no_crl_statement&gt; |
 	&lt;tls_key_update_statement&gt; |
 	&lt;tls_build_chain_local_statement&gt; |
-	&lt;tls_proxy_certificate_statement&gt;
+	&lt;tls_proxy_certificate_statement&gt; |
+	&lt;tls_security_level_statement&gt;
 </literallayout></listitem>
 </varlistentry>
 
@@ -3748,6 +3803,11 @@ TLS通信において、proxy 証明書の利用を禁止したい場合に disa
 <varlistentry>
 <term>&lt;auth_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"auth" &lt;validity&gt; &lt;auth_method&gt; &lt;hostspec&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;auth_trial_order_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"auth_trial_order" &lt;validity&gt; &lt;auth_method&gt; ...</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
@@ -4494,6 +4554,11 @@ TLS通信において、proxy 証明書の利用を禁止したい場合に disa
 <varlistentry>
 <term>&lt;tls_proxy_certificate_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"tls_proxy_certificate" &lt;validity&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;tls_security_level_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"tls_security_level" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 </variablelist>

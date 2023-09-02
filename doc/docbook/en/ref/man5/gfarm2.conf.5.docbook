@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>22 Sep 2022</date></refentryinfo>
+<refentryinfo><date>2 Sep 2023</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -1079,6 +1079,7 @@ method for the host, the order of the authentication trial is
 <token>gsi_auth</token>,
 and then
 <token>gsi</token>.
+This order can be changed with the <token>auth_trial_order</token> directive.
 </para>
 
 <para>The GSI methods are available if and only if the
@@ -1106,6 +1107,45 @@ tested for authentication by both
 and all other hosts will be authenticated by
 <token>gsi</token>.  Note that two hosts, 192.168.0.100 and
 192.168.0.101, will be tested for authentication by gsi only.</para>
+
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>auth_trial_order</token> <parameter moreinfo="none">method</parameter>...</term>
+<listitem>
+<para>
+This directive changes the order of authentication methods
+to be tried by the client.
+The argument enumerates the authentication methods
+in the order in which they should be tried.
+</para>
+
+<para>
+When described in the gfarm2.conf referenced by the client,
+it sets the authentication method to be tried for connections
+between the client and gfsd and between the client and gfmd.
+</para>
+
+<para>
+When described in the gfarm2.conf referenced by the gfsd,
+it sets the authentication method to be tried for connections
+between the gfsd and gfmd and between the gfsd and gfsd.
+</para>
+
+<para>
+When described in gfmd.conf,
+it sets the authentication method to be tried for connections
+between the slave gfmd and master gfmd.
+</para>
+
+<para>Example:</para>
+<literallayout format="linespecific" class="normal">
+	auth_trial_order sharedsecret sasl_auth sasl tls_sharedsecret tls_client_certificate kerberos_auth kerberos gsi_auth gsi
+</literallayout>
+<para>
+For the above settings, attempts are made in the same order as the default.
+</para>
 
 </listitem>
 </varlistentry>
@@ -3395,6 +3435,25 @@ In this case, look for the client certificate in the following order:
 </listitem>
 </varlistentry>
 
+<varlistentry>
+<term><token>tls_security_level</token> <parameter moreinfo="none">number</parameter></term>
+<listitem>
+<para>
+Specifies the numerical value of OpenSSL's security_level feature.
+See the OpenSSL documentation below for possible values and
+their respective meanings.
+<ulink url="https://www.cyrusimap.org/sasl/sasl/authentication_mechanisms.html"/>
+</para>
+<para>
+The default for this parameter is determined at OpenSSL compile time.
+</para>
+<para>Example:</para>
+<literallayout format="linespecific" class="normal">
+	tls_security_level 2
+</literallayout>
+</listitem>
+</varlistentry>
+
 </variablelist>
 </refsect1>
 
@@ -3451,6 +3510,7 @@ In this case, look for the client certificate in the following order:
 	&lt;postgresql_password_statement&gt; |
 	&lt;postgresql_conninfo_statement&gt; |
 	&lt;auth_statement&gt; |
+	&lt;auth_trial_order_statement&gt; |
 	&lt;shared_key_file_statement&gt; |
 	&lt;digest_statement&gt; |
 	&lt;directory_quota_count_per_user_limit_statement&gt; |
@@ -3560,7 +3620,8 @@ In this case, look for the client certificate in the following order:
 	&lt;tls_allow_no_crl_statement&gt; |
 	&lt;tls_key_update_statement&gt; |
 	&lt;tls_build_chain_local_statement&gt; |
-	&lt;tls_proxy_certificate_statement&gt;
+	&lt;tls_proxy_certificate_statement&gt; |
+	&lt;tls_security_level_statement&gt;
 </literallayout></listitem>
 </varlistentry>
 
@@ -3797,6 +3858,11 @@ In this case, look for the client certificate in the following order:
 <varlistentry>
 <term>&lt;auth_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"auth" &lt;validity&gt; &lt;auth_method&gt; &lt;hostspec&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;auth_trial_order_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"auth_trial_order" &lt;validity&gt; &lt;auth_method&gt; ...</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
@@ -4543,6 +4609,11 @@ In this case, look for the client certificate in the following order:
 <varlistentry>
 <term>&lt;tls_proxy_certificate_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"tls_proxy_certificate" &lt;validity&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;tls_security_level_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"tls_security_level" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 </variablelist>
