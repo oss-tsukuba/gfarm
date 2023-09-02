@@ -1,12 +1,17 @@
 #!/bin/bash
-set -eo pipefail
+set -euo pipefail
 status=1
-trap 'exit $status' 0 1 2 15
 
-FILE=$1
+: ${JWT_USER_PATH:=/tmp/jwt_user_u$(id -u)/token.jwt}
+[ $# -gt 0 ] && JWT_USER_PATH=$1
 
-[ X"$FILE" = X ] && exit 1
-[ -f $FILE ] || exit 1
+[ -f $JWT_USER_PATH ] || {
+	echo >&2 token not found: $JWT_USER_PATH
+	exit 1
+}
+
+trap '[ $status = 1 ] && echo >&2 invalid token: $JWT_USER_PATH; \
+	exit $status' 0 1 2 15
 
 pad() {
 	d=$1===
@@ -31,7 +36,7 @@ date_string() {
 	done
 }
 for i in 1 2; do
-	data=$(cut -d. -f $i $FILE)
+	data=$(cut -d. -f $i $JWT_USER_PATH)
 	pad $data | base64 -d | jq | date_string
 done
 status=0

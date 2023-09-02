@@ -16,6 +16,7 @@ SUBDIRS = \
 	util/gfservice \
 	util/gfruntest \
 	util/proxy-cert \
+	util/jwt-parse \
 	systest \
 	nls \
 	bench/gfperf \
