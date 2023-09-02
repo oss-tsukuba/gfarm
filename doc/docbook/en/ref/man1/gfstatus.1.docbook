@@ -22,7 +22,7 @@
 <cmdsynopsis sepchar=" ">
   <command moreinfo="none">gfstatus</command>
     <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
-    <arg choice="opt" rep="norepeat">-dS</arg>
+    <arg choice="opt" rep="norepeat">-d</arg>
  </cmdsynopsis>
 
 <cmdsynopsis sepchar=" ">
@@ -32,7 +32,7 @@
       <arg choice="plain" rep="norepeat">-d</arg>
       <arg choice="plain" rep="norepeat">-M</arg>
     </group>
-    <group choice="opt" rep="norepeat">
+    <group choice="plain" rep="norepeat">
       <arg choice="plain" rep="norepeat">-l</arg>
       <arg choice="plain" rep="norepeat">-L</arg>
     </group>
@@ -54,6 +54,11 @@
     <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
     <arg choice="opt" rep="norepeat">-d</arg>
     <arg choice="plain" rep="repeat"><replaceable>configuration_directive</replaceable></arg>
+</cmdsynopsis>
+
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfstatus</command>
+    <arg choice="plain" rep="norepeat">-S</arg>
 </cmdsynopsis>
 
 <cmdsynopsis sepchar=" ">
