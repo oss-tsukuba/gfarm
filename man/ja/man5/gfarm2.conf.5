@@ -2,12 +2,12 @@
 .\"     Title: gfarm2.conf
 .\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 22 Sep 2022
+.\"      Date: 2 Sep 2023
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFARM2\&.CONF" "5" "22 Sep 2022" "Gfarm" "Gfarm"
+.TH "GFARM2\&.CONF" "5" "2 Sep 2023" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -987,7 +987,9 @@ kerberos_auth、
 kerberos、
 gsi_auth、
 gsi
-認証 の順序で試みます。
+認証 の順序で試みます。 この順序は
+auth_trial_order
+ディレクティブで変更できます。
 .sp
 また
 sasl_auth
@@ -1020,6 +1022,31 @@ gsi_auth認証の指定は単に無視されます。
 sharedsecretとgsiの両方を、 10\&.0\&.0\&.0/8ネットワークに属すホストにはgsi_authおよび
 gsiの両方を、 それ以外の全てのホストにはgsi認証のみを試みます。 すなわち、ホスト192\&.168\&.0\&.100と192\&.168\&.0\&.101の2つのホストは、
 gsi認証のみを試みることになります。
+.RE
+.PP
+auth_trial_order \fI認証方式\fR\&.\&.\&.
+.RS 4
+クライアントが試行する認証方法の順序を変更します。 引数には、試行する順番で認証方法を羅列します。
+.sp
+クライアントが参照する gfarm2\&.conf に記載した場合、 クライアントと gfsd、 および クライアントと gfmd の間の接続で試行する認証方式を設定します。
+.sp
+gfsd が参照する gfarm2\&.conf に記載した場合、 gfsd と gfmd、 および gfsd どうしの間の接続で試行する認証方式を設定します。
+.sp
+gfmd\&.conf に記載した場合、 スレーブ gfmd と マスター gfmd の間の接続で試行する認証方式を設定します。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	auth_trial_order sharedsecret sasl_auth sasl tls_sharedsecret tls_client_certificate kerberos_auth kerberos gsi_auth gsi
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+上記はデフォルトと同じ順序で試行する場合の設定です。
 .RE
 .PP
 shared_key_file \fIパス名\fR
@@ -3139,6 +3166,27 @@ tls_key_file
 .RE
 .\}
 .RE
+.PP
+tls_security_level \fI数\fR
+.RS 4
+OpenSSL の security_level 機能の数値を指定します。 指定可能な値とそれぞれの意味は OpenSSL のドキュメント
+\m[blue]\fB\%https://www.cyrusimap.org/sasl/sasl/authentication_mechanisms.html\fR\m[]
+を参照してください。
+.sp
+このパラメータのデフォルトは OpenSSL のコンパイル時に決まります。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	tls_security_level 2
+.fi
+.if n \{\
+.RE
+.\}
+.RE
 .SH "GRAMMAR"
 .PP
 gfarm2\&.confの文法をBNFで記述すると、下記のようになります。
@@ -3197,6 +3245,7 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 	<postgresql_password_statement> |
 	<postgresql_conninfo_statement> |
 	<auth_statement> |
+	<auth_trial_order_statement> |
 	<shared_key_file_statement> |
 	<digest_statement> |
 	<directory_quota_count_per_user_limit_statement> |
@@ -3306,7 +3355,8 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 	<tls_allow_no_crl_statement> |
 	<tls_key_update_statement> |
 	<tls_build_chain_local_statement> |
-	<tls_proxy_certificate_statement>
+	<tls_proxy_certificate_statement> |
+	<tls_security_level_statement>
 .fi
 .if n \{\
 .RE
@@ -3965,6 +4015,20 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .nf
 "auth" <validity> <auth_method> <hostspec>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<auth_trial_order_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"auth_trial_order" <validity> <auth_method> \&.\&.\&.
 .fi
 .if n \{\
 .RE
@@ -5781,6 +5845,20 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .nf
 "tls_proxy_certificate" <validity>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<tls_security_level_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"tls_security_level" <number>
 .fi
 .if n \{\
 .RE

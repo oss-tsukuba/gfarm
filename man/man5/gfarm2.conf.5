@@ -2,12 +2,12 @@
 .\"     Title: gfarm2.conf
 .\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 22 Sep 2022
+.\"      Date: 2 Sep 2023
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFARM2\&.CONF" "5" "22 Sep 2022" "Gfarm" "Gfarm"
+.TH "GFARM2\&.CONF" "5" "2 Sep 2023" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -1082,7 +1082,9 @@ tls_client_certificate,
 kerberos_auth,
 kerberos,
 gsi_auth, and then
-gsi\&.
+gsi\&. This order can be changed with the
+auth_trial_order
+directive\&.
 .sp
 The GSI methods are available if and only if the \-\-with\-globus option is specified at configuration\&. When the methods are not available, an
 auth
@@ -1118,6 +1120,31 @@ gsi_auth
 and
 gsi; and all other hosts will be authenticated by
 gsi\&. Note that two hosts, 192\&.168\&.0\&.100 and 192\&.168\&.0\&.101, will be tested for authentication by gsi only\&.
+.RE
+.PP
+auth_trial_order \fImethod\fR\&.\&.\&.
+.RS 4
+This directive changes the order of authentication methods to be tried by the client\&. The argument enumerates the authentication methods in the order in which they should be tried\&.
+.sp
+When described in the gfarm2\&.conf referenced by the client, it sets the authentication method to be tried for connections between the client and gfsd and between the client and gfmd\&.
+.sp
+When described in the gfarm2\&.conf referenced by the gfsd, it sets the authentication method to be tried for connections between the gfsd and gfmd and between the gfsd and gfsd\&.
+.sp
+When described in gfmd\&.conf, it sets the authentication method to be tried for connections between the slave gfmd and master gfmd\&.
+.sp
+Example:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	auth_trial_order sharedsecret sasl_auth sasl tls_sharedsecret tls_client_certificate kerberos_auth kerberos gsi_auth gsi
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+For the above settings, attempts are made in the same order as the default\&.
 .RE
 .PP
 shared_key_file \fIpathname\fR
@@ -3285,6 +3312,26 @@ For example,
 .RE
 .\}
 .RE
+.PP
+tls_security_level \fInumber\fR
+.RS 4
+Specifies the numerical value of OpenSSL\*(Aqs security_level feature\&. See the OpenSSL documentation below for possible values and their respective meanings\&.
+\m[blue]\fB\%https://www.cyrusimap.org/sasl/sasl/authentication_mechanisms.html\fR\m[]
+.sp
+The default for this parameter is determined at OpenSSL compile time\&.
+.sp
+Example:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	tls_security_level 2
+.fi
+.if n \{\
+.RE
+.\}
+.RE
 .SH "GRAMMAR"
 .PP
 This is a grammar of gfarm2\&.conf described by the BNF notation\&.
@@ -3343,6 +3390,7 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 	<postgresql_password_statement> |
 	<postgresql_conninfo_statement> |
 	<auth_statement> |
+	<auth_trial_order_statement> |
 	<shared_key_file_statement> |
 	<digest_statement> |
 	<directory_quota_count_per_user_limit_statement> |
@@ -3452,7 +3500,8 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 	<tls_allow_no_crl_statement> |
 	<tls_key_update_statement> |
 	<tls_build_chain_local_statement> |
-	<tls_proxy_certificate_statement>
+	<tls_proxy_certificate_statement> |
+	<tls_security_level_statement>
 .fi
 .if n \{\
 .RE
@@ -4111,6 +4160,20 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 .\}
 .nf
 "auth" <validity> <auth_method> <hostspec>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<auth_trial_order_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"auth_trial_order" <validity> <auth_method> \&.\&.\&.
 .fi
 .if n \{\
 .RE
@@ -5927,6 +5990,20 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 .\}
 .nf
 "tls_proxy_certificate" <validity>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<tls_security_level_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"tls_security_level" <number>
 .fi
 .if n \{\
 .RE

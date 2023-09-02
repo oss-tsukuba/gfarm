@@ -830,7 +830,9 @@ PostgreSQLサーバーが動作しているホスト名を指定します。
 <span class="token">kerberos</span>、
 <span class="token">gsi_auth</span>、
 <span class="token">gsi</span> 認証
-の順序で試みます。</p>
+の順序で試みます。
+この順序は  <span class="token">auth_trial_order</span> ディレクティブで変更できます。
+</p>
 <p>
 また
 <span class="token">sasl_auth</span> および
@@ -858,6 +860,32 @@ GSIは利用できません。この場合、<span class="token">gsi</span>お�
 それ以外の全てのホストには<span class="token">gsi</span>認証のみを試みます。
 すなわち、ホスト192.168.0.100と192.168.0.101の2つのホストは、
 <span class="token">gsi</span>認証のみを試みることになります。</p>
+</dd>
+<dt><span class="term"><span class="token">auth_trial_order</span> <em class="parameter"><code>認証方式</code></em>...</span></dt>
+<dd>
+<p>
+クライアントが試行する認証方法の順序を変更します。
+引数には、試行する順番で認証方法を羅列します。
+</p>
+<p>
+クライアントが参照する gfarm2.conf に記載した場合、
+クライアントと gfsd、
+および クライアントと gfmd の間の接続で試行する認証方式を設定します。
+</p>
+<p>
+gfsd が参照する gfarm2.conf に記載した場合、
+gfsd と gfmd、
+および gfsd どうしの間の接続で試行する認証方式を設定します。
+</p>
+<p>
+gfmd.conf に記載した場合、
+スレーブ gfmd と マスター gfmd の間の接続で試行する認証方式を設定します。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	auth_trial_order sharedsecret sasl_auth sasl tls_sharedsecret tls_client_certificate kerberos_auth kerberos gsi_auth gsi<br>
+</p></div>
+<p>上記はデフォルトと同じ順序で試行する場合の設定です。</p>
 </dd>
 <dt><span class="term"><span class="token">shared_key_file</span> <em class="parameter"><code>パス名</code></em></span></dt>
 <dd><p>sharedsecret認証に用いる秘密鍵ファイルのパス名を指定します。</p></dd>
@@ -2605,6 +2633,20 @@ TLS通信において、proxy 証明書の利用を禁止したい場合に disa
 	tls_proxy_certificate disable<br>
 </p></div>
 </dd>
+<dt><span class="term"><span class="token">tls_security_level</span> <em class="parameter"><code>数</code></em></span></dt>
+<dd>
+<p>
+OpenSSL の security_level 機能の数値を指定します。
+指定可能な値とそれぞれの意味は OpenSSL のドキュメント
+<a class="ulink" href="https://www.cyrusimap.org/sasl/sasl/authentication_mechanisms.html" target="_top">https://www.cyrusimap.org/sasl/sasl/authentication_mechanisms.html</a>
+を参照してください。
+</p>
+<p>このパラメータのデフォルトは OpenSSL のコンパイル時に決まります。</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	tls_security_level 2<br>
+</p></div>
+</dd>
 </dl></div>
 </div>
 <div class="refsect1">
@@ -2660,6 +2702,7 @@ TLS通信において、proxy 証明書の利用を禁止したい場合に disa
 	&lt;postgresql_password_statement&gt; |<br>
 	&lt;postgresql_conninfo_statement&gt; |<br>
 	&lt;auth_statement&gt; |<br>
+	&lt;auth_trial_order_statement&gt; |<br>
 	&lt;shared_key_file_statement&gt; |<br>
 	&lt;digest_statement&gt; |<br>
 	&lt;directory_quota_count_per_user_limit_statement&gt; |<br>
@@ -2769,7 +2812,8 @@ TLS通信において、proxy 証明書の利用を禁止したい場合に disa
 	&lt;tls_allow_no_crl_statement&gt; |<br>
 	&lt;tls_key_update_statement&gt; |<br>
 	&lt;tls_build_chain_local_statement&gt; |<br>
-	&lt;tls_proxy_certificate_statement&gt;<br>
+	&lt;tls_proxy_certificate_statement&gt; |<br>
+	&lt;tls_security_level_statement&gt;<br>
 </p></div></dd>
 <dt><span class="term">&lt;include_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"include" &lt;pathname&gt;</p></div></dd>
@@ -2865,6 +2909,8 @@ TLS通信において、proxy 証明書の利用を禁止したい場合に disa
 <dd><div class="literallayout"><p>"postgresql_conninfo" &lt;string&gt;</p></div></dd>
 <dt><span class="term">&lt;auth_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"auth" &lt;validity&gt; &lt;auth_method&gt; &lt;hostspec&gt;</p></div></dd>
+<dt><span class="term">&lt;auth_trial_order_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"auth_trial_order" &lt;validity&gt; &lt;auth_method&gt; ...</p></div></dd>
 <dt><span class="term">&lt;auth_command&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"enable" | "disable"</p></div></dd>
 <dt><span class="term">&lt;auth_method&gt; ::=</span></dt>
@@ -3133,6 +3179,8 @@ TLS通信において、proxy 証明書の利用を禁止したい場合に disa
 <dd><div class="literallayout"><p>"tls_build_chain_local" &lt;validity&gt;</p></div></dd>
 <dt><span class="term">&lt;tls_proxy_certificate_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"tls_proxy_certificate" &lt;validity&gt;</p></div></dd>
+<dt><span class="term">&lt;tls_security_level_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"tls_security_level" &lt;number&gt;</p></div></dd>
 </dl></div>
 </div>
 <div class="refsect1">
