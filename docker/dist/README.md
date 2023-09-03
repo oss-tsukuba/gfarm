@@ -53,11 +53,15 @@ Build, install and setup tests for all distributions.
 
     % sh ./devrpm.sh
     (in the container)
-    # wget https://github.com/oss-tsukuba/gfarm/archive/refs/tags/$VER.tar.gz
+    # export PKG=gfarm
+    # export VER=2.8.0
+    # wget https://github.com/oss-tsukuba/$PKG/archive/refs/tags/$VER.tar.gz
     # mv $VER.tar.gz $PKG-$VER.tar.gz
     # sh gfarm/docker/dist/mkrpm.sh
     # Ctrl-D
 
-    % docker cp alma8:/root/rpmbuild/SRPMS/gfarm-$VER-1.src.rpm .
+    # export PKG=gfarm
+    # export VER=2.8.0
+    % docker cp alma8:/root/rpmbuild/SRPMS/$PKG-$VER-1.src.rpm .
     % docker stop alma8
     % docker rm alma8
