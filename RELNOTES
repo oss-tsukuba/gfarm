@@ -1,3 +1,50 @@
+Release note for Gfarm 2.8.0
+============================
+
+[2023.9.3]
+
+Update note
+* this release requires config-gfarm-update --update
+
+New feature
+* Transport Layer Security (TLS) for secure communication
+* New authentication methods - SASL (XOAUTH2, PLAIN, ANONYMOUS) and Kerberos
+* Multitenant support
+
+New command
+* gfcp - copy a file in parallel
+* gfpconcat - concatinate files in parallel
+
+New authentication method
+* sasl_auth, sasl - SASL (XOAUTH2, PLAIN, ANONYMOUS) authentication in TLS.
+  After the authentication, sasl_auth uses a plain socket, while sasl uses TLS
+  secure connection.
+* tls_sharedsecret, tls_client_certificate - shared secret and client
+  certificate authentications in TLS.  Afther the authentication, both uses
+  TLS secure connection.
+* kerberos_auth, kerberos - Kerberos authentication.  After the authentication,
+  kerberos_auth uses a plain socket, while kerberos uses Kerberos encrypted
+  connection.
+
+New configuration directive
+* auth_trial_order - specify authentication order
+* sasl_mechanisms, sasl_user, sasl_password - for SASL authentication
+* tls_cipher_suite, tls_ca_certificate_path, tls_ca_revocation_path,
+  tls_ca_peer_verify_chain_path, tls_certificate_file,
+  tls_certificate_chain_file, tls_key_file, tls_allow_no_crl,
+  tls_key_update, tls_build_chain_local, tls_proxy_certificate,
+  tls_security_level - for TLS secure communication
+
+Documentation
+* SASL authentication and secure communication with TLS
+
+Updated feature
+* gfpcopy - -t option for parallel copy of large files.  Default is 2.
+* gfpcopy - -T option to specify the threshold for large files.  Default is 1G.
+* gfuser - -A option to specify a global name for each authentication method
+* gfuser - -L option to display more user information
+* gfstatus - -S option to display static settings
+
 Release note for Gfarm 2.7.25
 =============================
 

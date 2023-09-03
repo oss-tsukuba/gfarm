@@ -25,22 +25,16 @@ Linux と NetBSD 以外の OS では，GNU make を使ってください．
 
 configure コマンドには，下記のオプションがあります．
 
-・--with-openldap=ディレクトリ
-
-  OpenLDAP のインストールされているディレクトリを指定します．
-  オプション省略時は自動的にインストールディレクトリの検索が試みられま
-  す．
-
 ・--with-postgresql=ディレクトリ
 
   PostgreSQL のインストールされているディレクトリを指定します．
   オプション省略時は自動的にインストールディレクトリの検索が試みられま
   す．
 
-・--with-openssl=ディレクトリ
+・--with-openssl=パッケージ名
 
-  OpenSSL のインストールされているディレクトリを指定します．
-  オプション省略時は /usr が指定されます．
+  OpenSSL のパッケージ名を指定します．
+  オプション省略時は openssl が指定されます．
 
 ・--with-globus=ディレクトリ
 
@@ -103,42 +97,55 @@ configure コマンドには，下記のオプションがあります．
   また，config-gfarm 時に -X オプションの指定が必要になります．
   このオプションは省略可能です．
 
+・--enable-linuxkernel
+
+  linux kernel 2.6 上の Gfarmカーネルドライバーを作成することを指示します。
+  詳しくは linux/doc/manual.{pdf,doc} を参照してください。
+
 利用するコンパイラを明示したい場合には，環境変数 CC に，コンパイラのコ
 マンド名を指定して configure を実行してください．以下は gcc を指定する
 例です．
 
 	% env CC=gcc ./configure [options]
 
-・--enable-linuxkernel
-
-  linux kernel 2.6 上の Gfarmカーネルドライバーを作成することを指示します。
-  詳しくは linux/doc/manual.{pdf,doc} を参照してください。
-
 構築に必要なパッケージ
 ----------------------
 
 * RPM パッケージ
 
-openssl-devel
-openldap-devel
+openssl-devel (CentOS 7 で TLS を用いるためには openssl11-devel(*)が必要)
 postgresql-devel or libpq-devel
+cyrus-sasl-devel			(SASL認証に必要)
+cyrus-sasl-xoauth2-idp(**)		(SASL XOAuth2 認証に必要)
+krb5-devel				(Kerberos 認証に必要)
 globus-gssapi-gsi-devel(*), pkgconfig	(--with-globus オプションに必要)
+rdma-core-devel				(--with-infiniband オプションに必要)
 postgresql, postgresql-server		(config-gfarm の実行に必要)
-fuse-devel				(gfarm2fs の構築に必要)
+fuse-devel, libacl-devel		(gfarm2fs の構築に必要)
 ganglia-gmond-python			(config-gf[ms]d-iostat の実行に必要)
 python3, python3-docopt(*), python3-schema(*)	(gfptar の実行に必要)
+ruby					(gfjournal{dump,admin} の実行に必要)
+golang					(jwt-agent の構築に必要)
 
 (*) EPELに含まれます．EPELは以下で利用できます．
     # yum install epel-release
+(**) https://github.com/oss-tsukuba/cyrus-sasl-xoauth2-idp.git
 
 * Debian パッケージ
 
 libssl-dev
-libldap2-dev
 libpq-dev
+libsasl2-dev sasl2-bin			(SASL認証に必要)
+cyrus-sasl-xoauth2-idp(**)		(SASL XOAuth2 認証に必要)
+libkrb5-dev				(Kerberos 認証に必要)
 libglobus-gssapi-gsi-dev, pkg-config	(--with-globus オプションに必要)
+libibverbs-dev				(--with-infiniband オプションに必要)
 postgresql, postgresql-client		(config-gfarm の実行に必要)
-libfuse-dev				(gfarm2fs の構築に必要)
+libfuse-dev, libacl1-dev		(gfarm2fs の構築に必要)
 python3, python3-docopt, python3-schema	(gfptar の実行に必要)
+ruby					(gfjournal{dump,admin} の実行に必要)
+golang					(jwt-agent の構築に必要)
+
+(**) https://github.com/oss-tsukuba/cyrus-sasl-xoauth2-idp.git
 
 $Id$

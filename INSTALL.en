@@ -25,22 +25,15 @@ Please use GNU make on operating systems other than Linux and NetBSD.
 
 Options for configure:
 
-  --with-openldap=directory
-
-  Specifies an installation directory for OpenLDAP.  When this
-  option is not specified, the installation directory is searched for
-  automatically.
-
   --with-postgresql=directory
 
   Specifies an installation directory for PostgreSQL.  When this
   option is not specified, the installation directory is searched for
   automatically.
 
-  --with-openssl=directory
+  --with-openssl=PKG
 
-  Specifies an installation directory for OpenSSL.  The default
-  directory is /usr.
+  Specifies a package name for OpenSSL.  The default is openssl.
 
   --with-globus=directory
 
@@ -112,26 +105,39 @@ Required Package
 
 * RPM Package
 
-openssl-devel
-openldap-devel
+openssl-devel (openssl11-devel(*) required for TLS on CentOS 7)
 postgresql-devel or libpq-devel
+cyrus-sasl-devel			(required for SASL)
+cyrus-sasl-xoauth2-idp(**)		(required for SASL XOAuth2)
+krb5-devel				(required for Kerberos)
 globus-gssapi-gsi-devel(*), pkgconfig	(required for --with-globus option)
+rdma-core-devel				(required for --with-infiniband option)
 postgresql, postgresql-server		(required to execute config-gfarm)
-fuse-devel				(required to build gfarm2fs)
+fuse-devel, libacl-devel		(required to build gfarm2fs)
 ganglia-gmond-python		(required to execute config-gf[ms]d-iostat)
 python3, python3-docopt(*), python3-schema(*)	(required to execute gfptar)
+ruby				(required to execute gfjournal{dump,admin})
+golang					(required for jwt-agent)
 
 (*) These packages are included in EPEL.  EPEL packages can be used by
     # yum install epel-release
+(**) https://github.com/oss-tsukuba/cyrus-sasl-xoauth2-idp.git
 
 * Debian Package
 
 libssl-dev
-libldap2-dev
 libpq-dev
+libsasl2-dev, sasl2-bin			(required for SASL)
+cyrus-sasl-xoauth2-idp(**)		(required for SASL XOAuth2)
+libkrb5-dev				(required for Kerberos)
 libglobus-gssapi-gsi-dev, pkgconf	(required for --with-globus option)
+libibverbs-dev				(required for --with-infiniband option)
 postgresql, postgresql-client		(required to execute config-gfarm)
-libfuse-dev				(required to build gfarm2fs)
+libfuse-dev, libacl1-dev		(required to build gfarm2fs)
 python3, python3-docopt, python3-schema	(required to execute gfptar)
+ruby				(required to execute gfjournal{dump,admin})
+golang					(required for jwt-agent)
+
+(**) https://github.com/oss-tsukuba/cyrus-sasl-xoauth2-idp.git
 
 $Id$
