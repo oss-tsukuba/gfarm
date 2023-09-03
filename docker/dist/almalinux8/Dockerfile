@@ -20,7 +20,7 @@ RUN dnf -y update \
     procps gdb valgrind \
     myproxy globus-simple-ca \
     cyrus-sasl-devel scitokens-cpp-devel \
-    golang jq pandoc
+    golang jq
 
 RUN \
  # sshd
