@@ -20,7 +20,10 @@ RUN dnf -y update \
     procps gdb valgrind \
     myproxy globus-simple-ca \
     cyrus-sasl-devel scitokens-cpp-devel \
-    golang jq
+    golang jq curl \
+ && dnf -y install 'dnf-command(config-manager)' \
+ && dnf config-manager --set-enabled powertools \
+ && dnf -y install pandoc
 
 RUN \
  # sshd

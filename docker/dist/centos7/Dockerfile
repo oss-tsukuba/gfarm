@@ -23,7 +23,7 @@ RUN yum -y update \
     myproxy globus-simple-ca \
     openssl11-devel \
     cyrus-sasl-devel scitokens-cpp-devel \
-    golang jq pandoc
+    golang jq pandoc curl
 
 RUN \
  # sshd
