@@ -14,5 +14,7 @@ do
 	gfarm-prun -a -p "[ -f $UNCONFIG ] && sudo $UNCONFIG -f || :"
 done
 
+gfarm-prun -a -p mv .gfarm2rc .gfarm2rc.bak
+
 status=0
 echo Done
