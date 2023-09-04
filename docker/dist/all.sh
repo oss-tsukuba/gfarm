@@ -54,7 +54,7 @@ if $build_pkg; then
 	(cd ~/gfarm && sh $DISTDIR/mkrpm.sh)
 	sh ./install-rpm.sh
 else
-	(cd ~/gfarm/$PKG && make > /dev/null &&
+	(cd ~/gfarm/$PKG && make clean > /dev/null && make > /dev/null &&
 	 sudo make PREFIX=/usr/local install > /dev/null &&
 	 gfarm-prun -p "(cd gfarm/$PKG && sudo make PREFIX=/usr/local install
 		 > /dev/null)")
