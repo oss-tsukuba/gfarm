@@ -10,7 +10,10 @@
 - Open gfarm/ directory
 - Open a command palette by Ctrl+Shift+p and execute "Dev Containers: Rebulid and Reopen in Container"
 - Open Terminal -> New Terminal
-- follow the instructions below in a container
+
+      % cd docker/dist
+
+- follow the instructions below after "in a container"
 
 ## Explore on virtual clusters
 
@@ -18,10 +21,10 @@
     % DIST=<distribution> docker compose build --build-arg UID=$(id -u) c1
     % DIST=<distribution> docker compose up -d
     ubuntu, almalinux8, and centos7 are available as $DIST.  Default is ubuntu
-    % docker exec -u $USER -w /home/$USER/gfarm -it gfarm-c1 /bin/bash
+    % make setup	# only required for OAuth Authentication
+    % make
 
     (in a container)
-    % cd docker/dist
     % sh ./all.sh
     ./all-rpm.sh also available in case of almalinux8 and centos7
     This will install and setup Gfarm.  Enjoy!
@@ -34,6 +37,33 @@ When you would like to execute `all.sh` (or `all-rpm.sh`) again, execute `unconf
 When you change the source code, execute `docker/dist/install.sh -m` in the top source directory and `restart.sh`.
 
 When you install Gfarm by `all.sh`, `regress.sh` and `failover.sh` are available for tests.
+
+## For OAuth authentication
+
+- connect remote desktop to localhost:13389
+- login ubuntu/ubuntu
+- launch Firefox
+- open a terminal
+
+      % sudo su -
+      [sudo] password for ubuntu: ubuntu
+      # apt update
+      # apt -y install libnss3-tools
+      # Ctrl-D
+      % /rdesktop/install-ca-for-browser.sh
+
+- connect to jwt-server/ by Firefox
+- login user1/PASSWORD
+- click "Generate and Store a JSON Web Token" button
+- user name and passphrase are displayed
+
+      (in a host)
+      % make
+      (in a container at docker/dist/)
+      % jwt-agent -s http://jwt-server/ -l user1
+      Passphrase:
+      % gfuser -A $USER SASL user1
+      % sh edconf.sh oauth2
 
 ## For HPCI Storage
 

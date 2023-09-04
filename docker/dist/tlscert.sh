@@ -15,4 +15,16 @@ gfarm-prun -a -p sudo ln -s $GSDIR/hostkey.pem $TLSDIR/private/gfmd.key
 gfarm-prun -a -p sudo ln -s $GSDIR/gfsd/gfsdcert.pem $TLSDIR/certs/gfsd.crt
 gfarm-prun -a -p sudo ln -s $GSDIR/gfsd/gfsdkey.pem $TLSDIR/private/gfsd.key
 
+if grep debian /etc/os-release > /dev/null; then
+	gfarm-prun -a -p "
+	sudo ln -s /minica /usr/share/ca-certificates/ &&
+	echo minica/minica.crt | sudo tee -a /etc/ca-certificates.conf
+		> /dev/null &&
+	sudo update-ca-certificates"
+elif grep rhel /etc/os-release > /dev/null; then
+	gfarm-prun -a -p "
+	sudo cp /minica/minica.crt /usr/share/pki/ca-trust-source/anchors/ &&
+	sudo update-ca-trust"
+fi
+
 status=0

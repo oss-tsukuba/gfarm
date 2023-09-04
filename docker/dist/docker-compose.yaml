@@ -11,6 +11,7 @@ x-common: &x-common
     - ../..:/home/$USER/gfarm:cached
     - local:/home/$USER/local:cached
     - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    - ./minica/minica.pem:/minica/minica.crt
   networks:
     - gfarm_net
   cap_add:
@@ -56,6 +57,49 @@ services:
     <<: *x-common
     hostname: c8
     container_name: gfarm-c8
+  keycloak:
+    build: keycloak
+    hostname: keycloak
+    container_name: gfarm-keycloak
+    volumes:
+      - ./keycloak:/keycloak
+      - ./minica/keycloak/cert.pem:/etc/x509/https/tls.crt
+      - ./minica/keycloak/key.pem:/etc/x509/https/tls.key
+    environment:
+      DB_VENDOR: h2
+      KEYCLOAK_USER: admin
+      KEYCLOAK_PASSWORD: admin
+    networks:
+      gfarm_net:
+    ports:
+      - 8080:8080
+      - 8443:8443
+  jwt-server:
+    build: jwt-server
+    hostname: jwt-server
+    container_name: gfarm-jwt-server
+    volumes:
+      - ./minica/minica.pem:/usr/share/pki/ca-trust-source/anchors/minica.crt
+    networks:
+      - gfarm_net
+    privileged: true
+  rdesktop:
+    image: scottyhardy/docker-remote-desktop
+    container_name: gfarm-rdesktop
+    volumes:
+      - ./minica/minica.pem:/minica/minica.pem
+      - ./rdesktop:/rdesktop
+    networks:
+      - gfarm_net
+    ports:
+      - 13389:3389
+  minica:
+    build: minica
+    container_name: gfarm-minica
+    volumes:
+      - ./minica:/minica:cached
+    networks:
+      - gfarm_net
 
 networks:
   gfarm_net:
