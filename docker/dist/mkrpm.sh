@@ -56,7 +56,7 @@ else
 fi
 if $NEEDTAR; then
 	[ -f $PKG-$VER/Makefile ] &&
-		(cd $PKG-$VER && make distclean > /dev/null || :)
+		(cd $PKG-$VER && make distclean > /dev/null || make clean || :)
 
 	tar --exclude-ignore-recursive=$PKG-$VER/.gitignore \
 		--exclude=.git -zcf $PKG-$VER.tar.gz $PKG-$VER \
