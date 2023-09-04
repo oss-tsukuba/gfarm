@@ -21,11 +21,19 @@ pad() {
 }
 
 date_string() {
+	expired=0
+	current_date=$(date +%s)
 	while read a b
 	do
 		case $a in
-		\"exp\":|\"iat\":|\"auth_time\":|\"nbf\":)
+		\"exp\":)
 			bb=$(echo $b | cut -d, -f 1)
+			[ $expired = 0 ] && expired=$((bb < current_date))
+			[ $b = $bb ] && COMMA= || COMMA=,
+			echo "  "$a $(date --date=@$bb)$COMMA ;;
+		\"iat\":|\"auth_time\":|\"nbf\":)
+			bb=$(echo $b | cut -d, -f 1)
+			[ $expired = 0 ] && expired=$((bb > current_date))
 			[ $b = $bb ] && COMMA= || COMMA=,
 			echo "  "$a $(date --date=@$bb)$COMMA ;;
 		\"*)
@@ -34,7 +42,10 @@ date_string() {
 			echo $a $b ;;
 		esac
 	done
+	[ $expired = 1 ] && echo >&2 "expired"
+	return $expired
 }
+
 for i in 1 2; do
 	data=$(cut -d. -f $i $JWT_USER_PATH)
 	pad $data | base64 -d | jq | date_string
