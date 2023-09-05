@@ -84,7 +84,7 @@ services:
       - gfarm_net
     privileged: true
   rdesktop:
-    image: scottyhardy/docker-remote-desktop
+    build: rdesktop
     container_name: gfarm-rdesktop
     volumes:
       - ./minica/minica.pem:/minica/minica.pem

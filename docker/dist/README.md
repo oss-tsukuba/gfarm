@@ -45,11 +45,6 @@ When you install Gfarm by `all.sh`, `regress.sh` and `failover.sh` are available
 - launch Firefox
 - open a terminal
 
-      % sudo su -
-      [sudo] password for ubuntu: ubuntu
-      # apt update
-      # apt -y install libnss3-tools
-      # Ctrl-D
       % /rdesktop/install-ca-for-browser.sh
 
 - connect to jwt-server/ by Firefox
@@ -61,7 +56,7 @@ When you install Gfarm by `all.sh`, `regress.sh` and `failover.sh` are available
       % make
       (in a container at docker/dist/)
       % jwt-agent -s http://jwt-server/ -l user1
-      Passphrase:
+      Passphrase: (paste the passphrase displayed)
       % gfuser -A $USER SASL user1
       % sh edconf.sh oauth2
 
