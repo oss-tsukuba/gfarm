@@ -13,7 +13,7 @@ RUN git clone https://github.com/oss-tsukuba/jwt-server.git
 COPY application.properties /jwt-server/src/main/resources/
 
 RUN cd jwt-server \
- && mvn package spring-boot:repackage \
+ && mvn package \
  && cp target/jwt-server.war /usr/share/tomcat/webapps/ROOT.war
 
 COPY init.sql /jwt-server/ddl/
