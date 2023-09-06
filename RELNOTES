@@ -75,7 +75,7 @@ Bug fix
 * gfptar - fix unexpected output filenames
 * gfptar - fix possible no information of the directory
 * gfptar - fix too many open files
-* gfptar - fix possible broken pepe
+* gfptar - fix possible broken pipe
 * config-gfarm - fix DEBUG=true does not work
 * unconfig-gfarm.sh - do not abort when backend database is already stopped
 
