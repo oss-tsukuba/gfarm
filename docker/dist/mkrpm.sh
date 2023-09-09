@@ -35,12 +35,12 @@ if [ -f $PKG-$VER.tar.gz ]; then
 	[ X"$SPEC" = X ] && exit 1
 
 elif [ -d $PKG-$VER ]; then
-	SPEC=$(find $PKG-$VER -type f -name $PKG.spec || :)
+	SPEC=$(find $PKG-$VER -type f -name $PKG.spec 2> /dev/null || :)
 	[ X"$SPEC" = X ] && exit 1
 	NEEDTAR=true
 
 elif [ -d $PKG ]; then
-	SPEC=$(find $PKG -type f -name $PKG.spec || :)
+	SPEC=$(find $PKG -type f -name $PKG.spec 2> /dev/null || :)
 	[ X"$SPEC" = X ] && exit 1
 	NEEDTAR=true
 
@@ -61,7 +61,8 @@ if $NEEDTAR; then
 	tar --exclude-ignore-recursive=$PKG-$VER/.gitignore \
 		--exclude=.git -zcf $PKG-$VER.tar.gz $PKG-$VER \
 		> /dev/null 2>&1 ||
-		tar --exclude=.git -zcf $PKG-$VER.tar.gz $PKG-$VER
+		tar --exclude=.git --exclude=*/docker -zcf $PKG-$VER.tar.gz \
+			$PKG-$VER
 fi
 
 mkdir -p ~/rpmbuild/SOURCES
