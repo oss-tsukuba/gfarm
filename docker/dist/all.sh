@@ -4,7 +4,17 @@ status=1
 PROG=$(basename $0)
 trap '[ $status = 0 ] && echo All set || echo NG: $PROG; exit $status' 0 1 2 15
 
-[ $# -gt 0 ] && build_pkg=true || build_pkg=false
+build_pkg=false
+gfarm_config=all
+while [ $# -gt 0 ]
+do
+	case $1 in
+	-pkg) build_pkg=true ;;
+	-min) gfarm_config=min ;;
+	*) exit 1 ;;
+	esac
+	shift
+done
 
 # sanity
 [ -f ./install.sh ]
@@ -99,19 +109,25 @@ sh ./cert.sh
 sh ./usercert.sh
 sh ./tlscert.sh
 
-# set up Gfarm-1 with 5 nodes
-echo c1 c2 c3 c4 c5 | sh ./config.sh - &
+if [ $gfarm_config = all ]; then
+	# set up Gfarm-1 with 5 nodes
+	echo c1 c2 c3 c4 c5 | sh ./config.sh - &
 
-# set up Gfarm-2 to Gfarm-4 with 1 node
-for h in c6 c7 c8; do
-	echo $h | ssh $h sh $PWD/config.sh - &
-done
-wait
+	# set up Gfarm-2 to Gfarm-4 with 1 node
+	for h in c6 c7 c8; do
+		echo $h | ssh $h sh $PWD/config.sh - &
+	done
+	wait
+else
+	echo c1 | sh ./config.sh -
+fi
 
 # Check installation
 sh ./check.sh
-for h in c6 c7 c8; do
-	ssh $h sh $PWD/check.sh
-done
+if [ $gfarm_config = all ]; then
+	for h in c6 c7 c8; do
+		ssh $h sh $PWD/check.sh
+	done
+fi
 
 status=0
