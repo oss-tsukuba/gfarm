@@ -2,27 +2,31 @@
 
 ## Prerequisite
 
-    % git clone https://github.com/oss-tsukuba/gfarm.git -b 2.8
+    % git clone https://github.com/oss-tsukuba/gfarm.git
 
-## (For VS Code users) Explore on virtual clusters by VS Code dev containers
+## Explore on virtual clusters by VS Code dev containers
+
+This section is an option only for VS Code users.
 
 - Install VS Code and Dev Containers extension
 - Open gfarm/ directory
 - Open a command palette by Ctrl+Shift+p and execute "Dev Containers: Rebulid and Reopen in Container"
 - Open Terminal -> New Terminal
-
-      % cd docker/dist
-
+```
+   % cd docker/dist
+```
 - follow the instructions below after "in a container"
 
 ## Explore on virtual clusters
+
+Install docker compose ([Ubuntu](https://docs.docker.com/engine/install/ubuntu/) | [CentOS](https://docs.docker.com/engine/install/centos/)) and make.
 
     % cd gfarm/docker/dist
     % DIST=<distribution> docker compose build --build-arg UID=$(id -u) c1
     % DIST=<distribution> docker compose up -d
     ubuntu, almalinux8, and centos7 are available as $DIST.  Default is ubuntu
     % make setup	# only required for OAuth Authentication
-    % make
+    % make          # login to a container
 
     (in a container)
     % sh ./all.sh
@@ -44,21 +48,21 @@ When you install Gfarm by `all.sh`, `regress.sh` and `failover.sh` are available
 - login ubuntu/ubuntu
 - launch Firefox
 - open a terminal
-
-      % /rdesktop/install-ca-for-browser.sh
-
+- execute `/rdesktop/install-ca-for-browser.sh`
 - connect to jwt-server/ by Firefox
 - login user1/PASSWORD
 - click "Generate and Store a JSON Web Token" button
 - user name and passphrase are displayed
 
-      (in a host)
-      % make
-      (in a container at docker/dist/)
-      % jwt-agent -s http://jwt-server/ -l user1
-      Passphrase: (paste the passphrase displayed)
-      % gfuser -A $USER SASL user1
-      % sh edconf.sh oauth2
+```
+(in a host)
+% make          # login to a container
+(in a container at docker/dist/)
+% jwt-agent -s http://jwt-server/ -l user1
+Passphrase: (paste the passphrase displayed)
+% gfuser -A $USER SASL user1
+% sh edconf.sh oauth2
+```
 
 ## For HPCI Storage
 
