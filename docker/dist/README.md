@@ -21,6 +21,8 @@ This section is an option only for VS Code users.
 
 Install docker compose ([Ubuntu](https://docs.docker.com/engine/install/ubuntu/) | [CentOS](https://docs.docker.com/engine/install/centos/)) and make.
 
+To allow docker compose to run with user privileges, add $USER to the docker group by `sudo usermod -aG docker $USER`
+
     % cd gfarm/docker/dist
     % DIST=<distribution> docker compose build --build-arg UID=$(id -u) c1
     % DIST=<distribution> docker compose up -d
