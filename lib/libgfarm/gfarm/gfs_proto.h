@@ -54,7 +54,7 @@ enum gfs_proto_command {
 	GFS_PROTO_FHREMOVE,
 	GFS_PROTO_STATUS,
 	GFS_PROTO_REPLICATION_REQUEST,		/* since gfarm-2.4.0 */
-	GFS_PROTO_REPLICATION_CANCEL,		/* since gfarm-2.4.0 */
+	GFS_PROTO_REPLICATION_CANCEL,		/* not used */
 
 	/* from client */
 
@@ -75,10 +75,10 @@ enum gfs_proto_command {
 	GFS_PROTO_CLOSE_WRITE,			/* since gfarm-2.6.0 */
 
 	/* RDMA for gfs-client */
-	GFS_PROTO_RDMA_EXCH_INFO,
-	GFS_PROTO_RDMA_HELLO,
-	GFS_PROTO_RDMA_PREAD,
-	GFS_PROTO_RDMA_PWRITE,
+	GFS_PROTO_RDMA_EXCH_INFO,		/* released as gfarm-2.7.0 */
+	GFS_PROTO_RDMA_HELLO,			/* released as gfarm-2.7.0 */
+	GFS_PROTO_RDMA_PREAD,			/* released as gfarm-2.7.0 */
+	GFS_PROTO_RDMA_PWRITE,			/* released as gfarm-2.7.0 */
 
 	/* from gfmd (i.e. back channel) */
 	GFS_PROTO_STATUS2,			/* since gfarm-2.7.13 */

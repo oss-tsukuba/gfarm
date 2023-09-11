@@ -1048,7 +1048,8 @@ gfmdc_connect(void)
 	}
 
 	if ((e = gfm_client_switch_gfmd_channel(gfm_server,
-	    GFM_PROTOCOL_VERSION, (gfarm_int64_t)hack_to_make_cookie_not_work,
+	    GFM_INTER_GFMD_PROTOCOL_VERSION,
+	    (gfarm_int64_t)hack_to_make_cookie_not_work,
 	    &gfmd_knows_me))
 	    != GFARM_ERR_NO_ERROR) {
 		if (gfm_client_is_connection_error(e)) {
@@ -1074,8 +1075,8 @@ gfmdc_connect(void)
 		gfp_xdr_free(conn);
 		return (e);
 	}
-	if ((e = switch_gfmd_channel(peer, 0, GFM_PROTOCOL_VERSION, diag))
-	    != GFARM_ERR_NO_ERROR) {
+	if ((e = switch_gfmd_channel(peer, 0, GFM_INTER_GFMD_PROTOCOL_VERSION,
+	    diag)) != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1002997,
 		    "gfmd_channel(%s) : %s",
 		    hostname, gfarm_error_string(e));
