@@ -90,6 +90,31 @@ IPアドレスと、"/"で区切られた0〜31までの数字で、ネットワ
 	include_nesting_limit 30<br>
 </p></div>
 </dd>
+<dt><span class="term"><span class="token">protocol_compat</span> <em class="parameter"><code>バージョン文字列</code></em></span></dt>
+<dd>
+<p>
+Gfarmクライアントは、そのバージョンがサーバーのバージョンよりも新しいと
+動作しません。
+しかしこの設定を行うことにより動作させることができる場合があります。
+</p>
+<p>
+環境変数 GFARM_PROTOCOL_COMPAT にこのバージョン文字列を指定した場合も
+同じ効果があります。
+</p>
+<p>
+現在バージョン文字列として可能な設定は 2.7.13 であり、
+これは gfarm-2.7.13 ないしそれよりも新しいサーバーと
+gfarm-2.8.0 以降のクライアントの組合せで動作させるための指定です。
+</p>
+<p>
+この文は、クライアントが参照するgfarm2.confのみで有効です。
+gfsd や gfmd は、gfarm2.conf や gfmd.conf 中のこの文を無視します。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	protocol_compat 2.7.13<br>
+</p></div>
+</dd>
 <dt><span class="term"><span class="token">spool</span> <em class="parameter"><code>gfsdスプール・ディレクトリ</code></em></span></dt>
 <dd>
 <p>gfsdが、gfarmファイルの実体を保持するディレクトリ名を
@@ -2657,6 +2682,7 @@ OpenSSL の security_level 機能の数値を指定します。
 <dd><div class="literallayout"><p><br>
 	&lt;include_statement&gt; |<br>
 	&lt;include_nesting_limit_statement&gt; |<br>
+	&lt;protocol_compat_statement&gt; |<br>
 	&lt;spool_statement&gt; |<br>
 	&lt;spool_server_listen_address_statement&gt; |<br>
 	&lt;spool_server_listen_backlog_statement&gt; |<br>
@@ -2819,6 +2845,8 @@ OpenSSL の security_level 機能の数値を指定します。
 <dd><div class="literallayout"><p>"include" &lt;pathname&gt;</p></div></dd>
 <dt><span class="term">&lt;include_nesting_limit_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"include_nesting_limit" &lt;number&gt;</p></div></dd>
+<dt><span class="term">&lt;protocol_compat_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"protocol_compat" &lt;version_string&gt;</p></div></dd>
 <dt><span class="term">&lt;spool_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"spool" &lt;pathname&gt;</p></div></dd>
 <dt><span class="term">&lt;spool_server_listen_address_statement&gt; ::=</span></dt>

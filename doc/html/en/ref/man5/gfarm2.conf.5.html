@@ -82,6 +82,30 @@ The default limit is 20 level.
 	include_nesting_limit 30<br>
 </p></div>
 </dd>
+<dt><span class="term"><span class="token">protocol_compat</span> <em class="parameter"><code>version_string</code></em></span></dt>
+<dd>
+<p>
+Gfarm client will not work if its version is newer than the server version.
+However, it may be possible to make it work by using this setting.
+</p>
+<p>
+Specifing the version string to the GFARM_PROTOCOL_COMPAT environment variable
+has the same effect.
+</p>
+<p>
+The current possible setting as a version string is 2.7.13,
+which specifies that gfarm will run on a combination of
+a gfarm-2.7.13 or newer server and a gfarm-2.8.0 or later client.
+</p>
+<p>
+This directive is only available for clients in gfarm2.conf.
+Both gfsd and gfmd ignore this setting in gfarm2.conf and gfmd.conf.
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	protocol_compat 2.7.13<br>
+</p></div>
+</dd>
 <dt><span class="term"><span class="token">spool</span> <em class="parameter"><code>directory</code></em></span></dt>
 <dd>
 <p>The <span class="token">spool</span> statement specifies a spool directory
@@ -2705,6 +2729,7 @@ The default for this parameter is determined at OpenSSL compile time.
 <dd><div class="literallayout"><p><br>
 	&lt;include_statement&gt; |<br>
 	&lt;include_nesting_limit_statement&gt; |<br>
+	&lt;protocol_compat_statement&gt; |<br>
 	&lt;spool_statement&gt; |<br>
 	&lt;spool_server_listen_address_statement&gt; |<br>
 	&lt;spool_server_listen_backlog_statement&gt; |<br>
@@ -2867,6 +2892,8 @@ The default for this parameter is determined at OpenSSL compile time.
 <dd><div class="literallayout"><p>"include" &lt;pathname&gt;</p></div></dd>
 <dt><span class="term">&lt;include_nesting_limit_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"include_nesting_limit" &lt;number&gt;</p></div></dd>
+<dt><span class="term">&lt;protocol_compat_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"protocol_compat" &lt;version_string&gt;</p></div></dd>
 <dt><span class="term">&lt;spool_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"spool" &lt;pathname&gt;</p></div></dd>
 <dt><span class="term">&lt;spool_server_listen_address_statement&gt; ::=</span></dt>
