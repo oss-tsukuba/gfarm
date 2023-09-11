@@ -87,6 +87,8 @@ struct gfm_connection {
 
 struct gfm_client_static {
 	struct gfp_conn_cache server_cache;
+
+	int gfm_proto_version_default;
 };
 
 #define SERVER_HASHTAB_SIZE	31	/* prime number */
@@ -121,6 +123,8 @@ gfm_client_static_init(struct gfarm_context *ctxp)
 		SERVER_HASHTAB_SIZE,
 		&ctxp->gfmd_connection_cache);
 
+	s->gfm_proto_version_default = GFM_PROTOCOL_VERSION;
+
 	ctxp->gfm_client_static = s;
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -135,6 +139,18 @@ gfm_client_static_term(struct gfarm_context *ctxp)
 
 	gfp_conn_cache_term(&s->server_cache);
 	free(s);
+}
+
+gfarm_error_t
+gfm_client_set_protocol_compat(int gfm_proto_version_id)
+{
+	switch (gfm_proto_version_id) {
+	case GFM_PROTOCOL_VERSION_V2_7_13:
+		staticp->gfm_proto_version_default = gfm_proto_version_id;
+		return (GFARM_ERR_NO_ERROR);
+	default:
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	}
 }
 
 int
@@ -206,15 +222,15 @@ gfm_client_get_username_in_tenant(struct gfm_connection *gfm_server,
 
 	gfm_client_connection_lock(gfm_server);
 
-	if ((e = gfm_client_user_info_get_my_own_request(gfm_server))
+	if ((e = gfm_client_user_info_get_mine_request(gfm_server))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_warning(GFARM_MSG_1005278,
-		    "%s: user_info_get_my_own request: %s",
+		    "%s: user_info_get_mine request: %s",
 		    diag, gfarm_error_string(e));
-	} else if ((e = gfm_client_user_info_get_my_own_result(gfm_server,
+	} else if ((e = gfm_client_user_info_get_mine_result(gfm_server,
 	    &user)) != GFARM_ERR_NO_ERROR) {
 		gflog_warning(GFARM_MSG_1005279,
-		    "%s: user_info_get_my_own result: %s",
+		    "%s: user_info_get_mine result: %s",
 		    diag, gfarm_error_string(e));
 	} else {
 		if ((username_in_tenant =
@@ -875,10 +891,10 @@ gfm_client_process_initialize(struct gfm_connection *gfm_server)
 		gflog_warning(GFARM_MSG_1005282,
 		    "%s: process_alloc request: %s",
 		    diag, gfarm_error_string(e));
-	else if ((e = gfm_client_user_info_get_my_own_request(gfm_server))
+	else if ((e = gfm_client_user_info_get_mine_request(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
 		gflog_warning(GFARM_MSG_1005283,
-		    "%s: user_info_get_my_own request: %s",
+		    "%s: user_info_get_mine request: %s",
 		    diag, gfarm_error_string(e));
 	else if ((e = gfm_client_compound_end_request(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
@@ -896,10 +912,10 @@ gfm_client_process_initialize(struct gfm_connection *gfm_server)
 		gflog_warning(GFARM_MSG_1005286,
 		    "%s: process_alloc result: %s",
 		    diag, gfarm_error_string(e));
-	else if ((e = gfm_client_user_info_get_my_own_result(gfm_server,
+	else if ((e = gfm_client_user_info_get_mine_result(gfm_server,
 	    &user)) != GFARM_ERR_NO_ERROR)
 		gflog_warning(GFARM_MSG_1005287,
-		    "%s: user_info_get_my_own result: %s",
+		    "%s: user_info_get_mine result: %s",
 		    diag, gfarm_error_string(e));
 	else {
 		char *username_in_tenant;
@@ -1748,12 +1764,37 @@ gfm_client_user_info_get_by_names(struct gfm_connection *gfm_server,
 }
 
 gfarm_error_t
+gfm_client_user_info_get_by_gsi_dn_request(struct gfm_connection *gfm_server,
+	const char *gsi_dn)
+{
+	return (gfm_client_rpc_request(gfm_server,
+	    GFM_PROTO_USER_INFO_GET_BY_GSI_DN, "s", gsi_dn));
+}
+
+gfarm_error_t
+gfm_client_user_info_get_by_gsi_dn_result(struct gfm_connection *gfm_server,
+	struct gfarm_user_info *user)
+{
+	return (gfm_client_rpc_result(gfm_server, 0, "ssss",
+	    &user->username, &user->realname, &user->homedir, &user->gsi_dn));
+}
+
+gfarm_error_t
 gfm_client_user_info_get_by_gsi_dn(struct gfm_connection *gfm_server,
 	const char *gsi_dn, struct gfarm_user_info *user)
 {
-	return (gfm_client_rpc(gfm_server, 0,
-	    GFM_PROTO_USER_INFO_GET_BY_GSI_DN, "s/ssss", gsi_dn,
-	    &user->username, &user->realname, &user->homedir, &user->gsi_dn));
+	gfarm_error_t e;
+
+	gfm_client_connection_lock(gfm_server);
+
+	e = gfm_client_user_info_get_by_gsi_dn_request(gfm_server, gsi_dn);
+	if (e == GFARM_ERR_NO_ERROR)
+		e = gfm_client_user_info_get_by_gsi_dn_result(gfm_server,
+		    user);
+
+	gfm_client_connection_unlock(gfm_server);
+
+	return (e);
 }
 
 gfarm_error_t
@@ -1769,6 +1810,55 @@ gfm_client_user_info_get_my_own_result(struct gfm_connection *gfm_server,
 {
 	return (gfm_client_rpc_result(gfm_server, 0, "ssss",
 	    &user->username, &user->realname, &user->homedir, &user->gsi_dn));
+}
+
+gfarm_error_t
+gfm_client_user_info_get_mine_request(struct gfm_connection *gfm_server)
+{
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+
+	if (staticp->gfm_proto_version_default >= GFM_PROTOCOL_VERSION_V2_8_0) {
+		e = gfm_client_user_info_get_my_own_request(gfm_server);
+	} else {
+#ifdef HAVE_GSI
+		char *gsi_dn;
+
+		if (GFARM_IS_AUTH_GSI(gfm_server->auth_method) &&
+		    (gsi_dn = gfp_xdr_secsession_initiator_dn(gfm_server->conn))
+		    != NULL) {
+			e = gfm_client_user_info_get_by_gsi_dn_request(
+			    gfm_server, gsi_dn);
+		}
+#else
+		/* do nothing */
+#endif
+	}
+	return (e);
+}
+
+gfarm_error_t
+gfm_client_user_info_get_mine_result(struct gfm_connection *gfm_server,
+	struct gfarm_user_info *user)
+{
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+
+	if (staticp->gfm_proto_version_default >= GFM_PROTOCOL_VERSION_V2_8_0) {
+		e = gfm_client_user_info_get_my_own_result(gfm_server, user);
+	} else {
+#ifdef HAVE_GSI
+		char *gsi_dn;
+
+		if (GFARM_IS_AUTH_GSI(gfm_server->auth_method) &&
+		    (gsi_dn = gfp_xdr_secsession_initiator_dn(gfm_server->conn))
+		    != NULL) {
+			e = gfm_client_user_info_get_by_gsi_dn_result(
+			    gfm_server, user);
+		}
+#else
+		/* do nothing */
+#endif
+	}
+	return (e);
 }
 
 gfarm_error_t

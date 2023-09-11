@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>2 Sep 2023</date></refentryinfo>
+<refentryinfo><date>11 Sep 2023</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -123,6 +123,33 @@ The default limit is 20 level.
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
 	include_nesting_limit 30
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>protocol_compat</token> <parameter moreinfo="none">version_string</parameter></term>
+<listitem>
+<para>
+Gfarm client will not work if its version is newer than the server version.
+However, it may be possible to make it work by using this setting.
+</para>
+<para>
+Specifing the version string to the GFARM_PROTOCOL_COMPAT environment variable
+has the same effect.
+</para>
+<para>
+The current possible setting as a version string is 2.7.13,
+which specifies that gfarm will run on a combination of
+a gfarm-2.7.13 or newer server and a gfarm-2.8.0 or later client.
+</para>
+<para>
+This directive is only available for clients in gfarm2.conf.
+Both gfsd and gfmd ignore this setting in gfarm2.conf and gfmd.conf.
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	protocol_compat 2.7.13
 </literallayout>
 </listitem>
 </varlistentry>
@@ -3465,6 +3492,7 @@ The default for this parameter is determined at OpenSSL compile time.
 <listitem><literallayout format="linespecific" class="normal">
 	&lt;include_statement&gt; |
 	&lt;include_nesting_limit_statement&gt; |
+	&lt;protocol_compat_statement&gt; |
 	&lt;spool_statement&gt; |
 	&lt;spool_server_listen_address_statement&gt; |
 	&lt;spool_server_listen_backlog_statement&gt; |
@@ -3633,6 +3661,11 @@ The default for this parameter is determined at OpenSSL compile time.
 <varlistentry>
 <term>&lt;include_nesting_limit_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"include_nesting_limit" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;protocol_compat_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"protocol_compat" &lt;version_string&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>

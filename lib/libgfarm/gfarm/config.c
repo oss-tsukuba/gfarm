@@ -46,7 +46,7 @@
 #include "gfpath.h"
 #define GFARM_USE_STDIO
 #include "config.h"
-#include "gfm_proto.h" /* GFMD_DEFAULT_PORT */
+#include "gfm_proto.h" /* GFMD_DEFAULT_PORT, GFM_PROTOCOL_VERSION_V* */
 #include "gfs_proto.h" /* GFSD_DEFAULT_PORT */
 #include "gfs_profile.h"
 #include "gfm_client.h"
@@ -3332,6 +3332,57 @@ parse_include(char *p, const char **op, const char *file, int lineno)
 	return (e);
 }
 
+gfarm_error_t
+gfarm_set_protocol_compat(const char *version)
+{
+	struct gfarm_version_config {
+		const char *const version_name;
+		int gfm_proto_version_id;
+	};
+	static const struct gfarm_version_config compat_table[] = {
+		{ "2.7.13", GFM_PROTOCOL_VERSION_V2_7_13 },
+	};
+	const struct gfarm_version_config *c;
+	gfarm_error_t e = GFARM_ERR_INVALID_ARGUMENT;
+	int i;
+
+	for (i = 0; i < GFARM_ARRAY_LENGTH(compat_table); i++) {
+		c = &compat_table[i];
+		if (strcmp(c->version_name, version) == 0) {
+			e = gfm_client_set_protocol_compat(
+			    c->gfm_proto_version_id);
+			break;
+		}
+	}
+	return (e);
+}
+
+static gfarm_error_t
+parse_protocol_compat(char *p, const char **op)
+{
+	gfarm_error_t e;
+	char *tmp, *version;
+
+	e = gfarm_strtoken(&p, &version);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (version == NULL)
+		return (GFARM_ERRMSG_MISSING_ARGUMENT);
+	e = gfarm_strtoken(&p, &tmp);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (tmp != NULL)
+		return (GFARM_ERRMSG_TOO_MANY_ARGUMENTS);
+
+	e = gfarm_set_protocol_compat(version);
+	if (e != GFARM_ERR_NO_ERROR) {
+		*op = "1st(version) argument";
+		return (e);
+	}
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
 static gfarm_error_t
 parse_one_line(const char *s, char *p,
 	enum gfarm_config_position position, const char *file, int lineno,
@@ -3345,6 +3396,8 @@ parse_one_line(const char *s, char *p,
 		e = parse_include(p, &o, file, lineno);
 	} else if (strcmp(s, o = "include_nesting_limit") == 0) {
 		e = parse_set_misc_int(p, &gfarm_ctxp->include_nesting_limit);
+	} else if (strcmp(s, o = "protocol_compat") == 0) {
+		e = parse_protocol_compat(p, &o);
 	} else if (strcmp(s, o = "spool") == 0) {
 		e = gfarm_parse_set_spool_root(p);
 	} else if (strcmp(s, o = "spool_server_listen_address") == 0) {

@@ -36,6 +36,8 @@ void gfarm_host_sched_info_free(int, struct gfarm_host_sched_info *);
 extern char *gfarm_auth_user_id_type_list[];
 extern int gfarm_auth_user_id_type_number;
 
+gfarm_error_t gfm_client_set_protocol_compat(int);
+
 int gfm_client_connection_empty(struct gfm_connection *);
 int gfm_client_is_connection_error(gfarm_error_t);
 struct gfp_xdr *gfm_client_connection_conn(struct gfm_connection *);
@@ -114,6 +116,9 @@ gfarm_error_t gfm_client_user_info_get_by_gsi_dn(struct gfm_connection *,
 	const char *, struct gfarm_user_info *);
 gfarm_error_t gfm_client_user_info_get_my_own_request(struct gfm_connection *);
 gfarm_error_t gfm_client_user_info_get_my_own_result(struct gfm_connection *,
+	struct gfarm_user_info *);
+gfarm_error_t gfm_client_user_info_get_mine_request(struct gfm_connection *);
+gfarm_error_t gfm_client_user_info_get_mine_result(struct gfm_connection *,
 	struct gfarm_user_info *);
 gfarm_error_t gfm_client_user_info_set(struct gfm_connection *,
 	const struct gfarm_user_info *);
