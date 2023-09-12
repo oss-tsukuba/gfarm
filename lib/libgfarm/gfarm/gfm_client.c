@@ -1817,7 +1817,8 @@ gfm_client_user_info_get_mine_request(struct gfm_connection *gfm_server)
 {
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 
-	if (staticp->gfm_proto_version_default >= GFM_PROTOCOL_VERSION_V2_8_0) {
+	if (staticp->gfm_proto_version_default >= GFM_PROTOCOL_VERSION_V2_8_0
+	    || GFARM_IS_AUTH_V2_8_OR_LATER(gfm_server->auth_method)) {
 		e = gfm_client_user_info_get_my_own_request(gfm_server);
 	} else {
 #ifdef HAVE_GSI
@@ -1845,7 +1846,8 @@ gfm_client_user_info_get_mine_result(struct gfm_connection *gfm_server,
 {
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 
-	if (staticp->gfm_proto_version_default >= GFM_PROTOCOL_VERSION_V2_8_0) {
+	if (staticp->gfm_proto_version_default >= GFM_PROTOCOL_VERSION_V2_8_0
+	    || GFARM_IS_AUTH_V2_8_OR_LATER(gfm_server->auth_method)) {
 		e = gfm_client_user_info_get_my_own_result(gfm_server, user);
 	} else {
 #ifdef HAVE_GSI
