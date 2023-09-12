@@ -1828,10 +1828,13 @@ gfm_client_user_info_get_mine_request(struct gfm_connection *gfm_server)
 		    != NULL) {
 			e = gfm_client_user_info_get_by_gsi_dn_request(
 			    gfm_server, gsi_dn);
-		}
-#else
-		/* do nothing */
+		} else
 #endif
+		{
+			e = gfm_client_rpc_request(gfm_server,
+			    GFM_PROTO_USER_INFO_GET_BY_NAMES, "is",
+			    (gfarm_int32_t)1, gfm_client_username(gfm_server));
+		}
 	}
 	return (e);
 }
@@ -1853,10 +1856,17 @@ gfm_client_user_info_get_mine_result(struct gfm_connection *gfm_server,
 		    != NULL) {
 			e = gfm_client_user_info_get_by_gsi_dn_result(
 			    gfm_server, user);
-		}
-#else
-		/* do nothing */
+		} else
 #endif
+		{
+			/* GFM_PROTO_USER_INFO_GET_BY_NAMES:nusers==1 result */
+			e = gfm_client_rpc_result(gfm_server, 0, "");
+			if (e == GFARM_ERR_NO_ERROR)
+				e = gfm_client_rpc_result(
+				    gfm_server, 0, "ssss",
+				    &user->username, &user->realname,
+				    &user->homedir, &user->gsi_dn);
+		}
 	}
 	return (e);
 }
