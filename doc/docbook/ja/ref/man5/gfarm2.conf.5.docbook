@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>2 Sep 2023</date></refentryinfo>
+<refentryinfo><date>11 Sep 2023</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -136,6 +136,34 @@ IPアドレスと、"/"で区切られた0〜31までの数字で、ネットワ
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
 	include_nesting_limit 30
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>protocol_compat</token> <parameter moreinfo="none">バージョン文字列</parameter></term>
+<listitem>
+<para>
+Gfarmクライアントは、そのバージョンがサーバーのバージョンよりも新しいと
+動作しません。
+しかしこの設定を行うことにより動作させることができる場合があります。
+</para>
+<para>
+環境変数 GFARM_PROTOCOL_COMPAT にこのバージョン文字列を指定した場合も
+同じ効果があります。
+</para>
+<para>
+現在バージョン文字列として可能な設定は 2.7.13 であり、
+これは gfarm-2.7.13 ないしそれよりも新しいサーバーと
+gfarm-2.8.0 以降のクライアントの組合せで動作させるための指定です。
+</para>
+<para>
+この文は、クライアントが参照するgfarm2.confのみで有効です。
+gfsd や gfmd は、gfarm2.conf や gfmd.conf 中のこの文を無視します。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	protocol_compat 2.7.13
 </literallayout>
 </listitem>
 </varlistentry>
@@ -3410,6 +3438,7 @@ OpenSSL の security_level 機能の数値を指定します。
 <listitem><literallayout format="linespecific" class="normal">
 	&lt;include_statement&gt; |
 	&lt;include_nesting_limit_statement&gt; |
+	&lt;protocol_compat_statement&gt; |
 	&lt;spool_statement&gt; |
 	&lt;spool_server_listen_address_statement&gt; |
 	&lt;spool_server_listen_backlog_statement&gt; |
@@ -3578,6 +3607,11 @@ OpenSSL の security_level 機能の数値を指定します。
 <varlistentry>
 <term>&lt;include_nesting_limit_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"include_nesting_limit" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;protocol_compat_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"protocol_compat" &lt;version_string&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>

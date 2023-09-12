@@ -2,12 +2,12 @@
 .\"     Title: gfarm2.conf
 .\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 2 Sep 2023
+.\"      Date: 11 Sep 2023
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFARM2\&.CONF" "5" "2 Sep 2023" "Gfarm" "Gfarm"
+.TH "GFARM2\&.CONF" "5" "11 Sep 2023" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -102,6 +102,29 @@ include
 .\}
 .nf
 	include_nesting_limit 30
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+protocol_compat \fIバージョン文字列\fR
+.RS 4
+Gfarmクライアントは、そのバージョンがサーバーのバージョンよりも新しいと 動作しません。 しかしこの設定を行うことにより動作させることができる場合があります。
+.sp
+環境変数 GFARM_PROTOCOL_COMPAT にこのバージョン文字列を指定した場合も 同じ効果があります。
+.sp
+現在バージョン文字列として可能な設定は 2\&.7\&.13 であり、 これは gfarm\-2\&.7\&.13 ないしそれよりも新しいサーバーと gfarm\-2\&.8\&.0 以降のクライアントの組合せで動作させるための指定です。
+.sp
+この文は、クライアントが参照するgfarm2\&.confのみで有効です。 gfsd や gfmd は、gfarm2\&.conf や gfmd\&.conf 中のこの文を無視します。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	protocol_compat 2\&.7\&.13
 .fi
 .if n \{\
 .RE
@@ -3200,6 +3223,7 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .nf
 	<include_statement> |
 	<include_nesting_limit_statement> |
+	<protocol_compat_statement> |
 	<spool_statement> |
 	<spool_server_listen_address_statement> |
 	<spool_server_listen_backlog_statement> |
@@ -3385,6 +3409,20 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .nf
 "include_nesting_limit" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<protocol_compat_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"protocol_compat" <version_string>
 .fi
 .if n \{\
 .RE

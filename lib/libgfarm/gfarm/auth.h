@@ -104,6 +104,9 @@ enum gfarm_auth_gss_request {
 #define GFARM_IS_AUTH_KERBEROS(auth) \
 	((auth) == GFARM_AUTH_METHOD_KERBEROS || \
 	 (auth) == GFARM_AUTH_METHOD_KERBEROS_AUTH)
+#define GFARM_IS_AUTH_V2_8_OR_LATER(auth) \
+	((auth) >= GFARM_AUTH_METHOD_TLS_SHAREDSECRET)
+
 
 /*
  * GFARM_AUTH_METHOD_TLS_CLIENT_CERTIFICATE dependent constants.

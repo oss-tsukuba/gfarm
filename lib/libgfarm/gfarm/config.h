@@ -265,6 +265,8 @@ gfarm_error_t gfm_client_config_get_vars_result(struct gfm_connection *,
 /* miscellaneous */
 extern int gfarm_file_trace;
 
+gfarm_error_t gfarm_set_protocol_compat(const char *);
+
 void gfarm_config_set_filename(char *);
 char *gfarm_config_get_filename(void);
 

@@ -160,6 +160,7 @@ gfarm_config_read(void)
 static void
 gfarm_parse_env_client(void)
 {
+	gfarm_error_t e;
 	char *env;
 
 	if ((env = getenv("GFARM_FLAGS")) != NULL) {
@@ -171,8 +172,16 @@ gfarm_parse_env_client(void)
 			}
 		}
 	}
-}
 
+	if ((env = getenv("GFARM_PROTOCOL_COMPAT")) != NULL) {
+		e = gfarm_set_protocol_compat(env);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "$GFARM_PROTOCOL_COMPAT=\"%s\": %s",
+			    env, gfarm_error_string(e));
+		}
+	}
+}
 
 /*
  * the following function is for client,
