@@ -1,0 +1,10 @@
+[mysqld]
+log-bin
+server-id=2
+log-basename=master2
+
+auto_increment_increment=5
+auto_increment_offset=2
+
+replicate-do-table=gfarmdb.tokens
+replicate-ignore-table=gfarmdb.errors

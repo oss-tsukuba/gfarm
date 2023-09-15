@@ -83,6 +83,15 @@ services:
     networks:
       - gfarm_net
     privileged: true
+  jwt-server2:
+    build: jwt-server
+    hostname: jwt-server2
+    container_name: gfarm-jwt-server2
+    volumes:
+      - ./minica/minica.pem:/usr/share/pki/ca-trust-source/anchors/minica.crt
+    networks:
+      - gfarm_net
+    privileged: true
   rdesktop:
     build: rdesktop
     container_name: gfarm-rdesktop
