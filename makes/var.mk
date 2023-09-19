@@ -26,12 +26,16 @@ COMMON_CFLAGS = $(OPTFLAGS) $(largefile_cflags) \
 	-I$(top_builddir)/include -I$(top_srcdir)/include \
 	-DCOMPAT_GFARM_2_3
 COMMON_LDFLAGS = $(largefile_ldflags) $(dynamic_ldflags)
-GFARMLIB = -L$(top_builddir)/lib/libgfarm -lgfarm \
+GFARMLIB = \
+	-L$(top_builddir)/lib/libgfarm/gfarm -lgfarm \
+	-L$(top_builddir)/lib/libgfarm/gfutil -lgfutil \
 	$(globus_gssapi_libs) $(openssl_libs)
 
 INC_SRCDIR = $(top_srcdir)/include/gfarm
 INC_BUILDDIR = $(top_builddir)/include/gfarm
-DEPGFARMLIB = $(top_builddir)/lib/libgfarm/libgfarm.la
+DEPGFARMLIB = \
+	$(top_builddir)/lib/libgfarm/gfarm/libgfarm.la \
+	$(top_builddir)/lib/libgfarm/gfutil/libgfutil.la
 DEPGFARMINC = $(INC_BUILDDIR)/gfarm_config.h $(INC_SRCDIR)/gfarm.h $(INC_SRCDIR)/gflog.h $(INC_SRCDIR)/error.h $(INC_SRCDIR)/gfarm_misc.h $(INC_SRCDIR)/gfarm_stringlist.h $(INC_SRCDIR)/gfs.h $(INC_SRCDIR)/gfs_glob.h
 
 # ns

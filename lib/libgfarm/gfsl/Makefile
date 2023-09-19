@@ -14,7 +14,7 @@ CFLAGS = $(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) -I$(GFSL_SRCDIR) \
 	$(GSSAPI_INCLUDES) \
 	-DGFARM_INSTALL_ETC_DIR='"$(sysconfdir)"' \
 	-DGLOBUS_FAKE_GSS_C_NT_USER=0 # see gss.c
-LDLIBS = $(GSSAPI_LIBS) $(openssl_libs) $(LIBS)
+LDLIBS = ../gfutil/libgfutil.la $(GSSAPI_LIBS) $(openssl_libs) $(LIBS)
 
 ### for library
 
