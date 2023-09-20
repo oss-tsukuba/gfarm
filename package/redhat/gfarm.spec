@@ -1136,6 +1136,8 @@ fi
 %defattr(-,root,root)
 %{lib_prefix}/libgfarm.so.1
 %{lib_prefix}/libgfarm.so.1.0.0
+%{lib_prefix}/libgfutil.so.1
+%{lib_prefix}/libgfutil.so.1.0.0
 %if %{globus}
 %{lib_prefix}/libgfsl_gsi.so.1
 %{lib_prefix}/libgfsl_gsi.so.1.0.0
