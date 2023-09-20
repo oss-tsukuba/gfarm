@@ -6,5 +6,5 @@ includedir=@includedir@
 Name: Gfarm
 Description: Gfarm filesystem
 Version: @PACKAGE_VERSION@
-Libs: -L${libdir} -lgfarm
+Libs: -L${libdir} -lgfarm -lgfutil
 Cflags: -I${includedir}
