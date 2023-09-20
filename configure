@@ -717,6 +717,7 @@ gss_targets
 gss_cflags
 gss_objs
 gss_srcs
+openssl_pkg
 openssl_libs
 openssl_includes
 openssl_LIBS
@@ -12447,6 +12448,7 @@ printf "%s\n" "try using OpenSSL in default path" >&6; }
   # if "pkg-config --cflags --libs openssl" does not work, try default
   openssl_libs='-lssl -lcrypto'
   openssl_includes=
+  openssl_pkg=
 
 elif test $pkg_failed = untried; then
      	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
@@ -12458,6 +12460,7 @@ printf "%s\n" "try using OpenSSL in default path" >&6; }
   # if "pkg-config --cflags --libs openssl" does not work, try default
   openssl_libs='-lssl -lcrypto'
   openssl_includes=
+  openssl_pkg=
 
 else
 	openssl_CFLAGS=$pkg_cv_openssl_CFLAGS
@@ -12470,8 +12473,10 @@ printf "%s\n" "using \"${with_openssl}\"" >&6; }
 
   openssl_libs=$openssl_LIBS
   openssl_includes=$openssl_CFLAGS
+  openssl_pkg=$with_openssl
 
 fi
+
 
 
 
