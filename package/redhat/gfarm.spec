@@ -1372,6 +1372,9 @@ fi
 %{prefix}/include/gfarm/gfs_glob.h
 # XXX - this should not be here
 %{prefix}/include/gfarm/gfarm_msg_enums.h
+%{lib_prefix}/libgfutil.a
+%{lib_prefix}/libgfutil.la
+%{lib_prefix}/libgfutil.so
 %{lib_prefix}/libgfarm.a
 %{lib_prefix}/libgfarm.la
 %{lib_prefix}/libgfarm.so

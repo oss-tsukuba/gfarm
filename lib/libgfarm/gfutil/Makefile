@@ -6,8 +6,13 @@ srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 
+# shared object version
+LTLDFLAGS = $(LTFLAGS_SHARELIB_IN) $(libdir)
+LT_CURRENT=1
+LT_REVISION=0
+LT_AGE=0
+
 LIBRARY = libgfutil.la
-LIBRARY_RESULT = # do not install
 
 SRCS =	alloc.c \
 	assert.c \

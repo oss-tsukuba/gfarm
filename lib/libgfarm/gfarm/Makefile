@@ -13,8 +13,13 @@ PUBLIC_RULE  = /dev/null
 PUBLIC_SRCS  =
 PUBLIC_OBJS  =
 
-LIBRARY = libgfarmcore.la
-LIBRARY_RESULT = # do not install
+# shared object version
+LTLDFLAGS = $(LTFLAGS_SHARELIB_IN) $(libdir)
+LT_CURRENT=1
+LT_REVISION=0
+LT_AGE=0
+
+LIBRARY = libgfarm.la
 
 GSS_SRCS = gss.c auth_client_gss.c auth_common_gss.c \
 	auth_server_gss.c io_gfsl.c
@@ -228,6 +233,7 @@ CFLAGS = $(pthread_includes) \
 	$(gss_cflags) $(metadb_client_includes) $(openssl_includes) \
 	$(optional_cflags) $(rdma_includes) \
 	-DGFARM_CONFIG='"$(sysconfdir)/gfarm2.conf"'
+LDLIBS = ../gfutil/libgfutil.la $(globus_gssapi_libs) $(openssl_libs) $(LIBS)
 
 all: $(LIBRARY)
 
