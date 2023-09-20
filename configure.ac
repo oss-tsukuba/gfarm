@@ -229,16 +229,19 @@ PKG_CHECK_MODULES(openssl, ${with_openssl}, [
 
   openssl_libs=$openssl_LIBS
   openssl_includes=$openssl_CFLAGS
+  openssl_pkg=$with_openssl
 ], [
   AC_MSG_RESULT([try using OpenSSL in default path])
 
   # if "pkg-config --cflags --libs openssl" does not work, try default
   openssl_libs='-lssl -lcrypto'
   openssl_includes=
+  openssl_pkg=
 ])
 
 AC_SUBST(openssl_includes)
 AC_SUBST(openssl_libs)
+AC_SUBST(openssl_pkg)
 
 ###
 ### common part for kerberos and globus (i.e. gssapi)

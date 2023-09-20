@@ -6,5 +6,6 @@ includedir=@includedir@
 Name: Gfarm
 Description: Gfarm filesystem
 Version: @PACKAGE_VERSION@
+Requires: @openssl_pkg@
 Libs: -L${libdir} -lgfarm -lgfutil
 Cflags: -I${includedir}
