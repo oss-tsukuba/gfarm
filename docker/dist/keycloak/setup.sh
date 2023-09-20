@@ -405,7 +405,7 @@ update_client_scopes "${CLIENT_ID_PUBLIC}" "${DEFAULT_SCOPES}" "${OPTIONAL_SCOPE
 
 create_client_id "$CLIENT_ID_CONFIDENTIAL" \
   -s publicClient=false \
-  -s 'redirectUris=["https://jwt-server.test/*", "http://jwt-server.test/*", "https://jwt-server/*", "http://jwt-server/*"]' \
+  -s 'redirectUris=["https://jwt-server.test/*", "http://jwt-server.test/*", "https://jwt-server/*", "http://jwt-server/*", "https://jwt-server2/*", "http://jwt-server2/*"]' \
   -s 'attributes."client.offline.session.idle.timeout"="86400"'\
   -s 'attributes."client.offline.session.max.lifespan"="31536000"'
 update_client_scopes "${CLIENT_ID_CONFIDENTIAL}" \

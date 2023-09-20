@@ -14,7 +14,7 @@ cd jwt-server/ddl
 mysql < init.sql
 mysql -u gfarm -pgfarm123 gfarmdb < jwt-server.ddl
 
-cp /mysql_master.cnf /etc/my.cnf.d/
+cp /mysql_slave.cnf /etc/my.cnf.d/
 systemctl restart mysql
 
-mysql < init_master.sql
+mysql < init_slave.sql
