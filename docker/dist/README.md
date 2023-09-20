@@ -27,7 +27,6 @@ To allow docker compose to run with user privileges, add $USER to the docker gro
     % DIST=<distribution> docker compose build --build-arg UID=$(id -u) c1
     % DIST=<distribution> docker compose up -d
     ubuntu, almalinux8, and centos7 are available as $DIST.  Default is ubuntu
-    % make setup	# only required for OAuth Authentication
     % make          # login to a container
 
     (in a container)
@@ -45,6 +44,11 @@ When you change the source code, execute `docker/dist/install.sh -m` in the top 
 When you install Gfarm by `all.sh`, `regress.sh` and `failover.sh` are available for tests.
 
 ## For OAuth authentication
+
+    % cd jwt-server
+    % docker compose up -d
+    % make setup
+    % cd ..
 
 - connect remote desktop to localhost:13389
 - login ubuntu/ubuntu
