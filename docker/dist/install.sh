@@ -36,7 +36,9 @@ fi
 make -j $(nproc) > /dev/null
 sudo make install > /dev/null
 
-gfarm-prun -p "(cd $PWD; sudo make install > /dev/null)"
+# -p cannot be used because the following error happens
+# mv: cannot stat 'libgfsl_gsi.so.1.0.0': No such file or directory
+gfarm-prun "(cd $PWD; sudo make install > /dev/null)"
 
 status=0
 echo Done
