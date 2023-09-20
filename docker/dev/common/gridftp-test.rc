@@ -13,8 +13,8 @@ LOCAL_TMPDIR=
 
 init() {
     grid-proxy-init
-    gfmkdir -p ${TESTDIR_GFARM}
-    gfchmod 1777 /tmp
+    gfmkdir -p ${TESTDIR_GFARM} || :
+    gfchmod 1777 /tmp || :
     LOCAL_TMPDIR=$(mktemp -d)
 }
 
