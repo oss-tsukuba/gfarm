@@ -20,10 +20,12 @@ gfarm2fs)
 esac
 
 mode=CONFIGURE
+install_option=all
 while [ $# -gt 0 ]
 do
 	case $1 in
 	-m) mode=MAKE ;;
+	-single) install_option=single ;;
 	*) exit 1 ;;
 	esac
 	shift
@@ -36,9 +38,11 @@ fi
 make -j $(nproc) > /dev/null
 sudo make install > /dev/null
 
-# -p cannot be used because the following error happens
-# mv: cannot stat 'libgfsl_gsi.so.1.0.0': No such file or directory
-gfarm-prun "(cd $PWD; sudo make install > /dev/null)"
+if [ $install_option = all ]; then
+	# -p cannot be used because the following error happens
+	# mv: cannot stat 'libgfsl_gsi.so.1.0.0': No such file or directory
+	gfarm-prun "(cd $PWD; sudo make install > /dev/null)"
+fi
 
 status=0
 echo Done
