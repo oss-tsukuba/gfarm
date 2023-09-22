@@ -1363,22 +1363,29 @@ static gfarm_error_t
 gfarm_ldap_fsngroup_modify(gfarm_uint64_t seqnum,
 	struct db_fsngroup_modify_arg *arg)
 {
-	int i = 0;
-	LDAPMod * modv[2];
+	gfarm_error_t e;
+	int i;
+	LDAPMod *modv[3];
 	struct ldap_string_modify storage[ARRAY_LENGTH(modv) - 1];
 	struct gfarm_ldap_host_info_key key;
 
 	key.hostname = arg->hostname;
 
+	i = 0;
 	set_string_mod(&modv[i], LDAP_MOD_REPLACE,
-		"objectclass", "GFarmHost", &storage[i]);
+	    "objectclass", "GFarmHost", &storage[i]);
 	i++;
 	set_string_mod(&modv[i], LDAP_MOD_REPLACE,
-		"fsngroupname", arg->fsngroupname, &storage[i]);
+	    "fsngroupname", arg->fsngroupname, &storage[i]);
 	i++;
+	modv[i++] = NULL;
+	assert(i == ARRAY_LENGTH(modv));
 
-	return (gfarm_ldap_generic_info_modify(&key, modv,
-			&gfarm_ldap_host_info_ops));
+	e = gfarm_ldap_generic_info_modify(&key, modv,
+	    &gfarm_ldap_host_info_ops);
+
+	free(arg);
+	return (e);
 }
 
 /**********************************************************************/
