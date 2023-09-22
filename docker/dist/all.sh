@@ -6,11 +6,13 @@ trap '[ $status = 0 ] && echo All set || echo NG: $PROG; exit $status' 0 1 2 15
 
 build_pkg=false
 gfarm_config=all
+install_option=
 while [ $# -gt 0 ]
 do
 	case $1 in
 	-pkg) build_pkg=true ;;
-	-min) gfarm_config=min ;;
+	-min) gfarm_config=min
+	      install_option=-single ;;
 	*) exit 1 ;;
 	esac
 	shift
@@ -31,7 +33,7 @@ if $build_pkg; then
 	(cd && sh $DISTDIR/mkrpm.sh)
 	sh ./install-rpm.sh
 else
-	(cd ~/gfarm && sh $DISTDIR/install.sh)
+	(cd ~/gfarm && sh $DISTDIR/install.sh $install_option)
 fi
 gfarm-pcp -p ~/.nodelist .
 
@@ -42,7 +44,7 @@ if $build_pkg; then
 	(cd ~/gfarm && sh $DISTDIR/mkrpm.sh)
 	sh ./install-rpm.sh
 else
-	(cd ~/gfarm/$PKG && sh $DISTDIR/install.sh)
+	(cd ~/gfarm/$PKG && sh $DISTDIR/install.sh $install_option)
 fi
 
 # install jwt-logon

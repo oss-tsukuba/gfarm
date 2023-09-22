@@ -1,0 +1,13 @@
+services:
+  minica:
+    build: .
+    container_name: gfarm-minica
+    volumes:
+      - .:/minica:cached
+    networks:
+      - gfarm_net
+
+networks:
+  gfarm_net:
+    name: gfarm_net
+    external: true
