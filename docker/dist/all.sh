@@ -35,6 +35,7 @@ if $build_pkg; then
 else
 	(cd ~/gfarm && sh $DISTDIR/install.sh $install_option)
 fi
+gfarm-pcp -p ~/.nodelist .
 
 # install Gfarm2fs
 PKG=gfarm2fs; export PKG
