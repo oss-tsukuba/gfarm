@@ -23,8 +23,6 @@ done
 [ -f ./config.sh ]
 DISTDIR=$PWD
 
-[ -f ~/.gfarm2rc ] && mv ~/.gfarm2rc ~/.gfarm2rc.bak
-
 # set up .nodelist
 sh ./setup.sh
 
@@ -36,6 +34,8 @@ else
 	(cd ~/gfarm && sh $DISTDIR/install.sh $install_option)
 fi
 gfarm-pcp -p ~/.nodelist .
+[ -f ~/.gfarm2rc ] && gfarm-prun -a -p "mv ~/.gfarm2rc ~/.gfarm2rc.bak
+	> /dev/null 2>&1"
 
 # install Gfarm2fs
 PKG=gfarm2fs; export PKG
