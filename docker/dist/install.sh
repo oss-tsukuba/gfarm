@@ -19,22 +19,20 @@ gfarm2fs)
 	;;
 esac
 
-mode=CONFIGURE
+CONF=true
 install_option=all
 while [ $# -gt 0 ]
 do
 	case $1 in
-	-m) mode=MAKE ;;
+	-m) CONF=false ;;
 	-single) install_option=single ;;
 	*) exit 1 ;;
 	esac
 	shift
 done
 
-if [ $mode = CONFIGURE ]; then
-./configure $CONF_OPT
-make clean > /dev/null
-fi
+$CONF && ./configure $CONF_OPT
+$CONF && make clean > /dev/null
 make -j $(nproc) > /dev/null
 sudo make install > /dev/null
 
