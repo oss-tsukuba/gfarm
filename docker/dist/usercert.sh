@@ -19,8 +19,6 @@ id $u > /dev/null
 $SUDO grid-cert-request -cn $u -nopw > /dev/null 2>&1
 sh ./cert-sign.sh /home/$u/.globus/usercert_request.pem \
 	/home/$u/.globus/usercert.pem
-$SUDO grid-proxy-init -q
-SUB=$($SUDO grid-proxy-info -identity)
 
 $SUDO gfarm-pcp -p /home/$u/.globus .
 
