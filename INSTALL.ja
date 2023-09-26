@@ -116,7 +116,7 @@ configure コマンドには，下記のオプションがあります．
 openssl-devel (CentOS 7 で TLS/SASL認証を用いるには openssl11-devel(*) が必要)
 postgresql-devel or libpq-devel
 cyrus-sasl-devel			(SASL認証に必要)
-cyrus-sasl-xoauth2-idp(**)		(SASL XOAuth2 認証に必要)
+cyrus-sasl-xoauth2-idp(**)		(SASL XOAUTH2 認証に必要)
 krb5-devel				(Kerberos 認証に必要)
 globus-gssapi-gsi-devel(*), pkgconfig	(--with-globus オプションに必要)
 rdma-core-devel				(--with-infiniband オプションに必要)
@@ -136,7 +136,7 @@ golang					(jwt-agent の構築に必要)
 libssl-dev
 libpq-dev
 libsasl2-dev sasl2-bin			(SASL認証に必要)
-cyrus-sasl-xoauth2-idp(**)		(SASL XOAuth2 認証に必要)
+cyrus-sasl-xoauth2-idp(**)		(SASL XOAUTH2 認証に必要)
 libkrb5-dev				(Kerberos 認証に必要)
 libglobus-gssapi-gsi-dev, pkg-config	(--with-globus オプションに必要)
 libibverbs-dev				(--with-infiniband オプションに必要)
@@ -159,6 +159,6 @@ golang					(jwt-agent の構築に必要)
   構築されます。
 
 * Kerberos がインストールされていない場合、Kerberos 認証が無効なバイナリが
-  構築されます。python3, python3-docopt, python3-schema	(gfptar の実行に必要)
+  構築されます。
 
 $Id$
