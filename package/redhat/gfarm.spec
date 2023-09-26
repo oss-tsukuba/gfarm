@@ -911,6 +911,8 @@ fi
 %{html_prefix}/en/ref/man8/config-gfarm.8.html
 %{html_prefix}/en/ref/man8/config-gfsd.8.html
 %{html_prefix}/en/user/index.html
+%{html_prefix}/en/user/auth-tls.html
+%{html_prefix}/en/user/auth-sasl.html
 %{html_prefix}/en/user/samba-gfarmfs.html
 %{html_prefix}/en/user/redundancy-tutorial.html
 %{html_prefix}/en/user/cipher-comparison.html
@@ -1086,6 +1088,8 @@ fi
 %{html_prefix}/ja/ref/man8/config-gfarm.8.html
 %{html_prefix}/ja/ref/man8/config-gfsd.8.html
 %{html_prefix}/ja/user/index.html
+%{html_prefix}/ja/user/auth-tls.html
+%{html_prefix}/ja/user/auth-sasl.html
 %{html_prefix}/ja/user/samba-gfarmfs.html
 %if %{gfarm_v2_not_yet}
 %{html_prefix}/ja/user/export-gfarm.html

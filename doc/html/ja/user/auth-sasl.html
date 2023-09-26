@@ -51,14 +51,13 @@ SASL 認証では TLS で暗号化された通信路を利用するため、あ�
 <H3>Cyrus SASL の設定</H3>
 
 Cyrus SASL の設定を置くディレクトリ
-(RHEL 系 Linux distribution の場合だと /usr/lib64/sasl2) に
+($(pkg-config --variable=libdir libsasl2)/sasl2) に
 以下の内容の設定を gfarm.conf という名称で置きます。
 <BR>
 なおこの文書では以降このファイルを
 「Cyrus SASL のサーバー設定ファイル」と呼称します。
 
 <PRE>
-log_level: 7
 mech_list: 利用するSASL認証メカニズムを空白で区切って指定
 …その他、メカニズム固有の設定が必要な場合は記述する
 </PRE>
@@ -86,11 +85,10 @@ XOAUTH2 メカニズムについては以下を参照してください。
 
 <P>
 XOAUTH2 メカニズムを利用する場合、
-cyrus-sasl-xoauth2-idp パッケージをインストールし、
+<A HREF="https://github.com/oss-tsukuba/cyrus-sasl-xoauth2-idp">cyrus-sasl-xoauth2-idp パッケージ</A>をインストールし、
 Cyrus SASL のサーバー設定ファイルに
 以下の内容の設定を gfarm.conf という名称で置きます。
 <PRE>
-log_level: 7
 mech_list: XOAUTH2
 xoauth2_scope: JWTのサーバー側検証時にJWTへ要求する scope
 xoauth2_aud: JWTのサーバー側検証時にJWTへ要求する audience
@@ -99,7 +97,6 @@ xoauth2_issuers: 信頼できるJWT発行サーバのURLのリスト
 </PRE>
 具体的な設定は OAuth IdP の構成に依存しますが、たとえば以下のようになります。
 <PRE>
-log_level: 7
 mech_list: XOAUTH2
 xoauth2_scope: hpci
 xoauth2_aud: hpci
@@ -139,6 +136,13 @@ sasl_mechanisms "PLAIN XOAUTH2"
 セキュリティ確保のため、実際に利用するメカニズムのみを指定してください。
 <BR>
 その他の設定については、Cyrus SASL のドキュメントに従ってください。
+
+<P>
+SASLユーザ名とGfarmのユーザ名が異る場合は、SASLユーザ名を以下のように
+登録します。
+<PRE>
+% gfuser -A Gfarmユーザ名 SASL SASLユーザ名
+</PRE>
 
 <HR>
 <H2>クライアント側設定</H2>
@@ -193,7 +197,7 @@ sasl_user "ユーザー名"
 
 <P>
 Cyrus SASL の設定を置くディレクトリ
-(RHEL 系 Linux distribution の場合だと /usr/lib64/sasl2) に
+($(pkg-config --variable=libdir libsasl2)/sasl2) に
 以下の内容の設定を gfarm-client.conf という名称で置くと、
 上記 sasl_user の指定は省略できます。
 <PRE>
@@ -213,7 +217,7 @@ XOAUTH2 で用いるアクセストークンを置いてください。
 chmod(1) コマンドを用いて JWT ファイルのモードを 0600 ないし 0400 に
 設定してください。
 <P>
-jwt-logon(1) コマンドや jwt-agent(1) コマンドを用いると、
+<A HREF="https://github.com/oss-tsukuba/jwt-logon">jwt-logon</A> コマンドや <A HREF="https://github.com/oss-tsukuba/jwt-agent">jwt-agent</A> コマンドを用いると、
 トークンを取得してこのファイルに適切なモードで JWT を設定することができます。
 <P>
 環境変数 JWT_USER_PATH に設定されいている値の最初の文字が「!」である場合、

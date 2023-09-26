@@ -9,6 +9,8 @@ include $(top_srcdir)/makes/var.mk
 htmldir=$(default_htmldir)/en/user
 
 HTML =	index.html \
+	auth-tls.html \
+	auth-sasl.html \
 	samba-gfarmfs.html \
 	redundancy-tutorial.html \
 	cipher-comparison.html \
