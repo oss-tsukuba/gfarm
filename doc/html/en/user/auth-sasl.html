@@ -53,7 +53,7 @@ must be configured in advance.
 
 Place the following configuration file named gfarm.conf
 in the Cyrus SASL configuration directory
-(/usr/lib64/sasl2 in the case of RHEL-based Linux distribution).
+($(pkg-config --variable=libdir libsasl2)/sasl2).
 <BR>
 In this document, this file will be referred to
 as the "Cyrus SASL server configuration file".
@@ -198,7 +198,7 @@ sasl_user "USER-NAME"
 <P>
 By placing the following configuration file named gfarm-client.conf
 in the Cyrus SASL configuration directory
-(/usr/lib64/sasl2 in the case of RHEL-based Linux distribution),
+($(pkg-config --variable=libdir libsasl2)/sasl2),
 the sasl_user specification can be omitted.
 <PRE>
 xoauth2_user_claim: key name of claim to be used as user ID in JWT
