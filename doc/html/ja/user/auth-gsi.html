@@ -24,31 +24,41 @@ GSI 認証
 この文書は、Gfarm の GSI 認証で必要な設定について説明します。
 <P>
 
+<H2>GSI 認証初期設定</H2>
+
+GSI認証を用いるためには，認証局証明書，ホスト証明書や
+クライアント証明書を用意した上で各種設定を行なう必要があります．
+詳しくは
+「<A HREF="https://gridcf.org/gct-docs/latest/gsic/admin/index.html">
+GSI C Admin Guide</A>」を参照して下さい．
+
+
 <H2>config-gfarm</H2>
 
-以下のように -a オプションで gsi ないし gsi_auth を指定して初期設定します．
+以下のように -a オプションで gsi ないし gsi_auth を指定して
+初期設定の値を確認します．
 <PRE>
-# config-gfarm -t -A &gt;global_admin_name&lt; -a gsi_auth -D &gt;Subject DN&lt;
+# config-gfarm -t -A &lt;global_admin_name&gt; -a gsi_auth -D &lt;Subject DN&gt;
 </PRE>
 
--D オプションでは Gfarm ファイルし捨て無管理者の
+-D オプションでは Gfarm ファイルシステム管理者の
 X.509 クライアント証明書の Subject Name を指定します。
 
 <P>
-指定認証方式に関する詳細は gfarm2.conf(5) の
+-a オプションは，Gfarm における認証方式を指定するものです．
+GSI 認証の場合は gsi ないし gsi_auth を指定してください．
+gsi_auth を指定した場合，
+認証段階のみ GSI で通信し，その後は平文で通信します．
+<P>
+認証方式の指定に関する詳細は gfarm2.conf(5) の
 マニュアルページあるいは Gfarm-FAQ.ja を参照してください．
 
 <P>
 もしデフォルト値が適切でない場合には，表示されるオプションを指定して設
-定を変更できます．適切な設定になったら，config-gfarm コマンドのオプショ
-ンから -t を取り除いて実行します．
-
+定を変更できます．
 <P>
-GSI認証を用いるためには，ホスト証明書やクライアント証明書を用意した上で
-各種設定を行なう必要がありますが，ここではその説明を省略しますので
-「<A HREF="https://gridcf.org/gct-docs/latest/gsic/admin/index.html">
-GSI C Admin Guide</A>」を参照して下さい．
-</P>
+適切な設定になったら，config-gfarm コマンドのオプションから -t を
+取り除いて実行すると設定が行なわれます．
 
 <HR>
 <H2>SEE ALSO</H2>

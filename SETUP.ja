@@ -115,7 +115,7 @@ root 権限が必要です．以下の設定は root 権限で行います．
 設定にあたり，まず以下を決める必要があります．
 
 ・管理者のグローバルユーザ名		[-A]
-・管理者のユーザ証明書の Subject DN	[-D]	(GSI 認証のときだけ)
+・管理者のユーザ証明書の Subject DN	[-D]	(X.509証明書を用いる認証のみ)
 
   グローバルユーザ名とは，Gfarm ファイルシステムで利用されるユーザ名で
   す．異なるアカウント体系をもつ複数の管理ドメインをまたがってファイル
@@ -159,15 +159,7 @@ root 権限が必要です．以下の設定は root 権限で行います．
 
 	# config-gfarm -t -A <global_admin_name>
 
-   GSI 認証を用いる場合:
-
-	# config-gfarm -t -A <global_admin_name> -a gsi_auth -D <Subject DN>
-
--a オプションは，Gfarm における認証方式を指定するものです．省略した場合
-sharedsecret（共有鍵認証）となります．GSI 認証の場合は -a gsi ないし
--a gsi_auth を指定します．指定認証方式に関する詳細は gfarm2.conf(5) の
-マニュアルページあるいは Gfarm-FAQ.ja を参照してください．
--D オプションは GSI 認証を用いる場合のみ必要です．
+共有鍵認証以外の設定は doc/html/ja/user/auth.html を参照してください．
 
 XPath による検索が可能な XML 拡張属性を利用する際には，-X オプションを
 指定する必要があります．
@@ -236,8 +228,8 @@ config-gfarm は，順番に次の処理を行います．
   有しているならば，ユーザ _gfarmfs のホームディレクトリを NFS 上に置
   き，認証鍵を NFS で共有することをお勧めします．
 
-ユーザ「_gfarmfs」の権限で，ホームディレクトリに認証鍵ファイル
-「.gfarm_shared_key」を作成します．
+ユーザ「_gfarmfs」の権限で，ホームディレクトリに共有鍵認証用の
+鍵ファイル「.gfarm_shared_key」を作成します．
 
 	# su _gfarmfs
 	$ gfkey -f -p 31536000
