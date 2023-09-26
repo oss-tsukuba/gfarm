@@ -59,7 +59,6 @@ In this document, this file will be referred to
 as the "Cyrus SASL server configuration file".
 
 <PRE>
-log_level: 7
 mech_list: the SASL authentication mechanisms to be used
 ...If other mechanism-specific settings are required, describe them.
 </PRE>
@@ -89,7 +88,6 @@ To use the XOAUTH2 mechanism, install the cyrus-sasl-xoauth2-idp package
 and place the following settings in the Cyrus SASL server configuration file
 under the name gfarm.conf.
 <PRE>
-log_level: 7
 mech_list: XOAUTH2
 xoauth2_scope: scope required in JWT, used for server-side validation
 xoauth2_aud: audience required in JWT, used for server-side validation
@@ -97,7 +95,6 @@ xoauth2_user_claim: key name of claim to be used as user ID in JWT
 </PRE>
 The specific configuration depends on the OAuth IdP, but here is an example.
 <PRE>
-log_level: 7
 mech_list: XOAUTH2
 xoauth2_scope: hpci
 xoauth2_aud: hpci
