@@ -12,6 +12,8 @@ export $ENV
 
 DISTDIR=$PWD
 
+grid-proxy-init -q || :
+
 gfmkdir -p /tmp
 gfchmod 1777 /tmp || :
 
@@ -58,7 +60,6 @@ LOG1=log.w_root.remote-$DATE
 LOG2=log.wo_root.local-$DATE
 
 create_mismatch_file
-grid-proxy-init -q || :
 gfsudo ./regress.sh -l $LOG1
 
 create_mismatch_file
