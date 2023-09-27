@@ -82,7 +82,7 @@ service_unconfig()
 
 	delete_file_or_directory -f $TEST_OPT "$RC_GFSD"
 
-	service_reg
+	service_reg $TEST_OPT
 
 	delete_file_or_directory -f $TEST_OPT "$SPOOL_DIRECTORY"
 	delete_file_or_directory -f $TEST_OPT "$GFSD_PID_FILE"
