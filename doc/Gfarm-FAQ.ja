@@ -55,9 +55,7 @@ Copyright (c) 2006-2017 Osamu Tatebe.  All Rights Reserved.
 		https://github.com/oss-tsukuba/gfarm/releases/
 
 	なお，最新のソースコードは以下のコマンドで入手できます．
-	Gfarm 2.7系
-		$ git clone -b 2.7 https://github.com/oss-tsukuba/gfarm.git
-	開発版
+	安定版
 		$ git clone https://github.com/oss-tsukuba/gfarm.git
 	Gfarm2fs
 		$ git clone https://github.com/oss-tsukuba/gfarm2fs.git
@@ -432,11 +430,13 @@ Copyright (c) 2006-2017 Osamu Tatebe.  All Rights Reserved.
 ***************
   3.1 Gfarm は firewall に守られていない環境で安全に運用できますか？
 
-	Gfarm は，sharedsecret 認証，gsi_auth 手法，gsi 認証の
-	3 種類の認証方法をサポートしていますが，
-	Internet 環境では，sharedsecret 認証や gsi_auth 手法では
-	安全とは言えません．gsi 認証の利用を推奨します．
-	これについては，次の項目を参照してください．
+	Gfarm は，sharedsecret，gsi_auth，gsi, sasl_auth, sasl,
+	tls_sharedsecret, tls_client_certificate, kerberos_auth,
+	kerberos の認証方法をサポートしていますが，Internet 環境では，
+	sharedsecret, gsi_auth, kerberos_auth は安全とは言えません．
+	tls_sharedsecret, tls_client_certificate, sasl, gsi, kerberos
+	認証の利用を推奨します．これについては，次の項目を参照してくだ
+	さい．
 
   3.2 sharedsecret 認証，gsi_auth 手法，gsi 認証の違いは？
 
@@ -470,6 +470,24 @@ Copyright (c) 2006-2017 Osamu Tatebe.  All Rights Reserved.
 	GSI に関する詳しい情報は，http://www.globus.org/ を参照し
 	てください．
 
+	「tls_sharedsecret」認証は，共有鍵を用いた認証ですがTLSで暗号
+	化された通信路を利用します．
+
+	「tls_client_certificate」認証は，X.509証明書を共有鍵を用いた
+	認証です．TLSで暗号化された通信路を利用します．GSI の代理証明
+	書も利用可能です．
+
+	「sasl_auth」認証は，SASL 認証を用いた認証です．認証中はTLSで
+	暗号化された通信路を利用しますが，認証後は平文で通信します．
+
+	「sasl」認証は，SASL 認証を用いた認証です．TLSで暗号化された通
+	信路を利用します．
+
+	「kerberos_auth」認証は，Kerberos 認証を用いた認証です．認証後
+	は平文で通信します．
+
+	「kerberos」認証は，Kerberos 認証を用いた認証です．認証後もデー
+	タは暗号化されます．
 
 4. 制限事項
 ***********

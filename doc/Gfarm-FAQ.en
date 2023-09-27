@@ -56,9 +56,7 @@ Table of Contents:
 
 	Current source code can be obtained by
 
-	Gfarm 2.7.X
-		$ git clone -b 2.7 https://github.com/oss-tsukuba/gfarm.git
-	Development version
+	Stable version
 		$ git clone https://github.com/oss-tsukuba/gfarm.git
 	Gfarm2fs
 		$ git clone https://github.com/oss-tsukuba/gfarm2fs.git
@@ -450,13 +448,12 @@ Table of Contents:
   3.1 It is safe to use Gfarm in an environment that is NOT protected by
      a firewall?
 
-	Gfarm supports three authentication methods, namely,
-	sharedsecret authentication, the gsi_auth method,
-	and gsi authentication.
-	The sharedsecret authentication and gsi_auth methods are
-	not safe enough in the Internet environment.
-	Please refer to the next question for further information about this
-	issue.
+	Gfarm supports sharedsecret, gsi_auth, gsi, sasl_auth, sasl,
+	tls_sharedsecret, tls_client_certificate, kerberos_auth, and
+	kerberos authentications.  The sharedsecret, gsi_auth, and
+	kerberos_auth are not safe enough in the Internet environment.
+	Please refer to the next question for further information
+	about this issue.
 
   3.2 What is the difference in sharedsecret authentication,
      the gsi_auth method, and gsi authentication?
@@ -498,6 +495,27 @@ Table of Contents:
 	Please see the following URL for more about the GSI:
 		http://www.globus.org/
 
+	The "tls_sharedsecret" authentication uses a shared secret key
+	over TLS secure connection.
+
+	The "tls_client_certificate" authentication uses a X.509
+	client certificate over TLS secure connection.  A proxy
+	certificate in GSI can be used.
+
+	The "sasl_auth" authentication uses a SASL mechanism.  For the
+	authentication, TLS secure communication is used, but for the
+	data communication after the authentication, the data is not
+	protected.
+
+	The "sasl" authentication uses a SASL mechanism over TLS
+	secure connection.
+
+	The "kerberos_auth" authentication uses Kerberos
+	authentication.  After the authentication, the data is not
+	protected.
+
+	The "kerberos" authentication uses Kerberos authentication.
+	The communicated data is encrypted.
 
 4. Limitations
 **************

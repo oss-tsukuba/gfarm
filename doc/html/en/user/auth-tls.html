@@ -72,7 +72,7 @@ can complete the settings by creating the symbolic link described above.
 <BR>
 These files are required only on the hosts running gfmd.
 <BR>
-These can be set in tls_certificate_file and tls_key_file in gfmd.conf,
+These can be set by tls_certificate_file and tls_key_file in gfmd.conf,
 and the default file name is as follows:
 <TABLE>
 <TR><TH>host certificate</TH>	<TD>/etc/pki/tls/certs/gfmd.crt</TD></TR>
@@ -89,7 +89,7 @@ to complete the configuration.
 </PRE>
 
 <BR>
-<LI>the service certificate and the private key for gfmd
+<LI>the service certificate and the private key for gfsd
 <BR>
 The following file names can be set by
 tls_certificate_file and tls_key_file directives in gfarm2.conf,
@@ -135,7 +135,7 @@ directly under each user's home directory.
 <BR>
 The configuration of this file is the same
 as that of sharedsecret authentication,
-so please refer to the description of sharedsecret authentication.
+so please refer to the description of <A HREF="auth-sharedsecret.html">sharedsecret authentication</A>.
 
 <HR>
 <H2>settings specific to tls_client_certificate</H2>
