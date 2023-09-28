@@ -89,7 +89,7 @@ td.speed { text-align: right; }
     <TD>tls_sharedsecret</TD>
     <TD>S</TD>
     <TD>○</TD>
-    <TD>○</TD>
+    <TD>○ (*1)</TD>
     <TD>○</TD>
     <TD><A HREF="auth-tls.html">auth-tls.html</A></TD>
   </TR>
@@ -105,7 +105,7 @@ td.speed { text-align: right; }
     <TD>sasl_auth</TD>
     <TD>a</TD>
     <TD>×</TD>
-    <TD>○</TD>
+    <TD>○ (*1)</TD>
     <TD>×</TD>
     <TD><A HREF="auth-sasl.html">auth-sasl.html</A></TD>
   </TR>
@@ -113,7 +113,7 @@ td.speed { text-align: right; }
     <TD>sasl</TD>
     <TD>A</TD>
     <TD>○</TD>
-    <TD>○</TD>
+    <TD>○ (*1)</TD>
     <TD>×</TD>
     <TD><A HREF="auth-sasl.html">auth-sasl.html</A></TD>
   </TR>
@@ -175,10 +175,12 @@ Gfarm のサーバーは認証されたクライアントからのみ接続を�
 相互認証を行なわない場合、DNS spoofing、BGP経路ハイジャック、ARP spoofing と
 いった手段でサーバーを詐称する攻撃に対して脆弱であるため、
 特に広域での利用時には相互認証を行なう認証方式の利用を推奨します。
-
 <P>
 サーバー間認証の項には、gfmdおよびgfsdのようなサーバー間の認証において
 利用できるか否かを記載しています。
+<P>
+(*1) この印のついた認証方式は、サーバーによるクライアント認証で用いられます。
+     クライアントによるサーバ認証には tls_client_certificate を用います。
 
 <HR>
 <H2>認証方式の設定</H2>
