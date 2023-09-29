@@ -117,6 +117,14 @@ proxy: http://proxyサーバー名:proxyポート番号/
 </PRE>
 「proxyサーバー名」および「proxyポート番号」は、適宜修正してください。
 
+<P>
+Ubuntu では、gfsd との認証が "unable to open Berkeley db /etc/sasldb2:
+Permission denied" により失敗することがあります。その場合、
+/etc/sasldb2 の所有者を変更することにより解決します。
+<PRE>
+% sudo chown _gfarmfs /etc/sasldb2
+</PRE>
+
 <H3>Gfarm の設定</H3>
 
 gfmd.conf や gfsd の読む gfarm2.conf に、以下のような設定を追加します。
