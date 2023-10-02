@@ -1826,11 +1826,16 @@ gfm_client_user_info_get_mine_request(struct gfm_connection *gfm_server)
 		if (GFARM_IS_AUTH_GSI(gfm_server->auth_method) &&
 		    (gsi_dn = gfp_xdr_secsession_initiator_dn(gfm_server->conn))
 		    != NULL) {
+			/* always use old RPC */
 			e = gfm_client_user_info_get_by_gsi_dn_request(
 			    gfm_server, gsi_dn);
 		} else
 #endif
-		{
+		if (staticp->gfm_proto_version_default >=
+		    GFM_PROTOCOL_VERSION_V2_8_0) {
+			e = gfm_client_user_info_get_my_own_request(
+			    gfm_server);
+		} else {
 			e = gfm_client_rpc_request(gfm_server,
 			    GFM_PROTO_USER_INFO_GET_BY_NAMES, "is",
 			    (gfarm_int32_t)1, gfm_client_username(gfm_server));
@@ -1854,11 +1859,16 @@ gfm_client_user_info_get_mine_result(struct gfm_connection *gfm_server,
 		if (GFARM_IS_AUTH_GSI(gfm_server->auth_method) &&
 		    (gsi_dn = gfp_xdr_secsession_initiator_dn(gfm_server->conn))
 		    != NULL) {
+			/* always use old RPC */
 			e = gfm_client_user_info_get_by_gsi_dn_result(
 			    gfm_server, user);
 		} else
 #endif
-		{
+		if (staticp->gfm_proto_version_default >=
+		    GFM_PROTOCOL_VERSION_V2_8_0) {
+			e = gfm_client_user_info_get_my_own_result(
+			    gfm_server, user);
+		} else {
 			/* GFM_PROTO_USER_INFO_GET_BY_NAMES:nusers==1 result */
 			e = gfm_client_rpc_result(gfm_server, 0, "");
 			if (e == GFARM_ERR_NO_ERROR)
