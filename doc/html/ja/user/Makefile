@@ -10,6 +10,11 @@ htmldir=$(default_htmldir)/ja/user
 
 HTML =	\
 	index.html \
+	auth.html \
+	auth-sharedsecret.html \
+	auth-gsi.html \
+	auth-tls.html \
+	auth-sasl.html \
 	samba-gfarmfs.html \
 	smboverssh.html \
 	redundancy-tutorial.html \

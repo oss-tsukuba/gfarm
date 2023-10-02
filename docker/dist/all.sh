@@ -23,8 +23,6 @@ done
 [ -f ./config.sh ]
 DISTDIR=$PWD
 
-[ -f ~/.gfarm2rc ] && mv ~/.gfarm2rc ~/.gfarm2rc.bak
-
 # set up .nodelist
 sh ./setup.sh
 
@@ -36,6 +34,8 @@ else
 	(cd ~/gfarm && sh $DISTDIR/install.sh $install_option)
 fi
 gfarm-pcp -p ~/.nodelist .
+[ -f ~/.gfarm2rc ] && gfarm-prun -a -p "mv ~/.gfarm2rc ~/.gfarm2rc.bak
+	> /dev/null 2>&1"
 
 # install Gfarm2fs
 PKG=gfarm2fs; export PKG
@@ -125,7 +125,21 @@ else
 fi
 
 # Check installation
-sh ./check.sh
+AUTH=
+for a in $(gfstatus -S | grep 'client auth' | grep -v not | awk '{ print $3 }')
+do
+	[ $a = gsi ] && AUTH="$AUTH gsi gsi_auth"
+	[ $a = tls ] && AUTH="$AUTH tls_sharedsecret tls_client_certificate"
+	[ $a = sasl ] && AUTH="$AUTH anonymous"
+done
+AUTH="$AUTH sharedsecret"
+for a in $AUTH
+do
+	echo "*** $a ***"
+	sh ./edconf.sh $a > /dev/null
+	sh ./check.sh
+done
+
 if [ $gfarm_config = all ]; then
 	for h in c6 c7 c8; do
 		ssh $h sh $PWD/check.sh

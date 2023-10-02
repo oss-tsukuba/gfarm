@@ -92,23 +92,25 @@ tls_certificate_file および tls_key_file ディレクティブで設定でき
 デフォルト設定では以下のファイル名となっています。
 
 <TABLE>
-<TR><TH>サービス証明書</TH>	<TD>/etc/pki/tls/certs/gfsd.crt</TD></TR>
-<TR><TH>秘密鍵</TH>		<TD>/etc/pki/tls/private/gfsd.key</TD></TR>
+<TR><TH></TH>		<TH>ディレクティブ</TH>	<TH>デフォルト値</TH></TR>
+<TR><TH>サービス証明書</TH><TD>tls_certificate_file</TD><TD>/etc/pki/tls/certs/gfsd.crt</TD></TR>
+<TR><TH>秘密鍵</TH>	<TD>tls_key_file</TD>	<TD>/etc/pki/tls/private/gfsd.key</TD></TR>
 </TABLE>
 
 ただし tls_certificate_file および tls_key_file の設定よりも、
 それぞれ環境変数 X509_USER_CERT および X509_USER_KEY の設定の方が
 優先されるようになっており、config-gfsd コマンドを用いて
-gfsd を初期設定した場合には、これらの環境変数経由で
-以下の場所が設定されているため、tls_certificate_file および
-tls_key_file ディレクティブの設定は効きません。
+gfsd を初期設定した場合には、gfsd 起動スクリプトでこれらの環境変数を
+設定しているため、tls_certificate_file および tls_key_file ディレクティブの
+設定は効きません。必要な場合は起動スクリプトを修正してください。
 
 <TABLE>
-<TR><TH>サービス証明書</TH><TD>/etc/grid-security/gfsd/gfsdcert.pem</TD></TR>
-<TR><TH>秘密鍵</TH>	   <TD>/etc/grid-security/gfsd/gfsdkey.pem</TD></TR>
+<TR><TH></TH>		<TH>環境変数</TH>	<TH>起動スクリプトの設定</TH></TR>
+<TR><TH>サービス証明書</TH><TD>X509_USER_CERT</TD><TD>/etc/grid-security/gfsd*/gfsdcert.pem</TD></TR>
+<TR><TH>秘密鍵</TH>	<TD>X509_USER_KEY</TD>	<TD>/etc/grid-security/gfsd*/gfsdkey.pem</TD></TR>
 </TABLE>
 
-こちらのパス名は GSI 認証と同一ですので、
+起動スクリプトに設定されているパス名は GSI 認証と同一ですので、
 既に GSI 認証の設定を完了しているサイトでは追加設定は不要です。
 <BR>
 また、gfsd でサービス証明書を用いるためには以下の設定の追加が、

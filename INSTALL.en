@@ -105,10 +105,10 @@ Required Package
 
 * RPM Package
 
-openssl-devel (openssl11-devel(*) required for TLS on CentOS 7)
+openssl-devel		(openssl11-devel(*) required for TLS/SASL on CentOS 7)
 postgresql-devel or libpq-devel
 cyrus-sasl-devel			(required for SASL)
-cyrus-sasl-xoauth2-idp(**)		(required for SASL XOAuth2)
+cyrus-sasl-xoauth2-idp(**)		(required for SASL XOAUTH2)
 krb5-devel				(required for Kerberos)
 globus-gssapi-gsi-devel(*), pkgconfig	(required for --with-globus option)
 rdma-core-devel				(required for --with-infiniband option)
@@ -128,7 +128,7 @@ golang					(required for jwt-agent)
 libssl-dev
 libpq-dev
 libsasl2-dev, sasl2-bin			(required for SASL)
-cyrus-sasl-xoauth2-idp(**)		(required for SASL XOAuth2)
+cyrus-sasl-xoauth2-idp(**)		(required for SASL XOAUTH2)
 libkrb5-dev				(required for Kerberos)
 libglobus-gssapi-gsi-dev, pkgconf	(required for --with-globus option)
 libibverbs-dev				(required for --with-infiniband option)
@@ -139,5 +139,12 @@ ruby				(required to execute gfjournal{dump,admin})
 golang					(required for jwt-agent)
 
 (**) https://github.com/oss-tsukuba/cyrus-sasl-xoauth2-idp.git
+
+Note
+----
+
+* Even if the required packages for TLS, SASL, SASL XOAUTH2, Kerberos
+  are missing, it is still possible to build Gfarm without these
+  authentication methods.
 
 $Id$

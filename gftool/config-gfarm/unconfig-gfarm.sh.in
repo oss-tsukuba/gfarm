@@ -94,7 +94,7 @@ service_unconfig()
 		delete_file_or_directory -f $TEST_OPT "$RC_GFMD_SLAVE"
 	delete_file_or_directory -f $TEST_OPT "$RC_BACKEND"
 
-	service_reg
+	service_reg $TEST_OPT
 
 	delete_file_or_directory -f $TEST_OPT "$BACKEND_DATA_DIR"
 	delete_file_or_directory -f $TEST_OPT "$BACKEND_LOG_DIR"

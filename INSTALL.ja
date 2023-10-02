@@ -113,10 +113,10 @@ configure コマンドには，下記のオプションがあります．
 
 * RPM パッケージ
 
-openssl-devel (CentOS 7 で TLS を用いるためには openssl11-devel(*)が必要)
+openssl-devel (CentOS 7 で TLS/SASL認証を用いるには openssl11-devel(*) が必要)
 postgresql-devel or libpq-devel
 cyrus-sasl-devel			(SASL認証に必要)
-cyrus-sasl-xoauth2-idp(**)		(SASL XOAuth2 認証に必要)
+cyrus-sasl-xoauth2-idp(**)		(SASL XOAUTH2 認証に必要)
 krb5-devel				(Kerberos 認証に必要)
 globus-gssapi-gsi-devel(*), pkgconfig	(--with-globus オプションに必要)
 rdma-core-devel				(--with-infiniband オプションに必要)
@@ -127,7 +127,7 @@ python3, python3-docopt(*), python3-schema(*)	(gfptar の実行に必要)
 ruby					(gfjournal{dump,admin} の実行に必要)
 golang					(jwt-agent の構築に必要)
 
-(*) EPELに含まれます．EPELは以下で利用できます．
+(*) EPEL RPM リポジトリに含まれます．EPELは以下で利用できます．
     # yum install epel-release
 (**) https://github.com/oss-tsukuba/cyrus-sasl-xoauth2-idp.git
 
@@ -136,7 +136,7 @@ golang					(jwt-agent の構築に必要)
 libssl-dev
 libpq-dev
 libsasl2-dev sasl2-bin			(SASL認証に必要)
-cyrus-sasl-xoauth2-idp(**)		(SASL XOAuth2 認証に必要)
+cyrus-sasl-xoauth2-idp(**)		(SASL XOAUTH2 認証に必要)
 libkrb5-dev				(Kerberos 認証に必要)
 libglobus-gssapi-gsi-dev, pkg-config	(--with-globus オプションに必要)
 libibverbs-dev				(--with-infiniband オプションに必要)
@@ -147,5 +147,18 @@ ruby					(gfjournal{dump,admin} の実行に必要)
 golang					(jwt-agent の構築に必要)
 
 (**) https://github.com/oss-tsukuba/cyrus-sasl-xoauth2-idp.git
+
+注:
+
+* TLS 認証および SASL 認証では TLS 1.3 プロトコルを用いますので、
+  OpenSSL version 1.1 以降が必要です。
+  OpenSSL のバージョンが 1.1 より古い場合には TLS 認証および SASL 認証が
+  無効なバイナリが構築されます。
+
+* Cyrus SASL がインストールされていない場合、SASL 認証が無効なバイナリが
+  構築されます。
+
+* Kerberos がインストールされていない場合、Kerberos 認証が無効なバイナリが
+  構築されます。
 
 $Id$

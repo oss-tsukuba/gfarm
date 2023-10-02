@@ -117,7 +117,7 @@ system is required.
 To begin with, the following information is required:
 
 - a global username of an administrator	[-A]
-- a subject DN of an administrator	[-D]	(for GSI auth only)
+- a subject DN of an administrator	[-D]	(for GSI/TLS certificate auth)
 
   The global username is a unique user name used in Gfarm file system
   to share files among several administrative domains having different
@@ -137,13 +137,9 @@ To begin with, the following information is required:
   by a user mapfile that is specified by 'local_user_map' directive in
   gfarm2.conf file.
 
-  In case of GSI, a user having the specified subject DN is an
-  administrator for a Gfarm file system.  The mapping between the
-  subject DN and the user's local account has to be defined in
-  the /etc/grid-security/grid-mapfile file.
-  To use the GSI authentication, you have to install Globus before
-  building Gfarm binaries, and have to specify --with-globus option
-  to the configure command of the Gfarm source code to enable Globus.
+  In case of GSI and TLS client certificate authentications, a user
+  having the specified subject DN is an administrator for a Gfarm file
+  system.  For details, see doc/html/en/user/index.html.
 
   Note that you cannot specify "_gfarmmd" user or "_gfarmfs" user
   in the -A option above, because these are special users which can be
@@ -164,11 +160,14 @@ configuration.
 
 	# config-gfarm -t -A <global_admin_name> -a gsi_auth -D <Subject DN>
 
-The -a option specifies the authentication method in Gfarm file system.
-The default is shared secret authentication (sharedsecret).
-In case of GSI, either "-a gsi" or "-a gsi_auth" should be used.
-For details, refer to a manual page of gfarm2.conf(5) and Gfarm-FAQ.en.
-The -D option is only required for GSI authentication.
+The -a option specifies the authentication method in Gfarm file
+system.  The default is shared secret authentication (sharedsecret).
+Available authentication methods are 'sharedsecret',
+'tls_sharedsecret', 'tls_client_certificate', 'gsi_auth', 'gsi',
+'kerberos_auth', and 'kerberos'.  For details, refer to
+html/en/user/index.html, a manual page of gfarm2.conf(5) and
+Gfarm-FAQ.en.  The -D option is only required for GSI and TLS client
+certificate authentications.
 
 Note that the -X option is required to enable XML Path Language
 (XPath) support for querying XML extended attributes.  The -r option
@@ -255,10 +254,8 @@ the CPU load of gfmd by using the following directive in gfmd.conf:
 Do not use this option, if any home directory is shared by NFS
 which does not have the no_root_squash option.
 
-In case of the GSI authentication, you should prepare a host certificate
-and client certificates and should configure globus related settings.
-But the procedure is not described here.  Please refer "GSI C Admin Guide"
-in http://www.globus.org/
+In case of the GSI or TLS, you should prepare a host certificate
+and/or client certificates.  For details, see html/en/user/index.html.
 
 You can check whether the metadata server gfmd is running or not by
 the following command execution;
@@ -321,8 +318,8 @@ server if the home directory is not shared by NFS.
   specified by the -p option of the gfkey command.  Thus, you have to
   redistribute the key file to all file system nodes before the period.
 
-In case of the GSI authentication, obtain a service certificate for
-the gfsd.
+In case of the GSI and TLS authentications, obtain a service
+certificate for the gfsd.
 
   Copy the certificate to /etc/grid-security/gfsd/gfsdcert.pem,
   and the private key to /etc/grid-security/gfsd/gfsdkey.pem,
@@ -368,8 +365,7 @@ user without the -t option.
 
 	# config-gfsd /var/gfarm
 
-'config-gfsd' creates the configuration file <sysconfdir>/gfsd.conf
-and puts the startup script in <sysconfdir>/init.d/gfsd
+'config-gfsd' creates the startup script in <sysconfdir>/init.d/gfsd
 (or <sysconfdir>/rc.d/gfsd, according to operating system).
 
 Finally, 'config-gfsd' displays a command line of 'gfhost' that would
@@ -380,21 +376,11 @@ Ask the administrator to execute the displayed text.
   The administrator should execute the gfhost command as a global user
   specified by config-gfarm command on the metadata server host.  In
   case of the shared secret authentication, it is a local account of
-  the same name or mapped by a user mapfile.  In case of GSI, use a
-  user certificate specified by the -D option of config-gfarm.
+  the same name or mapped by a user mapfile.  In case of GSI or TLS
+  client certificate authentication, use a user certificate specified
+  by the -D option of config-gfarm.
 
 	$ /usr/bin/gfhost -c -a i386-fedora5-linux -p 600 -n 2 node1.example.org
-
-  In case of GSI, add a service certificate of the gfsd in
-  /etc/grid-security/grid-mapfile of a metadata server in the
-  following format.  '@host@' is a fixed string.  It cannot be
-  changed.
-  Please note that the "CN=" part of the distinguished name
-  must be "gfsd/<HOSTNAME_OF_THE_FILESYSTEM_NODE>" format.  For example,
-  it must be "CN=gfsd/linux-1.example.com" for a file system node
-  "linux-1.example.com".
-
-	"Subject DN of gfsd server cert" @host@ FQDN
 
   In case of the shared secret authentication, and if account names
   of Gfarm users on the operating system are different from
@@ -440,7 +426,7 @@ This command asks confirmation as follows:
 	Do you run unconfiguration? [y/n]:
 
 If you answer "y", the gfsd daemon will be stopped, and generated
-configuration files will be removed.  Also, all Gfarm file system data
+startup scripts will be removed.  Also, all Gfarm file system data
 on this file system node will be removed.
 
 Finally, 'unconfig-gfsd.sh' displays a command line of 'gfhost'
@@ -483,9 +469,8 @@ In case of the shared secret authentication:
    from names of Gfarm global users, the 'local_user_map' directive setting
    in gfarm2.conf file is needed.
 
-In case of GSI:
-   obtain the user certificate, and ask to add your entry
-   into grid-mapfile of all file system nodes and all metadata servers.
+In case of GSI or TLS client certificate authentication:
+   obtain a user certificate.
 
 Testing of the Gfarm file system
 ================================
@@ -582,7 +567,7 @@ This requires the Gfarm administrative privilege;
 'global_username' is a global user name in Gfarm file system.
 'realname' is a name to identify the user.  'homedir' is a home
 directory in Gfarm.  'gsi_dn' is a subject DN of a user certificate
-used in GSI authentication.
+used in GSI or TLS client certificate authentication.
 
   'homedir' is not used for now.
 
@@ -612,10 +597,6 @@ and copy the key to the home directory on all metadata servers,
 all file system nodes and all client nodes.
 Please read "Configuration of a Gfarm client node" section above
 about the detail of the key creation and distribution.
-
-In case of GSI, register user's distinguished name to the grid-mapfile
-that maps to nobody user on all metadata servers and all file system
-nodes.
 
 Gfarm administrative privilege and gfarmroot privilege
 ======================================================

@@ -2,7 +2,7 @@
 <HTML><HEAD>
 <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <META http-equiv="Content-Style-Type" content="text/css">
-<TITLE>SASL Authentication</TITLE>
+<TITLE>SASL over TLS Authentication</TITLE>
 
 <STYLE type="text/css">
 <!-- /* BEGIN ... hide style from old browser */
@@ -15,14 +15,14 @@ pre { background:#e0ffff; margin-left: 2em; margin-right: 2em }
 <IMG alt="[GFARM LOGO]" src="../../pic/gfarm-logo.gif" align=right border=0></A>
 <A href="../../index.html">documents</A> &gt;
 <A href="index.html">User's Manual</A> &gt;
-SASL Authentication
+SASL over TLS Authentication
 
 <HR>
-<H1>SASL Authentication</H1>
+<H1>SASL over TLS Authentication</H1>
 English | <A href="../../ja/user/auth-sasl.html">Japanese</A>
 <P>
 <P>
-This document describes the settings required for SASL authentication in Gfarm.
+This document describes the settings required for SASL over TLS authentication in Gfarm.
 
 <P>
 There are two types of SASL authentication in Gfarm.
@@ -53,13 +53,12 @@ must be configured in advance.
 
 Place the following configuration file named gfarm.conf
 in the Cyrus SASL configuration directory
-(/usr/lib64/sasl2 in the case of RHEL-based Linux distribution).
+($(pkg-config --variable=libdir libsasl2)/sasl2).
 <BR>
 In this document, this file will be referred to
 as the "Cyrus SASL server configuration file".
 
 <PRE>
-log_level: 7
 mech_list: the SASL authentication mechanisms to be used
 ...If other mechanism-specific settings are required, describe them.
 </PRE>
@@ -85,24 +84,29 @@ For the XOAUTH2 mechanism, please refer to the following.
 <H3>Configuration for XOAUTH2 mechanism</H3>
 
 <P>
-To use the XOAUTH2 mechanism, install the cyrus-sasl-xoauth2-idp package
+To use the XOAUTH2 mechanism, install the <A HREF="https://github.com/oss-tsukuba/cyrus-sasl-xoauth2-idp">cyrus-sasl-xoauth2-idp package</A>
 and place the following settings in the Cyrus SASL server configuration file
 under the name gfarm.conf.
 <PRE>
-log_level: 7
 mech_list: XOAUTH2
 xoauth2_scope: scope required in JWT, used for server-side validation
 xoauth2_aud: audience required in JWT, used for server-side validation
 xoauth2_user_claim: key name of claim to be used as user ID in JWT
+xoauth2_issuers: a list of trusted issures of JWT
 </PRE>
 The specific configuration depends on the OAuth IdP, but here is an example.
 <PRE>
-log_level: 7
 mech_list: XOAUTH2
 xoauth2_scope: hpci
 xoauth2_aud: hpci
 xoauth2_user_claim: hpci.id
+xoauth2_issuers: https://keycloak.example.com/auth/realms/hpci https://keycloak.example.org/auth/realms/hpci
 </PRE>
+
+<P>
+When xoauth2_issuers is not specified, any issuer is trusted.  We
+highly recommend to specify xoauth2_issuers to accept JWTs issued by
+only trusted issuers.
 
 <P>
 The server side accesses the IdP,
@@ -112,6 +116,14 @@ add the following setting:
 proxy: http://PROXY-SERVER-NAME:PROXY-PORT-NUMBER/
 </PRE>
 Modify "PROXY-SERVER-NAME" and "PROXY-PORT-NUMBER" as appropriate.
+
+<P>
+On Ubuntu, authentication to gfsd may fail due to the error
+"unable to open Berkeley db /etc/sasldb2: Permission denied".
+This is a workaround for this error.
+<PRE>
+% sudo chown _gfarmfs /etc/sasldb2
+</PRE>
 
 <H3>Gfarm configuration</H3>
 
@@ -133,6 +145,13 @@ sasl_mechanisms "PLAIN XOAUTH2"
 For security purposes, specify only the mechanism actually used.
 <BR>
 For other settings, follow the Cyrus SASL documentation.
+
+<P>
+When the user name in SASL (SASL-username) and Gfarm (Gfarm-username)
+is different, register SASL user name as follows.
+<PRE>
+% gfuser -A Gfarm-username SASL SASL-username
+</PRE>
 
 <HR>
 <H2>Client-side configuration</H2>
@@ -187,7 +206,7 @@ sasl_user "USER-NAME"
 <P>
 By placing the following configuration file named gfarm-client.conf
 in the Cyrus SASL configuration directory
-(/usr/lib64/sasl2 in the case of RHEL-based Linux distribution),
+($(pkg-config --variable=libdir libsasl2)/sasl2),
 the sasl_user specification can be omitted.
 <PRE>
 xoauth2_user_claim: key name of claim to be used as user ID in JWT
@@ -204,7 +223,7 @@ if the environment variable is not set.
 To prevent other users from reading this file,
 set the mode of the JWT file to 0600 or 0400 using the chmod(1) command.
 <P>
-The jwt-logon(1) and jwt-agent(1) commands can be used
+The <A HREF="https://github.com/oss-tsukuba/jwt-logon">jwt-logon</A> and <A HREF="https://github.com/oss-tsukuba/jwt-agent">jwt-agent</A> commands can be used
 to obtain a token and set JWT in the appropriate mode for this file.
 <P>
 If the first character of the value
