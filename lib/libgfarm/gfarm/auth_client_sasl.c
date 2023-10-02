@@ -85,9 +85,11 @@ gfarm_auth_request_sasl_common(struct gfp_xdr *conn,
 	error = gfarm_tls_server_cert_is_ok(conn, service_tag, hostname);
 
 	if (error == GFARM_ERR_NO_ERROR) {
+		gfarm_privilege_lock("sasl_client_new");
 		r = sasl_client_new(SASL_CLIENT_CONF,
 		    hostname, self_hs, peer_hs,
 		    NULL, 0, &sasl_conn);
+		gfarm_privilege_unlock("sasl_client_new");
 		if (r != SASL_OK) {
 			gflog_notice(GFARM_MSG_1005323,
 			    "%s: sasl_client_new(): %s",
@@ -149,10 +151,12 @@ gfarm_auth_request_sasl_common(struct gfp_xdr *conn,
 		return (GFARM_ERR_PROTOCOL_NOT_AVAILABLE);
 	}
 
+	gfarm_privilege_lock("sasl_client_start");
 	r = sasl_client_start(sasl_conn,
 	    gfarm_ctxp->sasl_mechanisms != NULL ?
 	    gfarm_ctxp->sasl_mechanisms : mechanism_candidates,
 	    NULL, &data, &len, &chosen_mechanism);
+	gfarm_privilege_unlock("sasl_client_start");
 	free(mechanism_candidates);
 	if (r != SASL_OK && r != SASL_CONTINUE) {
 		if (gflog_auth_get_verbose()) {
@@ -207,8 +211,10 @@ gfarm_auth_request_sasl_common(struct gfp_xdr *conn,
 			gfp_xdr_tls_reset(conn); /* is this case graceful? */
 			return (e);
 		}
+		gfarm_privilege_lock("sasl_client_step");
 		r = sasl_client_step(sasl_conn, response, rsz, NULL,
 		    &data, &len);
+		gfarm_privilege_unlock("sasl_client_step");
 		if (data == NULL)
 			len = 0; /* defensive programming */
 		free(response);
@@ -308,8 +314,10 @@ gfarm_auth_request_sasl_step(int events, int fd, void *closure,
 			e = GFARM_ERR_UNEXPECTED_EOF;
 		state->error = e;
 	} else {
+		gfarm_privilege_lock("sasl_client_step");
 		r = sasl_client_step(state->sasl_conn, response, rsz, NULL,
 		    &state->data, &state->len);
+		gfarm_privilege_unlock("sasl_client_step");
 		if (state->data == NULL)
 			state->len = 0; /* defensive programming */
 		free(response);
@@ -436,11 +444,13 @@ gfarm_auth_request_sasl_receive_mechanisms(int events, int fd, void *closure,
 		gfarm_fd_event_set_callback(state->writable,
 		    gfarm_auth_request_sasl_send_chosen_mechanism, state);
 
+		gfarm_privilege_lock("sasl_client_start");
 		r = sasl_client_start(state->sasl_conn,
 		    gfarm_ctxp->sasl_mechanisms != NULL ?
 		    gfarm_ctxp->sasl_mechanisms : mechanism_candidates,
 		    NULL, &state->data, &state->len,
 		    &state->chosen_mechanism);
+		gfarm_privilege_unlock("sasl_client_start");
 		free(mechanism_candidates);
 		if (r != SASL_OK && r != SASL_CONTINUE) {
 			if (gflog_auth_get_verbose()) {
@@ -505,10 +515,12 @@ gfarm_auth_request_sasl_send_server_auth_result(int events, int fd,
 				self_hs = NULL;
 				peer_hs = NULL;
 			}
-			if ((r = sasl_client_new(SASL_CLIENT_CONF,
+			gfarm_privilege_lock("sasl_client_new");
+			r = sasl_client_new(SASL_CLIENT_CONF,
 			    state->hostname,
-			    self_hs, peer_hs, NULL, 0, &state->sasl_conn))
-			    != SASL_OK) {
+			    self_hs, peer_hs, NULL, 0, &state->sasl_conn);
+			gfarm_privilege_unlock("sasl_client_new");
+			if (r != SASL_OK) {
 				gflog_notice(GFARM_MSG_1005331,
 				    "%s: sasl_client_new(): %s",
 				    state->hostname,
@@ -836,6 +848,9 @@ gfarm_sasl_secret_password_set_by_string(char *s)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+/*
+ * PREREQUISITE: gfarm_privilege_lock
+ */
 static gfarm_error_t
 gfarm_sasl_secret_password_set_by_jwt_file(void)
 {
@@ -930,6 +945,12 @@ gfarm_sasl_secret_password_set_by_jwt_file(void)
 	return (e);
 }
 
+/*
+ * PREREQUISITE: gfarm_privilege_lock
+ *
+ * this function is called from sasl_client_step(), and
+ * gfarm_privilege_lock was held by the caller of sasl_client_step().
+ */
 static int
 sasl_getsecret(
 	sasl_conn_t *conn, void *context, int id, sasl_secret_t **resultp)
@@ -943,13 +964,11 @@ sasl_getsecret(
 
 	switch (id) {
 	case SASL_CB_PASS:
-
-		gfarm_privilege_lock(diag);
-
 		if (gfarm_ctxp->sasl_password != NULL) {
 			e = gfarm_sasl_secret_password_set_by_string(
 			    gfarm_ctxp->sasl_password);
 		} else {
+			/* this needs gfarm_privilege_lock */
 			e = gfarm_sasl_secret_password_set_by_jwt_file();
 			if (e == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY) {
 				if (gflog_auth_get_verbose()) {
@@ -958,9 +977,6 @@ sasl_getsecret(
 				}
 			}
 		}
-
-		gfarm_privilege_unlock(diag);
-
 		if (e != GFARM_ERR_NO_ERROR)
 			return (SASL_FAIL);
 		*resultp =
