@@ -956,7 +956,6 @@ sasl_getsecret(
 	sasl_conn_t *conn, void *context, int id, sasl_secret_t **resultp)
 {
 	gfarm_error_t e;
-	static const char diag[] = "gfarm:sasl_getsecret";
 
 	/* sanity check */
 	if (conn == NULL || resultp == NULL)
