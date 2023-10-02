@@ -9,6 +9,8 @@
 
 #include <gfarm/gfarm.h>
 
+#include "gfutil.h"
+
 #include "context.h"
 #include "gfp_xdr.h"
 #include "io_tls.h"
