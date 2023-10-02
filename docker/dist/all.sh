@@ -125,7 +125,21 @@ else
 fi
 
 # Check installation
-sh ./check.sh
+AUTH=
+for a in $(gfstatus -S | grep 'client auth' | grep -v not | awk '{ print $3 }')
+do
+	[ $a = gsi ] && AUTH="$AUTH gsi gsi_auth"
+	[ $a = tls ] && AUTH="$AUTH tls_sharedsecret tls_client_certificate"
+	[ $a = sasl ] && AUTH="$AUTH anonymous"
+done
+AUTH="$AUTH sharedsecret"
+for a in $AUTH
+do
+	echo "*** $a ***"
+	sh ./edconf.sh $a > /dev/null
+	sh ./check.sh
+done
+
 if [ $gfarm_config = all ]; then
 	for h in c6 c7 c8; do
 		ssh $h sh $PWD/check.sh
