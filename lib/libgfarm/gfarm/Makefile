@@ -354,6 +354,9 @@ stringlist.lo:
 timespec.lo: timespec.h
 url.lo: $(GFUTIL_SRCDIR)/queue.h config.h gfs_pio.h
 gfs_rdma.lo: gfs_rdma.h
-io_tls.lo: $(GFUTIL_SRCDIR)/thrsubr.h config_openssl.h tls_headers.h tls_instances.h tls_funcs.h context.h iobuffer.h gfp_xdr.h auth.h config.h io_tls.h
+io_tls.lo: $(GFUTIL_SRCDIR)/gfutil.h \
+	liberror.h context.h iobuffer.h gfp_xdr.h auth.h config.h io_tls.h \
+	tls_headers.h tls_instances.h tls_funcs.h \
+	$(GFUTIL_SRCDIR)/thrsubr.h config_openssl.h io_fd.h
 
 include $(optional_rule)

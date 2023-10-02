@@ -43,6 +43,8 @@
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gfs.h>
 
+#include "gfutil.h"
+
 #include "liberror.h"
 #ifndef TLS_TEST
 #include "context.h"
