@@ -278,6 +278,11 @@ static struct gfp_iobuffer_ops gfp_xdr_tls_iobuf_ops = {
  * Gfarm internal APIs
  */
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS:
+ *  - gfarm_privilege_lock
+ */
 static int
 gfp_xdr_tls_session_create_ctx(int flags, struct tls_session_ctx_struct **ctxp)
 {
@@ -295,6 +300,10 @@ gfp_xdr_tls_session_create_ctx(int flags, struct tls_session_ctx_struct **ctxp)
 
 /*
  * An SSL_CTX/SSL constructor
+ *
+ * PREREQUISITE: nothing
+ * LOCKS:
+ *  - gfarm_privilege_lock
  */
 gfarm_error_t
 gfp_xdr_tls_alloc(struct gfp_xdr *conn,	int fd, int flags)

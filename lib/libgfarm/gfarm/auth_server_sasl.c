@@ -90,8 +90,10 @@ gfarm_authorize_sasl_common(struct gfp_xdr *conn,
 		return (GFARM_ERR_AUTHENTICATION);
 	}
 
+	gfarm_privilege_lock("sasl_server_new");
 	r = sasl_server_new("gfarm", gfarm_host_get_self_name(), NULL,
 	    self_hs, peer_hs, NULL, 0, &sasl_conn);
+	gfarm_privilege_unlock("sasl_server_new");
 	if (r != SASL_OK) {
 		gflog_notice(GFARM_MSG_1005355, "sasl_server_new(): %s",
 		    sasl_errstring(r, NULL, NULL));
@@ -194,8 +196,10 @@ gfarm_authorize_sasl_common(struct gfp_xdr *conn,
 		return (GFARM_ERR_AUTHENTICATION);
 	}
 
+	gfarm_privilege_lock("sasl_server_start");
 	r = sasl_server_start(sasl_conn, chosen_mechanism, response, rsz,
 	    &data, &len);
+	gfarm_privilege_unlock("sasl_server_start");
 	free(response);
 	free(chosen_mechanism);
 	chosen_mechanism = response = NULL;
@@ -238,7 +242,9 @@ gfarm_authorize_sasl_common(struct gfp_xdr *conn,
 			gfp_xdr_tls_reset(conn); /* is this case graceful? */
 			return (e);
 		}
+		gfarm_privilege_lock("sasl_server_step");
 		r = sasl_server_step(sasl_conn, response, rsz, &data, &len);
+		gfarm_privilege_unlock("sasl_server_step");
 		free(response);
 		response = NULL;
 		if (r != SASL_OK && r != SASL_CONTINUE) {

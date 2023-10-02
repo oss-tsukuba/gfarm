@@ -830,6 +830,10 @@ copy_cache:
 
 /*
  * An iterator for every file in a directory
+ *
+ * PREREQUISITE: nothing
+ * LOCKS:
+ *  - gfarm_privilege_lock
  */
 static inline gfarm_error_t
 iterate_file_in_a_dir(const char *dir,
@@ -843,6 +847,8 @@ iterate_file_in_a_dir(const char *dir,
 	char filebuf[PATH_MAX];
 	int nadd = 0;
 	int iter_n = 0;
+
+	gfarm_privilege_lock(dir);
 
 	errno = 0;
 	if (unlikely(dir == NULL || nptr == NULL ||
@@ -914,9 +920,16 @@ done:
 		(void)closedir(d);
 	}
 
+	gfarm_privilege_unlock(dir);
+
 	return (ret);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS:
+ *  - gfarm_privilege_lock
+ */
 static inline gfarm_error_t
 tls_load_prvkey(const char *file, EVP_PKEY **keyptr)
 {
@@ -925,6 +938,8 @@ tls_load_prvkey(const char *file, EVP_PKEY **keyptr)
 	if (likely(is_valid_string(file) == true && keyptr != NULL)) {
 		FILE *f = NULL;
 		EVP_PKEY *pkey = NULL;
+
+		gfarm_privilege_lock(file);
 
 		*keyptr = NULL;
 		errno = 0;
@@ -971,6 +986,7 @@ tls_load_prvkey(const char *file, EVP_PKEY **keyptr)
 			(void)fclose(f);
 		}
 
+		gfarm_privilege_unlock(file);
 	}
 
 	return (ret);
@@ -978,6 +994,8 @@ tls_load_prvkey(const char *file, EVP_PKEY **keyptr)
 
 /*
  * Accumulate X509_NAMEs from X509s in a file.
+ *
+ * PREREQUISITE: gfarm_privilege_lock
  */
 static inline gfarm_error_t
 accumulate_x509_names_from_file(const char *file,
@@ -1098,6 +1116,10 @@ accumulate_x509_names_from_file(const char *file,
 
 /*
  * Cert files collector for acceptable certs list.
+ *
+ * PREREQUISITE: nothing
+ * LOCKS:
+ *  - gfarm_privilege_lock
  */
 static inline gfarm_error_t
 tls_get_x509_name_stack_from_dir(const char *dir,
@@ -1107,12 +1129,18 @@ tls_get_x509_name_stack_from_dir(const char *dir,
 			iterate_file_for_x509_name, stack, nptr));
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS:
+ *  - gfarm_privilege_lock
+ */
 static inline gfarm_error_t
 tls_set_ca_path(SSL_CTX *ssl_ctx,
 	const char *ca_path, const char* acceptable_ca_path,
 	STACK_OF(X509_NAME) (**trust_ca_list))
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
+	int st;
 
 	/*
 	 * NOTE: What Apache 2.4 does for this are:
@@ -1172,8 +1200,10 @@ tls_set_ca_path(SSL_CTX *ssl_ctx,
 			*trust_ca_list = NULL;
 		}
 		tls_runtime_flush_error();
-		if (likely(SSL_CTX_load_verify_locations(ssl_ctx,
-				NULL, ca_path) == 1)) {
+		gfarm_privilege_lock(ca_path);
+		st = SSL_CTX_load_verify_locations(ssl_ctx, NULL, ca_path);
+		gfarm_privilege_unlock(ca_path);
+		if (likely(st == 1)) {
 			ret = GFARM_ERR_NO_ERROR;
 		} else {
 			gflog_tls_error(GFARM_MSG_1005557,
@@ -1239,8 +1269,13 @@ done:
 	tls_runtime_flush_error();
 	if (likely(ssl_ctx != NULL && is_valid_string(ca_path) == true &&
 		(ch = X509_STORE_new()) != NULL)) {
+
 		tls_runtime_flush_error();
-		if (likely(X509_STORE_load_path(ch, ca_path) == 1)) {
+		gfarm_privilege_lock(ca_path);
+		st = X509_STORE_load_path(ch, ca_path);
+		gfarm_privilege_unlock(ca_path);
+
+		if (likely(st == 1)) {
 			tls_runtime_flush_error();
 			if (likely(SSL_CTX_set0_chain_cert_store(
 					ssl_ctx, ch) == 1)) {
@@ -1274,8 +1309,13 @@ done:
 	tls_runtime_flush_error();
 	if (likely(ssl_ctx != NULL && is_valid_string(ca_path) == true &&
 		(ve = X509_STORE_new()) != NULL)) {
+
 		tls_runtime_flush_error();
-		if (likely(X509_STORE_load_path(ve, ve_path) == 1)) {
+		gfarm_privilege_lock(ve_path);
+		st = X509_STORE_load_path(ve, ve_path);
+		gfarm_privilege_unlock(ve_path);
+
+		if (likely(st == 1)) {
 			tls_runtime_flush_error();
 			if (likely(SSL_CTX_set0_verify_cert_store(
 					ssl_ctx, ve) == 1)) {
@@ -1321,6 +1361,10 @@ done:
 
 /*
  * Add extra cert(s) from a file into SSL_CTX
+ *
+ * PREREQUISITE: nothing
+ * LOCKS:
+ *  - gfarm_privilege_lock
  */
 static inline gfarm_error_t
 tls_add_extra_certs(SSL_CTX *ssl_ctx, const char *file, int *n_added)
@@ -1328,6 +1372,8 @@ tls_add_extra_certs(SSL_CTX *ssl_ctx, const char *file, int *n_added)
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 	FILE *fd = NULL;
 	int osst = -INT_MAX;
+
+	gfarm_privilege_lock(file);
 
 	errno = 0;
 	tls_runtime_flush_error();
@@ -1407,11 +1453,35 @@ tls_add_extra_certs(SSL_CTX *ssl_ctx, const char *file, int *n_added)
 		(void)fclose(fd);
 	}
 
+	gfarm_privilege_unlock(file);
+
 	return (ret);
 }
 
 /*
+ * helper function
+ *
+ * PREREQUISITE: nothing
+ * LOCKS:
+ *  - gfarm_privilege_lock
+ */
+static inline int
+use_certificate_chain_file_w_lock(SSL_CTX *ssl_ctx, const char *file)
+{
+	int st;
+
+	gfarm_privilege_lock(file);
+	st = SSL_CTX_use_certificate_chain_file(ssl_ctx, file);
+	gfarm_privilege_unlock(file);
+	return (st);
+}
+
+/*
  * Load both cert file and cert chain file
+ *
+ * PREREQUISITE: nothing
+ * LOCKS:
+ *  - gfarm_privilege_lock
  */
 static inline gfarm_error_t
 tls_load_cert_and_chain(SSL_CTX *ssl_ctx,
@@ -1431,19 +1501,19 @@ tls_load_cert_and_chain(SSL_CTX *ssl_ctx,
 		tls_runtime_flush_error();
 		if (is_valid_string(cert_file) == true &&
 			is_valid_string(cert_chain_file) == false &&
-			(ost = SSL_CTX_use_certificate_chain_file(ssl_ctx,
+			(ost = use_certificate_chain_file_w_lock(ssl_ctx,
 				cert_file)) == 1) {
 			ret = GFARM_ERR_NO_ERROR;
 			n_certs = 1;
 		} else if (is_valid_string(cert_file) == false &&
 			is_valid_string(cert_chain_file) == true &&
-			(ost = SSL_CTX_use_certificate_chain_file(ssl_ctx,
+			(ost = use_certificate_chain_file_w_lock(ssl_ctx,
 				cert_chain_file)) == 1) {
 			ret = GFARM_ERR_NO_ERROR;
 			n_certs = 1;
 		} else {
 			if (is_valid_string(cert_file) == true &&
-				(ost = SSL_CTX_use_certificate_chain_file(
+				(ost = use_certificate_chain_file_w_lock(
 					ssl_ctx, cert_file)) == 1) {
 				if (is_valid_string(cert_chain_file) == true) {
 					n = 0;
@@ -1470,6 +1540,10 @@ done:
 
 /*
  * Set revocation path
+ *
+ * PREREQUISITE: nothing
+ * LOCKS:
+ *  - gfarm_privilege_lock
  */
 static inline gfarm_error_t
 tls_set_revoke_path(SSL_CTX *ssl_ctx, const char *revoke_path)
@@ -1488,7 +1562,9 @@ tls_set_revoke_path(SSL_CTX *ssl_ctx, const char *revoke_path)
 		int st;
 
 		tls_runtime_flush_error();
+		gfarm_privilege_lock(revoke_path);
 		st = X509_STORE_load_locations(store, NULL, revoke_path);
+		gfarm_privilege_unlock(revoke_path);
 		if (likely(st == 1)) {
 			tls_runtime_flush_error();
 			st = X509_STORE_set_flags(store,
@@ -2037,6 +2113,10 @@ done:
 
 /*
  * Constructor
+ *
+ * PREREQUISITE: nothing
+ * LOCKS:
+ *  - gfarm_privilege_lock
  */
 static inline gfarm_error_t
 tls_session_create_ctx(struct tls_session_ctx_struct **ctxptr,
