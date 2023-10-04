@@ -18,7 +18,7 @@ gfmkdir -p /tmp
 gfchmod 1777 /tmp || :
 
 cd ~/gfarm/regress
-make all
+make all > /dev/null
 
 create_mismatch_file()
 {
@@ -55,9 +55,11 @@ create_gfmd_restart_all
 update_gfarm2rc
 scp -p ~/.gfarm2rc c2:
 
+AUTH=$(gfhost -lv | head -1 | awk '{ print $2 }')
+DIST=$(grep ^ID= /etc/os-release | sed 's/ID="*\([a-z]*\)"*/\1/')
 DATE=$(date +%F-%T)
-LOG1=log.w_root.remote-$DATE
-LOG2=log.wo_root.local-$DATE
+LOG1=log.rm-root-$AUTH-$DIST-$DATE
+LOG2=log.lc-user-$AUTH-$DIST-$DATE
 
 create_mismatch_file
 gfsudo ./regress.sh -l $LOG1
