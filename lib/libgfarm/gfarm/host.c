@@ -445,12 +445,14 @@ gfarm_get_ip_addresses(int *countp, struct in_addr **ip_addressesp)
 		return (gfarm_errno_to_error(save_errno));
 	}
 	for (n = 0, ifa = ifa_head; ifa != NULL; ifa = ifa->ifa_next) {
+		if (ifa->ifa_addr == NULL) /* IP unnumbered, e.g. tun0 */
+			continue;
 		if (ifa->ifa_addr->sa_family == AF_INET &&
 		    (ifa->ifa_flags & IFF_UP) != 0) {
 			n++;
 		}
 	}
-	GFARM_MALLOC_ARRAY(addresses,  n);
+	GFARM_MALLOC_ARRAY(addresses,  n > 0 ? n : 1);
 	if (addresses == NULL) {
 		gflog_debug(GFARM_MSG_1002523,
 		    "gfarm_get_ip_addresses: no memory for %d IPs", n);
@@ -458,6 +460,8 @@ gfarm_get_ip_addresses(int *countp, struct in_addr **ip_addressesp)
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	for (i = 0, ifa = ifa_head; ifa != NULL; ifa = ifa->ifa_next) {
+		if (ifa->ifa_addr == NULL) /* IP unnumbered, e.g. tun0 */
+			continue;
 		if (ifa->ifa_addr->sa_family == AF_INET &&
 		    (ifa->ifa_flags & IFF_UP) != 0) {
 			addresses[i++] =
