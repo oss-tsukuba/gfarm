@@ -3,6 +3,16 @@ set -xeu
 status=1
 trap '[ $status = 0 ] && echo Done || echo NG; exit $status' 0 1 2 15
 
+option=min
+while [ $# -gt 0 ]
+do
+	case $1 in
+	regress) option=$1 ;;
+	*) exit 1 ;;
+	esac
+	shift
+done
+
 DOCKEREXEC="docker exec -u $USER -w /home/$USER/gfarm/docker/dist gfarm-c1"
 
 test()
@@ -18,7 +28,7 @@ test()
 	$JWT && (cd jwt-server && docker compose up -d && make setup)
 
 	# execute a script
-	$DOCKEREXEC sh $script -min
+	$DOCKEREXEC sh $script
 
 	# SASL XOAUTH2 test
 	$JWT && $DOCKEREXEC sh ./check-oauth.sh
@@ -30,14 +40,15 @@ test()
 make down
 
 ## Ubuntu
-test ubuntu all.sh jwt
+#test ubuntu "all.sh $option" jwt
+test ubuntu "all.sh $option"
 
 # AlmaLinux8 and CentOS7
 for d in almalinux8 centos7
 do
-	for s in all.sh "all.sh -pkg"
+	for s in all.sh "all.sh pkg"
 	do
-		test $d "$s"
+		test $d "$s $option"
 	done
 done
 

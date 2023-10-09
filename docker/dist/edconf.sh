@@ -67,6 +67,6 @@ fi
 echo [~/.gfarm2rc]
 cat $GFCONF
 
-gfarm-pcp -p $GFCONF .
+gfhost | gfarm-pcp -h - -p $GFCONF .
 
 echo Done

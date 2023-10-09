@@ -25,7 +25,7 @@ while [ $# -gt 0 ]
 do
 	case $1 in
 	-m) CONF=false ;;
-	-single) install_option=single ;;
+	single) install_option=$1 ;;
 	*) exit 1 ;;
 	esac
 	shift

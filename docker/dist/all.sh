@@ -7,12 +7,20 @@ trap '[ $status = 0 ] && echo All set || echo NG: $PROG; exit $status' 0 1 2 15
 build_pkg=false
 gfarm_config=all
 install_option=
+REGRESS=false
 while [ $# -gt 0 ]
 do
 	case $1 in
-	-pkg) build_pkg=true ;;
-	-min) gfarm_config=min
-	      install_option=-single ;;
+	pkg) build_pkg=true
+	     REGRESS=false ;;
+	min) gfarm_config=min
+	     install_option=single
+	     REGRESS=false ;;
+	regress)
+	     build_pkg=false
+	     gfarm_config=all
+	     install_option=
+	     REGRESS=true ;;
 	*) exit 1 ;;
 	esac
 	shift
@@ -138,12 +146,13 @@ do
 	echo "*** $a ***"
 	sh ./edconf.sh $a > /dev/null
 	sh ./check.sh
+	if [ $gfarm_config = all ]; then
+		for h in c6 c7 c8; do
+			ssh $h sh $PWD/edconf.sh $a > /dev/null
+			ssh $h sh $PWD/check.sh
+		done
+	fi
+	$REGRESS && sh ./regress.sh
 done
-
-if [ $gfarm_config = all ]; then
-	for h in c6 c7 c8; do
-		ssh $h sh $PWD/check.sh
-	done
-fi
 
 status=0

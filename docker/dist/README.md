@@ -84,6 +84,10 @@ Build, install and setup tests for all distributions.
 
     % sh ./batchtest.sh
 
+or
+
+    % sh ./batchtest.sh regress
+
 ## Create RPM packages
 
     % sh ./devrpm.sh
