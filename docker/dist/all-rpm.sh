@@ -1,3 +1,3 @@
 #!/bin/sh
 set -xeu
-sh ./all.sh -pkg $*
+sh ./all.sh pkg $*
