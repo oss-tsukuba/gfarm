@@ -357,11 +357,7 @@ is_valid_prvkey_file_permission(int fd, const char *file)
 						"open too widely. It would "
 						"be nice if the file "
 						"permission was 0600.", file);
-/* for checkpatch */
-#define GFMERR_PKEY_PERM						\
-	GFARM_ERRMSG_TLS_PRIVATE_KEY_FILE_PERMISSION_TOO_WIDELY_OPEN
-					ret = GFMERR_PKEY_PERM;
-#undef GFMERR_PKEY_PERM
+					ret = GFARM_ERR_INVALID_CREDENTIAL;
 				}
 			} else {
 				gflog_tls_error(GFARM_MSG_1005529,
@@ -370,11 +366,7 @@ is_valid_prvkey_file_permission(int fd, const char *file)
 					"which is strongly discouraged even "
 					"this process can read it for privacy "
 					"and security.", uid, file);
-/* for checkpatch */
-#define GFMERR_PKEY_OPEN \
-	GFARM_ERRMSG_TLS_PRIVATE_KEY_FILE_ABOUT_TO_BE_OPENED_BY_OTHERS
-				ret = GFMERR_PKEY_OPEN;
-#undef GFMERR_PKEY_OPEN
+				ret = GFARM_ERR_INVALID_CREDENTIAL;
 			}
 		} else {
 			if (errno != 0) {
@@ -972,7 +964,7 @@ tls_load_prvkey(const char *file, EVP_PKEY **keyptr)
 						"Can't read a PEM format "
 						"private key from %s.", file);
 				}
-				ret = GFARM_ERRMSG_TLS_PRIVATE_KEY_READ_FAILURE;
+				ret = GFARM_ERR_INVALID_CREDENTIAL;
 			}
 		} else {
 			if (errno != 0) {
@@ -2532,7 +2524,7 @@ runtime_init:
 					"Failed to set ciphersuites "
 					"\"%s\" to the SSL_CTX.",
 					ciphersuites);
-				ret = GFARM_ERRMSG_TLS_INVALID_CIPHER;
+				ret = GFARM_ERR_TLS_RUNTIME_ERROR;
 				goto bailout;
 			}
 		}
@@ -2617,8 +2609,7 @@ runtime_init:
 				gflog_tls_error(GFARM_MSG_1005617,
 					"Can't set a private key to a "
 					"SSL_CTX.");
-				/* ?? GFARM_ERRMSG_TLS_IBVALID_KEY ?? */
-				ret = GFARM_ERR_TLS_RUNTIME_ERROR;
+				ret = GFARM_ERR_INVALID_CREDENTIAL;
 				goto bailout;
 			}
 
@@ -3137,7 +3128,7 @@ tls_session_verify(struct tls_session_ctx_struct *ctx, bool *is_verified)
 					"Certificate verification failed: %s",
 					X509_verify_cert_error_string(vres));
 				ret = ctx->last_gfarm_error_ =
-					GFARM_ERRMSG_TLS_CERT_VERIFIY_FAILURE;
+					GFARM_ERR_AUTHENTICATION;
 			}
 			ctx->cert_verify_result_error_ = vres;
 			ctx->is_verified_ = v;

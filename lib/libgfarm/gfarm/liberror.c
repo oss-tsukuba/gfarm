@@ -287,7 +287,12 @@ static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {
 	/* refered only from gfarm/config.c */
 	"invalid digest type",
 
-	/* refered only from gfarm/tls_funcs.h */
+	/*
+	 * refered only from gfarm/tls_funcs.h
+	 *
+	 * deprecated, but DO NOT REMOVE
+	 * because these may be transfered via network in gfarm-2.8.0
+	 */
 	"TLS private key file permission too widely open.",
 	"TLS private key file about to be opened by others.",
 	"TLS private key read failure.",
