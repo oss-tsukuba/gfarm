@@ -2208,6 +2208,7 @@ tls_session_create_ctx(struct tls_session_ctx_struct **ctxptr,
 			gflog_tls_error(GFARM_MSG_1005594,
 				"Failed to check a CA certs directory %s: %s",
 				tmp, gfarm_error_string(ret));
+			ret = GFARM_ERR_INVALID_CREDENTIAL;
 		}
 		goto bailout;
 	}
@@ -2366,9 +2367,10 @@ tls_session_create_ctx(struct tls_session_ctx_struct **ctxptr,
 			is_valid_string(cert_chain_file) != true) ||
 			is_valid_string(prvkey_file) != true)) {
 			gflog_tls_error(GFARM_MSG_1005604,
-				"As a TLS server, at least a CA ptth, a cert "
+				"As a TLS server, at least a CA path, a cert "
 				"file/cert chain file and a private key file "
 				"must be presented.");
+			ret = GFARM_ERR_INVALID_CREDENTIAL;
 			goto bailout;
 		}
 	} else {
@@ -2393,6 +2395,7 @@ tls_session_create_ctx(struct tls_session_ctx_struct **ctxptr,
 					"file and a private key file, or a "
 					"CA path and GSI/GCT proxy cert "
 					"must be presented.");
+				ret = GFARM_ERR_INVALID_CREDENTIAL;
 				goto bailout;
 			}
 		} else {
@@ -2400,6 +2403,7 @@ tls_session_create_ctx(struct tls_session_ctx_struct **ctxptr,
 				gflog_tls_error(GFARM_MSG_1005606,
 					"At least a CA path must be "
 					"specified.");
+				ret = GFARM_ERR_INVALID_CREDENTIAL;
 				goto bailout;
 			}
 		}
@@ -2425,6 +2429,8 @@ runtime_init:
 			gflog_tls_error(GFARM_MSG_1005608,
 				"Can't load a private key file \"%s\".",
 				prvkey_file);
+			if (ret == GFARM_ERR_NO_ERROR)
+				ret = GFARM_ERR_INVALID_CREDENTIAL;
 			goto bailout;
 		}
 	}
@@ -2597,6 +2603,7 @@ runtime_init:
 					"No cert is load both %s and %s: %s.",
 					cert_file, cert_chain_file,
 					gfarm_error_string(ret));
+				ret = GFARM_ERR_INVALID_CREDENTIAL;
 				goto bailout;
 			}
 
