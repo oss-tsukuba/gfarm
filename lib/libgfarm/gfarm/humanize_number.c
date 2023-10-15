@@ -51,6 +51,7 @@ gfarm_humanize_number_to_int64(gfarm_int64_t *vp, const char *str)
 {
 	char *ep;
 
+	errno = 0;
 	*vp = gfarm_strtoi64(str, &ep);
 	if (errno != 0) {
 		int save_errno = errno;
