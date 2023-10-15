@@ -15,7 +15,8 @@ sudo grid-ca-create -noint -subject "cn=CA, ou=GfarmTest, o=Grid" -nobuild
 rm -f openssl_req.log
 for f in $GSDIR/certificates/*.0
 do
-	HASH=$(openssl x509 -hash -in $f -noout)
+	B=$(basename $f)
+	HASH=${B%.0}
 	[ -f $GSDIR/certificates/grid-security.conf.$HASH ] && break
 done
 sudo grid-default-ca -ca $HASH > /dev/null
