@@ -249,7 +249,7 @@ IPアドレスを以下のいずれかの形式で記載します。
 </TABLE>
 
 <P>
-auth ディレクティブは記述の順番に意味があり、上から適用されていきます。
+同一の認証方式の間では、auth ディレクティブは記述の順番に意味があり、上から適用されていきます。
 このため以下の例だと
 <PRE>
 auth enable * 192.168.0.0/24
@@ -272,6 +272,30 @@ auth enable * 192.168.0.0/24
 <UL>
 <LI>すべてのホストについて tls_client_certificate のみを許す
 </UL>
+
+<P>
+異なる認証方式の間の順序に意味はなく、
+クライアントは enable とされている認証方式を、以下の順序で試行します。
+<OL>
+<LI>sharedsecret
+<LI>sasl_auth
+<LI>sasl
+<LI>tls_sharedsecret
+<LI>tls_client_certificate
+<LI>kerberos_auth
+<LI>kerberos
+<LI>gsi_auth
+<LI>gsi
+</OL>
+
+この試行順序は、auth_trial_order ディレクティブで変更することができます。<BR>
+例えば以下の設定を行なうと、
+tls_client_certificate と sasl のみをこの順序で試行し
+それ以外の認証方式は利用しなくなります。
+<PRE>
+auth_trial_order tls_client_certificate sasl
+</PRE>
+
 
 <HR>
 <H2>SEE ALSO</H2>
