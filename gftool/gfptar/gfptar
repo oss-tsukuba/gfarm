@@ -1988,19 +1988,34 @@ class GfptarCommand(Command):
             filelistlist.append(newlist)
         return filelistlist
 
-    def lock_init(self, enable):
+    def lock_init(self, enable, timeout=None):
         if enable:
-            self._lock = threading.Lock()
+            if timeout is not None:
+                self._lock = threading.Lock()
+                self._lock_timeout = timeout
+                self.lock = self.lock_timeout
+            else:
+                self._lock = None
+                self.lock = threading.Lock
+        else:
+            self._lock = None
+            self.lock = self.lock_noop
 
     @contextmanager
-    def lock(self):
-        if self._lock:
-            if not self._lock.acquire(timeout=5):
-                logger.warning('lock: timeout(unexpected)')
+    def lock_noop(self):
+        yield
+
+    # NOTE: not used
+    @contextmanager
+    def lock_timeout(self):
+        locked = True
+        if not self._lock.acquire(timeout=self._lock_timeout):
+            logger.warning('lock: timeout(unexpected)')
+            locked = False
         try:
             yield
         finally:
-            if self._lock:
+            if locked:
                 self._lock.release()
 
     def cancel(self):
