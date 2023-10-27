@@ -2877,15 +2877,22 @@ tls_session_io_continuable(int sslerr, struct tls_session_ctx_struct *ctx,
 		break;
 
 	case SSL_ERROR_SSL:
-		/*
-		 * TLS runtime error
-		 */
 		if (BIO_eof(SSL_get_rbio(ctx->ssl_))) {
+			/*
+			 * gfmd failover happened?
+			 *
+			 * XXX
+			 * the BIO_eof() check method depends on
+			 * OpenSSL implementation
+			 */
 			ctx->last_gfarm_error_ =
 			    GFARM_ERR_UNEXPECTED_EOF;
 			gflog_tls_info(GFARM_MSG_1005652,
 			    "TLS EOF during %s", diag);
 		} else  {
+			/*
+			 * TLS runtime error
+			 */
 			ctx->last_gfarm_error_ =
 			    GFARM_ERR_TLS_RUNTIME_ERROR;
 			gflog_tls_error(GFARM_MSG_1005623,
