@@ -2882,8 +2882,9 @@ tls_session_io_continuable(int sslerr, struct tls_session_ctx_struct *ctx,
 			 * gfmd failover happened?
 			 *
 			 * XXX
-			 * the BIO_eof() check method depends on
-			 * OpenSSL implementation
+			 * This inspection method using BIO_eof() is
+			 * out of OpenSSL specification
+			 * and implementation dependent
 			 */
 			ctx->last_gfarm_error_ =
 			    GFARM_ERR_UNEXPECTED_EOF;
