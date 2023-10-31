@@ -1921,7 +1921,9 @@ class GfptarCommand(Command):
         self.stored_num = 0
         self.start_time = time.time()
         self.next_time = self.start_time + 1
-        self.next_gfsched = 0
+
+        self.gfsched_lock = None
+        self.gfsched_next = 0
         self.gfsched_list = None
 
         self.outdir_url.create_new_dir()
@@ -2028,16 +2030,20 @@ class GfptarCommand(Command):
         return val
 
     def _gfsched_sometimes(self, gfurl):
-        # gfurl.is_gfarm() is True
-        with self.lock():
+        # if gfurl.is_gfarm() is not True:
+        #     raise AssertionError
+        if self.gfsched_lock is None:
+            self.gfsched_lock = threading.Lock()
+        with self.gfsched_lock:
             now = time.time()
-            if now >= self.next_gfsched:
+            if now >= self.gfsched_next:
+                # access to Gfarm
                 self.gfsched_list = gfurl.gfsched(write_mode=True,
                                                   number=self.jobs)
                 # prevent IndexError
                 self.gfsched_list = self.gfsched_list[:self.jobs]
                 logger.debug("update gfsched_list")
-                self.next_gfsched = now + self.gfsched_interval
+                self.gfsched_next = now + self.gfsched_interval
 
     def select_a_target_host(self, outurl, index):
         if not outurl.is_gfarm():
@@ -2271,7 +2277,9 @@ class GfptarCommand(Command):
         self.start_time = time.time()
         self.next_time = self.start_time + 1
         self.dirstat_dict = {}
-        self.next_gfsched = 0
+
+        self.gfsched_lock = None
+        self.gfsched_next = 0
         self.gfsched_list = None
 
         if self.MT_enabled():
