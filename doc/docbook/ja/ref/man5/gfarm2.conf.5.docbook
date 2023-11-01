@@ -3148,7 +3148,7 @@ XOAUTH2 メカニズムの場合ののトークンもこれで指定できます
 <para>
 なお、この設定がない場合、環境変数 JWT_USER が指すファイル、
 あるいは環境変数も設定されていない場合は
-ファイル /tmp/jwt_user_u&lt;ユーザーID$gt;/token.jwt
+ファイル /tmp/jwt_user_u&lt;ユーザーID&gt;/token.jwt
 の内容をパスワードとして利用します。
 ファイルから読むのは XOAUTH2 メカニズムでの利用を想定した機能ですが、
 LOGIN や PLAIN といった XOAUTH2 以外のメカニズムを利用した場合でも、
