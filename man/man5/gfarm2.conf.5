@@ -3062,7 +3062,7 @@ sasl_password \fI"password_string"\fR
 .RS 4
 Specifies the password used for SASL authentication mechanisms such as LOGIN, PLAIN, etc\&. JWT token for the XOAUTH2 mechanism can be specified too\&.
 .sp
-If this directive is not specified, the file pointed to by the JWT_USER environment variable, or if the environment is not set either, the contents of the file /tmp/jwt_user_u$lt;USER_ID$gt;/token\&.jwt is used as the password\&. Note that reading from the file is a function intended for use with the XOAUTH2 mechanism, but the password may be read from this file even when non\-XOAUTH2 mechanisms such as LOGIN or PLAIN are used\&.
+If this directive is not specified, the file pointed to by the JWT_USER environment variable, or if the environment is not set either, the contents of the file /tmp/jwt_user_u<USER_ID>/token\&.jwt is used as the password\&. Note that reading from the file is a function intended for use with the XOAUTH2 mechanism, but the password may be read from this file even when non\-XOAUTH2 mechanisms such as LOGIN or PLAIN are used\&.
 .sp
 For example,
 .sp
