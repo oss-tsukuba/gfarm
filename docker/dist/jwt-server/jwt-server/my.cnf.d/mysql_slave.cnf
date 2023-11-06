@@ -8,3 +8,5 @@ auto_increment_offset=2
 
 replicate-do-table=gfarmdb.tokens
 replicate-ignore-table=gfarmdb.errors
+
+master_retry_count=0
