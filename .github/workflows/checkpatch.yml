@@ -1,0 +1,24 @@
+name: checkpatch
+
+on:
+  push:
+  pull_request:
+
+jobs:
+
+  checkpatch:
+    name: Run checkpatch test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: invoke checkpatch
+        id: checkpatch
+        run: |
+          set -x
+          git diff ${{ github.event.before }} ${{ github.sha }} | \
+            ./util/checkpatch/checkpatch.pl -
