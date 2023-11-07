@@ -195,7 +195,6 @@ which config-gfarm > /dev/null 2>&1 || err no gfarm installation
 
 case $mode in
 start)
-    stop > /dev/null 2>&1
     start ;;
 stop)
     stop ;;

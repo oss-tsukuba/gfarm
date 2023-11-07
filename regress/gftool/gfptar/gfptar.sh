@@ -18,6 +18,8 @@ if gfptar -q --test \
     exit_code=$exit_pass
 fi
 
+gfchmod -R 770 $gftmp
 gfrm -rf $gftmp
+chmod -R 770 $localtmp
 rm -rf $localtmp
 exit $exit_code

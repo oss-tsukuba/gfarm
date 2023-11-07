@@ -1390,17 +1390,18 @@ class GfptarCommand(Command):
 
     def __init__(self, name):
         self.init(name)
-        set_encoding(self.opt['--encoding'])
-        self.jobs = self.opt['--jobs']
-        self.bufsize = self.opt['--bufsize']
-        self.progress_enabled = self._progress_enabled()
-        self.hardlink_warn = True
-        self.disable_fsync = self.opt['--disable-fsync']
-        self.use_fsync = not self.disable_fsync
         self.canceled = threading.Event()
         self._lock = None
         self.futures = None
         self.sig_init()
+        self.hardlink_warn = True
+
+    def options_init(self):
+        set_encoding(self.opt['--encoding'])
+        self.jobs = self.opt['--jobs']
+        self.bufsize = self.opt['--bufsize']
+        self.progress_enabled = self._progress_enabled()
+        self.use_fsync = not self.opt['--disable-fsync']
 
     def sig_init(self):
         def sig_handler(signum, frame):
@@ -1428,12 +1429,14 @@ class GfptarCommand(Command):
                 infiles = self.opt['<member>']
                 self.create(outdir, basedir, infiles)
                 return
+
             outdir = self.opt['--extract']
             if outdir:
                 indir = self.opt['<indir>']
                 members = self.opt['<member>']
                 self.extract(outdir, indir, members)
                 return
+
             indir = self.opt['--list']
             if indir:
                 if self.verbose:
@@ -1441,6 +1444,7 @@ class GfptarCommand(Command):
                 else:
                     self.list_simple(indir)
                 return
+
             if self.opt['--test']:
                 self.test_main()
                 return
@@ -1455,6 +1459,7 @@ class GfptarCommand(Command):
                 sys.exit(1)
 
     def test_main(self):
+        self.options_init()
         self.hardlink_warn = False
         self.uid = os.getuid()
         self.pid = os.getpid()
@@ -1831,6 +1836,7 @@ class GfptarCommand(Command):
             print(fmt.format(*args))
 
     def create(self, outdir, basedir, infiles):
+        self.options_init()
         self.outdir = outdir
         self.outdir_url = GfURL.init(outdir)
         self.basedir_url = GfURL.init(basedir)
@@ -1915,7 +1921,9 @@ class GfptarCommand(Command):
         self.stored_num = 0
         self.start_time = time.time()
         self.next_time = self.start_time + 1
-        self.next_gfsched = 0
+
+        self.gfsched_lock = None
+        self.gfsched_next = 0
         self.gfsched_list = None
 
         self.outdir_url.create_new_dir()
@@ -1982,19 +1990,34 @@ class GfptarCommand(Command):
             filelistlist.append(newlist)
         return filelistlist
 
-    def lock_init(self, enable):
+    def lock_init(self, enable, timeout=None):
         if enable:
-            self._lock = threading.Lock()
+            if timeout is not None:
+                self._lock = threading.Lock()
+                self._lock_timeout = timeout
+                self.lock = self.lock_timeout
+            else:
+                self._lock = None
+                self.lock = threading.Lock
+        else:
+            self._lock = None
+            self.lock = self.lock_noop
 
     @contextmanager
-    def lock(self):
-        if self._lock:
-            if not self._lock.acquire(timeout=5):
-                logger.warning('lock: timeout(unexpected)')
+    def lock_noop(self):
+        yield
+
+    # NOTE: not used
+    @contextmanager
+    def lock_timeout(self):
+        locked = True
+        if not self._lock.acquire(timeout=self._lock_timeout):
+            logger.warning('lock: timeout(unexpected)')
+            locked = False
         try:
             yield
         finally:
-            if self._lock:
+            if locked:
                 self._lock.release()
 
     def cancel(self):
@@ -2007,16 +2030,20 @@ class GfptarCommand(Command):
         return val
 
     def _gfsched_sometimes(self, gfurl):
-        # gfurl.is_gfarm() is True
-        with self.lock():
+        # if gfurl.is_gfarm() is not True:
+        #     raise AssertionError
+        if self.gfsched_lock is None:
+            self.gfsched_lock = threading.Lock()
+        with self.gfsched_lock:
             now = time.time()
-            if now >= self.next_gfsched:
+            if now >= self.gfsched_next:
+                # access to Gfarm
                 self.gfsched_list = gfurl.gfsched(write_mode=True,
                                                   number=self.jobs)
                 # prevent IndexError
                 self.gfsched_list = self.gfsched_list[:self.jobs]
                 logger.debug("update gfsched_list")
-                self.next_gfsched = now + self.gfsched_interval
+                self.gfsched_next = now + self.gfsched_interval
 
     def select_a_target_host(self, outurl, index):
         if not outurl.is_gfarm():
@@ -2131,6 +2158,7 @@ class GfptarCommand(Command):
         return Exception('Not a gfptar-archived directory: ' + url_str)
 
     def extract(self, outdir, indir, members):
+        self.options_init()
         self.outdir = outdir
         self.outdir_url = GfURL.init(outdir)
         self.indir = indir
@@ -2249,7 +2277,9 @@ class GfptarCommand(Command):
         self.start_time = time.time()
         self.next_time = self.start_time + 1
         self.dirstat_dict = {}
-        self.next_gfsched = 0
+
+        self.gfsched_lock = None
+        self.gfsched_next = 0
         self.gfsched_list = None
 
         if self.MT_enabled():
@@ -2507,6 +2537,7 @@ class GfptarCommand(Command):
                          f'B/s={bytes_per_sec:.0f}  ')
 
     def list_simple(self, indir, quiet=False):
+        self.options_init()
         indir_url = GfURL.init(indir)
         filelistlist = []
         for ent in indir_url.listdir(recursive=False):
@@ -2525,6 +2556,7 @@ class GfptarCommand(Command):
                         print(line.rstrip())
 
     def list_verbose(self, indir, quiet=False):
+        self.options_init()
         self.compress_prog = self.opt['--use-compress-program']
         indir_url = GfURL.init(indir)
         archlist = []

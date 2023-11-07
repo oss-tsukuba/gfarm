@@ -55,15 +55,6 @@ ln -s ${jwt_agent_src_path} ${PRIMARY_HOME}/jwt-agent
 ln -s ${cyrus_sasl_xoauth2_idp_src_path} ${PRIMARY_HOME}/cyrus-sasl-xoauth2-idp
 ln -s ${scitokens_cpp_src_path} ${PRIMARY_HOME}/scitokens-cpp
 
-# remove untracked files
-(cd ${gfarm_src_path}; git clean -df) || true
-(cd ${gfarm2fs_src_path}; git clean -df) || true
-# the following directories may not exist
-( if cd ${jwt_logon_src_path}; then git clean -df; fi ) || true
-( if cd ${jwt_agent_src_path}; then git clean -df; fi ) || true
-( if cd ${cyrus_sasl_xoauth2_idp_src_path}; then git clean -df; fi ) || true
-( if cd ${scitokens_cpp_src_path}; then git clean -df; fi ) || true
-
 for u in _gfarmmd _gfarmfs; do
   $USERADD "$u"
 done
@@ -330,3 +321,27 @@ systemctl enable autofs
 ### disable getty
 systemctl mask systemd-logind.service
 systemctl mask getty.target
+
+# remove untracked files to remove *.o files and etc.
+# (after copying $base_gfservicerc)
+
+git_clean()
+{
+    dir="$1"
+    su - "${GFDOCKER_PRIMARY_USER}" -c "cd \"${dir}\"; git clean -dfx"
+}
+
+git_clean ${gfarm_src_path}
+git_clean ${gfarm2fs_src_path}
+# the following directories may not exist
+( if cd ${jwt_logon_src_path}; then git_clean ${jwt_logon_src_path}; fi )
+( if cd ${jwt_agent_src_path}; then git_clean ${jwt_agent_src_path}; fi )
+( if cd ${cyrus_sasl_xoauth2_idp_src_path}; then
+      git_clean ${cyrus_sasl_xoauth2_idp_src_path}; fi )
+( if cd ${scitokens_cpp_src_path}; then
+      git_clean ${scitokens_cpp_src_path}; fi )
+if [ "${GFDOCKER_NUM_TENANTS:-1}" -gt 1 ]; then
+    # for regress
+    ln -s ${gfarm_src2_path} ${TENANT_ADMIN_HOME}/gfarm
+    (cd ${gfarm_src2_path}; git_clean) || true
+fi
