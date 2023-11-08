@@ -508,7 +508,7 @@ update_user()
 
 create_user user1 PASSWORD
 
-${BINDIR}/jboss-cli.sh -c --command=reload
+${BINDIR}/jboss-cli.sh -c --command=reload || :
 
 ### login
 
