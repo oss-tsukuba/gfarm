@@ -8,7 +8,7 @@ include $(top_srcdir)/makes/var.mk
 
 CFLAGS = $(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR) \
 	-I$(srcdir)/../gfperf-lib $(openssl_includes)
-LDLIBS = $(COMMON_LDFLAGS) -L../gfperf-lib $(GFARMLIB) $(LIBS) -lgfperf
+LDLIBS = $(COMMON_LDFLAGS) -L$(top_builddir)/bench/gfperf/gfperf-lib $(GFARMLIB) $(LIBS) -lgfperf
 DEPLIBS = $(DEPGFARMLIB)
 
 PROGRAM = gfperf-replica
