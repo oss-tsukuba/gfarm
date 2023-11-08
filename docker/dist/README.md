@@ -88,6 +88,11 @@ or
 
     % sh ./batchtest.sh regress
 
+batchtest.sh accepts the following options.
+
+- jwt - includes oauth2 authentication but for the first time
+- ubuntu, almalinux8, centos7 - specifies a distrubution to test.  mutiple distributions can be specified
+
 ## Create RPM packages
 
     % sh ./devrpm.sh
