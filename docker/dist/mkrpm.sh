@@ -72,10 +72,10 @@ $COPY && sudo rm -rf $PKG-$VER > /dev/null 2>&1 || :
 
 #export GFARM_CONFIGURE_OPTION="--with-globus --with-infiniband"
 GFARM_CONFIGURE_OPTION="--enable-xmlattr --with-globus"
-if grep "CentOS Linux release 7" /etc/system-release > /dev/null
-then
-	GFARM_CONFIGURE_OPTION="$GFARM_CONFIGURE_OPTION --with-openssl=openssl11"
-fi
+#if grep "CentOS Linux release 7" /etc/system-release > /dev/null
+#then
+#	GFARM_CONFIGURE_OPTION="$GFARM_CONFIGURE_OPTION --with-openssl=openssl11"
+#fi
 export GFARM_CONFIGURE_OPTION
 rpmbuild --rebuild ~/rpmbuild/SRPMS/$PKG-$VER-1.src.rpm > /dev/null
 status=0
