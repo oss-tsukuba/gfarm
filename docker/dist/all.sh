@@ -17,10 +17,11 @@ do
 	     install_option=single
 	     REGRESS=false ;;
 	regress)
-	     build_pkg=false
+	     $build_pkg || {
 	     gfarm_config=all
 	     install_option=
-	     REGRESS=true ;;
+	     REGRESS=true
+	     } ;;
 	*) exit 1 ;;
 	esac
 	shift
