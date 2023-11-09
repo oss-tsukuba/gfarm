@@ -1600,7 +1600,7 @@ AC_ARG_ENABLE(check-python-mod,
 AS_HELP_STRING([--disable-check-python-mod],[skip checking python modules [default=enable]]), [], [])
 
 if test "x${enable_check_python_mod}" != "xno"; then
-  ./gftool/gfptar/gfptar -h > /dev/null
+  ${srcdir}/gftool/gfptar/gfptar -h > /dev/null
   rv=$?
   AC_MSG_CHECKING([Python modules])
   if test $rv -eq 0 ; then
