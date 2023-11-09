@@ -7,15 +7,16 @@ srcdir = .
 include $(top_srcdir)/makes/var.mk
 
 GFPREP_SRCDIR = $(srcdir)/../gfprep
+GFPREP_BUILDDIR = ../gfprep
 
 SRCS = gfpconcat.c pconcat.c \
 	$(GFPREP_SRCDIR)/gfmsg.c $(GFPREP_SRCDIR)/gfurl.c \
 	$(GFPREP_SRCDIR)/gfurl_local.c $(GFPREP_SRCDIR)/gfurl_gfarm.c \
 	$(GFPREP_SRCDIR)/gfurl_hpss.c $(GFPREP_SRCDIR)/gfarm_cmd.c
 OBJS = gfpconcat.o pconcat.o \
-	$(GFPREP_SRCDIR)/gfmsg.o $(GFPREP_SRCDIR)/gfurl.o \
-	$(GFPREP_SRCDIR)/gfurl_local.o $(GFPREP_SRCDIR)/gfurl_gfarm.o \
-	$(GFPREP_SRCDIR)/gfurl_hpss.o $(GFPREP_SRCDIR)/gfarm_cmd.o
+	$(GFPREP_BUILDDIR)/gfmsg.o $(GFPREP_BUILDDIR)/gfurl.o \
+	$(GFPREP_BUILDDIR)/gfurl_local.o $(GFPREP_BUILDDIR)/gfurl_gfarm.o \
+	$(GFPREP_BUILDDIR)/gfurl_hpss.o $(GFPREP_BUILDDIR)/gfarm_cmd.o
 PROGRAM = gfpconcat
 CFLAGS = $(pthread_includes) $(COMMON_CFLAGS) \
 	-I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR) \
