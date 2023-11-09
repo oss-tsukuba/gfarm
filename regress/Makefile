@@ -29,11 +29,13 @@ SUBDIRS=	\
 
 production_test: all
 	@echo ""
-	@./bin/am_I_gfarmroot && { echo '!! You have gfarmroot privilege,' \
-		'too dangerous for production environment !!'; exit 2; } || \
+	@$(srcdir)/bin/am_I_gfarmroot && \
+		{ echo '!! You have gfarmroot privilege,' \
+		  'too dangerous for production environment !!'; exit 2; } || \
 		true
-	@./bin/am_I_gfarmadm && { echo '!! You have gfarmadm privilege,' \
-		'too dangerous for production environment !!'; exit 2; } || \
+	@$(srcdir)/bin/am_I_gfarmadm && \
+		{ echo '!! You have gfarmadm privilege,' \
+		  'too dangerous for production environment !!'; exit 2; } || \
 		true
 	@$(CHECK_ENV) $(srcdir)/regress.sh
 	@echo ""

@@ -7,7 +7,7 @@ HOST_FLAGS_MAP_FILE="${localtmp}/readonly-common-host-flags.txt"
 GFPREP=$regress/bin/gfprep_for_test
 GFPCOPY=$regress/bin/gfpcopy_for_test
 
-GFS_PIO_TEST_P=${base}/../../../lib/libgfarm/gfarm/gfs_pio_test/gfs_pio_test
+GFS_PIO_TEST_P=./lib/libgfarm/gfarm/gfs_pio_test/gfs_pio_test
 update_file() {
   CONFIG_FILE="$1"
   shift

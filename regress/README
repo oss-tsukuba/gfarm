@@ -11,7 +11,7 @@ TO RUN TEST
 
   this is long, see "SETTING UP TEST ENVIRONMENT" section below.
 
-3. run "make check"
+3. run "make" (for production_test) or "make check" (for development)
 
 optional variables:
 	$GFARM_TEST_CKSUM_MISMATCH=<path>
@@ -70,6 +70,12 @@ i.e.
 - each test should preserve filesystem contents and user, group,
   host and fsngroup settings.  although it's OK to change them temporarily
   during the test.
+
+
+NOTES
+- if you are using the builddir feature, use "${srcdir}/makes/make.sh"
+  instead of "make".
+
 
 TODO
 - test by root?
