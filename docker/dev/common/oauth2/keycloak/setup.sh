@@ -531,7 +531,7 @@ for t in $(seq 1 "$GFDOCKER_NUM_TENANTS"); do
  done
 done
 
-${BINDIR}/jboss-cli.sh -c --command=reload
+${BINDIR}/jboss-cli.sh -c --command=reload --timeout=50000
 
 ### login
 
