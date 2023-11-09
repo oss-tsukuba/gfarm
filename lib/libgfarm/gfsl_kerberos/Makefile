@@ -12,4 +12,5 @@ MKFLAGS= \
 all:
 
 all install clean veryclean distclean man html msgno test:
-	$(MAKE) -f ../gfsl/Makefile VPATH=../gfsl srcdir=../gfsl $(MKFLAGS) $@
+	$(MAKE) -f $(srcdir)/../gfsl/Makefile \
+		VPATH=$(srcdir)/../gfsl srcdir=$(srcdir)/../gfsl $(MKFLAGS) $@
