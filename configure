@@ -15546,7 +15546,7 @@ fi
 
 
 if test "x${enable_check_python_mod}" != "xno"; then
-  ./gftool/gfptar/gfptar -h > /dev/null
+  ${srcdir}/gftool/gfptar/gfptar -h > /dev/null
   rv=$?
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking Python modules" >&5
 printf %s "checking Python modules... " >&6; }
