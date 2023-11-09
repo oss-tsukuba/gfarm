@@ -1,5 +1,8 @@
+TERM_INHERIT = $${TERM+--env TERM='${TERM}'}
+
 login:
-	docker exec -u ${USER} -w /home/${USER}/gfarm/docker/dist -it gfarm-c1 /bin/bash
+	docker exec -u ${USER} $(TERM_INHERIT) \
+		-w /home/${USER}/gfarm/docker/dist -it gfarm-c1 /bin/bash
 
 down:
 	(cd jwt-server; docker compose down)
