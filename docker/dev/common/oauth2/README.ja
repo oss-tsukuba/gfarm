@@ -1,6 +1,6 @@
 ☆ jwt-server/jwt-logon/jwt-agent 利用方法
 
-・コンテナ desktop:13389 に user/user でリモートデスクトップ接続できます。
+・コンテナ desktop:23389 に user/user でリモートデスクトップ接続できます。
  接続後、ブラウザで jwt-server にアクセスすることが可能です。
 
 ・デフォルト設定の場合、jwt-server の URL は下記になります。

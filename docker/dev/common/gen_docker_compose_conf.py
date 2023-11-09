@@ -155,7 +155,7 @@ if use_keycloak:
     networks:
       gfarm_dev:
     ports:
-      - "0.0.0.0:13389:3389"
+      - "0.0.0.0:23389:3389"
     <<: *common
   jwt-server:
     hostname: jwt-server{}
