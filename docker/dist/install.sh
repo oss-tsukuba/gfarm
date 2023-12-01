@@ -31,8 +31,11 @@ do
 	shift
 done
 
-$CONF && ./configure $CONF_OPT
-$CONF && make clean > /dev/null
+rm -rf build
+mkdir build
+cd build
+
+$CONF && ../configure $CONF_OPT
 make -j $(nproc) > /dev/null
 sudo make install > /dev/null
 
