@@ -4,7 +4,8 @@ srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 
-LOG=			log
+REGRESS=$(srcdir)/regress.sh
+LOG=log
 
 CHECK_ENV=	LANG=C PATH=$(prefix)/bin:$$PATH
 
@@ -37,17 +38,17 @@ production_test: all
 		{ echo '!! You have gfarmadm privilege,' \
 		  'too dangerous for production environment !!'; exit 2; } || \
 		true
-	@$(CHECK_ENV) $(srcdir)/regress.sh
+	@$(CHECK_ENV) $(REGRESS)
 	@echo ""
 
 check test: all
 	@echo ""
-	@$(CHECK_ENV) $(srcdir)/regress.sh
+	@$(CHECK_ENV) $(REGRESS)
 	@echo ""
 
 check-jenkins: all
 	@echo ""
-	@$(CHECK_ENV) $(srcdir)/regress.sh -j "${JENKINS_CLASSNAME}"
+	@$(CHECK_ENV) $(REGRESS) -j "${JENKINS_CLASSNAME}"
 	@echo ""
 
 loop: all
