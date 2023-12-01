@@ -38,17 +38,17 @@ production_test: all
 		{ echo '!! You have gfarmadm privilege,' \
 		  'too dangerous for production environment !!'; exit 2; } || \
 		true
-	@$(CHECK_ENV) $(REGRESS)
+	@$(CHECK_ENV) $(REGRESS) $(REGRESS_ARGS)
 	@echo ""
 
 check test: all
 	@echo ""
-	@$(CHECK_ENV) $(REGRESS)
+	@$(CHECK_ENV) $(REGRESS) $(REGRESS_ARGS)
 	@echo ""
 
 check-jenkins: all
 	@echo ""
-	@$(CHECK_ENV) $(REGRESS) -j "${JENKINS_CLASSNAME}"
+	@$(CHECK_ENV) $(REGRESS) $(REGRESS_ARGS) -j "${JENKINS_CLASSNAME}"
 	@echo ""
 
 loop: all
