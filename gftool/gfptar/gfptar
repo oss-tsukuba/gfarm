@@ -175,6 +175,17 @@ def execcmd_raw(args, stdin=subprocess.DEVNULL, stderr=subprocess.PIPE,
     return out, err, ret
 
 
+use_stderr = True
+DEFAULT_STDERR = sys.stderr.buffer
+
+
+def shutup_stderr():
+    global use_stderr
+    global DEFAULT_STDERR
+    use_stderr = False
+    DEFAULT_STDERR = subprocess.DEVNULL
+
+
 def execcmd(args, stdin=subprocess.DEVNULL, stderr=subprocess.PIPE,
             timeout=None, textmode=False):
     out, err, ret = execcmd_raw(args, stdin=stdin, stderr=stderr,
@@ -184,14 +195,17 @@ def execcmd(args, stdin=subprocess.DEVNULL, stderr=subprocess.PIPE,
             err = err.decode().rstrip()
         except Exception:
             pass
-        raise Exception('{}: {}'.format(str(args), err))
-    if err:
-        logger.warning(err)
+        msg = '{}: {}'.format(str(args), err)
+        if err and use_stderr:
+            logger.debug(msg)
+        raise Exception(msg)
     return out
 
 
 # text mode
-def execcmd_readline(args, stdin=subprocess.DEVNULL, stderr=sys.stderr.buffer):
+def execcmd_readline(args, stdin=subprocess.DEVNULL, stderr=None):
+    if stderr is None:  # for shutup_stderr
+        stderr = DEFAULT_STDERR
     proc = subprocess.Popen(
         args, shell=False, encoding=get_encoding(), close_fds=True,
         stdin=stdin, stdout=subprocess.PIPE, stderr=stderr)
@@ -345,6 +359,10 @@ class GfURLEntry():
 class GfURL(metaclass=abc.ABCMeta):
     MAXNAMLEN = 255  # SEE ALSO: dirent.h, gfarm/gfs.h (GFS_MAXNAMLEN)
 
+    @classmethod
+    def shutup_stderr(cls):
+        shutup_stderr()
+
     @staticmethod
     def init(url, use_gfarm_command=False, local=False):
         if local:
@@ -482,6 +500,14 @@ class GfURL(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def is_readable(self):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def is_writable(self):
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def get_size(self):
         raise NotImplementedError
 
@@ -508,8 +534,13 @@ class GfURL(metaclass=abc.ABCMeta):
         # hard link is not supported
         if entry.is_file():
             url = GfURL.init(entry.path)
-            with url.readopen() as f:
-                tar.addfile(tarinfo, fileobj=f)
+            if url.is_readable():
+                with url.readopen() as f:
+                    tar.addfile(tarinfo, fileobj=f)
+            else:
+                msg = f'not readable: {url.url_str}'
+                logger.warning(msg)
+                raise Exception(msg)
         else:
             tar.addfile(tarinfo)
 
@@ -543,7 +574,7 @@ class GfURL(metaclass=abc.ABCMeta):
         return url1.sha256(bufsize) == url2.sha256(bufsize)
 
     def compare_entries(self, d2url, data=True, same_owner=False,
-                        bufsize=1048576):
+                        bufsize=1048576, exclude_list=None):
         def search_compare_pop(subpath, ent1, dirdict2):
             ent2 = dirdict2.pop(subpath, None)
             if ent2 is None:
@@ -553,14 +584,33 @@ class GfURL(metaclass=abc.ABCMeta):
             # raise if different
             return True
 
+        def excluded(path):
+            if exclude_list is None:
+                return False
+            for exclude in exclude_list:
+                if re.match(exclude, path):
+                    return True
+            return False
+
+        def listdir_ignore_error(gfurl):
+            try:
+                yield from gfurl.listdir(recursive=True)
+            except Exception as e:
+                logger.warning('listdir(%s): error ignored: %s',
+                               gfurl.url_str, str(e))
+
         d1url = self
-        d1i = d1url.listdir(recursive=True)
-        d2i = d2url.listdir(recursive=True)
+        # iterator
+        d1i = listdir_ignore_error(d1url)
+        d2i = listdir_ignore_error(d2url)
         d1dict = dict()
         d2dict = dict()
         d2stop = False
         for d1ent in d1i:
             subpath1 = d1ent.subpath(d1url)
+            p1base = os.path.basename(subpath1)
+            if excluded(p1base):
+                continue
             logger.debug('compare:dir1: %s', subpath1)
             try:
                 if not search_compare_pop(subpath1, d1ent, d2dict):
@@ -575,7 +625,10 @@ class GfURL(metaclass=abc.ABCMeta):
                     d2stop = True
                     break
                 subpath2 = d2ent.subpath(d2url)
-                logger.debug('compare:dir2: %s', subpath1)
+                p2base = os.path.basename(subpath2)
+                if excluded(p2base):
+                    continue
+                logger.debug('compare:dir2: %s', subpath2)
                 try:
                     if not search_compare_pop(subpath2, d2ent, d1dict):
                         # not found, compare later
@@ -589,6 +642,9 @@ class GfURL(metaclass=abc.ABCMeta):
                 if d2ent is None:
                     break
                 subpath2 = d2ent.subpath(d2url)
+                p2base = os.path.basename(subpath2)
+                if excluded(p2base):
+                    continue
                 logger.debug('compare:dir2: %s', subpath1)
                 d2dict[subpath2] = d2ent
         d1notfound = dict()
@@ -735,6 +791,24 @@ class GfURLGfarm(GfURL):
             count += 1
         logger.debug('is_empty: %s, %d', self.url_str, count)
         return count == 0
+
+    R_OK = 0o4
+    W_OK = 0o2
+    X_OK = 0o1
+
+    def access(self, mode):
+        out, err, ret = execcmd_raw(['gfxattr', '-g', self.url_str,
+                                     'gfarm.effective_perm'])
+        if ret == 0:
+            val = int.from_bytes(out, byteorder='big')
+            return val & mode > 0
+        raise Exception(f'gfarm.effective_perm({self.url_str}): {err}')
+
+    def is_readable(self):
+        return self.access(self.R_OK)
+
+    def is_writable(self):
+        return self.access(self.W_OK)
 
     def get_size(self):
         for entry in self.listdir(recursive=False):
@@ -910,7 +984,7 @@ class GfURLGfarm(GfURL):
         proc = subprocess.Popen(
             args, shell=False, encoding=encoding, close_fds=True,
             stdin=subprocess.PIPE, stdout=subprocess.DEVNULL,
-            stderr=sys.stderr.buffer)
+            stderr=DEFAULT_STDERR)
         return Gfreg(self, proc, proc.stdin)
 
     def gfexport(self, textmode=False):
@@ -922,7 +996,7 @@ class GfURLGfarm(GfURL):
         return subprocess.Popen(
             args, shell=False, encoding=encoding, close_fds=True,
             stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-            stderr=sys.stderr.buffer)
+            stderr=DEFAULT_STDERR)
 
     @contextmanager
     def readopen(self, textmode=False):
@@ -1048,21 +1122,22 @@ class GfURLLocal(GfURL):
         else:
             os.mkdir(self.url_str, mode)
 
+    def _chmod_recursive(self, path, dir_mode, file_mode):
+        for root, dirs, files in os.walk(path):
+            for d in dirs:
+                dir_path = os.path.join(root, d)
+                os.chmod(dir_path, dir_mode)
+            for f in files:
+                file_path = os.path.join(root, f)
+                os.chmod(file_path, file_mode)
+
     def remove_tree(self, remove_readonly=False):
         path = self.path
         if path == '/' or path == '':
             raise AssertionError
         if remove_readonly:
-            def force_remove(func, target, _):
-                if target != path:
-                    parent = os.path.dirname(target)
-                    os.chmod(parent, 0o700)
-                os.chmod(target, 0o700)
-                func(target)
-
-            shutil.rmtree(path, onerror=force_remove)
-        else:
-            shutil.rmtree(path)
+            self._chmod_recursive(path, 0o700, 0o600)
+        shutil.rmtree(path)
 
     def symlink(self, linkname):
         os.symlink(linkname, self.url_str)
@@ -1081,6 +1156,12 @@ class GfURLLocal(GfURL):
 
     def is_empty(self):
         return len(os.listdir(self.url_str)) == 0
+
+    def is_readable(self):
+        return os.access(self.url_str, os.R_OK)
+
+    def is_writable(self):
+        return os.access(self.url_str, os.W_OK)
 
     def get_size(self):
         st = os.stat(self.url_str, follow_symlinks=False)
@@ -1154,11 +1235,25 @@ class GfURLLocal(GfURL):
                 return
 
         first = False
-        for entry in os.scandir(path):
-            yield self._toGfURLEntry(entry, path_only, hardlink_warn)
-            if recursive and entry.is_dir(follow_symlinks=False):
-                yield from self._scandir(entry.path, path_only, recursive,
-                                         first, hardlink_warn)
+        has_error = None
+        try:
+            for entry in os.scandir(path):
+                yield self._toGfURLEntry(entry, path_only, hardlink_warn)
+                if recursive and entry.is_dir(follow_symlinks=False):
+                    try:
+                        yield from self._scandir(entry.path, path_only,
+                                                 recursive,
+                                                 first, hardlink_warn)
+                    except Exception as e2:
+                        if has_error is None:  # save first error
+                            has_error = e2
+                        # DO NOT raise here
+        except Exception as e:
+            if has_error is None:  # save first error
+                has_error = e
+                logger.warning(str(e))  # logging only once
+        if has_error is not None:
+            raise has_error
 
     def listdir(self, path_only=False, recursive=False, first=False,
                 hardlink_warn=True):
@@ -1229,7 +1324,7 @@ class GfTarFile(tarfile.TarFile):
             openmode = 'r|*'  # any type (gz, bz2, xz)
         if not gfurl.exists():
             raise FileNotFoundError(gfurl.url_str)
-        # list of tuple(proc, closable obj, synchronizable obj)
+        # list of tuple(proc, closeable obj, synchronizable obj)
         proc_list = []
         if gfurl.is_gfarm():
             if compress_prog:
@@ -1276,7 +1371,7 @@ class GfTarFile(tarfile.TarFile):
             openmode = 'w|' + compress_type
         if gfurl.exists():
             raise FileExistsError(gfurl.url_str)
-        # list of tuple(proc, closable obj, synchronizable obj)
+        # list of tuple(proc, closeable obj, synchronizable obj)
         proc_list = []
         if gfurl.is_gfarm():
             if compress_prog:
@@ -1323,7 +1418,7 @@ class GfTarFile(tarfile.TarFile):
         return subprocess.Popen(
             args, shell=False, close_fds=True,
             stdin=subprocess.PIPE, stdout=outf,
-            stderr=sys.stderr.buffer)
+            stderr=DEFAULT_STDERR)
 
     @classmethod
     def decompress(cls, compress_prog, inf):
@@ -1332,7 +1427,7 @@ class GfTarFile(tarfile.TarFile):
         return subprocess.Popen(
             args, shell=False, close_fds=True,
             stdin=inf, stdout=subprocess.PIPE,
-            stderr=sys.stderr.buffer)
+            stderr=DEFAULT_STDERR)
 
     # override
     def close(self):
@@ -1391,10 +1486,12 @@ class GfptarCommand(Command):
     def __init__(self, name):
         self.init(name)
         self.canceled = threading.Event()
-        self._lock = None
+        self.lock_init(False)
         self.futures = None
         self.sig_init()
         self.hardlink_warn = True
+        if self.quiet:
+            GfURL.shutup_stderr()
 
     def options_init(self):
         set_encoding(self.opt['--encoding'])
@@ -1495,10 +1592,10 @@ class GfptarCommand(Command):
 
         # create tar per one entry
         self.opt['--size'] = 0
-        pattern_jobs = [1, 4, 10]
+        pattern_jobs = [1, 10]
         for jobs in pattern_jobs:
             self.opt['--jobs'] = jobs
-            self.test_simple('jobs_' + str(jobs))
+            self.test_simple('jobs_' + str(jobs), use_all_files=True)
         self.opt['--jobs'] = save_opt_jobs
 
         # create one tar
@@ -1569,7 +1666,7 @@ class GfptarCommand(Command):
         else:
             print(testname + ' ... FAIL (unexpected success)')
 
-    def test_simple(self, name):
+    def test_simple(self, name, use_all_files=False):
         testname = f'gfptar-test-simple-{name}'
         d_name = f'{testname}-{self.gfarm_user}-{self.uid}-{self.pid}'
         workdir_local = os.path.join(self.opt['--test-workdir-local'], d_name)
@@ -1582,8 +1679,8 @@ class GfptarCommand(Command):
         testsrc_name = 'test-src'
         srcdir_local = workdir_local_url.url_join(testsrc_name)
         srcdir_gfarm = workdir_gfarm_url.url_join(testsrc_name)
-        self.test_prepare_srcdir(srcdir_local)
-        self.test_prepare_srcdir(srcdir_gfarm)
+        self.test_prepare_srcdir(srcdir_local, use_all=use_all_files)
+        self.test_prepare_srcdir(srcdir_gfarm, use_all=use_all_files)
 
         test1_name = 'test-1-create'
         test1_dir_gfarm = workdir_gfarm_url.url_join(test1_name)
@@ -1595,11 +1692,25 @@ class GfptarCommand(Command):
         test4_dir_local = workdir_local_url.url_join(test4_name)
 
         # Gfarm -> Gfarm(tar)
-        self.create(test1_dir_gfarm, workdir_gfarm, [testsrc_name])
+        try:
+            self.create(test1_dir_gfarm, workdir_gfarm, [testsrc_name])
+            if use_all_files:
+                logger.error_exit(1, testname + '(create:Gfarm->Gfarm) ' +
+                                  '... FAIL (unexpected success)')
+        except Exception:
+            if not use_all_files:
+                raise
         # Gfarm(tar) -> Gfarm
         self.extract(test2_dir_gfarm, test1_dir_gfarm, [])
         # Gfarm -> Local(tar)
-        self.create(test3_dir_local, test2_dir_gfarm, [testsrc_name])
+        try:
+            self.create(test3_dir_local, test2_dir_gfarm, [testsrc_name])
+            if use_all_files:
+                logger.error_exit(1, testname + '(create:Gfarm->Local) ' +
+                                  '... FAIL (unexpected success)')
+        except Exception:
+            if not use_all_files:
+                raise
         # Local(tar) -> Local
         self.extract(test4_dir_local, test3_dir_local, [])
 
@@ -1609,34 +1720,35 @@ class GfptarCommand(Command):
         self.list_verbose(test1_dir_gfarm, quiet=True)
         self.list_verbose(test3_dir_local, quiet=True)
 
-        # extract a member (SEE ALSO: test_prepare_srcdir)
-        member = testsrc_name + '/dir1/ディレクトリ 2/ファイル 2'
-        all_members = [testsrc_name,
-                       testsrc_name + '/dir1',
-                       testsrc_name + '/dir1/ディレクトリ 2',
-                       member,
-                       ]
-        test_member_g_name = 'test-gfptar-member-g'
-        test_member_l_name = 'test-gfptar-member-l'
-        test_member_g = workdir_gfarm_url.url_join(test_member_g_name)
-        test_member_l = workdir_local_url.url_join(test_member_l_name)
-        self.extract(test_member_g, test1_dir_gfarm, [member])
-        self.extract(test_member_l, test3_dir_local, [member])
-        g_member = GfURL.init(os.path.join(test_member_g, member))
-        l_member = GfURL.init(os.path.join(test_member_l, member))
-        if not g_member.compare_data(l_member):
-            logger.error_exit(1, testname
-                              + '(extract a member) ' +
-                              '... FAIL (data mismatch)')
-        for testdir in [test_member_g, test_member_l]:
-            url = GfURL.init(testdir)
-            for ent in url.listdir(recursive=True):
-                p = ent.subpath(url)
-                if p in all_members:
-                    continue
-                logger.error('unexpected member: %s', p)
-                logger.error_exit(1, testname + '(extract a member) ' +
-                                  '... FAIL (unexpected member found)')
+        if use_all_files:
+            # extract a member (SEE ALSO: test_prepare_srcdir)
+            member = testsrc_name + '/dir1/readonly/file#2'
+            all_members = [testsrc_name,
+                           testsrc_name + '/dir1',
+                           testsrc_name + '/dir1/readonly',
+                           member,
+                           ]
+            test_member_g_name = 'test-gfptar-member-g'
+            test_member_l_name = 'test-gfptar-member-l'
+            test_member_g = workdir_gfarm_url.url_join(test_member_g_name)
+            test_member_l = workdir_local_url.url_join(test_member_l_name)
+            self.extract(test_member_g, test1_dir_gfarm, [member])
+            self.extract(test_member_l, test3_dir_local, [member])
+            g_member = GfURL.init(os.path.join(test_member_g, member))
+            l_member = GfURL.init(os.path.join(test_member_l, member))
+            if not g_member.compare_data(l_member):
+                logger.error_exit(1, testname
+                                  + '(extract a member) ' +
+                                  '... FAIL (data mismatch)')
+            for testdir in [test_member_g, test_member_l]:
+                url = GfURL.init(testdir)
+                for ent in url.listdir(recursive=True):
+                    p = ent.subpath(url)
+                    if p in all_members:
+                        continue
+                    logger.error('unexpected member: %s', p)
+                    logger.error_exit(1, testname + '(extract a member) ' +
+                                      '... FAIL (unexpected member found)')
 
         test5_name = 'test-5-create'
         test5_dir_gfarm = workdir_gfarm_url.url_join(test5_name)
@@ -1645,9 +1757,21 @@ class GfptarCommand(Command):
 
         # NOTE: check ignoring hardlinks for Local
         # Local -> Gfarm(tar)
-        self.create(test5_dir_gfarm, workdir_local, [testsrc_name])
+        try:
+            self.create(test5_dir_gfarm, workdir_local, [testsrc_name])
+            if use_all_files:
+                logger.error_exit(1, testname + '(create:Local->Gfarm) ' +
+                                  '... FAIL (unexpected success)')
+        except Exception:
+            if not use_all_files:
+                raise
         # Gfarm(tar) -> Local
         self.extract(test6_dir_local, test5_dir_gfarm, [])
+
+        test4_srcdir_local = os.path.join(test4_dir_local, testsrc_name)
+        if not self.test_compare_local(test4_srcdir_local, srcdir_local,
+                                       same_owner=True):
+            logger.error_exit(1, testname + ' ... FAIL (different data)(1)')
 
         if self.test_compare_local(test4_dir_local, test6_dir_local,
                                    same_owner=True):
@@ -1655,7 +1779,7 @@ class GfptarCommand(Command):
             workdir_local_url.remove_tree(remove_readonly=True)
             workdir_gfarm_url.remove_tree(remove_readonly=True)
         else:
-            logger.error_exit(1, testname + ' ... FAIL')
+            logger.error_exit(1, testname + ' ... FAIL (different data)(2)')
 
     def test_member(self):
         testname = 'gfptar-test-member'
@@ -1670,8 +1794,8 @@ class GfptarCommand(Command):
         testsrc_name = 'test-src'
         srcdir_local = workdir_local_url.url_join(testsrc_name)
         srcdir_gfarm = workdir_gfarm_url.url_join(testsrc_name)
-        self.test_prepare_srcdir(srcdir_local)
-        self.test_prepare_srcdir(srcdir_gfarm)
+        self.test_prepare_srcdir(srcdir_local, use_all=False)
+        self.test_prepare_srcdir(srcdir_gfarm, use_all=False)
 
         test1_name = 'test-1-create'
         test1_dir_gfarm = workdir_gfarm_url.url_join(test1_name)
@@ -1705,7 +1829,7 @@ class GfptarCommand(Command):
         workdir_local_url.remove_tree(remove_readonly=True)
         workdir_gfarm_url.remove_tree(remove_readonly=True)
 
-    def test_prepare_srcdir(self, dir_url_str):
+    def test_prepare_srcdir(self, dir_url_str, use_all=False):
         F = 'file'
         D = 'directory'
         S = 'symlink'
@@ -1716,14 +1840,20 @@ class GfptarCommand(Command):
             (D, 'dir1', 0o715, 2234567890, None),
             (D, 'dir1/readonly', 0o700, 3234567891, None),  # chmod 500 later
             (F, 'dir1/readonly/file#2', 0o456, 4234567892, None),
+        ]
+        tree2 = [
+            (F, 'dir1/noread-file', 0o000, 1234567891, None),
+            (D, 'dir1/noread-dir', 0o700, 1234567892, None),  # chmod 000 later
+            (F, 'dir1/noread-dir/file3', 0o400, 1234567893, None),
             (D, 'dir1/ディレクトリ 2', 0o755, 5234567890, None),
-            (F, 'dir1/ディレクトリ 2/ファイル 2', 0o400, 6234567890, None),
-            (S, 'dir1/ディレクトリ 2/シンボリックリンク 2',
-             0o777, 7234567890, 'ファイル 2'),
-            (L, 'dir1/ディレクトリ 2/ハードリンク 2',
-             0o400, 8234567890, 'dir1/ディレクトリ 2/ファイル 2'),
+            (L, 'dir1/ディレクトリ 2/hardlink1',
+             0o400, 6234567890, 'file1'),
+            (S, 'dir1/ディレクトリ 2/symlink1',
+             0o777, 7234567890, 'hardlink1'),
             (F, 'dir1/' + longname, 0o775, 9234567890, None),
-            ]
+        ]
+        if use_all:
+            tree += tree2
         srcdir_url = GfURL.init(dir_url_str)
         srcdir_url.mkdir()
         for ent in tree:
@@ -1759,6 +1889,9 @@ class GfptarCommand(Command):
         srcdir_url.chmod(mode=0o700, mtime=0)
         readonly_url = GfURL.init(srcdir_url.url_join('dir1/readonly'))
         readonly_url.chmod(mode=0o500)
+        if use_all:
+            noread_url = GfURL.init(srcdir_url.url_join('dir1/noread-dir'))
+            noread_url.chmod(mode=0o000)
 
     def test_specified_dir(self):
         basedir = self.opt['--basedir']
@@ -1812,20 +1945,30 @@ class GfptarCommand(Command):
             workdir_local_url.remove_tree(remove_readonly=True)
             workdir_gfarm_url.remove_tree(remove_readonly=True)
         else:
-            logger.error_exit(1, testname + ' ... FAIL')
+            logger.error_exit(1, testname + ' ... FAIL (different data)')
 
     def test_compare_local(self, dir1, dir2, data=False, same_owner=False):
-        out, err, ret = execcmd_raw(['diff', '-r', dir1, dir2])
+        # SEE ALSO: test_prepare_srcdir
+        exclude_list = [r'noread-*']
+        diff_args = ['diff']
+        for exclude in exclude_list:
+            diff_args += ['--exclude', exclude]
+        diff_args += ['-r', dir1, dir2]
+        out, err, ret = execcmd_raw(diff_args)
         if ret != 0:
+            logger.error(f'diff -r {dir1} {dir2}: {err}')
             return False
         logger.debug('diff -r (data check): PASS')
-        return self.test_compare(dir1, dir2, data=data, same_owner=same_owner)
+        return self.test_compare(dir1, dir2, data=data, same_owner=same_owner,
+                                 exclude_list=exclude_list)
 
-    def test_compare(self, dir1, dir2, data=True, same_owner=False):
+    def test_compare(self, dir1, dir2, data=True, same_owner=False,
+                     exclude_list=None):
         # compare mtime and mode of dir1/files with dir2/files
         d1url = GfURL.init(dir1)
         d2url = GfURL.init(dir2)
-        return d1url.compare_entries(d2url, data=True, same_owner=same_owner)
+        return d1url.compare_entries(d2url, data=True, same_owner=same_owner,
+                                     exclude_list=exclude_list)
 
     def MT_enabled(self):
         return self.jobs >= 2
@@ -1864,6 +2007,7 @@ class GfptarCommand(Command):
         self.start_time = time.time()
         self.next_time = self.start_time + 1
 
+        has_error = None
         filelist = []
         for infile in infiles:
             infile_url = GfURL.init(infile)
@@ -1883,17 +2027,24 @@ class GfptarCommand(Command):
             url_str = os.path.join(self.basedir_url.url_str, infile)
             gfurl = GfURL.init(url_str)
             logger.debug('listdir: %s', gfurl.url_str)
-            for entry in gfurl.listdir(recursive=True, first=True,
-                                       hardlink_warn=self.hardlink_warn):
-                logger.debug('listdir: entry.path=%s', entry.path)
-                filelist.append(entry)
-                self.total_size += entry.size
-                self.total_num += 1
-                if self.progress_enabled:
-                    now = time.time()
-                    if now >= self.next_time:
-                        self.next_time = now + 1
-                        self.progress_for_list1(now)
+            try:
+                for entry in gfurl.listdir(recursive=True, first=True,
+                                           hardlink_warn=self.hardlink_warn):
+                    logger.debug('listdir: entry.path=%s', entry.path)
+                    filelist.append(entry)
+                    self.total_size += entry.size
+                    self.total_num += 1
+                    if self.progress_enabled:
+                        now = time.time()
+                        if now >= self.next_time:
+                            self.next_time = now + 1
+                            self.progress_for_list1(now)
+            except Exception as e:
+                if has_error is None:  # save first error
+                    has_error = e
+                logger.debug(str(e))
+                # continue
+
         filelist.sort(key=entry_key, reverse=False)
         self.filelistlist = self.schedule(filelist)
         if self.progress_enabled:
@@ -1927,10 +2078,16 @@ class GfptarCommand(Command):
         self.gfsched_list = None
 
         self.outdir_url.create_new_dir()
-        if self.MT_enabled():
-            self.create_tars_MT()
-        else:
-            self.create_tars()
+        try:
+            if self.MT_enabled():
+                self.create_tars_MT()
+            else:
+                self.create_tars()
+        except Exception as e:
+            if has_error is None:  # save first error
+                has_error = e
+            logger.debug(str(e))
+
         if self.myprogress:
             self.progress_for_create(time.time())
             sys.stderr.write('\n')
@@ -1943,12 +2100,22 @@ class GfptarCommand(Command):
         del self.filelistlist
         if self.is_canceled():
             raise self.error_canceled()
+        if has_error is not None:
+            raise has_error
 
     def create_tars(self):
         self.lock_init(False)
+        has_error = None
         for filelist in self.filelistlist:
             self.serial += 1
-            self.create_a_tar(self.serial, filelist)
+            try:
+                self.create_a_tar(self.serial, filelist)
+            except Exception as e:
+                if has_error is None:  # save first error
+                    has_error = e
+                    logger.debug(str(e))
+        if has_error is not None:
+            raise has_error
 
     def create_tars_MT(self):
         self.lock_init(True)
@@ -1960,19 +2127,18 @@ class GfptarCommand(Command):
                 t = executor.submit(self.create_a_tar, self.serial, filelist)
                 futures[t] = self.serial
             self.futures = futures
+            has_error = None
             for t in concurrent.futures.as_completed(futures, timeout=None):
                 exc = t.exception()
                 if exc:
                     logger.debug('%s: serial=%04d', repr(exc), futures[t])
-                    if not self.is_canceled():
-                        self.cancel()
                     if self.verbose or self.debug:
                         tb = traceback.TracebackException.from_exception(exc)
                         logger.debug(''.join(tb.format()))
-                    for t2 in futures:
-                        logger.debug("cancel: serial=%04d", futures[t2])
-                        t2.cancel()
-                    raise exc
+                    if has_error is None:  # save first error
+                        has_error = exc
+            if has_error is not None:
+                raise has_error
 
     def schedule(self, filelist):
         filelistlist = []
@@ -2104,32 +2270,42 @@ class GfptarCommand(Command):
                                     compress_prog=self.compress_prog,
                                     use_fsync=self.use_fsync,
                                     target_host=target_host)
+        has_error = None
+        filelist_ok = []
         for entry in filelist:
             if self.is_canceled():
                 logger.debug('canceled (2): serial=%04d', serial)
                 break
             subpath = entry.subpath(self.basedir_url)
-            tar.add_entry(subpath, entry)
-
-            with self.lock():
-                self.info('stored: {}', subpath)
-                self.stored_size += entry.size
-                if self.myprogress:
-                    self.stored_num += 1
-                    now = time.time()
-                    if now >= self.next_time:
-                        self.next_time = now + 1
-                        self.progress_for_create(now)
-                elif self.tqdm:
-                    if entry.is_file():
-                        self.tqdm.update(entry.size)
+            try:
+                tar.add_entry(subpath, entry)
+                filelist_ok.append(entry)
+                with self.lock():
+                    self.info('stored: {}', subpath)
+                    self.stored_size += entry.size
+                    if self.myprogress:
+                        self.stored_num += 1
+                        now = time.time()
+                        if now >= self.next_time:
+                            self.next_time = now + 1
+                            self.progress_for_create(now)
+                    elif self.tqdm:
+                        if entry.is_file():
+                            self.tqdm.update(entry.size)
+            except Exception as e:
+                if has_error is None:  # save first error
+                    has_error = e
+                logger.debug(str(e))
+                # continue
 
         tar.close()
         tar_size = outurl.get_size()
-        self.create_a_members_list(outurl, filelist, target_host)
+        self.create_a_members_list(outurl, filelist_ok, target_host)
         with self.lock():
             self.info('created(.tar): {}', outurl.url_str)
             self.archive_size += tar_size
+        if has_error is not None:
+            raise has_error
 
     def create_a_members_list(self, url, filelist, target_host):
         outurl = GfURL.init(url.url_str + self.LIST_SUFFIX)
@@ -2413,7 +2589,12 @@ class GfptarCommand(Command):
             if self.is_canceled():
                 logger.debug('canceled (2): name=%s', target)
                 break
-            tarinfo = tar.next()
+            try:
+                tarinfo = tar.next()
+            except Exception as e:
+                logger.warning(f'SKIPPED: invalid or empty tar ({target}):'
+                               f' {str(e)}')
+                tarinfo = None
             if tarinfo is None:
                 break
             if members_num > 0:
@@ -2570,7 +2751,12 @@ class GfptarCommand(Command):
             tar = GfTarFile.extract_open(arch_url, self.bufsize,
                                          compress_prog=self.compress_prog)
             while True:
-                t = tar.next()
+                try:
+                    t = tar.next()
+                except Exception as e:
+                    logger.warning(f'SKIPPED: invalid or empty tar ({path}):'
+                                   f' {str(e)}')
+                    t = None
                 if t is None:
                     break
                 name = t.name
