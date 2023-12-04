@@ -57,9 +57,9 @@ scp -p ~/.gfarm2rc c2:
 
 AUTH=$(gfhost -lv | head -1 | awk '{ print $2 }')
 DIST=$(grep ^ID= /etc/os-release | sed 's/ID="*\([a-z]*\)"*/\1/')
-DATE=$(date +%F-%T)
-LOG1=log.rm-root-$AUTH-$DIST-$DATE
-LOG2=log.lc-user-$AUTH-$DIST-$DATE
+DATE=$(date +%F.%H_%M_%S)
+LOG1=log.rm-root.$AUTH.$DIST.$DATE
+LOG2=log.lc-user.$AUTH.$DIST.$DATE
 
 create_mismatch_file
 gfsudo ./regress.sh -l $LOG1
