@@ -1,3 +1,5 @@
+: ${srcdir:=.}
+
 PROG=./gfs_pio_failover_test
 TMPF=/tmp/gfs_pio_failover_test.file
 TMPD=/tmp/gfs_pio_failover_test.dir
@@ -19,7 +21,7 @@ get_gfsd() {
 		exit 1
 	fi
 
-	./wait_for_gfsd.sh $GFSD0
-	./wait_for_gfsd.sh $GFSD1
+	${srcdir}/wait_for_gfsd.sh $GFSD0
+	${srcdir}/wait_for_gfsd.sh $GFSD1
 }
 

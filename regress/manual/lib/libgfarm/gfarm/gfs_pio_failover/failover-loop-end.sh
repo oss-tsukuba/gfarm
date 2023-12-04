@@ -1,6 +1,8 @@
 #!/bin/sh
 
-. ./env.sh
+: ${srcdir:=.}
+
+. ${srcdir}/env.sh
 
 # limited to the 15 characters (see "man pgrep")
 NAME=failover-loop-s

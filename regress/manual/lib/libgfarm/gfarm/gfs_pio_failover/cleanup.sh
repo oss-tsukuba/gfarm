@@ -1,6 +1,8 @@
 #!/bin/sh
 
-. ./env.sh
+: ${srcdir:=.}
+
+. ${srcdir}/env.sh
 
 gfrm -f $GF_TMPF\*
 gfrm -f $GF_TMPF_SLNK\*

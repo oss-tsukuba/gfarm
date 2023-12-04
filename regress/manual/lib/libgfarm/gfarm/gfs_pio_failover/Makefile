@@ -15,6 +15,17 @@ all: $(PROGRAM)
 
 include $(top_srcdir)/makes/prog.mk
 
+check:
+	env srcdir=$(srcdir) $(srcdir)/test-all.sh auto
+
+# e.g.
+#	$ make TEST_TYPE=realpath check-one
+check-one:
+	env srcdir=$(srcdir) $(srcdir)/test-launch.sh $(TEST_TYPE) auto
+
+failover:
+	env srcdir=$(srcdir) ./gfmd-failover-local.sh
+
 ###
 
 $(OBJS): $(DEPGFARMINC)

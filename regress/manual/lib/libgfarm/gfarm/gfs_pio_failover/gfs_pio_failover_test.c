@@ -32,6 +32,7 @@
 
 #define GFMD_FILETAB_MAX	1024
 
+static char *srcdir = NULL;
 static int auto_failover;
 static long time0;
 
@@ -119,11 +120,13 @@ static void
 wait_for_failover_automatically(void)
 {
 	int r;
+	char cmd[1024];
 
 	msg("*** gfmd failover ***\n");
-	r = system("./gfmd-failover.sh");
+	snprintf(cmd, sizeof(cmd), "%s/gfmd-failover.sh", srcdir);
+	r = system(cmd);
 	if (r == -1 || WEXITSTATUS(r) != 0) {
-		fprintf(stderr, "failed auto failover\n");
+		fprintf(stderr, "failed auto failover (%s)\n", cmd);
 		exit(1);
 	}
 }
@@ -189,11 +192,12 @@ wait_for_gfsd(const char *hostname)
 	int r;
 	char cmd[1024];
 
-	snprintf(cmd, sizeof(cmd), "./wait_for_gfsd.sh %s", hostname);
+	snprintf(cmd, sizeof(cmd), "%s/wait_for_gfsd.sh %s", srcdir, hostname);
 	r = system(cmd);
 	if (r == -1 || WEXITSTATUS(r) != 0) {
-		fprintf(stderr, "failed to wait for gfsd (%s) connection\n",
-		    hostname);
+		fprintf(stderr,
+		    "failed to wait for gfsd (%s) connection. (%s)\n",
+		    hostname, cmd);
 		exit(1);
 	}
 }
@@ -2106,7 +2110,7 @@ test_write_long_loop(const char **argv)
 	int files = atoi(argv[2]);
 	int blocks = atoi(argv[3]);
 	int filesz = blocks * WRITE_LOOP_BUFSZ;
-	char cmd[256];
+	char cmd[1024];
 	GFS_File *gf;
 	size_t *fsz;
 	int loop = 0, wstatus, r, i, len, rest_files;
@@ -2121,11 +2125,12 @@ test_write_long_loop(const char **argv)
 	for (i = 0; i < files; ++i)
 		path[i] = malloc(PATH_MAX);
 
-	snprintf(cmd, sizeof cmd, "./failover-loop-start.sh %d &", tmlimit);
+	snprintf(cmd, sizeof cmd, "%s/failover-loop-start.sh %d &",
+	    srcdir, tmlimit);
 	wstatus = system(cmd);
 	r = WEXITSTATUS(wstatus);
 	if (r != 0) {
-		msg("failed to exec ./failover-loop-start.sh\n");
+		msg("failed to exec \"%s\"\n", cmd);
 		exit(1);
 	}
 
@@ -2220,10 +2225,11 @@ test_write_long_loop(const char **argv)
 			break;
 	}
 end:
-	wstatus = system("./failover-loop-end.sh");
+	snprintf(cmd, sizeof(cmd), "%s/failover-loop-end.sh", srcdir);
+	wstatus = system(cmd);
 	r = WEXITSTATUS(wstatus);
 	if (r != 0) {
-		msg("failed to exec ./failover-loop-end.sh\n");
+		msg("failed to exec \"%s\"\n", cmd);
 		exit(1);
 	}
 	if (e != GFARM_ERR_NO_ERROR)
@@ -2246,7 +2252,7 @@ test_sendfile_long_loop(const char **argv)
 	int blocks = atoi(argv[4]);
 	int chunksz = strlen(TEXT1);
 	int filesz = blocks * chunksz;
-	char cmd[256];
+	char cmd[1024];
 	GFS_File *gf;
 	int lfd;
 	off_t *fsz;
@@ -2265,11 +2271,12 @@ test_sendfile_long_loop(const char **argv)
 	for (i = 0; i < files; ++i)
 		path[i] = malloc(PATH_MAX);
 
-	snprintf(cmd, sizeof cmd, "./failover-loop-start.sh %d &", tmlimit);
+	snprintf(cmd, sizeof cmd, "%s/failover-loop-start.sh %d &",
+	    srcdir, tmlimit);
 	wstatus = system(cmd);
 	r = WEXITSTATUS(wstatus);
 	if (r != 0) {
-		msg("failed to exec ./failover-loop-start.sh\n");
+		msg("failed to exec \"%s\"\n", cmd);
 		exit(1);
 	}
 
@@ -2364,10 +2371,11 @@ test_sendfile_long_loop(const char **argv)
 			break;
 	}
 end:
-	wstatus = system("./failover-loop-end.sh");
+	snprintf(cmd, sizeof(cmd), "%s/failover-loop-end.sh", srcdir);
+	wstatus = system(cmd);
 	r = WEXITSTATUS(wstatus);
 	if (r != 0) {
-		msg("failed to exec ./failover-loop-end.sh\n");
+		msg("failed to exec \"%s\"\n", cmd);
 		exit(1);
 	}
 	if (e != GFARM_ERR_NO_ERROR)
@@ -3253,6 +3261,10 @@ main(int argc, char **argv)
 		fprintf(stderr, "Invalid type: %s\n", type_opt);
 		exit(1);
 	}
+
+	srcdir = getenv("srcdir");
+	if (srcdir == NULL)
+		srcdir = ".";
 
 	msg("<<test: %s>>\n", type_opt);
 

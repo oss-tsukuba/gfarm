@@ -1,6 +1,8 @@
 #!/bin/sh
 
-. ./env.sh
+: ${srcdir:=.}
+
+. ${srcdir}/env.sh
 
 setup_rep() {
 	get_gfsd
@@ -114,6 +116,6 @@ rep-remove)
 esac
 
 EXIT_CODE=$?
-./teardown.sh
+${srcdir}/teardown.sh
 
 exit $EXIT_CODE

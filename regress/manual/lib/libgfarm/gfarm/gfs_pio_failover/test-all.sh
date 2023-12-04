@@ -6,10 +6,12 @@
 
 autotest=$1
 
-. ./env.sh
+: ${srcdir:=.}
 
-./cleanup.sh
-./setup.sh
+. ${srcdir}/env.sh
+
+${srcdir}/cleanup.sh
+${srcdir}/setup.sh
 
 echo -n > failed-list
 echo -n > log
@@ -26,15 +28,15 @@ while read type; do
 		continue
 	fi
 	types="$types $type"
-done < test-list
+done < ${srcdir}/test-list
 
 for type in $types; do
 	if [ "$autotest" = "auto" ]; then
 		echo "================================" >> log 2>&1
-		./test-launch.sh $type $autotest >> log 2>&1
+		${srcdir}/test-launch.sh $type $autotest >> log 2>&1
 	else
 		echo "================================"
-		./test-launch.sh $type $autotest
+		${srcdir}/test-launch.sh $type $autotest
 	fi
 	if [ "$?" = "0" ]; then
 		result=PASS
@@ -56,7 +58,7 @@ done
 echo ""
 echo "PASS: $npass  FAIL: $nfail"
 
-./cleanup.sh
+${srcdir}/cleanup.sh
 
 if [ "$nfail" != "0" ]; then
     EXIT_CODE=1

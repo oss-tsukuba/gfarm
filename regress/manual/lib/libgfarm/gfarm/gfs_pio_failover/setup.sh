@@ -1,6 +1,8 @@
 #!/bin/sh
 
-. ./env.sh
+: ${srcdir:=.}
+
+. ${srcdir}/env.sh
 
 get_gfsd
 

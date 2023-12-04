@@ -1,6 +1,8 @@
 #!/bin/sh
 
-. ./env.sh
+: ${srcdir:=.}
+
+. ${srcdir}/env.sh
 
 STOPPED=0
 
@@ -25,7 +27,7 @@ while [ 1 ]; do
 		exit
 	fi
 
-	./gfmd-failover.sh >/dev/null
+	${srcdir}/gfmd-failover.sh >/dev/null
 	count=0
 	while [ $count -lt $SLEEP ]; do
 	    [ $STOPPED -eq 1 ] && exit 0
