@@ -17,8 +17,9 @@ grid-proxy-init -q || :
 gfmkdir -p /tmp
 gfchmod 1777 /tmp || :
 
-cd ~/gfarm/regress
-make all > /dev/null
+mkdir -p ~/gfarm/build/regress
+cd ~/gfarm/build/regress
+~/gfarm/makes/make.sh all > /dev/null
 
 create_mismatch_file()
 {
@@ -33,6 +34,7 @@ create_mismatch_file()
 
 create_gfmd_restart_all()
 {
+	mkdir -p bin
 	cat <<EOF > bin/gfmd_restart_all
 #!/bin/sh
 gfmdhost | gfarm-prun -a -p -h - sudo systemctl restart gfmd
@@ -62,11 +64,12 @@ LOG1=log.rm-root-$AUTH-$DIST-$DATE
 LOG2=log.lc-user-$AUTH-$DIST-$DATE
 
 create_mismatch_file
-gfsudo ./regress.sh -l $LOG1
+gfsudo ~/gfarm/makes/make.sh REGRESS_ARGS=" -l $LOG1" check
 
 create_mismatch_file
-ssh c2 "(grid-proxy-init -q; cd gfarm/regress && $ENV ./regress.sh -l $LOG2)"
+ssh c2 "(grid-proxy-init -q; cd gfarm/build/regress &&
+	$ENV ~/gfarm/makes/make.sh REGRESS_ARGS='-l $LOG2' check)"
 
-./addup.sh $LOG1 $LOG2 | egrep '(UNSUPPORTED|FAIL)'
+~/gfarm/regress/addup.sh $LOG1 $LOG2 | egrep '(UNSUPPORTED|FAIL)'
 
 status=0
