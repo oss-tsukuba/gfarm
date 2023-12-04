@@ -51,9 +51,16 @@ jobs:
           cd docker/dist
           docker compose up -d
 
-      - name: build and regress
+      - name: build
+        id: build
+        run: |
+          cd docker/dist
+          docker exec -u ${USER} -w /home/${USER}/gfarm/docker/dist gfarm-c1 \
+             sh ./all.sh
+
+      - name: regress
         id: regress
         run: |
           cd docker/dist
           docker exec -u ${USER} -w /home/${USER}/gfarm/docker/dist gfarm-c1 \
-             sh ./all.sh regress
+             sh ./regress.sh
