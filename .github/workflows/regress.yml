@@ -1,0 +1,80 @@
+name: regress with sharedsecret
+
+on:
+  push:
+  pull_request:
+
+jobs:
+
+  regress:
+    name: Run regress with sharedsecret authentication
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: checkout gfarm2fs
+        id: checkout_gfarm2fs
+        run: |
+          git clone https://github.com/oss-tsukuba/gfarm2fs.git
+
+      - name: checkout cyrus-sasl-xoauth2-idp
+        id: checkout_xoauth2idp
+        run: |
+          git clone https://github.com/oss-tsukuba/cyrus-sasl-xoauth2-idp.git
+
+      - name: checkout jwt-server
+        id: checkout_jwtserver
+        run: |
+          git clone https://github.com/oss-tsukuba/jwt-server.git
+
+      - name: checkout jwt-logon
+        id: checkout_jwtlogon
+        run: |
+          git clone https://github.com/oss-tsukuba/jwt-logon.git
+
+      - name: checkout jwt-agent
+        id: checkout_jwtagent
+        run: |
+          git clone https://github.com/oss-tsukuba/jwt-agent.git
+
+      - name: docker compose build
+        id: compose
+        run: |
+          cd docker/dist
+          docker compose build --build-arg UID=$(id -u) c1
+
+      - name: docker compose up
+        id: up
+        run: |
+          cd docker/dist
+          docker compose up -d
+
+      - name: build_all
+        id: build_all
+        run: |
+          cd docker/dist
+          docker exec -u ${USER} -w /home/${USER}/gfarm/docker/dist gfarm-c1 \
+             sh ./all.sh
+
+      - name: regress_gfarm
+        id: regress_gfarm
+        run: |
+          cd docker/dist
+          docker exec -u ${USER} -w /home/${USER}/gfarm/docker/dist gfarm-c1 \
+             sh ./regress.sh
+
+      - name: extract log files from the container
+        if: always()
+        run: |
+          mkdir -p regress-log
+          docker exec -u ${USER} -w /home/${USER}/gfarm/build/regress \
+              gfarm-c1 sh -c 'tar cf - log.*' | ( cd regress-log && tar pxf - )
+
+      - name: upload log
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: regress-log
+          path: regress-log/*
