@@ -1,4 +1,4 @@
-name: regress sharedsecret
+name: regress with sharedsecret
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
 
 jobs:
 
-  checkpatch:
+  regress:
     name: Run regress with sharedsecret authentication
     runs-on: ubuntu-latest
 
@@ -51,16 +51,30 @@ jobs:
           cd docker/dist
           docker compose up -d
 
-      - name: build
-        id: build
+      - name: build_all
+        id: build_all
         run: |
           cd docker/dist
           docker exec -u ${USER} -w /home/${USER}/gfarm/docker/dist gfarm-c1 \
              sh ./all.sh
 
-      - name: regress
-        id: regress
+      - name: regress_gfarm
+        id: regress_gfarm
         run: |
           cd docker/dist
           docker exec -u ${USER} -w /home/${USER}/gfarm/docker/dist gfarm-c1 \
              sh ./regress.sh
+
+      - name: extract log files from the container
+        if: always()
+        run: |
+          mkdir -p regress-log
+          docker exec -u ${USER} -w /home/${USER}/gfarm/build/regress \
+              gfarm-c1 sh -c 'tar cf - log.*' | ( cd regress-log && tar pxf - )
+
+      - name: upload log
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: regress-log
+          path: regress-log/*
