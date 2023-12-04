@@ -6,7 +6,7 @@ trap '[ $status = 0 ] && echo Done || echo NG: $PROG; \
 	gfrm -f $TFILE; exit $status' 0 1 2 15
 
 TFILE=/tmp/corrupted-file
-ENV="LANG=C GFARM_TEST_MDS2=c6:601 GFARM_TEST_MDS3=c7:601 \
+ENV="GFARM_TEST_MDS2=c6:601 GFARM_TEST_MDS3=c7:601 \
 	GFARM_TEST_MDS4=c8:601 GFARM_TEST_CKSUM_MISMATCH=$TFILE"
 export $ENV
 
@@ -17,9 +17,11 @@ grid-proxy-init -q || :
 gfmkdir -p /tmp
 gfchmod 1777 /tmp || :
 
-mkdir -p ~/gfarm/build/regress
-cd ~/gfarm/build/regress
-~/gfarm/makes/make.sh all > /dev/null
+TOP=~/gfarm
+BUILD=$TOP/build
+MAKE=$TOP/makes/make.sh
+cd $BUILD/regress
+$MAKE all > /dev/null
 
 create_mismatch_file()
 {
@@ -64,12 +66,12 @@ LOG1=log.rm-root.$AUTH.$DIST.$DATE
 LOG2=log.lc-user.$AUTH.$DIST.$DATE
 
 create_mismatch_file
-gfsudo ~/gfarm/makes/make.sh REGRESS_ARGS=" -l $LOG1" check
+gfsudo $MAKE REGRESS_ARGS="-l $LOG1" check
 
 create_mismatch_file
 ssh c2 "(grid-proxy-init -q; cd gfarm/build/regress &&
-	$ENV ~/gfarm/makes/make.sh REGRESS_ARGS='-l $LOG2' check)"
+	$ENV $MAKE REGRESS_ARGS='-l $LOG2' check)"
 
-~/gfarm/regress/addup.sh $LOG1 $LOG2 | egrep '(UNSUPPORTED|FAIL)'
+$TOP/regress/addup.sh $LOG1 $LOG2 | egrep '(UNSUPPORTED|FAIL)'
 
 status=0
