@@ -106,6 +106,10 @@ cat <<EOF | sudo tee $sasl_libdir/sasl2/gfarm-client.conf > /dev/null
 xoauth2_user_claim: hpci.id
 EOF
 
+# for GitHub Actions:
+# change the owner of /home/runner/local from root to runner
+sudo chown `id -un` ~/local
+
 cp $sasl_libdir/sasl2/gfarm*.conf ~/local
 gfarm-prun -p sudo cp local/gfarm*.conf $sasl_libdir/sasl2
 rm ~/local/gfarm*.conf
