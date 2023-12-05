@@ -44,6 +44,7 @@
 #include "subr.h"
 #include "user.h"
 #include "back_channel.h"
+#include "replica_check.h"
 
 /* for debug */
 /* #define DEBUG_REPLICA_CHECK or CPPFLAGS='-DDEBUG_REPLICA_CHECK' */
@@ -76,6 +77,8 @@ static struct gflog_reduced_state remove_ok_state =
 		SAME_WARNING_INTERVAL);
 
 struct replication_info {
+	struct replication_info *q_next, *q_prev;
+
 	gfarm_ino_t inum;
 	gfarm_uint64_t gen;
 	struct replica_spec replica_spec;
@@ -364,7 +367,7 @@ replica_check_fix(struct replication_info *info)
 		    (long long)info->inum, (long long)info->gen);
 		return (GFARM_ERR_NO_ERROR); /* ignore */
 	}
-	if (inode_is_opened_for_writing(inode)) {
+	if (inode_is_opened_for_spool_writing(inode)) {
 		gflog_debug(GFARM_MSG_1003627,
 		    "replica_check: %lld:%lld:%s: "
 		    "opened in write mode, ignored",
@@ -523,13 +526,95 @@ replica_check_stack_pop(struct replication_info *infop)
 	return (1);
 }
 
+struct rep_prioq {
+	pthread_mutex_t mutex;
+
+	/* dummy head of doubly linked circular list */
+	struct replication_info q;
+};
+
+static struct rep_prioq rep_prioq = {
+	PTHREAD_MUTEX_INITIALIZER,
+	{ &rep_prioq.q, &rep_prioq.q }
+};
+
 static void
-replication_info_free(struct replication_info *rep_info)
+replica_check_enqueue_internal(struct replication_info *info, const char *diag)
 {
-	if (rep_info->tdirset != TDIRSET_IS_UNKNOWN &&
-	    rep_info->tdirset != TDIRSET_IS_NOT_SET)
-		dirset_dec_busy_count(rep_info->tdirset);
-	replica_spec_free(&rep_info->replica_spec);
+	gfarm_mutex_lock(&rep_prioq.mutex, diag, "lock");
+	info->q_next = &rep_prioq.q;
+	info->q_prev = rep_prioq.q.q_prev;
+	rep_prioq.q.q_prev->q_next = info;
+	rep_prioq.q.q_prev = info;
+	gfarm_mutex_unlock(&rep_prioq.mutex, diag, "unlock");
+
+	RC_LOG_DEBUG(GFARM_MSG_UNFIXED,
+	    "replica_check_enqueue: inum=%lld", (long long)info->inum);
+
+}
+
+/* enqueue inode for replica_check_priority_task() */
+/* replica_check_start_*() are required after calling this */
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: rep_prioq.mutex
+ * SLEEPS: no
+ */
+void
+replica_check_enqueue(struct inode *inode, struct dirset *tdirset,
+	int desired_number, char *repattr, const char *diag)
+{
+	struct replication_info *info;
+	struct replica_spec spec;
+	gfarm_ino_t inum = inode_get_number(inode);
+	gfarm_int64_t gen = inode_get_gen(inode);
+
+	GFARM_MALLOC(info);
+	if (info == NULL) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "replica_check: %s(%lld, %lld): no memory",
+		    diag, (long long)inum, (long long)gen);
+		return;
+	}
+
+	info->inum = inum;
+	info->gen = gen;
+	spec.desired_number = desired_number;
+	spec.repattr = repattr;
+	replica_spec_dup(&info->replica_spec, &spec);
+	info->tdirset = tdirset;
+	dirset_inc_busy_count(tdirset);
+
+	replica_check_enqueue_internal(info, diag);
+}
+
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: rep_prioq.mutex
+ * SLEEPS: no
+ */
+static struct replication_info *
+replica_check_dequeue(const char *diag)
+{
+	struct replication_info *info;
+
+	gfarm_mutex_lock(&rep_prioq.mutex, diag, "lock");
+	info = rep_prioq.q.q_next;
+	if (info != &rep_prioq.q) {
+		/* remove */
+		rep_prioq.q.q_next = info->q_next;
+		info->q_next->q_prev = &rep_prioq.q;
+		info->q_next = info->q_prev = NULL;
+	} else {  /* empty */
+		info = NULL;
+	}
+	gfarm_mutex_unlock(&rep_prioq.mutex, diag, "unlock");
+
+	if (info != NULL) {
+		RC_LOG_DEBUG(GFARM_MSG_UNFIXED,
+		    "replica_check_dequeue: inum=%lld", (long long)info->inum);
+	}
+	return (info);
 }
 
 static void
@@ -615,6 +700,94 @@ replica_check_giant_lock_init()
 }
 
 /*
+ * PREREQUISITE: nothing
+ * LOCKS: giant_lock
+ * SLEEPS: no
+ */
+static void
+replication_info_free(struct replication_info *rep_info)
+{
+	if (rep_info->tdirset != TDIRSET_IS_UNKNOWN &&
+	    rep_info->tdirset != TDIRSET_IS_NOT_SET) {
+		replica_check_giant_lock();
+		dirset_dec_busy_count(rep_info->tdirset);
+		replica_check_giant_unlock();
+	}
+	replica_spec_free(&rep_info->replica_spec);
+}
+
+static void replica_check_priority_task(void);
+
+static gfarm_error_t
+replica_check_fix_retry(struct replication_info *info, int is_priority_task,
+	int *stopped)
+{
+	unsigned long long sl = GFARM_MILLISEC_BY_NANOSEC;  /* 1 millisec. */
+	double begin = retry_sleep_time;
+#define TOO_LONG_WARNING_TIMEOUT 600  /* sec. */
+	double warn_next = TOO_LONG_WARNING_TIMEOUT;
+	gfarm_error_t e;
+
+	for (;;) {
+		replica_check_giant_lock();
+		e = replica_check_fix(info);
+		replica_check_giant_unlock();
+		if (e != GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE) {
+			break; /* success or error */
+		}
+		/*
+		 * If this is not called from priority task, call
+		 * priority task.
+		 */
+		if (!is_priority_task) {
+			if (!replica_check_ctrl_enabled()) {
+				if (stopped != NULL) {
+					/* gfrepcheck stop */
+					*stopped = 1;
+					break;
+				}
+			}
+			replica_check_priority_task();
+		}
+		/* retry */
+		gfarm_nanosleep(sl);
+		retry_sleep_time += .000000001 * sl;
+		if (sl < GFARM_SECOND_BY_NANOSEC) {
+			sl *= 2; /* 2,4,8,...,512,1024,1024,... ms. */
+		}
+		if (retry_sleep_time - begin >= warn_next) {
+			gflog_notice(GFARM_MSG_UNFIXED,
+			    "replica_check_fix_retry: "
+			    "busy state is too long (%.1f sec., inum=%lld)",
+			    retry_sleep_time - begin,
+			    (long long)info->inum);
+			warn_next += TOO_LONG_WARNING_TIMEOUT;
+		}
+	}
+	return (e);
+}
+
+static void
+replica_check_priority_task()
+{
+	struct replication_info *info;
+	gfarm_error_t e;
+	static const char diag[] = "replica_check_priority_task";
+
+	while ((info = replica_check_dequeue(diag)) != NULL) {
+#define IS_PRIORITY_TASK 1
+		e = replica_check_fix_retry(info, IS_PRIORITY_TASK, NULL);
+		if (e != GFARM_ERR_NO_ERROR) {
+			RC_LOG_DEBUG(GFARM_MSG_UNFIXED,
+			    "%s: %s", diag, gfarm_error_string(e));
+		}
+
+		replication_info_free(info);
+		free(info);
+	}
+}
+
+/*
  * these variables are protected by giant lock since they are also
  * accessed by a signal handler
  */
@@ -678,26 +851,16 @@ replica_check_main_dir(gfarm_ino_t inum, gfarm_ino_t *countp, int *stopped)
 		replica_check_giant_unlock();
 
 		while (replica_check_stack_pop(&rep_info)) {
-			/* 1 milisec. */
-			unsigned long long sl = GFARM_MILLISEC_BY_NANOSEC;
-
-			for (;;) {
-				replica_check_giant_lock();
-				e = replica_check_fix(&rep_info);
-				replica_check_giant_unlock();
-				if (e !=
-				    GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE)
-					break; /* success or error */
-				/* retry */
-				gfarm_nanosleep(sl);
-				retry_sleep_time += .000000001 * sl;
-				if (sl < GFARM_SECOND_BY_NANOSEC)
-					sl *= 2; /* 2,4,8,...,512,1024,1024 */
+			if (*stopped == 1) {
+				/* clear stack */
+				replication_info_free(&rep_info);
+				continue;
 			}
-			if (e != GFARM_ERR_NO_ERROR &&
-			    e != GFARM_ERR_DISK_QUOTA_EXCEEDED) {
-				need_to_retry = 1;
-				gflog_debug(GFARM_MSG_1003631,
+			replica_check_priority_task();
+			e = replica_check_fix_retry(&rep_info, 0, stopped);
+			if (IS_REPLICA_CHECK_REQUIRED(e)) {
+				need_to_retry = 1; /* try again later */
+				RC_LOG_DEBUG(GFARM_MSG_1003631,
 				    "replica_check_fix(): %s",
 				    gfarm_error_string(e));
 			}
@@ -743,11 +906,14 @@ replica_check_main(void)
 	replication_info(); /* acquires giant_lock internally */
 
 	for (inum = root_inum;;) {
-		if (inum % REPLICA_CHECK_INTERRUPT_STEP == 0 &&
-		    !replica_check_ctrl_enabled()) { /* gfrepcheck stop */
-			RC_LOG_INFO(GFARM_MSG_1005016,
-			    "replica_check: stopped (interrupted)");
-			break;
+		if (inum % REPLICA_CHECK_INTERRUPT_STEP == 0) {
+			if (!replica_check_ctrl_enabled()) {
+				/* gfrepcheck stop */
+				RC_LOG_INFO(GFARM_MSG_1005016,
+				    "replica_check: stopped (interrupted)");
+				break;
+			}
+			replica_check_priority_task();
 		}
 
 		if (replica_check_main_dir(inum, &count, &stopped))
@@ -1196,6 +1362,7 @@ replica_check_ctrl_enabled(void)
 	return (ctrl == ENABLE);
 }
 
+#if 0 /* unused */
 /* MAINCTRL */
 static void
 replica_check_ctrl_wait(void)
@@ -1214,6 +1381,7 @@ replica_check_ctrl_wait(void)
 	gfarm_mutex_unlock(&replica_check_ctrl_mutex, diag,
 	    REPLICA_CHECK_CTRL_DIAG);
 }
+#endif
 
 static void
 replica_check_remove_set(int ctrl)
@@ -1445,11 +1613,17 @@ replica_check_thread(void *arg)
 		    replica_check_minimum_interval_locked();
 
 		replica_check_cond_wait();
-		replica_check_ctrl_wait(); /* if the ctrl is stop, wait here */
 		replica_check_is_running_update(1);
-		if (replica_check_main()) /* error occured, retry */
-			replica_check_cond_signal("retry_by_error",
-			    gfarm_metadb_heartbeat_interval);
+
+		if (replica_check_ctrl_enabled()) {  /* gfrepcheck enable */
+			if (replica_check_main()) {
+				/* error occurred */
+				replica_check_cond_signal("retry_by_error",
+				    gfarm_metadb_heartbeat_interval);
+			}
+		}
+
+		replica_check_priority_task();
 		replica_check_is_running_update(0);
 
 		/* call dead_file_copy_scan_deferred_all */

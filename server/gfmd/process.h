@@ -57,6 +57,7 @@ struct replica_spec {
 };
 
 void replica_spec_free(struct replica_spec *);
+void replica_spec_dup(struct replica_spec *, struct replica_spec *);
 
 struct file_opening {
 	/*

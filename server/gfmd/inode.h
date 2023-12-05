@@ -195,6 +195,7 @@ gfarm_error_t inode_cksum_get_on_host(struct inode *, struct host *,
 	char **, size_t *, char **, gfarm_int32_t *);
 
 int inode_is_opened_for_writing(struct inode *);
+int inode_is_opened_for_spool_writing(struct inode *);
 int inode_is_opened_on(struct inode *, struct host *);
 gfarm_uint64_t inode_get_open_status_by_host(struct inode *, struct host *);
 struct file_copy * inode_get_file_copy(struct inode *, struct host *);

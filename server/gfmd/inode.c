@@ -1284,6 +1284,12 @@ make_replicas_except(struct inode *inode, struct dirset *tdirset,
 	struct host *spool_host, int desired_replica_number, char *repattr,
 	struct file_copy *exception_list)
 {
+	/* make CPPFLAGS='-DDEBUG_REPLICA_CHECK_ENQUEUE' */
+#ifdef DEBUG_REPLICA_CHECK_ENQUEUE
+	gflog_warning(GFARM_MSG_UNFIXED,
+	    "DEBUG_REPLICA_CHECK_ENQUEUE enabled");
+	return (GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE);
+#else /* DEBUG_REPLICA_CHECK_ENQUEUE */
 	gfarm_error_t e;
 	struct hostset *existing, *being_removed;
 	int n_existing = 1; /* +1 is for spool_host */
@@ -1349,6 +1355,7 @@ make_replicas_except(struct inode *inode, struct dirset *tdirset,
 	hostset_free(being_removed);
 
 	return (e);
+#endif /* DEBUG_REPLICA_CHECK_ENQUEUE */
 }
 
 static gfarm_error_t
@@ -1504,12 +1511,15 @@ update_replicas(struct inode *inode, struct host *spool_host,
 	 * #673 - retry automatic replication when a request of
 	 * replication is failure
 	 */
-	/* avoid calling replica_check
-	   if GFARM_ERR_DISK_QUOTA_EXCEEDED and GFARM_ERR_NO_MEMORY occur */
-	if (save_e != GFARM_ERR_NO_ERROR &&
-	    save_e != GFARM_ERR_DISK_QUOTA_EXCEEDED &&
-	    save_e != GFARM_ERR_NO_MEMORY)
+	if (IS_REPLICA_CHECK_REQUIRED(save_e)) {
+		replica_check_enqueue(inode, tdirset,
+		    desired_replica_number, repattr, diag);
+		/*
+		 * Starts replica_check thread even though there is no
+		 * need to check all files.
+		 */
 		replica_check_start_rep_request_failed();
+	}
 }
 
 static void
@@ -5186,6 +5196,7 @@ inode_check_pending_replication(struct file_opening *fo)
 	struct inode *inode = fo->inode;
 	struct host *spool_host = fo->u.f.spool_host;
 	struct inode_activity *ia = inode->u.c.activity;
+	static const char diag[] = "inode_check_pending_replication";
 
 	assert(spool_host != NULL && ia != NULL);
 
@@ -5207,9 +5218,16 @@ inode_check_pending_replication(struct file_opening *fo)
 		 * #673 - retry automatic replication when a request of
 		 * replication is failure
 		 */
-		/* avoid calling replica_check if GFARM_ERR_NO_MEMORY occurs */
-		if (e != GFARM_ERR_NO_ERROR && e != GFARM_ERR_NO_MEMORY)
+		if (IS_REPLICA_CHECK_REQUIRED(e)) {
+			replica_check_enqueue(inode, ia->tdirset,
+			    fo->u.f.replica_spec.desired_number,
+			    fo->u.f.replica_spec.repattr, diag);
+			/*
+			 * Starts replica_check thread even though
+			 * there is no need to check all files.
+			 */
 			replica_check_start_rep_request_failed();
+		}
 	}
 }
 
@@ -5425,6 +5443,14 @@ inode_is_opened_for_writing(struct inode *inode)
 	struct inode_activity *ia = inode->u.c.activity;
 
 	return (ia != NULL && ia->u.f.writers > 0);
+}
+
+int
+inode_is_opened_for_spool_writing(struct inode *inode)
+{
+	struct inode_activity *ia = inode->u.c.activity;
+
+	return (ia != NULL && ia->u.f.spool_writers > 0);
 }
 
 int

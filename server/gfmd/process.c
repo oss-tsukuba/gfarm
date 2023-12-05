@@ -121,6 +121,19 @@ replica_spec_free(struct replica_spec *spec)
 }
 
 void
+replica_spec_dup(struct replica_spec *dst, struct replica_spec *src)
+{
+	static const char diag[] = "replica_spec_dup";
+
+	dst->desired_number = src->desired_number;
+	if (src->repattr != NULL) {
+		dst->repattr = strdup_log(src->repattr, diag);
+	} else {
+		dst->repattr = NULL;
+	}
+}
+
+void
 file_opening_free(struct file_opening *fo, gfarm_mode_t mode)
 {
 	if (GFARM_S_ISREG(mode)) {
