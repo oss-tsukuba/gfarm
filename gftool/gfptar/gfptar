@@ -221,6 +221,18 @@ def execcmd_readline(args, stdin=subprocess.DEVNULL, stderr=None):
         raise Exception('{}: returncode={}'.format(' '.join(args), ret))
 
 
+def gfwhoami():
+    return execcmd(['gfwhoami'], textmode=True).strip()
+
+
+def am_I_gfarmroot():
+    out = execcmd(['gfgroup', '-l', 'gfarmroot'], textmode=True)
+    patt = r'gfarmroot: {}( |$)'.format(gfwhoami())
+    if re.match(patt, out.strip()):
+        return True
+    return False
+
+
 class Command(metaclass=abc.ABCMeta):
     def init(self, name) -> NoReturn:
         self._docopt = docopt(self.getDoc())
@@ -1556,11 +1568,14 @@ class GfptarCommand(Command):
                 sys.exit(1)
 
     def test_main(self):
+        self.am_I_gfarmroot = am_I_gfarmroot()
+        if self.am_I_gfarmroot:
+            logger.warning('gfarmroot TEST: "noread" files are not used')
         self.options_init()
         self.hardlink_warn = False
         self.uid = os.getuid()
         self.pid = os.getpid()
-        out = execcmd(['gfwhoami'], textmode=True)
+        out = gfwhoami()
         self.gfarm_user = out.strip()
         self.test_unit()
         self.test_invalid('url', 'gfarm:/tmp', 'dst', True)
@@ -1679,8 +1694,23 @@ class GfptarCommand(Command):
         testsrc_name = 'test-src'
         srcdir_local = workdir_local_url.url_join(testsrc_name)
         srcdir_gfarm = workdir_gfarm_url.url_join(testsrc_name)
-        self.test_prepare_srcdir(srcdir_local, use_all=use_all_files)
-        self.test_prepare_srcdir(srcdir_gfarm, use_all=use_all_files)
+        if use_all_files:
+            readonly = True
+            if self.am_I_gfarmroot:
+                noread = False
+            else:
+                noread = True
+            link = True
+            longname = True
+        else:
+            readonly = False
+            noread = False
+            link = False
+            longname = False
+        self.test_prepare_srcdir(srcdir_local,
+                                 readonly, noread, link, longname)
+        self.test_prepare_srcdir(srcdir_gfarm,
+                                 readonly, noread, link, longname)
 
         test1_name = 'test-1-create'
         test1_dir_gfarm = workdir_gfarm_url.url_join(test1_name)
@@ -1694,22 +1724,22 @@ class GfptarCommand(Command):
         # Gfarm -> Gfarm(tar)
         try:
             self.create(test1_dir_gfarm, workdir_gfarm, [testsrc_name])
-            if use_all_files:
+            if noread:
                 logger.error_exit(1, testname + '(create:Gfarm->Gfarm) ' +
                                   '... FAIL (unexpected success)')
         except Exception:
-            if not use_all_files:
+            if not noread:
                 raise
         # Gfarm(tar) -> Gfarm
         self.extract(test2_dir_gfarm, test1_dir_gfarm, [])
         # Gfarm -> Local(tar)
         try:
             self.create(test3_dir_local, test2_dir_gfarm, [testsrc_name])
-            if use_all_files:
+            if noread:
                 logger.error_exit(1, testname + '(create:Gfarm->Local) ' +
                                   '... FAIL (unexpected success)')
         except Exception:
-            if not use_all_files:
+            if not noread:
                 raise
         # Local(tar) -> Local
         self.extract(test4_dir_local, test3_dir_local, [])
@@ -1720,7 +1750,7 @@ class GfptarCommand(Command):
         self.list_verbose(test1_dir_gfarm, quiet=True)
         self.list_verbose(test3_dir_local, quiet=True)
 
-        if use_all_files:
+        if readonly:
             # extract a member (SEE ALSO: test_prepare_srcdir)
             member = testsrc_name + '/dir1/readonly/file#2'
             all_members = [testsrc_name,
@@ -1759,11 +1789,11 @@ class GfptarCommand(Command):
         # Local -> Gfarm(tar)
         try:
             self.create(test5_dir_gfarm, workdir_local, [testsrc_name])
-            if use_all_files:
+            if noread:
                 logger.error_exit(1, testname + '(create:Local->Gfarm) ' +
                                   '... FAIL (unexpected success)')
         except Exception:
-            if not use_all_files:
+            if not noread:
                 raise
         # Gfarm(tar) -> Local
         self.extract(test6_dir_local, test5_dir_gfarm, [])
@@ -1794,8 +1824,8 @@ class GfptarCommand(Command):
         testsrc_name = 'test-src'
         srcdir_local = workdir_local_url.url_join(testsrc_name)
         srcdir_gfarm = workdir_gfarm_url.url_join(testsrc_name)
-        self.test_prepare_srcdir(srcdir_local, use_all=False)
-        self.test_prepare_srcdir(srcdir_gfarm, use_all=False)
+        self.test_prepare_srcdir(srcdir_local, readonly=True)
+        self.test_prepare_srcdir(srcdir_gfarm, readonly=True)
 
         test1_name = 'test-1-create'
         test1_dir_gfarm = workdir_gfarm_url.url_join(test1_name)
@@ -1829,7 +1859,11 @@ class GfptarCommand(Command):
         workdir_local_url.remove_tree(remove_readonly=True)
         workdir_gfarm_url.remove_tree(remove_readonly=True)
 
-    def test_prepare_srcdir(self, dir_url_str, use_all=False):
+    def test_prepare_srcdir(self, dir_url_str,
+                            readonly=False, noread=False,
+                            link=False, longname=False):
+        logger.debug(f'readonly={str(readonly)}, noread={str(noread)}, '
+                     f'link={str(link)}, longname={str(longname)}')
         F = 'file'
         D = 'directory'
         S = 'symlink'
@@ -1838,22 +1872,34 @@ class GfptarCommand(Command):
         tree = [
             (F, 'file1', 0o664, 1234567890, None),
             (D, 'dir1', 0o715, 2234567890, None),
+        ]
+        tree_readonly = [
             (D, 'dir1/readonly', 0o700, 3234567891, None),  # chmod 500 later
             (F, 'dir1/readonly/file#2', 0o456, 4234567892, None),
         ]
-        tree2 = [
+        tree_noread = [
             (F, 'dir1/noread-file', 0o000, 1234567891, None),
             (D, 'dir1/noread-dir', 0o700, 1234567892, None),  # chmod 000 later
             (F, 'dir1/noread-dir/file3', 0o400, 1234567893, None),
+        ]
+        tree_link = [
             (D, 'dir1/ディレクトリ 2', 0o755, 5234567890, None),
             (L, 'dir1/ディレクトリ 2/hardlink1',
              0o400, 6234567890, 'file1'),
             (S, 'dir1/ディレクトリ 2/symlink1',
              0o777, 7234567890, 'hardlink1'),
+        ]
+        tree_longname = [
             (F, 'dir1/' + longname, 0o775, 9234567890, None),
         ]
-        if use_all:
-            tree += tree2
+        if readonly:
+            tree += tree_readonly
+        if noread:
+            tree += tree_noread
+        if link:
+            tree += tree_link
+        if longname:
+            tree += tree_longname
         srcdir_url = GfURL.init(dir_url_str)
         srcdir_url.mkdir()
         for ent in tree:
@@ -1887,9 +1933,10 @@ class GfptarCommand(Command):
             if ftype == D:
                 url.chmod(mode, mtime=mtime)
         srcdir_url.chmod(mode=0o700, mtime=0)
-        readonly_url = GfURL.init(srcdir_url.url_join('dir1/readonly'))
-        readonly_url.chmod(mode=0o500)
-        if use_all:
+        if readonly:
+            readonly_url = GfURL.init(srcdir_url.url_join('dir1/readonly'))
+            readonly_url.chmod(mode=0o500)
+        if noread:
             noread_url = GfURL.init(srcdir_url.url_join('dir1/noread-dir'))
             noread_url.chmod(mode=0o000)
 
