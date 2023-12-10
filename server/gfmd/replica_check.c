@@ -368,7 +368,7 @@ replica_check_fix(struct replication_info *info)
 		return (GFARM_ERR_NO_ERROR); /* ignore */
 	}
 	if (inode_is_opened_for_spool_writing(inode)) {
-		gflog_debug(GFARM_MSG_1003627,
+		RC_LOG_DEBUG(GFARM_MSG_1003627,
 		    "replica_check: %lld:%lld:%s: "
 		    "opened in write mode, ignored",
 		    (long long)info->inum, (long long)info->gen,
@@ -528,6 +528,7 @@ replica_check_stack_pop(struct replication_info *infop)
 
 struct rep_prioq {
 	pthread_mutex_t mutex;
+	int count;
 
 	/* dummy head of doubly linked circular list */
 	struct replication_info q;
@@ -535,8 +536,34 @@ struct rep_prioq {
 
 static struct rep_prioq rep_prioq = {
 	PTHREAD_MUTEX_INITIALIZER,
+	0,
 	{ &rep_prioq.q, &rep_prioq.q }
 };
+
+/* If a size of "struct replica_info" is 128bytes, maximum size is 12.2MiB */
+#define REP_PRIOQ_MAX 100000
+
+int rep_prioq_count_max = 0;
+
+static int
+replica_check_queue_count(const char *diag) {
+	int count;
+
+	gfarm_mutex_lock(&rep_prioq.mutex, diag, "lock");
+	count = rep_prioq.count;
+	gfarm_mutex_unlock(&rep_prioq.mutex, diag, "unlock");
+	if (count > rep_prioq_count_max) {
+		rep_prioq_count_max = count;
+	}
+	RC_LOG_DEBUG(GFARM_MSG_UNFIXED, "rep_prioq.count=%d, max=%d",
+	    count, rep_prioq_count_max);
+	return (count);
+}
+
+static int
+replica_check_queue_is_full(const char *diag) {
+	return (replica_check_queue_count(diag) > REP_PRIOQ_MAX);
+}
 
 static void
 replica_check_enqueue_internal(struct replication_info *info, const char *diag)
@@ -546,6 +573,7 @@ replica_check_enqueue_internal(struct replication_info *info, const char *diag)
 	info->q_prev = rep_prioq.q.q_prev;
 	rep_prioq.q.q_prev->q_next = info;
 	rep_prioq.q.q_prev = info;
+	rep_prioq.count++;
 	gfarm_mutex_unlock(&rep_prioq.mutex, diag, "unlock");
 
 	RC_LOG_DEBUG(GFARM_MSG_UNFIXED,
@@ -569,6 +597,13 @@ replica_check_enqueue(struct inode *inode, struct dirset *tdirset,
 	gfarm_ino_t inum = inode_get_number(inode);
 	gfarm_int64_t gen = inode_get_gen(inode);
 
+	if (replica_check_queue_is_full(diag)) {
+		gflog_notice(GFARM_MSG_UNFIXED,
+		    "replica_check: %s(%lld, %lld): "
+		    "queue is full (will be proccessed later))",
+		    diag, (long long)inum, (long long)gen);
+		return;
+	}
 	GFARM_MALLOC(info);
 	if (info == NULL) {
 		gflog_error(GFARM_MSG_UNFIXED,
@@ -605,6 +640,7 @@ replica_check_dequeue(const char *diag)
 		rep_prioq.q.q_next = info->q_next;
 		info->q_next->q_prev = &rep_prioq.q;
 		info->q_next = info->q_prev = NULL;
+		rep_prioq.count--;
 	} else {  /* empty */
 		info = NULL;
 	}
@@ -969,6 +1005,13 @@ replica_check_info(void)
 	time_t time_start, elapse;
 	float progress;
 	long long estimate;
+	int q_count;
+	static const char diag[] = "replica_check_info";
+
+	q_count = replica_check_queue_count(diag);
+	RC_LOG_INFO(GFARM_MSG_UNFIXED,
+		    "replica_check: priority queue count=%d, max=%d",
+		     q_count, rep_prioq_count_max);
 
 	replica_check_giant_lock();
 	table_size = info_table_size;
