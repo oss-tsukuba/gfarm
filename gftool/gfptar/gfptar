@@ -550,8 +550,8 @@ class GfURL(metaclass=abc.ABCMeta):
                 with url.readopen() as f:
                     tar.addfile(tarinfo, fileobj=f)
             else:
-                msg = f'not readable: {url.url_str}'
-                logger.warning(msg)
+                msg = f'(not readable) Permission denied: {url.url_str}'
+                logger.debug(msg)
                 raise Exception(msg)
         else:
             tar.addfile(tarinfo)
@@ -2342,7 +2342,7 @@ class GfptarCommand(Command):
             except Exception as e:
                 if has_error is None:  # save first error
                     has_error = e
-                logger.debug(str(e))
+                logger.warning(str(e))
                 # continue
 
         tar.close()
