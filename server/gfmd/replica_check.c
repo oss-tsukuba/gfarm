@@ -76,6 +76,13 @@ static struct gflog_reduced_state remove_ok_state =
 		SAME_WARNING_DURATION,
 		SAME_WARNING_INTERVAL);
 
+static struct gflog_reduced_state queue_is_full_state =
+	GFLOG_REDUCED_STATE_INITIALIZER(
+		SAME_WARNING_TRIGGER,
+		SAME_WARNING_THRESHOLD,
+		SAME_WARNING_DURATION,
+		SAME_WARNING_INTERVAL);
+
 struct replication_info {
 	struct replication_info *q_next, *q_prev;
 
@@ -144,6 +151,14 @@ replica_check_minimum_interval_locked(void)
 			gflog_reduced_warning(msg_no, state, __VA_ARGS__); \
 		else							\
 			gflog_warning(msg_no, __VA_ARGS__);		\
+	}
+
+#define REDUCED_NOTICE(msg_no, state, ...)				\
+	{								\
+		if (replica_check_reduced_log_enabled())		\
+			gflog_reduced_notice(msg_no, state, __VA_ARGS__); \
+		else							\
+			gflog_notice(msg_no, __VA_ARGS__);		\
 	}
 
 #define REDUCED_INFO(msg_no, state, ...)				\
@@ -598,7 +613,7 @@ replica_check_enqueue(struct inode *inode, struct dirset *tdirset,
 	gfarm_int64_t gen = inode_get_gen(inode);
 
 	if (replica_check_queue_is_full(diag)) {
-		gflog_notice(GFARM_MSG_UNFIXED,
+		REDUCED_NOTICE(GFARM_MSG_UNFIXED, &queue_is_full_state,
 		    "replica_check: %s(%lld, %lld): "
 		    "queue is full (will be proccessed later))",
 		    diag, (long long)inum, (long long)gen);
