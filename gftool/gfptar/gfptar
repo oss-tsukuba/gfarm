@@ -2096,7 +2096,7 @@ class GfptarCommand(Command):
         self.filelistlist = self.schedule(filelist)
         if self.progress_enabled:
             self.progress_for_list1(time.time())
-            sys.stderr.write('\n')
+            sys.stdout.write('\n')
 
         self.tqdm = None
         self.myprogress = False
@@ -2137,7 +2137,7 @@ class GfptarCommand(Command):
 
         if self.myprogress:
             self.progress_for_create(time.time())
-            sys.stderr.write('\n')
+            sys.stdout.write('\n')
         if self.tqdm:
             self.tqdm.close()
         if not self.quiet and self.stored_size > 0:
@@ -2441,7 +2441,7 @@ class GfptarCommand(Command):
                     self.progress_for_list2(now)
         if self.progress_enabled:
             self.progress_for_list2(time.time())
-            sys.stderr.write('\n')
+            sys.stdout.write('\n')
 
         if search_target:
             # selected tar files
@@ -2511,7 +2511,7 @@ class GfptarCommand(Command):
             self.extract_from_archives(target_list, member_set)
         if self.progress_enabled:
             self.progress_for_extract(time.time())
-            sys.stderr.write('\n')
+            sys.stdout.write('\n')
 
         self.update_stat_for_directories(directory_list, member_set)
 
@@ -2719,14 +2719,14 @@ class GfptarCommand(Command):
 
     def progress_for_list1(self, now):
         sec = now - self.start_time
-        sys.stderr.write(f'\rlisting: '
+        sys.stdout.write(f'\rlisting: '
                          f'num={self.total_num}, '
                          f'size={self.total_size}, '
                          f'sec={sec:.0f}')
 
     def progress_for_list2(self, now):
         sec = now - self.start_time
-        sys.stderr.write(f'\rlisting: '
+        sys.stdout.write(f'\rlisting: '
                          f'num={self.total_num}, '
                          f'sec={sec:.0f}')
 
@@ -2741,7 +2741,7 @@ class GfptarCommand(Command):
             bytes_per_sec = self.stored_size / sec
         else:
             bytes_per_sec = 0
-        sys.stderr.write(f'\rcreated: {percent:.0f}%, '
+        sys.stdout.write(f'\rcreated: {percent:.0f}%, '
                          f'num={self.stored_num}/{self.total_num}, '
                          f'size={self.stored_size}, '
                          f'sec={sec:.0f}, '
@@ -2758,7 +2758,7 @@ class GfptarCommand(Command):
             bytes_per_sec = self.extracted_size / sec
         else:
             bytes_per_sec = 0
-        sys.stderr.write(f'\rextracted: {percent:.0f}%, '
+        sys.stdout.write(f'\rextracted: {percent:.0f}%, '
                          f'num={self.extracted_num}/{self.total_num}, '
                          f'size={self.extracted_size}, '
                          f'sec={sec:.0f}, '
