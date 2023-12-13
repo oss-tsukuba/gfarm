@@ -120,7 +120,7 @@ class GfLogger(logging.getLoggerClass()):
 logger = None
 
 
-def logger_init(name, loglevel=logging.WARNING, debug=False):
+def logger_init(name, loglevel=logging.WARNING, debug=False, verbose=False):
     global logger
 
     if logger is not None:
@@ -135,8 +135,10 @@ def logger_init(name, loglevel=logging.WARNING, debug=False):
         fmt = '%(filename)s:%(levelname)s:L%(lineno)d:' + \
             '%(asctime)s: %(message)s'
         fmt = fmt.format(name)
-    else:
+    elif verbose:
         fmt = '{}:%(levelname)s: %(message)s'.format(name)
+    else:
+        fmt = '%(message)s'
     formatter_strm = logging.Formatter(fmt=fmt, datefmt='%Y%m%d%H%M%S')
     strm.setFormatter(formatter_strm)
     strm.setLevel(loglevel)
@@ -194,6 +196,7 @@ def execcmd(args, stdin=subprocess.DEVNULL, stderr=subprocess.PIPE,
         try:
             err = err.decode().rstrip()
         except Exception:
+            logger.debug('cannot decode: err={}', err)
             pass
         msg = '{}: {}'.format(str(args), err)
         if err and use_stderr:
@@ -203,12 +206,29 @@ def execcmd(args, stdin=subprocess.DEVNULL, stderr=subprocess.PIPE,
 
 
 # text mode
-def execcmd_readline(args, stdin=subprocess.DEVNULL, stderr=None):
-    if stderr is None:  # for shutup_stderr
-        stderr = DEFAULT_STDERR
+def execcmd_readline(args, stdin=subprocess.DEVNULL):
+    if use_stderr:
+        stderr = subprocess.PIPE
+    else:
+        stderr = subprocess.DEVNULL
     proc = subprocess.Popen(
         args, shell=False, encoding=get_encoding(), close_fds=True,
         stdin=stdin, stdout=subprocess.PIPE, stderr=stderr)
+    if use_stderr:
+        def handle_stderr(process):
+            prefix = f'{args[0]}'
+            while True:
+                eline = process.stderr.readline()
+                if eline:
+                    eline = eline.rstrip('\r\n')
+                    sys.stderr.write(f'({prefix}) {eline}\n')
+                elif process.poll() is not None:
+                    break
+
+        stderr_thread = threading.Thread(target=handle_stderr, args=(proc,))
+        stderr_thread.start()
+    else:
+        stderr_thread = None
     while True:
         line = proc.stdout.readline()
         if line:
@@ -217,6 +237,8 @@ def execcmd_readline(args, stdin=subprocess.DEVNULL, stderr=None):
         elif proc.poll() is not None:
             break
     ret = proc.wait()
+    if stderr_thread is not None:
+        stderr_thread.join()
     if ret != 0:
         raise Exception('{}: returncode={}'.format(' '.join(args), ret))
 
@@ -231,6 +253,16 @@ def am_I_gfarmroot():
     if re.match(patt, out.strip()):
         return True
     return False
+
+
+def convert_message(error):
+    if hasattr(error, 'filename') and hasattr(error, 'strerror'):
+        if error.filename is not None and error.strerror is not None:
+            return f'{error.filename}: {error.strerror}'
+    if type(error) == Exception:  # custom errors
+        return str(error)
+    else:
+        return f'{error.__class__.__name__}: {str(error)}'
 
 
 class Command(metaclass=abc.ABCMeta):
@@ -251,7 +283,8 @@ class Command(metaclass=abc.ABCMeta):
         self.loglevel = loglevel
 
         # use stderr
-        mylogger = logger_init(name, loglevel=loglevel, debug=self.debug)
+        mylogger = logger_init(name, loglevel=loglevel, debug=self.debug,
+                               verbose=self.verbose)
         self.logger = mylogger
 
         logger.debug('USE_GFMKDIR_PLUS: %s', USE_GFMKDIR_PLUS)
@@ -515,6 +548,12 @@ class GfURL(metaclass=abc.ABCMeta):
     def is_readable(self):
         raise NotImplementedError
 
+    def check_readable(self):
+        if not self.is_readable():
+            e = PermissionError(13, 'Permission denied', self.url_str)
+            logger.debug(str(e))
+            raise e
+
     @abc.abstractmethod
     def is_writable(self):
         raise NotImplementedError
@@ -546,13 +585,9 @@ class GfURL(metaclass=abc.ABCMeta):
         # hard link is not supported
         if entry.is_file():
             url = GfURL.init(entry.path)
-            if url.is_readable():
-                with url.readopen() as f:
-                    tar.addfile(tarinfo, fileobj=f)
-            else:
-                msg = f'(not readable) Permission denied: {url.url_str}'
-                logger.debug(msg)
-                raise Exception(msg)
+            url.check_readable()
+            with url.readopen() as f:
+                tar.addfile(tarinfo, fileobj=f)
         else:
             tar.addfile(tarinfo)
 
@@ -814,7 +849,7 @@ class GfURLGfarm(GfURL):
         if ret == 0:
             val = int.from_bytes(out, byteorder='big')
             return val & mode > 0
-        raise Exception(f'gfarm.effective_perm({self.url_str}): {err}')
+        raise Exception(f'{self.url_str}: gfarm.effective_perm: {err}')
 
     def is_readable(self):
         return self.access(self.R_OK)
@@ -1263,7 +1298,7 @@ class GfURLLocal(GfURL):
         except Exception as e:
             if has_error is None:  # save first error
                 has_error = e
-                logger.warning(str(e))  # logging only once
+                logger.warning(convert_message(e))  # logging only once
         if has_error is not None:
             raise has_error
 
@@ -1338,6 +1373,7 @@ class GfTarFile(tarfile.TarFile):
             raise FileNotFoundError(gfurl.url_str)
         # list of tuple(proc, closeable obj, synchronizable obj)
         proc_list = []
+        gfurl.check_readable()
         if gfurl.is_gfarm():
             if compress_prog:
                 gfexport_proc = gfurl.gfexport()
@@ -1492,6 +1528,28 @@ class TestGfptar(unittest.TestCase):
         self.assertEqual(url.path, '/tmp')
 
 
+class GfptarError(Exception):
+    def __init__(self, message):
+        self.message = message
+        super().__init__(self.message)
+
+
+class UnreadableDirError(GfptarError):
+    def __init__(self):
+        self.message = 'Some files may not be archived' \
+            + ' (Unable to read some directories correctly)'
+        super().__init__(self.message)
+
+
+class CannotBeArchivedError(GfptarError):
+    def __init__(self, count=0):
+        if count >= 2:
+            self.message = f'{count} files cannot be archived'
+        else:
+            self.message = f'{count} file cannot be archived'
+        super().__init__(self.message)
+
+
 class GfptarCommand(Command):
     LIST_SUFFIX = '.lst'
 
@@ -1561,16 +1619,17 @@ class GfptarCommand(Command):
             if self.debug:
                 raise
             else:
-                if type(e) == Exception:  # custom errors
-                    logger.error(str(e))
+                if issubclass(type(e), GfptarError):  # already reported
+                    pass
                 else:
-                    logger.error('%s: %s', e.__class__.__name__, str(e))
+                    logger.error(convert_message(e))
                 sys.exit(1)
 
     def test_main(self):
         self.am_I_gfarmroot = am_I_gfarmroot()
         if self.am_I_gfarmroot:
-            logger.warning('gfarmroot TEST: "noread" files are not used')
+            logger.error('warning: gfarmroot is enabled: ' \
+                         + '"noread" files are not used')
         self.options_init()
         self.hardlink_warn = False
         self.uid = os.getuid()
@@ -1727,9 +1786,10 @@ class GfptarCommand(Command):
             if noread:
                 logger.error_exit(1, testname + '(create:Gfarm->Gfarm) ' +
                                   '... FAIL (unexpected success)')
-        except Exception:
+        except GfptarError as e:
             if not noread:
                 raise
+            logger.info(f'IGNORED: {str(e)}')
         # Gfarm(tar) -> Gfarm
         self.extract(test2_dir_gfarm, test1_dir_gfarm, [])
         # Gfarm -> Local(tar)
@@ -1738,9 +1798,10 @@ class GfptarCommand(Command):
             if noread:
                 logger.error_exit(1, testname + '(create:Gfarm->Local) ' +
                                   '... FAIL (unexpected success)')
-        except Exception:
+        except GfptarError as e:
             if not noread:
                 raise
+            logger.info(f'IGNORED: {str(e)}')
         # Local(tar) -> Local
         self.extract(test4_dir_local, test3_dir_local, [])
 
@@ -1792,9 +1853,10 @@ class GfptarCommand(Command):
             if noread:
                 logger.error_exit(1, testname + '(create:Local->Gfarm) ' +
                                   '... FAIL (unexpected success)')
-        except Exception:
+        except GfptarError as e:
             if not noread:
                 raise
+            logger.info(f'IGNORED: {str(e)}')
         # Gfarm(tar) -> Local
         self.extract(test6_dir_local, test5_dir_gfarm, [])
 
@@ -2054,7 +2116,8 @@ class GfptarCommand(Command):
         self.start_time = time.time()
         self.next_time = self.start_time + 1
 
-        has_error = None
+        self.cannot_be_archived = 0
+        cannot_read_dir = 0
         filelist = []
         for infile in infiles:
             infile_url = GfURL.init(infile)
@@ -2087,9 +2150,9 @@ class GfptarCommand(Command):
                             self.next_time = now + 1
                             self.progress_for_list1(now)
             except Exception as e:
-                if has_error is None:  # save first error
-                    has_error = e
-                logger.debug(str(e))
+                cannot_read_dir += 1
+                logger.warning('%s: error while reading directory (%s)',
+                               gfurl.url_str, convert_message(e))
                 # continue
 
         filelist.sort(key=entry_key, reverse=False)
@@ -2125,6 +2188,7 @@ class GfptarCommand(Command):
         self.gfsched_list = None
 
         self.outdir_url.create_new_dir()
+        has_error = None
         try:
             if self.MT_enabled():
                 self.create_tars_MT()
@@ -2140,6 +2204,16 @@ class GfptarCommand(Command):
             sys.stdout.write('\n')
         if self.tqdm:
             self.tqdm.close()
+        if cannot_read_dir > 0:
+            e = UnreadableDirError()
+            logger.warning(str(e))
+            if has_error is None:
+                has_error = e
+        if self.cannot_be_archived > 0:
+            e = CannotBeArchivedError(self.cannot_be_archived)
+            logger.warning(str(e))
+            if has_error is None:
+                has_error = e
         if not self.quiet and self.stored_size > 0:
             print('compression ratio: %.2f %% (%d/%d)' %
                   (100 * self.archive_size / self.stored_size,
@@ -2168,7 +2242,7 @@ class GfptarCommand(Command):
         self.lock_init(True)
         with concurrent.futures.ThreadPoolExecutor(
                 max_workers=self.jobs) as executor:
-            futures = {}
+            futures = {}  # serial number
             for filelist in self.filelistlist:
                 self.serial += 1
                 t = executor.submit(self.create_a_tar, self.serial, filelist)
@@ -2178,7 +2252,8 @@ class GfptarCommand(Command):
             for t in concurrent.futures.as_completed(futures, timeout=None):
                 exc = t.exception()
                 if exc:
-                    logger.debug('%s: serial=%04d', repr(exc), futures[t])
+                    logger.debug('serial=%04d: %s', futures[t],
+                                 convert_message(exc))
                     if self.verbose or self.debug:
                         tb = traceback.TracebackException.from_exception(exc)
                         logger.debug(''.join(tb.format()))
@@ -2317,7 +2392,6 @@ class GfptarCommand(Command):
                                     compress_prog=self.compress_prog,
                                     use_fsync=self.use_fsync,
                                     target_host=target_host)
-        has_error = None
         filelist_ok = []
         for entry in filelist:
             if self.is_canceled():
@@ -2326,24 +2400,25 @@ class GfptarCommand(Command):
             subpath = entry.subpath(self.basedir_url)
             try:
                 tar.add_entry(subpath, entry)
-                filelist_ok.append(entry)
-                with self.lock():
-                    self.info('stored: {}', subpath)
-                    self.stored_size += entry.size
-                    if self.myprogress:
-                        self.stored_num += 1
-                        now = time.time()
-                        if now >= self.next_time:
-                            self.next_time = now + 1
-                            self.progress_for_create(now)
-                    elif self.tqdm:
-                        if entry.is_file():
-                            self.tqdm.update(entry.size)
             except Exception as e:
-                if has_error is None:  # save first error
-                    has_error = e
-                logger.warning(str(e))
-                # continue
+                with self.lock():
+                    self.cannot_be_archived += 1
+                logger.warning(convert_message(e))
+                continue
+
+            filelist_ok.append(entry)
+            with self.lock():
+                self.info('stored: {}', subpath)
+                self.stored_size += entry.size
+                if self.myprogress:
+                    self.stored_num += 1
+                    now = time.time()
+                    if now >= self.next_time:
+                        self.next_time = now + 1
+                        self.progress_for_create(now)
+                elif self.tqdm:
+                    if entry.is_file():
+                        self.tqdm.update(entry.size)
 
         tar.close()
         tar_size = outurl.get_size()
@@ -2351,8 +2426,6 @@ class GfptarCommand(Command):
         with self.lock():
             self.info('created(.tar): {}', outurl.url_str)
             self.archive_size += tar_size
-        if has_error is not None:
-            raise has_error
 
     def create_a_members_list(self, url, filelist, target_host):
         outurl = GfURL.init(url.url_str + self.LIST_SUFFIX)
@@ -2590,7 +2663,7 @@ class GfptarCommand(Command):
         self.lock_init(True)
         with concurrent.futures.ThreadPoolExecutor(
                 max_workers=self.jobs) as executor:
-            futures = {}
+            futures = {}  # tar filenames
             serial = 0
             for target in target_list:
                 logger.debug('target_set: %s', target)
@@ -2602,13 +2675,15 @@ class GfptarCommand(Command):
             for t in concurrent.futures.as_completed(futures, timeout=None):
                 exc = t.exception()
                 if exc:
-                    logger.error('%s: %s', repr(exc), futures[t])
+                    logger.debug('%s: %s', futures[t], convert_message(exc))
                     tb = traceback.TracebackException.from_exception(exc)
                     logger.debug(''.join(tb.format()))
                     if not self.is_canceled():
                         self.cancel()
                         for t2 in futures:
-                            logger.error("cancel: name=%s", futures[t2])
+                            if t == t2:
+                                continue
+                            logger.error('%s: canceled', futures[t2])
                             t2.cancel()
                     raise exc
 
@@ -2639,7 +2714,7 @@ class GfptarCommand(Command):
             try:
                 tarinfo = tar.next()
             except Exception as e:
-                logger.warning(f'SKIPPED: invalid or empty tar ({target}):'
+                logger.warning(f'{target}: SKIPPED: invalid or empty tar: '
                                f' {str(e)}')
                 tarinfo = None
             if tarinfo is None:
@@ -2801,7 +2876,7 @@ class GfptarCommand(Command):
                 try:
                     t = tar.next()
                 except Exception as e:
-                    logger.warning(f'SKIPPED: invalid or empty tar ({path}):'
+                    logger.warning(f'{path}: SKIPPED: invalid or empty tar:'
                                    f' {str(e)}')
                     t = None
                 if t is None:
@@ -2809,7 +2884,9 @@ class GfptarCommand(Command):
                 name = t.name
                 if t.isdir():
                     name = name + '/'
-                info = (f'{t.mode:4o} {t.uname:>10}/{t.gname:<10}'
+                elif t.issym():
+                    name = name + ' -> ' + t.linkname
+                info = (f'{t.mode:04o} {t.uname:>10}/{t.gname:<10}'
                         f' {t.size:9d} {t.mtime} {name}')
                 if not quiet:
                     print(info)
