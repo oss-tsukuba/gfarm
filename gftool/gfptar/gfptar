@@ -1628,7 +1628,7 @@ class GfptarCommand(Command):
     def test_main(self):
         self.am_I_gfarmroot = am_I_gfarmroot()
         if self.am_I_gfarmroot:
-            logger.error('warning: gfarmroot is enabled: ' \
+            logger.error('warning: gfarmroot is enabled: '
                          + '"noread" files are not used')
         self.options_init()
         self.hardlink_warn = False
