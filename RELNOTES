@@ -50,7 +50,6 @@ New command
 * gfpconcat - concatinate files in parallel
 
 New authentication method
-
 * sasl_auth, sasl - SASL (XOAUTH2, PLAIN, ANONYMOUS) authentication in
   TLS.  After the authentication, sasl_auth uses a plain socket, while
   sasl uses TLS secure connection.
