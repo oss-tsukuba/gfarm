@@ -37,7 +37,8 @@ Updated feature
 * gfmd - warn when no file system node
 * gfptar - print more detailed progress messages
 * gfkey - gfarm2.conf is not mandatory
-* config-gfarm - introduce gfmd-slave.service to execute gfmd in slave mode
+* config-gfarm - introduce gfmd-slave.service to execute gfmd in slave
+  mode
 
 Bug fix
 * gfptar - fix unexpected output filenames
@@ -45,7 +46,8 @@ Bug fix
 * gfptar - fix too many open files
 * gfptar - fix possible broken pipe
 * config-gfarm - fix DEBUG=true does not work
-* unconfig-gfarm.sh - do not abort when backend database is already stopped
+* unconfig-gfarm.sh - do not abort when backend database is already
+  stopped
 
 Release note for Gfarm 2.7.23
 =============================
@@ -139,7 +141,8 @@ Update note
 * this release requires config-gfarm-update --update
 
 New feature
-* libgfarm - Multithread safe.  For details, see lib/libgfarm/README.MT-safe
+* libgfarm - Multithread safe.  For details, see
+  lib/libgfarm/README.MT-safe
 * Gfarm read only file system - gfstatus -Mm 'read_only enable'
 * pkg-config support
 
@@ -172,7 +175,8 @@ Updated feature
 * gfsd - display gfsd type in command line field of ps(1) [#1100]
 * gfmd - record gfmd config changes in log [#1097]
 * gfmd - -u option to specify file name of gfmd.failover.conf
-* gfmd - automatic quota check again, which makes gfquotacheck unnecessary
+* gfmd - automatic quota check again, which makes gfquotacheck
+  unnecessary
 * libgfarm - support GFARM_FILE_UNBUFFERED in open flag
 * FTBFS on GNU Hurd [#805]
 
