@@ -216,12 +216,14 @@ def execcmd_readline(args, stdin=subprocess.DEVNULL):
         stdin=stdin, stdout=subprocess.PIPE, stderr=stderr)
     if use_stderr:
         def handle_stderr(process):
-            prefix = f'{args[0]}'
+            prefix = ''
+            if logger.isEnabledFor(logging.INFO):
+                prefix = f'({args[0]}) '
             while True:
                 eline = process.stderr.readline()
                 if eline:
                     eline = eline.rstrip('\r\n')
-                    sys.stderr.write(f'({prefix}) {eline}\n')
+                    logger.warning(f'{prefix}{eline}')
                 elif process.poll() is not None:
                     break
 
@@ -1534,19 +1536,22 @@ class GfptarError(Exception):
         super().__init__(self.message)
 
 
-class UnreadableDirError(GfptarError):
-    def __init__(self):
-        self.message = 'Some files may not be archived' \
-            + ' (Unable to read some directories correctly)'
-        super().__init__(self.message)
-
-
 class CannotBeArchivedError(GfptarError):
-    def __init__(self, count=0):
-        if count >= 2:
-            self.message = f'{count} files cannot be archived'
-        else:
-            self.message = f'{count} file cannot be archived'
+    def __init__(self, files=0, directories=0):
+        msg = ''
+        if files >= 1:
+            msg += f'{files} file'
+            if files >= 2:
+                msg += 's'
+        if directories >= 1:
+            if msg:
+                msg += ' and '
+            msg += f'{directories} '
+            if directories >= 2:
+                msg += 'directories'
+            else:
+                msg += 'directory'
+        self.message = f'Error: {msg} cannot be archived'
         super().__init__(self.message)
 
 
@@ -2151,8 +2156,8 @@ class GfptarCommand(Command):
                             self.progress_for_list1(now)
             except Exception as e:
                 cannot_read_dir += 1
-                logger.warning('%s: error while reading directory (%s)',
-                               gfurl.url_str, convert_message(e))
+                logger.info('%s: error while reading directory (%s)',
+                            gfurl.url_str, convert_message(e))
                 # continue
 
         filelist.sort(key=entry_key, reverse=False)
@@ -2204,13 +2209,8 @@ class GfptarCommand(Command):
             sys.stdout.write('\n')
         if self.tqdm:
             self.tqdm.close()
-        if cannot_read_dir > 0:
-            e = UnreadableDirError()
-            logger.warning(str(e))
-            if has_error is None:
-                has_error = e
-        if self.cannot_be_archived > 0:
-            e = CannotBeArchivedError(self.cannot_be_archived)
+        if self.cannot_be_archived > 0 or cannot_read_dir > 0:
+            e = CannotBeArchivedError(self.cannot_be_archived, cannot_read_dir)
             logger.warning(str(e))
             if has_error is None:
                 has_error = e
