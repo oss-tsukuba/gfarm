@@ -1,3 +1,18 @@
+Release note for Gfarm 2.7.26
+=============================
+
+[2023.12.14]
+
+Updated feature
+* gfptar - ignore errors as the original tar behavior [#1162]
+
+Bug fix
+* gfptar - fix runtime error "release unlocked lock"
+* gfarmbb - fix gfarmbb start stops
+* gfhost - may fail with segmentation fault [#1158]
+* libgfarm - gfarm_humanize_number_to_int64() may fail
+* unconfig-gfarm.sh, unconfig-gfsd.sh - fix -t option
+
 Release note for Gfarm 2.7.25
 =============================
 
