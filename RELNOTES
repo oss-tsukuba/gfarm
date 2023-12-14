@@ -5,7 +5,7 @@ Release note for Gfarm 2.8.1
 
 New configuration directive
 * protocol_compat - use older version of protocols.  specify 2.7.13 to
-  access older servers in shared secret authentication
+  access older servers in shared secret authentication [#1153]
 
 New utility
 * jwt-parse - display a JSON Web Token and check expiration
@@ -15,19 +15,21 @@ Documentation
 * user/auth - SASL (OAuth2) authentication in TLS
 
 Updated feature
-* gfptar - ignore errors as the original tar behavior
+* gfptar - ignore errors as the original tar behavior [#1162]
 * gfmd - create file replicas first for files that fail to create file
-  replicas on file close
+  replicas on file close [#1160]
 * libgfarm - recover backward compatibility in GSI
 
 Bug fix
 * gfptar - fix runtime error "release unlocked lock"
 * gfarmbb - fix gfarmbb start stops
+* gfhost - may fail with segmentation fault [#1158]
 * libgfarm - SASL client-side authentication is not thread-safe
+  [#1157]
 * libgfarm - gfarm_humanize_number_to_int64() may fail
 * build directory feature in Make is broken
 * unconfig-gfarm.sh, unconfig-gfsd.sh - fix -t option
-* gfarm-gridftp-dsi does not work since Gfarm 2.8.0
+* gfarm-gridftp-dsi does not work since Gfarm 2.8.0 [#1155]
 
 Release note for Gfarm 2.8.0
 ============================
@@ -39,7 +41,8 @@ Update note
 
 New feature
 * Transport Layer Security (TLS) for secure communication
-* New authentication methods - SASL (XOAUTH2, PLAIN, ANONYMOUS) and Kerberos
+* New authentication methods - SASL (XOAUTH2, PLAIN, ANONYMOUS) and
+  Kerberos
 * Multitenant support
 
 New command
@@ -47,15 +50,16 @@ New command
 * gfpconcat - concatinate files in parallel
 
 New authentication method
-* sasl_auth, sasl - SASL (XOAUTH2, PLAIN, ANONYMOUS) authentication in TLS.
-  After the authentication, sasl_auth uses a plain socket, while sasl uses TLS
-  secure connection.
+
+* sasl_auth, sasl - SASL (XOAUTH2, PLAIN, ANONYMOUS) authentication in
+  TLS.  After the authentication, sasl_auth uses a plain socket, while
+  sasl uses TLS secure connection.
 * tls_sharedsecret, tls_client_certificate - shared secret and client
-  certificate authentications in TLS.  Afther the authentication, both uses
-  TLS secure connection.
-* kerberos_auth, kerberos - Kerberos authentication.  After the authentication,
-  kerberos_auth uses a plain socket, while kerberos uses Kerberos encrypted
-  connection.
+  certificate authentications in TLS.  Afther the authentication, both
+  uses TLS secure connection.
+* kerberos_auth, kerberos - Kerberos authentication.  After the
+  authentication, kerberos_auth uses a plain socket, while kerberos
+  uses Kerberos encrypted connection.
 
 New configuration directive
 * auth_trial_order - specify authentication order
@@ -71,8 +75,10 @@ Documentation
 
 Updated feature
 * gfpcopy - -t option for parallel copy of large files.  Default is 2.
-* gfpcopy - -T option to specify the threshold for large files.  Default is 1G.
-* gfuser - -A option to specify a global name for each authentication method
+* gfpcopy - -T option to specify the threshold for large files.
+  Default is 1G.
+* gfuser - -A option to specify a global name for each authentication
+  method
 * gfuser - -L option to display more user information
 * gfstatus - -S option to display static settings
 
@@ -100,7 +106,8 @@ Updated feature
 * gfmd - warn when no file system node
 * gfptar - print more detailed progress messages
 * gfkey - gfarm2.conf is not mandatory
-* config-gfarm - introduce gfmd-slave.service to execute gfmd in slave mode
+* config-gfarm - introduce gfmd-slave.service to execute gfmd in slave
+  mode
 
 Bug fix
 * gfptar - fix unexpected output filenames
@@ -108,7 +115,8 @@ Bug fix
 * gfptar - fix too many open files
 * gfptar - fix possible broken pipe
 * config-gfarm - fix DEBUG=true does not work
-* unconfig-gfarm.sh - do not abort when backend database is already stopped
+* unconfig-gfarm.sh - do not abort when backend database is already
+  stopped
 
 Release note for Gfarm 2.7.23
 =============================
@@ -202,7 +210,8 @@ Update note
 * this release requires config-gfarm-update --update
 
 New feature
-* libgfarm - Multithread safe.  For details, see lib/libgfarm/README.MT-safe
+* libgfarm - Multithread safe.  For details, see
+  lib/libgfarm/README.MT-safe
 * Gfarm read only file system - gfstatus -Mm 'read_only enable'
 * pkg-config support
 
@@ -235,7 +244,8 @@ Updated feature
 * gfsd - display gfsd type in command line field of ps(1) [#1100]
 * gfmd - record gfmd config changes in log [#1097]
 * gfmd - -u option to specify file name of gfmd.failover.conf
-* gfmd - automatic quota check again, which makes gfquotacheck unnecessary
+* gfmd - automatic quota check again, which makes gfquotacheck
+  unnecessary
 * libgfarm - support GFARM_FILE_UNBUFFERED in open flag
 * FTBFS on GNU Hurd [#805]
 
