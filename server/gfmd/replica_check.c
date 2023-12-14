@@ -570,7 +570,7 @@ replica_check_queue_count(const char *diag) {
 	if (count > rep_prioq_count_max) {
 		rep_prioq_count_max = count;
 	}
-	RC_LOG_DEBUG(GFARM_MSG_UNFIXED, "rep_prioq.count=%d, max=%d",
+	RC_LOG_DEBUG(GFARM_MSG_1005654, "rep_prioq.count=%d, max=%d",
 	    count, rep_prioq_count_max);
 	return (count);
 }
@@ -591,7 +591,7 @@ replica_check_enqueue_internal(struct replication_info *info, const char *diag)
 	rep_prioq.count++;
 	gfarm_mutex_unlock(&rep_prioq.mutex, diag, "unlock");
 
-	RC_LOG_DEBUG(GFARM_MSG_UNFIXED,
+	RC_LOG_DEBUG(GFARM_MSG_1005655,
 	    "replica_check_enqueue: inum=%lld", (long long)info->inum);
 
 }
@@ -613,7 +613,7 @@ replica_check_enqueue(struct inode *inode, struct dirset *tdirset,
 	gfarm_int64_t gen = inode_get_gen(inode);
 
 	if (replica_check_queue_is_full(diag)) {
-		REDUCED_NOTICE(GFARM_MSG_UNFIXED, &queue_is_full_state,
+		REDUCED_NOTICE(GFARM_MSG_1005656, &queue_is_full_state,
 		    "replica_check: %s(%lld, %lld): "
 		    "queue is full (will be proccessed later))",
 		    diag, (long long)inum, (long long)gen);
@@ -621,7 +621,7 @@ replica_check_enqueue(struct inode *inode, struct dirset *tdirset,
 	}
 	GFARM_MALLOC(info);
 	if (info == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005657,
 		    "replica_check: %s(%lld, %lld): no memory",
 		    diag, (long long)inum, (long long)gen);
 		return;
@@ -662,7 +662,7 @@ replica_check_dequeue(const char *diag)
 	gfarm_mutex_unlock(&rep_prioq.mutex, diag, "unlock");
 
 	if (info != NULL) {
-		RC_LOG_DEBUG(GFARM_MSG_UNFIXED,
+		RC_LOG_DEBUG(GFARM_MSG_1005658,
 		    "replica_check_dequeue: inum=%lld", (long long)info->inum);
 	}
 	return (info);
@@ -807,7 +807,7 @@ replica_check_fix_retry(struct replication_info *info, int is_priority_task,
 			sl *= 2; /* 2,4,8,...,512,1024,1024,... ms. */
 		}
 		if (retry_sleep_time - begin >= warn_next) {
-			gflog_notice(GFARM_MSG_UNFIXED,
+			gflog_notice(GFARM_MSG_1005659,
 			    "replica_check_fix_retry: "
 			    "busy state is too long (%.1f sec., inum=%lld)",
 			    retry_sleep_time - begin,
@@ -829,7 +829,7 @@ replica_check_priority_task()
 #define IS_PRIORITY_TASK 1
 		e = replica_check_fix_retry(info, IS_PRIORITY_TASK, NULL);
 		if (e != GFARM_ERR_NO_ERROR) {
-			RC_LOG_DEBUG(GFARM_MSG_UNFIXED,
+			RC_LOG_DEBUG(GFARM_MSG_1005660,
 			    "%s: %s", diag, gfarm_error_string(e));
 		}
 
@@ -1024,7 +1024,7 @@ replica_check_info(void)
 	static const char diag[] = "replica_check_info";
 
 	q_count = replica_check_queue_count(diag);
-	RC_LOG_INFO(GFARM_MSG_UNFIXED,
+	RC_LOG_INFO(GFARM_MSG_1005661,
 		    "replica_check: priority queue count=%d, max=%d",
 		     q_count, rep_prioq_count_max);
 

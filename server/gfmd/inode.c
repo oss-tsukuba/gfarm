@@ -1286,7 +1286,7 @@ make_replicas_except(struct inode *inode, struct dirset *tdirset,
 {
 	/* make CPPFLAGS='-DDEBUG_REPLICA_CHECK_ENQUEUE' */
 #ifdef DEBUG_REPLICA_CHECK_ENQUEUE
-	gflog_warning(GFARM_MSG_UNFIXED,
+	gflog_warning(GFARM_MSG_1005653,
 	    "DEBUG_REPLICA_CHECK_ENQUEUE enabled");
 	return (GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE);
 #else /* DEBUG_REPLICA_CHECK_ENQUEUE */
