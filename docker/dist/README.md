@@ -98,6 +98,8 @@ batchtest.sh accepts the following options.
     % sh ./devrpm.sh
     (in the container)
     # sh gfarm/docker/dist/mkrpm.sh gfarm 2.8.0
+    # rpm -Uvh rpmbuild/RPMS/x86_64/gfarm-gsi-*
+    # sh gfarm/docker/dist/mkrpm.sh gfarm2fs 1.2.19
     # Ctrl-D
 
     % export PKG=gfarm
