@@ -6,9 +6,15 @@ trap '[ $status = 1 ] && echo NG; exit $status' 0 1 2 15
 : ${PKG:=gfarm}
 : ${VER:=}
 
-# wget https://github.com/oss-tsukuba/gfarm/archive/refs/tags/$VER.tar.gz
-# or
-# git clone https://github.com/oss-tsukuba/gfarm.git gfarm-$VER
+if [ $# -gt 1 ]; then
+	PKG=$1
+	VER=$2
+
+	wget https://github.com/oss-tsukuba/$PKG/archive/refs/tags/$VER.tar.gz
+	mv $VER.tar.gz $PKG-$VER.tar.gz
+fi
+
+# git clone https://github.com/oss-tsukuba/$PKG.git $PKG-$VER
 
 [ X"$VER" = X ] && {
 	for f in $PKG-*.tar.gz $PKG-*

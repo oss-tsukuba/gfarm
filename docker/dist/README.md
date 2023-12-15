@@ -97,15 +97,11 @@ batchtest.sh accepts the following options.
 
     % sh ./devrpm.sh
     (in the container)
-    # export PKG=gfarm
-    # export VER=2.8.0
-    # wget https://github.com/oss-tsukuba/$PKG/archive/refs/tags/$VER.tar.gz
-    # mv $VER.tar.gz $PKG-$VER.tar.gz
-    # sh gfarm/docker/dist/mkrpm.sh
+    # sh gfarm/docker/dist/mkrpm.sh gfarm 2.8.0
     # Ctrl-D
 
-    # export PKG=gfarm
-    # export VER=2.8.0
+    % export PKG=gfarm
+    % export VER=2.8.0
     % docker cp alma8:/root/rpmbuild/SRPMS/$PKG-$VER-1.src.rpm .
     % docker stop alma8
     % docker rm alma8
