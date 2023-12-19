@@ -3,6 +3,7 @@
 sed -i 's/^GT_PACKAGE(\[gsi-openssh\]/#GT_PACKAGE(\[gsi-openssh\]/' configure.ac
 sed -i 's/^    \[globus_gss_assist\], \[gsi-openssh\])/#    \[globus_gss_assist\], \[gsi-openssh\])/' configure.ac
 sed -i 's/OPENSSL_VERSION=$($PKG_CONFIG --modversion openssl)/OPENSSL_VERSION=$($PKG_CONFIG --modversion openssl11)/' configure.ac
+sed -i 's|^syscmd(\[./update-dirt.sh\])|#syscmd(\[./update-dirt.sh\])|' configure.ac
 autoconf
 
 for f in $(find . -name configure.ac -exec grep -q 'OPENSSL' \{} \; -print)
