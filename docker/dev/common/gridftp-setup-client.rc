@@ -47,7 +47,7 @@ install_for_ubuntu() {
 
 cd $WORKDIR
 case $GFDOCKER_PRJ_NAME in
-    centos*-*)
+    centos*-*|rockylinux*-*|almalinux*-*)
         install_for_centos
         ;;
     opensuse-*)

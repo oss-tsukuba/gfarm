@@ -94,12 +94,12 @@ enable_gridftp_server() {
 cd $WORKDIR
 
 case $GFDOCKER_PRJ_NAME in
-    centos*-src)
+    centos*-src|rockylinux*-src|almalinux*-src)
         setup_for_centos
         install_from_source
         enable_gridftp_server
         ;;
-    centos*-pkg)
+    centos*-pkg|rockylinux*-pkg|almalinux*-pkg)
         setup_for_centos
         install_from_rpm
         enable_gridftp_server

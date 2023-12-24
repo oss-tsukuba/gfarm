@@ -4,23 +4,35 @@ set -eu
 
 TEST_FILES_DIR=~/UberFTP
 WORKDIR=/tmp
-FTPURL=gsiftp://gfmd1
+FTPSERVER=gfmd1
+FTPURL=gsiftp://${FTPSERVER}
 TESTDIR_PATH=tmp/test-gridftp-server
 TESTDIR_FTP=${FTPURL}/${TESTDIR_PATH}
 TESTDIR_GFARM=gfarm:/${TESTDIR_PATH}
 
 LOCAL_TMPDIR=
+TESTGROUP=
 
 init() {
+    LOCAL_TMPDIR=$(mktemp -d)
+    TESTGROUP=testgridftp-`randstr 5`
+
     grid-proxy-init
     gfmkdir -p ${TESTDIR_GFARM} || :
-    gfchmod 1777 /tmp || :
-    LOCAL_TMPDIR=$(mktemp -d)
+    gfsudo gfchmod 1777 /tmp || :
+    gfgroup -c ${TESTGROUP} `gfwhoami`
+    echo "TESTDIR_GFARM=${TESTDIR_GFARM}"
+    echo "TESTGROUP=${TESTGROUP}"
 }
 
 cleanup() {
+    gfgroup -d ${TESTGROUP}
     gfrm -rf ${TESTDIR_GFARM}
     rm -rf ${LOCAL_TMPDIR}
+}
+
+am_I_gfarmadm() {
+    gfgroup -l gfarmadm | egrep " `gfwhoami`"'( |$)' > /dev/null
 }
 
 randstr() {
@@ -28,8 +40,8 @@ randstr() {
 }
 
 createfile() {
-    NAME=$1
-    SIZE_MB=$2
+    local NAME=$1
+    local SIZE_MB=$2
 
     dd if=/dev/urandom of=${NAME} bs=1M count=${SIZE_MB} > /dev/null 2>&1
 }
@@ -42,16 +54,31 @@ PASS() {
     echo "PASS"
 }
 
-expect_mode() {
-    FILENAME=$1
-    EXPECTED=$2
+SKIP() {
+    echo "SKIP ($1)"
+}
 
+expect_mode() {
+    local FILENAME=$1
+    local EXPECTED=$2
+
+    local MODE
     MODE=$(gfls -ld $FILENAME | awk '{print $1}')
     [ "$MODE" = "$EXPECTED" ]
 }
 
+expect_group() {
+    local FILENAME=$1
+    local EXPECTED=$2
+
+    local GROUP
+    GROUP=$(gfls -ld $FILENAME | awk '{print $4}')
+    [ "$GROUP" = "$EXPECTED" ]
+}
+
 test_mkdir_rmdir() {
     msg_checking
+    local NAME
     NAME=$(randstr 10)
 
     uberftp -mkdir ${TESTDIR_FTP}/${NAME}
@@ -62,6 +89,7 @@ test_mkdir_rmdir() {
 
 test_rename() {
     msg_checking
+    local NAME
     NAME=$(randstr 10)
 
     uberftp -mkdir ${TESTDIR_FTP}/${NAME}
@@ -71,8 +99,22 @@ test_rename() {
     PASS
 }
 
+test_symlink() {
+    msg_checking
+    local NAME
+    NAME=$(randstr 10)
+
+    uberftp -mkdir ${TESTDIR_FTP}/${NAME}
+    uberftp -symlink ${TESTDIR_FTP}/${NAME} /${TESTDIR_PATH}/${NAME}_2
+    gftest -h ${TESTDIR_GFARM}/${NAME}_2
+    uberftp -rmdir ${TESTDIR_FTP}/${NAME}
+    uberftp -rm ${TESTDIR_FTP}/${NAME}_2
+    PASS
+}
+
 test_chmod() {
     msg_checking
+    local NAME
     NAME=$(randstr 10)
 
     uberftp -mkdir ${TESTDIR_FTP}/${NAME}
@@ -84,19 +126,45 @@ test_chmod() {
     PASS
 }
 
-common_globus_url_copy_dir() {
-    PARA=$1
+test_chgrp() {
+    msg_checking
+    if am_I_gfarmadm; then
+        :
+    else
+        SKIP "I am not gfarmadm"
+        return 0
+    fi
+
+    local NAME
     NAME=$(randstr 10)
-    TARGETDIR_FTP=${TESTDIR_FTP}/${NAME}
-    TARGETDIR_GFARM=${TESTDIR_GFARM}/${NAME}
-    COPY1=${LOCAL_TMPDIR}/copy1
+
+    uberftp -mkdir ${TESTDIR_FTP}/${NAME}
+    if expect_group ${TESTDIR_GFARM}/${NAME} ${TESTGROUP}; then
+        echo >&2 "unexpected group"
+        return 1
+    fi
+    uberftp -chgrp ${TESTGROUP} ${TESTDIR_FTP}/${NAME}
+    expect_group ${TESTDIR_GFARM}/${NAME} ${TESTGROUP}
+    uberftp -rmdir ${TESTDIR_FTP}/${NAME}
+    PASS
+}
+
+common_globus_url_copy_dir() {
+    local PARA=$1
+    local NAME
+    NAME=$(randstr 10)
+    local TARGETDIR_FTP=${TESTDIR_FTP}/${NAME}
+    local TARGETDIR_GFARM=${TESTDIR_GFARM}/${NAME}
+    local TARGETDIR=/${TESTDIR_PATH}/${NAME}
+    local COPY1=${LOCAL_TMPDIR}/copy1
 
     uberftp -mkdir ${TARGETDIR_FTP}
     globus-url-copy -r -p ${PARA} ${TEST_FILES_DIR}/ ${TARGETDIR_FTP}/
     globus-url-copy -r -p ${PARA} ${TARGETDIR_FTP}/ ${COPY1}/
     diff -r ${TEST_FILES_DIR} ${COPY1}
-    #uberftp -rm -r ${TARGETDIR_FTP}
-    gfrm -rf ${TARGETDIR_GFARM}
+    #uberftp ${FTPSERVER} "rm -r ${TARGETDIR}"
+    uberftp -rm -r ${TARGETDIR_FTP}
+    #gfrm -rf ${TARGETDIR_GFARM}
     PASS
 }
 
@@ -110,35 +178,65 @@ test_globus_url_copy_dir_para() {
     common_globus_url_copy_dir 8
 }
 
+compare_mtime() {
+    local F1="$1"
+    local F2="$2"
+    [ "$(stat -c %Y "$F1")" -eq "$(stat -c %Y "$F2")" ]
+}
+
 common_copy_file() {
-    COMMAND=$1
+    local COMMAND=$1
+    local NAME
     NAME=$(randstr 10)
-    SIZE_MB=1000
-    TARGETFILE_FTP=${TESTDIR_FTP}/${NAME}
-    TARGETFILE_GFARM=${TESTDIR_GFARM}/${NAME}
-    FILE1=${LOCAL_TMPDIR}/file1
-    FILE2=${LOCAL_TMPDIR}/file2
+    local SIZE_MB=1000
+    local TARGETFILE_FTP=${TESTDIR_FTP}/${NAME}
+    local TARGETFILE_GFARM=${TESTDIR_GFARM}/${NAME}
+    local FILE1=${LOCAL_TMPDIR}/file1
+    local FILE2=${LOCAL_TMPDIR}/file2
 
     if [ ! -f ${FILE1} ]; then  # reuse
         createfile ${FILE1} ${SIZE_MB}
     fi
 
-    if [ ${COMMAND} = "globus-url-copy-p1" ]; then
-        globus-url-copy -p 1 file:${FILE1} ${TARGETFILE_FTP}
-        globus-url-copy -p 1 ${TARGETFILE_FTP} file:${FILE2}
-    elif [ ${COMMAND} = "globus-url-copy-p8" ]; then
-        globus-url-copy -p 8 file:${FILE1} ${TARGETFILE_FTP}
-        globus-url-copy -p 8 ${TARGETFILE_FTP} file:${FILE2}
-    elif [ ${COMMAND} = "uberftp-modeS" ]; then
-        uberftp -mode S file:${FILE1} ${TARGETFILE_FTP}
-        uberftp -mode S ${TARGETFILE_FTP} file:${FILE2}
-    elif [ ${COMMAND} = "uberftp-modeE" ]; then
-        uberftp -mode E file:${FILE1} ${TARGETFILE_FTP}
-        uberftp -mode E ${TARGETFILE_FTP} file:${FILE2}
-    else
-        exit 1
-    fi
+    check_mtime=false
+    case $COMMAND in
+        globus-url-copy-p1)
+            globus-url-copy -p 1 file:${FILE1} ${TARGETFILE_FTP}
+            globus-url-copy -p 1 ${TARGETFILE_FTP} file:${FILE2}
+            ;;
+        globus-url-copy-p8)
+            globus-url-copy -p 8 file:${FILE1} ${TARGETFILE_FTP}
+            globus-url-copy -p 8 ${TARGETFILE_FTP} file:${FILE2}
+            ;;
+        globus-url-copy-cksum)
+            local digest
+            digest=$(gfstatus -M digest)
+            local OPT="-verify-checksum -checksum-alg ${digest}"
+            globus-url-copy $OPT file:${FILE1} ${TARGETFILE_FTP}
+            globus-url-copy $OPT ${TARGETFILE_FTP} file:${FILE2}
+            ;;
+        globus-url-copy-cksum-sha512-256)
+            local OPT="-verify-checksum -checksum-alg sha512-256"
+            globus-url-copy $OPT file:${FILE1} ${TARGETFILE_FTP}
+            globus-url-copy $OPT ${TARGETFILE_FTP} file:${FILE2}
+            ;;
+        uberftp-modeS)
+            uberftp -mode S file:${FILE1} ${TARGETFILE_FTP}
+            uberftp -mode S ${TARGETFILE_FTP} file:${FILE2}
+            check_mtime=true  # support MFMT
+            ;;
+        uberftp-modeE)
+            uberftp -mode E file:${FILE1} ${TARGETFILE_FTP}
+            uberftp -mode E ${TARGETFILE_FTP} file:${FILE2}
+            check_mtime=true  # support MFMT
+            ;;
+       *)
+           exit 1
+    esac
     cmp ${FILE1} ${FILE2}
+    if $check_mtime; then  # support MFMT
+       compare_mtime ${FILE1} ${FILE2}
+    fi
     gfrm -f ${TARGETFILE_GFARM}
     rm -f ${FILE2}
     PASS
@@ -152,6 +250,16 @@ test_globus_url_copy_file() {
 test_globus_url_copy_file_para() {
     msg_checking
     common_copy_file globus-url-copy-p8
+}
+
+test_globus_url_copy_file_cksum() {
+    msg_checking
+    common_copy_file globus-url-copy-cksum
+}
+
+test_globus_url_copy_file_cksum_sha512_256() {
+    msg_checking
+    common_copy_file globus-url-copy-cksum-sha512-256
 }
 
 test_uberftp_copy_file_modeS() {
@@ -170,10 +278,14 @@ cd $WORKDIR
 init
 test_mkdir_rmdir
 test_rename
+test_symlink
 test_chmod
+test_chgrp
 test_globus_url_copy_dir
 test_globus_url_copy_dir_para
 test_globus_url_copy_file
 test_globus_url_copy_file_para
+test_globus_url_copy_file_cksum
+test_globus_url_copy_file_cksum_sha512_256
 test_uberftp_copy_file_modeS
 test_uberftp_copy_file_modeE
