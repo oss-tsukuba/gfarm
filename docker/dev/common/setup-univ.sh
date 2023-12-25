@@ -328,20 +328,21 @@ systemctl mask getty.target
 git_clean()
 {
     dir="$1"
-    su - "${GFDOCKER_PRIMARY_USER}" -c "cd \"${dir}\"; git clean -dfx"
+    username="${2:-${GFDOCKER_PRIMARY_USER}}"
+    [ -d "$dir" ] || return 0  # skip
+    su - "$username" -c "cd \"${dir}\"; git clean -dfx"
 }
 
 git_clean ${gfarm_src_path}
 git_clean ${gfarm2fs_src_path}
+
 # the following directories may not exist
-( if cd ${jwt_logon_src_path}; then git_clean ${jwt_logon_src_path}; fi )
-( if cd ${jwt_agent_src_path}; then git_clean ${jwt_agent_src_path}; fi )
-( if cd ${cyrus_sasl_xoauth2_idp_src_path}; then
-      git_clean ${cyrus_sasl_xoauth2_idp_src_path}; fi )
-( if cd ${scitokens_cpp_src_path}; then
-      git_clean ${scitokens_cpp_src_path}; fi )
+git_clean ${jwt_logon_src_path}
+git_clean ${jwt_agent_src_path}
+git_clean ${cyrus_sasl_xoauth2_idp_src_path}
+git_clean ${scitokens_cpp_src_path}
 if [ "${GFDOCKER_NUM_TENANTS:-1}" -gt 1 ]; then
+    git_clean ${gfarm_src2_path} ${GFDOCKER_TENANT_ADMIN_USER}
     # for regress
     ln -s ${gfarm_src2_path} ${TENANT_ADMIN_HOME}/gfarm
-    (cd ${gfarm_src2_path}; git_clean) || true
 fi
