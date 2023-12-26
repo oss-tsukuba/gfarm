@@ -251,7 +251,7 @@ def gfwhoami():
 
 def am_I_gfarmroot():
     out = execcmd(['gfgroup', '-l', 'gfarmroot'], textmode=True)
-    patt = r'gfarmroot: {}( |$)'.format(gfwhoami())
+    patt = r'.* {}( |$)'.format(gfwhoami())
     if re.match(patt, out.strip()):
         return True
     return False
