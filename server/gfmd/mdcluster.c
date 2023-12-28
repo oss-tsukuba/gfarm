@@ -135,18 +135,14 @@ mdcluster_lookup(const char *name, const char *diag)
 }
 
 static struct mdcluster *
-mdcluster_new(const char *name)
+mdcluster_new(char *name)
 {
 	struct mdcluster *c;
 	static const char diag[] = "mdcluster_new";
 
-	if ((c = malloc(sizeof(struct mdcluster))) == NULL)
+	if (GFARM_MALLOC(c) == NULL)
 		return (NULL);
-	c->name = strdup(name);
-	if (c->name == NULL) {
-		free(c);
-		return (NULL);
-	}
+	c->name = name;
 	c->valid = 1;
 	GFARM_STAILQ_INIT(&c->mh_list);
 	gfarm_mutex_init(&c->mutex, diag, MDCLUSTER_MUTEX_DIAG);
@@ -161,6 +157,7 @@ mdcluster_enter(const char *name, struct mdcluster **cpp)
 	int created;
 	struct mdcluster *c;
 	gfarm_error_t e;
+	char *name2;
 	static const char diag[] = "mdcluster_enter";
 
 	c = mdcluster_lookup_internal(name, diag);
@@ -177,12 +174,25 @@ mdcluster_enter(const char *name, struct mdcluster **cpp)
 		return (GFARM_ERR_NO_ERROR);
 	}
 
+	name2 = strdup_log(name, diag);
+	if (name2 != NULL)
+		c = mdcluster_new(name2);
+	if (name2 == NULL || c == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		gflog_error(GFARM_MSG_1003012,
+		    "%s", gfarm_error_string(e));
+		free(name2);
+		return (e);
+	}
+
 	mdcluster_hash_mutex_lock(diag);
 	entry = gfarm_hash_enter(mdcluster_hashtab,
-	    &name, sizeof(name),
+	    &c->name, sizeof(c->name),
 	    sizeof(struct mdcluster *), &created);
 	if (entry == NULL) {
 		mdcluster_hash_mutex_unlock(diag);
+		free(c);
+		free(name2);
 		e = GFARM_ERR_NO_MEMORY;
 		gflog_error(GFARM_MSG_1003013,
 		    "%s", gfarm_error_string(e));
@@ -190,17 +200,11 @@ mdcluster_enter(const char *name, struct mdcluster **cpp)
 	}
 	if (!created) {
 		mdcluster_hash_mutex_unlock(diag);
+		free(c);
+		free(name2);
 		gflog_debug(GFARM_MSG_1003014,
 		    "Entry %s already exists", name);
 		return (GFARM_ERR_ALREADY_EXISTS);
-	}
-	c = mdcluster_new(name);
-	if (c == NULL) {
-		mdcluster_hash_mutex_unlock(diag);
-		e = GFARM_ERR_NO_MEMORY;
-		gflog_error(GFARM_MSG_1003012,
-		    "%s", gfarm_error_string(e));
-		return (e);
 	}
 	*(struct mdcluster **)gfarm_hash_entry_data(entry) = c;
 	mdcluster_hash_mutex_unlock(diag);
@@ -212,7 +216,7 @@ mdcluster_enter(const char *name, struct mdcluster **cpp)
 	return (GFARM_ERR_NO_ERROR);
 }
 
-/* mdhost_mutex_lock is assumed */
+/* PREREQUISITE: mdhost_mutex_lock */
 gfarm_error_t
 mdcluster_get_or_create_by_mdhost(struct mdhost *h)
 {
@@ -248,7 +252,7 @@ mdcluster_get_or_create_by_mdhost(struct mdhost *h)
 	return (GFARM_ERR_NO_ERROR);
 }
 
-/* mdhost_mutex_lock is assumed */
+/* PREREQUISITE: mdhost_mutex_lock */
 void
 mdcluster_remove_mdhost(struct mdhost *h)
 {
