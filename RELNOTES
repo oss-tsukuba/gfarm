@@ -1,3 +1,12 @@
+Release note for Gfarm 2.7.27
+=============================
+
+[2023.12.30]
+
+Bug fix
+* gfmd - synchronous slaves may be recognized as asyncronous slaves,
+  introduced by the version 2.7.21
+
 Release note for Gfarm 2.7.26
 =============================
 
