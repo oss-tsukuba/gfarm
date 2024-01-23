@@ -26,12 +26,12 @@ To allow docker compose to run with user privileges, add $USER to the docker gro
     % cd gfarm/docker/dist
     % DIST=<distribution> docker compose build --build-arg UID=$(id -u) c1
     % DIST=<distribution> docker compose up -d
-    ubuntu, almalinux8, and centos7 are available as $DIST.  Default is ubuntu
+    ubuntu, rockylinux9, almalinux8, and centos7 are available as $DIST.  Default is ubuntu
     % make          # login to a container
 
     (in a container)
     % sh ./all.sh
-    ./all-rpm.sh also available in case of almalinux8 and centos7
+    ./all-rpm.sh also available in case of rocylinux9, almalinux8 and centos7
     This will install and setup Gfarm.  Enjoy!
     % Ctrl-D
 
@@ -91,7 +91,7 @@ or
 batchtest.sh accepts the following options.
 
 - jwt - includes oauth2 authentication but for the first time
-- ubuntu, almalinux8, centos7 - specifies a distrubution to test.  mutiple distributions can be specified
+- ubuntu, rockylinux9, almalinux8, centos7 - specifies a distrubution to test.  mutiple distributions can be specified
 
 ## Create RPM packages
 

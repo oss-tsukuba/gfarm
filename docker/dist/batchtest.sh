@@ -14,7 +14,7 @@ do
 	regress) option=$1 ;;
 	jwt) TEST_OPTION=$1 ;;
 	ubuntu) DEBIAN="$DEBIAN $1"; DIST_SPECIFIED=true ;;
-	almalinux8|centos7) RHEL="$RHEL $1"; DIST_SPECIFIED=true ;;
+	rockylinux9|almalinux8|centos7) RHEL="$RHEL $1"; DIST_SPECIFIED=true ;;
 	*) exit 1 ;;
 	esac
 	shift
@@ -22,7 +22,7 @@ done
 
 $DIST_SPECIFIED || {
 	DEBIAN=ubuntu
-	RHEL="almalinux8 centos7"
+	RHEL="rockylinux9 almalinux8 centos7"
 }
 [ X"$DEBIAN" = X ] && DEBIAN=NONE
 [ X"$RHEL" = X ] && RHEL=NONE
