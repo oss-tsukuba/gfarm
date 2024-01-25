@@ -113,9 +113,16 @@ sudo chown `id -un` ~/local
 cp $sasl_libdir/sasl2/gfarm*.conf ~/local
 gfarm-prun -p sudo cp local/gfarm*.conf $sasl_libdir/sasl2
 rm ~/local/gfarm*.conf
+
+# create empty sasldb2 database,
+# because the gdbm backend of Cyrus SAL (e.g. on RHEL9) needs this
+# although the berkeley DB backend does NOT
+gfarm-prun -p -a "sudo saslpasswd2 -d -u NOT-EXIST NOT-EXIST"
+
 # XXX - SASL XOAUTH2 fails in gfsd on ubuntu due to the error
 # "unable to open Berkeley db /etc/sasldb2: Permission denied"
-gfarm-prun -p -a "sudo chown _gfarmfs /etc/sasldb2 > /dev/null 2>&1"
+gfarm-prun -p -a \
+	"sudo chown _gfarmfs /etc/sasldb2 /etc/sasl2/sasldb2 > /dev/null 2>&1"
 
 # set up certificates
 sh ./key.sh
