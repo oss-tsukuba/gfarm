@@ -19,26 +19,6 @@ jobs:
         run: |
           git clone https://github.com/oss-tsukuba/gfarm2fs.git
 
-      - name: checkout cyrus-sasl-xoauth2-idp
-        id: checkout_xoauth2idp
-        run: |
-          git clone https://github.com/oss-tsukuba/cyrus-sasl-xoauth2-idp.git
-
-      - name: checkout jwt-server
-        id: checkout_jwtserver
-        run: |
-          git clone https://github.com/oss-tsukuba/jwt-server.git
-
-      - name: checkout jwt-logon
-        id: checkout_jwtlogon
-        run: |
-          git clone https://github.com/oss-tsukuba/jwt-logon.git
-
-      - name: checkout jwt-agent
-        id: checkout_jwtagent
-        run: |
-          git clone https://github.com/oss-tsukuba/jwt-agent.git
-
       - name: docker compose build
         id: compose
         run: |
