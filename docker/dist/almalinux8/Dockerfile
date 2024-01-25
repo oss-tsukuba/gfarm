@@ -3,7 +3,8 @@ FROM almalinux:8
 ARG USERNAME=foo
 ARG UID=1000
 
-RUN dnf -y update \
+RUN dnf -y upgrade almalinux-release \
+ && dnf -y upgrade \
  && dnf -y install \
     git wget rpm-build sudo passwd \
     gcc make libtool \
@@ -21,7 +22,6 @@ RUN dnf -y update \
     myproxy globus-simple-ca \
     cyrus-sasl-devel scitokens-cpp-devel \
     golang jq curl \
- && dnf -y install 'dnf-command(config-manager)' \
  && dnf config-manager --set-enabled powertools \
  && dnf -y install pandoc
 
