@@ -51,9 +51,6 @@ test()
 	docker compose down
 }
 
-# clean up
-make down
-
 # debian
 for d in $DEBIAN
 do
@@ -72,5 +69,8 @@ do
 		[ X"$TEST_OPTION" = X ] || TEST_OPTION=
 	done
 done
+
+# clean up
+make down
 
 status=0
