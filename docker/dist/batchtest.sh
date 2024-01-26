@@ -51,6 +51,9 @@ test()
 	docker compose down
 }
 
+# clean up
+make down
+
 # debian
 for d in $DEBIAN
 do
