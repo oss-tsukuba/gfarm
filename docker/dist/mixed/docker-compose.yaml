@@ -1,0 +1,87 @@
+x-ubuntu-build: &x-ubuntu-build
+  build:
+    context: ../../..
+    dockerfile: docker/dist/ubuntu/Dockerfile
+    args:
+      USERNAME: $USER
+
+x-almalinux8-build: &x-almalinux8-build
+  build:
+    context: ../../..
+    dockerfile: docker/dist/almalinux8/Dockerfile
+    args:
+      USERNAME: $USER
+
+x-rockylinux9-build: &x-rockylinux9-build
+  build:
+    context: ../../..
+    dockerfile: docker/dist/rockylinux9/Dockerfile
+    args:
+      USERNAME: $USER
+
+x-common: &x-common
+  volumes:
+    - ../../..:/home/$USER/gfarm:cached
+    - local:/home/$USER/local:cached
+    - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    - ../minica/minica.pem:/minica/minica.crt
+  networks:
+    - gfarm_net
+  cap_add:
+    - SYS_ADMIN
+    - SYS_PTRACE
+  devices:
+    - /dev/fuse
+  security_opt:
+    - seccomp:unconfined
+    - apparmor:unconfined
+  privileged: false
+
+services:
+  c1:
+    <<: [*x-ubuntu-build, *x-common]
+    image: gfarm-ubuntu
+    hostname: c1
+    container_name: gfarm-c1
+  c2:
+    <<: [*x-almalinux8-build, *x-common]
+    image: gfarm-almalinux8
+    hostname: c2
+    container_name: gfarm-c2
+  c3:
+    <<: [*x-rockylinux9-build, *x-common]
+    image: gfarm-rockylinux9
+    hostname: c3
+    container_name: gfarm-c3
+  c4:
+    <<: *x-common
+    image: gfarm-ubuntu
+    hostname: c4
+    container_name: gfarm-c4
+  c5:
+    <<: *x-common
+    image: gfarm-almalinux8
+    hostname: c5
+    container_name: gfarm-c5
+  c6:
+    <<: *x-common
+    image: gfarm-rockylinux9
+    hostname: c6
+    container_name: gfarm-c6
+  c7:
+    <<: *x-common
+    image: gfarm-ubuntu
+    hostname: c7
+    container_name: gfarm-c7
+  c8:
+    <<: *x-common
+    image: gfarm-almalinux8
+    hostname: c8
+    container_name: gfarm-c8
+
+networks:
+  gfarm_net:
+    name: gfarm_net
+
+volumes:
+  local:
