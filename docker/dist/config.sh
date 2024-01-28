@@ -105,7 +105,7 @@ gfarm-prun -a -p -h $TMPF "
 	sudo cp $TMPCONF $CONFDIR/gfarm2.conf &&
 	sudo config-gfsd"
 for h in $GL; do
-	gfhost -c -a $(gfarm.arch.guess) -p 600 -n $(nproc) $h
+	gfhost -c -a $(ssh $h gfarm.arch.guess) -p 600 -n $(nproc) $h
 done
 gfarm-prun -a -p -h $TMPF sudo systemctl start gfsd
 
