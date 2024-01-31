@@ -10,7 +10,6 @@ x-common: &x-common
   volumes:
     - ../..:/home/$USER/gfarm:cached
     - local:/home/$USER/local:cached
-    - /sys/fs/cgroup:/sys/fs/cgroup:ro
     - ./minica/minica.pem:/minica/minica.crt
   networks:
     - gfarm_net
@@ -22,7 +21,7 @@ x-common: &x-common
   security_opt:
     - seccomp:unconfined
     - apparmor:unconfined
-  privileged: false
+  privileged: true
 
 services:
   c1:
