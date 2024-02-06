@@ -18,7 +18,7 @@ RUN yum -y update \
     procps valgrind \
     openssl11-devel openssl11 \
     cyrus-sasl-devel scitokens-cpp-devel \
-    golang jq pandoc curl
+    golang jq pandoc curl attr
 
 COPY docker/dist/centos7a/globus-patch.sh /
 

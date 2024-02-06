@@ -22,7 +22,7 @@ RUN dnf -y update \
     myproxy globus-simple-ca \
     cyrus-sasl-devel scitokens-cpp-devel \
     golang jq \
-    pandoc
+    pandoc attr
 
 RUN \
  # sshd
