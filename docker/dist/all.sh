@@ -165,6 +165,7 @@ do
 		done
 	fi
 	$REGRESS && sh ./regress.sh
+	$REGRESS && sh ./regress-xattr.sh
 done
 
 status=0
