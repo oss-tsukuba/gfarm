@@ -17,7 +17,7 @@
 # normal xattr remove test - 3
 {
 	gfxattr -r / "$attrname"XXX 
-	if [ $? == 0 ]; then
+	if [ $? = 0 ]; then
 		# must fail if not exists
 		exit $exit_fail
 	fi
@@ -42,7 +42,7 @@
 # normal xattr remove test - 6
 {
 	gfxattr -r $fileX "$attrname"XXX 
-	if [ $? == 0 ]; then
+	if [ $? = 0 ]; then
 		# must fail if not exists
 		exit $exit_fail
 	fi

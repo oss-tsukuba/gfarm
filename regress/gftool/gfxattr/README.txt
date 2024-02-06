@@ -3,7 +3,6 @@
 o Setup
 	- gfarm, gfarm2fs, fuse are installed
 	- "sudo modprobe fuse" executed
-	- setup visudo to run "sudo umount" by test running user
 	- gfmd, backend DB (PostgreSQL/OpenLDAP) are running
 	- Gfarm FS is empty (any files, directories are not created)
 

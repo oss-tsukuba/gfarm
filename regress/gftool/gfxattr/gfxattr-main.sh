@@ -44,7 +44,7 @@ echo "** fuse test **"
 . ./gftool/gfxattr/gfxattr-fuse.sh
 
 
-if [ $xml_enabled == 1 ]; then
+if [ $xml_enabled = 1 ]; then
 	echo "** set/get xml test **"
 	. ./gftool/gfxattr/gfxattr-set-xml.sh
 	

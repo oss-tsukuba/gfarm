@@ -19,7 +19,7 @@
 {
 	echo '<a>Xml2</a>' > $attrfile2
 	gfxattr -sx -c -f $attrfile2 / $attrname 
-	if [ $? == 0 ]; then
+	if [ $? = 0 ]; then
 		# must fail if already exists 
 		exit $exit_fail
 	fi
@@ -54,7 +54,7 @@
 {
 	echo '<a>Xml4</a>' > $attrfile
 	gfxattr -sx -m -f $attrfile / "$attrname"4 
-	if [ $? == 0 ]; then
+	if [ $? = 0 ]; then
 		# must fail if not exists 
 		exit $exit_fail
 	fi

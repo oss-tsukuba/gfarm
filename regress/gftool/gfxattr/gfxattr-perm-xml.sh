@@ -16,7 +16,7 @@ fi
 # xml xattr perm test - 1
 {
 	gfxattr -sx -f $attrfile $target $attrname 
-	if [ $? == 0 ]; then
+	if [ $? = 0 ]; then
 		# must fail
 		exit $exit_fail
 	fi
@@ -41,7 +41,7 @@ fi
 # xml xattr perm test - 4
 {
 	gfxattr -rx $target $attrname 
-	if [ $? == 0 ]; then
+	if [ $? = 0 ]; then
 		# must fail
 		exit $exit_fail
 	fi
@@ -66,7 +66,7 @@ fi
 # xml xattr perm test - 6
 {
 	gfxattr -gx $target $attrname 
-	if [ $? == 0 ]; then
+	if [ $? = 0 ]; then
 		# must fail
 		exit $exit_fail
 	fi
@@ -75,7 +75,7 @@ fi
 # xml xattr perm test - 7
 {
 	gfxattr -lx $target 
-	if [ $? == 0 ]; then
+	if [ $? = 0 ]; then
 		# msut fail
 		exit $exit_fail
 	fi

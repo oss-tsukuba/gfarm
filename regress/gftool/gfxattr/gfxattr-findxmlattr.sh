@@ -385,7 +385,7 @@ echo '<b>bbb</b>' > $attrfile2
 # xml xattr find test - 6.3
 {
 	gffindxmlattr -d -1 /a / 
-	if [ $? == 0 ]; then
+	if [ $? = 0 ]; then
 		# must fail
 		exit $exit_fail
 	fi

@@ -17,7 +17,7 @@
 # xml xattr remove test - 3
 {
 	gfxattr -rx / "$attrname"XXX 
-	if [ $? == 0 ]; then
+	if [ $? = 0 ]; then
 		# must fail if not exists
 		exit $exit_fail
 	fi
@@ -42,7 +42,7 @@
 # xml xattr remove test - 6
 {
 	gfxattr -rx $fileX "$attrname"XXX 
-	if [ $? == 0 ]; then
+	if [ $? = 0 ]; then
 		# must fail if not exists
 		exit $exit_fail
 	fi

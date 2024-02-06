@@ -204,3 +204,9 @@ gfxattr -s -c -x -f $xmltest/testxml   D/D/d test
 gffindxmlattr //name /A/B
 gffindxmlattr //name /A
 gffindxmlattr //name /
+
+# clean up
+gfrm [abcd]
+gfrm -rf [ABCD]
+fusermount -u $mountp
+rmdir $mountp

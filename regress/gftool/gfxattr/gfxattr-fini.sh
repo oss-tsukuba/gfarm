@@ -10,4 +10,5 @@ gfchmod 0755 $subdir
 rm -rf $fusemnt/$subdir
 rm -rf $fusemnt/$subdir2
 rm -f $fusemnt/$fileX
-sudo umount $fusemnt
+fusermount -u $fusemnt
+rmdir $fusemnt

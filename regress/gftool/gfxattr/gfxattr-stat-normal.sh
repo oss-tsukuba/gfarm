@@ -9,7 +9,7 @@
 	fi
 	gfstat / > $getstat
 	cmp -s $statfile $getstat
-	if [ $? == 0 ]; then
+	if [ $? = 0 ]; then
 		# ctime must be changed 
 		exit $exit_fail
 	fi
@@ -63,7 +63,7 @@
 	fi
 	gfstat / > $getstat
 	cmp -s $statfile $getstat
-	if [ $? == 0 ]; then
+	if [ $? = 0 ]; then
 		# ctime must be changed 
 		exit $exit_fail
 	fi
