@@ -24,7 +24,7 @@ RUN apt-get update \
     myproxy globus-simple-ca \
     libkrb5-dev \
     libsasl2-dev sasl2-bin libscitokens-dev \
-    golang jq pandoc curl
+    golang jq pandoc curl attr
 
 RUN \
   # sshd
