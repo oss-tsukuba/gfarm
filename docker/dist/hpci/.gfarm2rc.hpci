@@ -1,0 +1,17 @@
+# HPCI shared storage 
+# gfarm version: 2.7.20
+# conf version: 1
+metadb_server_host ms-0.r-ccs.riken.jp
+metadb_server_port 601
+metadb_server_list ms-0.r-ccs.riken.jp:601 ms-1.r-ccs.riken.jp:601 gfm11.hpci.itc.u-tokyo.ac.jp:601 gfm12.hpci.itc.u-tokyo.ac.jp:601
+
+auth enable gsi_auth *
+
+sockopt keepalive
+spool_server_cred_type host
+spool_server_cred_service gfsd
+network_receive_timeout 1200
+
+schedule_busy_load_thresh 4.0
+
+network_send_timeout 60
