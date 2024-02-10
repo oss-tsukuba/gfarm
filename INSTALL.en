@@ -108,16 +108,16 @@ Required Package
 openssl-devel		(openssl11-devel(*) required for TLS/SASL on CentOS 7)
 postgresql-devel or libpq-devel
 cyrus-sasl-devel			(required for SASL)
-cyrus-sasl-xoauth2-idp(**)		(required for SASL XOAUTH2)
+scitokens-cpp-devel, cyrus-sasl-xoauth2-idp(**)	(required for SASL XOAUTH2)
 krb5-devel				(required for Kerberos)
 globus-gssapi-gsi-devel(*), pkgconfig	(required for --with-globus option)
 rdma-core-devel				(required for --with-infiniband option)
 postgresql, postgresql-server		(required to execute config-gfarm)
-fuse-devel, libacl-devel		(required to build gfarm2fs)
+fuse, fuse-devel, libacl-devel		(required for gfarm2fs)
 ganglia-gmond-python		(required to execute config-gf[ms]d-iostat)
 python3, python3-docopt(*), python3-schema(*)	(required to execute gfptar)
 ruby				(required to execute gfjournal{dump,admin})
-golang					(required for jwt-agent)
+jq					(required for jwt-parse)
 
 (*) These packages are included in EPEL.  EPEL packages can be used by
     # yum install epel-release
@@ -128,15 +128,15 @@ golang					(required for jwt-agent)
 libssl-dev
 libpq-dev
 libsasl2-dev, sasl2-bin			(required for SASL)
-cyrus-sasl-xoauth2-idp(**)		(required for SASL XOAUTH2)
+libscitokens-dev, cyrus-sasl-xoauth2-idp(**)	(required for SASL XOAUTH2)
 libkrb5-dev				(required for Kerberos)
 libglobus-gssapi-gsi-dev, pkgconf	(required for --with-globus option)
 libibverbs-dev				(required for --with-infiniband option)
 postgresql, postgresql-client		(required to execute config-gfarm)
-libfuse-dev, libacl1-dev		(required to build gfarm2fs)
+fuse, libfuse-dev, libacl1-dev		(required for gfarm2fs)
 python3, python3-docopt, python3-schema	(required to execute gfptar)
 ruby				(required to execute gfjournal{dump,admin})
-golang					(required for jwt-agent)
+jq					(required for jwt-parse)
 
 (**) https://github.com/oss-tsukuba/cyrus-sasl-xoauth2-idp.git
 
