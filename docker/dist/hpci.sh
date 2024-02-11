@@ -14,10 +14,15 @@ grep "NAME_COMPATIBILITY=HYBRID" $GSICONF || {
 sudo mkdir -p /etc/grid-security/certificates
 OPWD=$PWD
 cd /etc/grid-security/certificates
-[ -f 61cd35bd.signing_policy ] ||
-	sudo wget https://www.hpci.nii.ac.jp/ca/61cd35bd.signing_policy
-[ -f 61cd35bd.0 ] ||
-	sudo wget https://www.hpci.nii.ac.jp/ca/61cd35bd.0
+HASH=61cd35bd
+for suf in signing_policy 0
+do
+	[ -f $HASH.$suf ] || {
+		[ -f $OPWD/hpci/$HASH.$suf ] &&
+			sudo cp $OPWD/hpci/$HASH.$suf . ||
+			sudo wget https://www.hpci.nii.ac.jp/ca/$HASH.$suf
+	}
+done
 cd $OPWD
 
 [ -f get_gfarm2conf.sh ] ||
@@ -26,7 +31,6 @@ get_gfarm2conf.sh
 
 [ -f ~/.gfarm2rc.hpci ] ||
 	sh ./get_gfarm2conf.sh -f ~/.gfarm2rc.hpci
-
 
 echo mv ~/.globus ~/.globus.bak
 echo myproxy-logon -s portal.hpci.nii.ac.jp -t 168 -l HPCI-ID
