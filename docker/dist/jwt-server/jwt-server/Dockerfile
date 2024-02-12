@@ -1,6 +1,7 @@
 FROM almalinux:8
 
-RUN dnf -y update \
+RUN dnf -y upgrade almalinux-release \
+ && dnf -y update \
  && dnf -y install \
     git java-11-devel tomcat httpd mod_ssl maven mariadb-server \
  && alternatives --set java java-11-openjdk.x86_64
