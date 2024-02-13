@@ -1,6 +1,7 @@
 FROM almalinux:8
 
-RUN dnf -y update \
+RUN dnf -y upgrade almalinux-release \
+ && dnf -y update \
  && dnf -y install \
     git wget rpm-build \
     gcc make libtool \
