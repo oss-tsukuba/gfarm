@@ -8,6 +8,8 @@ build_pkg=false
 gfarm_config=all
 install_option=
 REGRESS=false
+: ${REGRESS_GSI:=false}
+
 while [ $# -gt 0 ]
 do
 	case $1 in
@@ -164,6 +166,10 @@ do
 			ssh $h sh $PWD/check.sh
 		done
 	fi
+	case $a in
+	gsi*)
+		$REGRESS_GSI || continue ;;
+	esac
 	$REGRESS && sh ./regress.sh
 	$REGRESS && sh ./regress-xattr.sh
 done
