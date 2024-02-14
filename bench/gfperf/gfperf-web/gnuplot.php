@@ -246,7 +246,7 @@ class GNUPlot {
 		$arr[5] += 1900;
 		$arr[4]++;
 		$iTztime = gmmktime($arr[2], $arr[1], $arr[0], $arr[4],
-				    $arr[3], $arr[5], $arr[8]);
+				    $arr[3], $arr[5]);
 		return $iTztime-$iTime;
 	}
 
