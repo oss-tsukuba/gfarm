@@ -50,7 +50,8 @@ install_from_source() {
     tar xvf $PKG
     cd "$SRCDIR"
     ./configure --libdir=$(pkg-config --variable=libdir globus-gridftp-server)
-    make
+    #make
+    make CPPFLAGS='-DUSE_GLOBUS_GFS_CMD_TRNC -DUSE_GLOBUS_GFS_CMD_SITE_RDEL'
     sudo make install
 }
 
