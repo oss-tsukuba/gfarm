@@ -14,12 +14,12 @@ if [ $# -lt 2 ]; then
     exit 1
 fi
 
+config=
 case $1 in
   sharedsecret) config=${Config_sharedsecret} ;;
   gsi_auth) config=${Config_gsi_auth} ;;
   gsi) config=${Config_gsi} ;;
-  *) echo "type must be sharedsecret or gsi_auth or gsi." >&2
-     exit 1 ;;
+  *) ;;
 esac
 
 if [ ! -f $Config_sharedsecret ]; then
@@ -40,6 +40,6 @@ if [ ! -f $Config_gsi ]; then
     echo "auth enable gsi *" >> $Config_gsi
 fi
 
-export GFARM_CONFIG_FILE=$config
+[ X"$config" = X ] || export GFARM_CONFIG_FILE=$config
 shift
 exec $*
