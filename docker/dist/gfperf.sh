@@ -16,7 +16,7 @@ DATABASE=/tmp/database.db
 MPOINT=/tmp/gfperf
 
 # sh all.sh min
-# sh hpci.sh 
+# sh hpci.sh
 # export GFARM_CONFIG_FILE=$HOME/.gfarm2rc.hpci
 # mv ~/.globus ~/.globus.bak
 # myproxy-logon -s portal.hpci.nii.ac.jp -t 168 -l $HPCI_ID
@@ -55,7 +55,7 @@ copy: [
 EOF
 
 mkdir -p $MPOINT
-gfperf.rb test.yml 
+gfperf.rb test.yml
 
 # sudo apt-get -y install apache2
 sudo mkdir /var/www/html/gfperf
@@ -72,4 +72,4 @@ sudo sh -c "sed 's|var/www|tmp|' config.php.bak > config.php"
 # vi /etc/apache2/conf-available/gfperf.conf
 # ln -s ../conf-available/gfperf.conf /etc/apache2/conf-enabled/
 
-sudo service apache2 start 
+sudo service apache2 start
