@@ -78,6 +78,8 @@ Passphrase: (paste the passphrase displayed)
     % myproxy-logon -s portal.hpci.nii.ac.jp -t 168 -l HPCI-ID
     % export GFARM_CONFIG_FILE=$HOME/.gfarm2rc.hpci
 
+To execute gfperf, execute `gfperf.sh` after editing at least $PROJ and $HPCI\_ID
+
 ## Batch tests
 
 Build, install and setup tests for all distributions.
