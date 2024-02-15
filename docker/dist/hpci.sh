@@ -1,5 +1,6 @@
 #!/bin/sh
-set -xeu
+${DEBUG:=false} && set -x
+set -eu
 status=1
 trap '[ $status = 1 ] && echo NG; rm -f get_gfarm2conf.sh; exit $status' \
 	0 1 2 15
@@ -32,8 +33,10 @@ get_gfarm2conf.sh
 [ -f ~/.gfarm2rc.hpci ] ||
 	sh ./get_gfarm2conf.sh -f ~/.gfarm2rc.hpci
 
+echo \# YOU NEED TO DO THE FOLLOWING
 echo mv ~/.globus ~/.globus.bak
-echo myproxy-logon -s portal.hpci.nii.ac.jp -t 168 -l HPCI-ID
 echo export GFARM_CONFIG_FILE=$HOME/.gfarm2rc.hpci
+echo jwt-agent -s https://elpis.hpci.nii.ac.jp/ -l HPCI_ID
+echo or myproxy-logon -s portal.hpci.nii.ac.jp -t 168 -l HPCI-ID
 status=0
 echo Done

@@ -1,16 +1,13 @@
 #!/bin/sh
-set -xeu
+${DEBUG:=false} && set -x
+set -eu
+status=1
+PROG=$(basename $0)
+trap '[ $status = 0 ] && echo Done || echo NG: $PROG; exit $status' 0 1 2 15
 
 PROJ=hp120273
 HPCI_ID=hpci000543
 GHOME=home/$PROJ/$HPCI_ID
-
-#GFSD1=gfs74-2.hpci.itc.u-tokyo.ac.jp
-#GFSD2=ss-10-1-3.r-ccs.riken.jp
-GFSD1=$(gfsched -n 1 -D u-tokyo.ac.jp)
-GFSD2=$(gfsched -n 1 -D r-ccs.riken.jp)
-[ X"$GFSD1" != X ]
-[ X"$GFSD2" != X ]
 
 DATABASE=/tmp/database.db
 MPOINT=/tmp/gfperf
@@ -34,10 +31,16 @@ echo "auth enable tls_client_certificate *" >> $GFCONF
 awk '/^auth/ {print "auth disable", $3, $4}' $SYSCONF >> $GFCONF
 
 grid-proxy-info
+#GFSD1=gfs74-2.hpci.itc.u-tokyo.ac.jp
+#GFSD2=ss-10-1-3.r-ccs.riken.jp
+GFSD1=$(gfsched -n 1 -D u-tokyo.ac.jp)
+GFSD2=$(gfsched -n 1 -D r-ccs.riken.jp)
+[ X"$GFSD1" != X ]
+[ X"$GFSD2" != X ]
 gfhost -lv $GFSD1 $GFSD2
 
 sudo apt-get -y update
-sudo apt-get -y install php php-sqlite3 ruby ruby-sqlite3 sqlite gnuplot
+sudo apt-get -y install php php-sqlite3 ruby ruby-sqlite3 gnuplot
 
 cat <<EOF > test.yml
 database: {filename: "$DATABASE", check span: "10days",
@@ -55,6 +58,7 @@ copy: [
 EOF
 
 mkdir -p $MPOINT
+echo gfperf.rb test.yml
 gfperf.rb test.yml
 
 # sudo apt-get -y install apache2
@@ -73,3 +77,4 @@ sudo sh -c "sed 's|var/www|tmp|' config.php.bak > config.php"
 # ln -s ../conf-available/gfperf.conf /etc/apache2/conf-enabled/
 
 sudo service apache2 start
+status=0

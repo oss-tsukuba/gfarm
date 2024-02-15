@@ -75,10 +75,13 @@ Passphrase: (paste the passphrase displayed)
     execute all.sh or all-rpm.sh
     % sh ./hpci.sh
     % mv ~/.globus ~/.globus.bak
-    % myproxy-logon -s portal.hpci.nii.ac.jp -t 168 -l HPCI-ID
     % export GFARM_CONFIG_FILE=$HOME/.gfarm2rc.hpci
+    % jwt-agent -s https://elpis.hpci.nii.ac.jp/ -l HPCI_ID
 
-To execute gfperf, execute `gfperf.sh` after editing at least $PROJ and $HPCI\_ID
+To execute gfperf, execute the following after editing at least $PROJ and $HPCI\_ID
+
+    % myproxy-logon -s portal.hpci.nii.ac.jp -t 168 -l HPCI-ID
+    % sh gfperf.sh
 
 ## Batch tests
 
