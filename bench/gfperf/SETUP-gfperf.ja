@@ -7,12 +7,11 @@
    性能測定ツールでは以下のソフトウェアを使用します。
    予めインストールしておいてください。
 
-   ruby 1.8
+   ruby
    ruby-sqlite3 (Redhat, CentOSの場合EPELリポジトリが必要)
-   apache 2.2
-   php 5.1以上
-   php-pdo
-   sqlite3
+   apache2
+   php (8 以上)
+   php-sqlite3
    gnuplot
 
 2. インストール方法

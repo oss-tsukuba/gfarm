@@ -6,12 +6,11 @@
 1.1 Before installation
    Gfperf requires following software packages.
 
-   ruby 1.8
+   ruby
    ruby-sqlite3 (EPEL is required on Redhat, CentOS)
-   apache 2.2
-   php 5.1 or above
-   php-pdo
-   sqlite3
+   apache2
+   php (8 or above)
+   php-sqlite3
    gnuplot
 
 2. How to install
