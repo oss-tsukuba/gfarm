@@ -1,7 +1,7 @@
 '\" t
 .\"     Title: gfhost
-.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
 .\"      Date: 14 Mar 2019
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
@@ -85,7 +85,7 @@ Gfarmファイルシステムでは、ファイルシステムノードはメタ
 \fBgfsd\fR
 へ アクセスできなかった場合には \-\&.\-\-/\-\&.\-\-/\-\&.\-\- と表示します。
 .sp
-認証手段では、「G」は GSI 認証および暗号化、 「g」は認証処理のみ GSI で認証後は保護のない生データ (gsi_auth)、 「s」は sharedsecret 認証、「x」は認証失敗、「\-」は認証を 試みなかったことを示します。また、「\-U」オプション指定時には、 この認証手段の表示欄はなくなります。
+認証手段では、 「T」はTLSによるクライアント証明書認証、 「S」はTLSによる共有鍵認証、 「A」はTLSによるSASL認証、 「a」は認証中のみTLSによるSASL認証、 「K」はKerberos認証および暗号化通信、 「k」はKerberos認証のあと平文通信、 「G」は GSI 認証および暗号化、 「g」は認証処理のみ GSI で認証後は保護のない生データ (gsi_auth)、 「s」は sharedsecret 認証、「x」は認証失敗、「\-」は認証を 試みなかったことを示します。また、「\-U」オプション指定時には、 この認証手段の表示欄はなくなります。
 .sp
 フラグ欄については \-f オプションの項目をご覧ください。
 .sp

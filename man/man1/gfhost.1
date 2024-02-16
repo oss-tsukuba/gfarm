@@ -1,7 +1,7 @@
 '\" t
 .\"     Title: gfhost
-.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
 .\"      Date: 14 Mar 2019
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
@@ -93,7 +93,7 @@ If the host cannot be accessed due to a machine down or a network problem, etc\&
 \fBgfsd\fR
 on the host cannot be accessed, \-\&.\-\-/\-\&.\-\-/\-\&.\-\- will be displayed\&.
 .sp
-In the field of the authentication method, `G\*(Aq means the GSI authentication and the encryption, `g\*(Aq means only authentication is performed by GSI and actual communication is unprotected plain data (gsi_auth), `s\*(Aq means the gfarm sharedsecret authentication, `x\*(Aq means that the authentication fails, and `\-\*(Aq means that the authentication wasn\*(Aqt actually tried\&. With the \-U option, there is no authentication method field\&.
+In the field of the authentication method, `T\*(Aq means the client certificate authentication over TLS, `S\*(Aq means the Gfarm shared secret authentication over TLS, `A\*(Aq means SASL authentication over TLS, `a\*(Aq means SASL authentication over TLS but the plain communication after the authentication, `K\*(Aq means the Kerberos authentication and the encrypted communication, `k\*(Aq means the Kerberos authentication and the plain communication, `G\*(Aq means the GSI authentication and the encryption, `g\*(Aq means only authentication is performed by GSI and actual communication is unprotected plain data (gsi_auth), `s\*(Aq means the gfarm sharedsecret authentication, `x\*(Aq means that the authentication fails, and `\-\*(Aq means that the authentication wasn\*(Aqt actually tried\&. With the \-U option, there is no authentication method field\&.
 .sp
 In the field of the flags, refer to the \-f option\&.
 .sp
