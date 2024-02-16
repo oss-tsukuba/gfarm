@@ -151,6 +151,7 @@ do_copy_to_gfarm()
 		       et);
 
 	free(buf);
+	unlink(src);
 	gfs_unlink(dst);
 
 	return (GFARM_ERR_NO_ERROR);
@@ -273,6 +274,7 @@ do_copy_from_gfarm()
 		       et);
 
 	free(buf);
+	gfs_unlink(src);
 	unlink(dst);
 
 	return (GFARM_ERR_NO_ERROR);
