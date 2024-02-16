@@ -169,9 +169,8 @@ gfarm_auth_request_sasl_common(struct gfp_xdr *conn,
 		if (e == GFARM_ERR_NO_ERROR)
 			e = gfp_xdr_flush(conn);
 		sasl_dispose(&sasl_conn);
-		gfp_xdr_tls_reset(conn); /* is this case graceful? */
-		/* XXX change this to GFARM_ERR_AUTHENTICATION if graceful */
-		return (GFARM_ERR_PROTOCOL_NOT_AVAILABLE);
+		gfp_xdr_tls_reset(conn);
+		return (GFARM_ERR_AUTHENTICATION);
 	}
 
 	if (gflog_auth_get_verbose()) {
@@ -459,11 +458,11 @@ gfarm_auth_request_sasl_receive_mechanisms(int events, int fd, void *closure,
 				    state->hostname,
 				    sasl_errstring(r, NULL, NULL));
 			}
-			/*
-			 * XXX change this to GFARM_ERR_AUTHENTICATION
-			 * if graceful
-			 */
-			state->error = GFARM_ERR_PROTOCOL_NOT_AVAILABLE;
+			/* chosen_mechanism == "" means error */
+			e = gfp_xdr_send(state->conn, "s", "");
+			if (e == GFARM_ERR_NO_ERROR)
+				e = gfp_xdr_flush(state->conn);
+			state->error = GFARM_ERR_AUTHENTICATION;
 		} else if ((rv = gfarm_eventqueue_add_event(state->q,
 		    state->writable, NULL)) != 0) {
 			state->error = gfarm_errno_to_error(rv);

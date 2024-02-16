@@ -155,8 +155,12 @@ gfarm_authorize_sasl_common(struct gfp_xdr *conn,
 	if (e != GFARM_ERR_NO_ERROR || eof ||
 	    (chosen_mechanism != NULL && chosen_mechanism[0] == '\0')) {
 		/* chosen_mechanism == "" means error */
-		if (e == GFARM_ERR_NO_ERROR && EOF) /* i.e. eof */
-			e = GFARM_ERR_UNEXPECTED_EOF;
+		if (e == GFARM_ERR_NO_ERROR) {
+			if (eof)
+				e = GFARM_ERR_UNEXPECTED_EOF;
+			else
+				e = GFARM_ERR_AUTHENTICATION;
+		}
 		sasl_dispose(&sasl_conn);
 		gfp_xdr_tls_reset(conn); /* is this case graceful? */
 		return (e);
