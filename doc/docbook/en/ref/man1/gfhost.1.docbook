@@ -222,6 +222,15 @@ is the default function of <command moreinfo="none">gfhost</command>.
       </para>
       <para>
 	In the field of the authentication method,
+	`T' means the client certificate authentication over TLS,
+	`S' means the Gfarm shared secret authentication over TLS,
+	`A' means SASL authentication over TLS,
+	`a' means SASL authentication over TLS but the plain
+	communication after the authentication,
+	`K' means the Kerberos authentication and the encrypted
+	communication,
+	`k' means the Kerberos authentication and the plain
+	communication,
 	`G' means the GSI authentication and the encryption,
 	`g' means only authentication is performed by GSI and
 	actual communication is unprotected plain data (gsi_auth),
