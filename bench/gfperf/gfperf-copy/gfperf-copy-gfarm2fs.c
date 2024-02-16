@@ -180,6 +180,7 @@ do_copy() {
 	et = (float)exec_time.tv_sec + (float)exec_time.tv_usec/1000000;
 
 	free(buf);
+	unlink(src_filename);
 	unlink(dst_filename);
 
 	switch (direction) {
