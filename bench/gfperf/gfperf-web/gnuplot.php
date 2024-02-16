@@ -204,7 +204,9 @@ class GNUPlot {
 
 	private function init_common() {
 		if (!is_null($this->title())) {
-			$this->gplot->puts("set title \"" . $this->title() . "\"");
+			$title = str_replace("_", "\\\\_", $this->title());
+			$this->gplot->puts("set title \"" . $title . "\"");
+
 		}
 		$this->gplot->puts("set yrange[0:]");
 		$this->gplot->puts("set key left top");
