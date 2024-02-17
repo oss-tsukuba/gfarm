@@ -243,9 +243,12 @@ gfarm_auth_request_sasl_common(struct gfp_xdr *conn,
 	if (step_type == GFARM_AUTH_SASL_STEP_DONE) {
 		return (GFARM_ERR_NO_ERROR);
 	} else {
-		gfp_xdr_tls_reset(conn); /* is this case graceful? */
-		/* XXX change this to GFARM_ERR_AUTHENTICATION if graceful */
-		return (GFARM_ERR_PROTOCOL_NOT_AVAILABLE);
+		if (gflog_auth_get_verbose()) {
+			gflog_notice(GFARM_MSG_UNFIXED,
+			    "%s: SASL authentication failed", hostname);
+		}
+		gfp_xdr_tls_reset(conn);
+		return (GFARM_ERR_AUTHENTICATION);
 	}
 }
 
@@ -305,8 +308,7 @@ gfarm_auth_request_sasl_step(int events, int fd, void *closure,
 	} else if (step_type == GFARM_AUTH_SASL_STEP_DONE) {
 		/* leave state->error as is. i.e. GFARM_ERR_NO_ERROR */
 	} else if (step_type != GFARM_AUTH_SASL_STEP_CONTINUE) {
-		/* XXX change this to GFARM_ERR_AUTHENTICATION if graceful */
-		state->error = GFARM_ERR_PROTOCOL_NOT_AVAILABLE;
+		state->error = GFARM_ERR_AUTHENTICATION;
 	} else if ((e = gfp_xdr_recv(state->conn, 1, &eof, "B",
 	    &rsz, &response)) != GFARM_ERR_NO_ERROR || eof) {
 		if (e == GFARM_ERR_NO_ERROR) /* i.e. eof */
