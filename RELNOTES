@@ -1,10 +1,21 @@
+Release note for Gfarm 2.8.3
+============================
+
+[2024.2.20]
+
+Updated feature
+* gfperf - allow new authentication methods.  support PHP7 or later
+
+Bug fix
+* When SASL authentication fails, do not proceed to the next
+  authentication method
+
 Release note for Gfarm 2.8.2
 ============================
 
 [2023.12.30]
 
 Bug fix
-
 * gfmd - synchronous slaves may be recognized as asyncronous slaves,
   introduced by the version 2.7.21
 
