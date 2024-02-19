@@ -244,7 +244,7 @@ gfarm_auth_request_sasl_common(struct gfp_xdr *conn,
 		return (GFARM_ERR_NO_ERROR);
 	} else {
 		if (gflog_auth_get_verbose()) {
-			gflog_notice(GFARM_MSG_UNFIXED,
+			gflog_notice(GFARM_MSG_1005663,
 			    "%s: SASL authentication failed", hostname);
 		}
 		gfp_xdr_tls_reset(conn);
