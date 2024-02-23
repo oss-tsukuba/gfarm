@@ -170,6 +170,7 @@ do
 	gsi*)
 		$REGRESS_GSI || continue ;;
 	esac
+	$build_pkg && continue
 	$REGRESS && sh ./regress.sh
 	$REGRESS && sh ./regress-xattr.sh
 done

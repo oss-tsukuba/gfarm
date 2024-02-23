@@ -63,10 +63,8 @@ done
 for d in $RHEL
 do
 	[ X"$d" = XNONE ] && break
-	for s in all.sh "all.sh pkg"
-	do
-		test $d "$s" "$option"
-	done
+	test $d all.sh "$option"
+	test $d all.sh "pkg $option"
 done
 
 # clean up
