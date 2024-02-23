@@ -1,6 +1,8 @@
 #!/bin/sh
 set -xeu
 
+gfstatus -S | egrep -v not | grep sasl > /dev/null || exit 0
+
 REGRESS=
 while [ $# -gt 0 ]
 do
@@ -33,8 +35,10 @@ run_jwt_agent()
 
 echo "*** oauth2 ***"
 : ${USER:=$(id -un)}
+PASSF=~/local/.jwt-pass
 PASS=
 jwt-parse > /dev/null || PASS=$(sh ./init-jwt.sh)
+[ X$PASS = X ] && PASS=$(cat $PASSF) || echo $PASS > $PASSF
 [ X$PASS = X ] || run_jwt_agent $PASS
 gfuser -A $USER SASL $SASL_USER
 sh ./edconf.sh oauth2 > /dev/null

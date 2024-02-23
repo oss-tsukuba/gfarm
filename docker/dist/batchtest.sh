@@ -4,7 +4,6 @@ status=1
 trap '[ $status = 0 ] && echo Done || echo NG; exit $status' 0 1 2 15
 
 option=min
-TEST_OPTION=
 DEBIAN=
 RHEL=
 DIST_SPECIFIED=false
@@ -12,7 +11,6 @@ while [ $# -gt 0 ]
 do
 	case $1 in
 	regress) option=$1 ;;
-	jwt) TEST_OPTION=$1 ;;
 	ubuntu) DEBIAN="$DEBIAN $1"; DIST_SPECIFIED=true ;;
 	rockylinux9|almalinux8|centos7) RHEL="$RHEL $1"; DIST_SPECIFIED=true ;;
 	*) exit 1 ;;
@@ -33,20 +31,15 @@ test()
 {
 	script="$2"
 	opt="$3"
-	JWT=false
-	[ $# -gt 3 ] && JWT=true
 
 	DIST=$1 docker compose build --build-arg UID=$(id -u) c1
 	DIST=$1 docker compose up -d
-
-	# JWT-Server
-	$JWT && (cd jwt-server && docker compose up -d && make setup)
 
 	# execute a script
 	$DOCKEREXEC sh $script $opt
 
 	# SASL XOAUTH2 test
-	$JWT && $DOCKEREXEC sh ./check-oauth.sh $opt
+	$DOCKEREXEC sh ./check-oauth.sh $opt
 
 	docker compose down
 }
@@ -54,12 +47,16 @@ test()
 # clean up
 make down
 
+# JWT Server
+docker compose up -d	# for gfarm_net
+(cd jwt-server && docker compose up -d && make setup)
+docker compose down
+
 # debian
 for d in $DEBIAN
 do
 	[ X"$d" = XNONE ] && break
-	test $d all.sh "$option" $TEST_OPTION
-	[ X"$TEST_OPTION" = X ] || TEST_OPTION=
+	test $d all.sh "$option"
 done
 
 # RHEL
@@ -68,8 +65,7 @@ do
 	[ X"$d" = XNONE ] && break
 	for s in all.sh "all.sh pkg"
 	do
-		test $d "$s" "$option" $TEST_OPTION
-		[ X"$TEST_OPTION" = X ] || TEST_OPTION=
+		test $d "$s" "$option"
 	done
 done
 
