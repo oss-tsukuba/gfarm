@@ -8,18 +8,19 @@ DOCKEREXEC="docker exec -u $USER -w /home/$USER/gfarm/docker/dist/mixed gfarm-c1
 # clean up
 make down
 
-JWT=true
-
 docker compose up -d
 
 # JWT-Server
-$JWT && (cd ../jwt-server && docker compose up -d && make setup)
+(cd ../jwt-server && docker compose up -d && make setup)
 
 # execute a script
 $DOCKEREXEC sh all.sh
 
 # SASL XOAUTH2 test
-$JWT && $DOCKEREXEC sh ../check-oauth.sh
+$DOCKEREXEC sh ../check-oauth.sh
+
+# multitenant test
+$DOCKEREXEC sh ../check-multitenant.sh
 
 # clean up
 make down
