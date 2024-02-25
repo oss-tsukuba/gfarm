@@ -41,6 +41,9 @@ test()
 	# SASL XOAUTH2 test
 	$DOCKEREXEC sh ./check-oauth.sh $opt
 
+	# Multitenant test
+	$DOCKEREXEC sh ./check-multitenant.sh $opt
+
 	docker compose down
 }
 
