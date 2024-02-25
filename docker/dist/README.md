@@ -87,13 +87,11 @@ To execute gfperf, execute the following after editing at least $PROJ and $HPCI\
 
 Build, install and setup tests for all distributions.
 
-    % sh ./batchtest.sh
+    % sh ./batchtest.sh [ regress | regress_full ]
 
-or
+When regress or regress\_full option is specified this test includes regression tests.  For all authentications, use regress\_full not regress.  The log files of regression tests are stored in gfarm/build/regress.
 
-    % sh ./batchtest.sh regress
-
-batchtest.sh accepts the following options.
+`batchtest.sh` accepts the following options.
 
 - ubuntu, rockylinux9, almalinux8, centos7 - specifies a distrubution to test.  mutiple distributions can be specified
 

@@ -23,12 +23,13 @@ do
 		jwt-parse > /dev/null
 		AUTH="$AUTH sasl"
 		SASL="sasl_mechanisms XOAUTH2" ;;
-	anonymous)
+	anonymous|anonymous_auth)
 		gfuser anonymous > /dev/null 2>&1 || {
 			gfuser -c anonymous anon / ""
 			gfgroup -m -a gfarmadm anonymous
 		}
-		AUTH="$AUTH sasl"
+		[ $1 = anonymous ] && AUTH="$AUTH sasl" ||
+			AUTH="$AUTH sasl_auth"
 		SASL="sasl_mechanisms ANONYMOUS\nsasl_user dummy" ;;
 	*) exit 1 ;;
 	esac

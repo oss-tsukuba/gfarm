@@ -13,7 +13,7 @@ do
         case $1 in
         pkg|min)
             REGRESS=false ;;
-        regress)
+        regress|regress_full)
             [ X$REGRESS = X ] && REGRESS=true ;;
         *) exit 1 ;;
         esac

@@ -8,7 +8,7 @@ build_pkg=false
 gfarm_config=all
 install_option=
 REGRESS=false
-: ${REGRESS_GSI:=false}
+REGRESS_FULL=false
 
 while [ $# -gt 0 ]
 do
@@ -18,11 +18,12 @@ do
 	min) gfarm_config=min
 	     install_option=single
 	     REGRESS=false ;;
-	regress)
+	regress|regress_full)
 	     $build_pkg || {
 	     gfarm_config=all
 	     install_option=
 	     REGRESS=true
+	     [ $1 = "regress_full" ] && REGRESS_FULL=true
 	     } ;;
 	*) exit 1 ;;
 	esac
@@ -152,7 +153,7 @@ for a in $(gfstatus -S | grep 'client auth' | grep -v not | awk '{ print $3 }')
 do
 	[ $a = gsi ] && AUTH="$AUTH gsi gsi_auth"
 	[ $a = tls ] && AUTH="$AUTH tls_sharedsecret tls_client_certificate"
-	[ $a = sasl ] && AUTH="$AUTH anonymous"
+	[ $a = sasl ] && AUTH="$AUTH anonymous anonymous_auth"
 done
 AUTH="$AUTH sharedsecret"
 for a in $AUTH
@@ -167,8 +168,9 @@ do
 		done
 	fi
 	case $a in
-	gsi*)
-		$REGRESS_GSI || continue ;;
+	gsi*|\
+	tls_sharedsecret|anonymous_auth)
+		$REGRESS_FULL || continue ;;
 	esac
 	$build_pkg && continue
 	$REGRESS && sh ./regress.sh

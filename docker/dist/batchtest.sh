@@ -10,7 +10,7 @@ DIST_SPECIFIED=false
 while [ $# -gt 0 ]
 do
 	case $1 in
-	regress) option=$1 ;;
+	regress|regress_full) option=$1 ;;
 	ubuntu) DEBIAN="$DEBIAN $1"; DIST_SPECIFIED=true ;;
 	rockylinux9|almalinux8|centos7) RHEL="$RHEL $1"; DIST_SPECIFIED=true ;;
 	*) exit 1 ;;
