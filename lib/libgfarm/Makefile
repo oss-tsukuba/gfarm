@@ -28,6 +28,3 @@ $(OBJS): subdir-all
 
 include $(top_srcdir)/makes/subdir.mk
 include $(top_srcdir)/makes/lib.mk
-
-clean:
-	$(RM) -f hook_test hook_test_mpi
