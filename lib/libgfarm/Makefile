@@ -13,6 +13,3 @@ SUBDIRS = gfutil $(globus_targets) $(kerberos_targets) gfarm
 all: subdir-all
 
 include $(top_srcdir)/makes/subdir.mk
-
-clean:
-	$(RM) -f hook_test hook_test_mpi
