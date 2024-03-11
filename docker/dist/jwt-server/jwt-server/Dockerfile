@@ -1,10 +1,8 @@
-FROM almalinux:8
+FROM rockylinux/rockylinux:9
 
-RUN dnf -y upgrade almalinux-release \
- && dnf -y update \
+RUN dnf -y update \
  && dnf -y install \
-    git java-11-devel tomcat httpd mod_ssl maven mariadb-server \
- && alternatives --set java java-11-openjdk.x86_64
+    git java-devel tomcat httpd mod_ssl maven mariadb-server
 
 COPY jwt-server.conf /etc/httpd/conf.d/
 COPY server.xml /etc/tomcat/
