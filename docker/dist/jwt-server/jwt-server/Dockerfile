@@ -15,12 +15,7 @@ RUN cd jwt-server \
  && mvn package \
  && cp target/jwt-server.war /usr/share/tomcat/webapps/ROOT.war
 
-COPY my.cnf.d/ /
-COPY init.sql /jwt-server/ddl/
-COPY init_master.sql /jwt-server/ddl/
-COPY init_slave.sql /jwt-server/ddl/
-COPY setup.sh /
-COPY setup_slave.sh /
+COPY cnf/charset.cnf /etc/my.cnf.d/
 
 RUN systemctl enable httpd \
  && systemctl enable tomcat \

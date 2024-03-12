@@ -22,6 +22,7 @@ services:
     container_name: gfarm-jwt-server
     volumes:
       - ../minica/minica.pem:/usr/share/pki/ca-trust-source/anchors/minica.crt
+      - ./jwt-server:/jwt
     networks:
       - gfarm_net
     privileged: true
@@ -31,6 +32,7 @@ services:
     container_name: gfarm-jwt-server2
     volumes:
       - ../minica/minica.pem:/usr/share/pki/ca-trust-source/anchors/minica.crt
+      - ./jwt-server:/jwt
     networks:
       - gfarm_net
     privileged: true

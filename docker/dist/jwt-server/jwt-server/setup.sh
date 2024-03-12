@@ -10,11 +10,5 @@ systemctl restart tomcat
 while [ ! -e /var/lib/mysql/mysql.sock ]; do
 	sleep 1
 done
-cd jwt-server/ddl
-mysql < init.sql
-mysql -u gfarm -pgfarm123 gfarmdb < jwt-server.ddl
-
-cp /mysql_master.cnf /etc/my.cnf.d/
-systemctl restart mysql
-
-mysql < init_master.sql
+mysql < /jwt/sql/init.sql
+mysql -u gfarm -pgfarm123 gfarmdb < /jwt-server/ddl/jwt-server.ddl
