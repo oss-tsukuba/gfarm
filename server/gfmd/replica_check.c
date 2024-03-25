@@ -633,7 +633,8 @@ replica_check_enqueue(struct inode *inode, struct dirset *tdirset,
 	spec.repattr = repattr;
 	replica_spec_dup(&info->replica_spec, &spec);
 	info->tdirset = tdirset;
-	dirset_inc_busy_count(tdirset);
+	if (tdirset != TDIRSET_IS_UNKNOWN && tdirset != TDIRSET_IS_NOT_SET)
+		dirset_inc_busy_count(tdirset);
 
 	replica_check_enqueue_internal(info, diag);
 }
