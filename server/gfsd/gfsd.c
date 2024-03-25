@@ -354,12 +354,21 @@ gflog_put_fd_problem_full(int msg_no,
 {
 	va_list ap;
 
+	/*
+	 * GFARM_ERR_OPERATION_NOT_PERMITTED may be caused by
+	 * GFM_PROTO_REVOKE_GFSD_ACCESS.
+	 * See subversion r9079 (git commit f00a866df)
+	 * and subversion r9114 (git commit 5cd885303)
+	 */
+
 	va_start(ap, format);
 	gflog_vmessage(msg_no,
 	    (e == GFARM_ERR_BAD_FILE_DESCRIPTOR ||
 	     e == GFARM_ERR_OPERATION_NOT_PERMITTED) &&
 	    client != NULL && connection_is_down(gfp_xdr_fd(client)) ?
-	    LOG_INFO : LOG_ERR, file, line_no, func, format, ap);
+		LOG_INFO :
+	    IS_CONNECTION_ERROR(e) ? LOG_NOTICE : LOG_ERR,
+	    file, line_no, func, format, ap);
 	va_end(ap);
 }
 
@@ -2271,7 +2280,7 @@ gfm_client_compound_put_fd_result(struct gfp_xdr *client, const char *diag)
 		    diag, gfarm_error_string(e));
 	else if ((e = gfm_client_compound_begin_result(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_1002294,
+		gflog_notice(GFARM_MSG_1002294,
 		    "gfmd protocol: compound_begin result error on %s: %s",
 		    diag, gfarm_error_string(e));
 	else if ((e = gfm_client_put_fd_result(gfm_server))
@@ -5840,7 +5849,7 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 			exit(1);
 		}
 		if (!gfm_client_connection_empty(gfm_server)) {
-			gflog_warning(GFARM_MSG_1003786, "protocol mismatch, "
+			gflog_notice(GFARM_MSG_1003786, "protocol mismatch, "
 			    "iobuffer not empty: request = %d", request);
 			cleanup(0);
 			exit(1);
