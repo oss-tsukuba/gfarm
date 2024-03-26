@@ -31,11 +31,15 @@ do
 	shift
 done
 
-rm -rf build
-mkdir build
-cd build
+if $CONF; then
+	rm -rf build
+	mkdir build
+	cd build
 
-$CONF && ../configure $CONF_OPT
+	../configure $CONF_OPT
+else
+	cd build
+fi
 make -j $(nproc) > /dev/null
 sudo make install > /dev/null
 
