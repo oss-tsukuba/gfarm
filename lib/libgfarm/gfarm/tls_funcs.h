@@ -2485,6 +2485,11 @@ runtime_init:
 			}
 		}
 
+#ifdef SSL_OP_IGNORE_UNEXPECTED_EOF /* OpenSSL 3.0 or later */
+		/* this API returns new bitmask of options, instead of error */
+		SSL_CTX_set_options(ssl_ctx, SSL_OP_IGNORE_UNEXPECTED_EOF);
+#endif
+
 #define VERIFY_DEPTH	50
 		/*
 		 * XXX FIXME:
@@ -3636,6 +3641,10 @@ tls_session_shutdown(struct tls_session_ctx_struct *ctx)
 		ret = GFARM_ERR_NO_ERROR;
 	} else {
 #if 1 /* do not call SSL_shutdown() to avoid protocol interaction here */
+		/*
+		 * if SSL_shutdown() is called, close operation of
+		 * spool_check-gfsd prevents parent-gfsd from working
+		 */
 		ret = GFARM_ERR_NO_ERROR;
 #else
 		int st = SSL_shutdown(ssl);
