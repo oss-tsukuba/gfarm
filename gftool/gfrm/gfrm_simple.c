@@ -18,12 +18,13 @@ struct options {
 	int force;
 	int noexecute;
 	int recursive;
+	int verbose;
 };
 
 static void
 usage(void)
 {
-	fprintf(stderr, "Usage: %s [-r] [-n] [-f] [-h hostname] "
+	fprintf(stderr, "Usage: %s [-r] [-n] [-f] [-v] [-h hostname] "
 	    "[-D domainname] file...\n", program_name);
 	exit(EXIT_FAILURE);
 }
@@ -95,6 +96,8 @@ remove_file(char *file, struct gfs_stat *st, void *arg)
 		e = GFARM_ERR_NO_ERROR;
 	if (e != GFARM_ERR_NO_ERROR)
 		fprintf(stderr, "%s: %s\n", file, gfarm_error_string(e));
+	else if (!options->noexecute && options->verbose)
+		printf("removed '%s'\n", file);
 	return (e);
 }
 
@@ -116,6 +119,8 @@ remove_dir(char *dir, struct gfs_stat *st, void *arg)
 		e = GFARM_ERR_NO_ERROR;
 	if (e != GFARM_ERR_NO_ERROR)
 		fprintf(stderr, "%s: %s\n", dir, gfarm_error_string(e));
+	else if (!options->noexecute && options->verbose)
+		printf("removed directory '%s'\n", dir);
 	return (e);
 }
 
@@ -142,14 +147,15 @@ main(int argc, char **argv)
 
 	options.host =
 	options.domain = NULL;
-	options.force = options.noexecute = options.recursive = 0;
+	options.force = options.noexecute = options.recursive =
+	options.verbose = 0;
 
 	if (argc > 0)
 		program_name = basename(argv[0]);
 	e = gfarm_initialize(&argc, &argv);
 	error_check(e);
 
-	while ((c = getopt(argc, argv, "D:fh:nr?")) != -1) {
+	while ((c = getopt(argc, argv, "D:fh:nrv?")) != -1) {
 		switch (c) {
 		case 'D':
 			options.domain = optarg;
@@ -165,6 +171,9 @@ main(int argc, char **argv)
 			break;
 		case 'r':
 			options.recursive = 1;
+			break;
+		case 'v':
+			options.verbose = 1;
 			break;
 		case '?':
 		default:
