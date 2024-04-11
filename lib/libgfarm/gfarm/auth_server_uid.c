@@ -268,6 +268,7 @@ gfarm_auth_uid_to_global_username_gsi(void *closure,
 	enum gfarm_auth_id_role auth_user_id_role = *auth_user_id_rolep;
 	char *cn, *hostname;
 
+	/* peer_role is not sent in GSI due to protocol compatibility */
 	if (auth_user_id_role != GFARM_AUTH_ID_ROLE_UNKNOWN) {
 		gflog_warning(GFARM_MSG_1005270,
 		    "auth_uid_to_global_username(id_role:%d, id:%s): "

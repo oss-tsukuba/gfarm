@@ -100,7 +100,9 @@ auth_uid_to_global_username_gsi(void *closure,
 	struct mdhost *m;
 	const char diag[] = "auth_uid_to_global_username_gsi";
 
+	/* peer_role is not sent in GSI due to protocol compatibility */
 	assert(auth_user_id_role == GFARM_AUTH_ID_ROLE_UNKNOWN);
+
 	giant_lock();
 	u = user_lookup_gsi_dn(auth_user_id);
 	if (u != NULL) {
