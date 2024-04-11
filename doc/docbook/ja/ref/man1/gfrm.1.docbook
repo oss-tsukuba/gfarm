@@ -22,7 +22,7 @@
 <refsynopsisdiv id="synopsis">
 <cmdsynopsis sepchar=" ">
   <command moreinfo="none">gfrm</command>
-    <arg choice="opt" rep="norepeat">-frn</arg>
+    <arg choice="opt" rep="norepeat">-frvn</arg>
     <arg choice="opt" rep="norepeat">-h <replaceable>ファイルシステムノード</replaceable></arg>
     <arg choice="opt" rep="norepeat">-D <replaceable>ドメイン名</replaceable></arg>
     <arg choice="plain" rep="repeat"><replaceable>gfarm-URL</replaceable></arg>
@@ -73,6 +73,14 @@
 <listitem>
 <para>引数がディレクトリだった場合，そのディレクトリ以下を
 全て，再帰的に削除します．</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-v</option></term>
+<listitem>
+<para>消去されるファイルを表示します．
+</para>
 </listitem>
 </varlistentry>
 
