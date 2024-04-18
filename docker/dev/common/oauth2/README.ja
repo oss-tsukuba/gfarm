@@ -1,13 +1,38 @@
 ☆ jwt-server/jwt-logon/jwt-agent 利用方法
 
-・コンテナ desktop:23389 に user/user でリモートデスクトップ接続できます。
- 接続後、ブラウザで jwt-server にアクセスすることが可能です。
+・方法1: squid コンテナ経由 (推奨)
+  手元のブラウザに https プロキシを設定します。
+    ホスト名: ホストのIPアドレス
+    プロトコル: http
+    ポート: 13128
+  設定後、jwt-server にアクセスします。
+
+  SwitchyOmega のブラウザ拡張を使うと便利です。
+  New Profile でプロキシの設定を追加して Apply Changes し、
+  auto switch の Host wildcard に jwt-server と jwt-keycloak
+  の2個を * よりも上に追加し、
+  それぞれ対象の Profile を指定し、Apply Changes します。
+
+・方法2: chrome コンテナ経由
+  手元のブラウザで http://ホストのIPアドレス:6901 にアクセスし、
+  kasm_user/password で接続します。
+  ブラウザの中で Google Chrome が動作します。
+  そこから jwt-server にアクセスします。
+  詳細: https://hub.docker.com/r/kasmweb/chrome
+
+・方法3: desktop コンテナ経由 (無効化済み)
+  ホストのIPアドレス:23389 に user/user でリモートデスクトップ接続します。
+  接続後、その中のブラウザで jwt-server にアクセスすることが可能です。
+  # docker-compose.yml において、コメントアウトしてあります。
 
 ・デフォルト設定の場合、jwt-server の URL は下記になります。
 
   https://jwt-server/
 
+  証明書の警告がでますが、2回警告を無視して続行して接続します。
+
 ・Keycloak には下記のユーザが追加されます。
+  いずれかのユーザ名でログインします。
 
   user1/PASSWORD
   user2/PASSWORD
@@ -24,5 +49,3 @@
  ex2)
  $ jwt-agent -s https://jwt-server -l user1
   (jwt-serverより取得したパスフレーズを入力)
-
- 

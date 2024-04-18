@@ -25,3 +25,15 @@ CREATE TABLE `tokens` (
   `iv` varchar(128) NOT NULL,
   PRIMARY KEY (`user`,`audience`)
 );
+
+DROP TABLE IF EXISTS issues;
+
+CREATE TABLE IF NOT EXISTS `issues` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `user` varchar(20) NOT NULL,
+  `date` timestamp NULL,
+  `ip_addr` varchar(256) DEFAULT NULL,
+  `hostname` varchar(256) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `id` (`id`)
+);

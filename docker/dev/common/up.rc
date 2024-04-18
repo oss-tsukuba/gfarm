@@ -122,7 +122,10 @@ for f in $(echo $MNT_SSH_HOST_KEY_DIR/ssh_host_*_key); do
     sudo chmod 400 $SSH_HOST_KEY_DIR/$(basename "$f")
   fi
 done
-sudo systemctl restart sshd
+while ! sudo systemctl restart sshd; do
+  # may fail due to timeout
+  sleep 1
+done
 
 SAVE_KEYS_SCRIPT=/home/${GFDOCKER_PRIMARY_USER}/SAVE_SSH_HOST_KEYS.sh
 cat << EOF > $SAVE_KEYS_SCRIPT

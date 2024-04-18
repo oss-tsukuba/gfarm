@@ -148,15 +148,37 @@ for h in hosts:
 if use_keycloak:
    print('''\
 
-  desktop:
-    build: common/oauth2/ubuntu
-    volumes:
-      - ./mnt:/mnt:ro
+  squid:
+    image: ubuntu/squid
     networks:
       gfarm_dev:
     ports:
-      - "0.0.0.0:23389:3389"
+      - "0.0.0.0:13128:3128"
+    volumes:
+      - ./common/oauth2/allow-ssl-ports.conf:/etc/squid/conf.d/allow-ssl-ports.conf:ro
+  # http://<host IP address>:6901
+  # login: kasm_user/password
+  chrome:
+    image: kasmweb/chrome:1.15.0-rolling
+    shm_size: '512m'
+    volumes:
+      - ./mnt/ChromeDownloads:/home/kasm-user/Downloads:rw
+    networks:
+      gfarm_dev:
+    ports:
+      - "0.0.0.0:6901:6901"
+    environment:
+      - VNC_PW=password
     <<: *common
+  # desktop:
+  #   build: common/oauth2/ubuntu
+  #   volumes:
+  #     - ./mnt:/mnt:ro
+  #   networks:
+  #     gfarm_dev:
+  #   ports:
+  #     - "0.0.0.0:23389:3389"
+  #   <<: *common
   jwt-server:
     hostname: jwt-server{}
     build: common/oauth2/apache
@@ -193,6 +215,8 @@ if use_keycloak:
       dockerfile: oauth2/keycloak/Dockerfile
     volumes:
       - ./mnt:/mnt:ro
+      - ./mnt/jwt-keycloak/jwt-keycloakcert.pem:/etc/x509/https/tls.crt
+      - ./mnt/jwt-keycloak/jwt-keycloakkey.pem:/etc/x509/https/tls.key
     networks:
       gfarm_dev:
     environment:

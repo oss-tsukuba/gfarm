@@ -322,6 +322,10 @@ define up
 	mkdir -p $(ROOTDIR)/mnt
 	# readable for others
 	chmod 755 $(ROOTDIR)/mnt
+
+	mkdir -p $(ROOTDIR)/mnt/ChromeDownloads
+	chmod 700 $(ROOTDIR)/mnt/ChromeDownloads
+
 	$(COMPOSE) up -d --force-recreate
 	$(eval TMPFILE = $(shell mktemp))
 	# speed-up
