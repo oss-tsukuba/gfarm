@@ -42,7 +42,8 @@ RUN \
     '    StrictHostKeyChecking no' \
     > /etc/ssh/ssh_config.d/ignore-host-key.conf
 
-RUN useradd -m -u $UID -s /bin/bash $USERNAME \
+RUN id $UID && userdel $(id -un $UID) || : \
+ && useradd -m -u $UID -s /bin/bash $USERNAME \
  && echo "$USERNAME ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers.d/$USERNAME \
  # delete passwd
  && passwd -d $USERNAME
