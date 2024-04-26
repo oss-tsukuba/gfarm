@@ -108,6 +108,7 @@ mech_list: XOAUTH2 ANONYMOUS
 xoauth2_scope: hpci
 xoauth2_aud: hpci
 xoauth2_user_claim: hpci.id
+xoauth2_issuers:
 EOF
 cat <<EOF | sudo tee $sasl_libdir/sasl2/gfarm-client.conf > /dev/null
 xoauth2_user_claim: hpci.id
