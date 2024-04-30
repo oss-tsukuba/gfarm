@@ -289,6 +289,12 @@ for t in $(seq 1 "$GFDOCKER_NUM_TENANTS"); do
  done
 done
 
+USER1_UID=$(id -u "$GFDOCKER_PRIMARY_USER")
+if [ $USER1_UID -ne 1000 ]; then
+    echo >&2 "Error: unexpected USER1_UID=${USER1_UID}"
+    exit 1
+fi
+
 su - "$GFDOCKER_PRIMARY_USER" -c " \
   cd ~/gfarm \
     && for f in ~/gfarm/docker/dev/patch/*.patch; do \
@@ -342,6 +348,9 @@ EOF
 chmod +x ${CLEAR_NOLOGIN_SCRIPT}
 systemctl enable ${CLEAR_NOLOGIN}
 
+### enable sshd
+systemctl enable ssh || :
+systemctl enable sshd || :
 
 ### setup autofs
 GFARM2FS_OPT="auto_uid_min=40000,auto_uid_max=50000,auto_gid_min=40000,auto_gid_max=50000"

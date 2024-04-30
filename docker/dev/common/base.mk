@@ -750,6 +750,9 @@ ubuntu2004:
 ubuntu2204:
 	$(DOCKER_RUN) -it --rm 'ubuntu:22.04' bash
 
+ubuntu2404:
+	$(DOCKER_RUN) -it --rm 'ubuntu:24.04' bash
+
 debian10:
 	$(DOCKER_RUN) -it --rm 'debian:buster' bash
 
