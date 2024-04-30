@@ -1,4 +1,4 @@
-FROM gfarm-dev:ubuntu2404-base
+FROM gfarm-dev:ubuntu2204-base
 
 # System independent
 ARG GFDOCKER_NUM_JOBS
