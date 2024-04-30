@@ -557,3 +557,5 @@ case $GFDOCKER_PRJ_NAME in
     *)
 	;;
 esac
+
+stty sane

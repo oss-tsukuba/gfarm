@@ -58,6 +58,11 @@ scp_to_container "$SCP_HOST"
 
 for s in $SERVICES; do
     [ $s = "client1" ] && continue
-    rsync_fromto client1 $s &
+    case $s in
+	client*|gfmd*|gfsd*)
+	    rsync_fromto client1 $s &
+	    ;;
+    esac
 done
 wait
+stty sane
