@@ -25,6 +25,7 @@ def tobool(s):
     return s.lower() == 'true'
 
 use_keycloak = tobool(environ['GFDOCKER_SASL_USE_KEYCLOAK'])
+use_chrome_container = tobool(environ['GFDOCKER_USE_CHROME_CONTAINER'])
 
 if ip_version == '4':
     nw = IPv4Network(subnet)
@@ -154,20 +155,6 @@ if use_keycloak:
       - "0.0.0.0:13128:3128"
     volumes:
       - ./common/oauth2/allow-ssl-ports.conf:/etc/squid/conf.d/allow-ssl-ports.conf:ro
-  # http://<host IP address>:6901
-  # login: kasm_user/password
-  chrome:
-    image: kasmweb/chrome:1.15.0-rolling
-    shm_size: '512m'
-    volumes:
-      - ./mnt/ChromeDownloads:/home/kasm-user/Downloads:rw
-    networks:
-      gfarm_dev:
-    ports:
-      - "0.0.0.0:6901:6901"
-    environment:
-      - VNC_PW=password
-    <<: *common
   # desktop:
   #   build: common/oauth2/ubuntu
   #   volumes:
@@ -222,6 +209,24 @@ if use_keycloak:
       KEYCLOAK_USER: admin
       KEYCLOAK_PASSWORD: admin
 '''.format(hostname_suffix), end='')
+
+if use_chrome_container:
+    print('''\
+  # http://<host IP address>:6901
+  # login: kasm_user/password
+  chrome:
+    image: kasmweb/chrome:1.15.0-rolling
+    shm_size: '512m'
+    volumes:
+      - ./mnt/ChromeDownloads:/home/kasm-user/Downloads:rw
+    networks:
+      gfarm_dev:
+    ports:
+      - "0.0.0.0:6901:6901"
+    environment:
+      - VNC_PW=password
+    <<: *common
+''', end='')
 
 print('''\
 

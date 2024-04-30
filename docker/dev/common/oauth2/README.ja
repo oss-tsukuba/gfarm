@@ -14,6 +14,10 @@
   それぞれ対象の Profile を指定し、Apply Changes します。
 
 ・方法2: chrome コンテナ経由
+  docker/dev 環境動作中の場合には make down で環境を削除します。
+  docker/dev/config.mk に
+  GFDOCKER_USE_CHROME_CONTAINER = true
+  を追記して、環境を再構築します。
   手元のブラウザで http://ホストのIPアドレス:6901 にアクセスし、
   kasm_user/password で接続します。
   ブラウザの中で Google Chrome が動作します。
