@@ -71,6 +71,10 @@ def unhumanize_number(numstr):
     return n * (1024 ** power)
 
 
+class GfException(Exception):
+    pass
+
+
 class GfLogger(logging.getLoggerClass()):
     def __init__(self):
         super().__init__()
@@ -112,9 +116,10 @@ class GfLogger(logging.getLoggerClass()):
             with self.lock:
                 self._log(logging.ERROR, msg, args, **kwargs)
             if 'exit_code' in kwargs:
-                raise Exception('exit_code={}'.format(kwargs['exit_code']))
+                raise GfException('exit_code={}'.format(
+                    kwargs['exit_code']))
             else:
-                raise Exception('fatal exit')
+                raise GfException('fatal exit')
 
 
 logger = None
@@ -201,7 +206,7 @@ def execcmd(args, stdin=subprocess.DEVNULL, stderr=subprocess.PIPE,
         msg = '{}: {}'.format(str(args), err)
         if err and use_stderr:
             logger.debug(msg)
-        raise Exception(msg)
+        raise GfException(msg)
     return out
 
 
@@ -242,7 +247,7 @@ def execcmd_readline(args, stdin=subprocess.DEVNULL):
     if stderr_thread is not None:
         stderr_thread.join()
     if ret != 0:
-        raise Exception('{}: returncode={}'.format(' '.join(args), ret))
+        raise GfException('{}: returncode={}'.format(' '.join(args), ret))
 
 
 def gfwhoami():
@@ -261,7 +266,7 @@ def convert_message(error):
     if hasattr(error, 'filename') and hasattr(error, 'strerror'):
         if error.filename is not None and error.strerror is not None:
             return f'{error.filename}: {error.strerror}'
-    if type(error) == Exception:  # custom errors
+    if isinstance(error, GfException):  # custom errors
         return str(error)
     else:
         return f'{error.__class__.__name__}: {str(error)}'
@@ -380,7 +385,7 @@ class GfURLEntry():
                 a = oct(a & 0o7777)
                 b = oct(b & 0o7777)
             if a != b:
-                raise Exception(
+                raise GfException(
                     f'{ent1.path} vs {ent2.path}: prop={name}: {a} != {b}')
             logger.debug(f'GfURLEntry.compare:prop={name}: PASS')
 
@@ -398,7 +403,8 @@ class GfURLEntry():
             url1 = GfURL.init(ent1.path)
             url2 = GfURL.init(ent2.path)
             if not url1.compare_data(url2, bufsize=bufsize):
-                raise Exception(f'{ent1.path} vs {ent2.path}: different data')
+                raise GfException(
+                    f'{ent1.path} vs {ent2.path}: different data')
             logger.debug('GfURLEntry.compare:data: PASS')
         return True
 
@@ -851,7 +857,7 @@ class GfURLGfarm(GfURL):
         if ret == 0:
             val = int.from_bytes(out, byteorder='big')
             return val & mode > 0
-        raise Exception(f'{self.url_str}: gfarm.effective_perm: {err}')
+        raise GfException(f'{self.url_str}: gfarm.effective_perm: {err}')
 
     def is_readable(self):
         return self.access(self.R_OK)
@@ -1056,7 +1062,7 @@ class GfURLGfarm(GfURL):
             proc.stdout.close()
             ret = proc.wait()
             if ret != 0:
-                raise Exception('{}: returncode={}'.format(
+                raise GfException('{}: returncode={}'.format(
                     ' '.join(proc.args), ret))
 
     @contextmanager
@@ -1072,7 +1078,7 @@ class GfURLGfarm(GfURL):
             gfreg_obj.close()
             ret = proc.wait()
             if ret != 0:
-                raise Exception('{}: returncode={}'.format(
+                raise GfException('{}: returncode={}'.format(
                     ' '.join(proc.args), ret))
             gfreg_obj.post()
 
@@ -1113,7 +1119,7 @@ class GfURLLocal(GfURL):
             gfurl = GfURL.init(val.decode(get_encoding()))
             if gfurl.is_gfarm():
                 return gfurl
-            raise Exception('unexpected Gfarm URL format: ' + gfurl.url_str)
+            raise GfException('unexpected Gfarm URL format: ' + gfurl.url_str)
         except OSError as e:
             if e.errno == errno.EOPNOTSUPP:
                 return None
@@ -1125,8 +1131,8 @@ class GfURLLocal(GfURL):
                     gfurl = GfURL.init(os.path.join(parent_str, self.basename))
                     if gfurl.is_gfarm():
                         return gfurl
-                    raise Exception('unexpected Gfarm URL format: '
-                                    + gfurl.url_str)
+                    raise GfException('unexpected Gfarm URL format: '
+                                      + gfurl.url_str)
                 except OSError as e2:
                     if e2.errno == errno.EOPNOTSUPP:
                         # local filesystem
@@ -1497,7 +1503,7 @@ class GfTarFile(tarfile.TarFile):
                                  str(proc.args))
                     ret = proc.wait()
                     if ret != 0:
-                        raise Exception('{}: returncode={}'.format(
+                        raise GfException('{}: returncode={}'.format(
                             ' '.join(proc.args), ret))
                 if close_obj:
                     post_func = getattr(close_obj, 'post', None)
@@ -1530,10 +1536,8 @@ class TestGfptar(unittest.TestCase):
         self.assertEqual(url.path, '/tmp')
 
 
-class GfptarError(Exception):
-    def __init__(self, message):
-        self.message = message
-        super().__init__(self.message)
+class GfptarError(GfException):
+    pass
 
 
 class CannotBeArchivedError(GfptarError):
@@ -2127,18 +2131,18 @@ class GfptarCommand(Command):
         for infile in infiles:
             infile_url = GfURL.init(infile)
             if not infile_url.is_local():
-                raise Exception('specifying a relative path is required '
-                                'instead of a URL: ' + infile)
+                raise GfException('specifying a relative path is required '
+                                  'instead of a URL: ' + infile)
             infile = infile_url.path  # normalize and ignore scheme
             infile = infile.lstrip('/')  # relative path only
             if infile.startswith('./'):
                 infile = infile[2:]
             if infile == '' or infile == '.':
-                raise Exception('specifying current directory (.) '
-                                + 'as members is not allowed: ' + infile)
+                raise GfException('specifying current directory (.) '
+                                  + 'as members is not allowed: ' + infile)
             if infile == '..' or infile.startswith('../'):
-                raise Exception('specifying parent directory (..) '
-                                + 'as members is not allowed: ' + infile)
+                raise GfException('specifying parent directory (..) '
+                                  + 'as members is not allowed: ' + infile)
             url_str = os.path.join(self.basedir_url.url_str, infile)
             gfurl = GfURL.init(url_str)
             logger.debug('listdir: %s', gfurl.url_str)
@@ -2448,10 +2452,10 @@ class GfptarCommand(Command):
             self.info('created(.lst): {}', outurl.url_str)
 
     def error_canceled(self):
-        return Exception('Canceled')
+        return GfptarError('Canceled')
 
     def error_not_a_gfptar_directory(self, url_str):
-        return Exception('Not a gfptar-archived directory: ' + url_str)
+        return GfptarError('Not a gfptar-archived directory: ' + url_str)
 
     def extract(self, outdir, indir, members):
         self.options_init()
@@ -2529,7 +2533,7 @@ class GfptarCommand(Command):
             for member in member_set:
                 type_arch = archive_dict.get(member, None)
                 if type_arch is None:
-                    raise Exception('Not found in archive: ' + member)
+                    raise GfException('Not found in archive: ' + member)
                 file_type, target_arch = type_arch
                 target_set.add(target_arch)
                 if file_type == 'D':
