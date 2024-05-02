@@ -200,8 +200,6 @@ if use_keycloak:
       dockerfile: oauth2/keycloak/Dockerfile
     volumes:
       - ./mnt:/mnt:ro
-      - ./mnt/jwt-keycloak/jwt-keycloakcert.pem:/etc/x509/https/tls.crt
-      - ./mnt/jwt-keycloak/jwt-keycloakkey.pem:/etc/x509/https/tls.key
     networks:
       gfarm_dev:
     environment:

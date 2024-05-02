@@ -17,6 +17,10 @@ keytool -importkeystore -srckeystore /mnt/jwt-keycloak/jwt-keycloak.p12 \
   -destkeystore /opt/jboss/keycloak/standalone/configuration/keycloak.jks \
   -deststoretype JKS -deststorepass PASSWORD -destkeypass PASSWORD
 
+mkdir -p /etc/x509/https/
+cp -prf /mnt/jwt-keycloak/jwt-keycloakcert.pem /etc/x509/https/tls.crt
+cp -prf /mnt/jwt-keycloak/jwt-keycloakkey.pem /etc/x509/https/tls.key
+
 ignore() {
     echo 1>&2 "ERROR IGNORED"
     # true
