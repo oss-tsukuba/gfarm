@@ -361,7 +361,7 @@ static const char *
 gfurl_scheme_string(GFURL u)
 {
 	const char *p;
-	const char unknown[] = "unknown:";
+	static const char unknown[] = "unknown:";
 
 	switch (u->scheme) {
 	case GFURL_SCHEME_LOCAL:
