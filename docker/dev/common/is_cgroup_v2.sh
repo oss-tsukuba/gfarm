@@ -1,3 +1,11 @@
 #!/bin/sh
 
-mount | grep -q "cgroup2 on /sys/fs/cgroup type" > /dev/null 2>&1
+LINECOUNTS=$(cat /proc/self/cgroup | wc -l)
+
+if [ $LINECOUNTS -eq 1 ]; then
+  echo "This system is using cgroup v2."
+  exit 0
+else
+  echo "This system is using cgroup v1."
+  exit 1
+fi
