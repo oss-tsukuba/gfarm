@@ -55,7 +55,8 @@ gfarm-pcp -p ~/.nodelist .
 
 # install Gfarm2fs
 PKG=gfarm2fs; export PKG
-[ -d ~/gfarm/$PKG ] || git clone https://github.com/oss-tsukuba/$PKG.git
+[ -d ~/gfarm/$PKG ] ||
+	(cd ~/gfarm && git clone https://github.com/oss-tsukuba/$PKG.git)
 if $build_pkg; then
 	(cd ~/gfarm && sh $DISTDIR/mkrpm.sh)
 	sh ./install-rpm.sh
@@ -65,7 +66,8 @@ fi
 
 # install jwt-logon
 PKG=jwt-logon; export PKG
-[ -d ~/gfarm/$PKG ] || git clone https://github.com/oss-tsukuba/$PKG.git
+[ -d ~/gfarm/$PKG ] ||
+	(cd ~/gfarm && git clone https://github.com/oss-tsukuba/$PKG.git)
 if $build_pkg; then
 	(cd ~/gfarm && sh $DISTDIR/mkrpm.sh)
 	sh ./install-rpm.sh
@@ -77,7 +79,8 @@ fi
 
 # install jwt-agent
 PKG=jwt-agent; export PKG
-[ -d ~/gfarm/$PKG ] || git clone https://github.com/oss-tsukuba/$PKG.git
+[ -d ~/gfarm/$PKG ] ||
+	(cd ~/gfarm && git clone https://github.com/oss-tsukuba/$PKG.git)
 if $build_pkg; then
 	(cd ~/gfarm && sh $DISTDIR/mkrpm.sh)
 	sh ./install-rpm.sh
@@ -91,15 +94,14 @@ fi
 # install cyrus-sasl-xoauth2-idp
 PKG=cyrus-sasl-xoauth2-idp; export PKG
 sasl_libdir=$(pkg-config --variable=libdir libsasl2)
-[ -d ~/gfarm/$PKG ] || git clone https://github.com/oss-tsukuba/$PKG.git
+[ -d ~/gfarm/$PKG ] ||
+	(cd ~/gfarm && git clone https://github.com/oss-tsukuba/$PKG.git)
 if $build_pkg; then
 	(cd ~/gfarm && sh $DISTDIR/mkrpm.sh)
 	sh ./install-rpm.sh
 else
-	(cd ~/gfarm/$PKG && ./autogen.sh &&
-	 ./configure --libdir=$sasl_libdir &&
-	 make > /dev/null && sudo make install > /dev/null &&
-	 gfarm-prun -p "(cd gfarm/$PKG && sudo make install > /dev/null)")
+	(cd ~/gfarm/$PKG && autoreconf -fi &&
+	 sh $DISTDIR/install.sh $install_option)
 fi
 
 cat <<EOF | sudo tee $sasl_libdir/sasl2/gfarm.conf > /dev/null

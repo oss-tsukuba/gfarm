@@ -6,6 +6,7 @@ trap '[ $status = 1 ] && echo NG; exit $status' 0 1 2 15
 : ${PKG:=gfarm}
 
 CONF_OPT=
+PRUN_ARG=-p
 case $PKG in
 gfarm)
 	CONF_OPT="--enable-xmlattr --with-globus" #--with-infiniband
@@ -13,9 +14,13 @@ gfarm)
 	then
 		CONF_OPT="$CONF_OPT --with-openssl=openssl11"
 	fi
+	PRUN_ARG=
 	;;
 gfarm2fs)
 	CONF_OPT=--with-gfarm=/usr/local
+	;;
+cyrus-sasl-xoauth2-idp)
+	CONF_OPT=--libdir=$(pkg-config --variable=libdir libsasl2)
 	;;
 esac
 
@@ -46,7 +51,7 @@ sudo make install > /dev/null
 if [ $install_option = all ]; then
 	# -p cannot be used because the following error happens
 	# mv: cannot stat 'libgfsl_gsi.so.1.0.0': No such file or directory
-	gfarm-prun "(cd $PWD; sudo make install > /dev/null)"
+	gfarm-prun $PRUN_ARG "(cd $PWD; sudo make install > /dev/null)"
 fi
 
 status=0
