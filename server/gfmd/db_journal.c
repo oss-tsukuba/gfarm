@@ -1386,7 +1386,6 @@ end:
 		*gip = gi;
 	else {
 		db_journal_group_info_destroy(gi);
-		free(gi);
 		*gip = NULL;
 	}
 	return (e);
