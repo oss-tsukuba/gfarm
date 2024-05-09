@@ -2,7 +2,14 @@
 
 ## Prerequisite
 
-    % git clone https://github.com/oss-tsukuba/gfarm.git
+- Install `docker compose` ([Ubuntu](https://docs.docker.com/engine/install/ubuntu/) | [CentOS](https://docs.docker.com/engine/install/centos/)) and `make`.
+
+- To allow docker compose to run with user privileges, add $USER to the docker group by `sudo usermod -aG docker $USER`
+
+- Clone Gfarm
+```
+   % git clone https://github.com/oss-tsukuba/gfarm.git
+```
 
 ## Explore on virtual clusters by VS Code dev containers
 
@@ -15,13 +22,9 @@ This section is an option only for VS Code users.
 ```
    % cd docker/dist
 ```
-- follow the instructions below after "in a container"
+- follow the instructions below after "(in a container)"
 
 ## Explore on virtual clusters
-
-Install docker compose ([Ubuntu](https://docs.docker.com/engine/install/ubuntu/) | [CentOS](https://docs.docker.com/engine/install/centos/)) and make.
-
-To allow docker compose to run with user privileges, add $USER to the docker group by `sudo usermod -aG docker $USER`
 
     % cd gfarm/docker/dist
     % DIST=<distribution> docker compose build --build-arg UID=$(id -u) c1
