@@ -24,6 +24,8 @@ int gfarm_limit_nofiles(int *);
 
 /* logutil */
 
+const char *gflog_syslog_priority_to_name(int);
+
 #define GFLOG_ERROR_INVALID_FATAL_ACTION_NAME -1
 enum gflog_fatal_actions {
 	GFLOG_FATAL_ACTION_EXIT_BACKTRACE,
@@ -36,6 +38,7 @@ int gflog_fatal_action_name_to_number(const char *);
 
 void gfarm_peer_name_string(int, char *, size_t, int,
 	const char **, const char **);
+
 
 /* privlock */
 

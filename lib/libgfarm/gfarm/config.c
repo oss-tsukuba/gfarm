@@ -85,7 +85,6 @@ struct gfarm_config_static {
 	char *local_homedir;
 
 	/* static configuration variables */
-	int log_message_verbose;
 	gfarm_int64_t minimum_free_disk_space;
 	char **debug_command_argv;
 	char *argv0;
@@ -108,7 +107,6 @@ gfarm_config_static_init(struct gfarm_context *ctxp)
 	s->local_ug_maps_tab = NULL;
 	s->local_username = NULL;
 	s->local_homedir = NULL;
-	s->log_message_verbose = GFARM_CONFIG_MISC_DEFAULT;
 	s->minimum_free_disk_space = GFARM_CONFIG_MISC_DEFAULT;
 	s->debug_command_argv = NULL;
 	s->argv0 = NULL;
@@ -1031,6 +1029,8 @@ int gfarm_iostat_max_client = GFARM_CONFIG_MISC_DEFAULT;
 /* miscellaneous */
 #define GFARM_CONFIG_INCLUDE_NESTING_LIMIT_DEFAULT	20
 #define GFARM_LOG_MESSAGE_VERBOSE_DEFAULT	0
+#define GFARM_LOG_AUTH_VERBOSE_DEFAULT		0
+#define GFARM_LOG_TLS_VERBOSE_DEFAULT		0
 #define GFARM_NO_FILE_SYSTEM_NODE_TIMEOUT_DEFAULT 30 /* 30 seconds */
 
 /* 35 == 10*3 (failure of primary, secondary, tertiary nameserver) + 5 (RTT) */
@@ -3611,15 +3611,19 @@ parse_one_line(const char *s, char *p,
 		e = parse_log_file(p);
 	} else if (strcmp(s, o = "log_level") == 0) {
 		e = parse_log_level(p, &gfarm_ctxp->log_level);
+		if (e == GFARM_ERR_NO_ERROR)
+			gflog_set_priority_level(gfarm_ctxp->log_level);
 	} else if (strcmp(s, o = "log_message_verbose_level") == 0) {
-		e = parse_set_misc_int(p, &staticp->log_message_verbose);
+		e = parse_set_misc_int(p, &gfarm_ctxp->log_message_verbose);
 		if (e == GFARM_ERR_NO_ERROR)
-			gflog_set_message_verbose(staticp->log_message_verbose);
+			gflog_set_message_verbose(
+			    gfarm_ctxp->log_message_verbose);
 	} else if (strcmp(s, o = "log_auth_verbose") == 0) {
-		int tmp = GFARM_CONFIG_MISC_DEFAULT;
-		e = parse_set_misc_enabled(p, &tmp);
+		e = parse_set_misc_enabled(p, &gfarm_ctxp->log_auth_verbose);
 		if (e == GFARM_ERR_NO_ERROR)
-			gflog_auth_set_verbose(tmp);
+			gflog_auth_set_verbose(gfarm_ctxp->log_auth_verbose);
+	} else if (strcmp(s, o = "log_tls_verbose") == 0) {
+		e = parse_set_misc_enabled(p, &gfarm_ctxp->log_tls_verbose);
 	} else if (strcmp(s, o = "no_file_system_node_timeout") == 0) {
 		e = parse_set_misc_int(
 		    p, &gfarm_ctxp->no_file_system_node_timeout);
@@ -4070,10 +4074,17 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_ctxp->log_level == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->log_level = GFARM_DEFAULT_PRIORITY_LEVEL_TO_LOG;
 	gflog_set_priority_level(gfarm_ctxp->log_level);
-	if (staticp->log_message_verbose == GFARM_CONFIG_MISC_DEFAULT)
-		staticp->log_message_verbose =
+	if (gfarm_ctxp->log_message_verbose == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_ctxp->log_message_verbose =
 		    GFARM_LOG_MESSAGE_VERBOSE_DEFAULT;
-	gflog_set_message_verbose(staticp->log_message_verbose);
+	gflog_set_message_verbose(gfarm_ctxp->log_message_verbose);
+	if (gfarm_ctxp->log_auth_verbose == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_ctxp->log_auth_verbose =
+		    GFARM_LOG_AUTH_VERBOSE_DEFAULT;
+	gflog_auth_set_verbose(gfarm_ctxp->log_auth_verbose);
+	if (gfarm_ctxp->log_tls_verbose == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_ctxp->log_tls_verbose =
+		    GFARM_LOG_TLS_VERBOSE_DEFAULT;
 
 	if (gfarm_ctxp->no_file_system_node_timeout ==
 	    GFARM_CONFIG_MISC_DEFAULT)
@@ -4490,6 +4501,30 @@ gfarm_config_copyin_default(const struct gfarm_config_type *type,
 }
 
 static gfarm_error_t
+gfarm_config_copyin_log_message_verbose(const struct gfarm_config_type *type,
+	union gfarm_config_storage *storage)
+{
+	gfarm_error_t e = gfarm_config_copyin_default(type, storage);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	gflog_set_message_verbose(storage->i);
+	return (e);
+}
+
+static gfarm_error_t
+gfarm_config_copyin_log_auth_verbose(const struct gfarm_config_type *type,
+	union gfarm_config_storage *storage)
+{
+	gfarm_error_t e = gfarm_config_copyin_default(type, storage);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	gflog_auth_set_verbose(storage->i);
+	return (e);
+}
+
+static gfarm_error_t
 gfarm_config_copyin_parse(const struct gfarm_config_type *type,
 	union gfarm_config_storage *storage)
 {
@@ -4504,6 +4539,23 @@ gfarm_config_copyin_parse(const struct gfarm_config_type *type,
 	(*type->set_default)(addr);
 	e = parse_one_line(type->name, storage->s, GFARM_CONFIG_AT_HEAD,
 	    NULL, 0, &o);
+	return (e);
+}
+
+static gfarm_error_t
+gfarm_config_copyin_parse_log_level(const struct gfarm_config_type *type,
+	union gfarm_config_storage *storage)
+{
+	gfarm_error_t e;
+	int log_level_save = gfarm_ctxp->log_level;
+
+	gfarm_ctxp->log_level = GFARM_CONFIG_MISC_DEFAULT;
+
+	e = gfarm_config_copyin_parse(type, storage);
+	if (e == GFARM_ERR_NO_ERROR)
+		return (e);
+
+	gfarm_ctxp->log_level = log_level_save;
 	return (e);
 }
 
@@ -4553,6 +4605,30 @@ gfarm_config_copyout_auth_trial_order(const struct gfarm_config_type *type,
 	storage->s = gfarm_auth_trial_order_string_dup();
 	if (storage->s == NULL)
 		return (GFARM_ERR_NO_MEMORY);
+	return (GFARM_ERR_NO_ERROR);
+}
+
+/*
+ * The reason we use SERVER_PARSE() for the log_level directive is that
+ * theoretically, the values represented by symbols such as LOG_ERR,
+ * LOG_DEBUG, etc. may be different depending on the OS.
+ * Although due to the compatibility of the syslog protocol, they may
+ * not actually differ...
+ */
+static gfarm_error_t
+gfarm_config_copyout_log_level(const struct gfarm_config_type *type,
+	union gfarm_config_storage *storage)
+{
+	assert(type->fmt == 's');
+
+	/* gflog_syslog_priority_to_name() never returns NULL */
+	storage->s =
+	    strdup(gflog_syslog_priority_to_name(gfarm_ctxp->log_level));
+	if (storage->s == NULL) {
+		gflog_error(GFARM_MSG_UNFIXED, "no memory for log_level %s",
+		    gflog_syslog_priority_to_name(gfarm_ctxp->log_level));
+		return (GFARM_ERR_NO_MEMORY);
+	}
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -4740,9 +4816,17 @@ gfarm_config_validate_digest(union gfarm_config_storage *storage)
 #define CLIENT_PARSE	gfarm_config_client_side_parse_default, \
 			gfarm_config_copyin_default, \
 			gfarm_config_copyout_default
+#define CLIENT_PARSE_X(copyin) \
+			gfarm_config_client_side_parse_default, \
+			copyin, \
+			gfarm_config_copyout_default
 #define	SERVER_PARSE(copyout) \
 			gfarm_config_client_side_parse_nop, \
 			gfarm_config_copyin_parse, \
+			copyout
+#define	SERVER_PARSE_X(copyin, copyout) \
+			gfarm_config_client_side_parse_nop, \
+			copyin, \
 			copyout
 
 #define	INT_IMMUTABLE	'i', \
@@ -4810,6 +4894,26 @@ static const struct gfarm_config_type config_types[] = {
 	  FOR_METADB, CLIENT_PARSE, 's', gfarm_config_print_string,
 	  gfarm_config_set_default_string, gfarm_config_validate_digest,
 	  &gfarm_digest, 0 },
+	{ "log_level",
+	  FOR_METADB|FOR_CLIENT,
+	  SERVER_PARSE_X(
+	    gfarm_config_copyin_parse_log_level,
+	    gfarm_config_copyout_log_level),
+	  's', gfarm_config_print_string, gfarm_config_set_default_nop, NULL,
+	  NULL, 0 },
+	{ "log_message_verbose_level",
+	  FOR_METADB|FOR_CLIENT,
+	  CLIENT_PARSE_X(gfarm_config_copyin_log_message_verbose),
+	  INT_NON_NEGATIVE,
+	  NULL, offsetof(struct gfarm_context, log_message_verbose) },
+	{ "log_auth_verbose",
+	  FOR_METADB|FOR_CLIENT,
+	  CLIENT_PARSE_X(gfarm_config_copyin_log_auth_verbose),
+	  TYPE_ENABLED,
+	  NULL, offsetof(struct gfarm_context, log_auth_verbose) },
+	{ "log_tls_verbose",
+	  FOR_METADB, CLIENT_PARSE, TYPE_ENABLED,
+	  NULL, offsetof(struct gfarm_context, log_tls_verbose) },
 	{ "write_verify",
 	  FOR_METADB, CLIENT_PARSE, TYPE_ENABLED,
 	  &gfarm_write_verify, 0 },
@@ -4983,6 +5087,7 @@ gfarm_config_local_name_to_string(const char *name, char *string, size_t sz)
 		return (e);
 
 	len = (*type->printer)(&storage, string, sz);
+	gfarm_config_storage_free(type, &storage);
 	if (len == -1)
 		return (gfarm_errno_to_error(errno));
 	if (len >= sz)
@@ -5208,6 +5313,7 @@ gfm_client_config_name_to_string(
 		return (e);
 
 	len = (*type->printer)(&storage, string, sz);
+	gfarm_config_storage_free(type, &storage);
 	if (len == -1)
 		return (gfarm_errno_to_error(errno));
 	if (len >= sz)

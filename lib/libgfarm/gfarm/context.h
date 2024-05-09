@@ -9,6 +9,9 @@ struct gfarm_context {
 	int include_nesting_level;
 	int include_nesting_limit;
 	int log_level;
+	int log_message_verbose;
+	int log_auth_verbose;
+	int log_tls_verbose;
 	int no_file_system_node_timeout;
 	int gfmd_authentication_timeout;
 	int gfmd_reconnection_timeout;
