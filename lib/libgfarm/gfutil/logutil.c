@@ -117,8 +117,19 @@ gflog_set_priority_string(int priority, char *string)
 {
 	if (priority >= 0 && priority < GFLOG_PRIORITY_SIZE)
 		gflog_priority_string[priority] = string;
+	else
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "syslog priority %d (%s) exceeds GFLOG_PRIORITY_SIZE (%d),"
+		    " please increase GFLOG_PRIORITY_SIZE",
+		    priority, string, GFLOG_PRIORITY_SIZE);
 }
 
+/*
+ * Theoretically, the values represented by LOG_* symbols may not be
+ * from 0 to 7, depending on the OS.
+ * Although due to the compatibility of the syslog protocol, they may
+ * not actually differ...
+ */
 static void
 gflog_init_priority_string(void)
 {
@@ -130,23 +141,52 @@ gflog_init_priority_string(void)
 		    gflog_syslog_priorities[i].name);
 }
 
+const char *
+gflog_syslog_priority_to_name(int priority)
+{
+	int i;
+
+	pthread_once(&gflog_priority_string_once, gflog_init_priority_string);
+
+	/* fast path */
+	if (0 <= priority &&
+	    priority < GFARM_ARRAY_LENGTH(gflog_priority_string) &&
+	    gflog_priority_string[priority] != NULL)
+		return (gflog_priority_string[priority]);
+
+	/* slow path, when GFLOG_PRIORITY_SIZE is not enough  */
+	for (i = 0; i < GFARM_ARRAY_LENGTH(gflog_syslog_priorities); i++) {
+		if (priority == gflog_syslog_priorities[i].priority)
+			return (gflog_syslog_priorities[i].name);
+	}
+
+	/*
+	 * this shouldn't happen, unless a libgfarm user calls gflog_message()
+	 * with an invalid priority argument.
+	 */
+	gflog_warning(GFARM_MSG_UNFIXED,
+	    "unknown syslog priority %d", priority);
+	return ("unknown_syslog_priority");
+}
+
 static void
 gflog_out(int priority, const char *str1, const char *str2)
 {
-	pthread_once(&gflog_priority_string_once, gflog_init_priority_string);
+	const char *priority_name = gflog_syslog_priority_to_name(priority);
+
 #ifndef __KERNEL__	/* gflog_out :: printk */
 	switch (syslog_output) {
 	case use_syslog:
 		syslog(priority, "<%s> %s%s",
-		    gflog_priority_string[priority], str1, str2);
+		    priority_name, str1, str2);
 		break;
 	case use_stderr:
 		fprintf(stderr, "%s: <%s> %s%s\n", log_identifier,
-		    gflog_priority_string[priority], str1, str2);
+		    priority_name, str1, str2);
 		break;
 	case use_file:
 		fprintf(log_file, "%s: <%s> %s%s\n", log_identifier,
-		    gflog_priority_string[priority], str1, str2);
+		    priority_name, str1, str2);
 		break;
 	}
 #else /* __KERNEL__ */

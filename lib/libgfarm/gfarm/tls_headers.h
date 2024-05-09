@@ -283,6 +283,27 @@ tlslog_tls_message(int msg_no, int priority,
 #define gflog_tls_notice(msg_no, ...)	       \
 	tls_log_template(msg_no, LOG_NOTICE, __VA_ARGS__)
 
+
+#define tls_log_verbose_template(msg_no, level, ...)	     		\
+	do {								\
+		if (gfarm_ctxp->log_tls_verbose &&			\
+		    gflog_get_priority_level() >= level) {		\
+			tlslog_tls_message(msg_no, level,		\
+				__FILE__, __LINE__, __func__, __VA_ARGS__); \
+		}							\
+	} while (false)
+
+#define gflog_tls_verbose_error(msg_no, ...)		\
+	tls_log_verbose_template(msg_no, LOG_ERR, __VA_ARGS__)
+#define gflog_tls_verbose_warning(msg_no, ...)		\
+	tls_log_verbose_template(msg_no, LOG_WARNING, __VA_ARGS__)
+#define gflog_tls_verbose_debug(msg_no, ...)	     \
+	tls_log_verbose_template(msg_no, LOG_DEBUG, __VA_ARGS__)
+#define gflog_tls_verbose_info(msg_no, ...)	     \
+	tls_log_verbose_template(msg_no, LOG_INFO, __VA_ARGS__)
+#define gflog_tls_verbose_notice(msg_no, ...)	       \
+	tls_log_verbose_template(msg_no, LOG_NOTICE, __VA_ARGS__)
+
 #else
 
 #error Don not include this header unless you know what you need.

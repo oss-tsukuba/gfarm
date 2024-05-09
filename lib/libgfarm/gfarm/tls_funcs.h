@@ -1650,7 +1650,7 @@ tls_verify_callback_body(int ok, X509_STORE_CTX *sctx)
 						get_peer_dn_gsi_ish(
 							ctx->proxy_issuer_,
 							&bp, sizeof(b));
-						gflog_tls_debug(
+						gflog_tls_verbose_debug(
 							GFARM_MSG_1005574,
 							"got proxy issure: "
 							"\"%s\"", b);
@@ -1732,7 +1732,8 @@ done:
 			dn = NULL;
 		}
 
-		gflog_tls_debug(GFARM_MSG_1005577, "depth %d; ok %d -> %d; "
+		gflog_tls_verbose_debug(GFARM_MSG_1005577,
+			"depth %d; ok %d -> %d; "
 			" cert \"%s\"; error %d -> %d: error string \"%s.\"",
 			vdepth, org_ok, ok, dn, org_verr, verr, verrstr);
 	}

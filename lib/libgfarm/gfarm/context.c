@@ -151,6 +151,9 @@ gfarm_context_init(void)
 	ctxp->include_nesting_level = 0;
 	ctxp->include_nesting_limit = GFARM_CONFIG_MISC_DEFAULT;;
 	ctxp->log_level = GFARM_CONFIG_MISC_DEFAULT;
+	ctxp->log_message_verbose = GFARM_CONFIG_MISC_DEFAULT;
+	ctxp->log_auth_verbose = GFARM_CONFIG_MISC_DEFAULT;
+	ctxp->log_tls_verbose = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->no_file_system_node_timeout = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->gfmd_authentication_timeout = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->gfmd_reconnection_timeout = GFARM_CONFIG_MISC_DEFAULT;
