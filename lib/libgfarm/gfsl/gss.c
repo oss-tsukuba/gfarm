@@ -91,7 +91,7 @@ gssCrackStatus(OM_uint32 statValue, int statType)
     for (--i; i >= 0; --i)
 	free(ret[i]);
     free(ret);
-    return (ret);
+    return (NULL);
 }
 
 
