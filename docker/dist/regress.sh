@@ -69,8 +69,4 @@ ssh c2 "(grid-proxy-init -q; cd gfarm/regress && $ENV ./regress.sh -l $LOG2)"
 
 ./addup.sh $LOG1 $LOG2 | egrep '(UNSUPPORTED|FAIL)'
 
-# copy log files to build/regress for GitHub actions that assume builddir
-mkdir -p ~/gfarm/build/regress
-cp -p $LOG1 $LOG2 ~/gfarm/build/regress
-
 status=0
