@@ -2956,10 +2956,8 @@ tls_session_wait_io(struct tls_session_ctx_struct *ctx,
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 	char *method = NULL;
 
-	if (gflog_auth_get_verbose()) {
-		gflog_tls_debug(GFARM_MSG_1005626, "%s(): wait enter.",
-			__func__);
-	}
+	gflog_tls_verbose_debug(GFARM_MSG_1005626, "%s(): wait enter.",
+		__func__);
 
 	if (to_read && SSL_has_pending(ctx->ssl_)) {
 		method = "SSL_has_pending";
@@ -3027,10 +3025,9 @@ tls_session_wait_io(struct tls_session_ctx_struct *ctx,
 
 	ctx->last_gfarm_error_ = ret;
 
-	if (gflog_auth_get_verbose()) {
-		gflog_tls_debug(GFARM_MSG_1005627, "%s(): wait (%s) end : %s",
-			__func__, method, gfarm_error_string(ret));
-	}
+	gflog_tls_verbose_debug(GFARM_MSG_1005627,
+		"%s(): wait (%s) end : %s",
+		__func__, method, gfarm_error_string(ret));
 
 	return (ret);
 }
@@ -3398,12 +3395,9 @@ tls_session_update_key(struct tls_session_ctx_struct *ctx, int delta)
 		if (likely(SSL_key_update(ssl,
 				SSL_KEY_UPDATE_REQUESTED) == 1)) {
 			ret = ctx->last_gfarm_error_ = GFARM_ERR_NO_ERROR;
-			if (gflog_auth_get_verbose()) {
-				gflog_tls_debug(GFARM_MSG_1005640,
-					"TLS shared key updated after "
-					" %zu bytes I/O.",
-					ctx->io_key_update_accum_);
-			}
+			gflog_tls_verbose_debug(GFARM_MSG_1005640,
+				"TLS shared key updated after %zu bytes I/O.",
+				ctx->io_key_update_accum_);
 		} else {
 			/*
 			 * XXX FIXME:
@@ -3443,12 +3437,9 @@ tls_session_read(struct tls_session_ctx_struct *ctx, void *buf, int len,
 		int ssl_err;
 		bool continuable;
 
-		if (gflog_auth_get_verbose()) {
-			gflog_tls_debug(GFARM_MSG_1005642,
-				"%s(%s): about to read %d (remains %d)",
-				__func__, ctx->peer_cn_, len,
-				SSL_pending(ssl));
-		}
+		gflog_tls_verbose_debug(GFARM_MSG_1005642,
+			"%s(%s): about to read %d (remains %d)",
+			__func__, ctx->peer_cn_, len, SSL_pending(ssl));
 
 		if (unlikely(len == 0)) {
 			ret = ctx->last_gfarm_error_ = GFARM_ERR_NO_ERROR;
@@ -3458,11 +3449,8 @@ tls_session_read(struct tls_session_ctx_struct *ctx, void *buf, int len,
 		*actual_io_bytes = 0;
 
 retry:
-		if (gflog_auth_get_verbose()) {
-			gflog_tls_debug(GFARM_MSG_1005643,
-				"%s(%s): read %d/%d", __func__,
-				ctx->peer_cn_, n, len);
-		}
+		gflog_tls_verbose_debug(GFARM_MSG_1005643,
+			"%s(%s): read %d/%d", __func__, ctx->peer_cn_, n, len);
 
 		errno = 0;
 		n = SSL_read(ssl, buf, len);
@@ -3489,12 +3477,10 @@ retry:
 			}
 		}
 
-		if (gflog_auth_get_verbose()) {
-			gflog_tls_debug(GFARM_MSG_1005644,
-				"%s(%s): read done %d (remains %d) : %s",
-				__func__, ctx->peer_cn_, n, SSL_pending(ssl),
-				gfarm_error_string(ret));
-		}
+		gflog_tls_verbose_debug(GFARM_MSG_1005644,
+			"%s(%s): read done %d (remains %d) : %s",
+			__func__, ctx->peer_cn_, n, SSL_pending(ssl),
+			gfarm_error_string(ret));
 
 	} else {
 		ret = ctx->last_gfarm_error_ = GFARM_ERR_UNEXPECTED_EOF;
@@ -3522,11 +3508,9 @@ tls_session_write(struct tls_session_ctx_struct *ctx, const void *buf, int len,
 		int ssl_err;
 		bool continuable;
 
-		if (gflog_auth_get_verbose()) {
-			gflog_tls_debug(GFARM_MSG_1005645,
-				"%s(%s): about to write %d", __func__,
-				ctx->peer_cn_, len);
-		}
+		gflog_tls_verbose_debug(GFARM_MSG_1005645,
+			"%s(%s): about to write %d", __func__,
+			ctx->peer_cn_, len);
 
 		if (unlikely(len == 0)) {
 			ret = ctx->last_gfarm_error_ = GFARM_ERR_NO_ERROR;
@@ -3536,11 +3520,9 @@ tls_session_write(struct tls_session_ctx_struct *ctx, const void *buf, int len,
 		*actual_io_bytes = 0;
 
 retry:
-		if (gflog_auth_get_verbose()) {
-			gflog_tls_debug(GFARM_MSG_1005646,
-				"%s(%s): write %d/%d", __func__,
-				ctx->peer_cn_, n, len);
-		}
+		gflog_tls_verbose_debug(GFARM_MSG_1005646,
+			"%s(%s): write %d/%d", __func__,
+			ctx->peer_cn_, n, len);
 
 		errno = 0;
 		n = SSL_write(ssl, buf, len);
@@ -3567,11 +3549,9 @@ retry:
 			}
 		}
 
-		if (gflog_auth_get_verbose()) {
-			gflog_tls_debug(GFARM_MSG_1005647,
-				"%s(%s): write done %d : %s", __func__,
-				ctx->peer_cn_, n, gfarm_error_string(ret));
-		}
+		gflog_tls_verbose_debug(GFARM_MSG_1005647,
+			"%s(%s): write done %d : %s", __func__,
+			ctx->peer_cn_, n, gfarm_error_string(ret));
 
 	} else {
 		ret = ctx->last_gfarm_error_ = GFARM_ERR_UNEXPECTED_EOF;
@@ -3629,11 +3609,8 @@ tls_session_shutdown(struct tls_session_ctx_struct *ctx)
 		return (GFARM_ERR_UNKNOWN);
 	}
 
-	if (gflog_auth_get_verbose()) {
-		gflog_tls_debug(GFARM_MSG_1005648,
-			"%s(%s): about to shutdown SSL.",
-			__func__, ctx->peer_cn_);
-	}
+	gflog_tls_verbose_debug(GFARM_MSG_1005648,
+		"%s(%s): about to shutdown SSL.", __func__, ctx->peer_cn_);
 
 	if (!ctx->is_handshake_tried_) {
 		ret = GFARM_ERR_NO_ERROR;
@@ -3650,12 +3627,9 @@ tls_session_shutdown(struct tls_session_ctx_struct *ctx)
 #else
 		int st = SSL_shutdown(ssl);
 
-		if (gflog_auth_get_verbose()) {
-			gflog_tls_debug(GFARM_MSG_1005649,
-				"%s(%s): shutdown SSL issued : %s",
-				__func__, ctx->peer_cn_,
-				(st == 1) ? "OK" : "NG");
-		}
+		gflog_tls_verbose_debug(GFARM_MSG_1005649,
+			"%s(%s): shutdown SSL issued : %s",
+			__func__, ctx->peer_cn_, (st == 1) ? "OK" : "NG");
 
 		if (st == 1) {
 			ctx->last_ssl_error_ = SSL_ERROR_SSL;
@@ -3673,12 +3647,10 @@ tls_session_shutdown(struct tls_session_ctx_struct *ctx)
 
 			ret = tls_session_read(ctx, buf, sizeof(buf), &s_n);
 
-			if (gflog_auth_get_verbose()) {
-				gflog_tls_debug(GFARM_MSG_1005650,
-					"%s(%s): shutdown SSL replies read "
-					"%d : %s", __func__, ctx->peer_cn_,
-					s_n, gfarm_error_string(ret));
-			}
+			gflog_tls_verbose_debug(GFARM_MSG_1005650,
+				"%s(%s): shutdown SSL replies read "
+				"%d : %s", __func__, ctx->peer_cn_,
+				s_n, gfarm_error_string(ret));
 
 			if ((ret == GFARM_ERR_NO_ERROR && s_n > 0) ||
 				(ret == GFARM_ERR_PROTOCOL)) {
@@ -3698,12 +3670,9 @@ tls_session_shutdown(struct tls_session_ctx_struct *ctx)
 
 	ctx->last_gfarm_error_ = ret;
 
-	if (gflog_auth_get_verbose()) {
-		gflog_tls_debug(GFARM_MSG_1005651,
-			"%s(%s): shutdown SSL done : %s",
-			__func__, ctx->peer_cn_,
-			gfarm_error_string(ret));
-	}
+	gflog_tls_verbose_debug(GFARM_MSG_1005651,
+		"%s(%s): shutdown SSL done : %s",
+		__func__, ctx->peer_cn_, gfarm_error_string(ret));
 
 	return (ret);
 }
