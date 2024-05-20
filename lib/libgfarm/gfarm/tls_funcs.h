@@ -2912,7 +2912,7 @@ tls_session_io_continuable(int sslerr, struct tls_session_ctx_struct *ctx,
 		/*
 		 * Peer sent close_notify. Not retryable.
 		 */
-		ctx->last_gfarm_error_ = GFARM_ERR_PROTOCOL;
+		ctx->last_gfarm_error_ = GFARM_ERR_UNEXPECTED_EOF;
 		break;
 
 	case SSL_ERROR_WANT_X509_LOOKUP:
