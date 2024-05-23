@@ -55,7 +55,7 @@ gfarm_authorize_sasl_common(struct gfp_xdr *conn,
 
 	save_errno = gfarm_sasl_addr_string(gfp_xdr_fd(conn),
 	    self_hsbuf, sizeof(self_hsbuf),
-	    peer_hsbuf, sizeof(peer_hsbuf), diag);
+	    peer_hsbuf, sizeof(peer_hsbuf), hostname);
 	if (save_errno == EAFNOSUPPORT) {
 		/* sasl_server_new() doesn't work with AF_UNIX */
 		self_hs = NULL;
