@@ -282,7 +282,7 @@ gfarm_authorize_gss(struct gfp_xdr *conn, struct gfarm_gss *gss,
 
 		/* succeed, do logging */
 		gflog_notice(GFARM_MSG_1005301,
-		    "(%s@%s) authenticated: auth=%s type=%s  DN=\"%s\"",
+		    "(%s@%s) authenticated: auth=%s type=%s DN=\"%s\"",
 		    global_username, hostname,
 		    gfarm_auth_method_name(auth_method),
 		    gfarm_auth_id_role_name(peer_role), distname);
