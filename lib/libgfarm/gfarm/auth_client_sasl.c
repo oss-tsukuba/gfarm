@@ -49,9 +49,9 @@ gfarm_auth_request_sasl_common(struct gfp_xdr *conn,
 	char *peer_hs = peer_hsbuf;
 	sasl_conn_t *sasl_conn;
 	char *mechanism_candidates = NULL;
-	const char *chosen_mechanism = NULL;
+	const char *chosen_mechanism = NULL; /* sasl_conn owns this data */
 	gfarm_int32_t error, step_type;
-	const char *data = NULL;
+	const char *data = NULL; /* sasl_conn owns this data */
 	unsigned len;
 
 	/* sanity check, shouldn't happen */
@@ -141,7 +141,11 @@ gfarm_auth_request_sasl_common(struct gfp_xdr *conn,
 	if (e != GFARM_ERR_NO_ERROR || eof ||
 	    (mechanism_candidates == NULL || *mechanism_candidates == '\0')) {
 		/* mechanism_candidates == "" means error */
-		if (e == GFARM_ERR_NO_ERROR) {
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "%s: %s: SASL negotiation aborted: %s",
+			    diag, hostname, gfarm_error_string(e));
+		} else {
 			if (eof) {
 				e = GFARM_ERR_UNEXPECTED_EOF;
 				gflog_debug(GFARM_MSG_UNFIXED,
@@ -251,6 +255,9 @@ gfarm_auth_request_sasl_common(struct gfp_xdr *conn,
 		if (e != GFARM_ERR_NO_ERROR || eof) {
 			if (e == GFARM_ERR_NO_ERROR) /* i.e. eof */
 				e = GFARM_ERR_UNEXPECTED_EOF;
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "%s: %s: gfp_xdr_recv: %s",
+			    diag, hostname, gfarm_error_string(e));
 			sasl_dispose(&sasl_conn);
 			gfp_xdr_tls_reset(conn); /* is this case graceful? */
 			return (e);
@@ -278,6 +285,9 @@ gfarm_auth_request_sasl_common(struct gfp_xdr *conn,
 		if (e == GFARM_ERR_NO_ERROR)
 			e = gfp_xdr_flush(conn);
 		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "%s: %s: gfp_xdr_send: %s",
+			    diag, hostname, gfarm_error_string(e));
 			sasl_dispose(&sasl_conn);
 			gfp_xdr_tls_reset(conn); /* is this case graceful? */
 			return (e);
@@ -432,6 +442,12 @@ gfarm_auth_request_sasl_send_chosen_mechanism(int events, int fd,
 	 * client:(b:client_initial_response) ... optional
 	 */
 
+	if (gflog_auth_get_verbose()) {
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "%s: SASL using mechanism %s",
+		    state->hostname, state->chosen_mechanism);
+	}
+
 	if (state->data != NULL) {
 		e = gfp_xdr_send(state->conn, "sib",
 		    state->chosen_mechanism, (gfarm_int32_t)1,
@@ -471,6 +487,7 @@ gfarm_auth_request_sasl_send_chosen_mechanism(int events, int fd,
 static void
 gfarm_auth_request_sasl_receive_mechanisms(int events, int fd, void *closure,
 	const struct timeval *t)
+
 {
 	gfarm_error_t e;
 	struct gfarm_auth_request_sasl_state *state = closure;
@@ -501,8 +518,17 @@ gfarm_auth_request_sasl_receive_mechanisms(int events, int fd, void *closure,
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		state->error = e;
-		gflog_debug(GFARM_MSG_UNFIXED, "%s: %s: gfp_xdr_recv: %s",
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: %s: SASL negotiation aborted: %s",
 		    state->diag, state->hostname, gfarm_error_string(e));
+	} else if (mechanism_candidates == NULL ||
+	    *mechanism_candidates == '\0') {
+		/* XXX change this to GFARM_ERR_AUTHENTICATION if graceful */
+		state->error = GFARM_ERR_PROTOCOL_NOT_AVAILABLE;
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: %s: no SASL mechanism candidate",
+		    state->diag, state->hostname);
+		free(mechanism_candidates);
 	} else if (gfarm_ctxp->sasl_mechanisms != NULL &&
 	    strstr(mechanism_candidates, gfarm_ctxp->sasl_mechanisms)
 	    == NULL) {
