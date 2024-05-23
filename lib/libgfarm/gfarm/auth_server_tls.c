@@ -165,7 +165,7 @@ gfarm_error_t gfarm_authorize_tls_client_certificate(
 		/* succeed, do logging */
 
 		gflog_notice(GFARM_MSG_1005321,
-		    "(%s@%s) authenticated: auth=%s type:%s DN=\"%s\"",
+		    "(%s@%s) authenticated: auth=%s type=%s DN=\"%s\"",
 		    global_username, hostname,
 		    "tls_client_certificate",
 		    peer_role == GFARM_AUTH_ID_ROLE_USER ? "user" :
