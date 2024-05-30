@@ -2091,6 +2091,19 @@ enableと指定した場合、認証処理に関する詳細なログを記録�
 </varlistentry>
 
 <varlistentry>
+<term><token>log_auth_verbose</token> <parameter moreinfo="none">有効性</parameter></term>
+<listitem>
+<para>
+enableと指定した場合、TLS処理に関する詳細なログを記録します。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	log_tls_verbose enable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>file_trace</token> <parameter moreinfo="none">有効性</parameter></term>
 <listitem>
 <para>
@@ -3533,6 +3546,7 @@ OpenSSL の security_level 機能の数値を指定します。
 	&lt;log_level_statement&gt; |
 	&lt;log_message_verbose_level_statement&gt; |
 	&lt;log_auth_verbose_statement&gt; |
+	&lt;log_tls_verbose_statement&gt; |
 	&lt;file_trace_statement&gt; |
 	&lt;fatal_action_statement&gt; |
 	&lt;debug_command_statement&gt; |
@@ -4143,6 +4157,11 @@ OpenSSL の security_level 機能の数値を指定します。
 <varlistentry>
 <term>&lt;log_auth_verbose_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"log_auth_verbose" &lt;validity&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;log_tls_verbose_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"log_tls_verbose" &lt;validity&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>

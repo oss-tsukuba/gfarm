@@ -2145,6 +2145,19 @@ When "enable" is specified, verbose messages about authentication are logged.
 </varlistentry>
 
 <varlistentry>
+<term><token>log_tls_verbose</token> <parameter moreinfo="none">validity</parameter></term>
+<listitem>
+<para>
+When "enable" is specified, verbose messages about TLS are logged.
+</para>
+<para>Example:</para>
+<literallayout format="linespecific" class="normal">
+	log_tls_verbose enable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>file_trace</token> <parameter moreinfo="none">validity</parameter></term>
 <listitem>
 <para>
@@ -3587,6 +3600,7 @@ The default for this parameter is determined at OpenSSL compile time.
 	&lt;log_level_statement&gt; |
 	&lt;log_message_verbose_level_statement&gt; |
 	&lt;log_auth_verbose_statement&gt; |
+	&lt;log_tls_verbose_statement&gt; |
 	&lt;file_trace_statement&gt; |
 	&lt;fatal_action_statement&gt; |
 	&lt;debug_command_statement&gt; |
@@ -4197,6 +4211,11 @@ The default for this parameter is determined at OpenSSL compile time.
 <varlistentry>
 <term>&lt;log_auth_verbose_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"log_auth_verbose" &lt;validity&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;log_tls_verbose_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"log_tls_verbose" &lt;validity&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
