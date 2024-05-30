@@ -616,7 +616,7 @@ gfarm_auth_request_sasl_send_server_auth_result(int events, int fd,
 			error = gfarm_errno_to_error(save_errno);
 			gflog_debug(GFARM_MSG_UNFIXED,
 			    "%s: %s: gfarm_sasl_addr_string: %s",
-			    state->diag, state-> hostname,
+			    state->diag, state->hostname,
 			    strerror(save_errno));
 		} else {
 			if (save_errno == EAFNOSUPPORT) {
