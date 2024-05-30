@@ -446,7 +446,8 @@ gfarm_sasl_server_init(void)
 	int r = sasl_server_init(callbacks, "gfarm");
 
 	if (r != SASL_OK) {
-		gflog_notice(GFARM_MSG_1005365, "sasl_server_init(): %s",
+		gflog_notice(GFARM_MSG_1005365, "sasl_server_init(): %s, "
+                    "SASL server authentication is disabled",
 		    sasl_errstring(r, NULL, NULL));
 		sasl_server_initialized = GFARM_ERR_UNKNOWN;
 		return;

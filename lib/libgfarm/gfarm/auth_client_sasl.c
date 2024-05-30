@@ -1137,8 +1137,9 @@ gfarm_auth_client_sasl_static_init(struct gfarm_context *ctxp)
 	r = sasl_client_init(callbacks);
 
 	if (r != SASL_OK) {
-		gflog_auth_error(GFARM_MSG_1005351,
-		    "sasl_client_init(): %s",
+		gflog_error(GFARM_MSG_1005351,
+		    "sasl_client_init(): %s, "
+		    "SASL client authentication is disabled",
 		    sasl_errstring(r, NULL, NULL));
 		s->sasl_client_initialized = GFARM_ERR_UNKNOWN;
 		/* SASL won't work, but this is not a fatal error */
