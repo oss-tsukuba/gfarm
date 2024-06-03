@@ -20,9 +20,9 @@ struct gfp_iobuffer_ops {
 
 struct gfp_xdr;
 
-#define IS_CONNECTION_ERROR(e) \
+/* a connection error, but not GFARM_ERR_PROTOCOL */
+#define IS_RETRIABLE_ERROR(e) \
 	((e) == GFARM_ERR_BROKEN_PIPE || (e) == GFARM_ERR_UNEXPECTED_EOF || \
-	 (e) == GFARM_ERR_PROTOCOL || \
 	 (e) == GFARM_ERR_CANNOT_ASSIGN_REQUESTED_ADDRESS || \
 	 (e) == GFARM_ERR_NETWORK_IS_DOWN || \
 	 (e) == GFARM_ERR_NETWORK_IS_UNREACHABLE || \
@@ -33,6 +33,9 @@ struct gfp_xdr;
 	 (e) == GFARM_ERR_OPERATION_TIMED_OUT || \
 	 (e) == GFARM_ERR_CONNECTION_REFUSED || \
 	 (e) == GFARM_ERR_NO_ROUTE_TO_HOST)
+
+#define IS_CONNECTION_ERROR(e) \
+	((e) == GFARM_ERR_PROTOCOL || IS_RETRIABLE_ERROR(e))
 
 gfarm_error_t gfp_xdr_new(struct gfp_iobuffer_ops *, void *, int, int,
 	struct gfp_xdr **);

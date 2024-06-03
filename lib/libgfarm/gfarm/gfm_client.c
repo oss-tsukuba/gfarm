@@ -785,7 +785,7 @@ gfm_client_connection_acquire0(const char *hostname, int port,
 	    connect_op);
 	gettimeofday(&expiration_time, NULL);
 	expiration_time.tv_sec += gfarm_ctxp->gfmd_reconnection_timeout;
-	while (IS_CONNECTION_ERROR(e) &&
+	while (IS_RETRIABLE_ERROR(e) &&
 	       !gfarm_timeval_is_expired(&expiration_time)) {
 		gflog_notice(GFARM_MSG_1000058,
 		    "connecting to gfmd at %s:%d failed, "
@@ -974,7 +974,7 @@ gfm_client_connection_and_process_acquire(const char *hostname, int port,
 			break;
 
 		gfm_client_connection_free(gfm_server);
-		if (!IS_CONNECTION_ERROR(e))
+		if (!IS_RETRIABLE_ERROR(e))
 			break;
 
 		/* possibly gfmd failover or temporary error */

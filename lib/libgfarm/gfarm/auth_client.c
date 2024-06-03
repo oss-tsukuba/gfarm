@@ -577,7 +577,7 @@ gfarm_auth_request_sharedsecret_common(struct gfp_xdr *conn,
 		gflog_debug(GFARM_MSG_1003719,
 		    "gfarm_auth_request_sharedsecret: temporary failure");
 		/*
-		 * an error which satisfies IS_CONNECTION_ERROR(),
+		 * an error which satisfies IS_RETRIABLE_ERROR(),
 		 * to make the caller retry
 		 */
 		return (GFARM_ERR_CONNECTION_ABORTED);
@@ -810,7 +810,7 @@ gfarm_auth_request_sharedsecret_receive_fin(int events, int fd,
 			break;
 		case GFARM_AUTH_ERROR_TEMPORARY_FAILURE:
 			/*
-			 * an error which satisfies IS_CONNECTION_ERROR(),
+			 * an error which satisfies IS_RETRIABLE_ERROR(),
 			 * to make the caller retry
 			 */
 			state->error = GFARM_ERR_CONNECTION_ABORTED;

@@ -936,7 +936,7 @@ gfs_client_connection_and_process_acquire(
 			if (e != GFARM_ERR_NO_ERROR)
 				return (e);
 			continue;
-		} else if (gfs_client_is_connection_error(e) &&
+		} else if (IS_RETRIABLE_ERROR(e) &&
 		    --gfsd_nretries >= 0) {
 			gflog_debug(GFARM_MSG_1003904,
 			    "retry process (re)set");

@@ -573,7 +573,7 @@ gfarm_authorize_sharedsecret_common(struct gfp_xdr *conn,
 				error = GFARM_AUTH_ERROR_RESOURCE_UNAVAILABLE;
 			else if (e == GFARM_ERR_PROTOCOL)
 				error = GFARM_AUTH_ERROR_NOT_SUPPORTED;
-			else if (IS_CONNECTION_ERROR(e))
+			else if (IS_RETRIABLE_ERROR(e))
 				error = GFARM_AUTH_ERROR_TEMPORARY_FAILURE;
 			else
 				error = GFARM_AUTH_ERROR_INVALID_CREDENTIAL;

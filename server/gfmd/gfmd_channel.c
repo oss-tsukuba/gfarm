@@ -1264,6 +1264,11 @@ gfmdc_connect_thread(void *arg)
 			sleep(GFMDC_CONNECT_INTERVAL);
 		} else if ((e = gfmdc_connect()) != GFARM_ERR_NO_ERROR &&
 		    !gfm_client_is_connection_error(e)) {
+			/*
+			 * use gfm_client_is_connection_error() instead of
+			 * IS_RETRIABLE_ERROR() here,
+			 * because We'll wait for a fix of the server setting.
+			 */
 			gflog_error(GFARM_MSG_1003430,
 			    "gfmd_channel : "
 			    "give up to connect to the master gfmd: %s",
