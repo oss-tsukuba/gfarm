@@ -118,9 +118,10 @@ gfarm_auth_request_sasl_common(struct gfp_xdr *conn,
 			    diag, hostname, gfarm_error_string(e));
 		}
 		sasl_dispose(&sasl_conn);
-		gfp_xdr_tls_reset(conn);
+		gfp_xdr_tls_reset(conn); /* XXX this is NOT graceful for now */
+		/* XXX change this to GFARM_ERR_AUTHENTICATION if graceful */
 		return (error != GFARM_ERR_NO_ERROR ?
-		    GFARM_ERR_AUTHENTICATION : e);
+		    GFARM_ERR_PROTOCOL_NOT_AVAILABLE : e);
 	}
 
 
@@ -650,7 +651,8 @@ gfarm_auth_request_sasl_send_server_auth_result(int events, int fd,
 		gflog_debug(GFARM_MSG_UNFIXED, "%s: %s: gfp_xdr_send: %s",
 		    state->diag, state->hostname, gfarm_error_string(e));
 	} else if (error != GFARM_ERR_NO_ERROR) {
-		state->error = GFARM_ERR_AUTHENTICATION;
+		/* XXX change this to GFARM_ERR_AUTHENTICATION if graceful */
+		state->error = GFARM_ERR_PROTOCOL_NOT_AVAILABLE;
 	} else {
 		struct timeval timeout;
 

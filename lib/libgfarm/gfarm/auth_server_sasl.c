@@ -96,7 +96,7 @@ gfarm_authorize_sasl_common(struct gfp_xdr *conn,
 		gflog_warning(GFARM_MSG_1005354,
 		    "%s: does not accept my certificate: %s",
 		    hostname, gfarm_error_string(result));
-		gfp_xdr_tls_reset(conn);
+		gfp_xdr_tls_reset(conn); /* XXX this is NOT graceful for now */
 		return (GFARM_ERR_AUTHENTICATION);
 	}
 
