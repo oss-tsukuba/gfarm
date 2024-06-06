@@ -149,7 +149,8 @@ gfarm_auth_request_sasl_common(struct gfp_xdr *conn,
 			/* mechanism_candidates == "" means error */
 			e = GFARM_ERR_AUTHENTICATION;
 			gflog_auth_info(GFARM_MSG_UNFIXED,
-			    "%s: no SASL mechanism candidate",
+			    "%s: no SASL mechanism candidate, "
+			    "skip SASL authentication",
 			    hostname);
 		}
 		free(mechanism_candidates);
@@ -173,7 +174,8 @@ gfarm_auth_request_sasl_common(struct gfp_xdr *conn,
 		}
 
 		gflog_auth_error(GFARM_MSG_UNFIXED,
-		    "%s: SASL mechanism unmatch, server:<%s> vs client:<%s>",
+		    "%s: SASL mechanism mismatch, server: \"%s\" vs "
+		    "client: \"%s\", skip SASL authentication",
 		    hostname, mechanism_candidates,
 		    gfarm_ctxp->sasl_mechanisms);
 		free(mechanism_candidates);
@@ -191,7 +193,7 @@ gfarm_auth_request_sasl_common(struct gfp_xdr *conn,
 	free(mechanism_candidates);
 	if (r != SASL_OK && r != SASL_CONTINUE) {
 		gflog_auth_error(GFARM_MSG_1005324,
-		    "%s: sasl_client_start(): %s",
+		    "%s: sasl_client_start(): %s, skip SASL authentication",
 		    hostname, sasl_errstring(r, NULL, NULL));
 		/* chosen_mechanism == "" means error */
 		e = gfp_xdr_send(conn, "s", "");
@@ -511,7 +513,9 @@ gfarm_auth_request_sasl_receive_mechanisms(int events, int fd, void *closure,
 	    *mechanism_candidates == '\0') {
 		state->error = GFARM_ERR_AUTHENTICATION;
 		gflog_auth_info(GFARM_MSG_UNFIXED,
-		    "%s: no SASL mechanism candidate", state->hostname);
+		    "%s: no SASL mechanism candidate, "
+		    "skip SASL authentication",
+		    state->hostname);
 		free(mechanism_candidates);
 	} else if (gfarm_ctxp->sasl_mechanisms != NULL &&
 	    strstr(mechanism_candidates, gfarm_ctxp->sasl_mechanisms)
@@ -529,7 +533,8 @@ gfarm_auth_request_sasl_receive_mechanisms(int events, int fd, void *closure,
 		}
 
 		gflog_auth_error(GFARM_MSG_UNFIXED,
-		    "%s: SASL mechanism unmatch, server:<%s> vs client:<%s>",
+		    "%s: SASL mechanism mismatch, server: \"%s\" vs "
+		    "client: \"%s\", skip SASL authentication",
 		    state->hostname, mechanism_candidates,
 		    gfarm_ctxp->sasl_mechanisms);
 		free(mechanism_candidates);
@@ -549,7 +554,8 @@ gfarm_auth_request_sasl_receive_mechanisms(int events, int fd, void *closure,
 		free(mechanism_candidates);
 		if (r != SASL_OK && r != SASL_CONTINUE) {
 			gflog_auth_error(GFARM_MSG_1005330,
-			    "%s: sasl_client_start(): %s",
+			    "%s: sasl_client_start(): %s, "
+			    "skip SASL authentication",
 			    state->hostname, sasl_errstring(r, NULL, NULL));
 			/* chosen_mechanism == "" means error */
 			e = gfp_xdr_send(state->conn, "s", "");
@@ -879,7 +885,7 @@ sasl_getrealm(void *context, int id, const char **availrealms,
 			    "SASL: available realms:");
 			while (*availrealms) {
 				gflog_info(GFARM_MSG_1005338,
-				    "SASL: available realm <%s>",
+				    "SASL: available realm \"%s\"",
 				    *availrealms);
 				availrealms++;
 			}
