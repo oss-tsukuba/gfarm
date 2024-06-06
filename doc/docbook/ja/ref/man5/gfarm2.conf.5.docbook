@@ -2091,7 +2091,7 @@ enableと指定した場合、認証処理に関する詳細なログを記録�
 </varlistentry>
 
 <varlistentry>
-<term><token>log_auth_verbose</token> <parameter moreinfo="none">有効性</parameter></term>
+<term><token>log_tls_verbose</token> <parameter moreinfo="none">有効性</parameter></term>
 <listitem>
 <para>
 enableと指定した場合、TLS処理に関する詳細なログを記録します。
