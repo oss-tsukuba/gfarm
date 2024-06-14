@@ -30,8 +30,8 @@ gfarm_tls_server_cert_is_ok(struct gfp_xdr *conn, const char *service_tag,
 	    service_tag, peer_cn, &peer_hostname)) != GFARM_ERR_NO_ERROR) {
 		/* server cert is invalid? raise alert */
 		gflog_auth_warning(GFARM_MSG_1005303,
-		    "%s: '%s' service is expected "
-		    "in TLS server certificate <%s>",
+		    "TLS certificate \"%s\" for '%s' service is expected, "
+		    "but \"%s\" is provided",
 		    hostname, service_tag, peer_cn);
 		return (GFARM_ERR_HOSTNAME_MISMATCH);
 	}
