@@ -101,7 +101,7 @@ gfarm_auth_request_sasl_common(struct gfp_xdr *conn,
 		    NULL, 0, &sasl_conn);
 		gfarm_privilege_unlock("sasl_client_new");
 		if (r != SASL_OK) {
-			gflog_notice(GFARM_MSG_1005323,
+			gflog_auth_notice(GFARM_MSG_1005323,
 			    "%s: sasl_client_new(): %s",
 			    hostname, sasl_errstring(r, NULL, NULL));
 			error = GFARM_ERR_PROTOCOL_NOT_AVAILABLE;
@@ -266,7 +266,7 @@ gfarm_auth_request_sasl_common(struct gfp_xdr *conn,
 			len = 0; /* defensive programming */
 		free(response);
 		if (r != SASL_OK && r != SASL_CONTINUE) {
-			gflog_error(GFARM_MSG_1005326,
+			gflog_auth_error(GFARM_MSG_1005326,
 			    "%s: sasl_client_step(): %s",
 			    hostname, sasl_errstring(r, NULL, NULL));
 			sasl_dispose(&sasl_conn);
@@ -378,7 +378,7 @@ gfarm_auth_request_sasl_step(int events, int fd, void *closure,
 			state->len = 0; /* defensive programming */
 		free(response);
 		if (r != SASL_OK && r != SASL_CONTINUE) {
-			gflog_error(GFARM_MSG_1005328,
+			gflog_auth_error(GFARM_MSG_1005328,
 			    "%s: sasl_client_step(): %s",
 			    state->hostname, sasl_errstring(r, NULL, NULL));
 			/*
@@ -637,7 +637,7 @@ gfarm_auth_request_sasl_send_server_auth_result(int events, int fd,
 			    self_hs, peer_hs, NULL, 0, &state->sasl_conn);
 			gfarm_privilege_unlock("sasl_client_new");
 			if (r != SASL_OK) {
-				gflog_notice(GFARM_MSG_1005331,
+				gflog_auth_notice(GFARM_MSG_1005331,
 				    "%s: sasl_client_new(): %s",
 				    state->hostname,
 				    sasl_errstring(r, NULL, NULL));
