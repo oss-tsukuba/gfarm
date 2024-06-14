@@ -40,13 +40,13 @@ done
 
 # update log_level and log_auth_verbose
 cp -p $GFCONF $GFCONF.bak
-sed '/^log_level/d
-     /^log_auth_verbose/d' $GFCONF.bak > $GFCONF
+sed '/^log_/d' $GFCONF.bak > $GFCONF
 
 if $DEBUG; then
 	cat <<EOF >> $GFCONF
 log_level debug
 log_auth_verbose enable
+log_message_verbose_level 1
 EOF
 fi
 
