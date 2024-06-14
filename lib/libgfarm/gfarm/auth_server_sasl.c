@@ -94,7 +94,8 @@ gfarm_authorize_sasl_common(struct gfp_xdr *conn,
 	if (result != GFARM_ERR_NO_ERROR) {
 		/* server cert is invalid? raise alert */
 		gflog_warning(GFARM_MSG_1005354,
-		    "%s: does not accept my certificate: %s",
+		    "%s: does not accept my certificate: %s, "
+		    "skip SASL authentication",
 		    hostname, gfarm_error_string(result));
 		gfp_xdr_tls_reset(conn); /* XXX this is NOT graceful for now */
 		return (GFARM_ERR_AUTHENTICATION);
@@ -111,7 +112,9 @@ gfarm_authorize_sasl_common(struct gfp_xdr *conn,
 
 	if (r != SASL_OK) {
 		sasl_conn = NULL;
-		gflog_notice(GFARM_MSG_UNFIXED, "%s: sasl_server_new(): %s",
+		gflog_notice(GFARM_MSG_UNFIXED,
+		    "%s: sasl_server_new() faild: %s, "
+		    "skip SASL authentication",
 		    hostname, sasl_errstring(r, NULL, NULL));
 		data = ""; /* mechanism_candidates == "" means error */
 		len = 0;
@@ -120,13 +123,15 @@ gfarm_authorize_sasl_common(struct gfp_xdr *conn,
 		len = strlen(data);
 		if (data[0] == '\0')
 			gflog_notice(GFARM_MSG_UNFIXED,
-			    "%s: no sasl mechanism candidate", hostname);
+			    "%s: no sasl mechanism candidate, "
+			    "skip SASL authentication", hostname);
 	} else {
 		r = sasl_listmech(sasl_conn, NULL, NULL, " ", NULL,
 		    &data, &len, &count);
 		if (r != SASL_OK) {
-			gflog_error(GFARM_MSG_UNFIXED,
-			    "%s: sasl_listmech(): %s",
+			gflog_notice(GFARM_MSG_UNFIXED,
+			    "%s: sasl_listmech() failed: %s, "
+			    "skip SASL authentication",
 			    hostname, sasl_errstring(r, NULL, NULL));
 			data = ""; /* mechanism_candidates == "" means error */
 			len = 0;
@@ -145,13 +150,13 @@ gfarm_authorize_sasl_common(struct gfp_xdr *conn,
 			sasl_dispose(&sasl_conn);
 		gfp_xdr_tls_reset(conn);
 		if (data == NULL) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_notice(GFARM_MSG_UNFIXED,
 			    "%s: %s: sasl_listmech(): no memory?",
 			    diag, hostname);
 			return (GFARM_ERR_NO_MEMORY);
 		}
 		/* a gflog message was already recorded in previous clause */
-		return (GFARM_ERR_AUTHENTICATION);
+		return (e != GFARM_ERR_NO_ERROR ? e : GFARM_ERR_AUTHENTICATION);
 	}
 	gflog_auth_info(GFARM_MSG_UNFIXED,
 	    "SASL: %s: propose mechanisms <%s>", hostname, data);
@@ -189,8 +194,9 @@ gfarm_authorize_sasl_common(struct gfp_xdr *conn,
 			    "%s: %s: unexpected EOF", diag, hostname);
 		} else {
 			e = GFARM_ERR_AUTHENTICATION;
-			gflog_auth_error(GFARM_MSG_UNFIXED,
-			    "%s: SASL mechanism unmatch", hostname);
+			gflog_auth_notice(GFARM_MSG_UNFIXED,
+			    "%s: SASL mechanism mismatch, "
+			    "skip SASL authentication", hostname);
 		}
 		sasl_dispose(&sasl_conn);
 		gfp_xdr_tls_reset(conn);
@@ -224,21 +230,24 @@ gfarm_authorize_sasl_common(struct gfp_xdr *conn,
 
 	if (gfarm_ctxp->sasl_mechanisms != NULL &&
 	    strcasecmp(chosen_mechanism, gfarm_ctxp->sasl_mechanisms) != 0) {
-		gflog_error(GFARM_MSG_1005358,
-		    "%s: SASL mechanism does not match. \"%s\" vs \"%s\"",
+		gflog_info(GFARM_MSG_1005358,
+		    "%s: SASL mechanism does not match. \"%s\" vs \"%s\""
+		    "skip SASL authentication",
 		    hostname, gfarm_ctxp->sasl_mechanisms, chosen_mechanism);
 		/* XXX FIXME is this graceful? */
 		e = gfp_xdr_send(conn, "i",
 		    (gfarm_int32_t)GFARM_AUTH_SASL_STEP_ERROR);
 		if (e == GFARM_ERR_NO_ERROR)
 			e = gfp_xdr_flush(conn);
-		gflog_debug(GFARM_MSG_UNFIXED, "%s: %s: gfp_xdr_send: %s",
-		    diag, hostname, gfarm_error_string(e));
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "%s: %s: gfp_xdr_send: %s",
+			    diag, hostname, gfarm_error_string(e));
 		free(response);
 		free(chosen_mechanism);
 		sasl_dispose(&sasl_conn);
 		gfp_xdr_tls_reset(conn); /* is this case graceful? */
-		return (GFARM_ERR_AUTHENTICATION);
+		return (e != GFARM_ERR_NO_ERROR ? e : GFARM_ERR_AUTHENTICATION);
 	}
 
 	data = NULL;
@@ -250,18 +259,21 @@ gfarm_authorize_sasl_common(struct gfp_xdr *conn,
 	free(chosen_mechanism);
 	chosen_mechanism = response = NULL;
 	if (r != SASL_OK && r != SASL_CONTINUE) {
-		gflog_error(GFARM_MSG_1005359,
-		    "%s: SASL negotiation: %s", hostname,
+		gflog_notice(GFARM_MSG_1005359,
+		    "%s: SASL negotiation: %s, "
+		    "skip SASL authentication", hostname,
 		    sasl_errstring(r, NULL, NULL));
 		e = gfp_xdr_send(conn, "i",
 		    (gfarm_int32_t)GFARM_AUTH_SASL_STEP_ERROR);
 		if (e == GFARM_ERR_NO_ERROR)
 			e = gfp_xdr_flush(conn);
-		gflog_debug(GFARM_MSG_UNFIXED, "%s: %s: gfp_xdr_send: %s",
-		    diag, hostname, gfarm_error_string(e));
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "%s: %s: gfp_xdr_send: %s",
+			    diag, hostname, gfarm_error_string(e));
 		sasl_dispose(&sasl_conn);
 		gfp_xdr_tls_reset(conn); /* is this case graceful? */
-		return (GFARM_ERR_AUTHENTICATION);
+		return (e != GFARM_ERR_NO_ERROR ? e : GFARM_ERR_AUTHENTICATION);
 	}
 
 	while (r == SASL_CONTINUE) {
@@ -302,71 +314,81 @@ gfarm_authorize_sasl_common(struct gfp_xdr *conn,
 		free(response);
 		response = NULL;
 		if (r != SASL_OK && r != SASL_CONTINUE) {
-			gflog_error(GFARM_MSG_1005360,
-			    "%s: SASL negotiation: %s", peer_hsbuf,
+			gflog_notice(GFARM_MSG_1005360,
+			    "%s: SASL negotiation: %s, "
+			    "skip SASL authentication", peer_hsbuf,
 			    sasl_errstring(r, NULL, NULL));
 			e = gfp_xdr_send(conn, "i",
 			    (gfarm_int32_t)GFARM_AUTH_SASL_STEP_ERROR);
 			if (e == GFARM_ERR_NO_ERROR)
 				e = gfp_xdr_flush(conn);
-			gflog_debug(GFARM_MSG_UNFIXED,
-			    "%s: %s: gfp_xdr_send: %s",
-			    diag, hostname, gfarm_error_string(e));
+			if (e != GFARM_ERR_NO_ERROR)
+				gflog_debug(GFARM_MSG_UNFIXED,
+				    "%s: %s: gfp_xdr_send: %s",
+				    diag, hostname, gfarm_error_string(e));
 			sasl_dispose(&sasl_conn);
 			gfp_xdr_tls_reset(conn); /* is this case graceful? */
-			return (GFARM_ERR_AUTHENTICATION);
+			return (e != GFARM_ERR_NO_ERROR ? e
+			    : GFARM_ERR_AUTHENTICATION);
 		}
 	}
 
 	if (r != SASL_OK) {
-		gflog_error(GFARM_MSG_1005361,
-		    "%s: SASL: incorrect authentication: %s", hostname,
+		gflog_notice(GFARM_MSG_1005361,
+		    "%s: SASL: incorrect authentication: %s, "
+		    "skip SASL authentication", hostname,
 		    sasl_errstring(r, NULL, NULL));
 		e = gfp_xdr_send(conn, "i",
 		    (gfarm_int32_t)GFARM_AUTH_SASL_STEP_ERROR);
 		if (e == GFARM_ERR_NO_ERROR)
 			e = gfp_xdr_flush(conn);
-		gflog_debug(GFARM_MSG_UNFIXED, "%s: %s: gfp_xdr_send: %s",
-		    diag, hostname, gfarm_error_string(e));
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "%s: %s: gfp_xdr_send: %s",
+			    diag, hostname, gfarm_error_string(e));
 		sasl_dispose(&sasl_conn);
 		gfp_xdr_tls_reset(conn); /* is this case graceful? */
-		return (GFARM_ERR_AUTHENTICATION);
+		return (e != GFARM_ERR_NO_ERROR ? e : GFARM_ERR_AUTHENTICATION);
 	}
 
 	r = sasl_getprop(sasl_conn, SASL_USERNAME,
 	    (const void **)&user_id);
 
 	if (r != SASL_OK) {
-		gflog_error(GFARM_MSG_1005362,
-		    "%s: SASL: SASL_USERNAME: %s", hostname,
+		gflog_notice(GFARM_MSG_1005362,
+		    "%s: SASL: SASL_USERNAME: %s, "
+		    "skip SASL authentication", hostname,
 		    sasl_errstring(r, NULL, NULL));
 		e = gfp_xdr_send(conn, "i",
 		    (gfarm_int32_t)GFARM_AUTH_SASL_STEP_ERROR);
 		if (e == GFARM_ERR_NO_ERROR)
 			e = gfp_xdr_flush(conn);
-		gflog_debug(GFARM_MSG_UNFIXED,
-		    "%s: %s: gfp_xdr_send: %s",
-		    diag, hostname, gfarm_error_string(e));
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "%s: %s: gfp_xdr_send: %s",
+			    diag, hostname, gfarm_error_string(e));
 		sasl_dispose(&sasl_conn);
 		gfp_xdr_tls_reset(conn); /* is this case graceful? */
-		return (GFARM_ERR_AUTHENTICATION);
+		return (e != GFARM_ERR_NO_ERROR ? e : GFARM_ERR_AUTHENTICATION);
 	}
 
 	e = (*auth_uid_to_global_user)(closure, auth_method,
 	    user_id, &peer_role, &global_username);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_1005363,
-		    "%s@%s: unregistered user: %s", user_id, hostname,
-		    gfarm_error_string(e));
+		gflog_notice(GFARM_MSG_1005363,
+		    "%s@%s: unregistered user: %s, skip SASL authentication",
+		    user_id, hostname, gfarm_error_string(e));
 		e = gfp_xdr_send(conn, "i",
 		    (gfarm_int32_t)GFARM_AUTH_SASL_STEP_ERROR);
 		if (e == GFARM_ERR_NO_ERROR)
 			e = gfp_xdr_flush(conn);
-		gflog_debug(GFARM_MSG_UNFIXED, "%s: %s: gfp_xdr_send: %s",
-		    diag, hostname, gfarm_error_string(e));
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "%s: %s: gfp_xdr_send: %s",
+			    diag, hostname, gfarm_error_string(e));
 		sasl_dispose(&sasl_conn);
 		gfp_xdr_tls_reset(conn); /* is this case graceful? */
-		return (GFARM_ERR_AUTHENTICATION);
+		return (e != GFARM_ERR_NO_ERROR ? e : GFARM_ERR_AUTHENTICATION);
 	}
 
 	sasl_dispose(&sasl_conn); /* user_id is freed here */
