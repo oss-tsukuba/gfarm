@@ -40,6 +40,7 @@ import traceback
 import unittest
 import hashlib
 import signal
+import resource
 
 from docopt import docopt
 from schema import Schema, Use, Or
@@ -317,9 +318,8 @@ class GfURLEntry():
     TYPE_SYMLINK = 'SYM'
     TYPE_OTHER = 'OTHER'
 
-    def __init__(self, start_url, path, mode, file_type, uname, gname,
+    def __init__(self, path, mode, file_type, uname, gname,
                  size, mtime, linkname):
-        self.start_url = start_url  # GfURL
         self.path = path
         self.mode = mode
         self.file_type = file_type
@@ -588,7 +588,7 @@ class GfURL(metaclass=abc.ABCMeta):
 
     def tar_add(self, tar, subpath, entry):
         tarinfo = entry.toTarinfo(subpath)
-        if tarinfo is None:
+        if tarinfo is None:  # warning, skip
             return
         # hard link is not supported
         if entry.is_file():
@@ -966,8 +966,7 @@ class GfURLGfarm(GfURL):
                 else:
                     path = dirname + '/' + name
                 # path is Gfarm URL (gfarm:/...)
-                start = self
-                yield GfURLEntry(start, path, mode, file_type, uname, gname,
+                yield GfURLEntry(path, mode, file_type, uname, gname,
                                  size, mtime, linkname)
             else:
                 # ex. gfarm:/home/user1/dir: -> gfarm:/home/user1/dir
@@ -1259,9 +1258,8 @@ class GfURLLocal(GfURL):
         return file_type
 
     def _toGfURLEntry(self, entry, path_only, hardlink_warn):
-        start = self
         if path_only:
-            return GfURLEntry(start, entry.path, 0, None,
+            return GfURLEntry(entry.path, 0, None,
                               'root', 'root',
                               0, 0, '')
         st = entry.stat(follow_symlinks=False)
@@ -1272,7 +1270,7 @@ class GfURLLocal(GfURL):
                                'nlink=%d, inode=%d (Local): %s',
                                st.st_nlink, st.st_ino, entry.path)
         linkname = self._readlink(entry.path, entry.is_symlink())
-        return GfURLEntry(start, entry.path, st.st_mode, file_type,
+        return GfURLEntry(entry.path, st.st_mode, file_type,
                           self.uid2name(st.st_uid),
                           self.gid2name(st.st_gid),
                           st.st_size, st.st_mtime, linkname)
@@ -1280,8 +1278,7 @@ class GfURLLocal(GfURL):
     def _scandir(self, path, path_only, recursive, first, hardlink_warn):
         if first:
             st = os.stat(path, follow_symlinks=True)
-            start = self
-            yield GfURLEntry(start, path, st.st_mode, self._toFileType(st),
+            yield GfURLEntry(path, st.st_mode, self._toFileType(st),
                              self.uid2name(st.st_uid),
                              self.gid2name(st.st_gid),
                              st.st_size, st.st_mtime, '')
@@ -1510,8 +1507,8 @@ class GfTarFile(tarfile.TarFile):
                     if post_func:
                         close_obj.post()
 
-    def add_entry(self, subpath, entry):
-        entry.start_url.tar_add(self, subpath, entry)
+    def add_entry(self, basedir_url, subpath, entry):
+        basedir_url.tar_add(self, subpath, entry)
 
 
 class TestGfptar(unittest.TestCase):
@@ -1567,7 +1564,6 @@ class GfptarCommand(Command):
         self.canceled = threading.Event()
         self.lock_init(False)
         self.futures = None
-        self.sig_init()
         self.hardlink_warn = True
         if self.quiet:
             GfURL.shutup_stderr()
@@ -1578,6 +1574,13 @@ class GfptarCommand(Command):
         self.bufsize = self.opt['--bufsize']
         self.progress_enabled = self._progress_enabled()
         self.use_fsync = not self.opt['--disable-fsync']
+
+        self.memory_limit = self.opt['--memory']
+        if self.memory_limit is not None:
+            self.set_memory_limit(self.memory_limit)
+
+    def set_memory_limit(self, max_memory):
+        resource.setrlimit(resource.RLIMIT_AS, (max_memory, max_memory))
 
     def sig_init(self):
         def sig_handler(signum, frame):
@@ -2198,6 +2201,9 @@ class GfptarCommand(Command):
 
         self.outdir_url.create_new_dir()
         has_error = None
+
+        self.sig_init()
+
         try:
             if self.MT_enabled():
                 self.create_tars_MT()
@@ -2403,7 +2409,7 @@ class GfptarCommand(Command):
                 break
             subpath = entry.subpath(self.basedir_url)
             try:
-                tar.add_entry(subpath, entry)
+                tar.add_entry(self.basedir_url, subpath, entry)
             except Exception as e:
                 with self.lock():
                     self.cannot_be_archived += 1
@@ -2482,6 +2488,8 @@ class GfptarCommand(Command):
         self.total_num = 0
         self.start_time = time.time()
         self.next_time = self.start_time + 1
+
+        self.sig_init()
 
         for ent in indir_url.listdir(recursive=False):
             if ent.path.endswith(self.LIST_SUFFIX):  # ignored
@@ -2937,6 +2945,8 @@ Options:
              (https://docs.python.org/3/library/codecs.html#standard-encodings)
                             [default: utf-8]
   --bufsize=BYTES           buffer size to copy [default: 1M]
+  --memory=NUM              upper limit of memory size (bytes)
+                            (default: no limit)
   --test                    test mode (-q option is recommended)
   --test-workdir-local=DIR  local directory for test [default: /tmp]
   --test-workdir-gfarm=DIR  Gfarm directory for test [default: gfarm:/tmp]
@@ -2963,13 +2973,13 @@ Example of --create (Gfarm to Gfarm):
     ...
     F dir/test0999.data
 
-Example of --extract (Gfarm to Gfarm):
+Example of --extract (Gfarm to Local):
   Command line:
-    gfptar -x gfarm:/home/user1/out2 gfarm:/home/user1/out
+    gfptar -x /home/user1/out2 gfarm:/home/user1/out
   Output files:
-    gfarm:/home/user1/out2/dir/test0000.data
+    /home/user1/out2/dir/test0000.data
     ...
-    gfarm:/home/user1/out2/dir/test9999.data
+    /home/user1/out2/dir/test9999.data
 
 Limitations:
   - Hard links are not preserved.
@@ -2995,6 +3005,7 @@ _schema = Schema({
     '--gfsched-interval': Use(int),
     '--same-owner': bool,
     '--use-tqdm': bool,
+    '--memory': Or(Use(unhumanize_number), None),
     '--test': bool,
     '--test-workdir-local': Or(str, None),
     '--test-workdir-gfarm': Or(str, None),
