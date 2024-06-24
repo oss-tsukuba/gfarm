@@ -3,6 +3,7 @@
  */
 #include <assert.h>
 #include <signal.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -35,9 +36,14 @@ gfarm_server_config_read(void)
 	char *config_file = gfarm_config_get_filename();
 
 	if ((config = fopen(config_file, "r")) == NULL) {
-		gflog_debug(GFARM_MSG_1000976,
-			"open operation on server config file (%s) failed",
-			config_file);
+		if (errno == ENOENT)
+			gflog_debug(GFARM_MSG_1000976,
+			    "open operation on server config file (%s) failed",
+			    config_file);
+		else /* something went wrong */
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "server config file %s: %s",
+			    config_file, strerror(errno));
 		return (GFARM_ERRMSG_CANNOT_OPEN_CONFIG);
 	}
 	e = gfarm_config_read_file(config, &lineno, config_file);

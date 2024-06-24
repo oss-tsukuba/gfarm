@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <stdlib.h>
@@ -42,6 +43,14 @@ gfarm_import_fragment_config_read(char *config,
 	if (strcmp(config, "-") == 0) {
 		fp = stdin;
 	} else if ((fp = fopen(config, "r")) == NULL) {
+		if (errno == ENOENT)
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "Failed to open file (%s): %s",
+			    config, strerror(errno));
+		else /* something went wrong */
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "Failed to open file (%s): %s",
+			    config, strerror(errno));
 		gfarm_stringlist_free(&host_list);
 		free(size_table);
 		return (GFARM_ERR_NO_SUCH_OBJECT);
@@ -187,11 +196,15 @@ gfarm_hostlist_read(char *filename,
 	if (strcmp(filename, "-") == 0) {
 		fp = stdin;
 	} else if ((fp = fopen(filename, "r")) == NULL) {
+		if (errno == ENOENT)
+			gflog_debug(GFARM_MSG_1000988,
+			    "Failed to open file (%s): %s",
+			    filename, strerror(errno));
+		else /* something went wrong */
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "Failed to open file (%s): %s",
+			    filename, strerror(errno));
 		gfarm_stringlist_free(&host_list);
-		gflog_debug(GFARM_MSG_1000988,
-			"Failed to open file (%s): %s",
-			filename,
-			gfarm_error_string(GFARM_ERR_NO_SUCH_OBJECT));
 		return (GFARM_ERR_NO_SUCH_OBJECT);
 	}
 	for (i = 0; fgets(line, sizeof(line), fp) != NULL; i++) {

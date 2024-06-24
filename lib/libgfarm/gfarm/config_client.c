@@ -117,6 +117,9 @@ gfarm_config_read(void)
 	}
 	if ((config = fopen(rc, "r")) == NULL) {
 		user_config_errno = errno;
+		if (errno != ENOENT) /* something went wrong */
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "%s: %s", rc, strerror(errno));
 	} else {
 		user_config_errno = 0;
 		e = gfarm_config_read_file(config, &lineno, rc);
@@ -132,10 +135,14 @@ gfarm_config_read(void)
 		free(rc);
 
 	if ((config = fopen(config_file, "r")) == NULL) {
+		if (errno == ENOENT)
+			gflog_debug(GFARM_MSG_1000981,
+			    "%s: %s", config_file, strerror(errno));
+		else /* something went wrong */
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "%s: %s", config_file, strerror(errno));
 		if (user_config_errno != 0) {
 			e = GFARM_ERRMSG_CANNOT_OPEN_CONFIG;
-			gflog_debug(GFARM_MSG_1000981,
-			    "%s: %s", config_file, gfarm_error_string(e));
 			return (e);
 		}
 	} else {

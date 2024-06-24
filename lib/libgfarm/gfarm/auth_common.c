@@ -230,6 +230,12 @@ gfarm_auth_shared_key_get(unsigned int *expirep, char *shared_key,
 	}
 
 	if ((fp = fopen(keyfilename, "r+")) == NULL) {
+		if (errno == ENOENT)
+			gflog_debug(GFARM_MSG_UNFIXED, "%s: %s",
+			    keyfilename, strerror(errno));
+		else /* something went wrong */
+			gflog_warning(GFARM_MSG_UNFIXED, "%s: %s",
+			    keyfilename, strerror(errno));
 		e = GFARM_ERRMSG_SHAREDSECRET_KEY_FILE_NOT_EXIST;
 		goto create;
 	}
