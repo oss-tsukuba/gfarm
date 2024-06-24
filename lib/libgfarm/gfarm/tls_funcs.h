@@ -3328,7 +3328,7 @@ retry:
 
 		if (is_valid_string(ctx->peer_dn_oneline_) == true &&
 			gflog_auth_get_verbose()) {
-			gflog_tls_debug(GFARM_MSG_1005638,
+			gflog_tls_verbose_debug(GFARM_MSG_1005638,
 				"Authentication between \"%s\" %s and a "
 				"TLS session %s with %s.",
 				ctx->peer_dn_gsi_,
@@ -3339,7 +3339,7 @@ retry:
 				(ctx->is_got_proxy_cert_ == true) ?
 					"proxy certificate" :
 					"end-entity certificate");
-			gflog_tls_debug(GFARM_MSG_1005639,
+			gflog_tls_verbose_debug(GFARM_MSG_1005639,
 				"peer CN \"%s\"", tls_session_peer_cn(ctx));
 		}
 	}
