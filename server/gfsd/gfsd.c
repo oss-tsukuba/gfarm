@@ -7185,12 +7185,14 @@ main(int argc, char **argv)
 		if (seteuid(0) == -1 && is_root)
 			gflog_error_errno(GFARM_MSG_1002394, "seteuid(0)");
 		pid_fp = fopen(pid_file, "w");
+		save_errno = errno;
 		if (seteuid(gfsd_uid) == -1 && is_root)
 			gflog_error_errno(GFARM_MSG_1002395,
 			    "seteuid(%d)", (int)gfsd_uid);
 		if (pid_fp == NULL)
-			accepting_fatal_errno(GFARM_MSG_1000590,
-				"failed to open file: %s", pid_file);
+			accepting_fatal(GFARM_MSG_UNFIXED,
+			    "%s: failed to open file: %s",
+			    pid_file, strerror(save_errno));
 	}
 
 	if (!debug_mode) {
