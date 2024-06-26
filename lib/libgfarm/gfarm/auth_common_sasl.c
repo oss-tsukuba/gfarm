@@ -17,6 +17,9 @@ gfarm_sasl_log(void *context, int sasl_priority, const char *message)
 {
 	int prio;
 
+	if (!gflog_auth_get_verbose())
+		return (SASL_OK);
+
 	switch (sasl_priority) {
 	case SASL_LOG_NONE:
 		prio = LOG_DEBUG;
