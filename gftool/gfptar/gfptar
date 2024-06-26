@@ -41,6 +41,8 @@ import unittest
 import hashlib
 import signal
 import resource
+import string
+import random
 
 from docopt import docopt
 from schema import Schema, Use, Or
@@ -477,7 +479,7 @@ class GfURL(metaclass=abc.ABCMeta):
         base = self.url_str
         if not fullpath.startswith(base):
             logger.error('subpath: %s, %s', base, fullpath)
-            raise AssertionError
+            raise AssertionError(f'base={base}, fullpath={fullpath}')
         logger.debug('subpath: %s, %s', base, fullpath)
         return fullpath[len(base):].lstrip('/')  # relative path
 
@@ -585,19 +587,6 @@ class GfURL(metaclass=abc.ABCMeta):
     def writeopen(self, textmode=False, mode=0o600, mtime=None,
                   user=None, group=None, use_fsync=True, hostname=None):
         raise NotImplementedError
-
-    def tar_add(self, tar, subpath, entry):
-        tarinfo = entry.toTarinfo(subpath)
-        if tarinfo is None:  # warning, skip
-            return
-        # hard link is not supported
-        if entry.is_file():
-            url = GfURL.init(entry.path)
-            url.check_readable()
-            with url.readopen() as f:
-                tar.addfile(tarinfo, fileobj=f)
-        else:
-            tar.addfile(tarinfo)
 
     def copy_from(self, inf, bufsize, mode=None, mtime=0o600,
                   user=None, group=None, use_fsync=True, hostname=None):
@@ -1312,18 +1301,6 @@ class GfURLLocal(GfURL):
         yield from self._scandir(self.url_str, path_only, recursive, first,
                                  hardlink_warn)
 
-    # NOTE: This is not expected behavior.
-    # - This can copy a hard link,
-    #   but a hard link cannot be extracted from gfexport (stream open)
-    # - When the specified <member> for --create is a symlink,
-    #   the entry will be archived as symlink.
-    # def tar_add(self, tar, subpath, entry):
-    #     if entry.path:
-    #         path = os.path.join(self.url_str, entry.path)
-    #     else:
-    #         path = self.url_str
-    #     tar.add(path, arcname=subpath, recursive=False)
-
     @contextmanager
     def readopen(self, textmode=False):
         if textmode:
@@ -1365,7 +1342,8 @@ class GfURLLocal(GfURL):
 class GfTarFile(tarfile.TarFile):
     COMPRESS_TYPE_NO = 'no'
     ATTR_PROC_LIST = '_gfptar_proc_list'  # [(proc, fileobj, fileobj), ...]
-    USE_FSYNC = 'use_fsync'
+    ATTR_USE_FSYNC = 'use_fsync'
+    METHOD_add_entry = 'add_entry'
 
     @classmethod
     def extract_open(cls, gfurl, copybufsize, compress_prog=None):
@@ -1416,7 +1394,7 @@ class GfTarFile(tarfile.TarFile):
 
     @classmethod
     def create_open(cls, gfurl, compress_type, copybufsize, compress_prog=None,
-                    use_fsync=True, target_host=None):
+                    use_fsync=True, target_host=None, dummy_input=False):
         # use Stream (not seekable)
         openmode = 'w|'
         if compress_prog is None \
@@ -1461,7 +1439,11 @@ class GfTarFile(tarfile.TarFile):
             gfurl.chmod(0o600)
         logger.debug('GfTarFile.create_open: %s', gfurl.url_str)
         setattr(tar, cls.ATTR_PROC_LIST, proc_list)
-        setattr(tar, cls.USE_FSYNC, use_fsync)
+        setattr(tar, cls.ATTR_USE_FSYNC, use_fsync)
+        if dummy_input:
+            setattr(tar, cls.METHOD_add_entry, tar._add_entry_dummy)
+        else:
+            setattr(tar, cls.METHOD_add_entry, tar._add_entry)
         return tar
 
     @classmethod
@@ -1485,7 +1467,7 @@ class GfTarFile(tarfile.TarFile):
     # override
     def close(self):
         super().close()
-        use_fsync = getattr(self, self.USE_FSYNC, True)
+        use_fsync = getattr(self, self.ATTR_USE_FSYNC, True)
         proc_list = getattr(self, self.ATTR_PROC_LIST, None)
         if proc_list:
             for proc_tuple in proc_list:
@@ -1507,8 +1489,66 @@ class GfTarFile(tarfile.TarFile):
                     if post_func:
                         close_obj.post()
 
-    def add_entry(self, basedir_url, subpath, entry):
-        basedir_url.tar_add(self, subpath, entry)
+    def _add_entry_dummy(self, subpath, entry):
+        tarinfo = entry.toTarinfo(subpath)
+        if tarinfo is None:  # warning, skip
+            return
+        # hard link is not supported
+        if entry.is_file():
+            with RandomStream(entry.size) as f:
+                self.addfile(tarinfo, fileobj=f)
+        else:
+            self.addfile(tarinfo)
+
+    def _add_entry(self, subpath, entry):
+        tarinfo = entry.toTarinfo(subpath)
+        if tarinfo is None:  # warning, skip
+            return
+        # hard link is not supported
+        if entry.is_file():
+            url = GfURL.init(entry.path)
+            url.check_readable()
+            with url.readopen() as f:
+                self.addfile(tarinfo, fileobj=f)
+        else:
+            self.addfile(tarinfo)
+
+    # NOTE: This is not expected behavior for local file.
+    # - This can copy a hard link,
+    #   but a hard link cannot be extracted from gfexport (stream open)
+    # - When the specified <member> for --create is a symlink,
+    #   the entry will be archived as symlink.
+    # def tar_add(self, subpath, entry):
+    #     if entry.path:
+    #         path = os.path.join(self.url_str, entry.path)
+    #     else:
+    #         path = self.url_str
+    #     self.add(path, arcname=subpath, recursive=False)
+
+
+class RandomStream():
+    chunk_size = 1024 * 16
+
+    def __init__(self, size):
+        self.size = size
+        self.written = 0
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        pass
+
+    def read(self, size=-1):
+        if size == -1 or size > self.size - self.written:
+            size = self.size - self.written
+        if self.written >= self.size:
+            return b''
+        remaining_size = self.size - self.written
+        read_size = min(self.chunk_size, remaining_size, size)
+        random_data = os.urandom(read_size)
+        self.written += read_size
+        return random_data
 
 
 class TestGfptar(unittest.TestCase):
@@ -1574,6 +1614,7 @@ class GfptarCommand(Command):
         self.bufsize = self.opt['--bufsize']
         self.progress_enabled = self._progress_enabled()
         self.use_fsync = not self.opt['--disable-fsync']
+        self.dummy_input_num = self.opt['--dummy-input']
 
         self.memory_limit = self.opt['--memory']
         if self.memory_limit is not None:
@@ -2099,6 +2140,64 @@ class GfptarCommand(Command):
         if self.verbose:
             print(fmt.format(*args))
 
+    def list_dummy_files(self, base_dir, num, files_per_dir=1000):
+        choices = string.ascii_letters + string.digits + '漢あア()[]-'
+
+        def generate_random_dirname(min_depth=5, max_depth=5,
+                                    min_length=30, max_length=30):
+            depth = random.randint(min_depth, max_depth)
+            directories = [''.join(
+                random.choices(choices,
+                               k=random.randint(min_length, max_length)))
+                           for _ in range(depth)]
+            return os.path.join(*directories)
+
+        def generate_random_filename(min_length=30, max_length=30):
+            return ''.join(
+                random.choices(choices, k=random.randint(
+                    min_length, max_length))) \
+                + '.' + ''.join(random.choices(string.ascii_lowercase,
+                                               k=random.randint(2, 4)))
+
+        def rand_dir():
+            dir_path = generate_random_dirname()
+            path = os.path.join(base_dir, dir_path)
+            mode = 0o700
+            file_type = GfURLEntry.TYPE_DIR
+            uname = 'user1'
+            gname = 'group1'
+            size = 0
+            mtime = 0
+            linkname = ''
+            return GfURLEntry(path, mode, file_type, uname, gname,
+                              size, mtime, linkname)
+
+        def rand_file(dir_path):
+            f = generate_random_filename()
+            path = os.path.join(dir_path, f)
+            mode = 0o600
+            file_type = GfURLEntry.TYPE_FILE
+            uname = 'user1'
+            gname = 'group1'
+            size = random.randint(0, 1024)
+            mtime = 0
+            linkname = ''
+            return GfURLEntry(path, mode, file_type, uname, gname,
+                              size, mtime, linkname)
+
+        dir_num = int(num / files_per_dir)
+        remainder = num % files_per_dir
+        for i in range(dir_num):
+            dir_ent = rand_dir()
+            yield dir_ent
+            for j in range(files_per_dir - 1):
+                yield rand_file(dir_ent.path)
+        if remainder > 0:
+            dir_ent = rand_dir()
+            yield dir_ent
+            for j in range(remainder - 1):
+                yield rand_file(dir_ent.path)
+
     def create(self, outdir, basedir, infiles):
         self.options_init()
         self.outdir = outdir
@@ -2128,6 +2227,14 @@ class GfptarCommand(Command):
         self.start_time = time.time()
         self.next_time = self.start_time + 1
 
+        def listdir_switch(gfurl):
+            if self.dummy_input_num is not None:
+                return self.list_dummy_files(gfurl.url_str,
+                                             self.dummy_input_num)
+            else:
+                return gfurl.listdir(recursive=True, first=True,
+                                     hardlink_warn=self.hardlink_warn)
+
         self.cannot_be_archived = 0
         cannot_read_dir = 0
         filelist = []
@@ -2150,8 +2257,7 @@ class GfptarCommand(Command):
             gfurl = GfURL.init(url_str)
             logger.debug('listdir: %s', gfurl.url_str)
             try:
-                for entry in gfurl.listdir(recursive=True, first=True,
-                                           hardlink_warn=self.hardlink_warn):
+                for entry in listdir_switch(gfurl):
                     logger.debug('listdir: entry.path=%s', entry.path)
                     filelist.append(entry)
                     self.total_size += entry.size
@@ -2389,19 +2495,31 @@ class GfptarCommand(Command):
             outname = '%s..%s%s' % (firstpath, lastpath, self.suffix)
 
         serial_str = '%04d_' % serial
-        outname_max = GfURL.MAXNAMLEN - len(serial_str) - len(self.LIST_SUFFIX)
-        if len(outname) > outname_max:
+        outname_max = self.outdir_url.MAXNAMLEN \
+            - len(serial_str) - len(self.LIST_SUFFIX)
+        outname_len = len(outname.encode())
+        offset = 0
+        while outname_len > outname_max:
             # use last half of name
-            outname = outname[-outname_max:]
+            outname = outname[-(outname_max-offset):]
+            outname_len = len(outname.encode())
+            logger.debug(f'modified outname_len={outname_len}')
+            # loop for multibyte charactors
+            offset += 1
         # ex.: home/user1/dir -> home_user1_dir
         outname = serial_str + outname.replace('/', '_')
         outurl = GfURL.init(self.outdir_url.url_join(outname),
                             use_gfarm_command=self.use_gfarm_command)
         target_host = self.select_a_target_host(outurl, serial)
+        if self.dummy_input_num > 0:
+            dummy_input = True
+        else:
+            dummy_input = False
         tar = GfTarFile.create_open(outurl, self.compress_type, self.bufsize,
                                     compress_prog=self.compress_prog,
                                     use_fsync=self.use_fsync,
-                                    target_host=target_host)
+                                    target_host=target_host,
+                                    dummy_input=dummy_input)
         filelist_ok = []
         for entry in filelist:
             if self.is_canceled():
@@ -2409,7 +2527,7 @@ class GfptarCommand(Command):
                 break
             subpath = entry.subpath(self.basedir_url)
             try:
-                tar.add_entry(self.basedir_url, subpath, entry)
+                tar.add_entry(subpath, entry)
             except Exception as e:
                 with self.lock():
                     self.cannot_be_archived += 1
@@ -2908,13 +3026,38 @@ progname = os.path.basename(__file__)
 
 
 __doc__ = """
-Usage:
-  {f} [options] -c <outdir> [-C <basedir>] [--] <member>...
-  {f} [options] -x <outdir> [--] <indir> [<member>...]
-  {f} [options] -t <indir>
-  {f} [options] --test
-  {f} [options] --test -C <basedir> <member>...
-  {f} -h | --help
+gfptar - archive files in parallel
+
+Example of --create (Gfarm to Gfarm):
+  Command line:
+    gfptar -c gfarm:/home/user1/out -C gfarm:/home/user1 ./dir
+  Input files:
+    gfarm:/home/user1/dir/test0000.data
+    ...
+    gfarm:/home/user1/dir/test9999.data
+  Output files:
+    gfarm:/home/user1/out/0001_dir_test0000.data..dir_test0999.data.tar.gz
+    gfarm:/home/user1/out/0001_dir_test0000.data..dir_test0999.data.tar.gz.lst
+    ...
+    gfarm:/home/user1/out/0010_dir_test9000.data..dir_test9999.data.tar.gz
+    gfarm:/home/user1/out/0010_dir_test9000.data..di1_test9999.data.tar.gz.lst
+  Contents of list file (*.lst):
+    F dir/test0000.data
+    ...
+    F dir/test0999.data
+
+Example of --extract (Gfarm to Local):
+  Command line:
+    gfptar -x /home/user1/out2 gfarm:/home/user1/out
+  Output files:
+    /home/user1/out2/dir/test0000.data
+    ...
+    /home/user1/out2/dir/test9999.data
+
+Limitations:
+  - Hard links are not preserved.
+  - File names cannot include newline characters.
+  - Subsecond (less than a second) for mtime is not preserved.
 
 Options:
   -t, --list=DIR            list mode,
@@ -2950,41 +3093,20 @@ Options:
   --test                    test mode (-q option is recommended)
   --test-workdir-local=DIR  local directory for test [default: /tmp]
   --test-workdir-gfarm=DIR  Gfarm directory for test [default: gfarm:/tmp]
+  --dummy-input=NUM         the number of dummy files for input
+                            (for -c) (ignore <member>) (1000 files per dir)
   -q, --quiet               quiet messages
   -v, --verbose             verbose output
   -d, --debug               debug mode
   -?, -h, --help            show this help and exit
 
-Example of --create (Gfarm to Gfarm):
-  Command line:
-    gfptar -c gfarm:/home/user1/out -C gfarm:/home/user1 ./dir
-  Input files:
-    gfarm:/home/user1/dir/test0000.data
-    ...
-    gfarm:/home/user1/dir/test9999.data
-  Output files:
-    gfarm:/home/user1/out/0001_dir_test0000.data..dir_test0999.data.tar.gz
-    gfarm:/home/user1/out/0001_dir_test0000.data..dir_test0999.data.tar.gz.lst
-    ...
-    gfarm:/home/user1/out/0010_dir_test9000.data..dir_test9999.data.tar.gz
-    gfarm:/home/user1/out/0010_dir_test9000.data..di1_test9999.data.tar.gz.lst
-  Contents of list file (*.lst):
-    F dir/test0000.data
-    ...
-    F dir/test0999.data
-
-Example of --extract (Gfarm to Local):
-  Command line:
-    gfptar -x /home/user1/out2 gfarm:/home/user1/out
-  Output files:
-    /home/user1/out2/dir/test0000.data
-    ...
-    /home/user1/out2/dir/test9999.data
-
-Limitations:
-  - Hard links are not preserved.
-  - File names cannot include newline characters.
-  - Subsecond (less than a second) for mtime is not preserved.
+Usage:
+  {f} [options] -c <outdir> [-C <basedir>] [--] <member>...
+  {f} [options] -x <outdir> [--] <indir> [<member>...]
+  {f} [options] -t <indir>
+  {f} [options] --test
+  {f} [options] --test -C <basedir> <member>...
+  {f} -h | --help
 """.format(f=progname)
 
 
@@ -3009,6 +3131,7 @@ _schema = Schema({
     '--test': bool,
     '--test-workdir-local': Or(str, None),
     '--test-workdir-gfarm': Or(str, None),
+    '--dummy-input': Or(Use(unhumanize_number), None),
     '--quiet': bool,
     '--verbose': bool,
     '--debug': bool,
