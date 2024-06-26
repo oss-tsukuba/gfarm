@@ -135,12 +135,10 @@ gfarm_config_read(void)
 		free(rc);
 
 	if ((config = fopen(config_file, "r")) == NULL) {
-		if (errno == ENOENT)
-			gflog_debug(GFARM_MSG_1000981,
-			    "%s: %s", config_file, strerror(errno));
-		else /* something went wrong */
-			gflog_warning(GFARM_MSG_UNFIXED,
-			    "%s: %s", config_file, strerror(errno));
+		gflog_message(GFARM_MSG_1000981,
+		    errno == ENOENT ? LOG_DEBUG : LOG_WARNING,
+		    __FILE__, __LINE__, __func__,
+		    "%s: %s", config_file, strerror(errno));
 		if (user_config_errno != 0) {
 			e = GFARM_ERRMSG_CANNOT_OPEN_CONFIG;
 			return (e);

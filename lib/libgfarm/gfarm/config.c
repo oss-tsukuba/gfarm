@@ -3313,14 +3313,10 @@ parse_include(char *p, const char **op, const char *file, int lineno)
 	config = fopen(s, "r");
 	if (config == NULL) {
 		*op = s;
-		if (errno == ENOENT)
-			gflog_debug(GFARM_MSG_1005121,
-			    "%s: cannot open include file: "
-			    "No such file or directory", s);
-		else /* something went wrong */
-			gflog_warning(GFARM_MSG_UNFIXED,
-			    "%s: cannot open include file: %s",
-			    s, strerror(errno));
+		gflog_message(GFARM_MSG_UNFIXED,
+		    errno == ENOENT ? LOG_DEBUG : LOG_WARNING,
+		    __FILE__, __LINE__, __func__,
+		    "%s: cannot open include file: %s", s, strerror(errno));
 		free(malloced_filename);
 		--gfarm_ctxp->include_nesting_level;
 		return (GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY);
