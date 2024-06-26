@@ -2511,7 +2511,7 @@ class GfptarCommand(Command):
         outurl = GfURL.init(self.outdir_url.url_join(outname),
                             use_gfarm_command=self.use_gfarm_command)
         target_host = self.select_a_target_host(outurl, serial)
-        if self.dummy_input_num > 0:
+        if self.dummy_input_num is not None and self.dummy_input_num > 0:
             dummy_input = True
         else:
             dummy_input = False
