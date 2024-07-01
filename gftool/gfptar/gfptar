@@ -3,16 +3,14 @@
 # Requirements:
 # --- for Debian,Ubuntu series ---
 # apt-get install python3 python3-docopt python3-schema
-# (optional) python3-tqdm
 #
 # --- for RHEL,CentOS series ---
 # yum install     epel-release
 # yum install     python3 python3-docopt python3-schema
-# (optional) python3-tqdm
 #
 # --- Or, install to ~/.local just for user's environment ---
 # (required: python3-pip)
-# pip3 install --user docopt schema tqdm
+# pip3 install --user docopt schema
 
 # Coding style check:
 # flake8 ./gfptar
@@ -46,12 +44,6 @@ import random
 
 from docopt import docopt
 from schema import Schema, Use, Or
-
-try:
-    from tqdm import tqdm
-    have_tqdm = True
-except Exception:
-    have_tqdm = False
 
 
 # library
@@ -342,6 +334,13 @@ class GfURLEntry():
 
     def subpath(self, baseurl):
         return baseurl.subpath(self.path)
+
+    def size_all(self):
+        # include length of path
+        this_size = self.size + len(self.path.encode())
+        if self.is_symlink():
+            this_size += len(self.linkname.encode())
+        return this_size
 
     def is_file(self):
         return self.file_type == self.TYPE_FILE
@@ -1343,6 +1342,7 @@ class GfTarFile(tarfile.TarFile):
     COMPRESS_TYPE_NO = 'no'
     ATTR_PROC_LIST = '_gfptar_proc_list'  # [(proc, fileobj, fileobj), ...]
     ATTR_USE_FSYNC = 'use_fsync'
+    ATTR_DUMMY_SLEEP = 'dummy_sleep'
     METHOD_add_entry = 'add_entry'
 
     @classmethod
@@ -1394,7 +1394,8 @@ class GfTarFile(tarfile.TarFile):
 
     @classmethod
     def create_open(cls, gfurl, compress_type, copybufsize, compress_prog=None,
-                    use_fsync=True, target_host=None, dummy_input=False):
+                    use_fsync=True, target_host=None,
+                    dummy_input=False, dummy_sleep=0):
         # use Stream (not seekable)
         openmode = 'w|'
         if compress_prog is None \
@@ -1442,6 +1443,7 @@ class GfTarFile(tarfile.TarFile):
         setattr(tar, cls.ATTR_USE_FSYNC, use_fsync)
         if dummy_input:
             setattr(tar, cls.METHOD_add_entry, tar._add_entry_dummy)
+            setattr(tar, cls.ATTR_DUMMY_SLEEP, dummy_sleep)
         else:
             setattr(tar, cls.METHOD_add_entry, tar._add_entry)
         return tar
@@ -1495,6 +1497,7 @@ class GfTarFile(tarfile.TarFile):
             return
         # hard link is not supported
         if entry.is_file():
+            time.sleep(getattr(self, self.ATTR_DUMMY_SLEEP))
             with RandomStream(entry.size) as f:
                 self.addfile(tarinfo, fileobj=f)
         else:
@@ -1527,11 +1530,11 @@ class GfTarFile(tarfile.TarFile):
 
 
 class RandomStream():
-    chunk_size = 1024 * 16
-
     def __init__(self, size):
         self.size = size
         self.written = 0
+        self.rand_block_size = 1024
+        self.rand_data = os.urandom(self.rand_block_size)
 
     def __enter__(self):
         return self
@@ -1540,15 +1543,18 @@ class RandomStream():
         pass
 
     def read(self, size=-1):
-        if size == -1 or size > self.size - self.written:
-            size = self.size - self.written
         if self.written >= self.size:
             return b''
+        if size == -1:
+            size = self.size
         remaining_size = self.size - self.written
-        read_size = min(self.chunk_size, remaining_size, size)
-        random_data = os.urandom(read_size)
+        read_size = min(remaining_size, size)
+        repeat_count = read_size / self.rand_block_size
+        repeat_remainder = read_size % self.rand_block_size
+        data = self.rand_data * int(repeat_count) \
+            + self.rand_data[:repeat_remainder]
         self.written += read_size
-        return random_data
+        return data
 
 
 class TestGfptar(unittest.TestCase):
@@ -1614,7 +1620,6 @@ class GfptarCommand(Command):
         self.bufsize = self.opt['--bufsize']
         self.progress_enabled = self._progress_enabled()
         self.use_fsync = not self.opt['--disable-fsync']
-        self.dummy_input_num = self.opt['--dummy-input']
 
         self.memory_limit = self.opt['--memory']
         if self.memory_limit is not None:
@@ -1672,7 +1677,8 @@ class GfptarCommand(Command):
             if self.debug:
                 raise
             else:
-                if issubclass(type(e), GfptarError):  # already reported
+                if issubclass(type(e), CannotBeArchivedError):
+                    # already reported
                     pass
                 else:
                     logger.error(convert_message(e))
@@ -2133,54 +2139,66 @@ class GfptarCommand(Command):
                                      exclude_list=exclude_list)
 
     def MT_enabled(self):
-        return self.jobs >= 2
+        return self.jobs >= 1
 
     # lock required
     def info(self, fmt, *args):
         if self.verbose:
             print(fmt.format(*args))
 
-    def list_dummy_files(self, base_dir, num, files_per_dir=1000):
-        choices = string.ascii_letters + string.digits + '漢あア()[]-'
+    def list_dummy_files(self, base_dir, num, size_min, size_max, dummy_sleep):
+        # defaults
+        files_per_dir = 1000
+        dummy_sleep_per_entry = dummy_sleep / 512  # for each readdir()
+        dir_min_depth = 5
+        dir_max_depth = 5
+        dir_min_length = 30
+        dir_max_length = 30
+        file_min_length = 30
+        file_max_length = 30
 
-        def generate_random_dirname(min_depth=5, max_depth=5,
-                                    min_length=30, max_length=30):
-            depth = random.randint(min_depth, max_depth)
+        choices = string.ascii_letters + string.digits + '漢あア()[]-'
+        now = time.time()
+
+        def generate_random_dirname():
+            depth = random.randint(dir_min_depth, dir_max_depth)
             directories = [''.join(
                 random.choices(choices,
-                               k=random.randint(min_length, max_length)))
+                               k=random.randint(
+                                   dir_min_length, dir_max_length)))
                            for _ in range(depth)]
             return os.path.join(*directories)
 
-        def generate_random_filename(min_length=30, max_length=30):
+        def generate_random_filename():
+            suffix = ''.join(random.choices(string.ascii_lowercase,
+                                            k=random.randint(2, 4)))
             return ''.join(
                 random.choices(choices, k=random.randint(
-                    min_length, max_length))) \
-                + '.' + ''.join(random.choices(string.ascii_lowercase,
-                                               k=random.randint(2, 4)))
+                    file_min_length, file_max_length))) + '.' + suffix
 
         def rand_dir():
             dir_path = generate_random_dirname()
             path = os.path.join(base_dir, dir_path)
             mode = 0o700
             file_type = GfURLEntry.TYPE_DIR
-            uname = 'user1'
-            gname = 'group1'
+            uname = 'testuser1'
+            gname = 'testgroup1'
             size = 0
-            mtime = 0
+            mtime = now
             linkname = ''
             return GfURLEntry(path, mode, file_type, uname, gname,
                               size, mtime, linkname)
 
         def rand_file(dir_path):
+            time.sleep(dummy_sleep_per_entry)
             f = generate_random_filename()
             path = os.path.join(dir_path, f)
             mode = 0o600
             file_type = GfURLEntry.TYPE_FILE
-            uname = 'user1'
-            gname = 'group1'
-            size = random.randint(0, 1024)
-            mtime = 0
+            uname = 'testuser1'
+            gname = 'testgroup1'
+            size = random.randint(size_min, size_max)
+            mtime = now
             linkname = ''
             return GfURLEntry(path, mode, file_type, uname, gname,
                               size, mtime, linkname)
@@ -2204,13 +2222,22 @@ class GfptarCommand(Command):
         self.outdir_url = GfURL.init(outdir)
         self.basedir_url = GfURL.init(basedir)
         self.size = self.opt['--size']
+        if self.size <= 0:
+            self.size = 1
         self.ratio = self.opt['--ratio']
         self.compress_type = self.opt['--type']
         self.compress_prog = self.opt['--use-compress-program']
         self.disable_gfarm_command = self.opt['--disable-gfarm-command']
         self.use_gfarm_command = not self.disable_gfarm_command
         self.gfsched_interval = self.opt['--gfsched-interval']
-        self.use_tqdm = self.opt['--use-tqdm']
+        self.dummy_num = self.opt['--dummy-num']
+        if self.dummy_num is not None and self.dummy_num > 0:
+            self.dummy_input = True
+        else:
+            self.dummy_input = False
+        self.dummy_size_min = self.opt['--dummy-size-min']
+        self.dummy_size_max = self.opt['--dummy-size-max']
+        self.dummy_sleep = self.opt['--dummy-sleep']
         if self.compress_type == GfTarFile.COMPRESS_TYPE_NO:
             self.split_size = self.size
             self.suffix = '.tar'
@@ -2218,32 +2245,43 @@ class GfptarCommand(Command):
             self.split_size = self.size * 100 / self.ratio
             self.suffix = '.tar.' + self.compress_type
 
-        def entry_key(entry):
-            return entry.path
-
-        self.filelistlist = []
         self.total_size = 0
         self.total_num = 0
+
         self.start_time = time.time()
         self.next_time = self.start_time + 1
 
-        def listdir_switch(gfurl):
-            if self.dummy_input_num is not None:
-                return self.list_dummy_files(gfurl.url_str,
-                                             self.dummy_input_num)
-            else:
-                return gfurl.listdir(recursive=True, first=True,
-                                     hardlink_warn=self.hardlink_warn)
+        serial = 0
+        self.archived_size = 0
+        self.stored_size = 0
+        self.stored_num = 0
+
+        self.gfsched_lock = None
+        self.gfsched_next = 0
+        self.gfsched_list = None
+
+        self.outdir_url.create_new_dir()
+        has_error = None
 
         self.cannot_be_archived = 0
         cannot_read_dir = 0
-        filelist = []
+        targroup_list = []
+        targroup_list_len = 0
+        targroup_size = 0
+        serial = 0
+        self.listing = True
+
+        self.create_job_init()
+        self.sig_init()
+
+        infiles_checked = []
         for infile in infiles:
             infile_url = GfURL.init(infile)
             if not infile_url.is_local():
                 raise GfException('specifying a relative path is required '
                                   'instead of a URL: ' + infile)
             infile = infile_url.path  # normalize and ignore scheme
+            # normalized: ex. .///abc -> ./abc
             infile = infile.lstrip('/')  # relative path only
             if infile.startswith('./'):
                 infile = infile[2:]
@@ -2253,78 +2291,84 @@ class GfptarCommand(Command):
             if infile == '..' or infile.startswith('../'):
                 raise GfException('specifying parent directory (..) '
                                   + 'as members is not allowed: ' + infile)
+            infiles_checked.append(infile)
+
+        def listdir_switch(gfurl):
+            if self.dummy_num is not None:
+                return self.list_dummy_files(gfurl.url_str,
+                                             self.dummy_num,
+                                             self.dummy_size_min,
+                                             self.dummy_size_max,
+                                             self.dummy_sleep)
+            else:
+                return gfurl.listdir(recursive=True, first=True,
+                                     hardlink_warn=self.hardlink_warn)
+
+        for infile in infiles_checked:
+            if self.is_canceled():
+                logger.debug('Canceled (listdir 1): serial=%04d', serial)
+                break
+
             url_str = os.path.join(self.basedir_url.url_str, infile)
             gfurl = GfURL.init(url_str)
             logger.debug('listdir: %s', gfurl.url_str)
             try:
                 for entry in listdir_switch(gfurl):
+                    if self.is_canceled():
+                        logger.debug('Canceled (listdir 2): serial=%04d',
+                                     serial)
+                        break
                     logger.debug('listdir: entry.path=%s', entry.path)
-                    filelist.append(entry)
-                    self.total_size += entry.size
-                    self.total_num += 1
-                    if self.progress_enabled:
+                    # include length of path
+                    this_size = entry.size_all()
+                    with self.lock():  # for progress
+                        self.total_size += this_size
+                        self.total_num += 1
+
+                    targroup_size += this_size
+                    if targroup_size > self.split_size \
+                       and targroup_list_len > 0:
+                        serial += 1
+                        try:
+                            self.create_job_execute(serial, targroup_list)
+                        except Exception as e1:
+                            if has_error is None:
+                                has_error = e1
+                        targroup_list = []
+                        targroup_list_len = 0
+                        targroup_size = this_size
+                        if has_error is not None:
+                            break  # from listdir_switch()
+                    targroup_list.append(entry)
+                    targroup_list_len += 1
+
+                    # progress for listing before starting threads
+                    if serial == 0 and self.progress_enabled:
                         now = time.time()
                         if now >= self.next_time:
                             self.next_time = now + 1
-                            self.progress_for_list1(now)
-            except Exception as e:
+                            self.progress_for_create(now)
+            except Exception as e2:
                 cannot_read_dir += 1
                 logger.info('%s: error while reading directory (%s)',
-                            gfurl.url_str, convert_message(e))
-                # continue
+                            gfurl.url_str, convert_message(e2))
+                # continue : next infile
 
-        filelist.sort(key=entry_key, reverse=False)
-        self.filelistlist = self.schedule(filelist)
+        if targroup_list_len > 0:
+            serial += 1
+            try:
+                self.create_job_execute(serial, targroup_list)
+            except Exception as e:
+                if has_error is None:
+                    has_error = e
+
+        with self.lock():  # for progress
+            self.listing = False
+        self.create_job_finalize()
+
         if self.progress_enabled:
-            self.progress_for_list1(time.time())
-            sys.stdout.write('\n')
-
-        self.tqdm = None
-        self.myprogress = False
-        if self.progress_enabled:
-            if self.use_tqdm and have_tqdm:
-                term_size = shutil.get_terminal_size()
-                # bar_format = '{l_bar}{r_bar}'
-                bar_format = '{percentage:3.0f}% {n_fmt}/{total_fmt}' \
-                    + ' [{elapsed}<{remaining}, {rate_fmt}]'
-                self.tqdm = tqdm(total=self.total_size, unit_scale=True,
-                                 unit='B', dynamic_ncols=False,
-                                 bar_format=bar_format,
-                                 ncols=int(term_size.columns*3/4))
-            else:
-                self.myprogress = True
-
-        self.serial = 0
-        self.archive_size = 0
-        self.stored_size = 0
-        self.stored_num = 0
-        self.start_time = time.time()
-        self.next_time = self.start_time + 1
-
-        self.gfsched_lock = None
-        self.gfsched_next = 0
-        self.gfsched_list = None
-
-        self.outdir_url.create_new_dir()
-        has_error = None
-
-        self.sig_init()
-
-        try:
-            if self.MT_enabled():
-                self.create_tars_MT()
-            else:
-                self.create_tars()
-        except Exception as e:
-            if has_error is None:  # save first error
-                has_error = e
-            logger.debug(str(e))
-
-        if self.myprogress:
             self.progress_for_create(time.time())
             sys.stdout.write('\n')
-        if self.tqdm:
-            self.tqdm.close()
         if self.cannot_be_archived > 0 or cannot_read_dir > 0:
             e = CannotBeArchivedError(self.cannot_be_archived, cannot_read_dir)
             logger.warning(str(e))
@@ -2332,70 +2376,59 @@ class GfptarCommand(Command):
                 has_error = e
         if not self.quiet and self.stored_size > 0:
             print('compression ratio: %.2f %% (%d/%d)' %
-                  (100 * self.archive_size / self.stored_size,
-                   self.archive_size, self.stored_size))
-        del self.filelistlist
+                  (100 * self.archived_size / self.stored_size,
+                   self.archived_size, self.stored_size))
         if self.is_canceled():
             raise self.error_canceled()
         if has_error is not None:
             raise has_error
 
-    def create_tars(self):
-        self.lock_init(False)
+    def create_job_init(self):
+        if self.MT_enabled():
+            self.lock_init(True)
+            self.create_job_execute = self._create_job_execute_MT
+            self.executor = concurrent.futures.ThreadPoolExecutor(
+                max_workers=self.jobs)
+            self.futures = {}  # key: serial number
+        else:
+            self.lock_init(False)
+            self.create_job_execute = self._create_job_execute
+
+    def _create_job_execute(self, serial, filelist):
+        self.create_a_tar(serial, filelist)
+
+    def _create_job_execute_MT(self, serial, filelist):
+        t = self.executor.submit(self.create_a_tar, serial, filelist)
+        self.futures[t] = serial
         has_error = None
-        for filelist in self.filelistlist:
-            self.serial += 1
-            try:
-                self.create_a_tar(self.serial, filelist)
-            except Exception as e:
-                if has_error is None:  # save first error
-                    has_error = e
-                    logger.debug(str(e))
+        try:
+            has_error = self._create_job_check_MT()
+        except Exception as e:
+            logger.debug(f'_create_job_execute_MT(): {str(e)}')
         if has_error is not None:
             raise has_error
 
-    def create_tars_MT(self):
-        self.lock_init(True)
-        with concurrent.futures.ThreadPoolExecutor(
-                max_workers=self.jobs) as executor:
-            futures = {}  # serial number
-            for filelist in self.filelistlist:
-                self.serial += 1
-                t = executor.submit(self.create_a_tar, self.serial, filelist)
-                futures[t] = self.serial
-            self.futures = futures
-            has_error = None
-            for t in concurrent.futures.as_completed(futures, timeout=None):
-                exc = t.exception()
-                if exc:
-                    logger.debug('serial=%04d: %s', futures[t],
-                                 convert_message(exc))
-                    if self.verbose or self.debug:
-                        tb = traceback.TracebackException.from_exception(exc)
-                        logger.debug(''.join(tb.format()))
-                    if has_error is None:  # save first error
-                        has_error = exc
-            if has_error is not None:
-                raise has_error
+    def create_job_finalize(self):
+        if not self.MT_enabled():
+            return
+        has_error = self._create_job_check_MT(timeout=None)
+        if has_error is not None:
+            raise has_error
 
-    def schedule(self, filelist):
-        filelistlist = []
-        newlist = []
-        total = 0
-        for entry in filelist:
-            this_size = entry.size + len(entry.path.encode())
-            if entry.is_symlink():
-                this_size += len(entry.linkname.encode())
-            total += this_size
-            if total >= self.split_size:
-                if len(newlist) > 0:
-                    filelistlist.append(newlist)
-                newlist = []
-                total = this_size
-            newlist.append(entry)
-        if len(newlist) > 0:
-            filelistlist.append(newlist)
-        return filelistlist
+    def _create_job_check_MT(self, timeout=0.1):
+        has_error = None
+        for t in concurrent.futures.as_completed(self.futures,
+                                                 timeout=timeout):
+            exc = t.exception()
+            if exc:
+                logger.debug('serial=%04d: %s', self.futures[t],
+                             convert_message(exc))
+                if self.verbose or self.debug:
+                    tb = traceback.TracebackException.from_exception(exc)
+                    logger.debug(''.join(tb.format()))
+                if has_error is None:  # save first error
+                    has_error = exc
+        return has_error
 
     def lock_init(self, enable, timeout=None):
         if enable:
@@ -2475,7 +2508,7 @@ class GfptarCommand(Command):
     def create_a_tar0(self, serial, filelist):
         logger.debug('create_a_tar: start: %04d', serial)
         if self.is_canceled():
-            logger.debug('canceled (1): serial=%04d', serial)
+            logger.debug('Canceled (create 1): serial=%04d', serial)
             return
         first = None
         last = None
@@ -2507,26 +2540,23 @@ class GfptarCommand(Command):
             outname = outname[-(outname_max-offset):]
             outname_len = len(outname.encode())
             logger.debug(f'modified outname_len={outname_len}')
-            # loop for multibyte charactors
+            # loop for multibyte characters
             offset += 1
         # ex.: home/user1/dir -> home_user1_dir
         outname = serial_str + outname.replace('/', '_')
         outurl = GfURL.init(self.outdir_url.url_join(outname),
                             use_gfarm_command=self.use_gfarm_command)
         target_host = self.select_a_target_host(outurl, serial)
-        if self.dummy_input_num is not None and self.dummy_input_num > 0:
-            dummy_input = True
-        else:
-            dummy_input = False
         tar = GfTarFile.create_open(outurl, self.compress_type, self.bufsize,
                                     compress_prog=self.compress_prog,
                                     use_fsync=self.use_fsync,
                                     target_host=target_host,
-                                    dummy_input=dummy_input)
+                                    dummy_input=self.dummy_input,
+                                    dummy_sleep=self.dummy_sleep)
         filelist_ok = []
         for entry in filelist:
             if self.is_canceled():
-                logger.debug('canceled (2): serial=%04d', serial)
+                logger.debug('Canceled (create 2): serial=%04d', serial)
                 break
             subpath = entry.subpath(self.basedir_url)
             try:
@@ -2540,23 +2570,20 @@ class GfptarCommand(Command):
             filelist_ok.append(entry)
             with self.lock():
                 self.info('stored: {}', subpath)
-                self.stored_size += entry.size
-                if self.myprogress:
+                self.stored_size += entry.size_all()
+                if self.progress_enabled:
                     self.stored_num += 1
                     now = time.time()
                     if now >= self.next_time:
                         self.next_time = now + 1
                         self.progress_for_create(now)
-                elif self.tqdm:
-                    if entry.is_file():
-                        self.tqdm.update(entry.size)
 
         tar.close()
         tar_size = outurl.get_size()
         self.create_a_members_list(outurl, filelist_ok, target_host)
         with self.lock():
             self.info('created(.tar): {}', outurl.url_str)
-            self.archive_size += tar_size
+            self.archived_size += tar_size
 
     def create_a_members_list(self, url, filelist, target_host):
         outurl = GfURL.init(url.url_str + self.LIST_SUFFIX)
@@ -2644,9 +2671,9 @@ class GfptarCommand(Command):
                 now = time.time()
                 if now >= self.next_time:
                     self.next_time = now + 1
-                    self.progress_for_list2(now)
+                    self.progress_for_listing(now)
         if self.progress_enabled:
-            self.progress_for_list2(time.time())
+            self.progress_for_listing(time.time())
             sys.stdout.write('\n')
 
         if search_target:
@@ -2816,7 +2843,7 @@ class GfptarCommand(Command):
                         for t2 in futures:
                             if t == t2:
                                 continue
-                            logger.error('%s: canceled', futures[t2])
+                            logger.error('%s: Canceled', futures[t2])
                             t2.cancel()
                     raise exc
 
@@ -2832,7 +2859,7 @@ class GfptarCommand(Command):
     def extract_from_a_tar0(self, serial, target, member_set):
         logger.debug('extract_from_a_tar: start: %04d', serial)
         if self.is_canceled():
-            logger.debug('canceled (1): name=%s', target)
+            logger.debug('Canceled (extract 1): name=%s', target)
             return
         arch_url = GfURL.init(target,
                               use_gfarm_command=self.use_gfarm_command)
@@ -2842,7 +2869,7 @@ class GfptarCommand(Command):
         index = serial
         while True:
             if self.is_canceled():
-                logger.debug('canceled (2): name=%s', target)
+                logger.debug('Canceled (extract 2): name=%s', target)
                 break
             try:
                 tarinfo = tar.next()
@@ -2925,14 +2952,7 @@ class GfptarCommand(Command):
         with self.lock():
             self.info('extracted(done): {}', arch_url.url_str)
 
-    def progress_for_list1(self, now):
-        sec = now - self.start_time
-        sys.stdout.write(f'\rlisting: '
-                         f'num={self.total_num}, '
-                         f'size={self.total_size}, '
-                         f'sec={sec:.0f}')
-
-    def progress_for_list2(self, now):
+    def progress_for_listing(self, now):
         sec = now - self.start_time
         sys.stdout.write(f'\rlisting: '
                          f'num={self.total_num}, '
@@ -2941,15 +2961,21 @@ class GfptarCommand(Command):
     # lock required
     def progress_for_create(self, now):
         sec = now - self.start_time
-        if self.total_size > 0:
-            percent = self.stored_size * 100 / self.total_size
+        if self.listing:
+            percent_str = '?'
         else:
-            percent = 0
+            percent1 = self.stored_num * 100 / self.total_num
+            if self.total_size > 0:
+                percent2 = self.stored_size * 100 / self.total_size
+                percent = (percent1 + percent2) / 2
+            else:
+                percent = percent1
+            percent_str = f'{percent:.0f}'
         if sec > 0:
             bytes_per_sec = self.stored_size / sec
         else:
             bytes_per_sec = 0
-        sys.stdout.write(f'\rcreated: {percent:.0f}%, '
+        sys.stdout.write(f'\rcreated: {percent_str}%, '
                          f'num={self.stored_num}/{self.total_num}, '
                          f'size={self.stored_size}, '
                          f'sec={sec:.0f}, '
@@ -3086,7 +3112,6 @@ Options:
   --disable-fsync           disable calling fsync() before close()
   --gfsched-interval=SEC    interval of updating candidate hosts to write
                             (for Gfarm URL only) [default: 120]
-  --use-tqdm                use tqdm to show progress (for --create)
   --encoding=CODEC          codec for filename encoding
              (https://docs.python.org/3/library/codecs.html#standard-encodings)
                             [default: utf-8]
@@ -3096,8 +3121,12 @@ Options:
   --test                    test mode (-q option is recommended)
   --test-workdir-local=DIR  local directory for test [default: /tmp]
   --test-workdir-gfarm=DIR  Gfarm directory for test [default: gfarm:/tmp]
-  --dummy-input=NUM         the number of dummy files for input
+  --dummy-num=NUM           the number of dummy (random) files for input
                             (for -c) (ignore <member>) (1000 files per dir)
+                            (default: disabled)
+  --dummy-size-min=BYTES    minimum size of dummy files [default: 0]
+  --dummy-size-max=BYTES    maximum size of dummy files [default: 1M]
+  --dummy-sleep=SEC         sleep time per dummy file [default: 0.0]
   -q, --quiet               quiet messages
   -v, --verbose             verbose output
   -d, --debug               debug mode
@@ -3129,12 +3158,14 @@ _schema = Schema({
     '--disable-fsync': bool,
     '--gfsched-interval': Use(int),
     '--same-owner': bool,
-    '--use-tqdm': bool,
     '--memory': Or(Use(unhumanize_number), None),
     '--test': bool,
     '--test-workdir-local': Or(str, None),
     '--test-workdir-gfarm': Or(str, None),
-    '--dummy-input': Or(Use(unhumanize_number), None),
+    '--dummy-num': Or(Use(unhumanize_number), None),
+    '--dummy-size-min': Use(unhumanize_number),
+    '--dummy-size-max': Use(unhumanize_number),
+    '--dummy-sleep': Use(float),
     '--quiet': bool,
     '--verbose': bool,
     '--debug': bool,
