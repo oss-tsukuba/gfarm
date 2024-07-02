@@ -41,29 +41,75 @@ import signal
 import resource
 import string
 import random
+from decimal import Decimal, ROUND_DOWN
 
 from docopt import docopt
 from schema import Schema, Use, Or
 
 
 # library
-def unhumanize_number(numstr):
-    strlen = len(numstr)
-    if strlen == 1:
+def format_seconds(seconds):
+    if seconds < 3600:
+        minutes = seconds / 60
+        return f"{seconds:.0f}s({minutes:.1f}m)"
+    else:
+        hours = seconds / 3600
+        return f"{seconds:.0f}s({hours:.1f}h)"
+
+
+def humanize_number(num, binary_prefix=False):
+    if binary_prefix:
+        units = ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi', 'Yi']
+        base = Decimal(1024)
+    else:
+        units = ['', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y']
+        base = Decimal(1000)
+    if num < base:
+        return str(num)
+    n = Decimal(num)
+    ulen = len(units) - 1
+    scale = 0
+    while n >= base and scale < ulen:
+        n /= base
+        scale += 1
+    if n < 100:
+        d = n.quantize(Decimal('0.0'), rounding=ROUND_DOWN)
+        return f'{d}{units[scale]}'
+    else:
+        d = n.quantize(Decimal('0'), rounding=ROUND_DOWN)
+        return f'{d}{units[scale]}'
+
+
+def unhumanize_number(numstr, binary_prefix=False):
+    if binary_prefix:
+        base = 1024
+    else:
+        base = 1000
+    numstrlen = len(numstr)
+    if numstrlen == 1:
         return int(numstr)
-    n = int(numstr[:(strlen-1)])
-    si_prefix = numstr[(strlen-1):]
-    prefixes = {'K': 1,
-                'M': 2,
-                'G': 3,
-                'T': 4,
-                'P': 5,
-                'E': 6,
-                }
-    power = prefixes.get(si_prefix.upper())
+    lastchar = numstr[-1]
+    if lastchar == 'i' and numstrlen > 2:
+        n = int(numstr[:(numstrlen-2)])
+        prefix = numstr[-2]
+        base = 1024  # even if binary_prefix=False
+    else:
+        n = int(numstr[:(numstrlen-1)])
+        prefix = lastchar
+
+    units = {'K': 1,
+             'M': 2,
+             'G': 3,
+             'T': 4,
+             'P': 5,
+             'E': 6,
+             'Z': 7,
+             'Y': 8,
+             }
+    power = units.get(prefix.upper())
     if power is None:
         return int(numstr)
-    return n * (1024 ** power)
+    return n * (base ** power)
 
 
 class GfException(Exception):
@@ -195,6 +241,8 @@ def execcmd(args, stdin=subprocess.DEVNULL, stderr=subprocess.PIPE,
     if ret != 0:
         try:
             err = err.decode().rstrip()
+        except MemoryError:
+            raise
         except Exception:
             logger.debug('cannot decode: err={}', err)
             pass
@@ -638,6 +686,8 @@ class GfURL(metaclass=abc.ABCMeta):
         def listdir_ignore_error(gfurl):
             try:
                 yield from gfurl.listdir(recursive=True)
+            except MemoryError:
+                raise
             except Exception as e:
                 logger.warning('listdir(%s): error ignored: %s',
                                gfurl.url_str, str(e))
@@ -659,6 +709,8 @@ class GfURL(metaclass=abc.ABCMeta):
                 if not search_compare_pop(subpath1, d1ent, d2dict):
                     # not found, compare later
                     d1dict[subpath1] = d1ent
+            except MemoryError:
+                raise
             except Exception as e:
                 logger.error(str(e))
                 return False
@@ -676,6 +728,8 @@ class GfURL(metaclass=abc.ABCMeta):
                     if not search_compare_pop(subpath2, d2ent, d1dict):
                         # not found, compare later
                         d2dict[subpath2] = d2ent
+                except MemoryError:
+                    raise
                 except Exception as e:
                     logger.error(str(e))
                     return False
@@ -695,6 +749,8 @@ class GfURL(metaclass=abc.ABCMeta):
             try:
                 if not search_compare_pop(subpath1, d1ent, d2dict):
                     d1notfound[subpath1] = d1ent
+            except MemoryError:
+                raise
             except Exception as e:
                 logger.error(str(e))
                 return False
@@ -799,6 +855,8 @@ class GfURLGfarm(GfURL):
             raise AssertionError
         try:
             execcmd(['gfrm', '-rf', path])
+        except MemoryError:
+            raise
         except Exception:
             if remove_readonly:
                 execcmd(['gfchmod', '-R', '700', path])
@@ -1561,17 +1619,31 @@ class TestGfptar(unittest.TestCase):
     @staticmethod
     def suite():
         suite = unittest.TestSuite()
+        suite.addTest(TestGfptar('test_humanize'))
         suite.addTest(TestGfptar('test_unhumanize'))
         suite.addTest(TestGfptar('test_GfURL_use_gfarm_command_for_local'))
         return suite
 
+    def test_humanize(self):
+        self.assertEqual(humanize_number(1023, binary_prefix=True), '1023')
+        self.assertEqual(humanize_number(1024, binary_prefix=True), '1.0Ki')
+        self.assertEqual(humanize_number(999), '999')
+        self.assertEqual(humanize_number(1000), '1.0K')
+        self.assertEqual(humanize_number(99999), '99.9K')
+        self.assertEqual(humanize_number(100000), '100K')
+        self.assertEqual(humanize_number(1900000), '1.9M')
+        self.assertEqual(humanize_number(2000000), '2.0M')
+
     def test_unhumanize(self):
-        self.assertEqual(unhumanize_number('1K'), 1024)
-        self.assertEqual(unhumanize_number('2M'), 2097152)
-        self.assertEqual(unhumanize_number('3G'), 3221225472)
-        self.assertEqual(unhumanize_number('4T'), 4398046511104)
-        self.assertEqual(unhumanize_number('5P'), 5629499534213120)
-        self.assertEqual(unhumanize_number('6E'), 6917529027641081856)
+        self.assertEqual(unhumanize_number('999'), 999)
+        self.assertEqual(unhumanize_number('1K'), 1000)
+        self.assertEqual(unhumanize_number('1K', binary_prefix=True), 1024)
+        self.assertEqual(unhumanize_number('1Ki'), 1024)
+        self.assertEqual(unhumanize_number('2Mi'), 2097152)
+        self.assertEqual(unhumanize_number('3Gi'), 3221225472)
+        self.assertEqual(unhumanize_number('4Ti'), 4398046511104)
+        self.assertEqual(unhumanize_number('5Pi'), 5629499534213120)
+        self.assertEqual(unhumanize_number('6Ei'), 6917529027641081856)
 
     def test_GfURL_use_gfarm_command_for_local(self):
         url = GfURL.init('/tmp', use_gfarm_command=True)
@@ -1674,6 +1746,10 @@ class GfptarCommand(Command):
                 self.test_main()
                 return
         except Exception as e:
+            if self.futures is not None:
+                for t in self.futures:
+                    logger.info('%s: Canceled', self.futures[t])
+                    t.cancel()
             if self.debug:
                 raise
             else:
@@ -1725,7 +1801,7 @@ class GfptarCommand(Command):
 
         # create tar per one entry
         self.opt['--size'] = 0
-        pattern_jobs = [1, 10]
+        pattern_jobs = [0, 1, 10]
         for jobs in pattern_jobs:
             self.opt['--jobs'] = jobs
             self.test_simple('jobs_' + str(jobs), use_all_files=True)
@@ -2261,7 +2337,6 @@ class GfptarCommand(Command):
         self.gfsched_list = None
 
         self.outdir_url.create_new_dir()
-        has_error = None
 
         self.cannot_be_archived = 0
         cannot_read_dir = 0
@@ -2273,6 +2348,7 @@ class GfptarCommand(Command):
 
         self.create_job_init()
         self.sig_init()
+        has_error = None
 
         infiles_checked = []
         for infile in infiles:
@@ -2332,6 +2408,7 @@ class GfptarCommand(Command):
                         try:
                             self.create_job_execute(serial, targroup_list)
                         except Exception as e1:
+                            self.cancel()
                             if has_error is None:
                                 has_error = e1
                         targroup_list = []
@@ -2348,22 +2425,33 @@ class GfptarCommand(Command):
                         if now >= self.next_time:
                             self.next_time = now + 1
                             self.progress_for_create(now)
+            except MemoryError as e2:
+                self.cancel()
+                has_error = e2
+                targroup_list = []
+                targroup_list_len = 0
+                break  # from loop of infiles_checked
             except Exception as e2:
                 cannot_read_dir += 1
                 logger.info('%s: error while reading directory (%s)',
                             gfurl.url_str, convert_message(e2))
-                # continue : next infile
+                # continue (next infile)
+
+        if has_error is not None:
+            self.cancel()
 
         if targroup_list_len > 0:
             serial += 1
             try:
                 self.create_job_execute(serial, targroup_list)
             except Exception as e:
+                self.cancel()
                 if has_error is None:
                     has_error = e
 
         with self.lock():  # for progress
             self.listing = False
+
         self.create_job_finalize()
 
         if self.progress_enabled:
@@ -2378,10 +2466,10 @@ class GfptarCommand(Command):
             print('compression ratio: %.2f %% (%d/%d)' %
                   (100 * self.archived_size / self.stored_size,
                    self.archived_size, self.stored_size))
-        if self.is_canceled():
-            raise self.error_canceled()
         if has_error is not None:
             raise has_error
+        if self.is_canceled():
+            raise self.error_canceled()
 
     def create_job_init(self):
         if self.MT_enabled():
@@ -2403,15 +2491,19 @@ class GfptarCommand(Command):
         has_error = None
         try:
             has_error = self._create_job_check_MT()
+        except MemoryError:
+            raise
         except Exception as e:
+            # NOTE: cannot catch TimeoutError
+            # ignore timeout
             logger.debug(f'_create_job_execute_MT(): {str(e)}')
         if has_error is not None:
             raise has_error
 
-    def create_job_finalize(self):
+    def create_job_finalize(self, timeout=None):
         if not self.MT_enabled():
             return
-        has_error = self._create_job_check_MT(timeout=None)
+        has_error = self._create_job_check_MT(timeout=timeout)
         if has_error is not None:
             raise has_error
 
@@ -2426,6 +2518,13 @@ class GfptarCommand(Command):
                 if self.verbose or self.debug:
                     tb = traceback.TracebackException.from_exception(exc)
                     logger.debug(''.join(tb.format()))
+                if not self.is_canceled():
+                    self.cancel()
+                    for t2 in self.futures:
+                        if t == t2:
+                            continue
+                        logger.error('%s: Canceled', self.futures[t2])
+                        t2.cancel()
                 if has_error is None:  # save first error
                     has_error = exc
         return has_error
@@ -2561,6 +2660,9 @@ class GfptarCommand(Command):
             subpath = entry.subpath(self.basedir_url)
             try:
                 tar.add_entry(subpath, entry)
+            except MemoryError:
+                tar.close()
+                raise
             except Exception as e:
                 with self.lock():
                     self.cannot_be_archived += 1
@@ -2568,9 +2670,10 @@ class GfptarCommand(Command):
                 continue
 
             filelist_ok.append(entry)
+            size_all = entry.size_all()
             with self.lock():
                 self.info('stored: {}', subpath)
-                self.stored_size += entry.size_all()
+                self.stored_size += size_all
                 if self.progress_enabled:
                     self.stored_num += 1
                     now = time.time()
@@ -2756,6 +2859,8 @@ class GfptarCommand(Command):
             dir_url = GfURL.init(url_str)
             try:
                 dir_url.mkdir()
+            except MemoryError:
+                raise
             except Exception:
                 dir_url.makedirs()
             self.info('prepare_dir: {}', dir_url.url_str)
@@ -2823,27 +2928,29 @@ class GfptarCommand(Command):
         self.lock_init(True)
         with concurrent.futures.ThreadPoolExecutor(
                 max_workers=self.jobs) as executor:
-            futures = {}  # tar filenames
+            self.futures = {}  # tar filenames
             serial = 0
             for target in target_list:
                 logger.debug('target_set: %s', target)
                 serial += 1
                 t = executor.submit(self.extract_from_a_tar,
                                     serial, target, member_set)
-                futures[t] = target
+                self.futures[t] = target
 
-            for t in concurrent.futures.as_completed(futures, timeout=None):
+            for t in concurrent.futures.as_completed(self.futures,
+                                                     timeout=None):
                 exc = t.exception()
                 if exc:
-                    logger.debug('%s: %s', futures[t], convert_message(exc))
+                    logger.debug('%s: %s', self.futures[t],
+                                 convert_message(exc))
                     tb = traceback.TracebackException.from_exception(exc)
                     logger.debug(''.join(tb.format()))
                     if not self.is_canceled():
                         self.cancel()
-                        for t2 in futures:
+                        for t2 in self.futures:
                             if t == t2:
                                 continue
-                            logger.error('%s: Canceled', futures[t2])
+                            logger.error('%s: Canceled', self.futures[t2])
                             t2.cancel()
                     raise exc
 
@@ -2873,6 +2980,8 @@ class GfptarCommand(Command):
                 break
             try:
                 tarinfo = tar.next()
+            except MemoryError:
+                raise
             except Exception as e:
                 logger.warning(f'{target}: SKIPPED: invalid or empty tar: '
                                f' {str(e)}')
@@ -2961,6 +3070,7 @@ class GfptarCommand(Command):
     # lock required
     def progress_for_create(self, now):
         sec = now - self.start_time
+        sec_str = format_seconds(sec)
         if self.listing:
             percent_str = '?'
         else:
@@ -2975,11 +3085,15 @@ class GfptarCommand(Command):
             bytes_per_sec = self.stored_size / sec
         else:
             bytes_per_sec = 0
-        sys.stdout.write(f'\rcreated: {percent_str}%, '
-                         f'num={self.stored_num}/{self.total_num}, '
-                         f'size={self.stored_size}, '
-                         f'sec={sec:.0f}, '
-                         f'B/s={bytes_per_sec:.0f}  ')
+        stored_num_str = humanize_number(self.stored_num)
+        total_num_str = humanize_number(self.total_num)
+        stored_size_str = humanize_number(self.stored_size)
+        bytes_per_sec_str = humanize_number(bytes_per_sec)
+        sys.stdout.write(f'\rcreated: {percent_str}% '
+                         f'num={stored_num_str}/{total_num_str} '
+                         f'{stored_size_str}B '
+                         f'{sec_str} '
+                         f'{bytes_per_sec_str}B/s  ')
 
     # lock required
     def progress_for_extract(self, now):
@@ -3034,6 +3148,8 @@ class GfptarCommand(Command):
             while True:
                 try:
                     t = tar.next()
+                except MemoryError:
+                    raise
                 except Exception as e:
                     logger.warning(f'{path}: SKIPPED: invalid or empty tar:'
                                    f' {str(e)}')
@@ -3099,7 +3215,7 @@ Options:
   -C, --basedir=DIR         base directory for <member>s  [default: .]
   -j, --jobs=NUM            the number of jobs to copy per tar file in parallel
                             [default: 4]
-  -s, --size=BYTES          assumed bytes per output file [default: 200M]
+  -s, --size=BYTES          assumed bytes per output file [default: 200Mi]
   -T, --type=TYPE           compress type (gz,bz2,xz,no) [default: gz]
   -r, --ratio=RATIO         assumed compression ratio (%) [default: 50]
   -I, --use-compress-program=COMMAND
@@ -3115,7 +3231,7 @@ Options:
   --encoding=CODEC          codec for filename encoding
              (https://docs.python.org/3/library/codecs.html#standard-encodings)
                             [default: utf-8]
-  --bufsize=BYTES           buffer size to copy [default: 1M]
+  --bufsize=BYTES           buffer size to copy [default: 1Mi]
   --memory=NUM              upper limit of memory size (bytes)
                             (default: no limit)
   --test                    test mode (-q option is recommended)
@@ -3125,7 +3241,7 @@ Options:
                             (for -c) (ignore <member>) (1000 files per dir)
                             (default: disabled)
   --dummy-size-min=BYTES    minimum size of dummy files [default: 0]
-  --dummy-size-max=BYTES    maximum size of dummy files [default: 1M]
+  --dummy-size-max=BYTES    maximum size of dummy files [default: 1Mi]
   --dummy-sleep=SEC         sleep time per dummy file [default: 0.0]
   -q, --quiet               quiet messages
   -v, --verbose             verbose output
