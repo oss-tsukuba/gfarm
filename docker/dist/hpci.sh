@@ -33,6 +33,13 @@ get_gfarm2conf.sh
 [ -f ~/.gfarm2rc.hpci ] ||
 	sh ./get_gfarm2conf.sh -f ~/.gfarm2rc.hpci
 
+# install hpcissh
+sudo apt-get -y install sshpass
+PKG=hpcissh-clients; export PKG
+[ -d ~/gfarm/$PKG ] ||
+        (cd ~/gfarm && git clone https://github.com/hpci-auth/$PKG.git)
+(cd ~/gfarm/$PKG && sudo sh ./install.sh > /dev/null)
+
 echo \# YOU NEED TO DO THE FOLLOWING
 echo mv ~/.globus ~/.globus.bak
 echo export GFARM_CONFIG_FILE=$HOME/.gfarm2rc.hpci
