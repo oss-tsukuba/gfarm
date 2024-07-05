@@ -31,7 +31,6 @@ import subprocess
 import concurrent.futures
 import threading
 from typing import NoReturn
-from urllib.parse import urlparse
 import shutil
 from contextlib import contextmanager
 import traceback
@@ -42,14 +41,19 @@ import resource
 import string
 import random
 from decimal import Decimal, ROUND_DOWN
+import sqlite3
+import json
+import tempfile
 
 from docopt import docopt
 from schema import Schema, Use, Or
 
 
 # library
-def format_seconds(seconds):
-    if seconds < 3600:
+def format_seconds(seconds, minhour=False):
+    if minhour is False:
+        return f"{seconds:.0f}s"
+    elif seconds < 3600:
         minutes = seconds / 60
         return f"{seconds:.0f}s({minutes:.1f}m)"
     else:
@@ -110,6 +114,239 @@ def unhumanize_number(numstr, binary_prefix=False):
     if power is None:
         return int(numstr)
     return n * (base ** power)
+
+
+# Do not use the same DB object from multi-threads.
+class DB:
+    def __init__(self, filename):
+        self.filename = filename
+        self.con = sqlite3.connect(filename)
+        self.con.execute('PRAGMA synchronous = OFF')
+        # self.con.execute('PRAGMA cache_size = 1000')
+        # self.con.execute('PRAGMA mmap_size = 1000')
+        # self.con.execute('PRAGMA journal_mode=WAL')
+        # self.con.execute("PRAGMA busy_timeout=60000")
+
+    def commit(self):
+        self.con.commit()
+
+    def close(self):
+        self.con.close()
+
+    def remove(self):
+        os.remove(self.filename)
+
+
+class DBObj:
+    def dumps(self):
+        raise NotImplementedError
+
+    @classmethod
+    def loads(cls, key, txt):
+        raise NotImplementedError
+
+
+# Abstract
+class DBCollection:
+    def __init__(self, db, obj_cls, table_name, clear=False):
+        self.db = db
+        self.con = db.con
+        self.obj_cls = obj_cls
+        self.table_name = table_name
+        if clear:
+            self.clear()
+        self.create_table()
+
+    def create_table(self):
+        raise NotImplementedError
+
+    def clear(self):
+        self.con.execute(f'DROP TABLE IF EXISTS {self.table_name}')
+        self._count = 0
+
+    def commit(self):
+        self.con.commit()
+
+    def close(self):
+        self.con.close()
+
+    def filename(self):
+        return self.db.filename
+
+    def remove(self):
+        self.db.remove()
+
+    def __len__(self):
+        res = self.con.execute(f'SELECT COUNT(*) FROM {self.table_name}')
+        return res.fetchone()[0]
+
+
+class DBDict(DBCollection):
+    def create_table(self):
+        # Do not set "key TEXT PRIMARY KEY" here for speed reason.
+        self.con.execute(f'''
+        CREATE TABLE IF NOT EXISTS {self.table_name}
+        (key TEXT, value TEXT)
+        ''')
+
+    def create_index(self):
+        self.con.execute(f'CREATE INDEX idx_key ON {self.table_name} (key)')
+
+    def obj2json(self, obj):
+        return obj.dumps(for_list=False)
+
+    def json2obj(self, key, j):
+        if j is None:
+            return None
+        return self.obj_cls.loads(key, j, for_list=False)
+
+    def __setitem__(self, key, value):
+        self.con.execute(f'''
+        INSERT OR REPLACE INTO {self.table_name} (key, value) VALUES (?, ?)
+        ''', (key, self.obj2json(value)))
+        self.con.commit()
+
+    def __getitem__(self, key):
+        res = self.con.execute(
+            f'SELECT value FROM {self.table_name} WHERE key = ?', (key,))
+        row = res.fetchone()
+        if row:
+            return self.json2obj(row[0])
+        else:
+            raise KeyError(key)
+
+    def __delitem__(self, key):
+        if key in self:  # __contains__()
+            self.con.execute(
+                f'DELETE FROM {self.table_name} WHERE key = ?', (key,))
+        else:
+            raise KeyError(key)
+
+    def __contains__(self, key):
+        res = self.con.execute(
+            f'SELECT 1 FROM {self.table_name} WHERE key = ?', (key,))
+        row = res.fetchone()
+        return row is not None
+
+    def keys(self):
+        res = self.con.execute(f'SELECT key FROM {self.table_name}')
+        for row in res:
+            yield row[0]
+
+    def values(self):
+        res = self.con.execute(f'SELECT value FROM {self.table_name}')
+        for row in res:
+            yield self.json2obj(row[0])
+
+    def items(self):
+        res = self.con.execute(f'SELECT key,value FROM {self.table_name}')
+        for row in res:
+            yield row[0], self.json2obj(row[0], row[1])
+
+    def __iter__(self):
+        return self.keys()
+
+    # sort: None, 'ASC', 'DESC'
+    def iterator(self, sort=None, offset=0, limit=-1):
+        sql = f'SELECT key,value FROM {self.table_name}'
+        if sort is not None:
+            if sort.upper() == 'ASC':
+                sql += ' ORDER BY key ASC'
+            elif sort.upper() == 'DESC':
+                sql += ' ORDER BY key DESC'
+        sql += f' LIMIT {limit} OFFSET {offset}'
+        res = self.con.execute(sql)
+        for row in res:
+            yield row[0], self.json2obj(row[0], row[1])
+
+
+class DBList(DBCollection):
+    ERRMSG_INDEX = 'list index out of range'
+
+    def create_table(self):
+        self.con.execute(f'''
+        CREATE TABLE IF NOT EXISTS {self.table_name}
+        (id INTEGER PRIMARY KEY AUTOINCREMENT, value TEXT)
+        ''')
+
+    def __repr__(self):
+        return repr(list(self))
+
+    def __str__(self):
+        return str(list(self))
+
+    def obj2json(self, obj):
+        return obj.dumps(for_list=True)
+
+    def json2obj(self, key, j):
+        if j is None:
+            return None
+        return self.obj_cls.loads(key, j, for_list=True)
+
+    def append(self, obj):
+        self.con.execute(f'''
+        INSERT INTO {self.table_name} (value) VALUES (?)
+        ''', (self.obj2json(obj),))
+
+    def __getitem__(self, index):
+        res = self.con.execute(f'''
+        SELECT id,value FROM {self.table_name} ORDER BY id LIMIT 1 OFFSET ?
+        ''', (index,))
+        row = res.fetchone()
+        if row is None:
+            raise IndexError(self.ERRMSG_INDEX)
+        return self.json2obj(row[0], row[1])
+
+    def __setitem__(self, index, value):
+        with self.con:
+            res = self.con.execute(f'''
+            SELECT id FROM {self.table_name} ORDER BY id LIMIT 1 OFFSET ?
+            ''', (index,))
+            row = res.fetchone()
+            if row is None:
+                raise IndexError(self.ERRMSG_INDEX)
+            self.con.execute(f'''
+            UPDATE {self.table_name} SET value = ? WHERE id = ?
+            ''', (self.obj2json(value), row[0]))
+
+    def __delitem__(self, index):
+        with self.con:
+            res = self.con.execute(f'''
+            SELECT id FROM {self.table_name} ORDER BY id LIMIT 1 OFFSET ?
+            ''', (index,))
+            row = res.fetchone()
+            if row is None:
+                raise IndexError(self.ERRMSG_INDEX)
+            self.con.execute(f'''
+            DELETE FROM {self.table_name} WHERE id = ?
+            ''', (row[0],))
+
+    def __iter__(self):
+        res = self.con.execute(f'''
+        SELECT id,value FROM {self.table_name} ORDER BY id ASC
+        ''')
+        for row in res:
+            yield self.json2obj(row[0], row[1])
+
+    def __reversed__(self):
+        res = self.con.execute(f'''
+        SELECT id,value FROM {self.table_name} ORDER BY id DESC
+        ''')
+        for row in res:
+            yield self.json2obj(row[0], row[1])
+
+    # sort: None, 'ASC', 'DESC'
+    def iterator(self, sort=None, offset=0, limit=-1):
+        sql = f'SELECT id,value FROM {self.table_name}'
+        if sort is not None:
+            if sort.upper() == 'ASC':
+                sql += ' ORDER BY id ASC'
+            elif sort.upper() == 'DESC':
+                sql += ' ORDER BY id DESC'
+        sql += f' LIMIT {limit} OFFSET {offset}'
+        res = self.con.execute(sql)
+        for row in res:
+            yield self.json2obj(row[0], row[1])
 
 
 class GfException(Exception):
@@ -354,11 +591,19 @@ class Command(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
 
-class GfURLEntry():
+class GfURLEntry(DBObj):
     TYPE_FILE = 'FILE'
     TYPE_DIR = 'DIR'
     TYPE_SYMLINK = 'SYM'
     TYPE_OTHER = 'OTHER'
+
+    type_map = {
+        TYPE_FILE: 1,
+        TYPE_DIR: 2,
+        TYPE_SYMLINK: 3,
+        TYPE_OTHER: 4,
+    }
+    type_map_reverse = {v: k for k, v in type_map.items()}
 
     def __init__(self, path, mode, file_type, uname, gname,
                  size, mtime, linkname):
@@ -367,18 +612,42 @@ class GfURLEntry():
         self.file_type = file_type
         self.uname = uname
         self.gname = gname
-        self.size = size
         self.mtime = mtime
         self.linkname = linkname
 
-        if not self.is_file():
+        if self.is_file():
+            self.size = size
+        else:
             self.size = 0
 
     def __str__(self):
         return f'{self.path}, {self.mode:o}, {self.file_type}'
 
     def __repr__(self):
-        return str(self)
+        return (f'Entry(path={self.path},mode={oct(self.mode)},'
+                f'user={self.uname},group={self.gname})')
+
+    # only path must be specified for key when using DBDict
+    def dumps(self, for_list=False):
+        t = self.type_map[self.file_type]
+        # serialize using list() to reduce size
+        # [0]...[6]
+        array = [self.mode, t, self.uname, self.gname,
+                 self.size, self.mtime, self.linkname]
+        # save path to key when using dict, so don't save path to value
+        if for_list:
+            array.append(self.path)  # [7]
+        return json.dumps(array, separators=(',', ':'))
+
+    @classmethod
+    def loads(cls, key, txt, for_list=False):
+        o = json.loads(txt)
+        if for_list:
+            path = o[7]
+        else:
+            path = key
+        t = cls.type_map_reverse[o[1]]
+        return cls(path, o[0], t, o[2], o[3], o[4], o[5], o[6])
 
     def subpath(self, baseurl):
         return baseurl.subpath(self.path)
@@ -483,8 +752,41 @@ class GfURL(metaclass=abc.ABCMeta):
         return gfurl1
 
     def __init__(self, url):
-        # allow_fragments=False : allow "#filename"
-        self._url = urlparse(url, allow_fragments=False)
+        self._url_str = url
+        scheme, host, path = self.parse(url)
+        self._scheme = scheme
+        self._host = host
+        self._path = path
+
+    @classmethod
+    def parse(cls, url):
+        supported_classes = [GfURLGfarm]
+
+        for c in supported_classes:
+            if url.startswith(f'{c.SCHEME}:'):
+                # gfarm://host/path -> //host/path
+                hostpath = url[(c.SCHEME_LEN+1):]
+                scheme = c.SCHEME
+                if hostpath.startswith('//'):  # gfarm://...
+                    hostpath = hostpath[2:]
+                    hp = hostpath.split('/', 1)
+                    host = hp[0]
+                    if len(hp) >= 2:
+                        # ex. gfarm://host/path -> path='/path'
+                        # ex. gfarm://host/ -> path='/'
+                        path = '/' + hp[1]
+                    else:
+                        # ex. gfarm://host
+                        path = '/'
+                    return scheme, host, path
+                else:  # gfarm:/... or gfarm:...
+                    host = None
+                    path = hostpath
+                    return scheme, host, path
+
+        # case of GfURLLocal:
+        # scheme, host, path
+        return None, None, url
 
     @property
     def basename(self):
@@ -511,16 +813,22 @@ class GfURL(metaclass=abc.ABCMeta):
 
     @property
     def url_str(self):
-        return self._url.geturl()
+        return self._url_str
 
     @property
     def path(self):
-        return os.path.normpath(self._url.path)
+        return os.path.normpath(self._path)
 
     @property
     def root_url_str(self):
-        # ex. http://example.com/a/b/c -> http://example.com
-        return self.url_str[:-len(self._url.path)]
+        # ex. gfarm://example.com/a/b/c -> gfarm://example.com
+        # ex. gfarm:/abc.def/gh -> gfarm:
+        if self._scheme:
+            if self._host:
+                return f'{self._scheme}:{self._host}'
+            else:
+                return f'{self._scheme}:'
+        return ''
 
     def subpath(self, fullpath):
         base = self.url_str
@@ -772,6 +1080,9 @@ USE_GFREG_PLUS = str2bool(os.getenv('GFREG_PLUS', 'True'))
 
 
 class GfURLGfarm(GfURL):
+    SCHEME = 'gfarm'
+    SCHEME_LEN = 5
+    SCHEME_COLON = 'gfarm:'
     # Ex. 12345 -rw-rw-r-- 1 user1  gfarmadm     29 Jan  1 00:00:00 2022 fname
     PAT_ENTRY = re.compile(r'^\s*(\d+)\s+([-dl]\S+)\s+(\d+)\s+(\S+)\s+(\S+)\s+'
                            r'(\d+)\s+(\S+\s+\d+\s+\d+:\d+:\d+\s+\d+)\s+(.+)$')
@@ -782,7 +1093,7 @@ class GfURLGfarm(GfURL):
 
     @classmethod
     def is_my_URL(cls, url):
-        return url.startswith('gfarm:')
+        return url.startswith(cls.SCHEME_COLON)
 
     @staticmethod
     def to_oct_str(mode):
@@ -1149,6 +1460,9 @@ def get_gid(group):
 
 
 class GfURLLocal(GfURL):
+    SCHEME = ''
+    SCHEME_LEN = 0
+
     def __init__(self, url):
         super().__init__(url)
 
@@ -1553,7 +1867,6 @@ class GfTarFile(tarfile.TarFile):
         tarinfo = entry.toTarinfo(subpath)
         if tarinfo is None:  # warning, skip
             return
-        # hard link is not supported
         if entry.is_file():
             time.sleep(getattr(self, self.ATTR_DUMMY_SLEEP))
             with RandomStream(entry.size) as f:
@@ -1561,6 +1874,11 @@ class GfTarFile(tarfile.TarFile):
         else:
             self.addfile(tarinfo)
 
+    # NOTE: add() is not expected behavior. Use addfile() instead.
+    # - add() can copy a hard link,
+    #   but a hard link cannot be extracted from gfexport (stream open)
+    # - When the specified <member> for --create is a symlink,
+    #   the entry will be archived as symlink.
     def _add_entry(self, subpath, entry):
         tarinfo = entry.toTarinfo(subpath)
         if tarinfo is None:  # warning, skip
@@ -1574,20 +1892,8 @@ class GfTarFile(tarfile.TarFile):
         else:
             self.addfile(tarinfo)
 
-    # NOTE: This is not expected behavior for local file.
-    # - This can copy a hard link,
-    #   but a hard link cannot be extracted from gfexport (stream open)
-    # - When the specified <member> for --create is a symlink,
-    #   the entry will be archived as symlink.
-    # def tar_add(self, subpath, entry):
-    #     if entry.path:
-    #         path = os.path.join(self.url_str, entry.path)
-    #     else:
-    #         path = self.url_str
-    #     self.add(path, arcname=subpath, recursive=False)
 
-
-class RandomStream():
+class RandomStream:
     def __init__(self, size):
         self.size = size
         self.written = 0
@@ -1622,6 +1928,7 @@ class TestGfptar(unittest.TestCase):
         suite.addTest(TestGfptar('test_humanize'))
         suite.addTest(TestGfptar('test_unhumanize'))
         suite.addTest(TestGfptar('test_GfURL_use_gfarm_command_for_local'))
+        suite.addTest(TestGfptar('test_GfURL_parse'))
         return suite
 
     def test_humanize(self):
@@ -1650,6 +1957,30 @@ class TestGfptar(unittest.TestCase):
         self.assertEqual(url.is_local(), True)
         self.assertEqual(url.path, '/tmp')
 
+    def test_GfURL_parse(self):
+        self.assertEqual(GfURL.parse('gfarm://host'),
+                         ('gfarm', 'host', '/'))
+        self.assertEqual(GfURL.parse('gfarm://host/'),
+                         ('gfarm', 'host', '/'))
+        self.assertEqual(GfURL.parse('gfarm://host/path'),
+                         ('gfarm', 'host', '/path'))
+        self.assertEqual(GfURL.parse('gfarm://host/path://'),
+                         ('gfarm', 'host', '/path://'))
+        self.assertEqual(GfURL.parse('gfarm://host/path;abc'),
+                         ('gfarm', 'host', '/path;abc'))
+        self.assertEqual(GfURL.parse('gfarm://host/path#abc'),
+                         ('gfarm', 'host', '/path#abc'))
+        self.assertEqual(GfURL.parse('gfarm://host/path?abc'),
+                         ('gfarm', 'host', '/path?abc'))
+        self.assertEqual(GfURL.parse('gfarm:/path/abc'),
+                         ('gfarm', None, '/path/abc'))
+        self.assertEqual(GfURL.parse('gfarm:path/abc'),
+                         ('gfarm', None, 'path/abc'))
+        self.assertEqual(GfURL.parse('/abc/#def:/'),
+                         (None, None, '/abc/#def:/'))
+        self.assertEqual(GfURL.parse('abc:/def://'),
+                         (None, None, 'abc:/def://'))
+
 
 class GfptarError(GfException):
     pass
@@ -1676,6 +2007,7 @@ class CannotBeArchivedError(GfptarError):
 
 class GfptarCommand(Command):
     LIST_SUFFIX = '.lst'
+    SERIAL_FORMAT = '%04d'
 
     def __init__(self, name):
         self.init(name)
@@ -1692,6 +2024,7 @@ class GfptarCommand(Command):
         self.bufsize = self.opt['--bufsize']
         self.progress_enabled = self._progress_enabled()
         self.use_fsync = not self.opt['--disable-fsync']
+        self.workdir = self.opt['--workdir']
 
         self.memory_limit = self.opt['--memory']
         if self.memory_limit is not None:
@@ -1801,7 +2134,7 @@ class GfptarCommand(Command):
 
         # create tar per one entry
         self.opt['--size'] = 0
-        pattern_jobs = [0, 1, 10]
+        pattern_jobs = [0, 10]
         for jobs in pattern_jobs:
             self.opt['--jobs'] = jobs
             self.test_simple('jobs_' + str(jobs), use_all_files=True)
@@ -2222,6 +2555,11 @@ class GfptarCommand(Command):
         if self.verbose:
             print(fmt.format(*args))
 
+    def print_trace(self, exc):
+        if self.verbose or self.debug:
+            tb = traceback.TracebackException.from_exception(exc)
+            logger.info(''.join(tb.format()))
+
     def list_dummy_files(self, base_dir, num, size_min, size_max, dummy_sleep):
         # defaults
         files_per_dir = 1000
@@ -2234,6 +2572,8 @@ class GfptarCommand(Command):
         file_max_length = 30
 
         choices = string.ascii_letters + string.digits + '漢あア()[]-'
+        other_symbols = '!"#$%&=^~|`@{}+*;:,.<>?_' + r"\'"
+        choices += other_symbols
         now = time.time()
 
         def generate_random_dirname():
@@ -2265,9 +2605,10 @@ class GfptarCommand(Command):
             return GfURLEntry(path, mode, file_type, uname, gname,
                               size, mtime, linkname)
 
-        def rand_file(dir_path):
+        def rand_file(dir_path, idx):
             time.sleep(dummy_sleep_per_entry)
-            f = generate_random_filename()
+            # f = generate_random_filename()
+            f = f'{idx}.txt'
             path = os.path.join(dir_path, f)
             mode = 0o600
             file_type = GfURLEntry.TYPE_FILE
@@ -2285,12 +2626,12 @@ class GfptarCommand(Command):
             dir_ent = rand_dir()
             yield dir_ent
             for j in range(files_per_dir - 1):
-                yield rand_file(dir_ent.path)
+                yield rand_file(dir_ent.path, j)
         if remainder > 0:
             dir_ent = rand_dir()
             yield dir_ent
             for j in range(remainder - 1):
-                yield rand_file(dir_ent.path)
+                yield rand_file(dir_ent.path, j)
 
     def create(self, outdir, basedir, infiles):
         self.options_init()
@@ -2301,11 +2642,13 @@ class GfptarCommand(Command):
         if self.size <= 0:
             self.size = 1
         self.ratio = self.opt['--ratio']
+
         self.compress_type = self.opt['--type']
         self.compress_prog = self.opt['--use-compress-program']
         self.disable_gfarm_command = self.opt['--disable-gfarm-command']
         self.use_gfarm_command = not self.disable_gfarm_command
         self.gfsched_interval = self.opt['--gfsched-interval']
+
         self.dummy_num = self.opt['--dummy-num']
         if self.dummy_num is not None and self.dummy_num > 0:
             self.dummy_input = True
@@ -2321,16 +2664,14 @@ class GfptarCommand(Command):
             self.split_size = self.size * 100 / self.ratio
             self.suffix = '.tar.' + self.compress_type
 
-        self.total_size = 0
-        self.total_num = 0
-
         self.start_time = time.time()
         self.next_time = self.start_time + 1
 
-        serial = 0
         self.archived_size = 0
         self.stored_size = 0
         self.stored_num = 0
+        self.total_size = 0
+        self.total_num = 0
 
         self.gfsched_lock = None
         self.gfsched_next = 0
@@ -2340,9 +2681,6 @@ class GfptarCommand(Command):
 
         self.cannot_be_archived = 0
         cannot_read_dir = 0
-        targroup_list = []
-        targroup_list_len = 0
-        targroup_size = 0
         serial = 0
         self.listing = True
 
@@ -2380,6 +2718,22 @@ class GfptarCommand(Command):
                 return gfurl.listdir(recursive=True, first=True,
                                      hardlink_warn=self.hardlink_warn)
 
+        # Temporary files are removed when the process exits.
+        # dir=None: system default
+        tmpdir = tempfile.TemporaryDirectory(prefix='gfptar-',
+                                             dir=self.workdir)
+        tardb_prefix = os.path.join(tmpdir.name, 'list_for_create')
+        tardb_fmt = f'_{self.SERIAL_FORMAT}.db'
+        serial = 1
+        tarlist_db = DB(tardb_prefix + tardb_fmt % serial)
+        tarlist = DBList(tarlist_db, GfURLEntry, 'tarlist')
+        tarlist_num = 0
+        tarlist_size = 0
+
+        # TODO for debug (unnecessary)
+        # testdb = DB(os.path.join(tmpdir.name, 'test_dict.db'))
+        # testdict = DBDict(testdb, GfURLEntry, 'test_dict')
+
         for infile in infiles_checked:
             if self.is_canceled():
                 logger.debug('Canceled (listdir 1): serial=%04d', serial)
@@ -2401,26 +2755,33 @@ class GfptarCommand(Command):
                         self.total_size += this_size
                         self.total_num += 1
 
-                    targroup_size += this_size
-                    if targroup_size > self.split_size \
-                       and targroup_list_len > 0:
-                        serial += 1
+                    # testdict[entry.path] = entry  # TODO
+
+                    tarlist_size += this_size
+                    if tarlist_size > self.split_size and tarlist_num > 0:
                         try:
-                            self.create_job_execute(serial, targroup_list)
+                            tarlist.commit()
+                            tarlist.close()
+                            # DO NOT share a DBList with children,
+                            # share the filename instead.
+                            self.create_job_execute(serial,
+                                                    tarlist.filename())
                         except Exception as e1:
                             self.cancel()
                             if has_error is None:
                                 has_error = e1
-                        targroup_list = []
-                        targroup_list_len = 0
-                        targroup_size = this_size
+                        serial += 1
+                        tarlist_db = DB(tardb_prefix + tardb_fmt % serial)
+                        tarlist = DBList(tarlist_db, GfURLEntry, 'tarlist')
+                        tarlist_num = 0
+                        tarlist_size = this_size
                         if has_error is not None:
                             break  # from listdir_switch()
-                    targroup_list.append(entry)
-                    targroup_list_len += 1
+                    tarlist.append(entry)
+                    tarlist_num += 1
 
                     # progress for listing before starting threads
-                    if serial == 0 and self.progress_enabled:
+                    if serial == 1 and self.progress_enabled:
                         now = time.time()
                         if now >= self.next_time:
                             self.next_time = now + 1
@@ -2428,22 +2789,41 @@ class GfptarCommand(Command):
             except MemoryError as e2:
                 self.cancel()
                 has_error = e2
-                targroup_list = []
-                targroup_list_len = 0
+                tarlist = []
+                tarlist_num = 0
+                tarlist_size = 0
                 break  # from loop of infiles_checked
             except Exception as e2:
                 cannot_read_dir += 1
                 logger.info('%s: error while reading directory (%s)',
                             gfurl.url_str, convert_message(e2))
+                self.print_trace(e2)
                 # continue (next infile)
 
         if has_error is not None:
             self.cancel()
 
-        if targroup_list_len > 0:
-            serial += 1
+        # TODO
+        # testdict.commit()
+        # count = 0
+        # for key, entry in testdict.items():
+        #     #print(f'TODO DEBUG: key={key}: {str(entry)}') # TODO
+        #     count += 1
+        #     if count >= 2:
+        #         break
+        # count = 0
+        # for key in testdict:
+        #     #print(f'TODO DEBUG: key={key}') # TODO
+        #     count += 1
+        #     if count >= 2:
+        #         break
+        # testdict.close()
+
+        tarlist.commit()
+        tarlist.close()
+        if tarlist_num > 0:
             try:
-                self.create_job_execute(serial, targroup_list)
+                self.create_job_execute(serial, tarlist.filename())
             except Exception as e:
                 self.cancel()
                 if has_error is None:
@@ -2463,7 +2843,7 @@ class GfptarCommand(Command):
             if has_error is None:
                 has_error = e
         if not self.quiet and self.stored_size > 0:
-            print('compression ratio: %.2f %% (%d/%d)' %
+            print('compression ratio: %.2f%% (%d/%d)' %
                   (100 * self.archived_size / self.stored_size,
                    self.archived_size, self.stored_size))
         if has_error is not None:
@@ -2482,11 +2862,11 @@ class GfptarCommand(Command):
             self.lock_init(False)
             self.create_job_execute = self._create_job_execute
 
-    def _create_job_execute(self, serial, filelist):
-        self.create_a_tar(serial, filelist)
+    def _create_job_execute(self, serial, arg):
+        self.create_a_tar(serial, arg)
 
-    def _create_job_execute_MT(self, serial, filelist):
-        t = self.executor.submit(self.create_a_tar, serial, filelist)
+    def _create_job_execute_MT(self, serial, arg):
+        t = self.executor.submit(self.create_a_tar, serial, arg)
         self.futures[t] = serial
         has_error = None
         try:
@@ -2515,9 +2895,7 @@ class GfptarCommand(Command):
             if exc:
                 logger.debug('serial=%04d: %s', self.futures[t],
                              convert_message(exc))
-                if self.verbose or self.debug:
-                    tb = traceback.TracebackException.from_exception(exc)
-                    logger.debug(''.join(tb.format()))
+                self.print_trace(exc)
                 if not self.is_canceled():
                     self.cancel()
                     for t2 in self.futures:
@@ -2595,20 +2973,24 @@ class GfptarCommand(Command):
         logger.debug("selected target_host: %s", target_host)
         return target_host
 
-    def create_a_tar(self, serial, filelist):
+    def create_a_tar(self, serial, dbfile):
         try:
-            self.create_a_tar0(serial, filelist)
+            self.create_a_tar0(serial, dbfile)
         except Exception:
             if self.is_canceled():
                 raise self.error_canceled()
             else:
                 raise
 
-    def create_a_tar0(self, serial, filelist):
+    def create_a_tar0(self, serial, dbfile):
         logger.debug('create_a_tar: start: %04d', serial)
         if self.is_canceled():
             logger.debug('Canceled (create 1): serial=%04d', serial)
             return
+
+        tardb1 = DB(dbfile)
+        filelist = DBList(tardb1, GfURLEntry, 'tarlist')
+
         first = None
         last = None
         for entry in filelist:
@@ -2629,7 +3011,7 @@ class GfptarCommand(Command):
             lastpath = last.subpath(self.basedir_url)
             outname = '%s..%s%s' % (firstpath, lastpath, self.suffix)
 
-        serial_str = '%04d_' % serial
+        serial_str = f'{self.SERIAL_FORMAT}_' % serial
         outname_max = self.outdir_url.MAXNAMLEN \
             - len(serial_str) - len(self.LIST_SUFFIX)
         outname_len = len(outname.encode())
@@ -2652,7 +3034,9 @@ class GfptarCommand(Command):
                                     target_host=target_host,
                                     dummy_input=self.dummy_input,
                                     dummy_sleep=self.dummy_sleep)
-        filelist_ok = []
+
+        tardb_ok = DB(tardb1.filename + '_ok.db')
+        filelist_ok = DBList(tardb_ok, GfURLEntry, 'filelist_ok')
         for entry in filelist:
             if self.is_canceled():
                 logger.debug('Canceled (create 2): serial=%04d', serial)
@@ -2682,8 +3066,14 @@ class GfptarCommand(Command):
                         self.progress_for_create(now)
 
         tar.close()
-        tar_size = outurl.get_size()
+        tardb1.close()
+        tardb1.remove()
+
         self.create_a_members_list(outurl, filelist_ok, target_host)
+        tardb_ok.close()
+        tardb_ok.remove()
+
+        tar_size = outurl.get_size()
         with self.lock():
             self.info('created(.tar): {}', outurl.url_str)
             self.archived_size += tar_size
@@ -2720,8 +3110,9 @@ class GfptarCommand(Command):
         self.outdir_url = GfURL.init(outdir)
         self.indir = indir
         member_set = set(members)
-        self.compress_prog = self.opt['--use-compress-program']
         self.same_owner = self.opt['--same-owner']
+
+        self.compress_prog = self.opt['--use-compress-program']
         self.disable_gfarm_command = self.opt['--disable-gfarm-command']
         self.use_gfarm_command = not self.disable_gfarm_command
         self.gfsched_interval = self.opt['--gfsched-interval']
@@ -2943,8 +3334,7 @@ class GfptarCommand(Command):
                 if exc:
                     logger.debug('%s: %s', self.futures[t],
                                  convert_message(exc))
-                    tb = traceback.TracebackException.from_exception(exc)
-                    logger.debug(''.join(tb.format()))
+                    self.print_trace(exc)
                     if not self.is_canceled():
                         self.cancel()
                         for t2 in self.futures:
@@ -3070,11 +3460,14 @@ class GfptarCommand(Command):
     # lock required
     def progress_for_create(self, now):
         sec = now - self.start_time
-        sec_str = format_seconds(sec)
+        sec_str = format_seconds(sec, minhour=True)
         if self.listing:
             percent_str = '?'
         else:
-            percent1 = self.stored_num * 100 / self.total_num
+            if self.total_num > 0:
+                percent1 = self.stored_num * 100 / self.total_num
+            else:
+                percent1 = 0
             if self.total_size > 0:
                 percent2 = self.stored_size * 100 / self.total_size
                 percent = (percent1 + percent2) / 2
@@ -3088,10 +3481,11 @@ class GfptarCommand(Command):
         stored_num_str = humanize_number(self.stored_num)
         total_num_str = humanize_number(self.total_num)
         stored_size_str = humanize_number(self.stored_size)
+        total_size_str = humanize_number(self.total_size)
         bytes_per_sec_str = humanize_number(bytes_per_sec)
         sys.stdout.write(f'\rcreated: {percent_str}% '
-                         f'num={stored_num_str}/{total_num_str} '
-                         f'{stored_size_str}B '
+                         f'{stored_size_str}B/{total_size_str}B '
+                         f'{stored_num_str}/{total_num_str} '
                          f'{sec_str} '
                          f'{bytes_per_sec_str}B/s  ')
 
@@ -3232,6 +3626,7 @@ Options:
              (https://docs.python.org/3/library/codecs.html#standard-encodings)
                             [default: utf-8]
   --bufsize=BYTES           buffer size to copy [default: 1Mi]
+  --workdir=DIR             local directory for temporaly files
   --memory=NUM              upper limit of memory size (bytes)
                             (default: no limit)
   --test                    test mode (-q option is recommended)
@@ -3274,6 +3669,7 @@ _schema = Schema({
     '--disable-fsync': bool,
     '--gfsched-interval': Use(int),
     '--same-owner': bool,
+    '--workdir': Or(str, None),
     '--memory': Or(Use(unhumanize_number), None),
     '--test': bool,
     '--test-workdir-local': Or(str, None),
