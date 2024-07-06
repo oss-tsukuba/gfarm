@@ -44,6 +44,8 @@ from decimal import Decimal, ROUND_DOWN
 import sqlite3
 import json
 import tempfile
+import multiprocessing
+import queue
 
 from docopt import docopt
 from schema import Schema, Use, Or
@@ -2761,8 +2763,9 @@ class GfptarCommand(Command):
 
                     # testdict[entry.path] = entry  # TODO
 
-                    if tarlist_size + this_size > self.split_size \
-                       or tarlist_num + 1 > self.max_entries_per_tar:
+                    if tarlist_num > 0 \
+                       and (tarlist_size + this_size > self.split_size
+                            or tarlist_num + 1 > self.max_entries_per_tar):
                         try:
                             tarlist.commit()
                             tarlist.close()
@@ -2801,8 +2804,8 @@ class GfptarCommand(Command):
                 break  # from loop of infiles_checked
             except Exception as e2:
                 cannot_read_dir += 1
-                logger.info('%s: error while reading directory (%s)',
-                            gfurl.url_str, convert_message(e2))
+                logger.warning('%s: error while reading directory (%s)',
+                               gfurl.url_str, convert_message(e2))
                 self.print_trace(e2)
                 # continue (next infile)
 
@@ -2839,6 +2842,8 @@ class GfptarCommand(Command):
             self.listing = False
 
         self.create_job_finalize()
+
+        tmpdir.cleanup()
 
         if self.progress_enabled:
             self.progress_for_create(time.time())
@@ -2994,9 +2999,62 @@ class GfptarCommand(Command):
             logger.debug('Canceled (create 1): serial=%04d', serial)
             return
 
+        input_queue = multiprocessing.Queue()
+        output_queue = multiprocessing.Queue()
+        process = multiprocessing.Process(target=self.create_a_tar_worker,
+                                          args=(input_queue, output_queue,
+                                                serial, dbfile))
+        process.start()
+        try:
+            while True:
+                if self.is_canceled():
+                    logger.debug('Canceled (create 2): serial=%04d', serial)
+                    input_queue.put('CANCEL')
+                try:
+                    result = output_queue.get(timeout=1)
+                except queue.Empty:
+                    if not process.is_alive():
+                        logger.error('Unexpected child process termination')
+                        break
+                    continue
+                if result[0] == 'ADD':
+                    status, subpath, size_all = result
+                    with self.lock():
+                        self.info('stored: {}', subpath)
+                        self.stored_size += size_all
+                        if self.progress_enabled:
+                            self.stored_num += 1
+                            now = time.time()
+                            if now >= self.next_time:
+                                self.next_time = now + 1
+                                self.progress_for_create(now)
+                elif result[0] == 'DONE':
+                    (status, tar_size, cannot_be_archived,
+                     outurl, listurl) = result
+                    with self.lock():
+                        self.archived_size += tar_size
+                        self.info(f'created(.tar): {outurl}')
+                        self.info(f'created(.lst): {listurl}')
+                    break
+                elif result[0] == 'ERR':
+                    status, exc = result
+                    raise exc
+                else:
+                    logger.warning(f'unknown result: {str(result)}')
+        finally:
+            process.join()
+            input_queue.close()
+            output_queue.close()
+
+    def create_a_tar_worker(self, input_queue, output_queue, serial, dbfile):
         tardb1 = DB(dbfile)
         filelist = DBList(tardb1, GfURLEntry, 'tarlist')
 
+        if len(filelist) == 0:
+            tardb1.close()
+            tardb1.remove()
+            logger.error(f'empty filelist: {dbfile}')
+            return
         first = None
         last = None
         for entry in filelist:
@@ -3044,46 +3102,41 @@ class GfptarCommand(Command):
         # to reduce memory usage
         tardb_ok = DB(tardb1.filename + '_ok.db')
         filelist_ok = DBList(tardb_ok, GfURLEntry, 'filelist_ok')
+        cannot_be_archived = 0
         for entry in filelist:
-            if self.is_canceled():
-                logger.debug('Canceled (create 2): serial=%04d', serial)
-                break
+            if not input_queue.empty():
+                qdata = input_queue.get()
+                if qdata == 'CANCEL':
+                    break
             subpath = entry.subpath(self.basedir_url)
             try:
                 tar.add_entry(subpath, entry)
-            except MemoryError:
+                filelist_ok.append(entry)
+                size_all = entry.size_all()
+                output_queue.put(('ADD', subpath, size_all))
+            except MemoryError as e:
                 tar.close()
-                raise
+                output_queue.put(('ERR', e))
             except Exception as e:
-                with self.lock():
-                    self.cannot_be_archived += 1
+                cannot_be_archived += 1
                 logger.warning(convert_message(e))
                 continue
-
-            filelist_ok.append(entry)
-            size_all = entry.size_all()
-            with self.lock():
-                self.info('stored: {}', subpath)
-                self.stored_size += size_all
-                if self.progress_enabled:
-                    self.stored_num += 1
-                    now = time.time()
-                    if now >= self.next_time:
-                        self.next_time = now + 1
-                        self.progress_for_create(now)
 
         tar.close()
         tardb1.close()
         tardb1.remove()
 
-        self.create_a_members_list(outurl, filelist_ok, target_host)
+        # for DEBUG
+        # raise Exception('unexpected raise')
+        # output_queue.put(('ERR', Exception('expected error')))
+
+        listurl = self.create_a_members_list(outurl, filelist_ok, target_host)
         tardb_ok.close()
         tardb_ok.remove()
 
         tar_size = outurl.get_size()
-        with self.lock():
-            self.info('created(.tar): {}', outurl.url_str)
-            self.archived_size += tar_size
+        output_queue.put(('DONE', tar_size, cannot_be_archived,
+                          outurl.url_str, listurl.url_str))
 
     def create_a_members_list(self, url, filelist, target_host):
         outurl = GfURL.init(url.url_str + self.LIST_SUFFIX)
@@ -3102,8 +3155,7 @@ class GfptarCommand(Command):
                 subpath = entry.subpath(self.basedir_url)
                 f.write(subpath)
                 f.write('\n')
-        with self.lock():
-            self.info('created(.lst): {}', outurl.url_str)
+        return outurl
 
     def error_canceled(self):
         return GfptarError('Canceled')
@@ -3633,7 +3685,7 @@ Options:
              (https://docs.python.org/3/library/codecs.html#standard-encodings)
                             [default: utf-8]
   --bufsize=BYTES           buffer size to copy [default: 1Mi]
-  --workdir=DIR             local directory for temporaly files
+  --workdir=DIR             local directory for temporary files
   --max-entries-per-tar=NUM the number of entries per tar file
                             to limit memory usage [default: 100K]
   --memory=NUM              upper limit of memory size (bytes)
