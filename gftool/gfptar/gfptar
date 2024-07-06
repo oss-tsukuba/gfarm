@@ -2638,9 +2638,12 @@ class GfptarCommand(Command):
         self.outdir = outdir
         self.outdir_url = GfURL.init(outdir)
         self.basedir_url = GfURL.init(basedir)
-        self.size = self.opt['--size']
-        if self.size <= 0:
-            self.size = 1
+        self.assumed_size = self.opt['--size']
+        if self.assumed_size <= 0:
+            self.assumed_size = 1
+        self.max_entries_per_tar = self.opt['--max-entries-per-tar']
+        if self.max_entries_per_tar <= 0:
+            self.max_entries_per_tar = 1
         self.ratio = self.opt['--ratio']
 
         self.compress_type = self.opt['--type']
@@ -2658,10 +2661,10 @@ class GfptarCommand(Command):
         self.dummy_size_max = self.opt['--dummy-size-max']
         self.dummy_sleep = self.opt['--dummy-sleep']
         if self.compress_type == GfTarFile.COMPRESS_TYPE_NO:
-            self.split_size = self.size
+            self.split_size = self.assumed_size
             self.suffix = '.tar'
         else:
-            self.split_size = self.size * 100 / self.ratio
+            self.split_size = self.assumed_size * 100 / self.ratio
             self.suffix = '.tar.' + self.compress_type
 
         self.start_time = time.time()
@@ -2725,6 +2728,7 @@ class GfptarCommand(Command):
         tardb_prefix = os.path.join(tmpdir.name, 'list_for_create')
         tardb_fmt = f'_{self.SERIAL_FORMAT}.db'
         serial = 1
+        # to reduce memory usage
         tarlist_db = DB(tardb_prefix + tardb_fmt % serial)
         tarlist = DBList(tarlist_db, GfURLEntry, 'tarlist')
         tarlist_num = 0
@@ -2757,8 +2761,8 @@ class GfptarCommand(Command):
 
                     # testdict[entry.path] = entry  # TODO
 
-                    tarlist_size += this_size
-                    if tarlist_size > self.split_size and tarlist_num > 0:
+                    if tarlist_size + this_size > self.split_size \
+                       or tarlist_num + 1 > self.max_entries_per_tar:
                         try:
                             tarlist.commit()
                             tarlist.close()
@@ -2774,11 +2778,10 @@ class GfptarCommand(Command):
                         tarlist_db = DB(tardb_prefix + tardb_fmt % serial)
                         tarlist = DBList(tarlist_db, GfURLEntry, 'tarlist')
                         tarlist_num = 0
-                        tarlist_size = this_size
-                        if has_error is not None:
-                            break  # from listdir_switch()
+                        tarlist_size = 0
                     tarlist.append(entry)
                     tarlist_num += 1
+                    tarlist_size += this_size
 
                     # progress for listing before starting threads
                     if serial == 1 and self.progress_enabled:
@@ -2786,6 +2789,9 @@ class GfptarCommand(Command):
                         if now >= self.next_time:
                             self.next_time = now + 1
                             self.progress_for_create(now)
+
+                    if has_error is not None:
+                        break  # from listdir_switch()
             except MemoryError as e2:
                 self.cancel()
                 has_error = e2
@@ -2819,10 +2825,10 @@ class GfptarCommand(Command):
         #         break
         # testdict.close()
 
-        tarlist.commit()
-        tarlist.close()
         if tarlist_num > 0:
             try:
+                tarlist.commit()
+                tarlist.close()
                 self.create_job_execute(serial, tarlist.filename())
             except Exception as e:
                 self.cancel()
@@ -3035,6 +3041,7 @@ class GfptarCommand(Command):
                                     dummy_input=self.dummy_input,
                                     dummy_sleep=self.dummy_sleep)
 
+        # to reduce memory usage
         tardb_ok = DB(tardb1.filename + '_ok.db')
         filelist_ok = DBList(tardb_ok, GfURLEntry, 'filelist_ok')
         for entry in filelist:
@@ -3627,6 +3634,8 @@ Options:
                             [default: utf-8]
   --bufsize=BYTES           buffer size to copy [default: 1Mi]
   --workdir=DIR             local directory for temporaly files
+  --max-entries-per-tar=NUM the number of entries per tar file
+                            to limit memory usage [default: 100K]
   --memory=NUM              upper limit of memory size (bytes)
                             (default: no limit)
   --test                    test mode (-q option is recommended)
@@ -3670,6 +3679,7 @@ _schema = Schema({
     '--gfsched-interval': Use(int),
     '--same-owner': bool,
     '--workdir': Or(str, None),
+    '--max-entries-per-tar': Use(unhumanize_number),
     '--memory': Or(Use(unhumanize_number), None),
     '--test': bool,
     '--test-workdir-local': Or(str, None),
