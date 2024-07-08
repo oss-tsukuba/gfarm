@@ -2081,9 +2081,10 @@ class GfptarCommand(Command):
                 self.test_main()
                 return
         except Exception as e:
+            self.cancel()
             if self.futures is not None:
                 for t in self.futures:
-                    logger.info('%s: Canceled', self.futures[t])
+                    logger.debug('Canceled: %s', self.futures[t])
                     t.cancel()
             if self.debug:
                 raise
@@ -2999,17 +3000,19 @@ class GfptarCommand(Command):
             logger.debug('Canceled (create 1): serial=%04d', serial)
             return
 
-        input_queue = multiprocessing.Queue()
-        output_queue = multiprocessing.Queue()
-        process = multiprocessing.Process(target=self.create_a_tar_worker,
-                                          args=(input_queue, output_queue,
-                                                serial, dbfile))
-        process.start()
         try:
+            input_queue = multiprocessing.Queue()
+            output_queue = multiprocessing.Queue()
+            process = multiprocessing.Process(target=self.create_a_tar_worker,
+                                              args=(input_queue, output_queue,
+                                                    serial, dbfile))
+            process.start()
+            cancel = False
             while True:
-                if self.is_canceled():
+                if self.is_canceled() and cancel is False:
                     logger.debug('Canceled (create 2): serial=%04d', serial)
                     input_queue.put('CANCEL')
+                    cancel = True  # prevent input_queue from filling up
                 try:
                     result = output_queue.get(timeout=1)
                 except queue.Empty:
@@ -3042,9 +3045,13 @@ class GfptarCommand(Command):
                 else:
                     logger.warning(f'unknown result: {str(result)}')
         finally:
-            process.join()
+            timeout = 10
+            process.join(timeout)
+            process.kill()
+            process.close()
             input_queue.close()
             output_queue.close()
+            logger.debug(f'sub-process done: serial={serial}')
 
     def create_a_tar_worker(self, input_queue, output_queue, serial, dbfile):
         tardb1 = DB(dbfile)
@@ -3104,9 +3111,13 @@ class GfptarCommand(Command):
         filelist_ok = DBList(tardb_ok, GfURLEntry, 'filelist_ok')
         cannot_be_archived = 0
         for entry in filelist:
-            if not input_queue.empty():
+            while not input_queue.empty():
                 qdata = input_queue.get()
                 if qdata == 'CANCEL':
+                    logger.debug('receive CANCEL from parent')
+                    break
+                else:
+                    logger.error('unexpected message from parent')
                     break
             subpath = entry.subpath(self.basedir_url)
             try:
