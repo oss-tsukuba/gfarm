@@ -120,9 +120,10 @@ def unhumanize_number(numstr, binary_prefix=False):
 
 # Do not use the same DB object from multi-threads.
 class DB:
-    def __init__(self, filename):
+    def __init__(self, filename, check_same_thread=True):
         self.filename = filename
-        self.con = sqlite3.connect(filename)
+        self.con = sqlite3.connect(filename,
+                                   check_same_thread=check_same_thread)
         self.con.execute('PRAGMA synchronous = OFF')
         # self.con.execute('PRAGMA cache_size = 1000')
         # self.con.execute('PRAGMA mmap_size = 1000')
@@ -141,7 +142,8 @@ class DB:
 
 # Interface
 class DBObj:
-    def dumps(self, for_dict):
+    @classmethod
+    def dumps(cls, obj, for_dict):
         raise NotImplementedError
 
     @classmethod
@@ -154,12 +156,64 @@ class IntObj(DBObj):
     def __init__(self, i):
         self.i = i
 
-    def dumps(self, for_dict):
-        return str(self.i)
+    @classmethod
+    def dumps(cls, obj, for_dict):
+        if isinstance(obj, int):
+            return str(obj)
+        return str(obj.i)
 
     @classmethod
     def loads(cls, key, txt, for_dict):
         return int(txt)
+
+
+class StrObj(DBObj):
+    def __init__(self, s):
+        self.s = s
+
+    @classmethod
+    def dumps(cls, obj, for_dict):
+        if isinstance(obj, str):
+            return obj
+        return obj.s
+
+    @classmethod
+    def loads(cls, key, txt, for_dict):
+        return txt
+
+
+class TypeName(DBObj):
+    def __init__(self, file_type, filename):
+        self.file_type = file_type
+        self.filename = filename
+
+    @classmethod
+    def dumps(cls, obj, for_dict):
+        array = [obj.file_type, obj.filename]
+        return json.dumps(array, separators=(',', ':'))
+
+    @classmethod
+    def loads(cls, key, txt, for_dict):
+        array = json.loads(txt)
+        return cls(array[0], array[1])
+
+
+class FileAttr(DBObj):
+    def __init__(self, mode, mtime, user, group):
+        self.mode = mode
+        self.mtime = mtime
+        self.user = user
+        self.group = group
+
+    @classmethod
+    def dumps(cls, obj, for_dict):
+        array = [obj.mode, obj.mtime, obj.user, obj.group]
+        return json.dumps(array, separators=(',', ':'))
+
+    @classmethod
+    def loads(cls, key, txt, for_dict):
+        array = json.loads(txt)
+        return cls(array[0], array[1], array[2], array[3])
 
 
 # Abstract
@@ -175,7 +229,7 @@ class DBCollection:
             self.create_table()
 
     def obj2txt(self, obj):
-        return obj.dumps(self.for_dict)
+        return self.obj_cls.dumps(obj, self.for_dict)
 
     def txt2obj(self, key, txt):
         if txt is None:
@@ -243,6 +297,11 @@ class DBDict(DBCollection):
             f'SELECT 1 FROM {self.table_name} WHERE key = ?', (key,))
         row = res.fetchone()
         return row is not None
+
+    def get(self, key, default=None):
+        if key in self:  # __contains__()
+            return self[key]  # __getitem__()
+        return default
 
     def keys(self):
         res = self.con.execute(f'SELECT key FROM {self.table_name}')
@@ -323,6 +382,19 @@ class DBSet(DBCollection):
 
     def __iter__(self):
         res = self.con.execute(f'SELECT key FROM {self.table_name}')
+        for row in res:
+            yield self.txt2obj(row[0], row[0])
+
+    # sort: None, 'ASC', 'DESC'
+    def iterator(self, sort=None, offset=0, limit=-1):
+        sql = f'SELECT key FROM {self.table_name}'
+        if sort is not None:
+            if sort.upper() == 'ASC':
+                sql += ' ORDER BY key ASC'
+            elif sort.upper() == 'DESC':
+                sql += ' ORDER BY key DESC'
+        sql += f' LIMIT {limit} OFFSET {offset}'
+        res = self.con.execute(sql)
         for row in res:
             yield self.txt2obj(row[0], row[0])
 
@@ -692,15 +764,16 @@ class GfURLEntry(DBObj):
                 f'user={self.uname},group={self.gname})')
 
     # only path must be specified for key when using DBDict
-    def dumps(self, for_dict):
-        t = self.type_map[self.file_type]
+    @classmethod
+    def dumps(cls, obj, for_dict):
+        t = obj.type_map[obj.file_type]
         # serialize using list() to reduce size
         # [0]...[6]
-        array = [self.mode, t, self.uname, self.gname,
-                 self.size, self.mtime, self.linkname]
+        array = [obj.mode, t, obj.uname, obj.gname,
+                 obj.size, obj.mtime, obj.linkname]
         # save path to key when using dict, so don't save path to value
         if not for_dict:
-            array.append(self.path)  # [7]
+            array.append(obj.path)  # [7]
         return json.dumps(array, separators=(',', ':'))
 
     @classmethod
@@ -2055,9 +2128,13 @@ class TestGfptar(unittest.TestCase):
         self.assertEqual(d['a'], 1)
         self.assertEqual(d['b'], 2)
         self.assertEqual(d['c'], 3)
+        self.assertEqual(d.get('c'), 3)
+        self.assertEqual(d.get('d'), None)
+        self.assertNotIn('d', d)
+        self.assertIn('a', d)
 
         d.clear()
-        d['a'] = IntObj(4)
+        d['a'] = 4
         self.assertEqual(d['a'], 4)
 
         d.clear()
@@ -2084,6 +2161,7 @@ class TestGfptar(unittest.TestCase):
         s.clear()
         s.add(IntObj(1))
         self.assertIn(IntObj(1), s)
+        self.assertIn(1, s)
 
         s.clear()
         s.update({IntObj(1), IntObj(2), IntObj(3)})
@@ -2882,10 +2960,6 @@ class GfptarCommand(Command):
         tarlist_num = 0
         tarlist_size = 0
 
-        # TODO for debug (unnecessary)
-        # testdb = DB(os.path.join(tmpdir.name, 'test_dict.db'))
-        # testdict = DBDict(testdb, GfURLEntry, 'test_dict')
-
         for infile in infiles_checked:
             if self.is_canceled():
                 logger.debug('Canceled (listdir 1): serial=%04d', serial)
@@ -2906,8 +2980,6 @@ class GfptarCommand(Command):
                     with self.lock():  # for progress
                         self.total_size += this_size
                         self.total_num += 1
-
-                    # testdict[entry.path] = entry  # TODO
 
                     if tarlist_num > 0 \
                        and (tarlist_size + this_size > self.split_size
@@ -2957,22 +3029,6 @@ class GfptarCommand(Command):
 
         if has_error is not None:
             self.cancel()
-
-        # TODO
-        # testdict.commit()
-        # count = 0
-        # for key, entry in testdict.items():
-        #     #print(f'TODO DEBUG: key={key}: {str(entry)}') # TODO
-        #     count += 1
-        #     if count >= 2:
-        #         break
-        # count = 0
-        # for key in testdict:
-        #     #print(f'TODO DEBUG: key={key}') # TODO
-        #     count += 1
-        #     if count >= 2:
-        #         break
-        # testdict.close()
 
         if tarlist_num > 0:
             try:
@@ -3391,7 +3447,8 @@ class GfptarCommand(Command):
         self.outdir = outdir
         self.outdir_url = GfURL.init(outdir)
         self.indir = indir
-        member_set = set(members)
+        orig_member_set = set(members)
+        del members
         self.same_owner = self.opt['--same-owner']
 
         self.compress_prog = self.opt['--use-compress-program']
@@ -3405,10 +3462,22 @@ class GfptarCommand(Command):
         if not indir_url.is_directory():
             raise self.error_not_a_gfptar_directory(indir_url.url_str)
 
-        search_target = len(member_set) > 0
-        archive_dict = {}  # member -> (file_type, tar filename)
-        target_set_all = set()  # all tar files
-        directory_list = []
+        search_target = len(orig_member_set) > 0
+
+        # Temporary files are removed when the process exits.
+        # dir=None: system default
+        tmpdir = tempfile.TemporaryDirectory(prefix='gfptar-',
+                                             dir=self.workdir)
+        db_file = os.path.join(tmpdir.name, 'extract.db')
+        # to reduce memory usage
+        db = DB(db_file, check_same_thread=False)
+
+        # member name -> (file_type, tar filename)
+        archive_dict = DBDict(db, TypeName, 'archive_dict')
+        # all tar files
+        target_set_all = DBSet(db, StrObj, 'target_set_all')
+        directory_set_all = DBSet(db, StrObj, 'directory_set_all')
+
         self.total_num = 0
         self.start_time = time.time()
         self.next_time = self.start_time + 1
@@ -3439,10 +3508,10 @@ class GfptarCommand(Command):
                     file_type = line[:1]
                     path = line[2:].lstrip('/')
                     if search_target:
-                        archive_dict[path] = (file_type, arch_url_str)
+                        archive_dict[path] = TypeName(file_type, arch_url_str)
                     else:
                         if file_type == 'D':
-                            directory_list.append(path)
+                            directory_set_all.add(path)
             if self.progress_enabled:
                 now = time.time()
                 if now >= self.next_time:
@@ -3454,84 +3523,76 @@ class GfptarCommand(Command):
 
         if search_target:
             # selected tar files
-            target_set = set()
-            directory_set = set()
-            new_member_set = set()
-            for member in member_set:
+            target_set = DBSet(db, StrObj, 'target_set')
+            directory_set = DBSet(db, StrObj, 'directory_set')
+            member_set1 = DBSet(db, StrObj, 'member_set1')
+            for member in orig_member_set:
                 m = GfURL.init(member, local=True)
-                new_member_set.add(m.path)  # normalized
-            member_set = new_member_set
+                member_set1.add(m.path)  # normalized
 
-            for member in member_set:
+            for member in member_set1:
                 if self.is_canceled():
                     raise self.error_canceled()
                 type_arch = archive_dict.get(member, None)
                 if type_arch is None:
                     raise GfException('Not found in archive: ' + member)
-                file_type, target_arch = type_arch
-                target_set.add(target_arch)
+                target_set.add(type_arch.filename)
                 if file_type == 'D':
                     directory_set.add(member)
 
             # add parent directories to update attributes (mode,mtime)
-            new_member_set = set()
-            for member in member_set:
+            member_set2 = DBSet(db, StrObj, 'member_set2')
+            for member in member_set1:
                 if self.is_canceled():
                     raise self.error_canceled()
-                new_member_set.add(member)
+                member_set2.add(member)
                 url = GfURL.init(member, local=True)  # relative path
                 for parent_url in url.parent_list:
                     path = parent_url.path
                     if path != '.' and path != '/':
                         type_arch = archive_dict.get(path, None)
                         if type_arch is not None:  # found
-                            file_type, target_arch = type_arch
-                            target_set.add(target_arch)
+                            target_set.add(type_arch.filename)
                             directory_set.add(path)
-                            new_member_set.add(path)
-            del member_set
-            member_set = new_member_set  # replace
+                            member_set2.add(path)
+            archive_dict.clear()
+            member_set1.clear()
+            member_set = member_set2  # replace
             self.total_num = len(member_set)  # re-set
-            del archive_dict
-            directory_list = list(directory_set)
-            del directory_set
         else:
             target_set = target_set_all
-
-        target_list = list(target_set)
-        del target_set
-        target_list.sort()
+            directory_set = directory_set_all
+            member_set = DBSet(db, StrObj, 'member_set')
 
         self.outdir_url.create_new_dir()
 
-        self.created_directory_set = set()
-        # self.extract_directories(directory_list)
-        self.extract_directories_fast(directory_list)
+        self.created_directory_set = DBSet(db, StrObj, 'created_directory_set')
+        # self.extract_directories(directory_set)
+        self.extract_directories_fast(directory_set)
 
         self.extracted_num = 0
         self.extracted_size = 0
         self.start_time = time.time()
         self.next_time = self.start_time + 1
-        self.dirstat_dict = {}
+        self.dirstat_dict = DBDict(db, FileAttr, 'dirstat_dict')
 
         self.gfsched_lock = None
         self.gfsched_next = 0
         self.gfsched_list = None
 
         if self.MT_enabled():
-            self.extract_from_archives_MT(target_list, member_set)
+            self.extract_from_archives_MT(target_set, member_set)
         else:
-            self.extract_from_archives(target_list, member_set)
+            self.extract_from_archives(target_set, member_set)
         if self.progress_enabled:
             self.progress_for_extract(time.time())
             sys.stdout.write('\n')
 
-        self.update_stat_for_directories(directory_list, member_set)
+        self.update_stat_for_directories(directory_set, member_set)
 
-    def extract_directories(self, directory_list):
+    def extract_directories(self, directory_set):
         # NOTE: slow on Gfarm
-        directory_list.sort()
-        for d in directory_list:
+        for d in directory_set.iterator(sort='ASC'):
             if self.is_canceled():
                 raise self.error_canceled()
             url_str = self.outdir_url.url_join(d)
@@ -3545,43 +3606,41 @@ class GfptarCommand(Command):
             self.info('prepare_dir: {}', dir_url.url_str)
             self.created_directory_set.add(dir_url.path)
 
-    def extract_directories_fast(self, directory_list):
+    def extract_directories_fast(self, directory_set):
         # faster implementation for gfmkdir
-        directory_list.sort(reverse=True)
-        created = self.created_directory_set
-        for d in directory_list:
+        created_set = self.created_directory_set
+        for d in directory_set.iterator(sort='DESC'):
             if self.is_canceled():
                 raise self.error_canceled()
             url_str = self.outdir_url.url_join(d)
             dir_url = GfURL.init(url_str)
             # url.path is normalized
-            if dir_url.path in created:
+            if dir_url.path in created_set:
                 logger.debug('skip (already created): %s', url_str)
                 continue
             parent_url = dir_url.parent
-            if parent_url.path in created:
+            if parent_url.path in created_set:
                 dir_url.mkdir()
-                created.add(dir_url.path)
+                created_set.add(dir_url.path)
                 self.info('prepare_dir: {}', dir_url.path)
             else:  # no parent
                 dir_url.makedirs()
-                created.add(dir_url.path)
+                created_set.add(dir_url.path)
                 self.info('prepare_dir: {}', dir_url.path)
-                created.add(parent_url.path)
+                created_set.add(parent_url.path)
                 self.info('prepare_dir: {}', parent_url.path)
                 for p in parent_url.parent_list:
                     path = p.path
                     if path == '.' or path == '/':
                         continue
-                    created.add(path)
+                    created_set.add(path)
                     self.info('prepare_dir: {}', path)
 
-    def update_stat_for_directories(self, directory_list, member_set):
+    def update_stat_for_directories(self, directory_set, member_set):
         # process from leaves
-        directory_list.sort(reverse=True)
         members_num = len(member_set)
         self.clear_canceled()
-        for d in directory_list:
+        for d in directory_set.iterator(sort='DESC'):
             if self.is_canceled():
                 logger.debug('Canceled (extract 3)')
                 break
@@ -3601,21 +3660,21 @@ class GfptarCommand(Command):
             logger.debug("update_stat: %s, %s", d, oct(tarinfo.mode))
             self.info('update_stat: {}', d)
 
-    def extract_from_archives(self, target_list, member_set):
+    def extract_from_archives(self, target_set, member_set):
         self.lock_init(False)
         serial = 0
-        for target in target_list:
+        for target in target_set.iterator(sort='ASC'):
             logger.debug('target_set: %s', target)
             serial += 1
             self.extract_from_a_tar(serial, target, member_set)
 
-    def extract_from_archives_MT(self, target_list, member_set):
+    def extract_from_archives_MT(self, target_set, member_set):
         self.lock_init(True)
         with concurrent.futures.ThreadPoolExecutor(
                 max_workers=self.jobs) as executor:
             self.futures = {}  # tar filenames
             serial = 0
-            for target in target_list:
+            for target in target_set.iterator(sort='ASC'):
                 logger.debug('target_set: %s', target)
                 serial += 1
                 t = executor.submit(self.extract_from_a_tar,
@@ -3715,7 +3774,9 @@ class GfptarCommand(Command):
                 # NOTE: already created
                 logger.debug('extract,dir: %s', outfile)
                 with self.lock():
-                    self.dirstat_dict[outfile] = tarinfo
+                    self.dirstat_dict[outfile] = FileAttr(
+                        tarinfo.mode, tarinfo.mtime,
+                        tarinfo.uname, tarinfo.gname)
             elif tarinfo.issym():
                 logger.debug('extract,link: %s, %s', outfile,
                              tarinfo.linkname)
