@@ -71,7 +71,7 @@ def humanize_number(num, binary_prefix=False):
         units = ['', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y']
         base = Decimal(1000)
     if num < base:
-        return str(num)
+        return str(int(num))
     n = Decimal(num)
     ulen = len(units) - 1
     scale = 0
@@ -485,7 +485,7 @@ def execcmd(args, stdin=subprocess.DEVNULL, stderr=subprocess.PIPE,
         except Exception:
             logger.debug('cannot decode: err={}', err)
             pass
-        msg = '{}: {}'.format(str(args), err)
+        msg = f'{str(args)} (exit={ret}): {err}'
         if err and use_stderr:
             logger.debug(msg)
         raise GfException(msg)
@@ -1934,6 +1934,8 @@ class TestGfptar(unittest.TestCase):
         return suite
 
     def test_humanize(self):
+        self.assertEqual(humanize_number(0.1), '0')
+        self.assertEqual(humanize_number(1.9), '1')
         self.assertEqual(humanize_number(1023, binary_prefix=True), '1023')
         self.assertEqual(humanize_number(1024, binary_prefix=True), '1.0Ki')
         self.assertEqual(humanize_number(999), '999')
@@ -2082,10 +2084,12 @@ class GfptarCommand(Command):
                 return
         except Exception as e:
             self.cancel()
-            if self.futures is not None:
-                for t in self.futures:
-                    logger.debug('Canceled: %s', self.futures[t])
-                    t.cancel()
+            # NOTE: If threads are canceled, child processes may not stop.
+            #       In that case, gfptar may freeze.
+            # if self.futures is not None:
+            #     for t in self.futures:
+            #         logger.debug('Canceled: %s', self.futures[t])
+            #         t.cancel()
             if self.debug:
                 raise
             else:
@@ -2107,6 +2111,7 @@ class GfptarCommand(Command):
         self.pid = os.getpid()
         out = gfwhoami()
         self.gfarm_user = out.strip()
+
         self.test_unit()
         self.test_invalid('url', 'gfarm:/tmp', 'dst', True)
         self.test_invalid('dot1', '.', 'dst', True)
@@ -2910,11 +2915,12 @@ class GfptarCommand(Command):
                 self.print_trace(exc)
                 if not self.is_canceled():
                     self.cancel()
-                    for t2 in self.futures:
-                        if t == t2:
-                            continue
-                        logger.error('%s: Canceled', self.futures[t2])
-                        t2.cancel()
+                    # DO NOT cancel threads beacause it will freeze.
+                    # for t2 in self.futures:
+                    #     if t == t2:
+                    #         continue
+                    #     logger.error('Canceled: %s', self.futures[t2])
+                    #     t2.cancel()
                 if has_error is None:  # save first error
                     has_error = exc
         return has_error
@@ -2948,6 +2954,10 @@ class GfptarCommand(Command):
         finally:
             if locked:
                 self._lock.release()
+
+    def clear_canceled(self):
+        with self.lock():
+            self.canceled.clear()
 
     def cancel(self):
         with self.lock():
@@ -3007,6 +3017,19 @@ class GfptarCommand(Command):
                                               args=(input_queue, output_queue,
                                                     serial, dbfile))
             process.start()
+        except Exception:
+            try:
+                input_queue.close()
+            except Exception:
+                pass
+            try:
+                output_queue.close()
+            except Exception:
+                pass
+            raise
+
+        save_exc = None
+        try:
             cancel = False
             while True:
                 if self.is_canceled() and cancel is False:
@@ -3017,7 +3040,7 @@ class GfptarCommand(Command):
                     result = output_queue.get(timeout=1)
                 except queue.Empty:
                     if not process.is_alive():
-                        logger.error('Unexpected child process termination')
+                        logger.warning('Unexpected child process termination')
                         break
                     continue
                 if result[0] == 'ADD':
@@ -3040,27 +3063,77 @@ class GfptarCommand(Command):
                         self.info(f'created(.lst): {listurl}')
                     break
                 elif result[0] == 'ERR':
-                    status, exc = result
-                    raise exc
+                    (status, exc_type_name, exc_value_str,
+                     exc_traceback_str) = result
+                    input_queue.put('ERR_COMPLETE')
+                    raise Exception(
+                        f'{exc_type_name}: {exc_value_str}\n'
+                        f'{"".join(exc_traceback_str)}')
                 else:
                     logger.warning(f'unknown result: {str(result)}')
+        except Exception as e:
+            save_exc = e
+            raise
         finally:
             timeout = 10
-            process.join(timeout)
-            process.kill()
-            process.close()
-            input_queue.close()
-            output_queue.close()
-            logger.debug(f'sub-process done: serial={serial}')
+            try:
+                process.join(timeout)
+                process.terminate()
+                process.kill()
+                # process.close() may raise ValueError.
+                # (I don't know the reason):
+                #   ValueError: Cannot close a process while it is still
+                #   running. You should first call join() or terminate().
+                #
+                # Retry process.close() if ValueError is caught.
+                ok = False
+                for i in range(50):  # retry, max 5s
+                    try:
+                        process.close()
+                        ok = True
+                        break
+                    except Exception:
+                        logger.debug(f'retry process.close(): {i}')
+                        time.sleep(0.1)
+                if not ok:
+                    process.close()
+            except Exception as e:
+                self.print_trace(e)
+                if save_exc is None:
+                    raise
+            finally:
+                input_queue.close()
+                output_queue.close()
+                logger.debug(f'sub-process exits: serial={serial}')
 
     def create_a_tar_worker(self, input_queue, output_queue, serial, dbfile):
+        try:
+            self.create_a_tar_worker0(input_queue, output_queue,
+                                      serial, dbfile)
+        except Exception:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            exc_type_name = exc_type.__name__
+            exc_value_str = str(exc_value)
+            exc_traceback_str = traceback.format_exception(
+                exc_type, exc_value, exc_traceback)
+            output_queue.put(('ERR', exc_type_name, exc_value_str,
+                              exc_traceback_str))
+            try:
+                input_queue.get(timeout=10)
+                # ERR_COMPLETE
+            except queue.Empty:
+                pass
+
+    def create_a_tar_worker0(self, input_queue, output_queue, serial, dbfile):
+        signal.signal(signal.SIGINT, signal.SIG_DFL)
+        signal.signal(signal.SIGTERM, signal.SIG_DFL)
         tardb1 = DB(dbfile)
         filelist = DBList(tardb1, GfURLEntry, 'tarlist')
 
         if len(filelist) == 0:
             tardb1.close()
             tardb1.remove()
-            logger.error(f'empty filelist: {dbfile}')
+            logger.warning(f'empty filelist: {dbfile}')
             return
         first = None
         last = None
@@ -3125,9 +3198,9 @@ class GfptarCommand(Command):
                 filelist_ok.append(entry)
                 size_all = entry.size_all()
                 output_queue.put(('ADD', subpath, size_all))
-            except MemoryError as e:
+            except MemoryError:
                 tar.close()
-                output_queue.put(('ERR', e))
+                raise
             except Exception as e:
                 cannot_be_archived += 1
                 logger.warning(convert_message(e))
@@ -3139,7 +3212,6 @@ class GfptarCommand(Command):
 
         # for DEBUG
         # raise Exception('unexpected raise')
-        # output_queue.put(('ERR', Exception('expected error')))
 
         listurl = self.create_a_members_list(outurl, filelist_ok, target_host)
         tardb_ok.close()
@@ -3251,6 +3323,8 @@ class GfptarCommand(Command):
             member_set = new_member_set
 
             for member in member_set:
+                if self.is_canceled():
+                    raise self.error_canceled()
                 type_arch = archive_dict.get(member, None)
                 if type_arch is None:
                     raise GfException('Not found in archive: ' + member)
@@ -3262,6 +3336,8 @@ class GfptarCommand(Command):
             # add parent directories to update attributes (mode,mtime)
             new_member_set = set()
             for member in member_set:
+                if self.is_canceled():
+                    raise self.error_canceled()
                 new_member_set.add(member)
                 url = GfURL.init(member, local=True)  # relative path
                 for parent_url in url.parent_list:
@@ -3316,6 +3392,8 @@ class GfptarCommand(Command):
         # NOTE: slow on Gfarm
         directory_list.sort()
         for d in directory_list:
+            if self.is_canceled():
+                raise self.error_canceled()
             url_str = self.outdir_url.url_join(d)
             dir_url = GfURL.init(url_str)
             try:
@@ -3332,6 +3410,8 @@ class GfptarCommand(Command):
         directory_list.sort(reverse=True)
         created = self.created_directory_set
         for d in directory_list:
+            if self.is_canceled():
+                raise self.error_canceled()
             url_str = self.outdir_url.url_join(d)
             dir_url = GfURL.init(url_str)
             # url.path is normalized
@@ -3360,7 +3440,11 @@ class GfptarCommand(Command):
         # process from leaves
         directory_list.sort(reverse=True)
         members_num = len(member_set)
+        self.clear_canceled()
         for d in directory_list:
+            if self.is_canceled():
+                logger.debug('Canceled (extract 3)')
+                break
             if members_num > 0 and d not in member_set:
                 continue
             tarinfo = self.dirstat_dict.get(d)
@@ -3407,11 +3491,12 @@ class GfptarCommand(Command):
                     self.print_trace(exc)
                     if not self.is_canceled():
                         self.cancel()
-                        for t2 in self.futures:
-                            if t == t2:
-                                continue
-                            logger.error('%s: Canceled', self.futures[t2])
-                            t2.cancel()
+                        # DO NOT cancel threads beacause it will freeze.
+                        # for t2 in self.futures:
+                        #     if t == t2:
+                        #         continue
+                        #     logger.error('Canceled: %s', self.futures[t2])
+                        #     t2.cancel()
                     raise exc
 
     def extract_from_a_tar(self, serial, target, member_set):
@@ -3523,9 +3608,11 @@ class GfptarCommand(Command):
 
     def progress_for_listing(self, now):
         sec = now - self.start_time
+        sec_str = format_seconds(sec, minhour=True)
+        total_num_str = humanize_number(self.total_num)
         sys.stdout.write(f'\rlisting: '
-                         f'num={self.total_num}, '
-                         f'sec={sec:.0f}')
+                         f'{total_num_str}Ent, '
+                         f'{sec_str}  ')
 
     # lock required
     def progress_for_create(self, now):
@@ -3546,35 +3633,48 @@ class GfptarCommand(Command):
             percent_str = f'{percent:.0f}'
         if sec > 0:
             bytes_per_sec = self.stored_size / sec
+            ent_per_sec = self.stored_num / sec
         else:
             bytes_per_sec = 0
+            ent_per_sec = 0
         stored_num_str = humanize_number(self.stored_num)
         total_num_str = humanize_number(self.total_num)
         stored_size_str = humanize_number(self.stored_size)
         total_size_str = humanize_number(self.total_size)
         bytes_per_sec_str = humanize_number(bytes_per_sec)
+        ent_per_sec_str = humanize_number(ent_per_sec)
         sys.stdout.write(f'\rcreated: {percent_str}% '
                          f'{stored_size_str}B/{total_size_str}B '
-                         f'{stored_num_str}/{total_num_str} '
+                         f'{stored_num_str}/{total_num_str}Ent '
                          f'{sec_str} '
-                         f'{bytes_per_sec_str}B/s  ')
+                         f'{bytes_per_sec_str}B/s '
+                         f'{ent_per_sec_str}Ent/s  ')
 
     # lock required
     def progress_for_extract(self, now):
         sec = now - self.start_time
+        sec_str = format_seconds(sec, minhour=True)
         if self.total_num > 0:
             percent = self.extracted_num * 100 / self.total_num
         else:
             percent = 0
         if sec > 0:
             bytes_per_sec = self.extracted_size / sec
+            ent_per_sec = self.extracted_num / sec
         else:
             bytes_per_sec = 0
-        sys.stdout.write(f'\rextracted: {percent:.0f}%, '
-                         f'num={self.extracted_num}/{self.total_num}, '
-                         f'size={self.extracted_size}, '
-                         f'sec={sec:.0f}, '
-                         f'B/s={bytes_per_sec:.0f}  ')
+            ent_per_sec = 0
+        extracted_num_str = humanize_number(self.extracted_num)
+        total_num_str = humanize_number(self.total_num)
+        extracted_size_str = humanize_number(self.extracted_size)
+        bytes_per_sec_str = humanize_number(bytes_per_sec)
+        ent_per_sec_str = humanize_number(ent_per_sec)
+        sys.stdout.write(f'\rextracted: {percent:.0f}% '
+                         f'{extracted_size_str}B '
+                         f'{extracted_num_str}/{total_num_str}Ent '
+                         f'{sec_str} '
+                         f'{bytes_per_sec_str}B/s '
+                         f'{ent_per_sec_str}Ent/s  ')
 
     def list_simple(self, indir, quiet=False):
         self.options_init()
