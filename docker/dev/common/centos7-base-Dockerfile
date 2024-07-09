@@ -5,6 +5,14 @@ FROM centos:7
 ARG TZ
 ENV TZ=${TZ}
 
+# 2024-07-01: original yum repository was deprecated
+RUN cp -p /etc/yum.repos.d/CentOS-Base.repo \
+          /etc/yum.repos.d/CentOS-Base.repo.bak && \
+    sed -e '/^mirrorlist=/s/^/#/' \
+        -e '/^#baseurl=/s|^#baseurl=http://mirror|baseurl=http://vault|' \
+	 /etc/yum.repos.d/CentOS-Base.repo.bak \
+	>/etc/yum.repos.d/CentOS-Base.repo
+
 RUN sed -i -e '/override_install_langs/s/$/,ja_JP.utf8/g' /etc/yum.conf \
     && sed -i -e '/tsflags=nodocs/s/^/#/' /etc/yum.conf \
     && yum -y update \

@@ -3,6 +3,14 @@ FROM centos:7
 ARG USERNAME=foo
 ARG UID=1000
 
+# 2024-07-01: original yum repository was deprecated
+RUN cp -p /etc/yum.repos.d/CentOS-Base.repo \
+          /etc/yum.repos.d/CentOS-Base.repo.bak && \
+    sed -e '/^mirrorlist=/s/^/#/' \
+        -e '/^#baseurl=/s|^#baseurl=http://mirror|baseurl=http://vault|' \
+	 /etc/yum.repos.d/CentOS-Base.repo.bak \
+	>/etc/yum.repos.d/CentOS-Base.repo
+
 RUN yum -y update \
  && yum -y install \
     git wget rpm-build sudo passwd \
