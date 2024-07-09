@@ -135,17 +135,31 @@ class DB:
     def close(self):
         self.con.close()
 
-    def remove(self):
+    def unlink(self):
         os.remove(self.filename)
 
 
+# Interface
 class DBObj:
-    def dumps(self):
+    def dumps(self, for_list=False):
         raise NotImplementedError
 
     @classmethod
-    def loads(cls, key, txt):
+    def loads(cls, key, txt, for_list=False):
         raise NotImplementedError
+
+
+# Example of DBObj
+class IntObj(DBObj):
+    def __init__(self, i):
+        self.i = i
+
+    def dumps(self, for_list=False):
+        return str(self.i)
+
+    @classmethod
+    def loads(cls, key, txt, for_list=False):
+        return int(txt)
 
 
 # Abstract
@@ -157,26 +171,30 @@ class DBCollection:
         self.table_name = table_name
         if clear:
             self.clear()
-        self.create_table()
+        else:
+            self.create_table()
 
     def create_table(self):
         raise NotImplementedError
 
     def clear(self):
         self.con.execute(f'DROP TABLE IF EXISTS {self.table_name}')
-        self._count = 0
+        self.create_table()
 
     def commit(self):
         self.con.commit()
 
     def close(self):
         self.con.close()
+        self.con = None
 
     def filename(self):
         return self.db.filename
 
-    def remove(self):
-        self.db.remove()
+    def unlink(self):
+        if self.con is not None:
+            self.close()
+        self.db.unlink()
 
     def __len__(self):
         res = self.con.execute(f'SELECT COUNT(*) FROM {self.table_name}')
@@ -185,35 +203,30 @@ class DBCollection:
 
 class DBDict(DBCollection):
     def create_table(self):
-        # Do not set "key TEXT PRIMARY KEY" here for speed reason.
         self.con.execute(f'''
         CREATE TABLE IF NOT EXISTS {self.table_name}
-        (key TEXT, value TEXT)
+        (key TEXT PRIMARY KEY, value TEXT)
         ''')
 
-    def create_index(self):
-        self.con.execute(f'CREATE INDEX idx_key ON {self.table_name} (key)')
-
-    def obj2json(self, obj):
+    def obj2txt(self, obj):
         return obj.dumps(for_list=False)
 
-    def json2obj(self, key, j):
-        if j is None:
+    def txt2obj(self, key, txt):
+        if txt is None:
             return None
-        return self.obj_cls.loads(key, j, for_list=False)
+        return self.obj_cls.loads(key, txt, for_list=False)
 
     def __setitem__(self, key, value):
         self.con.execute(f'''
         INSERT OR REPLACE INTO {self.table_name} (key, value) VALUES (?, ?)
-        ''', (key, self.obj2json(value)))
-        self.con.commit()
+        ''', (key, self.obj2txt(value)))
 
     def __getitem__(self, key):
         res = self.con.execute(
             f'SELECT value FROM {self.table_name} WHERE key = ?', (key,))
         row = res.fetchone()
         if row:
-            return self.json2obj(row[0])
+            return self.txt2obj(key, row[0])
         else:
             raise KeyError(key)
 
@@ -236,14 +249,21 @@ class DBDict(DBCollection):
             yield row[0]
 
     def values(self):
-        res = self.con.execute(f'SELECT value FROM {self.table_name}')
+        res = self.con.execute(f'SELECT key,value FROM {self.table_name}')
         for row in res:
-            yield self.json2obj(row[0])
+            yield self.txt2obj(row[0], row[1])
 
     def items(self):
         res = self.con.execute(f'SELECT key,value FROM {self.table_name}')
         for row in res:
-            yield row[0], self.json2obj(row[0], row[1])
+            yield row[0], self.txt2obj(row[0], row[1])
+
+    def update(self, other=None, **kwargs):
+        if other:
+            for key, value in other.items():
+                self[key] = value
+        for key, value in kwargs.items():
+            self[key] = value
 
     def __iter__(self):
         return self.keys()
@@ -259,7 +279,58 @@ class DBDict(DBCollection):
         sql += f' LIMIT {limit} OFFSET {offset}'
         res = self.con.execute(sql)
         for row in res:
-            yield row[0], self.json2obj(row[0], row[1])
+            yield row[0], self.txt2obj(row[0], row[1])
+
+
+class DBSet(DBCollection):
+    def create_table(self):
+        self.con.execute(f'''
+        CREATE TABLE IF NOT EXISTS {self.table_name}
+        (key TEXT PRIMARY KEY)
+        ''')
+
+    def obj2txt(self, obj):
+        return obj.dumps(for_list=True)
+
+    def txt2obj(self, key, txt):
+        if txt is None:
+            return None
+        return self.obj_cls.loads(key, txt, for_list=True)
+
+    def update(self, others):
+        for key in others:
+            self.add(key)
+
+    def add(self, key):
+        self.con.execute(f'''
+        INSERT OR IGNORE INTO {self.table_name} (key) VALUES (?)
+        ''', (self.obj2txt(key),))
+
+    def remove(self, key):
+        if key in self:
+            self.con.execute(f'DELETE FROM {self.table_name} WHERE key = ?',
+                             (self.obj2txt(key),))
+        else:
+            raise KeyError(key)
+
+    def discard(self, key):
+        self.con.execute(f'DELETE FROM {self.table_name} WHERE key = ?',
+                         (self.obj2txt(key),))
+
+    def __delitem__(self, key):
+        self.remove(key)
+
+    def __contains__(self, key):
+        res = self.con.execute(f'''
+        SELECT 1 FROM {self.table_name} WHERE key = ?
+        ''', (self.obj2txt(key),))
+        row = res.fetchone()
+        return row is not None
+
+    def __iter__(self):
+        res = self.con.execute(f'SELECT key FROM {self.table_name}')
+        for row in res:
+            yield self.txt2obj(row[0], row[0])
 
 
 class DBList(DBCollection):
@@ -277,18 +348,22 @@ class DBList(DBCollection):
     def __str__(self):
         return str(list(self))
 
-    def obj2json(self, obj):
+    def obj2txt(self, obj):
         return obj.dumps(for_list=True)
 
-    def json2obj(self, key, j):
-        if j is None:
+    def txt2obj(self, key, txt):
+        if txt is None:
             return None
-        return self.obj_cls.loads(key, j, for_list=True)
+        return self.obj_cls.loads(key, txt, for_list=True)
 
     def append(self, obj):
         self.con.execute(f'''
         INSERT INTO {self.table_name} (value) VALUES (?)
-        ''', (self.obj2json(obj),))
+        ''', (self.obj2txt(obj),))
+
+    def extend(self, lst):
+        for obj in lst:
+            self.append(obj)
 
     def __getitem__(self, index):
         res = self.con.execute(f'''
@@ -297,7 +372,7 @@ class DBList(DBCollection):
         row = res.fetchone()
         if row is None:
             raise IndexError(self.ERRMSG_INDEX)
-        return self.json2obj(row[0], row[1])
+        return self.txt2obj(row[0], row[1])
 
     def __setitem__(self, index, value):
         with self.con:
@@ -309,7 +384,7 @@ class DBList(DBCollection):
                 raise IndexError(self.ERRMSG_INDEX)
             self.con.execute(f'''
             UPDATE {self.table_name} SET value = ? WHERE id = ?
-            ''', (self.obj2json(value), row[0]))
+            ''', (self.obj2txt(value), row[0]))
 
     def __delitem__(self, index):
         with self.con:
@@ -328,14 +403,14 @@ class DBList(DBCollection):
         SELECT id,value FROM {self.table_name} ORDER BY id ASC
         ''')
         for row in res:
-            yield self.json2obj(row[0], row[1])
+            yield self.txt2obj(row[0], row[1])
 
     def __reversed__(self):
         res = self.con.execute(f'''
         SELECT id,value FROM {self.table_name} ORDER BY id DESC
         ''')
         for row in res:
-            yield self.json2obj(row[0], row[1])
+            yield self.txt2obj(row[0], row[1])
 
     # sort: None, 'ASC', 'DESC'
     def iterator(self, sort=None, offset=0, limit=-1):
@@ -348,7 +423,7 @@ class DBList(DBCollection):
         sql += f' LIMIT {limit} OFFSET {offset}'
         res = self.con.execute(sql)
         for row in res:
-            yield self.json2obj(row[0], row[1])
+            yield self.txt2obj(row[0], row[1])
 
 
 class GfException(Exception):
@@ -1927,10 +2002,8 @@ class TestGfptar(unittest.TestCase):
     @staticmethod
     def suite():
         suite = unittest.TestSuite()
-        suite.addTest(TestGfptar('test_humanize'))
-        suite.addTest(TestGfptar('test_unhumanize'))
-        suite.addTest(TestGfptar('test_GfURL_use_gfarm_command_for_local'))
-        suite.addTest(TestGfptar('test_GfURL_parse'))
+        suite.addTest(
+            unittest.defaultTestLoader.loadTestsFromTestCase(TestGfptar))
         return suite
 
     def test_humanize(self):
@@ -1984,6 +2057,86 @@ class TestGfptar(unittest.TestCase):
                          (None, None, '/abc/#def:/'))
         self.assertEqual(GfURL.parse('abc:/def://'),
                          (None, None, 'abc:/def://'))
+
+    def test_DBDict(self):
+        tmpdir = tempfile.TemporaryDirectory(prefix='gfptar-test-',
+                                             dir=None)
+        testdb = DB(os.path.join(tmpdir.name, 'test.db'))
+        d = DBDict(testdb, IntObj, 'test_dict')
+
+        d.update({'a': IntObj(1), 'b': IntObj(2), 'c': IntObj(3)})
+        self.assertEqual(d['a'], 1)
+        self.assertEqual(d['b'], 2)
+        self.assertEqual(d['c'], 3)
+
+        d.clear()
+        d['a'] = IntObj(4)
+        self.assertEqual(d['a'], 4)
+
+        d.clear()
+        d.update({'a': IntObj(1)})
+        d['a'] = IntObj(2)
+        self.assertEqual(d['a'], 2)
+
+        d.clear()
+        d.update({'a': IntObj(1)})
+        del d['a']
+        self.assertNotIn('a', d)
+
+        d.unlink()
+
+    def test_DBSet(self):
+        tmpdir = tempfile.TemporaryDirectory(prefix='gfptar-test-',
+                                             dir=None)
+        testdb = DB(os.path.join(tmpdir.name, 'test.db'))
+        s = DBSet(testdb, IntObj, 'test_set')
+
+        s.update({IntObj(1), IntObj(2), IntObj(3)})
+        self.assertEqual(set(s), {1, 2, 3})
+
+        s.clear()
+        s.add(IntObj(1))
+        self.assertIn(IntObj(1), s)
+
+        s.clear()
+        s.update({IntObj(1), IntObj(2), IntObj(3)})
+        s.add(IntObj(4))
+        self.assertIn(IntObj(4), s)
+
+        s.clear()
+        s.update({IntObj(1), IntObj(2), IntObj(3)})
+        s.remove(IntObj(2))
+        self.assertNotIn(IntObj(2), s)
+
+        with self.assertRaises(KeyError):
+            s.remove(IntObj(4))
+        s.discard(IntObj(4))
+
+        s.unlink()
+
+    def test_DBList(self):
+        tmpdir = tempfile.TemporaryDirectory(prefix='gfptar-test-',
+                                             dir=None)
+        testdb = DB(os.path.join(tmpdir.name, 'test.db'))
+        lst = DBList(testdb, IntObj, 'test_list')
+        lst.extend([IntObj(1), IntObj(2), IntObj(3)])
+        self.assertEqual(list(lst), [1, 2, 3])
+
+        lst.clear()
+        lst.append(IntObj(1))
+        self.assertEqual(lst[0], 1)
+
+        lst.clear()
+        lst.extend([IntObj(1), IntObj(2), IntObj(3)])
+        lst[1] = IntObj(4)
+        self.assertEqual(list(lst), [1, 4, 3])
+
+        lst.clear()
+        lst.extend([IntObj(1), IntObj(2), IntObj(3)])
+        del lst[1]
+        self.assertEqual(list(lst), [1, 3])
+
+        lst.unlink()
 
 
 class GfptarError(GfException):
@@ -3132,7 +3285,7 @@ class GfptarCommand(Command):
 
         if len(filelist) == 0:
             tardb1.close()
-            tardb1.remove()
+            tardb1.unlink()
             logger.warning(f'empty filelist: {dbfile}')
             return
         first = None
@@ -3208,14 +3361,14 @@ class GfptarCommand(Command):
 
         tar.close()
         tardb1.close()
-        tardb1.remove()
+        tardb1.unlink()
 
         # for DEBUG
         # raise Exception('unexpected raise')
 
         listurl = self.create_a_members_list(outurl, filelist_ok, target_host)
         tardb_ok.close()
-        tardb_ok.remove()
+        tardb_ok.unlink()
 
         tar_size = outurl.get_size()
         output_queue.put(('DONE', tar_size, cannot_be_archived,
