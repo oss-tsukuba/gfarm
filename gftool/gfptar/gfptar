@@ -141,11 +141,11 @@ class DB:
 
 # Interface
 class DBObj:
-    def dumps(self, for_list=False):
+    def dumps(self, for_dict):
         raise NotImplementedError
 
     @classmethod
-    def loads(cls, key, txt, for_list=False):
+    def loads(cls, key, txt, for_dict):
         raise NotImplementedError
 
 
@@ -154,11 +154,11 @@ class IntObj(DBObj):
     def __init__(self, i):
         self.i = i
 
-    def dumps(self, for_list=False):
+    def dumps(self, for_dict):
         return str(self.i)
 
     @classmethod
-    def loads(cls, key, txt, for_list=False):
+    def loads(cls, key, txt, for_dict):
         return int(txt)
 
 
@@ -173,6 +173,14 @@ class DBCollection:
             self.clear()
         else:
             self.create_table()
+
+    def obj2txt(self, obj):
+        return obj.dumps(self.for_dict)
+
+    def txt2obj(self, key, txt):
+        if txt is None:
+            return None
+        return self.obj_cls.loads(key, txt, self.for_dict)
 
     def create_table(self):
         raise NotImplementedError
@@ -207,14 +215,7 @@ class DBDict(DBCollection):
         CREATE TABLE IF NOT EXISTS {self.table_name}
         (key TEXT PRIMARY KEY, value TEXT)
         ''')
-
-    def obj2txt(self, obj):
-        return obj.dumps(for_list=False)
-
-    def txt2obj(self, key, txt):
-        if txt is None:
-            return None
-        return self.obj_cls.loads(key, txt, for_list=False)
+        self.for_dict = True
 
     def __setitem__(self, key, value):
         self.con.execute(f'''
@@ -288,14 +289,7 @@ class DBSet(DBCollection):
         CREATE TABLE IF NOT EXISTS {self.table_name}
         (key TEXT PRIMARY KEY)
         ''')
-
-    def obj2txt(self, obj):
-        return obj.dumps(for_list=True)
-
-    def txt2obj(self, key, txt):
-        if txt is None:
-            return None
-        return self.obj_cls.loads(key, txt, for_list=True)
+        self.for_dict = False
 
     def update(self, others):
         for key in others:
@@ -341,20 +335,13 @@ class DBList(DBCollection):
         CREATE TABLE IF NOT EXISTS {self.table_name}
         (id INTEGER PRIMARY KEY AUTOINCREMENT, value TEXT)
         ''')
+        self.for_dict = False
 
     def __repr__(self):
         return repr(list(self))
 
     def __str__(self):
         return str(list(self))
-
-    def obj2txt(self, obj):
-        return obj.dumps(for_list=True)
-
-    def txt2obj(self, key, txt):
-        if txt is None:
-            return None
-        return self.obj_cls.loads(key, txt, for_list=True)
 
     def append(self, obj):
         self.con.execute(f'''
@@ -705,24 +692,24 @@ class GfURLEntry(DBObj):
                 f'user={self.uname},group={self.gname})')
 
     # only path must be specified for key when using DBDict
-    def dumps(self, for_list=False):
+    def dumps(self, for_dict):
         t = self.type_map[self.file_type]
         # serialize using list() to reduce size
         # [0]...[6]
         array = [self.mode, t, self.uname, self.gname,
                  self.size, self.mtime, self.linkname]
         # save path to key when using dict, so don't save path to value
-        if for_list:
+        if not for_dict:
             array.append(self.path)  # [7]
         return json.dumps(array, separators=(',', ':'))
 
     @classmethod
-    def loads(cls, key, txt, for_list=False):
+    def loads(cls, key, txt, for_dict):
         o = json.loads(txt)
-        if for_list:
-            path = o[7]
-        else:
+        if for_dict:
             path = key
+        else:
+            path = o[7]
         t = cls.type_map_reverse[o[1]]
         return cls(path, o[0], t, o[2], o[3], o[4], o[5], o[6])
 
