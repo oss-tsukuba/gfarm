@@ -15,6 +15,7 @@ RUN yum -y update \
  && yum -y install \
     git wget rpm-build sudo passwd \
     gcc make libtool \
+    postgresql-devel postgresql postgresql-server \
     python3 ruby \
     libxslt docbook-style-xsl \
     epel-release \
