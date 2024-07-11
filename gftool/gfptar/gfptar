@@ -539,16 +539,7 @@ class GfLogger(logging.getLoggerClass()):
 logger = None
 
 
-def logger_init(name, loglevel=logging.WARNING, debug=False, verbose=False):
-    global logger
-
-    if logger is not None:
-        return logger
-
-    logger = logging.getLogger()  # RootLogger
-    logger.__class__ = GfLogger
-    logger.myinit()
-    logger.setLevel(loglevel)
+def logger_config(logger, name, loglevel, debug, verbose):
     strm = logging.StreamHandler()  # stderr
     if debug:
         fmt = '%(filename)s:%(levelname)s:L%(lineno)d:' + \
@@ -562,6 +553,27 @@ def logger_init(name, loglevel=logging.WARNING, debug=False, verbose=False):
     strm.setFormatter(formatter_strm)
     strm.setLevel(loglevel)
     logger.addHandler(strm)
+
+
+def logger_init(name, loglevel=logging.WARNING, debug=False, verbose=False):
+    global logger
+
+    if logger is not None:
+        return logger
+
+    logger = logging.getLogger()  # RootLogger
+    logger.__class__ = GfLogger
+    logger.myinit()
+    logger.setLevel(loglevel)
+    logger_config(logger, name, loglevel, debug, verbose)
+    return logger
+
+
+# unused
+def logger_init_without_lock(name, loglevel=logging.WARNING,
+                             debug=False, verbose=False):
+    logger = logging.RootLogger(loglevel)
+    logger_config(logger, name, loglevel, debug, verbose)
     return logger
 
 
@@ -690,6 +702,7 @@ def convert_message(error):
 
 class Command(metaclass=abc.ABCMeta):
     def init(self, name) -> NoReturn:
+        self.name = name
         self._docopt = docopt(self.getDoc())
         self.opt = self.getSchema().validate(self._docopt)
         self.debug = self.opt['--debug']
@@ -705,10 +718,9 @@ class Command(metaclass=abc.ABCMeta):
             loglevel = logging.ERROR
         self.loglevel = loglevel
 
-        # use stderr
-        mylogger = logger_init(name, loglevel=loglevel, debug=self.debug,
-                               verbose=self.verbose)
-        self.logger = mylogger
+        # use stderr with lock
+        logger_init(name, loglevel=loglevel, debug=self.debug,
+                    verbose=self.verbose)
 
         logger.debug('USE_GFMKDIR_PLUS: %s', USE_GFMKDIR_PLUS)
         logger.debug('USE_GFCHMOD_PLUS: %s', USE_GFCHMOD_PLUS)
@@ -2273,7 +2285,7 @@ class GfptarCommand(Command):
         return not self.debug and not self.verbose and not self.quiet
 
     def run(self):
-        self.logger.debug(pformat(self.opt))
+        logger.debug(pformat(self.opt))
         try:
             outdir = self.opt['--create']
             if outdir:
@@ -2317,6 +2329,9 @@ class GfptarCommand(Command):
                 else:
                     logger.error(convert_message(e))
                 sys.exit(1)
+        finally:
+            self.worker_terminate()
+            logger.debug('exit')
 
     def test_main(self):
         self.am_I_gfarmroot = am_I_gfarmroot()
@@ -2423,6 +2438,7 @@ class GfptarCommand(Command):
         try:
             self.create(test1_dir, workdir, [testsrc_name])
         except Exception as e:
+            self.print_trace(e)
             if str(e).startswith('specifying '):
                 ok = True
             else:
@@ -2912,10 +2928,10 @@ class GfptarCommand(Command):
         cannot_read_dir = 0
         serial = 0
         self.listing = True
+        has_error = None
 
         self.create_job_init()
         self.sig_init()
-        has_error = None
 
         infiles_checked = []
         for infile in infiles:
@@ -2962,7 +2978,7 @@ class GfptarCommand(Command):
 
         for infile in infiles_checked:
             if self.is_canceled():
-                logger.debug('Canceled (listdir 1): serial=%04d', serial)
+                logger.debug(f'Canceled (listdir 1): serial={serial}')
                 break
 
             url_str = os.path.join(self.basedir_url.url_str, infile)
@@ -2971,8 +2987,7 @@ class GfptarCommand(Command):
             try:
                 for entry in listdir_switch(gfurl):
                     if self.is_canceled():
-                        logger.debug('Canceled (listdir 2): serial=%04d',
-                                     serial)
+                        logger.debug(f'Canceled (listdir 2): serial={serial}')
                         break
                     logger.debug('listdir: entry.path=%s', entry.path)
                     # include length of path
@@ -3043,7 +3058,7 @@ class GfptarCommand(Command):
         with self.lock():  # for progress
             self.listing = False
 
-        self.create_job_finalize()
+        self.create_job_final()
 
         tmpdir.cleanup()
 
@@ -3068,18 +3083,42 @@ class GfptarCommand(Command):
         if self.MT_enabled():
             self.lock_init(True)
             self.create_job_execute = self._create_job_execute_MT
-            self.executor = concurrent.futures.ThreadPoolExecutor(
+            self.thread_pool = concurrent.futures.ThreadPoolExecutor(
                 max_workers=self.jobs)
             self.futures = {}  # key: serial number
+
         else:
             self.lock_init(False)
             self.create_job_execute = self._create_job_execute
+        if self.jobs <= 0:
+            worker_num = 1
+        else:
+            worker_num = self.jobs
+
+        # kill old processes for regress
+        self.worker_terminate()
+
+        class Started():
+            pass
+
+        self.worker_list = []  # (started, process, inq, outq)
+        self.worker_ident_dict = {}
+        for i in range(worker_num):
+            inq = multiprocessing.Queue()
+            outq = multiprocessing.Queue()
+            # ProcessPoolExecutor cannot be utilized here,
+            # because, for example, Queue cannot be not specified as arguments.
+            process = multiprocessing.Process(target=self.create_a_tar_process,
+                                              args=(inq, outq))
+            started = Started()
+            started.status = False
+            self.worker_list.append((started, process, inq, outq))
 
     def _create_job_execute(self, serial, arg):
-        self.create_a_tar(serial, arg)
+        self.create_a_tar_thread(serial, arg)
 
     def _create_job_execute_MT(self, serial, arg):
-        t = self.executor.submit(self.create_a_tar, serial, arg)
+        t = self.thread_pool.submit(self.create_a_tar_thread, serial, arg)
         self.futures[t] = serial
         has_error = None
         try:
@@ -3089,16 +3128,67 @@ class GfptarCommand(Command):
         except Exception as e:
             # NOTE: cannot catch TimeoutError
             # ignore timeout
-            logger.debug(f'_create_job_execute_MT(): {str(e)}')
+            logger.debug(f'_create_job_execute_MT(): {type(e)} {str(e)}')
         if has_error is not None:
             raise has_error
 
-    def create_job_finalize(self, timeout=None):
-        if not self.MT_enabled():
+    def process_close(self, process, index=None):
+        if not process.is_alive():
             return
-        has_error = self._create_job_check_MT(timeout=timeout)
-        if has_error is not None:
-            raise has_error
+        logger.debug(f'process_close() start (index={index}):'
+                     f' pid={process.pid}')
+        # timeout = 10
+        # process.join(timeout)
+        process.terminate()
+        process.kill()
+        # process.close() may raise ValueError.
+        # (I don't know the reason):
+        #   ValueError: Cannot close a process while it is still
+        #   running. You should first call join() or terminate().
+        #
+        # Retry process.close() if ValueError is caught.
+        ok = False
+        for i in range(50):  # retry, max 5s
+            try:
+                process.close()
+                ok = True
+                break
+            except ValueError as e:
+                logger.debug(f'retry[{i}] process.close() (index={index}):'
+                             f' {str(e)}')
+                time.sleep(0.1)
+            if not ok:
+                process.close()
+        logger.debug(f'process_close() finished (index={index})')
+
+    def create_job_final(self, timeout=None):
+        if self.MT_enabled():
+            has_error = self._create_job_check_MT(timeout=timeout)
+            self.thread_pool.shutdown(cancel_futures=True)
+            if has_error is not None:
+                raise has_error
+        self.worker_terminate()
+
+    def worker_terminate(self):
+        if getattr(self, 'worker_list', None) is None:
+            return
+        err_list = []
+        for index, worker in enumerate(self.worker_list):
+            started, process, inq, outq = worker
+            try:
+                inq.close()
+            except Exception:
+                pass
+            try:
+                outq.close()
+            except Exception:
+                pass
+            try:
+                if started.status:
+                    self.process_close(process, index=index)
+            except Exception:
+                err_list.append(worker)
+        self.worker_list = err_list
 
     def _create_job_check_MT(self, timeout=0.1):
         has_error = None
@@ -3106,7 +3196,7 @@ class GfptarCommand(Command):
                                                  timeout=timeout):
             exc = t.exception()
             if exc:
-                logger.debug('serial=%04d: %s', self.futures[t],
+                logger.debug('serial=%d: %s', self.futures[t],
                              convert_message(exc))
                 self.print_trace(exc)
                 if not self.is_canceled():
@@ -3191,55 +3281,65 @@ class GfptarCommand(Command):
         logger.debug("selected target_host: %s", target_host)
         return target_host
 
-    def create_a_tar(self, serial, dbfile):
+    def create_a_tar_thread(self, serial, dbfile):
         try:
-            self.create_a_tar0(serial, dbfile)
+            self.create_a_tar_thread0(serial, dbfile)
         except Exception:
             if self.is_canceled():
                 raise self.error_canceled()
             else:
                 raise
 
-    def create_a_tar0(self, serial, dbfile):
-        logger.debug('create_a_tar: start: %04d', serial)
+    def create_a_tar_thread0(self, serial, dbfile):
+        logger.debug(f'create_a_tar: start (serial={serial})')
         if self.is_canceled():
-            logger.debug('Canceled (create 1): serial=%04d', serial)
+            logger.debug(f'Canceled (create 1): serial={serial}')
             return
 
-        try:
-            input_queue = multiprocessing.Queue()
-            output_queue = multiprocessing.Queue()
-            process = multiprocessing.Process(target=self.create_a_tar_worker,
-                                              args=(input_queue, output_queue,
-                                                    serial, dbfile))
-            process.start()
-        except Exception:
-            try:
-                input_queue.close()
-            except Exception:
-                pass
-            try:
-                output_queue.close()
-            except Exception:
-                pass
-            raise
+        with self.lock():
+            # Thread ID -> index of worker_list
+            ident = threading.get_ident()
+            idx = self.worker_ident_dict.get(ident)
+            if idx is None:
+                idx = len(self.worker_ident_dict)
+                self.worker_ident_dict[ident] = idx
+                logger.debug('worker_ident_dict: '
+                             + str(self.worker_ident_dict))
 
-        save_exc = None
+        started, process, inq, outq = self.worker_list[idx]
+        if not started.status:
+            process.start()  # high cost to start
+            started.status = True
+
+        inq.put(('START', serial, dbfile))
+        response = outq.get()
+        if response != 'READY':
+            logger.error(f'Unexpected child response: {response}')
+            return
+
         try:
             cancel = False
             while True:
                 if self.is_canceled() and cancel is False:
-                    logger.debug('Canceled (create 2): serial=%04d', serial)
-                    input_queue.put('CANCEL')
+                    logger.debug(f'Canceled (create 2): serial={serial}')
+                    inq.put('CANCEL')
                     cancel = True  # prevent input_queue from filling up
                 try:
-                    result = output_queue.get(timeout=1)
+                    result = outq.get(timeout=1)
                 except queue.Empty:
+                    result = None
                     if not process.is_alive():
-                        logger.warning('Unexpected child process termination')
+                        logger.warning('Unexpected child process termination'
+                                       f' (serial={serial})')
                         break
+                if result is None:
+                    logger.debug('waiting for message from child:'
+                                 f' serial={serial}')
                     continue
-                if result[0] == 'ADD':
+                if len(result) == 0:
+                    logger.warning('unknown result (None)')
+                    break
+                elif result[0] == 'ADD':
                     status, subpath, size_all = result
                     with self.lock():
                         self.info('stored: {}', subpath)
@@ -3261,52 +3361,53 @@ class GfptarCommand(Command):
                 elif result[0] == 'ERR':
                     (status, exc_type_name, exc_value_str,
                      exc_traceback_str) = result
-                    input_queue.put('ERR_COMPLETE')
+                    inq.put('ERR_COMPLETE')
                     raise Exception(
                         f'{exc_type_name}: {exc_value_str}\n'
                         f'{"".join(exc_traceback_str)}')
                 else:
                     logger.warning(f'unknown result: {str(result)}')
-        except Exception as e:
-            save_exc = e
-            raise
+                    break
         finally:
-            timeout = 10
-            try:
-                process.join(timeout)
-                process.terminate()
-                process.kill()
-                # process.close() may raise ValueError.
-                # (I don't know the reason):
-                #   ValueError: Cannot close a process while it is still
-                #   running. You should first call join() or terminate().
-                #
-                # Retry process.close() if ValueError is caught.
-                ok = False
-                for i in range(50):  # retry, max 5s
-                    try:
-                        process.close()
-                        ok = True
-                        break
-                    except Exception:
-                        logger.debug(f'retry process.close(): {i}')
-                        time.sleep(0.1)
-                if not ok:
-                    process.close()
-            except Exception as e:
-                self.print_trace(e)
-                if save_exc is None:
-                    raise
-            finally:
-                input_queue.close()
-                output_queue.close()
-                logger.debug(f'sub-process exits: serial={serial}')
+            logger.debug(f'(parent) subprocess finished: serial={serial}')
 
-    def create_a_tar_worker(self, input_queue, output_queue, serial, dbfile):
+    def create_a_tar_process(self, input_queue, output_queue):
+        global logger
+        logger = logger_init_without_lock(
+            self.name, loglevel=self.loglevel,
+            debug=self.debug, verbose=self.verbose)
+
+        signal.signal(signal.SIGINT, signal.SIG_DFL)
+        signal.signal(signal.SIGTERM, signal.SIG_DFL)
+        while True:
+            pid = os.getpid()
+            logger.debug(f'create_a_tar_process: start, pid={pid}')
+            try:
+                self.create_a_tar_process0(input_queue, output_queue)
+            except KeyboardInterrupt:
+                pass
+
+    def create_a_tar_process0(self, input_queue, output_queue):
+        request = input_queue.get()
+        if len(request) > 0 and request[0] == 'START':
+            output_queue.put('READY')
+        else:
+            logger.error(f'Unexpected request for child: {request}')
+            return  # exit
+        op, serial, dbfile = request
+        logger.debug(f'create_a_tar_process0: start (serial={serial})')
         try:
-            self.create_a_tar_worker0(input_queue, output_queue,
-                                      serial, dbfile)
-        except Exception:
+            result = self.create_a_tar_process1(input_queue, output_queue,
+                                                serial, dbfile)
+            tar_size, cannot_be_archived, outurl, listurl = result
+            output_queue.put(('DONE', tar_size, cannot_be_archived,
+                              outurl, listurl))
+            logger.debug(f'subprocess exits: serial={serial}')
+        except KeyboardInterrupt:
+            pass
+        except Exception as e:
+            logger.debug(f'create_a_tar_process: error (serial={serial})')
+            self.print_trace(e)
             exc_type, exc_value, exc_traceback = sys.exc_info()
             exc_type_name = exc_type.__name__
             exc_value_str = str(exc_value)
@@ -3320,9 +3421,8 @@ class GfptarCommand(Command):
             except queue.Empty:
                 pass
 
-    def create_a_tar_worker0(self, input_queue, output_queue, serial, dbfile):
-        signal.signal(signal.SIGINT, signal.SIG_DFL)
-        signal.signal(signal.SIGTERM, signal.SIG_DFL)
+    def create_a_tar_process1(self, input_queue, output_queue, serial, dbfile):
+        logger.debug(f'create_a_tar_process1: start (serial={serial})')
         tardb1 = DB(dbfile)
         filelist = DBList(tardb1, GfURLEntry, 'tarlist')
 
@@ -3330,7 +3430,7 @@ class GfptarCommand(Command):
             tardb1.close()
             tardb1.unlink()
             logger.warning(f'empty filelist: {dbfile}')
-            return
+            return 0, 0, '', ''
         first = None
         last = None
         for entry in filelist:
@@ -3380,8 +3480,12 @@ class GfptarCommand(Command):
         filelist_ok = DBList(tardb_ok, GfURLEntry, 'filelist_ok')
         cannot_be_archived = 0
         for entry in filelist:
+            logger.debug(f'subprocess(serial={serial}): {entry.path}')
             while not input_queue.empty():
-                qdata = input_queue.get()
+                try:
+                    qdata = input_queue.get(timeout=1)
+                except queue.Empty:
+                    qdata = None
                 if qdata == 'CANCEL':
                     logger.debug('receive CANCEL from parent')
                     break
@@ -3414,8 +3518,7 @@ class GfptarCommand(Command):
         tardb_ok.unlink()
 
         tar_size = outurl.get_size()
-        output_queue.put(('DONE', tar_size, cannot_be_archived,
-                          outurl.url_str, listurl.url_str))
+        return tar_size, cannot_be_archived, outurl.url_str, listurl.url_str
 
     def create_a_members_list(self, url, filelist, target_host):
         outurl = GfURL.init(url.url_str + self.LIST_SUFFIX)
