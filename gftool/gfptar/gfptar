@@ -2780,7 +2780,7 @@ class GfptarCommand(Command):
 
     # lock required
     def info(self, fmt, *args):
-        if self.verbose:
+        if self.verbose or self.debug:
             print(fmt.format(*args))
 
     def print_trace(self, exc):
@@ -3681,6 +3681,7 @@ class GfptarCommand(Command):
         self.update_stat_for_directories(directory_set, member_set)
 
     def extract_directories(self, directory_set):
+        logger.debug('extract_directories')
         # NOTE: slow on Gfarm
         for d in directory_set.iterator(sort='ASC'):
             if self.is_canceled():
@@ -3697,6 +3698,7 @@ class GfptarCommand(Command):
             self.created_directory_set.add(dir_url.path)
 
     def extract_directories_fast(self, directory_set):
+        logger.debug('extract_directories_fast: start')
         # faster implementation for gfmkdir
         created_set = self.created_directory_set
         for d in directory_set.iterator(sort='DESC'):
@@ -3704,6 +3706,8 @@ class GfptarCommand(Command):
                 raise self.error_canceled()
             url_str = self.outdir_url.url_join(d)
             dir_url = GfURL.init(url_str)
+            logger.debug('extract_directories_fast: '
+                         f'out_url={self.outdir_url.url_str}, d={d}')
             # url.path is normalized
             if dir_url.path in created_set:
                 logger.debug('skip (already created): %s', url_str)
@@ -3727,6 +3731,7 @@ class GfptarCommand(Command):
                     self.info('prepare_dir: {}', path)
 
     def update_stat_for_directories(self, directory_set, member_set):
+        logger.debug('update_stat_for_directories')
         # process from leaves
         members_num = len(member_set)
         self.clear_canceled()
@@ -3831,8 +3836,8 @@ class GfptarCommand(Command):
 
             # ex. /a/b/c/ -> a/b/c
             outfile = tarinfo.name.strip('/')  # relative path only
-            url_str = self.outdir_url.url_join(outfile)
-            outurl = GfURL.init(url_str)
+            outurl_str = self.outdir_url.url_join(outfile)
+            outurl = GfURL.init(outurl_str)
 
             parent = outurl.parent
             with self.lock():
@@ -3852,6 +3857,8 @@ class GfptarCommand(Command):
                     user = tarinfo.uname
                     group = tarinfo.gname
                 inf = tar.extractfile(tarinfo)  # io.BufferedReader
+                logger.debug('extract,file(before): %s, %s',
+                             outurl_str, outfile)
                 size = outurl.copy_from(inf, self.bufsize,
                                         mode=tarinfo.mode,
                                         mtime=tarinfo.mtime,
