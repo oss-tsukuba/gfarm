@@ -125,10 +125,7 @@ class DB:
         self.con = sqlite3.connect(filename,
                                    check_same_thread=check_same_thread)
         self.con.execute('PRAGMA synchronous = OFF')
-        # self.con.execute('PRAGMA cache_size = 1000')
-        # self.con.execute('PRAGMA mmap_size = 1000')
-        # self.con.execute('PRAGMA journal_mode=WAL')
-        # self.con.execute("PRAGMA busy_timeout=60000")
+        self.con.execute('PRAGMA journal_mode = OFF')  # disable rollback
 
     def commit(self):
         self.con.commit()
@@ -3213,13 +3210,12 @@ class GfptarCommand(Command):
 
     def lock_init(self, enable, timeout=None):
         if enable:
+            self._lock = threading.Lock()
+            self.lock = self.lock_timeout
             if timeout is not None:
-                self._lock = threading.Lock()
                 self._lock_timeout = timeout
-                self.lock = self.lock_timeout
             else:
-                self._lock = None
-                self.lock = threading.Lock
+                self._lock_timeout = -1
         else:
             self._lock = None
             self.lock = self.lock_noop
@@ -3228,7 +3224,6 @@ class GfptarCommand(Command):
     def lock_noop(self):
         yield
 
-    # NOTE: not used
     @contextmanager
     def lock_timeout(self):
         locked = True
@@ -3572,13 +3567,16 @@ class GfptarCommand(Command):
         tmpdir = tempfile.TemporaryDirectory(prefix='gfptar-',
                                              dir=self.workdir)
         db_file = os.path.join(tmpdir.name, 'extract.db')
+        db_file_target = os.path.join(tmpdir.name, 'target.db')
+
         # to reduce memory usage
         db = DB(db_file, check_same_thread=False)
+        db_target = DB(db_file_target, check_same_thread=False)
 
         # member name -> (file_type, tar filename)
         archive_dict = DBDict(db, TypeName, 'archive_dict')
         # all tar files
-        target_set_all = DBSet(db, StrObj, 'target_set_all')
+        target_set_all = DBSet(db_target, StrObj, 'target_set_all')
         directory_set_all = DBSet(db, StrObj, 'directory_set_all')
 
         self.total_num = 0
@@ -3626,7 +3624,7 @@ class GfptarCommand(Command):
 
         if search_target:
             # selected tar files
-            target_set = DBSet(db, StrObj, 'target_set')
+            target_set = DBSet(db_target, StrObj, 'target_set')
             directory_set = DBSet(db, StrObj, 'directory_set')
             member_set1 = DBSet(db, StrObj, 'member_set1')
             for member in orig_member_set:
@@ -3819,7 +3817,8 @@ class GfptarCommand(Command):
                               use_gfarm_command=self.use_gfarm_command)
         tar = GfTarFile.extract_open(arch_url, self.bufsize,
                                      compress_prog=self.compress_prog)
-        members_num = len(member_set)
+        with self.lock():
+            members_num = len(member_set)
         index = serial
         while True:
             if self.is_canceled():
@@ -3836,8 +3835,9 @@ class GfptarCommand(Command):
             if tarinfo is None:
                 break
             if members_num > 0:
-                if tarinfo.name not in member_set:
-                    continue  # not a target
+                with self.lock():
+                    if tarinfo.name not in member_set:
+                        continue  # not a target
             # members_num == 0 -> extract all
 
             # ex. /a/b/c/ -> a/b/c
@@ -3876,10 +3876,10 @@ class GfptarCommand(Command):
             elif tarinfo.isdir():
                 # NOTE: already created
                 logger.debug('extract,dir: %s', outfile)
+                fattr = FileAttr(tarinfo.mode, tarinfo.mtime,
+                                 tarinfo.uname, tarinfo.gname)
                 with self.lock():
-                    self.dirstat_dict[outfile] = FileAttr(
-                        tarinfo.mode, tarinfo.mtime,
-                        tarinfo.uname, tarinfo.gname)
+                    self.dirstat_dict[outfile] = fattr
             elif tarinfo.issym():
                 logger.debug('extract,link: %s, %s', outfile,
                              tarinfo.linkname)
