@@ -3914,9 +3914,15 @@ class GfptarCommand(Command):
         sec = now - self.start_time
         sec_str = format_seconds(sec, minhour=True)
         total_num_str = humanize_number(self.total_num)
+        if sec > 0:
+            ent_per_sec = self.total_num / sec
+        else:
+            ent_per_sec = 0
+        ent_per_sec_str = humanize_number(ent_per_sec)
         sys.stdout.write(f'\rlisting: '
-                         f'{total_num_str}Ent, '
-                         f'{sec_str}  ')
+                         f'{total_num_str}Ent '
+                         f'{sec_str} '
+                         f'{ent_per_sec_str}Ent/s  ')
 
     # lock required
     def progress_for_create(self, now):
