@@ -46,6 +46,7 @@ import json
 import tempfile
 import multiprocessing
 import queue
+import inspect
 
 from docopt import docopt
 from schema import Schema, Use, Or
@@ -487,50 +488,41 @@ class GfException(Exception):
 
 
 class GfLogger(logging.getLoggerClass()):
-    def __init__(self):
-        super().__init__()
-        self.myinit()
+    def __init__(self, name):
+        self._mylock = threading.Lock()
+        super().__init__(name)
 
-    def myinit(self):
-        if getattr(self, 'lock', None) is None:
-            self.lock = threading.Lock()
+    def _mylog(self, level, msg, *args):
+        frame = inspect.currentframe().f_back.f_back
+        lineno = frame.f_lineno
+        record = self.makeRecord(self.name, level, frame.f_code.co_filename,
+                                 lineno, msg, args, None)
+        with self._mylock:
+            self.handle(record)
 
-    # REFERENCE: logging/__init__.py: class Logger()
-    def debug(self, msg, *args, **kwargs):
-        if self.isEnabledFor(logging.DEBUG):
-            with self.lock:
-                self._log(logging.DEBUG, msg, args, **kwargs)
+    def debug(self, msg, *args):
+        self._mylog(logging.DEBUG, msg, *args)
 
-    def info(self, msg, *args, **kwargs):
-        if self.isEnabledFor(logging.INFO):
-            with self.lock:
-                self._log(logging.INFO, msg, args, **kwargs)
+    def info(self, msg, *args):
+        self._mylog(logging.INFO, msg, *args)
 
     def warning(self, msg, *args, **kwargs):
-        if self.isEnabledFor(logging.WARNING):
-            with self.lock:
-                self._log(logging.WARNING, msg, args, **kwargs)
+        self._mylog(logging.WARNING, msg, *args)
 
     def error(self, msg, *args, **kwargs):
-        if self.isEnabledFor(logging.ERROR):
-            with self.lock:
-                self._log(logging.ERROR, msg, args, **kwargs)
+        self._mylog(logging.ERROR, msg, *args)
 
-    def error_exit(self, exit_code, msg, *args, **kwargs):
-        if self.isEnabledFor(logging.ERROR):
-            with self.lock:
-                self._log(logging.ERROR, msg, args, **kwargs)
+    def error_exit(self, exit_code, msg, *args):
+        self._mylog(logging.ERROR, msg, *args)
         sys.exit(exit_code)
 
-    def fatal(self, msg, *args, **kwargs):
-        if self.isEnabledFor(logging.ERROR):
-            with self.lock:
-                self._log(logging.ERROR, msg, args, **kwargs)
-            if 'exit_code' in kwargs:
-                raise GfException('exit_code={}'.format(
-                    kwargs['exit_code']))
-            else:
-                raise GfException('fatal exit')
+    # def fatal(self, msg, *args, **kwargs):
+    #     self._mylog(logging.ERROR, msg, args)
+    #     if 'exit_code' in kwargs:
+    #         raise GfException('exit_code={}'.format(
+    #             kwargs['exit_code']))
+    #     else:
+    #         raise GfException('fatal exit')
 
 
 logger = None
@@ -558,15 +550,12 @@ def logger_init(name, loglevel=logging.WARNING, debug=False, verbose=False):
     if logger is not None:
         return logger
 
-    logger = logging.getLogger()  # RootLogger
-    logger.__class__ = GfLogger
-    logger.myinit()
+    logger = GfLogger('gfptar')
     logger.setLevel(loglevel)
     logger_config(logger, name, loglevel, debug, verbose)
     return logger
 
 
-# unused
 def logger_init_without_lock(name, loglevel=logging.WARNING,
                              debug=False, verbose=False):
     logger = logging.RootLogger(loglevel)
@@ -3161,7 +3150,7 @@ class GfptarCommand(Command):
     def create_job_final(self, timeout=None):
         if self.MT_enabled():
             has_error = self._create_job_check_MT(timeout=timeout)
-            self.thread_pool.shutdown(cancel_futures=True)
+            self.thread_pool.shutdown(wait=False)
             if has_error is not None:
                 raise has_error
         self.worker_terminate()
