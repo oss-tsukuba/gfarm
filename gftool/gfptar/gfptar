@@ -3630,8 +3630,6 @@ class GfptarCommand(Command):
                 m = GfURL.init(member, local=True)
                 member_set1.add(m.path)  # normalized
 
-            logger.debug('directory_set 0: '
-                         + str(list(directory_set)))  # TODO
             for member in member_set1:
                 if self.is_canceled():
                     raise self.error_canceled()
@@ -3639,11 +3637,9 @@ class GfptarCommand(Command):
                 if type_arch is None:
                     raise GfException('Not found in archive: ' + member)
                 target_set.add(type_arch.filename)
-                if file_type == 'D':
+                if type_arch.file_type == 'D':
                     logger.debug(f'directory_set.add 2: {path}')
                     directory_set.add(member)
-                    logger.debug('directory_set 2: '
-                                 + str(list(directory_set)))  # TODO
 
             # add parent directories to update attributes (mode,mtime)
             member_set2 = DBSet(db, StrObj, 'member_set2')
@@ -3660,8 +3656,6 @@ class GfptarCommand(Command):
                             target_set.add(type_arch.filename)
                             logger.debug(f'directory_set.add 3: {path}')
                             directory_set.add(path)
-                            logger.debug('directory_set 3:'
-                                         + str(list(directory_set)))  # TODO
                             member_set2.add(path)
             archive_dict.clear()
             member_set1.clear()
