@@ -2780,8 +2780,10 @@ class GfptarCommand(Command):
 
     # lock required
     def info(self, fmt, *args):
-        if self.verbose or self.debug:
+        if self.verbose:
             print(fmt.format(*args))
+        if self.debug:
+            logger.debug(fmt.format(*args))
 
     def print_trace(self, exc):
         if self.verbose or self.debug:
@@ -3598,9 +3600,11 @@ class GfptarCommand(Command):
                     file_type = line[:1]
                     path = line[2:].lstrip('/')
                     if search_target:
+                        logger.debug(f'archive_dict[{path}]: {file_type}')
                         archive_dict[path] = TypeName(file_type, arch_url_str)
                     else:
                         if file_type == 'D':
+                            # logger.debug(f'directory_set_all.add 1: {path}')
                             directory_set_all.add(path)
             if self.progress_enabled:
                 now = time.time()
@@ -3628,6 +3632,7 @@ class GfptarCommand(Command):
                     raise GfException('Not found in archive: ' + member)
                 target_set.add(type_arch.filename)
                 if file_type == 'D':
+                    logger.debug(f'directory_set_all.add 2: {path}')
                     directory_set.add(member)
 
             # add parent directories to update attributes (mode,mtime)
@@ -3643,6 +3648,7 @@ class GfptarCommand(Command):
                         type_arch = archive_dict.get(path, None)
                         if type_arch is not None:  # found
                             target_set.add(type_arch.filename)
+                            logger.debug(f'directory_set_all.add 3: {path}')
                             directory_set.add(path)
                             member_set2.add(path)
             archive_dict.clear()
