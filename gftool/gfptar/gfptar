@@ -149,6 +149,16 @@ class DBObj:
         raise NotImplementedError
 
 
+class JsonObj(DBObj):
+    @classmethod
+    def dumps(cls, obj, for_dict):
+        return json.dumps(obj, separators=(',', ':'))
+
+    @classmethod
+    def loads(cls, key, txt, for_dict):
+        return json.loads(txt)
+
+
 # Example of DBObj
 class IntObj(DBObj):
     def __init__(self, i):
@@ -178,22 +188,6 @@ class StrObj(DBObj):
     @classmethod
     def loads(cls, key, txt, for_dict):
         return txt
-
-
-class TypeName(DBObj):
-    def __init__(self, file_type, filename):
-        self.file_type = file_type
-        self.filename = filename
-
-    @classmethod
-    def dumps(cls, obj, for_dict):
-        array = [obj.file_type, obj.filename]
-        return json.dumps(array, separators=(',', ':'))
-
-    @classmethod
-    def loads(cls, key, txt, for_dict):
-        array = json.loads(txt)
-        return cls(array[0], array[1])
 
 
 class FileAttr(DBObj):
@@ -3570,10 +3564,6 @@ class GfptarCommand(Command):
         self.db = DB(db_file, check_same_thread=False)
         self.db_target = DB(db_file_target, check_same_thread=False)
 
-        # member name -> (file_type, tar filename)
-        self.archive_dict = DBDict(self.db, TypeName, 'archive_dict')
-        # all tar files
-        self.target_set_all = DBSet(self.db_target, StrObj, 'target_set_all')
         self.directory_set_all = DBSet(self.db, StrObj, 'directory_set_all')
 
         self.total_num = 0
@@ -3581,10 +3571,17 @@ class GfptarCommand(Command):
         self.next_time = self.start_time + 1
 
         self.sig_init()
-        target_set, directory_set, member_set = self.extract_schedule_v1()
+        target_set, directory_set, member_set = self.extract_schedule_v2()
         self.extract_main(target_set, directory_set, member_set)
 
-    def extract_schedule_v1(self):
+    def extract_schedule_v2(self):
+        # tar archive filename
+        target_list_all = DBList(self.db, StrObj, 'target_list_all')
+        target_list_idx = 0
+
+        # member name -> set(file_type, tar filename)
+        archive_dict = DBDict(self.db, JsonObj, 'archive_dict')
+
         for ent in self.indir_url.listdir(recursive=False):
             if ent.path.endswith(self.LIST_SUFFIX):  # ignored
                 continue
@@ -3592,7 +3589,6 @@ class GfptarCommand(Command):
                 raise self.error_canceled()
             subpath = ent.subpath(self.indir_url)
             arch_url_str = self.indir_url.url_join(subpath)
-            self.target_set_all.add(arch_url_str)
             list_url = GfURL.init(arch_url_str + self.LIST_SUFFIX)
             if not list_url.exists():
                 raise self.error_not_a_gfptar_directory(self.indir_url.url_str)
@@ -3610,12 +3606,13 @@ class GfptarCommand(Command):
                     path = line[2:].lstrip('/')
                     if self.search_target:
                         logger.debug(f'archive_dict[{path}]: {file_type}')
-                        self.archive_dict[path] = TypeName(
-                            file_type, arch_url_str)
+                        archive_dict[path] = (file_type, target_list_idx)
                     else:
                         if file_type == 'D':
                             logger.debug(f'directory_set_all.add: {path}')
                             self.directory_set_all.add(path)
+            target_list_all.append(arch_url_str)
+            target_list_idx += 1
             if self.progress_enabled:
                 now = time.time()
                 if now >= self.next_time:
@@ -3625,9 +3622,9 @@ class GfptarCommand(Command):
             self.progress_for_listing(time.time())
             sys.stdout.write('\n')
 
+        target_set = DBSet(self.db_target, StrObj, 'target_set')
         if self.search_target:
             # selected tar files
-            target_set = DBSet(self.db_target, StrObj, 'target_set')
             directory_set = DBSet(self.db, StrObj, 'directory_set')
             member_set1 = DBSet(self.db, StrObj, 'member_set1')
             for member in self.orig_member_set:
@@ -3637,11 +3634,13 @@ class GfptarCommand(Command):
             for member in member_set1:
                 if self.is_canceled():
                     raise self.error_canceled()
-                type_arch = self.archive_dict.get(member, None)
+                type_arch = archive_dict.get(member, None)
                 if type_arch is None:
                     raise GfException('Not found in archive: ' + member)
-                target_set.add(type_arch.filename)
-                if type_arch.file_type == 'D':
+                arch_idx = type_arch[1]
+                target_filename = target_list_all[arch_idx]
+                target_set.add(target_filename)
+                if type_arch[0] == 'D':
                     logger.debug(f'directory_set.add 2: {path}')
                     directory_set.add(member)
 
@@ -3655,18 +3654,21 @@ class GfptarCommand(Command):
                 for parent_url in url.parent_list:
                     path = parent_url.path
                     if path != '.' and path != '/':
-                        type_arch = self.archive_dict.get(path, None)
+                        type_arch = archive_dict.get(path, None)
                         if type_arch is not None:  # found
-                            target_set.add(type_arch.filename)
+                            arch_idx = type_arch[1]
+                            target_filename = target_list_all[arch_idx]
+                            target_set.add(target_filename)
                             logger.debug(f'directory_set.add 3: {path}')
                             directory_set.add(path)
                             member_set2.add(path)
-            self.archive_dict.clear()
+            archive_dict.clear()
             member_set1.clear()
             member_set = member_set2  # replace
             self.total_num = len(member_set)  # re-set
         else:
-            target_set = self.target_set_all
+            for target in target_list_all:
+                target_set.add(target)
             directory_set = self.directory_set_all
             member_set = DBSet(self.db, StrObj, 'member_set')
         return target_set, directory_set, member_set
