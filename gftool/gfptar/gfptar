@@ -3540,7 +3540,7 @@ class GfptarCommand(Command):
         self.outdir = outdir
         self.outdir_url = GfURL.init(outdir)
         self.indir = indir
-        orig_member_set = set(members)
+        self.orig_member_set = set(members)
         del members
         self.same_owner = self.opt['--same-owner']
 
@@ -3549,13 +3549,13 @@ class GfptarCommand(Command):
         self.use_gfarm_command = not self.disable_gfarm_command
         self.gfsched_interval = self.opt['--gfsched-interval']
 
-        indir_url = GfURL.init(self.indir)
+        self.indir_url = indir_url = GfURL.init(self.indir)
         if not indir_url.exists():
             raise FileNotFoundError(indir_url.url_str)
         if not indir_url.is_directory():
             raise self.error_not_a_gfptar_directory(indir_url.url_str)
 
-        search_target = len(orig_member_set) > 0
+        self.search_target = len(self.orig_member_set) > 0
 
         # Temporary files are removed when the process exits.
         # dir=None: system default
@@ -3567,32 +3567,35 @@ class GfptarCommand(Command):
         logger.debug(f'db_file_target={db_file_target}')
 
         # to reduce memory usage
-        db = DB(db_file, check_same_thread=False)
-        db_target = DB(db_file_target, check_same_thread=False)
+        self.db = DB(db_file, check_same_thread=False)
+        self.db_target = DB(db_file_target, check_same_thread=False)
 
         # member name -> (file_type, tar filename)
-        archive_dict = DBDict(db, TypeName, 'archive_dict')
+        self.archive_dict = DBDict(self.db, TypeName, 'archive_dict')
         # all tar files
-        target_set_all = DBSet(db_target, StrObj, 'target_set_all')
-        directory_set_all = DBSet(db, StrObj, 'directory_set_all')
+        self.target_set_all = DBSet(self.db_target, StrObj, 'target_set_all')
+        self.directory_set_all = DBSet(self.db, StrObj, 'directory_set_all')
 
         self.total_num = 0
         self.start_time = time.time()
         self.next_time = self.start_time + 1
 
         self.sig_init()
+        target_set, directory_set, member_set = self.extract_schedule_v1()
+        self.extract_main(target_set, directory_set, member_set)
 
-        for ent in indir_url.listdir(recursive=False):
+    def extract_schedule_v1(self):
+        for ent in self.indir_url.listdir(recursive=False):
             if ent.path.endswith(self.LIST_SUFFIX):  # ignored
                 continue
             if self.is_canceled():
                 raise self.error_canceled()
-            subpath = ent.subpath(indir_url)
-            arch_url_str = indir_url.url_join(subpath)
-            target_set_all.add(arch_url_str)
+            subpath = ent.subpath(self.indir_url)
+            arch_url_str = self.indir_url.url_join(subpath)
+            self.target_set_all.add(arch_url_str)
             list_url = GfURL.init(arch_url_str + self.LIST_SUFFIX)
             if not list_url.exists():
-                raise self.error_not_a_gfptar_directory(indir_url.url_str)
+                raise self.error_not_a_gfptar_directory(self.indir_url.url_str)
             with list_url.readopen(textmode=True) as f:
                 while True:
                     line = f.readline()
@@ -3605,13 +3608,14 @@ class GfptarCommand(Command):
                     # ex. "D /path/to/dir"
                     file_type = line[:1]
                     path = line[2:].lstrip('/')
-                    if search_target:
+                    if self.search_target:
                         logger.debug(f'archive_dict[{path}]: {file_type}')
-                        archive_dict[path] = TypeName(file_type, arch_url_str)
+                        self.archive_dict[path] = TypeName(
+                            file_type, arch_url_str)
                     else:
                         if file_type == 'D':
                             logger.debug(f'directory_set_all.add: {path}')
-                            directory_set_all.add(path)
+                            self.directory_set_all.add(path)
             if self.progress_enabled:
                 now = time.time()
                 if now >= self.next_time:
@@ -3621,19 +3625,19 @@ class GfptarCommand(Command):
             self.progress_for_listing(time.time())
             sys.stdout.write('\n')
 
-        if search_target:
+        if self.search_target:
             # selected tar files
-            target_set = DBSet(db_target, StrObj, 'target_set')
-            directory_set = DBSet(db, StrObj, 'directory_set')
-            member_set1 = DBSet(db, StrObj, 'member_set1')
-            for member in orig_member_set:
+            target_set = DBSet(self.db_target, StrObj, 'target_set')
+            directory_set = DBSet(self.db, StrObj, 'directory_set')
+            member_set1 = DBSet(self.db, StrObj, 'member_set1')
+            for member in self.orig_member_set:
                 m = GfURL.init(member, local=True)
                 member_set1.add(m.path)  # normalized
 
             for member in member_set1:
                 if self.is_canceled():
                     raise self.error_canceled()
-                type_arch = archive_dict.get(member, None)
+                type_arch = self.archive_dict.get(member, None)
                 if type_arch is None:
                     raise GfException('Not found in archive: ' + member)
                 target_set.add(type_arch.filename)
@@ -3642,7 +3646,7 @@ class GfptarCommand(Command):
                     directory_set.add(member)
 
             # add parent directories to update attributes (mode,mtime)
-            member_set2 = DBSet(db, StrObj, 'member_set2')
+            member_set2 = DBSet(self.db, StrObj, 'member_set2')
             for member in member_set1:
                 if self.is_canceled():
                     raise self.error_canceled()
@@ -3651,24 +3655,27 @@ class GfptarCommand(Command):
                 for parent_url in url.parent_list:
                     path = parent_url.path
                     if path != '.' and path != '/':
-                        type_arch = archive_dict.get(path, None)
+                        type_arch = self.archive_dict.get(path, None)
                         if type_arch is not None:  # found
                             target_set.add(type_arch.filename)
                             logger.debug(f'directory_set.add 3: {path}')
                             directory_set.add(path)
                             member_set2.add(path)
-            archive_dict.clear()
+            self.archive_dict.clear()
             member_set1.clear()
             member_set = member_set2  # replace
             self.total_num = len(member_set)  # re-set
         else:
-            target_set = target_set_all
-            directory_set = directory_set_all
-            member_set = DBSet(db, StrObj, 'member_set')
+            target_set = self.target_set_all
+            directory_set = self.directory_set_all
+            member_set = DBSet(self.db, StrObj, 'member_set')
+        return target_set, directory_set, member_set
 
+    def extract_main(self, target_set, directory_set, member_set):
         self.outdir_url.create_new_dir()
 
-        self.created_directory_set = DBSet(db, StrObj, 'created_directory_set')
+        self.created_directory_set = DBSet(self.db, StrObj,
+                                           'created_directory_set')
         # self.extract_directories(directory_set)
         self.extract_directories_fast(directory_set)
 
@@ -3676,7 +3683,7 @@ class GfptarCommand(Command):
         self.extracted_size = 0
         self.start_time = time.time()
         self.next_time = self.start_time + 1
-        self.dirstat_dict = DBDict(db, FileAttr, 'dirstat_dict')
+        self.dirstat_dict = DBDict(self.db, FileAttr, 'dirstat_dict')
 
         self.gfsched_lock = None
         self.gfsched_next = 0
@@ -3691,10 +3698,10 @@ class GfptarCommand(Command):
             sys.stdout.write('\n')
 
         self.update_stat_for_directories(directory_set, member_set)
-        db.close()
-        db.unlink()
-        db_target.close()
-        db_target.unlink()
+        self.db.close()
+        self.db.unlink()
+        self.db_target.close()
+        self.db_target.unlink()
 
     def extract_directories(self, directory_set):
         logger.debug('extract_directories')
