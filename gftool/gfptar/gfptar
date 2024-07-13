@@ -2261,6 +2261,10 @@ class GfptarCommand(Command):
         signal.signal(signal.SIGINT, sig_handler)
         signal.signal(signal.SIGTERM, sig_handler)
 
+    def sig_default(self):
+        signal.signal(signal.SIGINT, signal.SIG_DFL)
+        signal.signal(signal.SIGTERM, signal.SIG_DFL)
+
     def getDoc(self) -> str:
         return __doc__
 
@@ -2317,6 +2321,7 @@ class GfptarCommand(Command):
                 sys.exit(1)
         finally:
             self.worker_terminate()
+            self.sig_default()
             logger.debug('exit')
 
     def test_main(self):
@@ -3363,8 +3368,7 @@ class GfptarCommand(Command):
             self.name, loglevel=self.loglevel,
             debug=self.debug, verbose=self.verbose)
 
-        signal.signal(signal.SIGINT, signal.SIG_DFL)
-        signal.signal(signal.SIGTERM, signal.SIG_DFL)
+        self.sig_default()
         while True:
             pid = os.getpid()
             logger.debug(f'create_a_tar_process: start, pid={pid}')
@@ -3559,6 +3563,8 @@ class GfptarCommand(Command):
                                              dir=self.workdir)
         db_file = os.path.join(tmpdir.name, 'extract.db')
         db_file_target = os.path.join(tmpdir.name, 'target.db')
+        logger.debug(f'db_file={db_file}')
+        logger.debug(f'db_file_target={db_file_target}')
 
         # to reduce memory usage
         db = DB(db_file, check_same_thread=False)
@@ -3604,7 +3610,7 @@ class GfptarCommand(Command):
                         archive_dict[path] = TypeName(file_type, arch_url_str)
                     else:
                         if file_type == 'D':
-                            # logger.debug(f'directory_set_all.add 1: {path}')
+                            logger.debug(f'directory_set_all.add: {path}')
                             directory_set_all.add(path)
             if self.progress_enabled:
                 now = time.time()
@@ -3624,6 +3630,8 @@ class GfptarCommand(Command):
                 m = GfURL.init(member, local=True)
                 member_set1.add(m.path)  # normalized
 
+            logger.debug('directory_set 0: '
+                         + str(list(directory_set)))  # TODO
             for member in member_set1:
                 if self.is_canceled():
                     raise self.error_canceled()
@@ -3632,8 +3640,10 @@ class GfptarCommand(Command):
                     raise GfException('Not found in archive: ' + member)
                 target_set.add(type_arch.filename)
                 if file_type == 'D':
-                    logger.debug(f'directory_set_all.add 2: {path}')
+                    logger.debug(f'directory_set.add 2: {path}')
                     directory_set.add(member)
+                    logger.debug('directory_set 2: '
+                                 + str(list(directory_set)))  # TODO
 
             # add parent directories to update attributes (mode,mtime)
             member_set2 = DBSet(db, StrObj, 'member_set2')
@@ -3648,8 +3658,10 @@ class GfptarCommand(Command):
                         type_arch = archive_dict.get(path, None)
                         if type_arch is not None:  # found
                             target_set.add(type_arch.filename)
-                            logger.debug(f'directory_set_all.add 3: {path}')
+                            logger.debug(f'directory_set.add 3: {path}')
                             directory_set.add(path)
+                            logger.debug('directory_set 3:'
+                                         + str(list(directory_set)))  # TODO
                             member_set2.add(path)
             archive_dict.clear()
             member_set1.clear()
@@ -3685,6 +3697,10 @@ class GfptarCommand(Command):
             sys.stdout.write('\n')
 
         self.update_stat_for_directories(directory_set, member_set)
+        db.close()
+        db.unlink()
+        db_target.close()
+        db_target.unlink()
 
     def extract_directories(self, directory_set):
         logger.debug('extract_directories')
