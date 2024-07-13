@@ -12,7 +12,7 @@ mkdir $localtmp
 LANG=en_US.UTF-8
 export LANG
 
-if gfptar -d --test \
+if gfptar -q --test \
 	  --test-workdir-local=$localtmp \
 	  --test-workdir-gfarm=gfarm:$gftmp; then
     exit_code=$exit_pass
