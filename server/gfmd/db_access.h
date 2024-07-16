@@ -6,6 +6,7 @@
 
 gfarm_error_t db_initialize(void);
 gfarm_error_t db_terminate(void);
+gfarm_error_t db_sync_mode(int);
 void *db_thread(void *);
 int db_getfreenum(void);
 

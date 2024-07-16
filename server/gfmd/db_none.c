@@ -84,6 +84,13 @@ gfarm_none_terminate(void)
 /**********************************************************************/
 
 static gfarm_error_t
+gfarm_none_sync_mode_nop(int mode)
+{
+	/* do not call modify_seqnum(), this is just startup operation */
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
 gfarm_none_nop(gfarm_uint64_t seqnum, void *arg)
 {
 	modify_seqnum(seqnum);
@@ -609,6 +616,7 @@ gfarm_none_mdhost_load(void *closure,
 const struct db_ops db_none_ops = {
 	gfarm_none_initialize,
 	gfarm_none_terminate,
+	gfarm_none_sync_mode_nop,
 
 	gfarm_none_nop,
 	gfarm_none_nop,

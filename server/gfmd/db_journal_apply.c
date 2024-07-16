@@ -985,6 +985,7 @@ db_journal_apply_mdhost_remove(gfarm_uint64_t seqnum, char *name)
 const struct db_ops db_journal_apply_ops = {
 	NULL,
 	NULL,
+	NULL,
 
 	db_journal_apply_begin,
 	db_journal_apply_end,

@@ -69,6 +69,8 @@ enum gfarm_db_access_type {
 };
 extern enum gfarm_db_access_type gfarm_db_access_type;
 
+extern int gfarm_metadb_backend_sync_off_during_startup;
+
 /* auth TLS dependent */
 #define GFARM_TLS_CERTIFICATE_PATH_DEFAULT		"/etc/pki/tls/certs"
 #define GFARM_TLS_KEY_PATH_DEFAULT			"/etc/pki/tls/private"

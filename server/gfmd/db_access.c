@@ -433,6 +433,14 @@ db_terminate(void)
 	return (e);
 }
 
+gfarm_error_t
+db_sync_mode(int mode)
+{
+	gfarm_mutex_lock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
+	e = ops->set_mode(mode);
+	gfarm_mutex_unlock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
+}
+
 pthread_mutex_t *
 get_db_access_mutex(void)
 {

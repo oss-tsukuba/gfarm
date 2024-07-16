@@ -1200,6 +1200,8 @@ boot_apply_db_journal(void)
 	static int boot_apply = 1;
 
 	gflog_info(GFARM_MSG_1003273, "start applying db journal");
+	if (gfarm_metadb_backend_sync_off_during_startup)
+		db_sync_mode_(0);
 	if ((e = create_detached_thread(db_journal_store_thread,
 	    &boot_apply)) != GFARM_ERR_NO_ERROR)
 		gflog_fatal(GFARM_MSG_1003274,
@@ -1207,6 +1209,8 @@ boot_apply_db_journal(void)
 		    gfarm_error_string(e));
 
 	db_journal_wait_for_apply_thread();
+	if (gfarm_metadb_backend_sync_off_during_startup)
+		db_sync_mode_(1);
 	gflog_info(GFARM_MSG_1003275, "end applying db journal");
 
 	/*

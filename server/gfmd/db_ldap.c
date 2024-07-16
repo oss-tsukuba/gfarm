@@ -1169,6 +1169,12 @@ gfarm_ldap_generic_info_get_foreach(
 /**********************************************************************/
 
 static gfarm_error_t
+gfarm_ldap_sync_mode_nop(int mode)
+{
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
 gfarm_ldap_nop(gfarm_uint64_t seqnum, void *arg)
 {
 	return (GFARM_ERR_NO_ERROR);
@@ -3426,6 +3432,7 @@ gfarm_ldap_quota_dir_load(void *closure,
 const struct db_ops db_ldap_ops = {
 	gfarm_ldap_initialize,
 	gfarm_ldap_terminate,
+	gfarm_ldap_sync_mode_nop,
 
 	gfarm_ldap_nop,
 	gfarm_ldap_nop,

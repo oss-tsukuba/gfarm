@@ -149,6 +149,12 @@ db_journal_noaction(void)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+static gfarm_error_t
+db_journal_sync_mode_noaction(int)
+{
+	return (GFARM_ERR_NO_ERROR);
+}
+
 gfarm_error_t
 db_journal_init_status(void)
 {
@@ -4859,6 +4865,7 @@ db_journal_mdhost_load(void *closure,
 struct db_ops db_journal_ops = {
 	db_journal_noaction,
 	db_journal_terminate,
+	db_journal_sync_mode_noaction,
 
 	db_journal_write_begin,
 	db_journal_write_end,

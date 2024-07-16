@@ -258,6 +258,32 @@ gfarm_pgsql_initialize(void)
 }
 
 gfarm_error_t
+gfarm_pgsql_sync_mode(int mode)
+{
+	gfarm_error_t e;
+	PGresult *res;
+	const char *cmd
+
+	if (mode) {
+		cmd = "synchronous_commit on";
+	} else {
+		cmd = "synchronous_commit off";
+	}
+	res = PQexec(conn, cmd);
+	if (PQresultStatus(res) == PGRES_COMMAND_OK) {
+		gflog_info(GFARM_MSG_UNFIXED, "postgresql backend: %s", cmd);
+		e = GFARM_ERR_NO_ERROR;
+	} else {
+		gflog_error(GFARM_MSG_UNFIXED, "%s: %s: %s",
+		    diag, cmd, PQresultErrorMessage(res));
+		e = GFARM_ERR_UNKNOWN;
+	}
+
+	PQclear(res);
+	return (e);
+}
+
+gfarm_error_t
 gfarm_pgsql_terminate(void)
 {
 	/* close and free connection resources */
@@ -265,7 +291,6 @@ gfarm_pgsql_terminate(void)
 
 	return (GFARM_ERR_NO_ERROR);
 }
-
 
 /**********************************************************************/
 
