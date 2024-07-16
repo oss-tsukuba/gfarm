@@ -2619,6 +2619,8 @@ class GfptarCommand(Command):
         test4_dir_local = workdir_local_url.url_join(test4_name)
         test5_name = 'test-5-extract'
         test5_dir_local = workdir_local_url.url_join(test5_name)
+        test6_name = 'test-6-extract'
+        test6_dir_local = workdir_local_url.url_join(test6_name)
 
         # pick files as members (SEE ALSO: test_prepare_srcdir)
         members = ['file1', 'dir1']
@@ -2634,6 +2636,14 @@ class GfptarCommand(Command):
         # Local(tar) -> Local
         self.extract(test4_dir_local, test3_dir_local, files)
         self.extract(test5_dir_local, test3_dir_local, members)
+
+        # error
+        try:
+            self.extract(test6_dir_local, test3_dir_local, ['abcde'])
+            logger.error_exit(1, testname + '(not found in archive files) ' +
+                              '... FAIL (unexpected success)')
+        except GfptarError as e:
+            logger.info(f'Expected error, ignored: {str(e)}')
 
         for f in files:
             g_member = GfURL.init(os.path.join(test2_dir_gfarm, f))
@@ -3222,7 +3232,7 @@ class GfptarCommand(Command):
                 self.print_trace(exc)
                 if not self.is_canceled():
                     self.cancel()
-                    # DO NOT cancel threads beacause it will freeze.
+                    # DO NOT cancel threads because it will freeze.
                     # for t2 in self.futures:
                     #     if t == t2:
                     #         continue
@@ -3698,11 +3708,13 @@ class GfptarCommand(Command):
         if self.search_target:
             self.total_num = len(member_set)  # update
         archive_dict.clear()
-        member_check_dict.clear()
 
         for member, found in member_check_dict.items():
+            logger.debug(f'check member_check_dict: {member}, {found}')
             if not found:
-                raise GfException('Not found in archive: ' + member)
+                raise GfptarError('The specified file is not found'
+                                  ' in archive files: ' + member)
+        member_check_dict.clear()
 
         return target_set, directory_set, member_set
 
@@ -3840,7 +3852,7 @@ class GfptarCommand(Command):
                     self.print_trace(exc)
                     if not self.is_canceled():
                         self.cancel()
-                        # DO NOT cancel threads beacause it will freeze.
+                        # DO NOT cancel threads because it will freeze.
                         # for t2 in self.futures:
                         #     if t == t2:
                         #         continue
