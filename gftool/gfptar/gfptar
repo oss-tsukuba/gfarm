@@ -3618,7 +3618,7 @@ class GfptarCommand(Command):
         self.extract_main(target_set, directory_set, member_set)
 
     def extract_schedule_v3(self):
-        target_set = DBSet(self.db, StrObj, 'target_set')
+        target_set = DBSet(self.db_target, StrObj, 'target_set')
         directory_set = DBSet(self.db, StrObj, 'directory_set')
         member_set = DBSet(self.db, StrObj, 'member_set')
 
@@ -3663,38 +3663,43 @@ class GfptarCommand(Command):
                             logger.debug(f'directory_set.add: {path}')
                             directory_set.add(path)  # all directories
             if self.search_target:
+                is_target = False
                 for member in member_check_dict.keys():
-                    is_checked = member_check_dict.get(member)
-                    if is_checked:
-                        logger.debug(f'from member_check_dict.keys(checked):'
-                                     f' {member} ')
-                        continue
-                    found = False
                     file_type = archive_dict.get(member, None)
                     logger.debug(f'from member_check_dict.keys: {member} '
                                  f'[{file_type}]')
+                    found = False
                     if file_type is not None:
-                        logger.debug(f'target_set.add: {arch_url_str}')
-                        target_set.add(arch_url_str)  # select this tar file
                         logger.debug(f'member_set.add: {member}')
                         member_set.add(member)
                         found = True
                         if file_type == 'D':
                             logger.debug(f'directory_set.add: {member}')
                             directory_set.add(member)
-                    # else ... specified member may be a parent directory
-                    #     ex. dir -> dir/ -> dir/path/to/file
-                    for path, file_type in archive_dict.find_by_prefix(
-                            member + '/'):
-                        logger.debug(f'member_set.add: {path}')
-                        member_set.add(path)
-                        found = True
-                        if file_type == 'D':
-                            logger.debug(f'directory_set.add: {path}')
-                            directory_set.add(path)
+                            is_dir = True
+                        else:
+                            is_dir = False
+                    else:
+                        # specified member may be a parent directory
+                        # ex. dir -> dir/* -> dir/path/to/file
+                        is_dir = True
+                    if is_dir:
+                        # find {member}/* files
+                        for path, file_type in archive_dict.find_by_prefix(
+                                member + '/'):
+                            logger.debug(f'member_set.add: {path}')
+                            member_set.add(path)
+                            found = True
+                            if file_type == 'D':
+                                logger.debug(f'directory_set.add: {path}')
+                                directory_set.add(path)
                     if found:
                         member_check_dict[member] = True
+                        is_target = True
                 archive_dict.clear()  # re-use for next tar file
+                if is_target:
+                    logger.debug(f'target_set.add: {arch_url_str}')
+                    target_set.add(arch_url_str)  # select this tar file
             else:
                 target_set.add(arch_url_str)  # use all tar files
             if self.progress_enabled:
@@ -3707,7 +3712,6 @@ class GfptarCommand(Command):
             sys.stdout.write('\n')
         if self.search_target:
             self.total_num = len(member_set)  # update
-        archive_dict.clear()
 
         for member, found in member_check_dict.items():
             logger.debug(f'check member_check_dict: {member}, {found}')
@@ -3715,6 +3719,7 @@ class GfptarCommand(Command):
                 raise GfptarError('The specified file is not found'
                                   ' in archive files: ' + member)
         member_check_dict.clear()
+        archive_dict.clear()
 
         return target_set, directory_set, member_set
 
@@ -3897,6 +3902,7 @@ class GfptarCommand(Command):
                 break
             if members_num > 0:
                 with self.lock():
+                    # perfect match
                     if tarinfo.name not in member_set:
                         continue
                     member_set.remove(tarinfo.name)
