@@ -612,6 +612,7 @@ def shutup_stderr():
     global DEFAULT_STDERR
     use_stderr = False
     DEFAULT_STDERR = subprocess.DEVNULL
+    logger.debug('shutup_stderr')
 
 
 def execcmd(args, stdin=subprocess.DEVNULL, stderr=subprocess.PIPE,
@@ -947,12 +948,12 @@ class GfURL(metaclass=abc.ABCMeta):
         return GfURL.init(self.root_url_str + parent_path)
 
     @property
-    def parent_list(self):
+    def parent_iter(self):
         def parents_func(u):
-            if u.path != '.' and u.path != '/':
+            p = u.parent.path
+            if p != '' and p != '.' and p != '/':
                 yield u.parent
                 yield from parents_func(u.parent)
-                return
         yield from parents_func(self)
 
     @property
@@ -1068,7 +1069,11 @@ class GfURL(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_size(self):
+    def size(self):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def mode(self):
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -1366,10 +1371,15 @@ class GfURLGfarm(GfURL):
     def is_writable(self):
         return self.access(self.W_OK)
 
-    def get_size(self):
-        for entry in self.listdir(recursive=False):
-            logger.debug('get_size: %s, %d', entry.path, entry.size)
+    def size(self):
+        for entry in self.listdir(recursive=False, myself_only=True):
+            logger.debug('size: %s, %d', entry.path, entry.size)
             return entry.size
+
+    def mode(self):
+        for entry in self.listdir(recursive=False, myself_only=True):
+            logger.debug('mode: %s, %o', entry.path, entry.mode)
+            return entry.mode & 0o777
 
     @classmethod
     def from_rwx(cls, rwx, highchar):
@@ -1417,11 +1427,13 @@ class GfURLGfarm(GfURL):
         return mode, file_type
 
     def listdir(self, path_only=False, recursive=False, first=False,
-                hardlink_warn=False):
+                hardlink_warn=False, myself_only=False):
         dirname = self.url_str
         gfls_opt = '-ailT'
         if recursive:
             gfls_opt += 'R'
+        if myself_only:
+            gfls_opt += 'd'
         for line in execcmd_readline(['gfls', gfls_opt, self.url_str]):
             logger.debug('listdir: raw line=%s', line)
             if line is None:
@@ -1676,7 +1688,16 @@ class GfURLLocal(GfURL):
 
     def mkdir(self, mode=0o700, parents=False):
         if parents:
-            os.makedirs(self.url_str, mode=mode, exist_ok=True)
+            # Reference: https://docs.python.org/3/library/os.html#os.makedirs
+            # Changed in version 3.7: The mode argument no longer
+            # affects the file permission bits of newly created
+            # intermediate-level directories.
+            # os.makedirs(self.url_str, mode=mode, exist_ok=True)
+            for p in reversed(list(self.parent_iter)):
+                if p.exists():
+                    continue
+                os.mkdir(p.url_str, mode | 0o700)
+            os.mkdir(self.url_str, mode)
         else:
             os.mkdir(self.url_str, mode)
 
@@ -1721,10 +1742,15 @@ class GfURLLocal(GfURL):
     def is_writable(self):
         return os.access(self.url_str, os.W_OK)
 
-    def get_size(self):
+    def size(self):
         st = os.stat(self.url_str, follow_symlinks=False)
-        logger.debug('get_size: %s, %d', self.url_str, st.st_size)
+        logger.debug('size: %s, %d', self.url_str, st.st_size)
         return st.st_size
+
+    def mode(self):
+        st = os.stat(self.url_str, follow_symlinks=False)
+        logger.debug('mode: %s, %o', self.url_str, st.st_mode)
+        return st.st_mode & 0o777
 
     @classmethod
     def _readlink(cls, path, is_symlink):
@@ -2645,6 +2671,18 @@ class GfptarCommand(Command):
         except GfptarError as e:
             logger.info(f'Expected error, ignored: {str(e)}')
 
+        # check mode=0o700 for parents without tarinfo of file#2
+        gd1 = GfURL.init(os.path.join(test2_dir_gfarm, 'dir1/readonly'))
+        ld1 = GfURL.init(os.path.join(test4_dir_local, 'dir1/readonly'))
+        gd1_mode = gd1.mode()
+        if gd1_mode != 0o700:
+            logger.error_exit(
+                1, f'{testname} ... FAIL: gd1.mode={gd1_mode:#o}')
+        ld1_mode = ld1.mode()
+        if ld1_mode != 0o700:
+            logger.error_exit(
+                1, f'{testname} ... FAIL: ld1.mode={ld1_mode:#o}')
+
         for f in files:
             g_member = GfURL.init(os.path.join(test2_dir_gfarm, f))
             l_member = GfURL.init(os.path.join(test4_dir_local, f))
@@ -3546,7 +3584,7 @@ class GfptarCommand(Command):
         tardb_ok.close()
         tardb_ok.unlink()
 
-        tar_size = outurl.get_size()
+        tar_size = outurl.size()
         return tar_size, cannot_be_archived, outurl.url_str, listurl.url_str
 
     def create_a_members_list(self, url, filelist, target_host):
@@ -3798,7 +3836,7 @@ class GfptarCommand(Command):
                 self.info('prepare_dir: {}', dir_url.path)
                 created_set.add(parent_url.path)
                 self.info('prepare_dir: {}', parent_url.path)
-                for p in parent_url.parent_list:
+                for p in parent_url.parent_iter:
                     path = p.path
                     if path == '.' or path == '/':
                         continue
@@ -3807,8 +3845,8 @@ class GfptarCommand(Command):
 
     def update_stat_for_directories(self, directory_set):
         logger.debug('update_stat_for_directories')
-        # process from leaves
         self.clear_canceled()
+        # DESC: process from leaves
         for d in directory_set.iterator(sort='DESC'):
             if self.is_canceled():
                 logger.debug('Canceled (extract 3)')
@@ -3824,8 +3862,7 @@ class GfptarCommand(Command):
                               user=tarinfo.uname, group=tarinfo.gname)
             else:
                 dir_url.chmod(tarinfo.mode, mtime=tarinfo.mtime)
-            logger.debug("update_stat: %s, %s", d, oct(tarinfo.mode))
-            self.info('update_stat: {}', d)
+            self.info('update_stat: {}, mode={}', d, oct(tarinfo.mode))
 
     def extract_from_archives(self, target_set, member_set):
         self.lock_init(False)
