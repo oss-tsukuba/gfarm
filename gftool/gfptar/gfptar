@@ -68,8 +68,8 @@ def humanize_number(num, binary_prefix=False):
     if binary_prefix:
         units = ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi', 'Yi']
         base = Decimal(1024)
-    else:
-        units = ['', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y']
+    else:  # SI prefix
+        units = ['', 'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y']
         base = Decimal(1000)
     if num < base:
         return str(int(num))
@@ -97,10 +97,11 @@ def unhumanize_number(numstr, binary_prefix=False):
         return int(numstr)
     lastchar = numstr[-1]
     if lastchar == 'i' and numstrlen > 2:
+        # binary prefix
         n = int(numstr[:(numstrlen-2)])
         prefix = numstr[-2]
         base = 1024  # even if binary_prefix=False
-    else:
+    else:  # SI prefix
         n = int(numstr[:(numstrlen-1)])
         prefix = lastchar
 
@@ -2105,16 +2106,18 @@ class TestGfptar(unittest.TestCase):
         self.assertEqual(humanize_number(1023, binary_prefix=True), '1023')
         self.assertEqual(humanize_number(1024, binary_prefix=True), '1.0Ki')
         self.assertEqual(humanize_number(999), '999')
-        self.assertEqual(humanize_number(1000), '1.0K')
-        self.assertEqual(humanize_number(99999), '99.9K')
-        self.assertEqual(humanize_number(100000), '100K')
+        self.assertEqual(humanize_number(1000), '1.0k')
+        self.assertEqual(humanize_number(99999), '99.9k')
+        self.assertEqual(humanize_number(100000), '100k')
         self.assertEqual(humanize_number(1900000), '1.9M')
         self.assertEqual(humanize_number(2000000), '2.0M')
 
     def test_unhumanize(self):
         self.assertEqual(unhumanize_number('999'), 999)
+        self.assertEqual(unhumanize_number('1k'), 1000)
         self.assertEqual(unhumanize_number('1K'), 1000)
-        self.assertEqual(unhumanize_number('1K', binary_prefix=True), 1024)
+        self.assertEqual(unhumanize_number('1k', binary_prefix=True), 1024)
+        self.assertEqual(unhumanize_number('1ki'), 1024)
         self.assertEqual(unhumanize_number('1Ki'), 1024)
         self.assertEqual(unhumanize_number('2Mi'), 2097152)
         self.assertEqual(unhumanize_number('3Gi'), 3221225472)
@@ -2290,6 +2293,16 @@ class GfptarCommand(Command):
         self.progress_enabled = self._progress_enabled()
         self.use_fsync = not self.opt['--disable-fsync']
         self.workdir = self.opt['--workdir']
+
+        progress_unit_type = self.opt['--progress-unit']
+        if progress_unit_type == 'si':
+            self._humanize = self._humanize_si
+        elif progress_unit_type == 'bin':
+            self._humanize = self._humanize_bin
+        elif progress_unit_type == 'raw':
+            self._humanize = self._humanize_raw
+        else:
+            self._humanize = self._humanize_si
 
         self.memory_limit = self.opt['--memory']
         if self.memory_limit is not None:
@@ -4032,19 +4045,28 @@ class GfptarCommand(Command):
         with self.lock():
             self.info('extracted(done): {}', arch_url.url_str)
 
+    def _humanize_si(self, n):
+        return humanize_number(n)
+
+    def _humanize_bin(self, n):
+        return humanize_number(n, binary_prefix=True)
+
+    def _humanize_raw(self, n):
+        return int(n)
+
     def progress_for_listing(self, now):
         sec = now - self.start_time
         sec_str = format_seconds(sec, minhour=True)
-        total_num_str = humanize_number(self.total_num)
+        total_num_str = self._humanize(self.total_num)
         if sec > 0:
             ent_per_sec = self.total_num / sec
         else:
             ent_per_sec = 0
-        ent_per_sec_str = humanize_number(ent_per_sec)
+        ent_per_sec_str = self._humanize(ent_per_sec)
         sys.stdout.write(f'\rlisting: '
                          f'{total_num_str}Ent '
                          f'{sec_str} '
-                         f'{ent_per_sec_str}Ent/s  ')
+                         f'{ent_per_sec_str}Ent/s   ')
 
     # lock required
     def progress_for_create(self, now):
@@ -4069,18 +4091,18 @@ class GfptarCommand(Command):
         else:
             bytes_per_sec = 0
             ent_per_sec = 0
-        stored_num_str = humanize_number(self.stored_num)
-        total_num_str = humanize_number(self.total_num)
-        stored_size_str = humanize_number(self.stored_size)
-        total_size_str = humanize_number(self.total_size)
-        bytes_per_sec_str = humanize_number(bytes_per_sec)
-        ent_per_sec_str = humanize_number(ent_per_sec)
+        stored_num_str = self._humanize(self.stored_num)
+        total_num_str = self._humanize(self.total_num)
+        stored_size_str = self._humanize(self.stored_size)
+        total_size_str = self._humanize(self.total_size)
+        bytes_per_sec_str = self._humanize(bytes_per_sec)
+        ent_per_sec_str = self._humanize(ent_per_sec)
         sys.stdout.write(f'\rcreated: {percent_str}% '
-                         f'{stored_size_str}B/{total_size_str}B '
+                         f'{stored_size_str}/{total_size_str}B '
                          f'{stored_num_str}/{total_num_str}Ent '
                          f'{sec_str} '
                          f'{bytes_per_sec_str}B/s '
-                         f'{ent_per_sec_str}Ent/s  ')
+                         f'{ent_per_sec_str}Ent/s   ')
 
     # lock required
     def progress_for_extract(self, now):
@@ -4096,17 +4118,17 @@ class GfptarCommand(Command):
         else:
             bytes_per_sec = 0
             ent_per_sec = 0
-        extracted_num_str = humanize_number(self.extracted_num)
-        total_num_str = humanize_number(self.total_num)
-        extracted_size_str = humanize_number(self.extracted_size)
-        bytes_per_sec_str = humanize_number(bytes_per_sec)
-        ent_per_sec_str = humanize_number(ent_per_sec)
+        extracted_num_str = self._humanize(self.extracted_num)
+        total_num_str = self._humanize(self.total_num)
+        extracted_size_str = self._humanize(self.extracted_size)
+        bytes_per_sec_str = self._humanize(bytes_per_sec)
+        ent_per_sec_str = self._humanize(ent_per_sec)
         sys.stdout.write(f'\rextracted: {percent:.0f}% '
                          f'{extracted_size_str}B '
                          f'{extracted_num_str}/{total_num_str}Ent '
                          f'{sec_str} '
                          f'{bytes_per_sec_str}B/s '
-                         f'{ent_per_sec_str}Ent/s  ')
+                         f'{ent_per_sec_str}Ent/s   ')
 
     def list_simple(self, indir, quiet=False):
         self.options_init()
@@ -4196,6 +4218,16 @@ Example of --extract (Gfarm to Local):
     ...
     /home/user1/out2/dir/test9999.data
 
+SI prefix or Binary prerix:
+  SI prefix:
+    - 1k  = 10^3 = 1000^1 (kilo) (not K)
+    - 1M  = 10^6 = 1000^2 (mega)
+    - ...
+  Binary prefix:
+    - 1Ki = 2^10 = 1024^1 (kibi)
+    - 1Mi = 2^20 = 1024^2 (mebi)
+    - ...
+
 Limitations:
   - Hard links are not preserved.
   - File names cannot include newline characters.
@@ -4233,7 +4265,12 @@ Options:
   --workdir=DIR             local directory for temporary files
                             (default: system temporary directory)
   --max-entries-per-tar=NUM the number of entries per tar file
-                            to limit memory usage [default: 100K]
+                            to limit memory usage [default: 100k]
+  --progress-unit=TYPE      unit for progress
+                              - si: SI prefix
+                              - bin: Binary prefix
+                              - raw: no conversion
+                            [default: si]
   --memory=BYTES            upper limit of memory size (bytes)
                             (default: no limit) (ex. 2Gi)
   --test                    test mode (-q option is recommended)
@@ -4279,6 +4316,7 @@ _schema = Schema({
     '--same-owner': bool,
     '--workdir': Or(str, None),
     '--max-entries-per-tar': Use(unhumanize_number),
+    '--progress-unit': str,
     '--memory': Or(Use(unhumanize_number), None),
     '--test': bool,
     '--test-workdir-local': Or(str, None),
