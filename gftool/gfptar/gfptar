@@ -2893,7 +2893,7 @@ class GfptarCommand(Command):
                                k=random.randint(
                                    dir_min_length, dir_max_length)))
                            for _ in range(depth)]
-            return os.path.join(*directories)
+            return directories
 
         def generate_random_filename():
             suffix = ''.join(random.choices(string.ascii_lowercase,
@@ -2902,18 +2902,29 @@ class GfptarCommand(Command):
                 random.choices(choices, k=random.randint(
                     file_min_length, file_max_length))) + '.' + suffix
 
-        def rand_dir():
-            dir_path = generate_random_dirname()
-            path = os.path.join(base_dir, dir_path)
-            mode = 0o700
+        def rand_dir(first_dir_index):
+            first_dir = f'dir{first_dir_index:04d}'
+            dir_list = generate_random_dirname()
+            dir_depth = len(dir_list)
+
+            mode = 0o755
             file_type = GfURLEntry.TYPE_DIR
             uname = 'testuser1'
-            gname = 'testgroup1'
+            gname = 'testgroup2'
             size = 0
             mtime = now
             linkname = ''
-            return GfURLEntry(path, mode, file_type, uname, gname,
-                              size, mtime, linkname)
+            # first_dir: to pick up members
+            #
+            # path = os.path.join(base_dir, first_dir)
+            # yield GfURLEntry(path, mode, file_type, uname, gname,
+            #                  size, mtime, linkname)
+            for i in range(dir_depth):
+                parent = dir_list[:(i+1)]
+                dir_path = os.path.join(*parent)
+                path = os.path.join(base_dir, first_dir, dir_path)
+                yield GfURLEntry(path, mode, file_type, uname, gname,
+                                 size, mtime, linkname)
 
         def rand_file(dir_path, idx):
             time.sleep(dummy_sleep_per_entry)
@@ -2933,14 +2944,18 @@ class GfptarCommand(Command):
         dir_num = int(num / files_per_dir)
         remainder = num % files_per_dir
         for i in range(dir_num):
-            dir_ent = rand_dir()
-            yield dir_ent
-            for j in range(files_per_dir - 1):
+            dir_num = 0
+            for dir_ent in rand_dir(i):
+                dir_num += 1
+                yield dir_ent
+            for j in range(files_per_dir - dir_num):
                 yield rand_file(dir_ent.path, j)
         if remainder > 0:
-            dir_ent = rand_dir()
-            yield dir_ent
-            for j in range(remainder - 1):
+            dir_num = 0
+            for dir_ent in rand_dir(dir_num):
+                dir_num += 1
+                yield dir_ent
+            for j in range(remainder - dir_num):
                 yield rand_file(dir_ent.path, j)
 
     def create(self, outdir, basedir, infiles):
@@ -4203,6 +4218,7 @@ Options:
   -I, --use-compress-program=COMMAND
                             filter data through COMMAND,
                             the command must accept -d option for decompression
+                            (ex. pigz)
   --same-owner              extract files with the same ownership
                             (for euid=0 on local, or gfarmroot on Gfarm)
   --disable-gfarm-command   disable the use of gfreg and gfexport
@@ -4215,15 +4231,17 @@ Options:
                             [default: utf-8]
   --bufsize=BYTES           buffer size to copy [default: 1Mi]
   --workdir=DIR             local directory for temporary files
+                            (default: system temporary directory)
   --max-entries-per-tar=NUM the number of entries per tar file
                             to limit memory usage [default: 100K]
-  --memory=NUM              upper limit of memory size (bytes)
-                            (default: no limit)
+  --memory=BYTES            upper limit of memory size (bytes)
+                            (default: no limit) (ex. 2Gi)
   --test                    test mode (-q option is recommended)
   --test-workdir-local=DIR  local directory for test [default: /tmp]
   --test-workdir-gfarm=DIR  Gfarm directory for test [default: gfarm:/tmp]
   --dummy-num=NUM           the number of dummy (random) files for input
-                            (for -c) (ignore <member>) (1000 files per dir)
+                            (for -c option) (ignore <member> arguments)
+                            (create dummy 1000 entries per dir)
                             (default: disabled)
   --dummy-size-min=BYTES    minimum size of dummy files [default: 0]
   --dummy-size-max=BYTES    maximum size of dummy files [default: 1Mi]
