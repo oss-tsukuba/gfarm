@@ -1199,14 +1199,14 @@ boot_apply_db_journal(void)
 	gfarm_error_t e;
 	static int boot_apply = 1;
 	/*
-	 * use the do_sync_off variable to explicitly show it's not changed.
+	 * use the async_commit variable to explicitly show it's not changed.
 	 * although the gfarm_metadb_backend_sync_commit_at_initialization
 	 * setting shouldn't be changed during this function
 	 */
-	int do_sync_off = !gfarm_metadb_backend_sync_commit_at_initialization;
+	int async_commit = !gfarm_metadb_backend_sync_commit_at_initialization;
 
 	gflog_info(GFARM_MSG_1003273, "start applying db journal");
-	if (do_sync_off)
+	if (async_commit)
 		db_sync_commit_at_initialization(0);
 
 	if ((e = create_detached_thread(db_journal_store_thread,
@@ -1217,7 +1217,7 @@ boot_apply_db_journal(void)
 
 	db_journal_wait_for_apply_thread();
 
-	if (do_sync_off)
+	if (async_commit)
 		db_sync_commit_at_initialization(1);
 	gflog_info(GFARM_MSG_1003275, "end applying db journal");
 
