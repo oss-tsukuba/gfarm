@@ -2651,6 +2651,29 @@ This parameter is only available in gfmd.conf.
 </varlistentry>
 
 <varlistentry>
+<term><token>metadb_backend_sync_commit_at_initialization</token> <parameter moreinfo="none">validity</parameter></term>
+<listitem>
+<para>
+If metadb_replication is enabled, gfmd reflects the journal file contents
+to the backend database at startup,
+This directive controls whether or not synchronous commit is performed
+on the backend database side.
+If this setting is disable, asynchronous commit is performed,
+which speeds up gfmd startup.
+The default is <token>disable</token>.
+This directive is currently implemented only in the PostgreSQL backend.
+</para>
+<para>
+This parameter is only available in gfmd.conf.
+</para>
+<para>Example:</para>
+<literallayout format="linespecific" class="normal">
+	metadb_backend_sync_commit_at_initialization disable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>metadb_replica_remover_by_host_sleep_time</token> <parameter moreinfo="none">nanoseconds</parameter></term>
 <listitem>
 <para>
@@ -3625,6 +3648,7 @@ The default for this parameter is determined at OpenSSL compile time.
 	&lt;metadb_journal_dir_statement&gt; |
 	&lt;metadb_journal_max_size_statement&gt; |
 	&lt;metadb_journal_recvq_size_statement&gt; |
+	&lt;metadb_backend_sync_commit_at_initialization_statement&gt; |
 	&lt;metadb_replica_remover_by_host_sleep_time_statement&gt; |
 	&lt;metadb_replica_remover_by_host_inode_step_statement&gt; |
 	&lt;replica_check_statement&gt; |
@@ -4344,6 +4368,11 @@ The default for this parameter is determined at OpenSSL compile time.
 <varlistentry>
 <term>&lt;metadb_journal_recvq_size_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"metadb_journal_recvq_size" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;metadb_backend_sync_commit_at_initialization_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"metadb_backend_sync_commit_at_initialization" &lt;validity&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>

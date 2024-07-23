@@ -2576,6 +2576,29 @@ gfsd や gfmd は、gfarm2.conf や gfmd.conf 中のこの文を無視します�
 </varlistentry>
 
 <varlistentry>
+<term><token>metadb_backend_sync_commit_at_initialization</token> <parameter moreinfo="none">有効性</parameter></term>
+<listitem>
+<para>
+metadb_replication が enable の場合、gfmd は起動時にジャーナルファイルの
+内容をバックエンドデータベースへ反映しますが、
+この反映時にバックエンドデータベース側で同期コミットを行なうか否かを
+このディレクティブで制御します。
+この設定が disable だと非同期にコミットを行なうため gfmd の起動が
+高速化します。
+デフォルトは disable です。
+このディレクティブは現在 PostgreSQL バックエンドのみで実装されています。
+</para>
+<para>
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+</para>
+<para>Example:</para>
+<literallayout format="linespecific" class="normal">
+	metadb_backend_sync_commit_at_initialization disable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>metadb_replica_remover_by_host_sleep_time</token> <parameter moreinfo="none">ナノ秒</parameter></term>
 <listitem>
 <para>
@@ -3571,6 +3594,7 @@ OpenSSL の security_level 機能の数値を指定します。
 	&lt;metadb_journal_dir_statement&gt; |
 	&lt;metadb_journal_max_size_statement&gt; |
 	&lt;metadb_journal_recvq_size_statement&gt; |
+	&lt;metadb_backend_sync_commit_at_initialization_statement&gt; |
 	&lt;metadb_replica_remover_by_host_sleep_time_statement&gt; |
 	&lt;metadb_replica_remover_by_host_inode_step_statement&gt; |
 	&lt;replica_check_statement&gt; |
@@ -4290,6 +4314,11 @@ OpenSSL の security_level 機能の数値を指定します。
 <varlistentry>
 <term>&lt;metadb_journal_recvq_size_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"metadb_journal_recvq_size" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;metadb_backend_sync_commit_at_initialization_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"metadb_backend_sync_commit_at_initialization" &lt;validity&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
