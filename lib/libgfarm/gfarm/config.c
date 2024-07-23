@@ -978,9 +978,13 @@ int gfarm_write_verify_log_interval = GFARM_CONFIG_MISC_DEFAULT;
 
 /* GFM dependent */
 
+#define GFARM_METADB_BACKEND_SYNC_COMMIT_AT_INITIALIZATION_DEFAULT	0
+
 enum gfarm_backend_db_type gfarm_backend_db_type = GFARM_BACKEND_DB_TYPE_NONE;
 enum gfarm_db_access_type gfarm_db_access_type = GFARM_DB_ACCESS_TYPE_DBQ;
 int gfarm_metadb_server_listen_backlog = GFARM_CONFIG_MISC_DEFAULT;
+int gfarm_metadb_backend_sync_commit_at_initialization =
+    GFARM_CONFIG_MISC_DEFAULT;
 
 static struct {
 	enum gfarm_atime_type type;
@@ -3470,6 +3474,10 @@ parse_one_line(const char *s, char *p,
 		    gfarm_auth_server_cred_name_set);
 	} else if (strcmp(s, o = "metadb_db_access_type") == 0) {
 		e = parse_db_access_type(p);
+	} else if (strcmp(s,
+	    o = "metadb_backend_sync_commit_at_initialization") == 0) {
+		e = parse_set_misc_enabled(p,
+		    &gfarm_metadb_backend_sync_commit_at_initialization);
 
 	} else if (strcmp(s, o = "ldap_server_host") == 0) {
 		e = parse_set_var(p, &gfarm_ldap_server_name);
@@ -4030,6 +4038,10 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_write_verify_log_interval == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_write_verify_log_interval =
 		    GFARM_WRITE_VERIFY_LOG_INTERVAL_DEFAULT;
+	if (gfarm_metadb_backend_sync_commit_at_initialization
+	    == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_metadb_backend_sync_commit_at_initialization =
+		    GFARM_METADB_BACKEND_SYNC_COMMIT_AT_INITIALIZATION_DEFAULT;
 
 	if (gfarm_spool_server_listen_backlog == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_spool_server_listen_backlog = LISTEN_BACKLOG_DEFAULT;

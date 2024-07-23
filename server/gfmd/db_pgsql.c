@@ -258,6 +258,33 @@ gfarm_pgsql_initialize(void)
 }
 
 gfarm_error_t
+gfarm_pgsql_sync_commit_at_initialization(int mode)
+{
+	gfarm_error_t e;
+	PGresult *res;
+	const char *cmd;
+	static const char diag[] = "gfarm_pgsql_sync_commit_at_initialization";
+
+	if (mode) {
+		cmd = "set synchronous_commit=1";
+	} else {
+		cmd = "set synchronous_commit=0";
+	}
+	res = PQexec(conn, cmd);
+	if (PQresultStatus(res) == PGRES_COMMAND_OK) {
+		gflog_info(GFARM_MSG_UNFIXED, "postgresql backend: %s", cmd);
+		e = GFARM_ERR_NO_ERROR;
+	} else {
+		gflog_error(GFARM_MSG_UNFIXED, "%s: %s: %s",
+		    diag, cmd, PQresultErrorMessage(res));
+		e = GFARM_ERR_UNKNOWN;
+	}
+
+	PQclear(res);
+	return (e);
+}
+
+gfarm_error_t
 gfarm_pgsql_terminate(void)
 {
 	/* close and free connection resources */
@@ -265,7 +292,6 @@ gfarm_pgsql_terminate(void)
 
 	return (GFARM_ERR_NO_ERROR);
 }
-
 
 /**********************************************************************/
 
@@ -4404,6 +4430,7 @@ gfarm_pgsql_get_conn(void)
 const struct db_ops db_pgsql_ops = {
 	gfarm_pgsql_initialize,
 	gfarm_pgsql_terminate,
+	gfarm_pgsql_sync_commit_at_initialization,
 
 	gfarm_pgsql_begin,
 	gfarm_pgsql_end,

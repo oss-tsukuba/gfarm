@@ -169,6 +169,7 @@ struct db_mdhost_modify_arg {
 struct db_ops {
 	gfarm_error_t (*initialize)(void);
 	gfarm_error_t (*terminate)(void);
+	gfarm_error_t (*sync_commit_at_initialization)(int);
 
 	gfarm_error_t (*begin)(gfarm_uint64_t, void *);
 	gfarm_error_t (*end)(gfarm_uint64_t, void *);

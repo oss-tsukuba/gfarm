@@ -433,6 +433,22 @@ db_terminate(void)
 	return (e);
 }
 
+gfarm_error_t
+db_sync_commit_at_initialization(int mode)
+{
+	gfarm_error_t e;
+	static const char diag[] = "db_sync_commit_at_initialization";
+
+	gfarm_mutex_lock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
+	if (gfarm_get_metadb_replication_enabled()) {
+		e = store_ops->sync_commit_at_initialization(mode);
+	} else {
+		e = ops->sync_commit_at_initialization(mode);
+	}
+	gfarm_mutex_unlock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
+	return (e);
+}
+
 pthread_mutex_t *
 get_db_access_mutex(void)
 {
