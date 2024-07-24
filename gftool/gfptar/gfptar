@@ -47,6 +47,7 @@ import tempfile
 import multiprocessing
 import queue
 import inspect
+from collections import defaultdict
 
 from docopt import docopt
 from schema import Schema, Use, Or
@@ -128,6 +129,7 @@ class DB:
                                    check_same_thread=check_same_thread)
         self.con.execute('PRAGMA synchronous = OFF')
         self.con.execute('PRAGMA journal_mode = OFF')  # disable rollback
+        # self.con.execute('PRAGMA journal_mode = WAL')
 
     def commit(self):
         self.con.commit()
@@ -207,6 +209,29 @@ class FileAttr(DBObj):
     def loads(cls, key, txt, for_dict):
         array = json.loads(txt)
         return cls(array[0], array[1], array[2], array[3])
+
+
+class FileAttr2(DBObj):
+    def __init__(self, mode, mtime, user, group, size, linkname, ftype):
+        self.mode = mode
+        self.mtime = mtime
+        self.user = user
+        self.group = group
+        self.size = size
+        self.linkname = linkname
+        self.ftype = ftype
+
+    @classmethod
+    def dumps(cls, obj, for_dict):
+        array = [obj.mode, obj.mtime, obj.user, obj.group,
+                 obj.size, obj.linkname, obj.ftype]
+        return json.dumps(array, separators=(',', ':'))
+
+    @classmethod
+    def loads(cls, key, txt, for_dict):
+        array = json.loads(txt)
+        return cls(array[0], array[1], array[2], array[3],
+                   array[4], array[5], array[6])
 
 
 # Abstract
@@ -795,6 +820,9 @@ class GfURLEntry(DBObj):
         t = cls.type_map_reverse[o[1]]
         return cls(path, o[0], t, o[2], o[3], o[4], o[5], o[6])
 
+    def url(self):
+        return GfURL.init(self.path)
+
     def subpath(self, baseurl):
         return baseurl.subpath(self.path)
 
@@ -1028,6 +1056,14 @@ class GfURL(metaclass=abc.ABCMeta):
         self.mkdir(mode, parents=True)
 
     @abc.abstractmethod
+    def rename(self, dest):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def remove(self):
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def remove_tree(self, remove_readonly=False):
         raise NotImplementedError
 
@@ -1093,7 +1129,7 @@ class GfURL(metaclass=abc.ABCMeta):
                   user=None, group=None, use_fsync=True, hostname=None):
         raise NotImplementedError
 
-    def copy_from(self, inf, bufsize, mode=None, mtime=0o600,
+    def copy_from(self, inf, bufsize, mode=0o600, mtime=None,
                   user=None, group=None, use_fsync=True, hostname=None):
         readlen = 0
         with self.writeopen(mode=mode, mtime=mtime,
@@ -1309,6 +1345,12 @@ class GfURLGfarm(GfURL):
             if mode is not None:
                 # slow
                 self.chmod(mode)
+
+    def rename(self, dest):
+        execcmd(['gfmv', self.url_str, dest])
+
+    def remove(self):
+        execcmd(['gfrm', self.url_str])
 
     def remove_tree(self, remove_readonly=False):
         path = self.url_str
@@ -1711,6 +1753,12 @@ class GfURLLocal(GfURL):
                 file_path = os.path.join(root, f)
                 os.chmod(file_path, file_mode)
 
+    def rename(self, dest):
+        os.rename(self.path, dest)
+
+    def remove(self):
+        os.remove(self.path)
+
     def remove_tree(self, remove_readonly=False):
         path = self.path
         if path == '/' or path == '':
@@ -1873,12 +1921,7 @@ class GfURLLocal(GfURL):
                 f.flush()
                 os.fsync(f.fileno())
             f.close()
-            if mode is not None:
-                self.chmod(mode, mtime=mtime, user=user, group=group)
-            else:
-                if mtime is not None:
-                    self.utime(mtime, mtime)
-                self.chown(user, group)
+            self.chmod(mode, mtime=mtime, user=user, group=group)
 
 
 class GfTarFile(tarfile.TarFile):
@@ -2308,20 +2351,27 @@ class GfptarCommand(Command):
         if self.memory_limit is not None:
             self.set_memory_limit(self.memory_limit)
 
+        self.compress_type = self.opt['--type']
+        self.compress_prog = self.opt['--use-compress-program']
+
     def set_memory_limit(self, max_memory):
         resource.setrlimit(resource.RLIMIT_AS, (max_memory, max_memory))
 
     def sig_init(self):
         def sig_handler(signum, frame):
-            print('')  # new line
+            logger.warning(f'Interrupt (signal={signum}')
             self.cancel()
 
+        signal.signal(signal.SIGHUP, sig_handler)
         signal.signal(signal.SIGINT, sig_handler)
         signal.signal(signal.SIGTERM, sig_handler)
+        signal.signal(signal.SIGPIPE, signal.SIG_IGN)
 
     def sig_default(self):
+        signal.signal(signal.SIGHUP, signal.SIG_DFL)
         signal.signal(signal.SIGINT, signal.SIG_DFL)
         signal.signal(signal.SIGTERM, signal.SIG_DFL)
+        signal.signal(signal.SIGPIPE, signal.SIG_IGN)
 
     def getDoc(self) -> str:
         return __doc__
@@ -2895,7 +2945,7 @@ class GfptarCommand(Command):
         file_max_length = 30
 
         choices = string.ascii_letters + string.digits + '漢あア()[]-'
-        other_symbols = '!"#$%&=^~|`@{}+*;:,.<>?_' + r"\'"
+        other_symbols = ' !"#$%&=^~|`@{}+*;:,.<>?_' + r"\'"
         choices += other_symbols
         now = time.time()
 
@@ -2985,8 +3035,6 @@ class GfptarCommand(Command):
             self.max_entries_per_tar = 1
         self.ratio = self.opt['--ratio']
 
-        self.compress_type = self.opt['--type']
-        self.compress_prog = self.opt['--use-compress-program']
         self.disable_gfarm_command = self.opt['--disable-gfarm-command']
         self.use_gfarm_command = not self.disable_gfarm_command
         self.gfsched_interval = self.opt['--gfsched-interval']
@@ -3649,7 +3697,6 @@ class GfptarCommand(Command):
         self.specified_members = specified_members
         self.same_owner = self.opt['--same-owner']
 
-        self.compress_prog = self.opt['--use-compress-program']
         self.disable_gfarm_command = self.opt['--disable-gfarm-command']
         self.use_gfarm_command = not self.disable_gfarm_command
         self.gfsched_interval = self.opt['--gfsched-interval']
@@ -3702,13 +3749,16 @@ class GfptarCommand(Command):
         for ent in self.indir_url.listdir(recursive=False):
             if self.is_canceled():
                 raise self.error_canceled()
-            if ent.path.endswith(self.LIST_SUFFIX):  # ignored
+            if ent.path.endswith(self.LIST_SUFFIX):  # ignore *.lst, *.tar.lst
                 continue
-            subpath = ent.subpath(self.indir_url)
-            arch_url_str = self.indir_url.url_join(subpath)
-            list_url = GfURL.init(arch_url_str + self.LIST_SUFFIX)
+            base = os.path.basename(ent.path)
+            if not self.PATT_TAR.match(base):  # ignore not *.tar.*
+                continue
+            arch_url_str = ent.path
+            list_file = arch_url_str + self.LIST_SUFFIX
+            list_url = GfURL.init(list_file)
             if not list_url.exists():
-                raise self.error_not_a_gfptar_directory(self.indir_url.url_str)
+                raise self.error_not_a_gfptar_directory(list_file)
             with list_url.readopen(textmode=True) as f:
                 while True:
                     line = f.readline()
@@ -4149,41 +4199,295 @@ class GfptarCommand(Command):
                     if not quiet:
                         print(line.rstrip())
 
+    def decompress_infodb(self, tmpdir, db_path):
+        db_url = GfURL.init(db_path)
+        base = os.path.basename(db_path)
+        tmpdb_path = os.path.join(tmpdir.name, base)
+        tmpdb_url = GfURL.init(tmpdb_path)
+        # TODO decompress
+        with db_url.readopen() as f:
+            tmpdb_url.copy_from(f, self.bufsize, use_fsync=self.use_fsync)
+        return tmpdb_url
+
+    TABLE_ENTRY = 'entries'
+    TABLE_USER = 'users'
+    TABLE_GROUP = 'groups'
+
     def list_verbose(self, indir, quiet=False):
         self.options_init()
-        self.compress_prog = self.opt['--use-compress-program']
         indir_url = GfURL.init(indir)
-        archlist = []
+        tmpdir = tempfile.TemporaryDirectory(prefix='gfptar-',
+                                             dir=self.workdir)
+        self.gen_infodb_all(indir_url, tmpdir, update=False)
+
+        # TODO .db.gz
+        db_gen1_pattern = re.compile(r'^(\d+)_.+.db')
+        # divide by generations : gNN_ (NN >= 2)
+        db_gen_pattern = re.compile(r'^g(\d+)_(\d+)_.+.db')
+
+        infodb_list = []
         for ent in indir_url.listdir(recursive=False):
-            if ent.path.endswith(self.LIST_SUFFIX):
+            path = ent.path  # fullpath when ent is Gfarm
+            base = os.path.basename(path)
+            g1_match = db_gen1_pattern.match(base)
+            if g1_match:
+                id_num = g1_match.group(1)
+                infodb_list.append((int(id_num), path))
+            else:
+                g_match = db_gen_pattern.match(base)
+                if g_match:
+                    id_num = g_match.group(2)
+                    infodb_list.append((int(id_num), path))
+
+        def id_key(id_path):
+            id_num, path = id_path
+            return id_num
+
+        infodb_list.sort(key=id_key)
+        for id_num, db_path in infodb_list:
+            tmpdb_url = self.decompress_infodb(tmpdir, db_path)
+            db = DB(tmpdb_url.path)
+            try:
+                fattr_dict = DBDict(db, FileAttr2, self.TABLE_ENTRY)
+                user_dict = DBDict(db, StrObj, self.TABLE_USER)
+                group_dict = DBDict(db, StrObj, self.TABLE_GROUP)
+                user_dict_mem = {}
+                group_dict_mem = {}
+                # cache in memory
+                for k, v in user_dict.items():
+                    user_dict_mem[k] = v
+                for k, v in group_dict.items():
+                    group_dict_mem[k] = v
+                for path, t in fattr_dict.iterator(sort='ASC'):
+                    # id -> name
+                    user = user_dict_mem.get(t.user, '???')
+                    group = user_dict_mem.get(t.group, '???')
+                    if not quiet:
+                        print(f'{t.ftype} {t.mode:04o}'
+                              f' {user:>10}/{group:<10}'
+                              f' {t.size:9d} {t.mtime} {path}')
+            finally:
+                db.close()
+
+    # *.tar or *.tar.*
+    PATT_TAR = re.compile(r'.*\.tar(\.\w{1,5})?$')
+
+    def gen_infodb_all(self, indir_url, tmpdir, update=False):
+        tar_pattern = self.PATT_TAR
+        gen1_pattern = re.compile(r'^(\d+)_.+')
+        # divide by generations : gNN_ (NN >= 2)
+        gen_pattern = re.compile(r'^g(\d+)_(\d+)_.+')
+        gen_dict_list = defaultdict(list)
+
+        for ent in indir_url.listdir(recursive=False):
+            path = ent.path
+            base = os.path.basename(path)
+            if ent.path.endswith(self.LIST_SUFFIX):  # ignore *.lst, *.tar.lst
                 continue
-            archlist.append(ent.path)
-        archlist.sort()
-        for path in archlist:
-            arch_url = GfURL.init(path)
-            tar = GfTarFile.extract_open(arch_url, self.bufsize,
-                                         compress_prog=self.compress_prog)
-            while True:
-                try:
-                    t = tar.next()
-                except MemoryError:
-                    raise
-                except Exception as e:
-                    logger.warning(f'{path}: SKIPPED: invalid or empty tar:'
-                                   f' {str(e)}')
-                    t = None
-                if t is None:
+            if not tar_pattern.match(base):  # ignore not *.tar.*
+                continue
+            g1_match = gen1_pattern.match(base)
+            if g1_match:
+                # generation number = 1
+                gen_num = '1'
+                id_num = g1_match.group(1)
+            else:
+                g_match = gen_pattern.match(base)
+                if g_match:
+                    gen_num = g_match.group(1)
+                    id_num = g_match.group(2)
+                else:
+                    # skip irrelevant file
+                    continue
+            # gen -> tarlist
+            gen_dict_list[gen_num].append((id_num, path))
+
+        if self.jobs >= 1:
+            max_workers = self.jobs
+        else:
+            max_workers = 1
+
+        save_e = None
+        cancel = False
+        # Concurrent execution for each generation
+        with multiprocessing.Manager() as manager:
+            lock = manager.Lock()
+            share_cancel = manager.Value('i', 0)
+
+            def sig_handler(signum, frame):
+                logger.warning(f'Interrupt (signal={signum}')
+                share_cancel.value = 1
+
+            signal.signal(signal.SIGHUP, sig_handler)
+            signal.signal(signal.SIGINT, sig_handler)
+            signal.signal(signal.SIGTERM, sig_handler)
+            signal.signal(signal.SIGPIPE, signal.SIG_IGN)
+
+            for gen_num, tarlist in gen_dict_list.items():
+                with concurrent.futures.ProcessPoolExecutor(
+                        max_workers=max_workers) as executor:
+                    arglist = []
+                    for id_num, tar_path in tarlist:
+                        arglist.append((lock, share_cancel, tmpdir,
+                                        update, gen_num, id_num, tar_path,
+                                        self.bufsize, self.compress_prog,
+                                        self.use_fsync))
+                    # executor.map(gen_infodb_one, arglist)
+                    futures = [executor.submit(gen_infodb_one, arg)
+                               for arg in arglist]
+
+                    for future in concurrent.futures.as_completed(futures):
+                        try:
+                            future.result()
+                        except Exception as e:
+                            # logger.error(f'{e}')
+                            self.print_trace(e)
+                            share_cancel.value = 1
+                            if save_e is None:
+                                save_e = e
+            if share_cancel.value != 0:
+                cancel = True
+            self.sig_default()  # no longer be able to access Manager
+
+        if save_e:
+            raise save_e
+        if cancel:
+            raise self.error_canceled()
+
+
+signal_initialized = False
+
+
+def signal_init_for_gen_infodb(share_cancel):
+    global signal_initialized
+
+    if not signal_initialized:
+        def sig_handler(signum, frame):
+            with share_cancel.get_lock():
+                if share_cancel.value != 0:
+                    logger.warning(f'Interrupt (signal={signum}')
+                    share_cancel.value = 1
+
+        signal.signal(signal.SIGHUP, sig_handler)
+        signal.signal(signal.SIGINT, sig_handler)
+        signal.signal(signal.SIGTERM, sig_handler)
+        signal.signal(signal.SIGPIPE, signal.SIG_IGN)
+        signal_initialized = True
+        # logger.debug('signal_init_for_gen_infodb')
+
+
+def gen_infodb_name(gen_num, id_num):
+    # ex. g2_0099_
+    return f'g{gen_num}_{id_num:04}_info.db'
+
+
+# ProcessPoolExecutor cannot serialize "self" object of GfptarCommand
+def gen_infodb_one(args):
+    (lock, share_cancel, tmpdir, update, gen_num, id_num,
+     tar_path, bufsize, compress_prog, use_fsync) = args
+    if share_cancel.value != 0:
+        # logger.debug('Canceled (2)')
+        return
+    tar_url = GfURL.init(tar_path)
+    indir_url = tar_url.parent
+    db_name = gen_infodb_name(gen_num, id_num)
+    db_path = indir_url.url_join(db_name)
+    db_url = GfURL.init(db_path)
+    if not update and db_url.exists():
+        logger.debug(f'not update: {db_path}')
+        return
+    signal_init_for_gen_infodb(share_cancel)
+
+    # Local file
+    tmpdb_path = os.path.join(tmpdir.name, str(id_num) + '_info.db')
+    tmpdb = DB(tmpdb_path)
+    fattr_dict = DBDict(tmpdb, FileAttr2, GfptarCommand.TABLE_ENTRY)
+
+    user_dict = {}  # use memory for speed
+    group_dict = {}  # use memory for speed
+
+    tar = GfTarFile.extract_open(tar_url, bufsize,
+                                 compress_prog=compress_prog)
+    db_close = False
+    try:
+        interval = 1  # sec. | for interrupt
+        next_check = time.time() + interval
+        while True:
+            now = time.time()
+            if now >= next_check:
+                # access manager.Value(): very high cost
+                if share_cancel.value != 0:
+                    logger.info('Canceled')
                     break
-                name = t.name
-                if t.isdir():
-                    name = name + '/'
-                elif t.issym():
-                    name = name + ' -> ' + t.linkname
-                info = (f'{t.mode:04o} {t.uname:>10}/{t.gname:<10}'
-                        f' {t.size:9d} {t.mtime} {name}')
-                # logger.debug(info)
-                if not quiet:
-                    print(info)
+                next_check = now + interval
+            try:
+                t = tar.next()
+            except MemoryError:
+                raise
+            except Exception as e:
+                logger.warning(f'{tar_path}: SKIPPED: invalid or empty tar:'
+                               f' {str(e)}')
+                t = None
+            if t is None:
+                break
+            # name = t.name
+            # if t.isdir():
+            #     name = name + '/'
+            # elif t.issym():
+            #     name = name + ' -> ' + t.linkname
+            # info = (f'{gen_num}:{id_num} {t.mode:04o}'
+            #         f' {t.uname:>10}/{t.gname:<10}'
+            #         f' {t.size:9d} {t.mtime} {name}')
+            # logger.debug(info)
+            # logger.debug(f'add to DB: {t.name}')
+            if t.isfile():
+                ftype = 'F'
+            elif t.isdir():
+                ftype = 'D'
+            elif t.issym():
+                ftype = 'L'
+            else:
+                ftype = '?'
+            user_id = user_dict.get(t.uname, None)  # not uid
+            if user_id is None:
+                user_id = str(len(user_dict))
+                user_dict[t.uname] = user_id
+            group_id = group_dict.get(t.gname, None)  # not gid
+            if group_id is None:
+                group_id = str(len(group_dict))
+                group_dict[t.gname] = group_id
+            fattr = FileAttr2(t.mode, int(t.mtime), user_id, group_id,
+                              t.size, t.linkname, ftype)
+            fattr_dict[t.name] = fattr
+        # success
+
+        # id -> name
+        rev_user_dict = DBDict(tmpdb, StrObj, GfptarCommand.TABLE_USER)
+        rev_group_dict = DBDict(tmpdb, StrObj, GfptarCommand.TABLE_GROUP)
+        for k, v in user_dict.items():
+            rev_user_dict[v] = k
+        for k, v in group_dict.items():
+            rev_group_dict[v] = k
+        tmpdb.commit()
+        tmpdb.close()
+        db_close = True
+
+        db_path0 = indir_url.url_join(db_name + '.tmp')
+        db_url0 = GfURL.init(db_path0)
+        tmpdb_url = GfURL.init(tmpdb_path)
+        if db_url0.exists():
+            db_url0.remove()
+        # TODO convert .gz : gzip_writeopen(), copy_from(, gzip=True)
+        # copy infodb from tmpdir to indir
+        with tmpdb_url.readopen() as f:
+            db_url0.copy_from(f, bufsize, use_fsync=use_fsync)
+        # atomic operation to avoid leaving junk files
+        db_url0.rename(db_path)
+    finally:
+        tar.close()
+        if not db_close:
+            tmpdb.commit()
+            tmpdb.close()
 
 
 progname = os.path.basename(__file__)
