@@ -4261,7 +4261,7 @@ class GfptarCommand(Command):
                 for path, t in fattr_dict.iterator(sort='ASC'):
                     # id -> name
                     user = user_dict_mem.get(t.user, '???')
-                    group = user_dict_mem.get(t.group, '???')
+                    group = group_dict_mem.get(t.group, '???')
                     if not quiet:
                         print(f'{t.ftype} {t.mode:04o}'
                               f' {user:>10}/{group:<10}'
