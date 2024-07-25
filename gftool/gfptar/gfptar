@@ -193,7 +193,7 @@ class StrObj(DBObj):
         return txt
 
 
-class FileAttr(DBObj):
+class FileAttr1(DBObj):
     def __init__(self, mode, mtime, user, group):
         self.mode = mode
         self.mtime = mtime
@@ -797,6 +797,7 @@ class GfURLEntry(DBObj):
         return (f'Entry(path={self.path},mode={oct(self.mode)},'
                 f'user={self.uname},group={self.gname})')
 
+    # TODO remove
     # only path must be specified for key when using DBDict
     @classmethod
     def dumps(cls, obj, for_dict):
@@ -810,6 +811,7 @@ class GfURLEntry(DBObj):
             array.append(obj.path)  # [7]
         return json.dumps(array, separators=(',', ':'))
 
+    # TODO remove
     @classmethod
     def loads(cls, key, txt, for_dict):
         o = json.loads(txt)
@@ -2124,6 +2126,7 @@ class GfTarFile(tarfile.TarFile):
                 self.addfile(tarinfo, fileobj=f)
         else:
             self.addfile(tarinfo)
+        return tarinfo
 
     # NOTE: add() is not expected behavior. Use addfile() instead.
     # - add() can copy a hard link,
@@ -2142,6 +2145,7 @@ class GfTarFile(tarfile.TarFile):
                 self.addfile(tarinfo, fileobj=f)
         else:
             self.addfile(tarinfo)
+        return tarinfo
 
 
 class RandomStream:
@@ -3183,6 +3187,7 @@ class GfptarCommand(Command):
         tardb_prefix = os.path.join(tmpdir.name, 'list_for_create')
         tardb_fmt = f'_{self.SERIAL_FORMAT}.db'
         serial = 1
+        gen = 1  # TODO
         # to reduce memory usage
         tarlist_db = DB(tardb_prefix + tardb_fmt % serial)
         tarlist = DBList(tarlist_db, GfURLEntry, 'tarlist')
@@ -3217,7 +3222,7 @@ class GfptarCommand(Command):
                             tarlist.close()
                             # DO NOT share a DBList with children,
                             # share the filename instead.
-                            self.create_job_execute(serial,
+                            self.create_job_execute(gen, serial,
                                                     tarlist.filename())
                         except Exception as e1:
                             self.cancel()
@@ -3262,7 +3267,7 @@ class GfptarCommand(Command):
             try:
                 tarlist.commit()
                 tarlist.close()
-                self.create_job_execute(serial, tarlist.filename())
+                self.create_job_execute(gen, serial, tarlist.filename())
             except Exception as e:
                 self.cancel()
                 if has_error is None:
@@ -3327,11 +3332,11 @@ class GfptarCommand(Command):
             started.status = False
             self.worker_list.append((started, process, inq, outq))
 
-    def _create_job_execute(self, serial, arg):
-        self.create_a_tar_thread(serial, arg)
+    def _create_job_execute(self, gen, serial, arg):
+        self.create_a_tar_thread(gen, serial, arg)
 
-    def _create_job_execute_MT(self, serial, arg):
-        t = self.thread_pool.submit(self.create_a_tar_thread, serial, arg)
+    def _create_job_execute_MT(self, gen, serial, arg):
+        t = self.thread_pool.submit(self.create_a_tar_thread, gen, serial, arg)
         self.futures[t] = serial
         has_error = None
         try:
@@ -3492,17 +3497,17 @@ class GfptarCommand(Command):
         logger.debug("selected target_host: %s", target_host)
         return target_host
 
-    def create_a_tar_thread(self, serial, dbfile):
+    def create_a_tar_thread(self, gen, serial, dbfile):
         try:
-            self.create_a_tar_thread0(serial, dbfile)
+            self.create_a_tar_thread0(gen, serial, dbfile)
         except Exception:
             if self.is_canceled():
                 raise self.error_canceled()
             else:
                 raise
 
-    def create_a_tar_thread0(self, serial, dbfile):
-        logger.debug(f'create_a_tar: start (serial={serial})')
+    def create_a_tar_thread0(self, gen, serial, dbfile):
+        logger.debug(f'create_a_tar: start (gen={gen}, serial={serial})')
         if self.is_canceled():
             logger.debug(f'Canceled (create 1): serial={serial}')
             return
@@ -3522,7 +3527,7 @@ class GfptarCommand(Command):
             process.start()  # high cost to start
             started.status = True
 
-        inq.put(('START', serial, dbfile))
+        inq.put(('START', gen, serial, dbfile))
         response = outq.get()
         if response != 'READY':
             logger.error(f'Unexpected child response: {response}')
@@ -3563,11 +3568,11 @@ class GfptarCommand(Command):
                                 self.progress_for_create(now)
                 elif result[0] == 'DONE':
                     (status, tar_size, cannot_be_archived,
-                     outurl, listurl) = result
+                     outurl, infodb_url) = result
                     with self.lock():
                         self.archived_size += tar_size
                         self.info(f'created(.tar): {outurl}')
-                        self.info(f'created(.lst): {listurl}')
+                        self.info(f'created(.lst): {infodb_url}')
                     break
                 elif result[0] == 'ERR':
                     (status, exc_type_name, exc_value_str,
@@ -3604,14 +3609,14 @@ class GfptarCommand(Command):
         else:
             logger.error(f'Unexpected request for child: {request}')
             return  # exit
-        op, serial, dbfile = request
+        op, gen, serial, dbfile = request
         logger.debug(f'create_a_tar_process0: start (serial={serial})')
         try:
             result = self.create_a_tar_process1(input_queue, output_queue,
-                                                serial, dbfile)
-            tar_size, cannot_be_archived, outurl, listurl = result
+                                                gen, serial, dbfile)
+            tar_size, cannot_be_archived, outurl, infodb_url = result
             output_queue.put(('DONE', tar_size, cannot_be_archived,
-                              outurl, listurl))
+                              outurl, infodb_url))
             logger.debug(f'subprocess exits: serial={serial}')
         except KeyboardInterrupt:
             pass
@@ -3631,7 +3636,8 @@ class GfptarCommand(Command):
             except queue.Empty:
                 pass
 
-    def create_a_tar_process1(self, input_queue, output_queue, serial, dbfile):
+    def create_a_tar_process1(self, input_queue, output_queue,
+                              gen, serial, dbfile):
         logger.debug(f'create_a_tar_process1: start (serial={serial})')
         tardb1 = DB(dbfile)
         filelist = DBList(tardb1, GfURLEntry, 'tarlist')
@@ -3662,8 +3668,12 @@ class GfptarCommand(Command):
             outname = '%s..%s%s' % (firstpath, lastpath, self.suffix)
 
         serial_str = f'{self.SERIAL_FORMAT}_' % serial
+        if gen >= 2:
+            prefix_str = f'g{gen}_{serial_str}'
+        else:
+            prefix_str = serial_str
         outname_max = self.outdir_url.MAXNAMLEN \
-            - len(serial_str) - len(self.LIST_SUFFIX)
+            - len(prefix_str) - len(self.LIST_SUFFIX)
         outname_len = len(outname.encode())
         offset = 0
         while outname_len > outname_max:
@@ -3674,7 +3684,7 @@ class GfptarCommand(Command):
             # loop for multibyte characters
             offset += 1
         # ex.: home/user1/dir -> home_user1_dir
-        outname = serial_str + outname.replace('/', '_')
+        outname = prefix_str + outname.replace('/', '_')
         outurl = GfURL.init(self.outdir_url.url_join(outname),
                             use_gfarm_command=self.use_gfarm_command)
         target_host = self.select_a_target_host(outurl, serial)
@@ -3683,53 +3693,68 @@ class GfptarCommand(Command):
                                     target_host=target_host,
                                     dummy_input=self.dummy_input,
                                     dummy_sleep=self.dummy_sleep)
-
         # to reduce memory usage
+        # SEE ALSO: gen_infodb_one()
+        tmpdb_path = tardb1.filename + '_info.db'
+        infodb = InfoDB(tmpdb_path)
+
+        # TODO remove
         tardb_ok = DB(tardb1.filename + '_ok.db')
         filelist_ok = DBList(tardb_ok, GfURLEntry, 'filelist_ok')
-        cannot_be_archived = 0
-        for entry in filelist:
-            logger.debug(f'subprocess(serial={serial}): {entry.path}')
-            while not input_queue.empty():
-                try:
-                    qdata = input_queue.get(timeout=1)
-                except queue.Empty:
-                    qdata = None
-                if qdata == 'CANCEL':
-                    logger.debug('receive CANCEL from parent')
-                    break
-                else:
-                    logger.error('unexpected message from parent')
-                    break
-            subpath = entry.subpath(self.basedir_url)
-            try:
-                logger.debug(f'tar.add_entry: {subpath}')
-                tar.add_entry(subpath, entry)
-                filelist_ok.append(entry)
-                size_all = entry.size_all()
-                output_queue.put(('ADD', subpath, size_all))
-            except MemoryError:
-                tar.close()
-                raise
-            except Exception as e:
-                cannot_be_archived += 1
-                logger.warning(convert_message(e))
-                continue
 
-        tar.close()
-        tardb1.close()
-        tardb1.unlink()
+        cannot_be_archived = 0
+        try:
+            for entry in filelist:
+                logger.debug(f'subprocess(serial={serial}): {entry.path}')
+                while not input_queue.empty():
+                    try:
+                        qdata = input_queue.get(timeout=1)
+                    except queue.Empty:
+                        qdata = None
+                    if qdata == 'CANCEL':
+                        logger.debug('receive CANCEL from parent')
+                        break
+                    else:
+                        logger.error('unexpected message from parent')
+                        break
+                subpath = entry.subpath(self.basedir_url)
+                try:
+                    logger.debug(f'tar.add_entry: {subpath}')
+                    tarinfo = tar.add_entry(subpath, entry)
+                    infodb.add(tarinfo)
+                    filelist_ok.append(entry)  # TODO remove
+                    size_all = entry.size_all()
+                    output_queue.put(('ADD', subpath, size_all))
+                except MemoryError:
+                    tar.close()
+                    raise
+                except Exception as e:
+                    cannot_be_archived += 1
+                    logger.warning(convert_message(e))
+                    continue
+        finally:
+            tar.close()
+            tardb1.close()
+            tardb1.unlink()
+        infodb.close()
+
+        # SEE ALSO: gen_infodb_name()
+        db_name = f'g{gen}_{serial_str}info.db.gz'
+        db_url_str = self.outdir_url.url_join(db_name)
+        infodb.compress_copy(db_url_str, self.bufsize, self.use_fsync)
 
         # for DEBUG
         # raise Exception('unexpected raise')
 
-        listurl = self.create_a_members_list(outurl, filelist_ok, target_host)
+        # TODO remove
+        self.create_a_members_list(outurl, filelist_ok, target_host)
         tardb_ok.close()
         tardb_ok.unlink()
 
         tar_size = outurl.size()
-        return tar_size, cannot_be_archived, outurl.url_str, listurl.url_str
+        return tar_size, cannot_be_archived, outurl.url_str, db_url_str
 
+    # TODO remove
     def create_a_members_list(self, url, filelist, target_host):
         outurl = GfURL.init(url.url_str + self.LIST_SUFFIX)
         with outurl.writeopen(textmode=True, use_fsync=self.use_fsync,
@@ -3918,7 +3943,7 @@ class GfptarCommand(Command):
         self.extracted_size = 0
         self.start_time = time.time()
         self.next_time = self.start_time + 1
-        self.dirstat_dict = DBDict(self.db, FileAttr, 'dirstat_dict')
+        self.dirstat_dict = DBDict(self.db, FileAttr1, 'dirstat_dict')
 
         self.gfsched_lock = None
         self.gfsched_next = 0
@@ -4127,8 +4152,8 @@ class GfptarCommand(Command):
             elif tarinfo.isdir():
                 # NOTE: already created
                 logger.debug('extract,dir: %s', outfile)
-                fattr = FileAttr(tarinfo.mode, tarinfo.mtime,
-                                 tarinfo.uname, tarinfo.gname)
+                fattr = FileAttr1(tarinfo.mode, tarinfo.mtime,
+                                  tarinfo.uname, tarinfo.gname)
                 with self.lock():
                     self.dirstat_dict[outfile] = fattr
             elif tarinfo.issym():
@@ -4434,10 +4459,9 @@ def signal_init_for_gen_infodb(share_cancel):
 
     if not signal_initialized:
         def sig_handler(signum, frame):
-            with share_cancel.get_lock():
-                if share_cancel.value != 0:
-                    logger.warning(f'Interrupt (signal={signum}')
-                    share_cancel.value = 1
+            if share_cancel.value != 0:
+                logger.warning(f'Interrupt (signal={signum}')
+                share_cancel.value = 1
 
         signal.signal(signal.SIGHUP, sig_handler)
         signal.signal(signal.SIGINT, sig_handler)
@@ -4450,6 +4474,67 @@ def signal_init_for_gen_infodb(share_cancel):
 def gen_infodb_name(gen_num, id_num):
     # ex. g2_0099_
     return f'g{gen_num}_{id_num}_info.db.gz'
+
+
+class InfoDB:
+    def __init__(self, dbfile_path):
+        self.db = DB(dbfile_path)
+        self.fattr_dict = DBDict(self.db, FileAttr2, GfptarCommand.TABLE_ENTRY)
+        self.user_dict = {}   # use memory for speed
+        self.group_dict = {}  # use memory for speed
+
+    def add(self, tarinfo):
+        t = tarinfo
+        if t.isfile():
+            ftype = 'F'
+        elif t.isdir():
+            ftype = 'D'
+        elif t.issym():
+            ftype = 'L'
+        else:
+            ftype = '?'
+        user_id = self.user_dict.get(t.uname, None)  # not uid
+        if user_id is None:
+            user_id = str(len(self.user_dict))
+            self.user_dict[t.uname] = user_id
+        group_id = self.group_dict.get(t.gname, None)  # not gid
+        if group_id is None:
+            group_id = str(len(self.group_dict))
+            self.group_dict[t.gname] = group_id
+        fattr = FileAttr2(t.mode, int(t.mtime), user_id, group_id,
+                          t.size, t.linkname, ftype)
+        self.fattr_dict[t.name] = fattr
+
+    def close(self):
+        # id -> name
+        rev_user_dict = DBDict(self.db, StrObj, GfptarCommand.TABLE_USER)
+        rev_group_dict = DBDict(self.db, StrObj, GfptarCommand.TABLE_GROUP)
+        for k, v in self.user_dict.items():
+            rev_user_dict[v] = k
+        for k, v in self.group_dict.items():
+            rev_group_dict[v] = k
+        self.db.commit()
+        self.db.close()
+
+    def compress_copy(self, db_path, bufsize, use_fsync):
+        db_path_tmp = db_path + '.tmp'
+        db_url_tmp = GfURL.init(db_path_tmp)
+        tmpdb_url = GfURL.init(self.db.filename)
+        if db_url_tmp.exists():
+            db_url_tmp.remove()
+        # copy infodb from tmpdir to indir
+        with db_url_tmp.writeopen(use_fsync=use_fsync) as outf:
+            proc = Compress.compress(Compress.gzip_prog, outf)
+            with tmpdb_url.readopen() as inf:
+                shutil.copyfileobj(inf, proc.stdin, bufsize)
+            proc.stdin.close()
+            ret = proc.wait()
+            if ret != 0:
+                raise GfException('{}: returncode={}'.format(
+                    ' '.join(proc.args), ret))
+
+        # atomic operation to avoid leaving junk files
+        db_url_tmp.rename(db_path)
 
 
 # ProcessPoolExecutor cannot serialize "self" object of GfptarCommand
@@ -4471,12 +4556,7 @@ def gen_infodb_one(args):
 
     # Local file
     tmpdb_path = os.path.join(tmpdir.name, str(id_num) + '_info.db')
-    tmpdb = DB(tmpdb_path)
-    fattr_dict = DBDict(tmpdb, FileAttr2, GfptarCommand.TABLE_ENTRY)
-
-    user_dict = {}  # use memory for speed
-    group_dict = {}  # use memory for speed
-
+    infodb = InfoDB(tmpdb_path)
     tar = GfTarFile.extract_open(tar_url, bufsize)
     db_close = False
     try:
@@ -4510,61 +4590,16 @@ def gen_infodb_one(args):
             #         f' {t.size:9d} {t.mtime} {name}')
             # logger.debug(info)
             # logger.debug(f'add to DB: {t.name}')
-            if t.isfile():
-                ftype = 'F'
-            elif t.isdir():
-                ftype = 'D'
-            elif t.issym():
-                ftype = 'L'
-            else:
-                ftype = '?'
-            user_id = user_dict.get(t.uname, None)  # not uid
-            if user_id is None:
-                user_id = str(len(user_dict))
-                user_dict[t.uname] = user_id
-            group_id = group_dict.get(t.gname, None)  # not gid
-            if group_id is None:
-                group_id = str(len(group_dict))
-                group_dict[t.gname] = group_id
-            fattr = FileAttr2(t.mode, int(t.mtime), user_id, group_id,
-                              t.size, t.linkname, ftype)
-            fattr_dict[t.name] = fattr
+            infodb.add(t)
         # success
 
-        # id -> name
-        rev_user_dict = DBDict(tmpdb, StrObj, GfptarCommand.TABLE_USER)
-        rev_group_dict = DBDict(tmpdb, StrObj, GfptarCommand.TABLE_GROUP)
-        for k, v in user_dict.items():
-            rev_user_dict[v] = k
-        for k, v in group_dict.items():
-            rev_group_dict[v] = k
-        tmpdb.commit()
-        tmpdb.close()
+        infodb.close()
         db_close = True
-
-        db_path0 = indir_url.url_join(db_name + '.tmp')
-        db_url0 = GfURL.init(db_path0)
-        tmpdb_url = GfURL.init(tmpdb_path)
-        if db_url0.exists():
-            db_url0.remove()
-        # copy infodb from tmpdir to indir
-        with db_url0.writeopen(use_fsync=use_fsync) as outf:
-            proc = Compress.compress(Compress.gzip_prog, outf)
-            with tmpdb_url.readopen() as inf:
-                shutil.copyfileobj(inf, proc.stdin, bufsize)
-            proc.stdin.close()
-            ret = proc.wait()
-            if ret != 0:
-                raise GfException('{}: returncode={}'.format(
-                    ' '.join(proc.args), ret))
-
-        # atomic operation to avoid leaving junk files
-        db_url0.rename(db_path)
+        infodb.compress_copy(db_path, bufsize, use_fsync)
     finally:
         tar.close()
         if not db_close:
-            tmpdb.commit()
-            tmpdb.close()
+            infodb.db.close()
 
 
 progname = os.path.basename(__file__)
