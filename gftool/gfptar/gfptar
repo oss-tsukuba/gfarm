@@ -1924,8 +1924,58 @@ class GfURLLocal(GfURL):
             self.chmod(mode, mtime=mtime, user=user, group=group)
 
 
+class Compress:
+    TYPE_NO = 'no'
+    TYPE_GZIP = 'gz'
+    TYPE_BZIP2 = 'bz2'
+    TYPE_XZ = 'xz'
+
+    @classmethod
+    def set_default(cls, compress_type, compress_prog,
+                    gzip_prog, bzip2_prog, xz_prog):
+        if gzip_prog is not None:
+            cls.gzip_prog = shutil.which(gzip_prog)
+        else:
+            cls.gzip_prog = None
+        if bzip2_prog is not None:
+            cls.bzip2_prog = shutil.which(bzip2_prog)
+        else:
+            cls.bzip2_prog = None
+        if xz_prog is not None:
+            cls.xz_prog = shutil.which(xz_prog)
+        else:
+            cls.xz_prog = None
+
+        cls.compress_type = compress_type
+        if compress_prog is None:
+            if compress_type == cls.TYPE_GZIP:
+                compress_prog = cls.gzip_prog
+            elif compress_type == cls.TYPE_BZIP2:
+                compress_prog = cls.bzip2_prog
+            elif compress_type == cls.TYPE_XZ:
+                compress_prog = cls.xz_prog
+        cls.compress_prog = compress_prog  # may be None
+
+    @classmethod
+    def compress(cls, compress_prog, outf):
+        args = [compress_prog]
+        # binary mode
+        return subprocess.Popen(
+            args, shell=False, close_fds=True,
+            stdin=subprocess.PIPE, stdout=outf,
+            stderr=DEFAULT_STDERR)
+
+    @classmethod
+    def decompress(cls, compress_prog, inf):
+        args = [compress_prog, '-d']
+        # binary mode
+        return subprocess.Popen(
+            args, shell=False, close_fds=True,
+            stdin=inf, stdout=subprocess.PIPE,
+            stderr=DEFAULT_STDERR)
+
+
 class GfTarFile(tarfile.TarFile):
-    COMPRESS_TYPE_NO = 'no'
     ATTR_PROC_LIST = '_gfptar_proc_list'  # [(proc, fileobj, fileobj), ...]
     ATTR_USE_FSYNC = 'use_fsync'
     ATTR_DUMMY_SLEEP = 'dummy_sleep'
@@ -1933,6 +1983,8 @@ class GfTarFile(tarfile.TarFile):
 
     @classmethod
     def extract_open(cls, gfurl, copybufsize, compress_prog=None):
+        if compress_prog is None:
+            compress_prog = Compress.compress_prog
         # use Stream (not seekable)
         if compress_prog is not None:
             openmode = 'r|'
@@ -1946,8 +1998,8 @@ class GfTarFile(tarfile.TarFile):
         if gfurl.is_gfarm():
             if compress_prog:
                 gfexport_proc = gfurl.gfexport()
-                decompress_proc = cls.decompress(compress_prog,
-                                                 gfexport_proc.stdout)
+                decompress_proc = Compress.decompress(compress_prog,
+                                                      gfexport_proc.stdout)
                 tar = cls.open(None, mode=openmode,
                                fileobj=decompress_proc.stdout,
                                copybufsize=copybufsize)
@@ -1965,7 +2017,7 @@ class GfTarFile(tarfile.TarFile):
         else:
             if compress_prog:
                 inf = open(gfurl.url_str, 'rb')
-                decompress_proc = cls.decompress(compress_prog, inf)
+                decompress_proc = Compress.decompress(compress_prog, inf)
                 tar = cls.open(None, mode=openmode,
                                fileobj=decompress_proc.stdout,
                                copybufsize=copybufsize)
@@ -1982,11 +2034,14 @@ class GfTarFile(tarfile.TarFile):
     def create_open(cls, gfurl, compress_type, copybufsize, compress_prog=None,
                     use_fsync=True, target_host=None,
                     dummy_input=False, dummy_sleep=0):
+        if compress_prog is None:
+            compress_prog = Compress.compress_prog
         # use Stream (not seekable)
-        openmode = 'w|'
         if compress_prog is None \
-           and compress_type != cls.COMPRESS_TYPE_NO:
+           and compress_type != Compress.TYPE_NO:
             openmode = 'w|' + compress_type
+        else:
+            openmode = 'w|'
         if gfurl.exists():
             raise FileExistsError(gfurl.url_str)
         # list of tuple(proc, closeable obj, synchronizable obj)
@@ -1994,8 +2049,8 @@ class GfTarFile(tarfile.TarFile):
         if gfurl.is_gfarm():
             if compress_prog:
                 gfreg_obj = gfurl.gfreg(mode=0o600, hostname=target_host)
-                compress_proc = cls.compress(compress_prog,
-                                             gfreg_obj.stdin)
+                compress_proc = Compress.compress(compress_prog,
+                                                  gfreg_obj.stdin)
                 tar = cls.open(None, mode=openmode,
                                fileobj=compress_proc.stdin,
                                copybufsize=copybufsize)
@@ -2011,7 +2066,7 @@ class GfTarFile(tarfile.TarFile):
         else:  # Local
             if compress_prog:
                 outf = open(gfurl.url_str, 'wb')
-                compress_proc = cls.compress(compress_prog, outf)
+                compress_proc = Compress.compress(compress_prog, outf)
                 tar = cls.open(None, mode=openmode,
                                fileobj=compress_proc.stdin,
                                copybufsize=copybufsize)
@@ -2033,24 +2088,6 @@ class GfTarFile(tarfile.TarFile):
         else:
             setattr(tar, cls.METHOD_add_entry, tar._add_entry)
         return tar
-
-    @classmethod
-    def compress(cls, compress_prog, outf):
-        args = [compress_prog]
-        # binary mode
-        return subprocess.Popen(
-            args, shell=False, close_fds=True,
-            stdin=subprocess.PIPE, stdout=outf,
-            stderr=DEFAULT_STDERR)
-
-    @classmethod
-    def decompress(cls, compress_prog, inf):
-        args = [compress_prog, '-d']
-        # binary mode
-        return subprocess.Popen(
-            args, shell=False, close_fds=True,
-            stdin=inf, stdout=subprocess.PIPE,
-            stderr=DEFAULT_STDERR)
 
     # override
     def close(self):
@@ -2353,6 +2390,13 @@ class GfptarCommand(Command):
 
         self.compress_type = self.opt['--type']
         self.compress_prog = self.opt['--use-compress-program']
+        self.gzip_prog = self.opt['--gzip-program']
+        self.xz_prog = self.opt['--xz-program']
+        self.bzip2_prog = self.opt['--bzip2-program']
+        Compress.set_default(self.compress_type, self.compress_prog,
+                             self.gzip_prog, self.bzip2_prog, self.xz_prog)
+        if Compress.gzip_prog is None:
+            raise GfException('gzip: command not found. Please install gzip.')
 
     def set_memory_limit(self, max_memory):
         resource.setrlimit(resource.RLIMIT_AS, (max_memory, max_memory))
@@ -2408,7 +2452,10 @@ class GfptarCommand(Command):
                 return
 
             if self.opt['--test']:
-                self.test_main()
+                self.test_main_short()
+                return
+            if self.opt['--test-long']:
+                self.test_main_long()
                 return
         except Exception as e:
             self.cancel()
@@ -2432,7 +2479,7 @@ class GfptarCommand(Command):
             self.sig_default()
             logger.debug('exit')
 
-    def test_main(self):
+    def test_init(self):
         self.am_I_gfarmroot = am_I_gfarmroot()
         if self.am_I_gfarmroot:
             logger.error('warning: gfarmroot is enabled: '
@@ -2444,6 +2491,13 @@ class GfptarCommand(Command):
         out = gfwhoami()
         self.gfarm_user = out.strip()
 
+    def test_main_short(self):
+        self.test_init()
+        self.test_opt_pattern(full=False)
+        self.test_specified_dir()
+
+    def test_main_long(self):
+        self.test_init()
         self.test_unit()
         self.test_invalid('url', 'gfarm:/tmp', 'dst', True)
         self.test_invalid('dot1', '.', 'dst', True)
@@ -2455,8 +2509,7 @@ class GfptarCommand(Command):
         self.test_invalid('dotdot3', '../abc', 'dst', False)
         self.test_invalid('dotdot4', './..', 'dst', False)
         self.test_member()
-        self.test_opt_pattern()
-        self.test_specified_dir()
+        self.test_opt_pattern(full=True)
 
     def test_unit(self):
         verbosity = 2
@@ -2466,7 +2519,7 @@ class GfptarCommand(Command):
             logger.error_exit(1, 'unittest error')
         print('unittest ... PASS')
 
-    def test_opt_pattern(self):
+    def test_opt_pattern(self, full=False):
         save_opt_size = self.opt['--size']
         save_opt_jobs = self.opt['--jobs']
         save_opt_type = self.opt['--type']
@@ -2474,7 +2527,10 @@ class GfptarCommand(Command):
 
         # create tar per one entry
         self.opt['--size'] = 0
-        pattern_jobs = [0, 10]
+        if full:
+            pattern_jobs = [0, 10]
+        else:
+            pattern_jobs = [16]
         for jobs in pattern_jobs:
             self.opt['--jobs'] = jobs
             self.test_simple('jobs_' + str(jobs), use_all_files=True)
@@ -2482,24 +2538,35 @@ class GfptarCommand(Command):
 
         # create one tar
         self.opt['--size'] = unhumanize_number('100M')
-        pattern_type = [
-            'gz',
-            # 'bz2',
-            # 'xz',
-            'no']
+        if full:
+            pattern_type = [
+                'gz',
+                'bz2',
+                'xz',
+                'no']
+        else:
+            pattern_type = ['gz']
         for t in pattern_type:
             self.opt['--type'] = t
             self.test_simple('type_' + t)
         self.opt['--type'] = save_opt_type
 
-        pattern_compress_prog = {
-            # 'gz': 'gzip',
-            # 'bz2': 'bzip2',
-            'xz': 'xz',
-            # 'lzip': 'lzip',
-            # 'lzop': 'lzop',
-        }
-        for t, prog in pattern_compress_prog.items():
+        if full:
+            pattern_compress_prog = {
+                'gzip': 'gz',
+                'pigz': 'gz',
+                'bzip2': 'bz2',
+                'xz': 'xz',
+                # 'pbzip2': 'bz2',
+                # 'lzip': 'lz',
+                # 'lzop': 'lzo',
+                # 'lz4': 'lz4',
+            }
+        else:
+            pattern_compress_prog = {
+                'xz': 'xz',
+            }
+        for prog, t in pattern_compress_prog.items():
             w = shutil.which(prog)
             if not w:
                 logger.error('SKIPPED: No such command: %s', prog)
@@ -3047,7 +3114,8 @@ class GfptarCommand(Command):
         self.dummy_size_min = self.opt['--dummy-size-min']
         self.dummy_size_max = self.opt['--dummy-size-max']
         self.dummy_sleep = self.opt['--dummy-sleep']
-        if self.compress_type == GfTarFile.COMPRESS_TYPE_NO:
+
+        if self.compress_type == Compress.TYPE_NO:
             self.split_size = self.assumed_size
             self.suffix = '.tar'
         else:
@@ -3611,7 +3679,6 @@ class GfptarCommand(Command):
                             use_gfarm_command=self.use_gfarm_command)
         target_host = self.select_a_target_host(outurl, serial)
         tar = GfTarFile.create_open(outurl, self.compress_type, self.bufsize,
-                                    compress_prog=self.compress_prog,
                                     use_fsync=self.use_fsync,
                                     target_host=target_host,
                                     dummy_input=self.dummy_input,
@@ -3996,8 +4063,7 @@ class GfptarCommand(Command):
             return
         arch_url = GfURL.init(target,
                               use_gfarm_command=self.use_gfarm_command)
-        tar = GfTarFile.extract_open(arch_url, self.bufsize,
-                                     compress_prog=self.compress_prog)
+        tar = GfTarFile.extract_open(arch_url, self.bufsize)
         with self.lock():
             members_num = len(member_set)
         index = serial
@@ -4199,15 +4265,21 @@ class GfptarCommand(Command):
                     if not quiet:
                         print(line.rstrip())
 
-    def decompress_infodb(self, tmpdir, db_path):
+    def decompress_infodb(self, outdir, in_dbgz_path):
+        dbgz_url = GfURL.init(in_dbgz_path)
+        base = os.path.basename(in_dbgz_path)
+        db_path = os.path.join(outdir.name, base)
         db_url = GfURL.init(db_path)
-        base = os.path.basename(db_path)
-        tmpdb_path = os.path.join(tmpdir.name, base)
-        tmpdb_url = GfURL.init(tmpdb_path)
-        # TODO decompress
-        with db_url.readopen() as f:
-            tmpdb_url.copy_from(f, self.bufsize, use_fsync=self.use_fsync)
-        return tmpdb_url
+        with dbgz_url.readopen() as inf:
+            proc = Compress.decompress(Compress.gzip_prog, inf)
+            with db_url.writeopen(use_fsync=self.use_fsync) as outf:
+                shutil.copyfileobj(proc.stdout, outf, self.bufsize)
+            proc.stdout.close()
+            ret = proc.wait()
+            if ret != 0:
+                raise GfException('{}: returncode={}'.format(
+                    ' '.join(proc.args), ret))
+        return db_url
 
     TABLE_ENTRY = 'entries'
     TABLE_USER = 'users'
@@ -4330,8 +4402,7 @@ class GfptarCommand(Command):
                     for id_num, tar_path in tarlist:
                         arglist.append((lock, share_cancel, tmpdir,
                                         update, gen_num, id_num, tar_path,
-                                        self.bufsize, self.compress_prog,
-                                        self.use_fsync))
+                                        self.bufsize, self.use_fsync))
                     # executor.map(gen_infodb_one, arglist)
                     futures = [executor.submit(gen_infodb_one, arg)
                                for arg in arglist]
@@ -4378,13 +4449,13 @@ def signal_init_for_gen_infodb(share_cancel):
 
 def gen_infodb_name(gen_num, id_num):
     # ex. g2_0099_
-    return f'g{gen_num}_{id_num:04}_info.db'
+    return f'g{gen_num}_{id_num}_info.db.gz'
 
 
 # ProcessPoolExecutor cannot serialize "self" object of GfptarCommand
 def gen_infodb_one(args):
     (lock, share_cancel, tmpdir, update, gen_num, id_num,
-     tar_path, bufsize, compress_prog, use_fsync) = args
+     tar_path, bufsize, use_fsync) = args
     if share_cancel.value != 0:
         # logger.debug('Canceled (2)')
         return
@@ -4406,8 +4477,7 @@ def gen_infodb_one(args):
     user_dict = {}  # use memory for speed
     group_dict = {}  # use memory for speed
 
-    tar = GfTarFile.extract_open(tar_url, bufsize,
-                                 compress_prog=compress_prog)
+    tar = GfTarFile.extract_open(tar_url, bufsize)
     db_close = False
     try:
         interval = 1  # sec. | for interrupt
@@ -4477,10 +4547,17 @@ def gen_infodb_one(args):
         tmpdb_url = GfURL.init(tmpdb_path)
         if db_url0.exists():
             db_url0.remove()
-        # TODO convert .gz : gzip_writeopen(), copy_from(, gzip=True)
         # copy infodb from tmpdir to indir
-        with tmpdb_url.readopen() as f:
-            db_url0.copy_from(f, bufsize, use_fsync=use_fsync)
+        with db_url0.writeopen(use_fsync=use_fsync) as outf:
+            proc = Compress.compress(Compress.gzip_prog, outf)
+            with tmpdb_url.readopen() as inf:
+                shutil.copyfileobj(inf, proc.stdin, bufsize)
+            proc.stdin.close()
+            ret = proc.wait()
+            if ret != 0:
+                raise GfException('{}: returncode={}'.format(
+                    ' '.join(proc.args), ret))
+
         # atomic operation to avoid leaving junk files
         db_url0.rename(db_path)
     finally:
@@ -4549,12 +4626,20 @@ Options:
   -j, --jobs=NUM            the number of jobs to copy per tar file in parallel
                             [default: 4]
   -s, --size=BYTES          assumed bytes per output file [default: 200Mi]
-  -T, --type=TYPE           compress type (gz,bz2,xz,no) [default: gz]
+  -T, --type=TYPE           compression type (and tar archive suffix)
+                              - gz : use gzip  (*.tar.gz)
+                              - bz2: use bzip2 (*.tar.bz2)
+                              - xz : use xz    (*.tar.xz)
+                              - no : no compression (*.tar)
+                            [default: gz]
   -r, --ratio=RATIO         assumed compression ratio (%) [default: 50]
   -I, --use-compress-program=COMMAND
                             filter data through COMMAND,
                             the command must accept -d option for decompression
-                            (ex. pigz)
+                            (ex. lz4, lzip, lzop)
+  --gzip-program=COMMAND    gzip command (ex. pigz) [default: gzip]
+  --bzip2-program=COMMAND   bzip2 command (ex. pbzip2) [default: bzip2]
+  --xz-program=COMMAND      xz command [default: xz]
   --same-owner              extract files with the same ownership
                             (for euid=0 on local, or gfarmroot on Gfarm)
   --disable-gfarm-command   disable the use of gfreg and gfexport
@@ -4577,7 +4662,8 @@ Options:
                             [default: si]
   --memory=BYTES            upper limit of memory size (bytes)
                             (default: no limit) (ex. 2Gi)
-  --test                    test mode (-q option is recommended)
+  --test                    run short tests (-q option is recommended)
+  --test-long               run long  tests (-q option is recommended)
   --test-workdir-local=DIR  local directory for test [default: /tmp]
   --test-workdir-gfarm=DIR  Gfarm directory for test [default: gfarm:/tmp]
   --dummy-num=NUM           the number of dummy (random) files for input
@@ -4598,6 +4684,7 @@ Usage:
   {f} [options] -t <indir>
   {f} [options] --test
   {f} [options] --test -C <basedir> <member>...
+  {f} [options] --test-long
   {f} -h | --help
 """.format(f=progname)
 
@@ -4614,6 +4701,9 @@ _schema = Schema({
     '--ratio': Use(int),
     '--jobs': Use(int),
     '--use-compress-program': Or(str, None),
+    '--gzip-program': Or(str, None),
+    '--bzip2-program': Or(str, None),
+    '--xz-program': Or(str, None),
     '--disable-gfarm-command': bool,
     '--disable-fsync': bool,
     '--gfsched-interval': Use(int),
@@ -4623,6 +4713,7 @@ _schema = Schema({
     '--progress-unit': str,
     '--memory': Or(Use(unhumanize_number), None),
     '--test': bool,
+    '--test-long': bool,
     '--test-workdir-local': Or(str, None),
     '--test-workdir-gfarm': Or(str, None),
     '--dummy-num': Or(Use(unhumanize_number), None),
