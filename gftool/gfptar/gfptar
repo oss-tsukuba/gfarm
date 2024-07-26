@@ -4590,7 +4590,8 @@ class InfoDB:
         self.db.close()
 
     @staticmethod
-    def compress_copy(in_db_path, out_dbgz_path, bufsize, use_fsync):
+    def compress_copy(in_db_path, out_dbgz_path, bufsize, use_fsync,
+                      move=True):
         dbgz_path_tmp = out_dbgz_path + '.tmp'
         dbgz_url_tmp = GfURL.init(dbgz_path_tmp)
         db_url = GfURL.init(in_db_path)
@@ -4609,6 +4610,8 @@ class InfoDB:
         # atomic operation to avoid leaving junk files
         dbgz_url_tmp.rename(out_dbgz_path)
         logger.debug(f'created(.db.gz): {out_dbgz_path}')
+        if move:
+            db_url.remove()
 
     @staticmethod
     def decompress_copy(in_dbgz_path, out_db_path, bufsize, use_fsync):
