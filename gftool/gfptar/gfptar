@@ -101,12 +101,12 @@ def unhumanize_number(numstr, binary_prefix=False):
         return int(numstr)
     lastchar = numstr[-1]
     if lastchar == 'i' and numstrlen > 2:
-        # binary prefix
-        n = int(numstr[:(numstrlen-2)])
+        # binary prefix: ex. 1Ki
+        n = float(numstr[:(numstrlen-2)])
         prefix = numstr[-2]
         base = 1024  # even if binary_prefix=False
     else:  # SI prefix
-        n = int(numstr[:(numstrlen-1)])
+        n = float(numstr[:(numstrlen-1)])
         prefix = lastchar
 
     units = {'K': 1,
@@ -121,7 +121,7 @@ def unhumanize_number(numstr, binary_prefix=False):
     power = units.get(prefix.upper())
     if power is None:
         return int(numstr)
-    return n * (base ** power)
+    return int(n * (base ** power))
 
 
 # Do not use the same DB object from multi-threads.
@@ -2213,7 +2213,7 @@ class TestGfptar(unittest.TestCase):
         self.assertEqual(unhumanize_number('999'), 999)
         self.assertEqual(unhumanize_number('1k'), 1000)
         self.assertEqual(unhumanize_number('1K'), 1000)
-        # self.assertEqual(unhumanize_number('1.5k'), 1500)  # TODO
+        self.assertEqual(unhumanize_number('1.234k'), 1234)
         self.assertEqual(unhumanize_number('1k', binary_prefix=True), 1024)
         self.assertEqual(unhumanize_number('1ki'), 1024)
         self.assertEqual(unhumanize_number('1Ki'), 1024)
@@ -2222,6 +2222,7 @@ class TestGfptar(unittest.TestCase):
         self.assertEqual(unhumanize_number('4Ti'), 4398046511104)
         self.assertEqual(unhumanize_number('5Pi'), 5629499534213120)
         self.assertEqual(unhumanize_number('6Ei'), 6917529027641081856)
+        self.assertEqual(unhumanize_number('6.1E'), 6100000000000000000)
 
     def test_GfURL_use_gfarm_command_for_local(self):
         url = GfURL.init('/tmp', use_gfarm_command=True)
@@ -4884,7 +4885,7 @@ Example of --extract (Gfarm to Local):
     ...
     /home/user1/out2/dir/test9999.data
 
-SI prefix or Binary prerix:
+SI prefix or Binary prefix:
   SI prefix:
     - 1k  = 10^3 = 1000^1 (kilo) (not K)
     - 1M  = 10^6 = 1000^2 (mega)
