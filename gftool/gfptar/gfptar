@@ -4501,6 +4501,10 @@ class GfptarCommand(Command):
 
             self.current_ent_num = 0
             self.current_size = 0
+            if self.progress_enabled or self.verbose:
+                now = time.time()
+                self.progress_for_sync_infodb(now)
+
             for gen_num, tarlist in gen_to_tar_list.items():
                 with concurrent.futures.ProcessPoolExecutor(
                         max_workers=max_workers) as executor:
@@ -4535,6 +4539,7 @@ class GfptarCommand(Command):
             self.sig_default()  # no longer be able to access Manager
 
         if self.progress_enabled or self.verbose:
+            now = time.time()
             self.progress_for_sync_infodb(now)
             sys.stdout.write('\n')
         if save_e:
