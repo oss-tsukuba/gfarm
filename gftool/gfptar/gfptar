@@ -1947,14 +1947,26 @@ class Compress:
             cls.xz_prog = None
 
         cls.compress_type = compress_type
-        if compress_prog is None:
+        if compress_prog is not None:
+            compress_prog0 = shutil.which(compress_prog)
+            if compress_prog0 is None:
+                raise GfptarError(f'{compress_prog}: command not found.')
+            compress_prog = compress_prog0
+        else:
             if compress_type == cls.TYPE_GZIP:
                 compress_prog = cls.gzip_prog
             elif compress_type == cls.TYPE_BZIP2:
                 compress_prog = cls.bzip2_prog
             elif compress_type == cls.TYPE_XZ:
                 compress_prog = cls.xz_prog
+            # else:
+            #     compress_prog = None
         cls.compress_prog = compress_prog  # may be None
+        logger.debug(f'compress_type={cls.compress_type}')
+        logger.debug(f'compress_prog={cls.compress_prog}')
+        logger.debug(f'gzip_prog={cls.gzip_prog}')
+        logger.debug(f'bzip2_prog={cls.bzip2_prog}')
+        logger.debug(f'xz_prog={cls.xz_prog}')
 
     @classmethod
     def compress(cls, compress_prog, outf):
@@ -2370,6 +2382,7 @@ class GfptarCommand(Command):
         self.hardlink_warn = True
         if self.quiet:
             GfURL.shutup_stderr()
+        self.tmpdir = None
 
     def options_init(self):
         set_encoding(self.opt['--encoding'])
@@ -2489,6 +2502,11 @@ class GfptarCommand(Command):
         finally:
             self.worker_terminate()
             self.sig_default()
+            if self.tmpdir:
+                try:
+                    self.tmpdir.cleanup()
+                except Exception:
+                    pass
             logger.debug('exit')
 
     def test_init(self):
@@ -3840,7 +3858,7 @@ class GfptarCommand(Command):
         infodb_list2 = self.check_and_sync_infodb(self.indir_url,
                                                   tar_list=tar_list)
         if infodb_list2 is not None:
-            infodb_list = infodb_list2
+            infodb_list = infodb_list2  # use new list
         self.sort_tar_or_infodb_list(infodb_list)
 
         infodb_dict = {}
@@ -4225,6 +4243,25 @@ class GfptarCommand(Command):
                          f'{sec_str} '
                          f'{ent_per_sec_str}Ent/s   ')
 
+    def progress_for_sync_infodb(self, now):
+        sec = now - self.start_time
+        sec_str = format_seconds(sec, minhour=True)
+        current_tar_num_str = self._humanize(self.current_tar_num)
+        total_tar_num_str = self._humanize(self.total_tar_num)
+        current_ent_num_str = self._humanize(self.current_ent_num)
+        current_size_str = self._humanize(self.current_size)
+        if sec > 0:
+            ent_per_sec = self.current_ent_num / sec
+        else:
+            ent_per_sec = 0
+        ent_per_sec_str = self._humanize(ent_per_sec)
+        sys.stdout.write(f'\rsync-db: '
+                         f'{current_tar_num_str}/{total_tar_num_str}Tar '
+                         f'{current_size_str}B '
+                         f'{current_ent_num_str}Ent '
+                         f'{sec_str} '
+                         f'{ent_per_sec_str}Ent/s   ')
+
     # lock required
     def progress_for_create(self, now):
         sec = now - self.start_time
@@ -4301,7 +4338,35 @@ class GfptarCommand(Command):
     def cmd_list_verbose(self, indir, quiet=False):
         self.options_init()
         indir_url = GfURL.init(indir)
-        infodb_list = self.check_and_sync_infodb(indir_url)
+
+        # SEE ALSO: cmd_extract()
+        tar_list, infodb_list = self.list_tar_and_infodb_files(indir_url)
+        infodb_list2 = self.check_and_sync_infodb(indir_url,
+                                                  tar_list=tar_list)
+        if infodb_list2 is not None:
+            infodb_list = infodb_list2  # use new list
+
+        infodb_dict = {}
+        for id_num, gen_num, infodb_path in infodb_list:
+            infodb_dict[id_num] = infodb_path
+
+        error_num = 0
+        tar_dict = {}
+        for id_num, gen_num, tar_path in tar_list:
+            tar_dict[id_num] = tar_path
+            infodb = infodb_dict.get(id_num, None)
+            if infodb is None:
+                logger.error(f'lost *_info.db.gz tied to {tar_path}')
+                error_num += 1
+
+        for id_num, gen_num, in_dbgz_path in infodb_list:
+            tar_path = tar_dict.get(id_num, None)
+            if tar_path is None:
+                logger.error(f'lost *.tar.* tied to {in_dbgz_path}')
+                error_num += 1
+
+        if error_num > 0:
+            raise GfptarError(f'Total errors encountered: {error_num}')
 
         for path, fattr in self.list_entries_from_all(
                 indir_url, infodb_list=infodb_list, resolve_ugmap=True):
@@ -4402,18 +4467,22 @@ class GfptarCommand(Command):
         logger.debug('check_and_sync_infodb: enable')
         if tar_list is None:
             tar_list = self.list_tar_files(indir_url)
-        update = True
+        update = True  # always True
+        self.total_tar_num = 0
+        self.current_tar_num = 0
 
         # generation -> tar files
         gen_to_tar_list = defaultdict(list)
         for id_num, gen_num, path in tar_list:
             gen_to_tar_list[gen_num].append((id_num, path))
+            self.total_tar_num += 1
 
         if self.jobs >= 1:
             max_workers = self.jobs
         else:
             max_workers = 1
 
+        self.start_time = time.time()
         save_e = None
         cancel = False
         # Concurrent execution for each generation
@@ -4430,6 +4499,8 @@ class GfptarCommand(Command):
             signal.signal(signal.SIGTERM, sig_handler)
             signal.signal(signal.SIGPIPE, signal.SIG_IGN)
 
+            self.current_ent_num = 0
+            self.current_size = 0
             for gen_num, tarlist in gen_to_tar_list.items():
                 with concurrent.futures.ProcessPoolExecutor(
                         max_workers=max_workers) as executor:
@@ -4446,7 +4517,13 @@ class GfptarCommand(Command):
 
                     for future in concurrent.futures.as_completed(futures):
                         try:
-                            future.result()
+                            num, size = future.result()
+                            self.current_ent_num += num
+                            self.current_size += size
+                            self.current_tar_num += 1
+                            if self.progress_enabled or self.verbose:
+                                now = time.time()
+                                self.progress_for_sync_infodb(now)
                         except Exception as e:
                             # logger.error(f'{e}')
                             self.print_trace(e)
@@ -4457,6 +4534,9 @@ class GfptarCommand(Command):
                 cancel = True
             self.sig_default()  # no longer be able to access Manager
 
+        if self.progress_enabled or self.verbose:
+            self.progress_for_sync_infodb(now)
+            sys.stdout.write('\n')
         if save_e:
             raise save_e
         if cancel:
@@ -4593,7 +4673,7 @@ class InfoDB:
          tar_path, bufsize, use_fsync) = args
         if share_cancel.value != 0:
             # logger.debug('Canceled (2)')
-            return
+            return 0, 0
         tar_url = GfURL.init(tar_path)
         indir_url = tar_url.parent
         db_name = InfoDB.infodb_filename(gen_num, id_num)
@@ -4601,7 +4681,7 @@ class InfoDB:
         db_url = GfURL.init(db_path)
         if not update and db_url.exists():
             logger.debug(f'not update: {db_path}')
-            return
+            return 0, 0
         InfoDB.signal_init(share_cancel)
 
         # Local file
@@ -4609,6 +4689,8 @@ class InfoDB:
         infodb = InfoDB(tmpdb_path)
         tar = GfTarFile.extract_open(tar_url, bufsize)
         db_close = False
+        num = 0
+        size = 0
         try:
             interval = 1  # sec. | for interrupt
             next_check = time.time() + interval
@@ -4641,17 +4723,19 @@ class InfoDB:
                 # logger.debug(info)
                 # logger.debug(f'add to DB: {t.name}')
                 infodb.add(t)
+                num += 1
+                size += t.size
             # success
 
             infodb.commit_close()
             db_close = True
             InfoDB.compress_copy(infodb.db.filename, db_path, bufsize,
                                  use_fsync)
-            # TODO progress
         finally:
             tar.close()
             if not db_close:
                 infodb.db.close()
+        return num, size
 
     @staticmethod
     def list_entries_from_one(in_dbgz_path, tmpdir, bufsize, use_fsync,
