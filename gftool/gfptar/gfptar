@@ -767,7 +767,6 @@ class GfURLEntry(DBObj):
     TYPE_SYMLINK = 'S'
     TYPE_OTHER = '?'
 
-    # TODO remove
     type_map = {
         TYPE_FILE: 1,
         TYPE_DIR: 2,
@@ -798,7 +797,6 @@ class GfURLEntry(DBObj):
         return (f'Entry(path={self.path},mode={oct(self.mode)},'
                 f'user={self.uname},group={self.gname})')
 
-    # TODO remove
     # only path must be specified for key when using DBDict
     @classmethod
     def dumps(cls, obj, for_dict):
@@ -812,7 +810,6 @@ class GfURLEntry(DBObj):
             array.append(obj.path)  # [7]
         return json.dumps(array, separators=(',', ':'))
 
-    # TODO remove
     @classmethod
     def loads(cls, key, txt, for_dict):
         o = json.loads(txt)
@@ -3711,7 +3708,7 @@ class GfptarCommand(Command):
                                     dummy_input=self.dummy_input,
                                     dummy_sleep=self.dummy_sleep)
         # to reduce memory usage
-        # SEE ALSO: gen_infodb_one()
+        # SEE ALSO: InfoDB.generate_one()
         db_name = InfoDB.infodb_filename(gen, serial)
         tmpdb_path = os.path.join(self.tmpdir.name, db_name + '.tmp')
         infodb = InfoDB(tmpdb_path)
@@ -3735,6 +3732,7 @@ class GfptarCommand(Command):
                 subpath = entry.subpath(self.basedir_url)
                 try:
                     logger.debug(f'tar.add_entry: {subpath}')
+                    # GfTarFile.METHOD_add_entry
                     tarinfo = tar.add_entry(subpath, entry)
                     infodb.add(tarinfo)
                     size_all = entry.size_all()
@@ -3755,7 +3753,6 @@ class GfptarCommand(Command):
             if not db_close:
                 infodb.db.close()
 
-        # SEE ALSO: gen_infodb_name()
         out_db_path = self.outdir_url.url_join(db_name)
         InfoDB.compress_copy(infodb.db.filename, out_db_path,
                              self.bufsize, self.use_fsync)
@@ -3875,8 +3872,9 @@ class GfptarCommand(Command):
                 logger.error(f'lost *.tar.* tied to {in_dbgz_path}')
                 error_num += 1
                 continue
-            for path, fattr in self.list_entries_from_one(
-                    in_dbgz_path, resolve_ugmap=False):
+            for path, fattr in InfoDB.list_entries_from_one(
+                    in_dbgz_path, self.tmpdir, self.bufsize, self.use_fsync,
+                    resolve_ugmap=False):
                 if self.is_canceled():
                     raise self.error_canceled()
                 self.total_num += 1
@@ -4319,7 +4317,9 @@ class GfptarCommand(Command):
             infodb_list = self.list_infodb_files(indir_url)
         self.sort_tar_or_infodb_list(infodb_list)
         for id_num, gen_num, in_dbgz_path in infodb_list:
-            yield from self.list_entries_from_one(in_dbgz_path, resolve_ugmap)
+            yield from InfoDB.list_entries_from_one(
+                in_dbgz_path, self.tmpdir, self.bufsize, self.use_fsync,
+                resolve_ugmap)
 
     def sort_tar_or_infodb_list(self, tar_or_infodb_list):
         def id_key(value):
@@ -4395,34 +4395,6 @@ class GfptarCommand(Command):
         else:
             return tar_list
 
-    # TODO InfoDB
-    def list_entries_from_one(self, in_dbgz_path, resolve_ugmap=False):
-        base = os.path.basename(in_dbgz_path)
-        out_db_path = os.path.join(self.tmpdir.name, base + '.tmp.db')
-        tmpdb_url = InfoDB.decompress_copy(in_dbgz_path, out_db_path,
-                                           self.bufsize, self.use_fsync)
-        db = DB(tmpdb_url.path)
-        try:
-            fattr_dict = DBDict(db, FileAttr2, InfoDB.TABLE_ENTRY)
-            if resolve_ugmap:
-                user_dict = DBDict(db, StrObj, InfoDB.TABLE_USER)
-                group_dict = DBDict(db, StrObj, InfoDB.TABLE_GROUP)
-                user_dict_mem = {}
-                group_dict_mem = {}
-                # cache in memory
-                for k, v in user_dict.items():
-                    user_dict_mem[k] = v
-                for k, v in group_dict.items():
-                    group_dict_mem[k] = v
-            for path, fattr in fattr_dict.iterator(sort='ASC'):
-                if resolve_ugmap:
-                    # unique id -> name
-                    fattr.user = user_dict_mem.get(fattr.user, '???')
-                    fattr.group = group_dict_mem.get(fattr.group, '???')
-                yield path, fattr
-        finally:
-            db.close()
-
     def check_and_sync_infodb(self, indir_url, tar_list=None):
         if not self.sync_infodb:
             logger.debug('check_and_sync_infodb: disable')
@@ -4466,7 +4438,10 @@ class GfptarCommand(Command):
                         arglist.append((lock, share_cancel, self.tmpdir,
                                         update, gen_num, id_num, tar_path,
                                         self.bufsize, self.use_fsync))
-                    futures = [executor.submit(gen_infodb_one, arg)
+                    # InfoDB.generate_one is staticmethod,
+                    # because ProcessPoolExecutor cannot serialize
+                    # members of "self" object.
+                    futures = [executor.submit(InfoDB.generate_one, arg)
                                for arg in arglist]
 
                     for future in concurrent.futures.as_completed(futures):
@@ -4494,26 +4469,6 @@ class GfptarCommand(Command):
             infodb_path = os.path.join(dname, fname)
             infodb_list.append((id_num, gen_num, infodb_path))
         return infodb_list
-
-
-signal_initialized = False
-
-
-def signal_init_for_gen_infodb(share_cancel):
-    global signal_initialized
-
-    if not signal_initialized:
-        def sig_handler(signum, frame):
-            if share_cancel.value != 0:
-                logger.warning(f'Interrupt (signal={signum}')
-                share_cancel.value = 1
-
-        signal.signal(signal.SIGHUP, sig_handler)
-        signal.signal(signal.SIGINT, sig_handler)
-        signal.signal(signal.SIGTERM, sig_handler)
-        signal.signal(signal.SIGPIPE, signal.SIG_IGN)
-        signal_initialized = True
-        # logger.debug('signal_init_for_gen_infodb')
 
 
 class InfoDB:
@@ -4615,71 +4570,117 @@ class InfoDB:
                     ' '.join(proc.args), ret))
         return db_url
 
+    signal_initialized = False
 
-# ProcessPoolExecutor cannot serialize "self" object of GfptarCommand
-def gen_infodb_one(args):
-    (lock, share_cancel, tmpdir, update, gen_num, id_num,
-     tar_path, bufsize, use_fsync) = args
-    if share_cancel.value != 0:
-        # logger.debug('Canceled (2)')
-        return
-    tar_url = GfURL.init(tar_path)
-    indir_url = tar_url.parent
-    db_name = InfoDB.infodb_filename(gen_num, id_num)
-    db_path = indir_url.url_join(db_name)
-    db_url = GfURL.init(db_path)
-    if not update and db_url.exists():
-        logger.debug(f'not update: {db_path}')
-        return
-    signal_init_for_gen_infodb(share_cancel)
-
-    # Local file
-    tmpdb_path = os.path.join(tmpdir.name, str(id_num) + '_info.db')
-    infodb = InfoDB(tmpdb_path)
-    tar = GfTarFile.extract_open(tar_url, bufsize)
-    db_close = False
-    try:
-        interval = 1  # sec. | for interrupt
-        next_check = time.time() + interval
-        while True:
-            now = time.time()
-            if now >= next_check:
-                # access manager.Value(): very high cost
+    @classmethod
+    def signal_init(cls, share_cancel):
+        if not cls.signal_initialized:
+            def sig_handler(signum, frame):
                 if share_cancel.value != 0:
-                    logger.info('Canceled')
-                    break
-                next_check = now + interval
-            try:
-                t = tar.next()
-            except MemoryError:
-                raise
-            except Exception as e:
-                logger.warning(f'{tar_path}: SKIPPED: invalid or empty tar:'
-                               f' {str(e)}')
-                t = None
-            if t is None:
-                break
-            # name = t.name
-            # if t.isdir():
-            #     name = name + '/'
-            # elif t.issym():
-            #     name = name + ' -> ' + t.linkname
-            # info = (f'{gen_num}:{id_num} {t.mode:04o}'
-            #         f' {t.uname:>10}/{t.gname:<10}'
-            #         f' {t.size:9d} {t.mtime} {name}')
-            # logger.debug(info)
-            # logger.debug(f'add to DB: {t.name}')
-            infodb.add(t)
-        # success
+                    logger.warning(f'Interrupt (signal={signum}')
+                    share_cancel.value = 1
 
-        infodb.commit_close()
-        db_close = True
-        InfoDB.compress_copy(infodb.db.filename, db_path, bufsize, use_fsync)
-        # TODO progress
-    finally:
-        tar.close()
-        if not db_close:
-            infodb.db.close()
+            signal.signal(signal.SIGHUP, sig_handler)
+            signal.signal(signal.SIGINT, sig_handler)
+            signal.signal(signal.SIGTERM, sig_handler)
+            signal.signal(signal.SIGPIPE, signal.SIG_IGN)
+            cls.signal_initialized = True
+            logger.debug('InfoDB.signal_init')
+
+    @staticmethod
+    def generate_one(args):
+        (lock, share_cancel, tmpdir, update, gen_num, id_num,
+         tar_path, bufsize, use_fsync) = args
+        if share_cancel.value != 0:
+            # logger.debug('Canceled (2)')
+            return
+        tar_url = GfURL.init(tar_path)
+        indir_url = tar_url.parent
+        db_name = InfoDB.infodb_filename(gen_num, id_num)
+        db_path = indir_url.url_join(db_name)
+        db_url = GfURL.init(db_path)
+        if not update and db_url.exists():
+            logger.debug(f'not update: {db_path}')
+            return
+        InfoDB.signal_init(share_cancel)
+
+        # Local file
+        tmpdb_path = os.path.join(tmpdir.name, str(id_num) + '_info.db')
+        infodb = InfoDB(tmpdb_path)
+        tar = GfTarFile.extract_open(tar_url, bufsize)
+        db_close = False
+        try:
+            interval = 1  # sec. | for interrupt
+            next_check = time.time() + interval
+            while True:
+                now = time.time()
+                if now >= next_check:
+                    # access manager.Value(): very high cost
+                    if share_cancel.value != 0:
+                        logger.info('Canceled')
+                        break
+                    next_check = now + interval
+                try:
+                    t = tar.next()
+                except MemoryError:
+                    raise
+                except Exception as e:
+                    logger.warning(f'{tar_path}: SKIPPED:'
+                                   f' invalid or empty tar: {str(e)}')
+                    t = None
+                if t is None:
+                    break
+                # name = t.name
+                # if t.isdir():
+                #     name = name + '/'
+                # elif t.issym():
+                #     name = name + ' -> ' + t.linkname
+                # info = (f'{gen_num}:{id_num} {t.mode:04o}'
+                #         f' {t.uname:>10}/{t.gname:<10}'
+                #         f' {t.size:9d} {t.mtime} {name}')
+                # logger.debug(info)
+                # logger.debug(f'add to DB: {t.name}')
+                infodb.add(t)
+            # success
+
+            infodb.commit_close()
+            db_close = True
+            InfoDB.compress_copy(infodb.db.filename, db_path, bufsize,
+                                 use_fsync)
+            # TODO progress
+        finally:
+            tar.close()
+            if not db_close:
+                infodb.db.close()
+
+    @staticmethod
+    def list_entries_from_one(in_dbgz_path, tmpdir, bufsize, use_fsync,
+                              resolve_ugmap=False):
+        base = os.path.basename(in_dbgz_path)
+        out_db_path = os.path.join(tmpdir.name, base + '.tmp.db')
+        tmpdb_url = InfoDB.decompress_copy(in_dbgz_path, out_db_path,
+                                           bufsize, use_fsync)
+        db = DB(tmpdb_url.path)
+        try:
+            fattr_dict = DBDict(db, FileAttr2, InfoDB.TABLE_ENTRY)
+            if resolve_ugmap:
+                user_dict = DBDict(db, StrObj, InfoDB.TABLE_USER)
+                group_dict = DBDict(db, StrObj, InfoDB.TABLE_GROUP)
+                user_dict_mem = {}
+                group_dict_mem = {}
+                # cache in memory
+                for k, v in user_dict.items():
+                    user_dict_mem[k] = v
+                for k, v in group_dict.items():
+                    group_dict_mem[k] = v
+            for path, fattr in fattr_dict.iterator(sort='ASC'):
+                if resolve_ugmap:
+                    # unique id -> name
+                    fattr.user = user_dict_mem.get(fattr.user, '???')
+                    fattr.group = group_dict_mem.get(fattr.group, '???')
+                yield path, fattr
+        finally:
+            db.close()
 
 
 progname = os.path.basename(__file__)
