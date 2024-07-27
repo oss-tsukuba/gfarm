@@ -2445,22 +2445,22 @@ class GfptarCommand(Command):
             if outdir:
                 basedir = self.opt['--basedir']
                 infiles = self.opt['<member>']
-                self.create(outdir, basedir, infiles)
+                self.cmd_create(outdir, basedir, infiles)
                 return
 
             outdir = self.opt['--extract']
             if outdir:
                 indir = self.opt['<indir>']
                 members = self.opt['<member>']
-                self.extract(outdir, indir, members)
+                self.cmd_extract(outdir, indir, members)
                 return
 
             indir = self.opt['--list']
             if indir:
                 if self.verbose:
-                    self.list_verbose(indir)
+                    self.cmd_list_verbose(indir)
                 else:
-                    self.list_simple(indir)
+                    self.cmd_list_simple(indir)
                 return
 
             if self.opt['--test']:
@@ -2619,7 +2619,7 @@ class GfptarCommand(Command):
 
         ok = False
         try:
-            self.create(test1_dir, workdir, [testsrc_name])
+            self.cmd_create(test1_dir, workdir, [testsrc_name])
         except Exception as e:
             self.print_trace(e)
             if str(e).startswith('specifying '):
@@ -2675,7 +2675,7 @@ class GfptarCommand(Command):
 
         # Gfarm -> Gfarm(tar)
         try:
-            self.create(test1_dir_gfarm, workdir_gfarm, [testsrc_name])
+            self.cmd_create(test1_dir_gfarm, workdir_gfarm, [testsrc_name])
             if noread:
                 logger.error_exit(1, testname + '(create:Gfarm->Gfarm) ' +
                                   '... FAIL (unexpected success)')
@@ -2684,10 +2684,10 @@ class GfptarCommand(Command):
                 raise
             logger.info(f'IGNORED: {str(e)}')
         # Gfarm(tar) -> Gfarm
-        self.extract(test2_dir_gfarm, test1_dir_gfarm, [])
+        self.cmd_extract(test2_dir_gfarm, test1_dir_gfarm, [])
         # Gfarm -> Local(tar)
         try:
-            self.create(test3_dir_local, test2_dir_gfarm, [testsrc_name])
+            self.cmd_create(test3_dir_local, test2_dir_gfarm, [testsrc_name])
             if noread:
                 logger.error_exit(1, testname + '(create:Gfarm->Local) ' +
                                   '... FAIL (unexpected success)')
@@ -2696,13 +2696,13 @@ class GfptarCommand(Command):
                 raise
             logger.info(f'IGNORED: {str(e)}')
         # Local(tar) -> Local
-        self.extract(test4_dir_local, test3_dir_local, [])
+        self.cmd_extract(test4_dir_local, test3_dir_local, [])
 
         # --list
-        self.list_simple(test1_dir_gfarm, quiet=True)
-        self.list_simple(test3_dir_local, quiet=True)
-        self.list_verbose(test1_dir_gfarm, quiet=True)
-        self.list_verbose(test3_dir_local, quiet=True)
+        self.cmd_list_simple(test1_dir_gfarm, quiet=True)
+        self.cmd_list_simple(test3_dir_local, quiet=True)
+        self.cmd_list_verbose(test1_dir_gfarm, quiet=True)
+        self.cmd_list_verbose(test3_dir_local, quiet=True)
 
         if readonly:
             # extract a member (SEE ALSO: test_prepare_srcdir)
@@ -2716,8 +2716,8 @@ class GfptarCommand(Command):
             test_member_l_name = 'test-gfptar-member-l'
             test_member_g = workdir_gfarm_url.url_join(test_member_g_name)
             test_member_l = workdir_local_url.url_join(test_member_l_name)
-            self.extract(test_member_g, test1_dir_gfarm, [member])
-            self.extract(test_member_l, test3_dir_local, [member])
+            self.cmd_extract(test_member_g, test1_dir_gfarm, [member])
+            self.cmd_extract(test_member_l, test3_dir_local, [member])
             g_member = GfURL.init(os.path.join(test_member_g, member))
             l_member = GfURL.init(os.path.join(test_member_l, member))
             if not g_member.compare_data(l_member):
@@ -2742,7 +2742,7 @@ class GfptarCommand(Command):
         # NOTE: check ignoring hardlinks for Local
         # Local -> Gfarm(tar)
         try:
-            self.create(test5_dir_gfarm, workdir_local, [testsrc_name])
+            self.cmd_create(test5_dir_gfarm, workdir_local, [testsrc_name])
             if noread:
                 logger.error_exit(1, testname + '(create:Local->Gfarm) ' +
                                   '... FAIL (unexpected success)')
@@ -2751,7 +2751,7 @@ class GfptarCommand(Command):
                 raise
             logger.info(f'IGNORED: {str(e)}')
         # Gfarm(tar) -> Local
-        self.extract(test6_dir_local, test5_dir_gfarm, [])
+        self.cmd_extract(test6_dir_local, test5_dir_gfarm, [])
 
         test4_srcdir_local = os.path.join(test4_dir_local, testsrc_name)
         if not self.test_compare_local(test4_srcdir_local, srcdir_local,
@@ -2800,19 +2800,19 @@ class GfptarCommand(Command):
         files = ['file1', 'dir1/readonly/file#2']
 
         # Gfarm -> Gfarm(tar)
-        self.create(test1_dir_gfarm, srcdir_gfarm, members)
+        self.cmd_create(test1_dir_gfarm, srcdir_gfarm, members)
         # Gfarm(tar) -> Gfarm
-        self.extract(test2_dir_gfarm, test1_dir_gfarm, files)
+        self.cmd_extract(test2_dir_gfarm, test1_dir_gfarm, files)
 
         # Local -> Local(tar)
-        self.create(test3_dir_local, srcdir_local, files)
+        self.cmd_create(test3_dir_local, srcdir_local, files)
         # Local(tar) -> Local
-        self.extract(test4_dir_local, test3_dir_local, files)
-        self.extract(test5_dir_local, test3_dir_local, members)
+        self.cmd_extract(test4_dir_local, test3_dir_local, files)
+        self.cmd_extract(test5_dir_local, test3_dir_local, members)
 
         # error
         try:
-            self.extract(test6_dir_local, test3_dir_local, ['abcde'])
+            self.cmd_extract(test6_dir_local, test3_dir_local, ['abcde'])
             logger.error_exit(1, testname + '(not found in archive files) ' +
                               '... FAIL (unexpected success)')
         except GfptarError as e:
@@ -2954,13 +2954,13 @@ class GfptarCommand(Command):
         test12_dir_local = workdir_local_url.url_join(test12_name)
 
         # basedir -> Gfarm(tar)
-        self.create(test9_dir_gfarm, basedir, infiles)
+        self.cmd_create(test9_dir_gfarm, basedir, infiles)
         # Gfarm(tar) -> Gfarm
-        self.extract(test10_dir_gfarm, test9_dir_gfarm, [])
+        self.cmd_extract(test10_dir_gfarm, test9_dir_gfarm, [])
         # Gfarm -> Local(tar)
-        self.create(test11_dir_local, test10_dir_gfarm, infiles)
+        self.cmd_create(test11_dir_local, test10_dir_gfarm, infiles)
         # Local(tar) -> Local
-        self.extract(test12_dir_local, test11_dir_local, [])
+        self.cmd_extract(test12_dir_local, test11_dir_local, [])
 
         result = True
         for infile in infiles:
@@ -3107,7 +3107,7 @@ class GfptarCommand(Command):
 
     TABLE_tar_entry = 'tar_entry'
 
-    def create(self, outdir, basedir, infiles):
+    def cmd_create(self, outdir, basedir, infiles):
         logger.debug(f'create start: outdir={outdir}, basedir={basedir}')
         self.options_init()
         self.outdir = outdir
@@ -3769,7 +3769,7 @@ class GfptarCommand(Command):
     def error_not_a_gfptar_directory(self, url_str):
         return GfptarError('Not a gfptar-archived directory: ' + url_str)
 
-    def extract(self, outdir, indir, specified_members):
+    def cmd_extract(self, outdir, indir, specified_members):
         logger.debug(f'extract start: outdir={outdir}, indir={indir}')
         self.options_init()
         self.outdir = outdir
@@ -4287,7 +4287,7 @@ class GfptarCommand(Command):
                          f'{bytes_per_sec_str}B/s '
                          f'{ent_per_sec_str}Ent/s   ')
 
-    def list_simple(self, indir, quiet=False):
+    def cmd_list_simple(self, indir, quiet=False):
         self.options_init()
         indir_url = GfURL.init(indir)
         infodb_list = self.check_and_sync_infodb(indir_url)
@@ -4298,7 +4298,7 @@ class GfptarCommand(Command):
                 print(f'{fattr.ftype} {path}')
         self.tmpdir.cleanup()
 
-    def list_verbose(self, indir, quiet=False):
+    def cmd_list_verbose(self, indir, quiet=False):
         self.options_init()
         indir_url = GfURL.init(indir)
         infodb_list = self.check_and_sync_infodb(indir_url)
