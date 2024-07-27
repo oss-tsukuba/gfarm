@@ -2362,7 +2362,7 @@ class CannotBeArchivedError(GfptarError):
 
 
 class GfptarCommand(Command):
-    LIST_SUFFIX = '.lst'
+    LIST_SUFFIX = '.lst'  # to ignore old files
     SERIAL_FORMAT = '%04d'
 
     def __init__(self, name):
@@ -3108,6 +3108,8 @@ class GfptarCommand(Command):
             for j in range(remainder - dir_num):
                 yield rand_file(dir_ent.path, j)
 
+    TABLE_tar_entry = 'tar_entry'
+
     def create(self, outdir, basedir, infiles):
         logger.debug(f'create start: outdir={outdir}, basedir={basedir}')
         self.options_init()
@@ -3202,10 +3204,10 @@ class GfptarCommand(Command):
         serial = 1
         gen = 1  # TODO
         # to reduce memory usage
-        tarlist_db = DB(tardb_prefix + tardb_fmt % serial)
-        tarlist = DBList(tarlist_db, GfURLEntry, 'tarlist')
-        tarlist_num = 0
-        tarlist_size = 0
+        filelist_db = DB(tardb_prefix + tardb_fmt % serial)
+        filelist = DBList(filelist_db, GfURLEntry, self.TABLE_tar_entry)
+        filelist_num = 0
+        filelist_size = 0
 
         for infile in infiles_checked:
             if self.is_canceled():
@@ -3227,28 +3229,29 @@ class GfptarCommand(Command):
                         self.total_size += this_size
                         self.total_num += 1
 
-                    if tarlist_num > 0 \
-                       and (tarlist_size + this_size > self.split_size
-                            or tarlist_num + 1 > self.max_entries_per_tar):
+                    if filelist_num > 0 \
+                       and (filelist_size + this_size > self.split_size
+                            or filelist_num + 1 > self.max_entries_per_tar):
                         try:
-                            tarlist.commit()
-                            tarlist.close()
+                            filelist.commit()
+                            filelist.close()
                             # DO NOT share a DBList with children,
                             # share the filename instead.
                             self.create_job_execute(gen, serial,
-                                                    tarlist.filename())
+                                                    filelist.filename())
                         except Exception as e1:
                             self.cancel()
                             if has_error is None:
                                 has_error = e1
                         serial += 1
-                        tarlist_db = DB(tardb_prefix + tardb_fmt % serial)
-                        tarlist = DBList(tarlist_db, GfURLEntry, 'tarlist')
-                        tarlist_num = 0
-                        tarlist_size = 0
-                    tarlist.append(entry)
-                    tarlist_num += 1
-                    tarlist_size += this_size
+                        filelist_db = DB(tardb_prefix + tardb_fmt % serial)
+                        filelist = DBList(filelist_db, GfURLEntry,
+                                          self.TABLE_tar_entry)
+                        filelist_num = 0
+                        filelist_size = 0
+                    filelist.append(entry)
+                    filelist_num += 1
+                    filelist_size += this_size
 
                     # progress for listing before starting threads
                     if serial == 1 and self.progress_enabled:
@@ -3262,9 +3265,9 @@ class GfptarCommand(Command):
             except MemoryError as e2:
                 self.cancel()
                 has_error = e2
-                tarlist = []
-                tarlist_num = 0
-                tarlist_size = 0
+                filelist = []
+                filelist_num = 0
+                filelist_size = 0
                 break  # from loop of infiles_checked
             except Exception as e2:
                 cannot_read_dir += 1
@@ -3276,11 +3279,11 @@ class GfptarCommand(Command):
         if has_error is not None:
             self.cancel()
 
-        if tarlist_num > 0:
+        if filelist_num > 0:
             try:
-                tarlist.commit()
-                tarlist.close()
-                self.create_job_execute(gen, serial, tarlist.filename())
+                filelist.commit()
+                filelist.close()
+                self.create_job_execute(gen, serial, filelist.filename())
             except Exception as e:
                 self.cancel()
                 if has_error is None:
@@ -3652,12 +3655,12 @@ class GfptarCommand(Command):
     def create_a_tar_process1(self, input_queue, output_queue,
                               gen, serial, dbfile):
         logger.debug(f'create_a_tar_process1: start (serial={serial})')
-        tardb1 = DB(dbfile)
-        filelist = DBList(tardb1, GfURLEntry, 'tarlist')
+        tardb = DB(dbfile)
+        filelist = DBList(tardb, GfURLEntry, self.TABLE_tar_entry)
 
         if len(filelist) == 0:
-            tardb1.close()
-            tardb1.unlink()
+            tardb.close()
+            tardb.unlink()
             logger.warning(f'empty filelist: {dbfile}')
             return 0, 0, '', ''
         first = None
@@ -3713,10 +3716,6 @@ class GfptarCommand(Command):
         tmpdb_path = os.path.join(self.tmpdir.name, db_name + '.tmp')
         infodb = InfoDB(tmpdb_path)
 
-        # TODO remove
-        tardb_ok = DB(tardb1.filename + '_ok.db')
-        filelist_ok = DBList(tardb_ok, GfURLEntry, 'filelist_ok')
-
         cannot_be_archived = 0
         db_close = False
         try:
@@ -3738,7 +3737,6 @@ class GfptarCommand(Command):
                     logger.debug(f'tar.add_entry: {subpath}')
                     tarinfo = tar.add_entry(subpath, entry)
                     infodb.add(tarinfo)
-                    filelist_ok.append(entry)  # TODO remove
                     size_all = entry.size_all()
                     output_queue.put(('ADD', subpath, size_all))
                 except MemoryError:
@@ -3752,8 +3750,8 @@ class GfptarCommand(Command):
             db_close = True
         finally:
             tar.close()
-            tardb1.close()
-            tardb1.unlink()
+            tardb.close()
+            tardb.unlink()
             if not db_close:
                 infodb.db.close()
 
@@ -3765,33 +3763,8 @@ class GfptarCommand(Command):
         # for DEBUG
         # raise Exception('unexpected raise')
 
-        # TODO remove
-        self.create_a_members_list(outurl, filelist_ok, target_host)
-        tardb_ok.close()
-        tardb_ok.unlink()
-
         tar_size = outurl.size()
         return tar_size, cannot_be_archived, outurl.url_str, out_db_path
-
-    # TODO remove
-    def create_a_members_list(self, url, filelist, target_host):
-        outurl = GfURL.init(url.url_str + self.LIST_SUFFIX)
-        with outurl.writeopen(textmode=True, use_fsync=self.use_fsync,
-                              hostname=target_host) as f:
-            for entry in filelist:
-                # ex. "D /path/to/dir"
-                if entry.is_file():
-                    f.write('F ')
-                elif entry.is_directory():
-                    f.write('D ')
-                elif entry.is_symlink():
-                    f.write('S ')
-                else:  # unknown
-                    f.write('? ')
-                subpath = entry.subpath(self.basedir_url)
-                f.write(subpath)
-                f.write('\n')
-        return outurl
 
     def error_canceled(self):
         return GfptarError('Canceled')
@@ -3838,13 +3811,25 @@ class GfptarCommand(Command):
         self.extract_main()
         tmpdir.cleanup()
 
-    def extract_schedule_v4(self):
-        target_set = DBSet(self.db_target, StrObj, 'target_set')
-        directory_set = DBSet(self.db, StrObj, 'directory_set')
-        member_set = DBSet(self.db, StrObj, 'member_set')
+    TABLE_target_set = 'target_set'
+    TABLE_directory_set = 'directory_set'
+    TABLE_member_set = 'member_set'
+    TABLE_archive_dict = 'archive_dict'
+    TABLE_member_check_dict = 'member_check_dict'
+    TABLE_created_directory_set = 'created_directory_set'
+    TABLE_dirstat_dict = 'dirstat_dict'
 
-        archive_dict = DBDict(self.db, JsonObj, 'archive_dict')
-        member_check_dict = DBDict(self.db, JsonObj, 'member_check_dict')
+    def extract_schedule_v4(self):
+        target_set = DBSet(self.db_target, StrObj, self.TABLE_target_set)
+        directory_set = DBSet(self.db, StrObj, self.TABLE_directory_set)
+        member_set = DBSet(self.db, StrObj, self.TABLE_member_set)
+        archive_dict = DBDict(self.db, JsonObj, self.TABLE_archive_dict)
+        member_check_dict = DBDict(self.db, JsonObj,
+                                   self.TABLE_member_check_dict)
+
+        self.created_directory_set = DBSet(self.db, StrObj,
+                                           self.TABLE_created_directory_set)
+        self.dirstat_dict = DBDict(self.db, FileAttr1, self.TABLE_dirstat_dict)
 
         if self.search_target:
             for member in self.specified_members:
@@ -3968,16 +3953,13 @@ class GfptarCommand(Command):
          member_set, error_num) = self.extract_schedule_v4()
         self.outdir_url.create_new_dir()
 
-        self.created_directory_set = DBSet(self.db, StrObj,
-                                           'created_directory_set')
-        # self.extract_directories(directory_set)
+        # self.extract_directories(directory_set)  # slow
         self.extract_directories_fast(directory_set)
 
         self.extracted_num = 0
         self.extracted_size = 0
         self.start_time = time.time()
         self.next_time = self.start_time + 1
-        self.dirstat_dict = DBDict(self.db, FileAttr1, 'dirstat_dict')
 
         self.gfsched_lock = None
         self.gfsched_next = 0
@@ -4434,7 +4416,7 @@ class GfptarCommand(Command):
                     group_dict_mem[k] = v
             for path, fattr in fattr_dict.iterator(sort='ASC'):
                 if resolve_ugmap:
-                    # id -> name
+                    # unique id -> name
                     fattr.user = user_dict_mem.get(fattr.user, '???')
                     fattr.group = group_dict_mem.get(fattr.group, '???')
                 yield path, fattr
@@ -4549,12 +4531,14 @@ class InfoDB:
         self.user_dict = {}   # use memory for speed
         self.group_dict = {}  # use memory for speed
 
-    PATT_INFODB = r'^gfptar(\d+)_(\d+)_.+.db.gz$'
+    # SEE ALSO: infodb_filename
+    PATT_INFODB = r'^g(\d+)_(\d+)_gfptar.db.gz$'
 
     @classmethod
     def infodb_filename(cls, gen_num, id_num):
-        # ex. gfptar2_0099_info.db.gz
-        return f'gfptar{gen_num}_{int(id_num):04}_info.db.gz'
+        # SEE ALSO: PATT_INFODB
+        # ex. g2_0099_gfptar.db.gz
+        return f'g{gen_num}_{int(id_num):04}_gfptar.db.gz'
 
     def add(self, tarinfo):
         t = tarinfo
@@ -4579,7 +4563,7 @@ class InfoDB:
         self.fattr_dict[t.name] = fattr
 
     def commit_close(self):
-        # id -> name
+        # unique id -> name
         rev_user_dict = DBDict(self.db, StrObj, self.TABLE_USER)
         rev_group_dict = DBDict(self.db, StrObj, self.TABLE_GROUP)
         for k, v in self.user_dict.items():
@@ -4707,20 +4691,29 @@ gfptar - archive files in parallel
 Example of --create (Gfarm to Gfarm):
   Command line:
     gfptar -c gfarm:/home/user1/out -C gfarm:/home/user1 ./dir
-  Input files:
+  Input files (any files):
     gfarm:/home/user1/dir/test0000.data
     ...
     gfarm:/home/user1/dir/test9999.data
   Output files:
     gfarm:/home/user1/out/0001_dir_test0000.data..dir_test0999.data.tar.gz
-    gfarm:/home/user1/out/0001_dir_test0000.data..dir_test0999.data.tar.gz.lst
+    gfarm:/home/user1/out/g1_0001_gfptar.db.gz
     ...
     gfarm:/home/user1/out/0010_dir_test9000.data..dir_test9999.data.tar.gz
-    gfarm:/home/user1/out/0010_dir_test9000.data..di1_test9999.data.tar.gz.lst
-  Contents of list file (*.lst):
-    F dir/test0000.data
-    ...
-    F dir/test0999.data
+    gfarm:/home/user1/out/g1_0010_gfptar.db.gz
+
+Contents of gMM_NN_gfptar.db.gz file (sqlite3 and gzip):
+  MM: the generation number for each append operation
+  NN: the serial number
+  table 'path_entry': map of path name to JSON string
+    json.dumps([ int(file_mode), int(mtime),
+                 int(user_unique_id), int(group_unique_id),
+                 int(size), symlink_path, file_type(D,F,S) ]
+    file_type 'D': directory
+    file_type 'F': file
+    file_type 'S': symbolic link
+  table 'user_map' : map of unique id (not uid) to user name
+  table 'group_map': map of unique id (not gid) to group name
 
 Example of --extract (Gfarm to Local):
   Command line:
