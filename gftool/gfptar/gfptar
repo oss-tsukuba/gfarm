@@ -80,12 +80,15 @@ def humanize_number(num, binary_prefix=False):
     while n >= base and scale < ulen:
         n /= base
         scale += 1
-    if n < 100:
+    if n < 10:
+        d = n.quantize(Decimal('0.000'), rounding=ROUND_DOWN)
+    elif n < 100:
+        d = n.quantize(Decimal('0.00'), rounding=ROUND_DOWN)
+    elif n < 1000:
         d = n.quantize(Decimal('0.0'), rounding=ROUND_DOWN)
-        return f'{d}{units[scale]}'
     else:
         d = n.quantize(Decimal('0'), rounding=ROUND_DOWN)
-        return f'{d}{units[scale]}'
+    return f'{d}{units[scale]}'
 
 
 def unhumanize_number(numstr, binary_prefix=False):
@@ -1009,7 +1012,7 @@ class GfURL(metaclass=abc.ABCMeta):
         if not fullpath.startswith(base):
             logger.error('subpath: %s, %s', base, fullpath)
             raise AssertionError(f'base={base}, fullpath={fullpath}')
-        logger.debug('subpath: %s, %s', base, fullpath)
+        # logger.debug('subpath: %s, %s', base, fullpath)
         return fullpath[len(base):].lstrip('/')  # relative path
 
     def url_join(self, subpath):
@@ -2198,18 +2201,19 @@ class TestGfptar(unittest.TestCase):
         self.assertEqual(humanize_number(0.1), '0')
         self.assertEqual(humanize_number(1.9), '1')
         self.assertEqual(humanize_number(1023, binary_prefix=True), '1023')
-        self.assertEqual(humanize_number(1024, binary_prefix=True), '1.0Ki')
+        self.assertEqual(humanize_number(1024, binary_prefix=True), '1.000Ki')
         self.assertEqual(humanize_number(999), '999')
-        self.assertEqual(humanize_number(1000), '1.0k')
-        self.assertEqual(humanize_number(99999), '99.9k')
-        self.assertEqual(humanize_number(100000), '100k')
-        self.assertEqual(humanize_number(1900000), '1.9M')
-        self.assertEqual(humanize_number(2000000), '2.0M')
+        self.assertEqual(humanize_number(1000), '1.000k')
+        self.assertEqual(humanize_number(99999), '99.99k')
+        self.assertEqual(humanize_number(100000), '100.0k')
+        self.assertEqual(humanize_number(1900000), '1.900M')
+        self.assertEqual(humanize_number(2000000), '2.000M')
 
     def test_unhumanize(self):
         self.assertEqual(unhumanize_number('999'), 999)
         self.assertEqual(unhumanize_number('1k'), 1000)
         self.assertEqual(unhumanize_number('1K'), 1000)
+        # self.assertEqual(unhumanize_number('1.5k'), 1500)  # TODO
         self.assertEqual(unhumanize_number('1k', binary_prefix=True), 1024)
         self.assertEqual(unhumanize_number('1ki'), 1024)
         self.assertEqual(unhumanize_number('1Ki'), 1024)
@@ -2366,17 +2370,29 @@ class CannotBeArchivedError(GfptarError):
                 msg += 'directories'
             else:
                 msg += 'directory'
-        self.message = f'Error: {msg} cannot be archived'
+        self.message = f'{msg} cannot be archived'
         super().__init__(self.message)
+
+
+@contextmanager
+def ignore_exception(ignore):
+    try:
+        yield
+    except Exception as e:
+        if ignore:
+            logger.debug(f'Ignored: {str(e)}')
+            return
+        raise
 
 
 class GfptarCommand(Command):
     LIST_SUFFIX = '.lst'  # to ignore old files
+    TMP_SUFFIX = '.tmp'
     SERIAL_FORMAT = '%04d'
 
     def __init__(self, name):
         self.init(name)
-        self.canceled = threading.Event()
+        self.canceled = False
         self.lock_init(False)
         self.futures = None
         self.hardlink_warn = True
@@ -2396,8 +2412,11 @@ class GfptarCommand(Command):
         euid = os.geteuid()
         # Temporary files are removed when the process exits.
         # dir=None: system default
+        if self.tmpdir:
+            self.tmpdir.cleanup()
         self.tmpdir = tempfile.TemporaryDirectory(prefix=f'gfptar-{euid}-',
                                                   dir=self.workdir)
+        self.sig_init()  # to clean tmpdir
 
         progress_unit_type = self.opt['--progress-unit']
         if progress_unit_type == 'si':
@@ -2428,8 +2447,9 @@ class GfptarCommand(Command):
 
     def sig_init(self):
         def sig_handler(signum, frame):
-            logger.warning(f'Interrupt (signal={signum}')
-            self.cancel()
+            # logger.warning(f'Interrupt (signal={signum})')
+            sys.stderr.write(f'\nInterrupt (signal={signum})\n')
+            self.canceled = True
 
         signal.signal(signal.SIGHUP, sig_handler)
         signal.signal(signal.SIGINT, sig_handler)
@@ -2440,6 +2460,12 @@ class GfptarCommand(Command):
         signal.signal(signal.SIGHUP, signal.SIG_DFL)
         signal.signal(signal.SIGINT, signal.SIG_DFL)
         signal.signal(signal.SIGTERM, signal.SIG_DFL)
+        signal.signal(signal.SIGPIPE, signal.SIG_IGN)
+
+    def sig_ignore(self):
+        signal.signal(signal.SIGHUP, signal.SIG_IGN)
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+        signal.signal(signal.SIGTERM, signal.SIG_IGN)
         signal.signal(signal.SIGPIPE, signal.SIG_IGN)
 
     def getDoc(self) -> str:
@@ -2503,11 +2529,9 @@ class GfptarCommand(Command):
             self.worker_terminate()
             self.sig_default()
             if self.tmpdir:
-                try:
-                    self.tmpdir.cleanup()
-                except Exception:
-                    pass
-            logger.debug('exit')
+                self.tmpdir.cleanup()
+                logger.debug('tmpdir.cleanup')
+            logger.debug('DONE')
 
     def test_init(self):
         self.am_I_gfarmroot = am_I_gfarmroot()
@@ -3180,8 +3204,7 @@ class GfptarCommand(Command):
         self.listing = True
         has_error = None
 
-        self.create_job_init()
-        self.sig_init()
+        self.create_job_init()  # before creating threads
 
         infiles_checked = []
         for infile in infiles:
@@ -3294,7 +3317,7 @@ class GfptarCommand(Command):
         if has_error is not None:
             self.cancel()
 
-        if filelist_num > 0:
+        if filelist_num > 0 and not self.is_canceled():
             try:
                 filelist.commit()
                 filelist.close()
@@ -3414,6 +3437,7 @@ class GfptarCommand(Command):
         if self.MT_enabled():
             has_error = self._create_job_check_MT(timeout=timeout)
             self.thread_pool.shutdown(wait=False)
+            logger.debug('self.thread_pool.shutdown')
             if has_error is not None:
                 raise has_error
         self.worker_terminate()
@@ -3490,15 +3514,15 @@ class GfptarCommand(Command):
 
     def clear_canceled(self):
         with self.lock():
-            self.canceled.clear()
+            self.canceled = False
 
     def cancel(self):
         with self.lock():
-            self.canceled.set()
+            self.canceled = True
 
     def is_canceled(self):
         with self.lock():
-            val = self.canceled.is_set()
+            val = self.canceled
         return val
 
     def _gfsched_sometimes(self, gfurl):
@@ -3602,8 +3626,8 @@ class GfptarCommand(Command):
                      out_tar_path, out_dbgz_path) = result
                     with self.lock():
                         self.archived_size += tar_size
-                        self.info(f'created(.tar): {out_tar_path}')
-                        self.info(f'created(.db.gz): {out_dbgz_path}')
+                        self.info('created(.tar): {}', out_tar_path)
+                        self.info('created(.db.gz): {}', out_dbgz_path)
                     break
                 elif result[0] == 'ERR':
                     (status, exc_type_name, exc_value_str,
@@ -3624,7 +3648,7 @@ class GfptarCommand(Command):
             self.name, loglevel=self.loglevel,
             debug=self.debug, verbose=self.verbose)
 
-        self.sig_default()
+        self.sig_ignore()
         while True:
             pid = os.getpid()
             logger.debug(f'create_a_tar_process: start, pid={pid}')
@@ -3705,7 +3729,7 @@ class GfptarCommand(Command):
         else:
             prefix_str = serial_str
         outname_max = self.outdir_url.MAXNAMLEN \
-            - len(prefix_str) - len(self.LIST_SUFFIX)
+            - len(prefix_str) - len(self.TMP_SUFFIX)
         outname_len = len(outname.encode())
         offset = 0
         while outname_len > outname_max:
@@ -3717,14 +3741,17 @@ class GfptarCommand(Command):
             offset += 1
         # ex.: home/user1/dir -> home_user1_dir
         outname = prefix_str + outname.replace('/', '_')
-        outurl = GfURL.init(self.outdir_url.url_join(outname),
-                            use_gfarm_command=self.use_gfarm_command)
-        target_host = self.select_a_target_host(outurl, serial)
-        tar = GfTarFile.create_open(outurl, self.compress_type, self.bufsize,
-                                    use_fsync=self.use_fsync,
-                                    target_host=target_host,
-                                    dummy_input=self.dummy_input,
-                                    dummy_sleep=self.dummy_sleep)
+        outname_path = self.outdir_url.url_join(outname)
+        outname_path_tmp = outname_path + self.TMP_SUFFIX
+        outurl_tmp = GfURL.init(outname_path_tmp,
+                                use_gfarm_command=self.use_gfarm_command)
+        target_host = self.select_a_target_host(outurl_tmp, serial)
+        tar_tmp = GfTarFile.create_open(outurl_tmp, self.compress_type,
+                                        self.bufsize,
+                                        use_fsync=self.use_fsync,
+                                        target_host=target_host,
+                                        dummy_input=self.dummy_input,
+                                        dummy_sleep=self.dummy_sleep)
         # to reduce memory usage
         # SEE ALSO: InfoDB.generate_one()
         db_name = InfoDB.infodb_filename(gen, serial)
@@ -3733,9 +3760,11 @@ class GfptarCommand(Command):
 
         cannot_be_archived = 0
         db_close = False
+        cancel = False
+        has_error = False
         try:
             for entry in filelist:
-                logger.debug(f'subprocess(serial={serial}): {entry.path}')
+                # logger.debug(f'subprocess(serial={serial}): {entry.path}')
                 while not input_queue.empty():
                     try:
                         qdata = input_queue.get(timeout=1)
@@ -3743,20 +3772,25 @@ class GfptarCommand(Command):
                         qdata = None
                     if qdata == 'CANCEL':
                         logger.debug('receive CANCEL from parent')
+                        cancel = True
                         break
                     else:
                         logger.error('unexpected message from parent')
+                        cancel = True
                         break
+                if cancel:
+                    break
                 subpath = entry.subpath(self.basedir_url)
                 try:
-                    logger.debug(f'tar.add_entry: {subpath}')
+                    logger.debug(f'tar_tmp.add_entry: {subpath}')
                     # GfTarFile.METHOD_add_entry
-                    tarinfo = tar.add_entry(subpath, entry)
+                    tarinfo = tar_tmp.add_entry(subpath, entry)
                     infodb.add(tarinfo)
                     size_all = entry.size_all()
                     output_queue.put(('ADD', subpath, size_all))
                 except MemoryError:
-                    tar.close()
+                    raise
+                except BrokenPipeError:
                     raise
                 except Exception as e:
                     cannot_be_archived += 1
@@ -3764,12 +3798,25 @@ class GfptarCommand(Command):
                     continue
             infodb.commit_close()
             db_close = True
+            if cancel:
+                raise self.error_canceled()
+        except Exception:
+            has_error = True
+            raise
         finally:
-            tar.close()
-            tardb.close()
-            tardb.unlink()
-            if not db_close:
-                infodb.db.close()
+            with ignore_exception(has_error):
+                tar_tmp.close()
+            with ignore_exception(has_error):
+                tardb.close()
+            with ignore_exception(has_error):
+                tardb.unlink()
+            with ignore_exception(has_error):
+                if not db_close:
+                    infodb.db.close()
+
+        # success
+        tar_size = outurl_tmp.size()
+        outurl_tmp.rename(outname_path)
 
         out_db_path = self.outdir_url.url_join(db_name)
         InfoDB.compress_copy(infodb.db.filename, out_db_path,
@@ -3778,8 +3825,7 @@ class GfptarCommand(Command):
         # for DEBUG
         # raise Exception('unexpected raise')
 
-        tar_size = outurl.size()
-        return tar_size, cannot_be_archived, outurl.url_str, out_db_path
+        return tar_size, cannot_be_archived, outname_path, out_db_path
 
     def error_canceled(self):
         return GfptarError('Canceled')
@@ -3822,7 +3868,6 @@ class GfptarCommand(Command):
         self.start_time = time.time()
         self.next_time = self.start_time + 1
 
-        self.sig_init()
         self.extract_main()
         tmpdir.cleanup()
 
@@ -3948,9 +3993,9 @@ class GfptarCommand(Command):
                 now = time.time()
                 if now >= self.next_time:
                     self.next_time = now + 1
-                    self.progress_for_listing(now)
+                    self.progress_for_schedule(now)
         if self.progress_enabled:
-            self.progress_for_listing(time.time())
+            self.progress_for_schedule(time.time())
             sys.stdout.write('\n')
         if self.search_target:
             self.total_num = len(member_set)  # update
@@ -4229,7 +4274,7 @@ class GfptarCommand(Command):
     def _humanize_raw(self, n):
         return int(n)
 
-    def progress_for_listing(self, now):
+    def progress_for_schedule(self, now):
         sec = now - self.start_time
         sec_str = format_seconds(sec, minhour=True)
         total_num_str = self._humanize(self.total_num)
@@ -4238,10 +4283,10 @@ class GfptarCommand(Command):
         else:
             ent_per_sec = 0
         ent_per_sec_str = self._humanize(ent_per_sec)
-        sys.stdout.write(f'\rlisting: '
+        sys.stdout.write(f'\rschedule: '
                          f'{total_num_str}Ent '
                          f'{sec_str} '
-                         f'{ent_per_sec_str}Ent/s   ')
+                         f'{ent_per_sec_str}Ent/s')
 
     def progress_for_sync_infodb(self, now):
         sec = now - self.start_time
@@ -4260,7 +4305,7 @@ class GfptarCommand(Command):
                          f'{current_size_str}B '
                          f'{current_ent_num_str}Ent '
                          f'{sec_str} '
-                         f'{ent_per_sec_str}Ent/s   ')
+                         f'{ent_per_sec_str}Ent/s')
 
     # lock required
     def progress_for_create(self, now):
@@ -4291,12 +4336,12 @@ class GfptarCommand(Command):
         total_size_str = self._humanize(self.total_size)
         bytes_per_sec_str = self._humanize(bytes_per_sec)
         ent_per_sec_str = self._humanize(ent_per_sec)
-        sys.stdout.write(f'\rcreated: {percent_str}% '
+        sys.stdout.write(f'\rcreate: {percent_str}% '
                          f'{stored_size_str}/{total_size_str}B '
                          f'{stored_num_str}/{total_num_str}Ent '
                          f'{sec_str} '
                          f'{bytes_per_sec_str}B/s '
-                         f'{ent_per_sec_str}Ent/s   ')
+                         f'{ent_per_sec_str}Ent/s')
 
     # lock required
     def progress_for_extract(self, now):
@@ -4317,20 +4362,21 @@ class GfptarCommand(Command):
         extracted_size_str = self._humanize(self.extracted_size)
         bytes_per_sec_str = self._humanize(bytes_per_sec)
         ent_per_sec_str = self._humanize(ent_per_sec)
-        sys.stdout.write(f'\rextracted: {percent:.0f}% '
+        sys.stdout.write(f'\rextract: {percent:.0f}% '
                          f'{extracted_size_str}B '
                          f'{extracted_num_str}/{total_num_str}Ent '
                          f'{sec_str} '
                          f'{bytes_per_sec_str}B/s '
-                         f'{ent_per_sec_str}Ent/s   ')
+                         f'{ent_per_sec_str}Ent/s')
 
     def cmd_list_simple(self, indir, quiet=False):
         self.options_init()
         indir_url = GfURL.init(indir)
         infodb_list = self.check_and_sync_infodb(indir_url)
-
         for path, fattr in self.list_entries_from_all(
                 indir_url, infodb_list=infodb_list, resolve_ugmap=True):
+            if self.is_canceled():
+                break
             if not quiet:
                 print(f'{fattr.ftype} {path}')
         self.tmpdir.cleanup()
@@ -4370,6 +4416,8 @@ class GfptarCommand(Command):
 
         for path, fattr in self.list_entries_from_all(
                 indir_url, infodb_list=infodb_list, resolve_ugmap=True):
+            if self.is_canceled():
+                break
             if not quiet:
                 print(f'{fattr.ftype} {fattr.mode:04o}'
                       f' {fattr.user:>10}/{fattr.group:<10}'
@@ -4485,13 +4533,20 @@ class GfptarCommand(Command):
         self.start_time = time.time()
         save_e = None
         cancel = False
+
+        sigs = [signal.SIGHUP, signal.SIGINT, signal.SIGTERM]
+        orig_sig_handler = {}
+        for sig in sigs:
+            orig_sig_handler[sig] = signal.getsignal(sig)
+
         # Concurrent execution for each generation
         with multiprocessing.Manager() as manager:
             lock = manager.Lock()
             share_cancel = manager.Value('i', 0)
 
             def sig_handler(signum, frame):
-                logger.warning(f'Interrupt (signal={signum}')
+                # logger.warning(f'Interrupt (signal={signum}')
+                sys.stderr.write(f'\nInterrupt (signal={signum})\n')
                 share_cancel.value = 1
 
             signal.signal(signal.SIGHUP, sig_handler)
@@ -4536,7 +4591,10 @@ class GfptarCommand(Command):
                                 save_e = e
             if share_cancel.value != 0:
                 cancel = True
-            self.sig_default()  # no longer be able to access Manager
+        # no longer be able to access Manager
+        for sig in sigs:
+            # restore
+            signal.signal(sig, orig_sig_handler[sig])
 
         if self.progress_enabled or self.verbose:
             now = time.time()
@@ -4662,7 +4720,8 @@ class InfoDB:
         if not cls.signal_initialized:
             def sig_handler(signum, frame):
                 if share_cancel.value != 0:
-                    logger.warning(f'Interrupt (signal={signum}')
+                    # logger.warning(f'Interrupt (signal={signum})')
+                    sys.stderr.write(f'\nInterrupt (signal={signum})\n')
                     share_cancel.value = 1
 
             signal.signal(signal.SIGHUP, sig_handler)
@@ -4696,6 +4755,7 @@ class InfoDB:
         db_close = False
         num = 0
         size = 0
+        has_error = True
         try:
             interval = 1  # sec. | for interrupt
             next_check = time.time() + interval
@@ -4705,6 +4765,7 @@ class InfoDB:
                     # access manager.Value(): very high cost
                     if share_cancel.value != 0:
                         logger.info('Canceled')
+                        has_error = True
                         break
                     next_check = now + interval
                 try:
@@ -4736,10 +4797,15 @@ class InfoDB:
             db_close = True
             InfoDB.compress_copy(infodb.db.filename, db_path, bufsize,
                                  use_fsync)
+        except Exception:
+            has_error = True
+            raise
         finally:
-            tar.close()
-            if not db_close:
-                infodb.db.close()
+            with ignore_exception(has_error):
+                tar.close()
+            with ignore_exception(has_error):
+                if not db_close:
+                    infodb.db.close()
         return num, size
 
     @staticmethod
@@ -4750,6 +4816,7 @@ class InfoDB:
         tmpdb_url = InfoDB.decompress_copy(in_dbgz_path, out_db_path,
                                            bufsize, use_fsync)
         db = DB(tmpdb_url.path)
+        has_error = False
         try:
             fattr_dict = DBDict(db, FileAttr2, InfoDB.TABLE_ENTRY)
             if resolve_ugmap:
@@ -4768,8 +4835,12 @@ class InfoDB:
                     fattr.user = user_dict_mem.get(fattr.user, '???')
                     fattr.group = group_dict_mem.get(fattr.group, '???')
                 yield path, fattr
+        except Exception:
+            has_error = True
+            raise
         finally:
-            db.close()
+            with ignore_exception(has_error):
+                db.close()
 
 
 progname = os.path.basename(__file__)
