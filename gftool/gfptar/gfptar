@@ -48,6 +48,7 @@ import multiprocessing
 import queue
 import inspect
 from collections import defaultdict
+import datetime
 
 from docopt import docopt
 from schema import Schema, Use, Or
@@ -198,7 +199,7 @@ class StrObj(DBObj):
 
 class FileAttr1(DBObj):
     def __init__(self, mode, mtime, user, group):
-        self.mode = mode
+        self.mode = mode & 0o7777
         self.mtime = mtime
         self.user = user
         self.group = group
@@ -216,7 +217,7 @@ class FileAttr1(DBObj):
 
 class FileAttr2(DBObj):
     def __init__(self, mode, mtime, user, group, size, linkname, ftype):
-        self.mode = mode
+        self.mode = mode & 0o7777
         self.mtime = mtime
         self.user = user
         self.group = group
@@ -856,7 +857,7 @@ class GfURLEntry(DBObj):
         else:
             logger.warning('unsupported type: %s, %s', path, self.file_type)
             return None
-        tarinfo.mode = self.mode
+        tarinfo.mode = self.mode & 0o7777
         tarinfo.mtime = self.mtime
         tarinfo.size = self.size
         tarinfo.linkname = self.linkname
@@ -2400,6 +2401,7 @@ class GfptarCommand(Command):
         if self.quiet:
             GfURL.shutup_stderr()
         self.tmpdir = None
+        self.test_mode = False
 
     def options_init(self):
         set_encoding(self.opt['--encoding'])
@@ -2551,6 +2553,7 @@ class GfptarCommand(Command):
         self.pid = os.getpid()
         out = gfwhoami()
         self.gfarm_user = out.strip()
+        self.test_mode = True
 
     def test_main_short(self):
         self.test_init()
@@ -3903,44 +3906,16 @@ class GfptarCommand(Command):
                     path = path.lstrip('/')
                 member_check_dict[path] = False  # initialize
 
-        tar_list, infodb_list = self.list_tar_and_infodb_files(self.indir_url)
-        infodb_list2 = self.check_and_sync_infodb(self.indir_url,
-                                                  tar_list=tar_list)
-        if infodb_list2 is not None:
-            infodb_list = infodb_list2  # use new list
-        self.sort_tar_or_infodb_list(infodb_list)
-
-        infodb_dict = {}
-        for id_num, gen_num, infodb_path in infodb_list:
-            infodb_dict[id_num] = infodb_path
-
         error_num = 0
-        tar_dict = {}
-        for id_num, gen_num, tar_path in tar_list:
-            tar_dict[id_num] = tar_path
-            infodb = infodb_dict.get(id_num, None)
-            if infodb is None:
-                logger.error(f'lost *_info.db.gz tied to {tar_path}')
-                error_num += 1
-        del infodb_dict
-
-        if self.debug:
-            infodb_list3 = self.list_infodb_files(self.indir_url)
-            self.sort_tar_or_infodb_list(infodb_list3)
-            if infodb_list != infodb_list3:
-                raise AssertionError(f'infodb_list{str(infodb_list)} != '
-                                     f'infodb_list3{str(infodb_list3)}')
-
-        for id_num, gen_num, in_dbgz_path in infodb_list:
+        for id_num, gen_num, dbgz_path, tar_path in \
+                self.list_infodb_files(self.indir_url):
             if self.is_canceled():
                 raise self.error_canceled()
-            tar_path = tar_dict.get(id_num, None)
-            if tar_path is None:
-                logger.error(f'lost *.tar.* tied to {in_dbgz_path}')
+            if dbgz_path is None or tar_path is None:
                 error_num += 1
                 continue
             for path, fattr in InfoDB.list_entries_from_one(
-                    in_dbgz_path, self.tmpdir, self.bufsize, self.use_fsync,
+                    dbgz_path, self.tmpdir, self.bufsize, self.use_fsync,
                     resolve_ugmap=False):
                 if self.is_canceled():
                     raise self.error_canceled()
@@ -4374,153 +4349,186 @@ class GfptarCommand(Command):
                          f'{ent_per_sec_str}Ent/s')
 
     def cmd_list_simple(self, indir, quiet=False):
-        self.options_init()
-        indir_url = GfURL.init(indir)
-        infodb_list = self.check_and_sync_infodb(indir_url)
-        for id_num, gen_num, path, fattr in self.list_entries_from_all(
-                indir_url, infodb_list=infodb_list, resolve_ugmap=True):
-            if self.is_canceled():
-                break
-            if not quiet:
-                print(f'{fattr.ftype} {path}')
-        self.tmpdir.cleanup()
+        self.cmd_list(indir, quiet=quiet, verbose=False)
 
     def cmd_list_verbose(self, indir, quiet=False):
+        self.cmd_list(indir, quiet=quiet, verbose=True)
+
+    def cmd_list(self, indir, quiet=False, verbose=True):
         self.options_init()
         indir_url = GfURL.init(indir)
 
-        # SEE ALSO: cmd_extract()
-        tar_list, infodb_list = self.list_tar_and_infodb_files(indir_url)
-        infodb_list2 = self.check_and_sync_infodb(indir_url,
-                                                  tar_list=tar_list)
-        if infodb_list2 is not None:
-            infodb_list = infodb_list2  # use new list
+        def print_quiet(id_num, gen_num, path, fattr):
+            pass
 
-        infodb_dict = {}
-        for id_num, gen_num, infodb_path in infodb_list:
-            infodb_dict[id_num] = infodb_path
+        def print_verbose(id_num, gen_num, path, fattr):
+            name = path
+            if fattr.ftype == InfoDB.TYPE_DIR:
+                name = name + '/'
+            elif fattr.ftype == InfoDB.TYPE_SYMLINK:
+                name = name + ' -> ' + fattr.linkname
+            dt_object = datetime.datetime.fromtimestamp(fattr.mtime)
+            mtime_str = dt_object.strftime('%Y-%m-%d %H:%M')
+            print(f'g{gen_num}_{id_num:04} {fattr.ftype} {fattr.mode:04o}'
+                  f' {fattr.user:>8}/{fattr.group:<8}'
+                  f' {fattr.size:9d} {mtime_str} {name}')
 
+        def print_simple(id_num, gen_num, path, fattr):
+            name = path
+            if fattr.ftype == InfoDB.TYPE_DIR:
+                name = name + '/'
+            print(f'{fattr.ftype} {name}')
+
+        if quiet:
+            print_func = print_quiet
+        elif verbose:
+            print_func = print_verbose
+        else:
+            print_func = print_simple
+
+        for id_num, gen_num, path, fattr in self.list_entries_from_all(
+                indir_url, resolve_ugmap=True):
+            if self.is_canceled():
+                break
+            print_func(id_num, gen_num, path, fattr)
+        self.tmpdir.cleanup()
+
+    def list_entries_from_all(self, indir_url, resolve_ugmap=False):
+        # SEE ALSO: extract_schedule_*()
+        infodb_list = self.list_infodb_files(indir_url)
         error_num = 0
-        tar_dict = {}
-        for id_num, gen_num, tar_path in tar_list:
-            tar_dict[id_num] = tar_path
-            infodb = infodb_dict.get(id_num, None)
-            if infodb is None:
-                logger.error(f'lost *_info.db.gz tied to {tar_path}')
+        for id_num, gen_num, dbgz_path, tar_path in infodb_list:
+            if dbgz_path is None:
                 error_num += 1
-
-        for id_num, gen_num, in_dbgz_path in infodb_list:
-            tar_path = tar_dict.get(id_num, None)
+                continue
             if tar_path is None:
-                logger.error(f'lost *.tar.* tied to {in_dbgz_path}')
                 error_num += 1
-
+                # FALLTHROUGH
+            for path, fattr in InfoDB.list_entries_from_one(
+                    dbgz_path, self.tmpdir, self.bufsize, self.use_fsync,
+                    resolve_ugmap):
+                yield id_num, gen_num, path, fattr
         if error_num > 0:
             raise GfptarError(f'Total errors encountered: {error_num}')
 
-        for id_num, gen_num, path, fattr in self.list_entries_from_all(
-                indir_url, infodb_list=infodb_list, resolve_ugmap=True):
-            if self.is_canceled():
-                break
-            if not quiet:
-                print(f'g{gen_num}_{id_num:04} {fattr.ftype} {fattr.mode:04o}'
-                      f' {fattr.user:>10}/{fattr.group:<10}'
-                      f' {fattr.size:9d} {fattr.mtime} {path}')
-        self.tmpdir.cleanup()
-
-    def list_entries_from_all(self, indir_url, infodb_list=None,
-                              resolve_ugmap=False):
-        if infodb_list is None:
-            infodb_list = self.list_infodb_files(indir_url)
-        self.sort_tar_or_infodb_list(infodb_list)
-        for id_num, gen_num, in_dbgz_path in infodb_list:
-            for path, fattr in InfoDB.list_entries_from_one(
-                    in_dbgz_path, self.tmpdir, self.bufsize, self.use_fsync,
-                    resolve_ugmap):
-                yield id_num, gen_num, path, fattr
-
-    def sort_tar_or_infodb_list(self, tar_or_infodb_list):
+    def sort_infodb_list(self, tar_or_infodb_list):
         def id_key(value):
-            id_num, gen_num, path = value
-            return id_num
+            return value[0]  # id_num
 
         tar_or_infodb_list.sort(key=id_key)
         return tar_or_infodb_list
 
-    def list_infodb_files(self, indir_url):
-        db_gen_pattern = re.compile(InfoDB.PATT_INFODB)
-        infodb_list = []
-        for ent in indir_url.listdir(recursive=False):
-            path = ent.path  # fullpath when ent is Gfarm
-            base = os.path.basename(path)
-            g_match = db_gen_pattern.match(base)
-            if g_match:
-                gen_num = g_match.group(1)
-                id_num = g_match.group(2)
-                # int("0001") -> 1
-                infodb_list.append((int(id_num), int(gen_num), path))
-        return infodb_list
+    def list_infodb_files(self, indir_url, sort=True):
+        tar_list, infodb_list = self.list_tar_infodb_files(indir_url)
+        if self.sync_infodb:
+            infodb_list1 = self.create_infodb_files(indir_url, tar_list)
+            if self.test_mode:
+                self.sort_infodb_list(infodb_list)
+                self.sort_infodb_list(infodb_list1)
+                if infodb_list != infodb_list1:
+                    raise AssertionError(f'infodb_list{str(infodb_list)} != '
+                                         f'infodb_list1{str(infodb_list1)}')
+                for id_num, gen_num, infodb_path in infodb_list:
+                    u = GfURL.init(infodb_path)
+                    if not u.exists():
+                        raise AssertionError(f'{infodb_path} does not exist'
+                                             ' even after create_infodb_files')
+            del infodb_list
+            infodb_list = infodb_list1
 
-    def list_tar_and_infodb_files(self, indir_url):
-        return self.list_tar_files(indir_url, infodb=True)
+        infodb_dict = {}
+        for id_num, gen_num, infodb_path in infodb_list:
+            infodb_dict[id_num] = (gen_num, infodb_path)
 
-    def list_tar_files(self, indir_url, infodb=False):
-        # *.tar or *.tar.*
-        PATT_TAR = r'^.*\.tar(\.\w{1,5})?$'
+        tar_dict = {}
+        for id_num, gen_num, tar_path in tar_list:
+            tar_dict[id_num] = (gen_num, tar_path)
+            infodb = infodb_dict.get(id_num, None)
+            if infodb is None:
+                fname = InfoDB.infodb_filename(gen_num, id_num)
+                logger.error(f'lost {fname} tied to {tar_path}.'
+                             ' --sync-db will recreate the file.')
+                infodb_dict[id_num] = (gen_num, None)
+
+        for id_num, gen_num, infodb_path in infodb_list:
+            tar = tar_dict.get(id_num, None)
+            if tar is None:
+                logger.error(f'lost *.tar.* tied to {infodb_path}')
+
+        infodb_tar_list = []
+        for id_num, gen_path in sorted(infodb_dict.items()):
+            gen_num, infodb_path = gen_path
+            tar = tar_dict.get(id_num, None)
+            if tar is not None:
+                gen_num2, tar_path = tar
+            else:
+                tar_path = None
+            infodb_tar_list.append((id_num, gen_num, infodb_path, tar_path))
+
+        if sort:
+            self.sort_infodb_list(infodb_tar_list)
+        return infodb_tar_list
+
+    # def list_only_infodb_files(self, indir_url):
+    #     db_gen_pattern = re.compile(InfoDB.PATT_INFODB)
+    #     infodb_list = []
+    #     for ent in indir_url.listdir(recursive=False):
+    #         path = ent.path  # fullpath when ent is Gfarm
+    #         base = os.path.basename(path)
+    #         g_match = db_gen_pattern.match(base)
+    #         if g_match:
+    #             gen_num = g_match.group(1)
+    #             id_num = g_match.group(2)
+    #             # int("0001") -> 1
+    #             infodb_list.append((int(id_num), int(gen_num), path))
+    #     return infodb_list
+
+    def list_tar_infodb_files(self, indir_url, check=True, sync=False):
+        PATT_TAR = r'^.*\.tar(\.\w{1,5})?$'  # *.tar or *.tar.*
         PATT_TAR_GEN1 = r'^(\d+)_.+'
-        PATT_TAR_GEN = r'^g(\d+)_(\d+)_.+'
+        PATT_TAR_GEN_ALL = r'^g(\d+)_(\d+)_.+'
         tar_pattern = re.compile(PATT_TAR)
         tar_gen1_pattern = re.compile(PATT_TAR_GEN1)
-        # divide by generations : gN_* (N >= 2)
-        tar_gen_pattern = re.compile(PATT_TAR_GEN)
+        tar_gen_all_pattern = re.compile(PATT_TAR_GEN_ALL)
+        infodb_pattern = re.compile(InfoDB.PATT_INFODB)
         tar_list = []
-        if infodb:
-            db_gen_pattern = re.compile(InfoDB.PATT_INFODB)
-            infodb_list = []
+        infodb_list = []
         for ent in indir_url.listdir(recursive=False):
             path = ent.path
             base = os.path.basename(path)
-            if infodb:
-                db_match = db_gen_pattern.match(base)
-                if db_match:
-                    gen_num = db_match.group(1)
-                    id_num = db_match.group(2)
-                    # int("0001") -> 1
-                    infodb_list.append((int(id_num), int(gen_num), path))
-                    continue
+            db_match = infodb_pattern.match(base)
+            if db_match:
+                gen_num = db_match.group(1)
+                id_num = db_match.group(2)
+                # int("0001") -> 1
+                infodb_list.append((int(id_num), int(gen_num), path))
+                continue
             if ent.path.endswith(self.LIST_SUFFIX):  # ignore *.lst, *.tar.lst
                 continue
             if not tar_pattern.match(base):  # ignore not *.tar.*
                 continue
-            g1_match = tar_gen1_pattern.match(base)
-            if g1_match:
+            t1_match = tar_gen1_pattern.match(base)
+            if t1_match:
                 # generation number = 1
                 gen_num = '1'
                 # ex. 0001 (str)
-                id_num = g1_match.group(1)
+                id_num = t1_match.group(1)
             else:
-                g_match = tar_gen_pattern.match(base)
-                if g_match:
-                    gen_num = g_match.group(1)
+                t_match = tar_gen_all_pattern.match(base)
+                if t_match:
+                    gen_num = t_match.group(1)
                     # ex. 0001 (str)
-                    id_num = g_match.group(2)
+                    id_num = t_match.group(2)
                 else:
                     # ignore irrelevant file
                     continue
+            # int("0001") -> 1
             tar_list.append((int(id_num), int(gen_num), path))
-        if infodb:
-            return tar_list, infodb_list
-        else:
-            return tar_list
+        return tar_list, infodb_list
 
-    def check_and_sync_infodb(self, indir_url, tar_list=None):
-        if not self.sync_infodb:
-            logger.debug('check_and_sync_infodb: disable')
-            return None
-        logger.debug('check_and_sync_infodb: enable')
-        if tar_list is None:
-            tar_list = self.list_tar_files(indir_url)
-        update = True  # always True
+    def create_infodb_files(self, indir_url, tar_list):
+        logger.debug('create_infodb_files')
+        overwrite = True  # always True
         self.total_tar_num = 0
         self.current_tar_num = 0
 
@@ -4566,7 +4574,7 @@ class GfptarCommand(Command):
                     arglist = []
                     for id_num, tar_path in tarlist:
                         arglist.append((lock, share_cancel, self.tmpdir,
-                                        update, gen_num, id_num, tar_path,
+                                        overwrite, gen_num, id_num, tar_path,
                                         self.bufsize, self.use_fsync))
                     # InfoDB.generate_one is staticmethod,
                     # because ProcessPoolExecutor cannot serialize
@@ -4735,7 +4743,7 @@ class InfoDB:
 
     @staticmethod
     def generate_one(args):
-        (lock, share_cancel, tmpdir, update, gen_num, id_num,
+        (lock, share_cancel, tmpdir, overwrite, gen_num, id_num,
          tar_path, bufsize, use_fsync) = args
         if share_cancel.value != 0:
             # logger.debug('Canceled (2)')
@@ -4745,8 +4753,8 @@ class InfoDB:
         db_name = InfoDB.infodb_filename(gen_num, id_num)
         db_path = indir_url.url_join(db_name)
         db_url = GfURL.init(db_path)
-        if not update and db_url.exists():
-            logger.debug(f'not update: {db_path}')
+        if not overwrite and db_url.exists():
+            logger.debug(f'not overwrite: {db_path}')
             return 0, 0
         InfoDB.signal_init(share_cancel)
 
@@ -4780,16 +4788,6 @@ class InfoDB:
                     t = None
                 if t is None:
                     break
-                # name = t.name
-                # if t.isdir():
-                #     name = name + '/'
-                # elif t.issym():
-                #     name = name + ' -> ' + t.linkname
-                # info = (f'{gen_num}:{id_num} {t.mode:04o}'
-                #         f' {t.uname:>10}/{t.gname:<10}'
-                #         f' {t.size:9d} {t.mtime} {name}')
-                # logger.debug(info)
-                # logger.debug(f'add to DB: {t.name}')
                 infodb.add(t)
                 num += 1
                 size += t.size
