@@ -4376,7 +4376,7 @@ class GfptarCommand(Command):
         self.options_init()
         indir_url = GfURL.init(indir)
         infodb_list = self.check_and_sync_infodb(indir_url)
-        for path, fattr in self.list_entries_from_all(
+        for id_num, gen_num, path, fattr in self.list_entries_from_all(
                 indir_url, infodb_list=infodb_list, resolve_ugmap=True):
             if self.is_canceled():
                 break
@@ -4417,12 +4417,12 @@ class GfptarCommand(Command):
         if error_num > 0:
             raise GfptarError(f'Total errors encountered: {error_num}')
 
-        for path, fattr in self.list_entries_from_all(
+        for id_num, gen_num, path, fattr in self.list_entries_from_all(
                 indir_url, infodb_list=infodb_list, resolve_ugmap=True):
             if self.is_canceled():
                 break
             if not quiet:
-                print(f'{fattr.ftype} {fattr.mode:04o}'
+                print(f'g{gen_num}_{id_num:04} {fattr.ftype} {fattr.mode:04o}'
                       f' {fattr.user:>10}/{fattr.group:<10}'
                       f' {fattr.size:9d} {fattr.mtime} {path}')
         self.tmpdir.cleanup()
@@ -4433,9 +4433,10 @@ class GfptarCommand(Command):
             infodb_list = self.list_infodb_files(indir_url)
         self.sort_tar_or_infodb_list(infodb_list)
         for id_num, gen_num, in_dbgz_path in infodb_list:
-            yield from InfoDB.list_entries_from_one(
+            for path, fattr in InfoDB.list_entries_from_one(
                 in_dbgz_path, self.tmpdir, self.bufsize, self.use_fsync,
-                resolve_ugmap)
+                resolve_ugmap):
+                yield id_num, gen_num, path, fattr
 
     def sort_tar_or_infodb_list(self, tar_or_infodb_list):
         def id_key(value):
@@ -4902,6 +4903,7 @@ Limitations:
 Options:
   -t, --list=DIR            list mode,
                             list the members of <indir>
+                            (use with --verbose to see more details)
   -x, --extract=DIR         extract mode,
                             extract all members or specified <member>s
                             from <indir> to <outdir>
@@ -4968,6 +4970,7 @@ Usage:
   {f} [options] -c <outdir> [-C <basedir>] [--] <member>...
   {f} [options] -x <outdir> [--] <indir> [<member>...]
   {f} [options] -t <indir>
+  {f} [options] -t <indir> -v
   {f} [options] --test
   {f} [options] --test -C <basedir> <member>...
   {f} [options] --test-long
