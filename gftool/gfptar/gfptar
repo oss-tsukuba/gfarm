@@ -2410,7 +2410,6 @@ class GfptarCommand(Command):
         else:
             self.max_workers = 1
         self.bufsize = self.opt['--bufsize']
-        self.progress_enabled = self._progress_enabled()
         self.use_fsync = not self.opt['--disable-fsync']
         self.sync_infodb = self.opt['--sync-db']
 
@@ -2424,6 +2423,8 @@ class GfptarCommand(Command):
                                                   dir=self.workdir)
         self.sig_init()  # to clean tmpdir
 
+        self.progress_enabled = self._progress_enabled()
+        self.progress_interval = self.opt['--progress-interval']
         progress_unit_type = self.opt['--progress-unit']
         if progress_unit_type == 'si':
             self._humanize = self._humanize_si
@@ -3192,7 +3193,7 @@ class GfptarCommand(Command):
             self.suffix = '.tar.' + self.compress_type
 
         self.start_time = time.time()
-        self.next_time = self.start_time + 1
+        self.next_time = self.start_time + self.progress_interval
 
         self.archived_size = 0
         self.stored_size = 0
@@ -3303,7 +3304,7 @@ class GfptarCommand(Command):
                     if serial == 1 and self.progress_enabled:
                         now = time.time()
                         if now >= self.next_time:
-                            self.next_time = now + 1
+                            self.next_time = now + self.progress_interval
                             self.progress_for_create(now)
 
                     if has_error is not None:
@@ -3627,7 +3628,7 @@ class GfptarCommand(Command):
                             self.stored_num += 1
                             now = time.time()
                             if now >= self.next_time:
-                                self.next_time = now + 1
+                                self.next_time = now + self.progress_interval
                                 self.progress_for_create(now)
                 elif result[0] == 'DONE':
                     (status, tar_size, cannot_be_archived,
@@ -3869,7 +3870,7 @@ class GfptarCommand(Command):
 
         self.total_num = 0
         self.start_time = time.time()
-        self.next_time = self.start_time + 1
+        self.next_time = self.start_time + self.progress_interval
 
         self.extract_main()
         tmpdir.cleanup()
@@ -3995,7 +3996,7 @@ class GfptarCommand(Command):
             if self.progress_enabled:
                 now = time.time()
                 if now >= self.next_time:
-                    self.next_time = now + 1
+                    self.next_time = now + self.progress_interval
                     self.progress_for_schedule(now)
         if self.progress_enabled:
             self.progress_for_schedule(time.time())
@@ -4023,7 +4024,7 @@ class GfptarCommand(Command):
         self.extracted_num = 0
         self.extracted_size = 0
         self.start_time = time.time()
-        self.next_time = self.start_time + 1
+        self.next_time = self.start_time + self.progress_interval
 
         self.gfsched_lock = None
         self.gfsched_next = 0
@@ -4261,7 +4262,7 @@ class GfptarCommand(Command):
                         self.extracted_size += tarinfo.size
                     now = time.time()
                     if now >= self.next_time:
-                        self.next_time = now + 1
+                        self.next_time = now + self.progress_interval
                         self.progress_for_extract(now)
 
         tar.close()
@@ -4434,8 +4435,8 @@ class GfptarCommand(Command):
         self.sort_tar_or_infodb_list(infodb_list)
         for id_num, gen_num, in_dbgz_path in infodb_list:
             for path, fattr in InfoDB.list_entries_from_one(
-                in_dbgz_path, self.tmpdir, self.bufsize, self.use_fsync,
-                resolve_ugmap):
+                    in_dbgz_path, self.tmpdir, self.bufsize, self.use_fsync,
+                    resolve_ugmap):
                 yield id_num, gen_num, path, fattr
 
     def sort_tar_or_infodb_list(self, tar_or_infodb_list):
@@ -4934,6 +4935,7 @@ Options:
   --disable-fsync           disable calling fsync() before close()
   --gfsched-interval=SEC    interval of updating candidate hosts to write
                             (for Gfarm URL only) [default: 120]
+  --progress-interval=SEC   interval of updating progress [default: 1.0]
   --encoding=CODEC          codec for filename encoding
              (https://docs.python.org/3/library/codecs.html#standard-encodings)
                             [default: utf-8]
@@ -4999,6 +5001,7 @@ _schema = Schema({
     '--same-owner': bool,
     '--workdir': Or(str, None),
     '--max-entries-per-tar': Use(unhumanize_number),
+    '--progress-interval': Use(float),
     '--progress-unit': str,
     '--memory': Or(Use(unhumanize_number), None),
     '--test': bool,
