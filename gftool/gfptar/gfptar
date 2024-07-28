@@ -938,10 +938,13 @@ class GfURL(metaclass=abc.ABCMeta):
 
     @classmethod
     def parse(cls, url):
-        supported_classes = [GfURLGfarm]
+        if cls == GfURL:
+            supported_classes = [GfURLGfarm]
+        else:
+            supported_classes = [cls]
 
         for c in supported_classes:
-            if url.startswith(f'{c.SCHEME}:'):
+            if c.SCHEME_LEN > 0 and url.startswith(f'{c.SCHEME}:'):
                 # gfarm://host/path -> //host/path
                 hostpath = url[(c.SCHEME_LEN+1):]
                 scheme = c.SCHEME
@@ -2253,6 +2256,8 @@ class TestGfptar(unittest.TestCase):
                          (None, None, '/abc/#def:/'))
         self.assertEqual(GfURL.parse('abc:/def://'),
                          (None, None, 'abc:/def://'))
+        self.assertEqual(GfURLLocal.parse('gfarm:abc:/def://'),
+                         (None, None, 'gfarm:abc:/def://'))
 
     def test_DBDict(self):
         euid = os.geteuid()
@@ -2557,13 +2562,14 @@ class GfptarCommand(Command):
 
     def test_main_short(self):
         self.test_init()
+        self.test_member()
         self.test_opt_pattern(full=False)
         self.test_specified_dir()
 
     def test_main_long(self):
         self.test_init()
         self.test_unit()
-        self.test_invalid('url', 'gfarm:/tmp', 'dst', True)
+        # self.test_invalid('url', 'gfarm:/tmp', 'dst', False)  # allowed
         self.test_invalid('dot1', '.', 'dst', True)
         self.test_invalid('dot2', '', 'dst', False)
         self.test_invalid('dot3', './', 'dst', False)
@@ -2673,7 +2679,7 @@ class GfptarCommand(Command):
         ok = False
         try:
             self.cmd_create(test1_dir, workdir, [testsrc_name])
-        except Exception as e:
+        except GfException as e:
             self.print_trace(e)
             if str(e).startswith('specifying '):
                 ok = True
@@ -2849,8 +2855,9 @@ class GfptarCommand(Command):
         test6_dir_local = workdir_local_url.url_join(test6_name)
 
         # pick files as members (SEE ALSO: test_prepare_srcdir)
-        members = ['file1', 'dir1']
-        files = ['file1', 'dir1/readonly/file#2']
+        # 'gfarm:abc' is a filename (not Gfarm URL)
+        members = ['gfarm:abc', 'dir1']
+        files = ['gfarm:abc', 'dir1/readonly/file#2']
 
         # Gfarm -> Gfarm(tar)
         self.cmd_create(test1_dir_gfarm, srcdir_gfarm, members)
@@ -2908,7 +2915,8 @@ class GfptarCommand(Command):
         L = 'hardlink'
         longname = ('0123456789' * 30)[:255]
         tree = [
-            (F, 'file1', 0o664, 1234567890, None),
+            # (F, 'file1', 0o664, 1234567890, None),
+            (F, 'gfarm:abc', 0o644, 1234567890, None),  # not Gfarm URL
             (D, 'dir1', 0o715, 2234567890, None),
         ]
         tree_readonly = [
@@ -2923,7 +2931,7 @@ class GfptarCommand(Command):
         tree_link = [
             (D, 'dir1/ディレクトリ 2', 0o755, 5234567890, None),
             (L, 'dir1/ディレクトリ 2/hardlink1',
-             0o400, 6234567890, 'file1'),
+             0o400, 6234567890, 'gfarm:abc'),
             (S, 'dir1/ディレクトリ 2/symlink1',
              0o777, 7234567890, 'hardlink1'),
         ]
@@ -3220,10 +3228,12 @@ class GfptarCommand(Command):
 
         infiles_checked = []
         for infile in infiles:
-            infile_url = GfURL.init(infile)
-            if not infile_url.is_local():
-                raise GfException('specifying a relative path is required '
-                                  'instead of a URL: ' + infile)
+            # infile_url = GfURL.init(infile)
+            # if not infile_url.is_local():
+            #     raise GfException('specifying a relative path is required '
+            #                       'instead of a URL: ' + infile)
+            # NOTE: allow members named gfarm:* (ex. gfarm:/tmp/gfarm:abc)
+            infile_url = GfURL.init(infile, local=True)
             infile = infile_url.path  # normalize and ignore scheme
             # normalized: ex. .///abc -> ./abc
             infile = infile.lstrip('/')  # relative path only
