@@ -2589,7 +2589,7 @@ class GfptarCommand(Command):
         # create tar per one entry
         self.opt['--size'] = 0
         if full:
-            # jobs == 0: not use multithread
+            # jobs == 0: not use multi-thread
             pattern_jobs = [0, 16]
         else:
             pattern_jobs = []  # skip
@@ -3052,7 +3052,7 @@ class GfptarCommand(Command):
                                      exclude_list=exclude_list)
 
     def MT_enabled(self):
-        # jobs == 0: not use multithread
+        # jobs == 0: not use multi-thread
         return self.jobs >= 1
 
     # lock required
@@ -4863,23 +4863,22 @@ Example of --create (Gfarm to Gfarm):
     ...
     gfarm:/home/user1/out/0010_dir_test9000.data..dir_test9999.data.tar.gz
     gfarm:/home/user1/out/g1_0010_gfptar.db.gz
-
-Contents of gMM_NN_gfptar.db.gz file (sqlite3 and gzip):
-  MM: the generation number for each append operation
-  NN: the serial number
-  table 'path_entry': map of path name to JSON string
-    json.dumps([ int(file_mode), int(mtime),
-                 int(user_unique_id), int(group_unique_id),
-                 int(size), symlink_path, file_type(D,F,S) ]
-    file_type 'D': directory
-    file_type 'F': file
-    file_type 'S': symbolic link
-  table 'user_map' : map of unique id (not uid) to user name
-  table 'group_map': map of unique id (not gid) to group name
+  Contents of gMM_NN_gfptar.db.gz file (sqlite3 and gzip):
+    MM: the generation number for each append operation
+    NN: the serial number
+    table 'path_entry': map of path name to JSON string
+      json.dumps([ int(file_mode), int(mtime),
+                   int(user_unique_id), int(group_unique_id),
+                   int(size), symlink_path, file_type(D,F,S) ]
+      file_type 'D': directory
+      file_type 'F': file
+      file_type 'S': symbolic link
+    table 'user_map' : map of unique id (not uid) to user name
+    table 'group_map': map of unique id (not gid) to group name
 
 Example of --extract (Gfarm to Local):
   Command line:
-    gfptar -x /home/user1/out2 gfarm:/home/user1/out
+    gfptar -x /home/user1/out2 gfarm:/home/user1/gfptar-dir
   Output files:
     /home/user1/out2/dir/test0000.data
     ...
