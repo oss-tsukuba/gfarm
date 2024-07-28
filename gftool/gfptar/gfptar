@@ -2404,6 +2404,11 @@ class GfptarCommand(Command):
     def options_init(self):
         set_encoding(self.opt['--encoding'])
         self.jobs = self.opt['--jobs']
+        # SEE ALSO: MT_enabled()
+        if self.jobs >= 1:
+            self.max_workers = self.jobs
+        else:
+            self.max_workers = 1
         self.bufsize = self.opt['--bufsize']
         self.progress_enabled = self._progress_enabled()
         self.use_fsync = not self.opt['--disable-fsync']
@@ -2584,6 +2589,7 @@ class GfptarCommand(Command):
         # create tar per one entry
         self.opt['--size'] = 0
         if full:
+            # jobs == 0: not use multithread
             pattern_jobs = [0, 16]
         else:
             pattern_jobs = []  # skip
@@ -3046,6 +3052,7 @@ class GfptarCommand(Command):
                                      exclude_list=exclude_list)
 
     def MT_enabled(self):
+        # jobs == 0: not use multithread
         return self.jobs >= 1
 
     # lock required
@@ -3357,16 +3364,12 @@ class GfptarCommand(Command):
             self.lock_init(True)
             self.create_job_execute = self._create_job_execute_MT
             self.thread_pool = concurrent.futures.ThreadPoolExecutor(
-                max_workers=self.jobs)
+                max_workers=self.max_workers)
             self.futures = {}  # key: serial number
 
         else:
             self.lock_init(False)
             self.create_job_execute = self._create_job_execute
-        if self.jobs <= 0:
-            worker_num = 1
-        else:
-            worker_num = self.jobs
 
         # kill old processes for regress
         self.worker_terminate()
@@ -3376,15 +3379,19 @@ class GfptarCommand(Command):
 
         self.worker_list = []  # (started, process, inq, outq)
         self.worker_ident_dict = {}
-        for i in range(worker_num):
+        for i in range(self.max_workers):
             inq = multiprocessing.Queue()
             outq = multiprocessing.Queue()
+            # NOTE: use multiprocessing.Process instead of ProcessPoolExecutor.
             # ProcessPoolExecutor cannot be utilized here,
-            # because, for example, Queue cannot be not specified as arguments.
+            # because, for example, multiprocessing.Queue() cannot be
+            # specified as arguments for ProcessPoolExecutor.
+            # multiprocessing.Manager().Queue() can be used
+            # for ProcessPoolExecutor, but it is very slow.
             process = multiprocessing.Process(target=self.create_a_tar_process,
                                               args=(inq, outq))
             started = Started()
-            started.status = False
+            started.status = False  # lock required
             self.worker_list.append((started, process, inq, outq))
 
     def _create_job_execute(self, gen, serial, arg):
@@ -3653,10 +3660,7 @@ class GfptarCommand(Command):
         while True:
             pid = os.getpid()
             logger.debug(f'create_a_tar_process: start, pid={pid}')
-            try:
-                self.create_a_tar_process0(input_queue, output_queue)
-            except KeyboardInterrupt:
-                pass
+            self.create_a_tar_process0(input_queue, output_queue)
 
     def create_a_tar_process0(self, input_queue, output_queue):
         request = input_queue.get()
@@ -3674,8 +3678,6 @@ class GfptarCommand(Command):
             output_queue.put(('DONE', tar_size, cannot_be_archived,
                               outurl, infodb_url))
             logger.debug(f'subprocess exits: serial={serial}')
-        except KeyboardInterrupt:
-            pass
         except Exception as e:
             logger.debug(f'create_a_tar_process: error (serial={serial})')
             self.print_trace(e)
@@ -4125,7 +4127,7 @@ class GfptarCommand(Command):
     def extract_from_archives_MT(self, target_set, member_set):
         self.lock_init(True)
         with concurrent.futures.ThreadPoolExecutor(
-                max_workers=self.jobs) as executor:
+                max_workers=self.max_workers) as executor:
             self.futures = {}  # tar filenames
             serial = 0
             for target in target_set.iterator(sort='ASC'):
@@ -4451,9 +4453,9 @@ class GfptarCommand(Command):
             base = os.path.basename(path)
             g_match = db_gen_pattern.match(base)
             if g_match:
-                # int("0001") -> 1
                 gen_num = g_match.group(1)
                 id_num = g_match.group(2)
+                # int("0001") -> 1
                 infodb_list.append((int(id_num), int(gen_num), path))
         return infodb_list
 
@@ -4462,7 +4464,7 @@ class GfptarCommand(Command):
 
     def list_tar_files(self, indir_url, infodb=False):
         # *.tar or *.tar.*
-        PATT_TAR = r'.*\.tar(\.\w{1,5})?$'
+        PATT_TAR = r'^.*\.tar(\.\w{1,5})?$'
         PATT_TAR_GEN1 = r'^(\d+)_.+'
         PATT_TAR_GEN = r'^g(\d+)_(\d+)_.+'
         tar_pattern = re.compile(PATT_TAR)
@@ -4479,9 +4481,9 @@ class GfptarCommand(Command):
             if infodb:
                 db_match = db_gen_pattern.match(base)
                 if db_match:
-                    # int("0001") -> 1
                     gen_num = db_match.group(1)
                     id_num = db_match.group(2)
+                    # int("0001") -> 1
                     infodb_list.append((int(id_num), int(gen_num), path))
                     continue
             if ent.path.endswith(self.LIST_SUFFIX):  # ignore *.lst, *.tar.lst
@@ -4526,11 +4528,6 @@ class GfptarCommand(Command):
             gen_to_tar_list[gen_num].append((id_num, path))
             self.total_tar_num += 1
 
-        if self.jobs >= 1:
-            max_workers = self.jobs
-        else:
-            max_workers = 1
-
         self.start_time = time.time()
         save_e = None
         cancel = False
@@ -4563,7 +4560,7 @@ class GfptarCommand(Command):
 
             for gen_num, tarlist in gen_to_tar_list.items():
                 with concurrent.futures.ProcessPoolExecutor(
-                        max_workers=max_workers) as executor:
+                        max_workers=self.max_workers) as executor:
                     arglist = []
                     for id_num, tar_path in tarlist:
                         arglist.append((lock, share_cancel, self.tmpdir,
@@ -4630,12 +4627,14 @@ class InfoDB:
         self.user_dict = {}   # use memory for speed
         self.group_dict = {}  # use memory for speed
 
-    # SEE ALSO: infodb_filename
+    # SEE ALSO: infodb_filename()
     PATT_INFODB = r'^g(\d+)_(\d+)_gfptar.db.gz$'
 
     @classmethod
     def infodb_filename(cls, gen_num, id_num):
         # SEE ALSO: PATT_INFODB
+        # gen_num (>= 1): the generation number
+        # id_num  (>= 1): the serial number
         # ex. g2_0099_gfptar.db.gz
         return f'g{gen_num}_{int(id_num):04}_gfptar.db.gz'
 
