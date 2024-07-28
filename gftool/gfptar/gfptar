@@ -4851,6 +4851,8 @@ class InfoDB:
         finally:
             with ignore_exception(has_error):
                 db.close()
+            with ignore_exception(has_error):
+                db.unlink()
 
 
 progname = os.path.basename(__file__)
