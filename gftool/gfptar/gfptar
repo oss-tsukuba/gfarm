@@ -129,6 +129,10 @@ def unhumanize_number(numstr, binary_prefix=False):
 class DB:
     def __init__(self, filename, check_same_thread=True):
         self.filename = filename
+        # NOTE: check_same_thread=True: ignore the following error:
+        # SQLite objects created in a thread can only be used
+        # in that same thread.
+        # The object was created in thread id MM and this is thread id NN.
         self.con = sqlite3.connect(filename,
                                    check_same_thread=check_same_thread)
         self.con.execute('PRAGMA synchronous = OFF')
@@ -771,14 +775,6 @@ class GfURLEntry(DBObj):
     TYPE_SYMLINK = 'S'
     TYPE_OTHER = '?'
 
-    type_map = {
-        TYPE_FILE: 1,
-        TYPE_DIR: 2,
-        TYPE_SYMLINK: 3,
-        TYPE_OTHER: 4,
-    }
-    type_map_reverse = {v: k for k, v in type_map.items()}
-
     def __init__(self, path, mode, file_type, uname, gname,
                  size, mtime, linkname):
         self.path = path
@@ -804,10 +800,9 @@ class GfURLEntry(DBObj):
     # only path must be specified for key when using DBDict
     @classmethod
     def dumps(cls, obj, for_dict):
-        t = obj.type_map[obj.file_type]
         # serialize using list() to reduce size
         # [0]...[6]
-        array = [obj.mode, t, obj.uname, obj.gname,
+        array = [obj.mode, obj.file_type, obj.uname, obj.gname,
                  obj.size, obj.mtime, obj.linkname]
         # save path to key when using dict, so don't save path to value
         if not for_dict:
@@ -821,8 +816,7 @@ class GfURLEntry(DBObj):
             path = key
         else:
             path = o[7]
-        t = cls.type_map_reverse[o[1]]
-        return cls(path, o[0], t, o[2], o[3], o[4], o[5], o[6])
+        return cls(path, o[0], o[1], o[2], o[3], o[4], o[5], o[6])
 
     def url(self):
         return GfURL.init(self.path)
@@ -3113,8 +3107,6 @@ class GfptarCommand(Command):
 
         def rand_dir(first_dir_index):
             first_dir = f'dir{first_dir_index:04d}'
-            dir_list = generate_random_dirname()
-            dir_depth = len(dir_list)
 
             mode = 0o755
             file_type = GfURLEntry.TYPE_DIR
@@ -3128,6 +3120,8 @@ class GfptarCommand(Command):
             # path = os.path.join(base_dir, first_dir)
             # yield GfURLEntry(path, mode, file_type, uname, gname,
             #                  size, mtime, linkname)
+            dir_list = generate_random_dirname()
+            dir_depth = len(dir_list)
             for i in range(dir_depth):
                 parent = dir_list[:(i+1)]
                 dir_path = os.path.join(*parent)
@@ -3144,7 +3138,10 @@ class GfptarCommand(Command):
             file_type = GfURLEntry.TYPE_FILE
             uname = 'testuser1'
             gname = 'testgroup1'
-            size = random.randint(size_min, size_max)
+            if size_max > 0:
+                size = random.randint(size_min, size_max)
+            else:
+                size = 0
             mtime = now
             linkname = ''
             return GfURLEntry(path, mode, file_type, uname, gname,
@@ -3152,19 +3149,20 @@ class GfptarCommand(Command):
 
         dir_num = int(num / files_per_dir)
         remainder = num % files_per_dir
-        for i in range(dir_num):
-            dir_num = 0
-            for dir_ent in rand_dir(i):
-                dir_num += 1
+        for dir_idx in range(dir_num):
+            dir_count = 0
+            for dir_ent in rand_dir(dir_idx):
+                dir_count += 1
                 yield dir_ent
-            for j in range(files_per_dir - dir_num):
+            for j in range(files_per_dir - dir_count):
                 yield rand_file(dir_ent.path, j)
+        dir_idx = dir_num
         if remainder > 0:
-            dir_num = 0
-            for dir_ent in rand_dir(dir_num):
-                dir_num += 1
+            dir_count = 0
+            for dir_ent in rand_dir(dir_idx):
+                dir_count += 1
                 yield dir_ent
-            for j in range(remainder - dir_num):
+            for j in range(remainder - dir_count):
                 yield rand_file(dir_ent.path, j)
 
     TABLE_tar_entry = 'tar_entry'
@@ -3203,27 +3201,27 @@ class GfptarCommand(Command):
             self.split_size = self.assumed_size * 100 / self.ratio
             self.suffix = '.tar.' + self.compress_type
 
-        self.start_time = time.time()
-        self.next_time = self.start_time + self.progress_interval
-
         self.archived_size = 0
         self.stored_size = 0
         self.stored_num = 0
         self.total_size = 0
         self.total_num = 0
+        self.start_time = time.time()
+        self.next_time = self.start_time + self.progress_interval
+        self.listing = True
+        if self.progress_enabled:
+            self.progress_for_create(self.start_time)
 
         self.gfsched_lock = None
         self.gfsched_next = 0
         self.gfsched_list = None
 
-        self.outdir_url.create_new_dir()
-
         self.cannot_be_archived = 0
         cannot_read_dir = 0
         serial = 0
-        self.listing = True
         has_error = None
 
+        self.outdir_url.create_new_dir()
         self.create_job_init()  # before creating threads
 
         infiles_checked = []
@@ -3349,8 +3347,9 @@ class GfptarCommand(Command):
                 if has_error is None:
                     has_error = e
 
-        with self.lock():  # for progress
-            self.listing = False
+        if not self.is_canceled():
+            with self.lock():  # for progress
+                self.listing = False
 
         self.create_job_final()
 
@@ -3535,17 +3534,13 @@ class GfptarCommand(Command):
                 self._lock.release()
 
     def clear_canceled(self):
-        with self.lock():
-            self.canceled = False
+        self.canceled = False
 
     def cancel(self):
-        with self.lock():
-            self.canceled = True
+        self.canceled = True
 
     def is_canceled(self):
-        with self.lock():
-            val = self.canceled
-        return val
+        return self.canceled
 
     def _gfsched_sometimes(self, gfurl):
         # if gfurl.is_gfarm() is not True:
@@ -3583,7 +3578,15 @@ class GfptarCommand(Command):
             else:
                 raise
 
-    def create_a_tar_thread0(self, gen, serial, dbfile):
+    MSG_CHILD_READY = 'READY'
+    MSG_CHILD_PROGRESS = 'PROGRESS'
+    MSG_CHILD_DONE = 'DONE'
+    MSG_CHILD_ERROR = 'ERROR'
+    MSG_PARENT_START = 'START'
+    MSG_PARENT_CANCEL = 'CANCEL'
+    MSG_PARENT_ERROR_COMPLETE = 'ERROR_COMPLETE'
+
+    def create_a_tar_thread0(self, gen, serial, arg):
         logger.debug(f'create_a_tar: start (gen={gen}, serial={serial})')
         if self.is_canceled():
             logger.debug(f'Canceled (create 1): serial={serial}')
@@ -3604,46 +3607,51 @@ class GfptarCommand(Command):
             process.start()  # high cost to start
             started.status = True
 
-        inq.put(('START', gen, serial, dbfile))
+        inq.put((self.MSG_PARENT_START, gen, serial, arg))
         response = outq.get()
-        if response != 'READY':
-            logger.error(f'Unexpected child response: {response}')
+        if response != self.MSG_CHILD_READY:
+            logger.error(f'Unexpected response from child process: {response}')
             return
 
         try:
             cancel = False
             while True:
-                if self.is_canceled() and cancel is False:
+                if self.is_canceled() and not cancel:
                     logger.debug(f'Canceled (create 2): serial={serial}')
-                    inq.put('CANCEL')
+                    inq.put(self.MSG_PARENT_CANCEL)
                     cancel = True  # prevent input_queue from filling up
                 try:
                     result = outq.get(timeout=1)
                 except queue.Empty:
+                    logger.debug('MSG_CHILD_ timeout, retry...')
                     result = None
                     if not process.is_alive():
                         logger.warning('Unexpected child process termination'
                                        f' (serial={serial})')
                         break
                 if result is None:
-                    logger.debug('waiting for message from child:'
+                    logger.debug('waiting for message from child process:'
                                  f' serial={serial}')
                     continue
                 if len(result) == 0:
-                    logger.warning('unknown result (None)')
+                    logger.warning('unknown result (None) from child process')
                     break
-                elif result[0] == 'ADD':
-                    status, subpath, size_all = result
+                msg = result[0]
+                if msg == self.MSG_CHILD_PROGRESS:
+                    logger.debug('MSG_CHILD_PROGRESS')
+                    status, num, size, path_list = result
                     with self.lock():
-                        self.info('stored: {}', subpath)
-                        self.stored_size += size_all
+                        for entry_path in path_list:
+                            self.info('archived: {}', entry_path)
+                        self.stored_size += size
+                        self.stored_num += num
                         if self.progress_enabled:
-                            self.stored_num += 1
                             now = time.time()
                             if now >= self.next_time:
-                                self.next_time = now + self.progress_interval
+                                self.next_time = now \
+                                    + self.progress_interval
                                 self.progress_for_create(now)
-                elif result[0] == 'DONE':
+                elif msg == self.MSG_CHILD_DONE:
                     (status, tar_size, cannot_be_archived,
                      out_tar_path, out_dbgz_path) = result
                     with self.lock():
@@ -3651,15 +3659,16 @@ class GfptarCommand(Command):
                         self.info('created(.tar): {}', out_tar_path)
                         self.info('created(.db.gz): {}', out_dbgz_path)
                     break
-                elif result[0] == 'ERR':
+                elif msg == self.MSG_CHILD_ERROR:
                     (status, exc_type_name, exc_value_str,
                      exc_traceback_str) = result
-                    inq.put('ERR_COMPLETE')
+                    inq.put(self.MSG_PARENT_ERROR_COMPLETE)
                     raise Exception(
                         f'{exc_type_name}: {exc_value_str}\n'
                         f'{"".join(exc_traceback_str)}')
                 else:
-                    logger.warning(f'unknown result: {str(result)}')
+                    logger.error('unknown message from child process:'
+                                 f' {str(result)}')
                     break
         finally:
             logger.debug(f'(parent) subprocess finished: serial={serial}')
@@ -3678,10 +3687,10 @@ class GfptarCommand(Command):
 
     def create_a_tar_process0(self, input_queue, output_queue):
         request = input_queue.get()
-        if len(request) > 0 and request[0] == 'START':
-            output_queue.put('READY')
+        if len(request) > 0 and request[0] == self.MSG_PARENT_START:
+            output_queue.put(self.MSG_CHILD_READY)
         else:
-            logger.error(f'Unexpected request for child: {request}')
+            logger.error(f'Unexpected request from parent process: {request}')
             return  # exit
         op, gen, serial, dbfile = request
         logger.debug(f'create_a_tar_process0: start (serial={serial})')
@@ -3689,8 +3698,8 @@ class GfptarCommand(Command):
             result = self.create_a_tar_process1(input_queue, output_queue,
                                                 gen, serial, dbfile)
             tar_size, cannot_be_archived, outurl, infodb_url = result
-            output_queue.put(('DONE', tar_size, cannot_be_archived,
-                              outurl, infodb_url))
+            output_queue.put((self.MSG_CHILD_DONE, tar_size,
+                              cannot_be_archived, outurl, infodb_url))
             logger.debug(f'subprocess exits: serial={serial}')
         except Exception as e:
             logger.debug(f'create_a_tar_process: error (serial={serial})')
@@ -3700,11 +3709,11 @@ class GfptarCommand(Command):
             exc_value_str = str(exc_value)
             exc_traceback_str = traceback.format_exception(
                 exc_type, exc_value, exc_traceback)
-            output_queue.put(('ERR', exc_type_name, exc_value_str,
-                              exc_traceback_str))
+            output_queue.put((self.MSG_CHILD_ERROR,
+                              exc_type_name, exc_value_str, exc_traceback_str))
             try:
                 input_queue.get(timeout=10)
-                # ERR_COMPLETE
+                # expect: self.MSG_PARENT_ERROR_COMPLETE
             except queue.Empty:
                 pass
 
@@ -3741,7 +3750,7 @@ class GfptarCommand(Command):
 
         serial_str = f'{self.SERIAL_FORMAT}_' % serial
         if gen >= 2:
-            # SEE ALSO: list_infodb()
+            # SEE ALSO: InfoDB.infodb_filename()
             prefix_str = f'g{gen}_{serial_str}'
         else:
             prefix_str = serial_str
@@ -3779,6 +3788,12 @@ class GfptarCommand(Command):
         db_close = False
         cancel = False
         has_error = False
+        next_time = time.time() + self.progress_interval
+        progress_path_list = []
+        progress_path_list_max = 100000  # limiter to limit memory usage
+        progress_num = 0
+        progress_size = 0
+        report_path = (self.debug or self.verbose)
         try:
             for entry in filelist:
                 # logger.debug(f'subprocess(serial={serial}): {entry.path}')
@@ -3787,12 +3802,12 @@ class GfptarCommand(Command):
                         qdata = input_queue.get(timeout=1)
                     except queue.Empty:
                         qdata = None
-                    if qdata == 'CANCEL':
-                        logger.debug('receive CANCEL from parent')
+                    if qdata == self.MSG_PARENT_CANCEL:
+                        logger.debug('receive CANCEL from parent process')
                         cancel = True
                         break
                     else:
-                        logger.error('unexpected message from parent')
+                        logger.error('unexpected message from parent process')
                         cancel = True
                         break
                 if cancel:
@@ -3803,8 +3818,21 @@ class GfptarCommand(Command):
                     # GfTarFile.METHOD_add_entry
                     tarinfo = tar_tmp.add_entry(subpath, entry)
                     infodb.add(tarinfo)
-                    size_all = entry.size_all()
-                    output_queue.put(('ADD', subpath, size_all))
+                    progress_num += 1
+                    progress_size += entry.size_all()
+                    if report_path:
+                        progress_path_list.append(subpath)
+                    now = time.time()
+                    if now >= next_time \
+                       or len(progress_path_list) > progress_path_list_max:
+                        next_time = now + self.progress_interval
+                        output_queue.put((self.MSG_CHILD_PROGRESS,
+                                          progress_num, progress_size,
+                                          progress_path_list))
+                        # reset
+                        progress_path_list = []
+                        progress_num = 0
+                        progress_size = 0
                 except MemoryError:
                     raise
                 except BrokenPipeError:
@@ -3813,6 +3841,11 @@ class GfptarCommand(Command):
                     cannot_be_archived += 1
                     logger.warning(convert_message(e))
                     continue
+            # success
+            if progress_num > 0:
+                output_queue.put((self.MSG_CHILD_PROGRESS,
+                                  progress_num, progress_size,
+                                  progress_path_list))
             infodb.commit_close()
             db_close = True
             if cancel:
@@ -4010,6 +4043,8 @@ class GfptarCommand(Command):
         self.extracted_size = 0
         self.start_time = time.time()
         self.next_time = self.start_time + self.progress_interval
+        if self.progress_enabled:
+            self.progress_for_extract(self._start_time)
 
         self.gfsched_lock = None
         self.gfsched_next = 0
@@ -4981,7 +5016,6 @@ Usage:
   {f} [options] -c <outdir> [-C <basedir>] [--] <member>...
   {f} [options] -x <outdir> [--] <indir> [<member>...]
   {f} [options] -t <indir>
-  {f} [options] -t <indir> -v
   {f} [options] --test
   {f} [options] --test -C <basedir> <member>...
   {f} [options] --test-long
