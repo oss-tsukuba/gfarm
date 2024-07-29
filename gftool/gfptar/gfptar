@@ -144,8 +144,11 @@ class DB:
 
     def close(self):
         self.con.close()
+        self.con = None
 
     def unlink(self):
+        if self.con is not None:
+            self.close()
         os.remove(self.filename)
 
 
@@ -270,18 +273,15 @@ class DBCollection:
         self.create_table()
 
     def commit(self):
-        self.con.commit()
+        self.db.commit()
 
     def close(self):
-        self.con.close()
-        self.con = None
+        self.db.close()
 
     def filename(self):
         return self.db.filename
 
     def unlink(self):
-        if self.con is not None:
-            self.close()
         self.db.unlink()
 
     def __len__(self):
