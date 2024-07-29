@@ -4196,6 +4196,14 @@ class GfptarCommand(Command):
         arch_url = GfURL.init(target,
                               use_gfarm_command=self.use_gfarm_command)
         tar = GfTarFile.extract_open(arch_url, self.bufsize)
+        try:
+            self.extract_from_a_tar1(serial, target, member_set, tar)
+            with self.lock():
+                self.info('extracted(done): {}', arch_url.url_str)
+        finally:
+            tar.close()
+
+    def extract_from_a_tar1(self, serial, target, member_set, tar):
         with self.lock():
             members_num = len(member_set)
         index = serial
@@ -4288,10 +4296,6 @@ class GfptarCommand(Command):
                     if now >= self.next_time:
                         self.next_time = now + self.progress_interval
                         self.progress_for_extract(now)
-
-        tar.close()
-        with self.lock():
-            self.info('extracted(done): {}', arch_url.url_str)
 
     def _humanize_si(self, n):
         return humanize_number(n)
