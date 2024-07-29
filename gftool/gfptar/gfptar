@@ -3914,10 +3914,6 @@ class GfptarCommand(Command):
         self.db = DB(db_file, check_same_thread=False)
         self.db_target = DB(db_file_target, check_same_thread=False)
 
-        self.total_num = 0
-        self.start_time = time.time()
-        self.next_time = self.start_time + self.progress_interval
-
         self.extract_main()
         tmpdir.cleanup()
 
@@ -3949,6 +3945,13 @@ class GfptarCommand(Command):
                     path = path.lstrip('/')
                 member_check_dict[path] = False  # initialize
 
+        self.total_num = 0
+        self.total_size = 0
+        self.start_time = time.time()
+        self.next_time = self.start_time + self.progress_interval
+        if self.progress_enabled:
+            self.progress_for_schedule(self.start_time)
+
         error_num = 0
         for id_num, gen_num, dbgz_path, tar_path in \
                 self.list_infodb_files(self.indir_url):
@@ -3963,6 +3966,7 @@ class GfptarCommand(Command):
                 if self.is_canceled():
                     raise self.error_canceled()
                 self.total_num += 1
+                self.total_size += fattr.size
                 file_type = fattr.ftype
                 if self.search_target:
                     logger.debug(f'archive_dict[{path}]: {file_type}')
@@ -4302,12 +4306,14 @@ class GfptarCommand(Command):
         sec = now - self.start_time
         sec_str = format_seconds(sec, minhour=True)
         total_num_str = self._humanize(self.total_num)
+        total_size_str = self._humanize(self.total_size)
         if sec > 0:
             ent_per_sec = self.total_num / sec
         else:
             ent_per_sec = 0
         ent_per_sec_str = self._humanize(ent_per_sec)
         sys.stdout.write(f'\rschedule: '
+                         f'{total_size_str}B '
                          f'{total_num_str}Ent '
                          f'{sec_str} '
                          f'{ent_per_sec_str}Ent/s')
@@ -4372,9 +4378,15 @@ class GfptarCommand(Command):
         sec = now - self.start_time
         sec_str = format_seconds(sec, minhour=True)
         if self.total_num > 0:
-            percent = self.extracted_num * 100 / self.total_num
+            percent1 = self.extracted_num * 100 / self.total_num
         else:
-            percent = 0
+            percent1 = 0
+        if self.total_size > 0:
+            percent2 = self.extracted_size * 100 / self.total_size
+            percent = (percent1 + percent2) / 2
+        else:
+            percent = percent1
+        percent_str = f'{percent:.0f}'
         if sec > 0:
             bytes_per_sec = self.extracted_size / sec
             ent_per_sec = self.extracted_num / sec
@@ -4383,11 +4395,12 @@ class GfptarCommand(Command):
             ent_per_sec = 0
         extracted_num_str = self._humanize(self.extracted_num)
         total_num_str = self._humanize(self.total_num)
+        total_size_str = self._humanize(self.total_size)
         extracted_size_str = self._humanize(self.extracted_size)
         bytes_per_sec_str = self._humanize(bytes_per_sec)
         ent_per_sec_str = self._humanize(ent_per_sec)
-        sys.stdout.write(f'\rextract: {percent:.0f}% '
-                         f'{extracted_size_str}B '
+        sys.stdout.write(f'\rextract: {percent_str}% '
+                         f'{extracted_size_str}/{total_size_str}B '
                          f'{extracted_num_str}/{total_num_str}Ent '
                          f'{sec_str} '
                          f'{bytes_per_sec_str}B/s '
