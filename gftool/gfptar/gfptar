@@ -3257,7 +3257,7 @@ class GfptarCommand(Command):
                                      hardlink_warn=self.hardlink_warn)
 
         tmpdir = self.tmpdir
-        tardb_prefix = os.path.join(tmpdir.name, 'list_for_create')
+        tardb_prefix = os.path.join(tmpdir.name, 'create')
         tardb_fmt = f'_{self.SERIAL_FORMAT}.db'
         serial = 1
         gen = 1  # TODO
@@ -4044,7 +4044,7 @@ class GfptarCommand(Command):
         self.start_time = time.time()
         self.next_time = self.start_time + self.progress_interval
         if self.progress_enabled:
-            self.progress_for_extract(self._start_time)
+            self.progress_for_extract(self.start_time)
 
         self.gfsched_lock = None
         self.gfsched_next = 0
