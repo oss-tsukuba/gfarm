@@ -3679,7 +3679,7 @@ class GfptarCommand(Command):
             self.name, loglevel=self.loglevel,
             debug=self.debug, verbose=self.verbose)
 
-        self.sig_ignore()
+        self.sig_default()
         while True:
             pid = os.getpid()
             logger.debug(f'create_a_tar_process: start, pid={pid}')
