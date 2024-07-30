@@ -735,6 +735,8 @@ class Command(metaclass=abc.ABCMeta):
         self.name = name
         self._docopt = docopt(self.getDoc())
         self.opt = self.getSchema().validate(self._docopt)
+
+    def log_init(self):
         self.debug = self.opt['--debug']
         self.verbose = self.opt['--verbose']
         self.quiet = self.opt['--quiet']
@@ -749,12 +751,9 @@ class Command(metaclass=abc.ABCMeta):
         self.loglevel = loglevel
 
         # use stderr with lock
-        logger_init(name, loglevel=loglevel, debug=self.debug,
+        logger_init(self.name, loglevel=loglevel, debug=self.debug,
                     verbose=self.verbose)
-
-        logger.debug('USE_GFMKDIR_PLUS: %s', USE_GFMKDIR_PLUS)
-        logger.debug('USE_GFCHMOD_PLUS: %s', USE_GFCHMOD_PLUS)
-        logger.debug('USE_GFREG_PLUS: %s', USE_GFREG_PLUS)
+        logger.debug(pformat(self.opt))
 
     @abc.abstractmethod
     def getDoc(self) -> str:
@@ -2397,12 +2396,17 @@ class GfptarCommand(Command):
         self.lock_init(False)
         self.futures = None
         self.hardlink_warn = True
-        if self.quiet:
-            GfURL.shutup_stderr()
         self.tmpdir = None
         self.test_mode = False
 
     def options_init(self):
+        self.log_init()
+        if self.quiet:
+            GfURL.shutup_stderr()
+        logger.debug('USE_GFMKDIR_PLUS: %s', USE_GFMKDIR_PLUS)
+        logger.debug('USE_GFCHMOD_PLUS: %s', USE_GFCHMOD_PLUS)
+        logger.debug('USE_GFREG_PLUS: %s', USE_GFREG_PLUS)
+
         set_encoding(self.opt['--encoding'])
         self.jobs = self.opt['--jobs']
         # SEE ALSO: MT_enabled()
@@ -2486,7 +2490,6 @@ class GfptarCommand(Command):
         return not self.debug and not self.verbose and not self.quiet
 
     def run(self):
-        logger.debug(pformat(self.opt))
         try:
             outdir = self.opt['--create']
             if outdir:
@@ -2542,11 +2545,11 @@ class GfptarCommand(Command):
             logger.debug('DONE')
 
     def test_init(self):
+        self.options_init()
         self.am_I_gfarmroot = am_I_gfarmroot()
         if self.am_I_gfarmroot:
             logger.error('warning: gfarmroot is enabled: '
                          + '"noread" files are not used')
-        self.options_init()
         self.hardlink_warn = False
         self.uid = os.getuid()
         self.pid = os.getpid()
@@ -2589,9 +2592,19 @@ class GfptarCommand(Command):
         save_opt_type = self.opt['--type']
         save_opt_compress_prog = self.opt['--use-compress-program']
         save_opt_syncdb = self.opt['--sync-db']
+        save_opt_verbose = self.opt['--verbose']
 
         # create tar per one entry
         self.opt['--size'] = 0
+
+        # test --verbose and --sync-db
+        self.opt['--verbose'] = True
+        self.opt['--sync-db'] = True
+        self.test_simple('syncdb')
+        self.opt['--sync-db'] = save_opt_syncdb
+        self.opt['--verbose'] = save_opt_verbose
+
+        # test --jobs
         if full:
             # jobs == 0: not use multi-thread
             pattern_jobs = [0, 16]
@@ -2605,10 +2618,7 @@ class GfptarCommand(Command):
         # create one tar
         self.opt['--size'] = unhumanize_number('100M')
 
-        self.opt['--sync-db'] = True
-        self.test_simple('syncdb')
-        self.opt['--sync-db'] = save_opt_syncdb
-
+        # test --type
         if full:
             pattern_type = [
                 'gz',
@@ -2622,6 +2632,7 @@ class GfptarCommand(Command):
             self.test_simple('type_' + t)
         self.opt['--type'] = save_opt_type
 
+        # test --type and --use-compress-program
         if full:
             pattern_compress_prog = {
                 'gzip': 'gz',
@@ -3168,8 +3179,8 @@ class GfptarCommand(Command):
     TABLE_tar_entry = 'tar_entry'
 
     def cmd_create(self, outdir, basedir, infiles):
-        logger.debug(f'create start: outdir={outdir}, basedir={basedir}')
         self.options_init()
+        logger.debug(f'create start: outdir={outdir}, basedir={basedir}')
         self.outdir = outdir
         self.outdir_url = GfURL.init(outdir)
         self.basedir_url = GfURL.init(basedir)
@@ -3656,7 +3667,7 @@ class GfptarCommand(Command):
                      out_tar_path, out_dbgz_path) = result
                     with self.lock():
                         self.archived_size += tar_size
-                        self.info('created(.tar): {}', out_tar_path)
+                        self.info('created({}): {}', self.suffix, out_tar_path)
                         self.info('created(.db.gz): {}', out_dbgz_path)
                     break
                 elif msg == self.MSG_CHILD_ERROR:
@@ -3884,8 +3895,8 @@ class GfptarCommand(Command):
         return GfptarError('Not a gfptar-archived directory: ' + url_str)
 
     def cmd_extract(self, outdir, indir, specified_members):
-        logger.debug(f'extract start: outdir={outdir}, indir={indir}')
         self.options_init()
+        logger.debug(f'extract start: outdir={outdir}, indir={indir}')
         self.outdir = outdir
         self.outdir_url = GfURL.init(outdir)
         self.indir = indir
@@ -4199,7 +4210,7 @@ class GfptarCommand(Command):
         try:
             self.extract_from_a_tar1(serial, target, member_set, tar)
             with self.lock():
-                self.info('extracted(done): {}', arch_url.url_str)
+                self.info('extract,DONE: {}', arch_url.url_str)
         finally:
             tar.close()
 
