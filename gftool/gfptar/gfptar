@@ -911,13 +911,15 @@ class GfURL(metaclass=abc.ABCMeta):
         shutup_stderr()
 
     @staticmethod
-    def init(url, use_gfarm_command=False, local=False):
+    def init(url, use_gfarm_command=False, local=False, dry_run=False):
         if local:
-            return GfURLLocal(url)
+            return GfURLLocal(url, dry_run)
         if GfURLGfarm.is_my_URL(url):
-            return GfURLGfarm(url)
-        gfurl1 = GfURLLocal(url)
+            return GfURLGfarm(url, dry_run)
+        gfurl1 = GfURLLocal(url, dry_run)
         if not use_gfarm_command:
+            return gfurl1
+        if dry_run:  # cannot resolve the Gfarm URL from gfarm2fs
             return gfurl1
         # use_gfarm_command=True: use gf* commands on gfarm2fs
         gfurl2 = gfurl1.get_gfarm_url_by_gfarm2fs()
@@ -927,12 +929,24 @@ class GfURL(metaclass=abc.ABCMeta):
             return gfurl2
         return gfurl1
 
-    def __init__(self, url):
+    def __init__(self, url, dry_run):
         self._url_str = url
         scheme, host, path = self.parse(url)
         self._scheme = scheme
         self._host = host
         self._path = path
+        self.dry_run = dry_run
+        if dry_run:
+            self.chmod = self.dryrun_chmod
+            self.chown = self.dryrun_chown
+            self.utime = self.dryrun_utime
+            self.mkdir = self.dryrun_mkdir
+            self.rename = self.dryrun_rename
+            self.remove = self.dryrun_remove
+            self.remove_tree = self.dryrun_remove_tree
+            self.symlink = self.dryrun_symlink
+            self.hardlink = self.dryrun_hardlink
+            self.writeopen = self.dryrun_writeopen
 
     @classmethod
     def parse(cls, url):
@@ -979,7 +993,8 @@ class GfURL(metaclass=abc.ABCMeta):
         if self.root_url_str != '' \
            and (parent_path == '.' or parent_path == '/'):
             parent_path = ''
-        return GfURL.init(self.root_url_str + parent_path)
+        return GfURL.init(self.root_url_str + parent_path,
+                          dry_run=self.dry_run)
 
     @property
     def parent_iter(self):
@@ -1027,6 +1042,8 @@ class GfURL(metaclass=abc.ABCMeta):
         return isinstance(self, GfURLLocal)
 
     def create_new_dir(self):
+        if self.dry_run:
+            return
         if self.exists():
             raise FileExistsError(self.url_str)
         self.mkdir()
@@ -1045,17 +1062,30 @@ class GfURL(metaclass=abc.ABCMeta):
               follow_symlinks=True):
         raise NotImplementedError
 
+    def dryrun_chmod(self, mode, mtime=None, user=None, group=None,
+                     follow_symlinks=True):
+        pass
+
     @abc.abstractmethod
     def chown(self, user, group, follow_symlinks=True):
         raise NotImplementedError
+
+    def dryrun_chown(self, user, group, follow_symlinks=True):
+        pass
 
     @abc.abstractmethod
     def utime(self, atime, mtime, follow_symlinks=True):
         raise NotImplementedError
 
+    def dryrun_utime(self, atime, mtime, follow_symlinks=True):
+        pass
+
     @abc.abstractmethod
     def mkdir(self, mode=0o700, parents=False):
         raise NotImplementedError
+
+    def dryrun_mkdir(self, mode=0o700, parents=False):
+        pass
 
     def makedirs(self, mode=0o700):
         self.mkdir(mode, parents=True)
@@ -1064,21 +1094,36 @@ class GfURL(metaclass=abc.ABCMeta):
     def rename(self, dest):
         raise NotImplementedError
 
+    def dryrun_rename(self, dest):
+        pass
+
     @abc.abstractmethod
     def remove(self):
         raise NotImplementedError
+
+    def dryrun_remove(self):
+        pass
 
     @abc.abstractmethod
     def remove_tree(self, remove_readonly=False):
         raise NotImplementedError
 
+    def dryrun_remove_tree(self, remove_readonly=False):
+        pass
+
     @abc.abstractmethod
     def symlink(self, linkname):
         raise NotImplementedError
 
+    def dryrun_symlink(self, linkname):
+        pass
+
     @abc.abstractmethod
     def hardlink(self, linkname):
         raise NotImplementedError
+
+    def dryrun_hardlink(self, linkname):
+        pass
 
     @abc.abstractmethod
     def exists(self):
@@ -1133,6 +1178,15 @@ class GfURL(metaclass=abc.ABCMeta):
     def writeopen(self, textmode=False, mode=0o600, mtime=None,
                   user=None, group=None, use_fsync=True, hostname=None):
         raise NotImplementedError
+
+    @contextmanager
+    def dryrun_writeopen(self, textmode=False, mode=0o600, mtime=None,
+                         user=None, group=None, use_fsync=True, hostname=None):
+        f = open(os.devnull, 'wb')
+        try:
+            yield f
+        finally:
+            f.close()
 
     def copy_from(self, inf, bufsize, mode=0o600, mtime=None,
                   user=None, group=None, use_fsync=True, hostname=None):
@@ -1279,8 +1333,8 @@ class GfURLGfarm(GfURL):
                            r'(\d+)\s+(\S+\s+\d+\s+\d+:\d+:\d+\s+\d+)\s+(.+)$')
     PAT_EMPTY = re.compile(r'^\s*$')
 
-    def __init__(self, url):
-        super().__init__(url)
+    # def __init__(self, url, dry_run):
+    #     super().__init__(url, dry_run)
 
     @classmethod
     def is_my_URL(cls, url):
@@ -1667,9 +1721,6 @@ class GfURLLocal(GfURL):
     SCHEME = ''
     SCHEME_LEN = 0
 
-    def __init__(self, url):
-        super().__init__(url)
-
     @classmethod
     def is_my_URL(cls, url):
         return True
@@ -1679,7 +1730,8 @@ class GfURLLocal(GfURL):
         XATTR_GFARM2FS_URL = 'gfarm2fs.url'
         try:
             val = os.getxattr(self.url_str, XATTR_GFARM2FS_URL)
-            gfurl = GfURL.init(val.decode(get_encoding()))
+            gfurl = GfURL.init(val.decode(get_encoding()),
+                               dry_run=self.dry_run)
             if gfurl.is_gfarm():
                 return gfurl
             raise GfException('unexpected Gfarm URL format: ' + gfurl.url_str)
@@ -1687,11 +1739,16 @@ class GfURLLocal(GfURL):
             if e.errno == errno.EOPNOTSUPP:
                 return None
             elif e.errno == errno.ENOENT:
-                # creation mode
+                parent_path = self.parent.url_str
+                if parent_path == '':
+                    # local filesystem
+                    return None
+                # creation mode (parent must exist)
                 try:
-                    val = os.getxattr(self.parent.url_str, XATTR_GFARM2FS_URL)
+                    val = os.getxattr(parent_path, XATTR_GFARM2FS_URL)
                     parent_str = val.decode(get_encoding())
-                    gfurl = GfURL.init(os.path.join(parent_str, self.basename))
+                    gfurl = GfURL.init(os.path.join(parent_str, self.basename),
+                                       dry_run=self.dry_run)
                     if gfurl.is_gfarm():
                         return gfurl
                     raise GfException('unexpected Gfarm URL format: '
@@ -2063,7 +2120,7 @@ class GfTarFile(tarfile.TarFile):
             raise FileExistsError(gfurl.url_str)
         # list of tuple(proc, closeable obj, synchronizable obj)
         proc_list = []
-        if gfurl.is_gfarm():
+        if gfurl.is_gfarm() and not gfurl.dry_run:
             if compress_prog:
                 gfreg_obj = gfurl.gfreg(mode=0o600, hostname=target_host)
                 compress_proc = Compress.compress(compress_prog,
@@ -2080,21 +2137,25 @@ class GfTarFile(tarfile.TarFile):
                                fileobj=gfreg_obj.stdin,
                                copybufsize=copybufsize)
                 proc_list.append(tuple([gfreg_obj.proc, gfreg_obj, None]))
-        else:  # Local
-            if compress_prog:
+        else:  # Local or dry_run
+            if gfurl.dry_run:
+                outf = open(os.devnull, 'wb')
+            else:
                 outf = open(gfurl.url_str, 'wb')
+            if compress_prog:
                 compress_proc = Compress.compress(compress_prog, outf)
                 tar = cls.open(None, mode=openmode,
                                fileobj=compress_proc.stdin,
                                copybufsize=copybufsize)
                 proc_list.append(tuple([compress_proc, compress_proc.stdin,
                                         None]))
-                proc_list.append(tuple([None, outf, outf]))
             else:
-                outf = open(gfurl.url_str, 'wb')
                 tar = cls.open(gfurl.url_str, mode=openmode,
                                fileobj=outf, copybufsize=copybufsize)
-                proc_list.append(tuple([None, outf, outf]))
+            if gfurl.dry_run:
+                proc_list.append((None, outf, None))
+            else:
+                proc_list.append((None, outf, outf))
             gfurl.chmod(0o600)
         logger.debug('GfTarFile.create_open: %s', gfurl.url_str)
         setattr(tar, cls.ATTR_PROC_LIST, proc_list)
@@ -2458,6 +2519,8 @@ class GfptarCommand(Command):
                              self.gzip_prog, self.bzip2_prog, self.xz_prog)
         if Compress.gzip_prog is None:
             raise GfException('gzip: command not found. Please install gzip.')
+
+        self.dry_run = self.opt['--dry-run']
 
     def set_memory_limit(self, max_memory):
         resource.setrlimit(resource.RLIMIT_AS, (max_memory, max_memory))
@@ -3187,7 +3250,7 @@ class GfptarCommand(Command):
         self.options_init()
         logger.debug('create start: outdir=%s, basedir=%s', outdir, basedir)
         self.outdir = outdir
-        self.outdir_url = GfURL.init(outdir)
+        self.outdir_url = GfURL.init(outdir, dry_run=self.dry_run)
         self.basedir_url = GfURL.init(basedir)
         self.assumed_size = self.opt['--size']
         if self.assumed_size <= 0:
@@ -3575,6 +3638,8 @@ class GfptarCommand(Command):
                 self.gfsched_next = now + self.gfsched_interval
 
     def select_a_target_host(self, outurl, index):
+        if self.dry_run:
+            return
         if not outurl.is_gfarm():
             return None
         if self.jobs <= 1:
@@ -3786,7 +3851,8 @@ class GfptarCommand(Command):
         outname_path = self.outdir_url.url_join(outname)
         outname_path_tmp = outname_path + self.TMP_SUFFIX
         outurl_tmp = GfURL.init(outname_path_tmp,
-                                use_gfarm_command=self.use_gfarm_command)
+                                use_gfarm_command=self.use_gfarm_command,
+                                dry_run=self.dry_run)
         target_host = self.select_a_target_host(outurl_tmp, serial)
         tar_tmp = GfTarFile.create_open(outurl_tmp, self.compress_type,
                                         self.bufsize,
@@ -3881,12 +3947,15 @@ class GfptarCommand(Command):
                     infodb.db.close()
 
         # success
-        tar_size = outurl_tmp.size()
+        if self.dry_run:
+            tar_size = 1024 ** 2  # no particular reason
+        else:
+            tar_size = outurl_tmp.size()
         outurl_tmp.rename(outname_path)
 
         out_db_path = self.outdir_url.url_join(db_name)
         InfoDB.compress_copy(infodb.db.filename, out_db_path,
-                             self.bufsize, self.use_fsync)
+                             self.bufsize, self.use_fsync, self.dry_run)
 
         # for DEBUG
         # raise Exception('unexpected raise')
@@ -3903,7 +3972,7 @@ class GfptarCommand(Command):
         self.options_init()
         logger.debug('extract start: outdir=%s, indir=%s', outdir, indir)
         self.outdir = outdir
-        self.outdir_url = GfURL.init(outdir)
+        self.outdir_url = GfURL.init(outdir, dry_run=self.dry_run)
         self.indir = indir
         self.specified_members = specified_members
         self.same_owner = self.opt['--same-owner']
@@ -4093,7 +4162,7 @@ class GfptarCommand(Command):
             if self.is_canceled():
                 raise self.error_canceled()
             url_str = self.outdir_url.url_join(d)
-            dir_url = GfURL.init(url_str)
+            dir_url = GfURL.init(url_str, dry_run=self.dry_run)
             try:
                 dir_url.mkdir()
             except MemoryError:
@@ -4111,7 +4180,7 @@ class GfptarCommand(Command):
             if self.is_canceled():
                 raise self.error_canceled()
             url_str = self.outdir_url.url_join(d)
-            dir_url = GfURL.init(url_str)
+            dir_url = GfURL.init(url_str, dry_run=self.dry_run)
             logger.debug('extract_directories_fast: '
                          f'out_url={self.outdir_url.url_str}, d={d}')
             # url.path is normalized
@@ -4119,7 +4188,7 @@ class GfptarCommand(Command):
                 logger.debug('skip (already created): %s', url_str)
                 continue
             parent_url = dir_url.parent
-            if parent_url.path in created_set:
+            if parent_url.path in created_set:  # parent exists
                 dir_url.mkdir()
                 created_set.add(dir_url.path)
                 self.info('prepare_dir: {}', dir_url.path)
@@ -4149,7 +4218,7 @@ class GfptarCommand(Command):
                 logger.warning('No information of the directory: %s', d)
                 continue
             url_str = self.outdir_url.url_join(d)
-            dir_url = GfURL.init(url_str)
+            dir_url = GfURL.init(url_str, dry_run=self.dry_run)
             if self.same_owner:
                 dir_url.chmod(tarinfo.mode, mtime=tarinfo.mtime,
                               user=tarinfo.uname, group=tarinfo.gname)
@@ -4249,14 +4318,16 @@ class GfptarCommand(Command):
             # ex. /a/b/c/ -> a/b/c
             outfile = tarinfo.name.strip('/')  # relative path only
             outurl_str = self.outdir_url.url_join(outfile)
-            outurl = GfURL.init(outurl_str)
+            outurl = GfURL.init(outurl_str, dry_run=self.dry_run)
 
             parent = outurl.parent
             with self.lock():
                 exist_dir = parent.path in self.created_directory_set
             if not exist_dir:
                 if not parent.exists():
-                    parent.makedirs()  # default 0700
+                    with ignore_exception(True):
+                        if not self.dry_run:
+                            parent.makedirs()  # default 0700
                 with self.lock():
                     self.created_directory_set.add(parent.path)
 
@@ -4659,7 +4730,8 @@ class GfptarCommand(Command):
                     for id_num, tar_path in tarlist:
                         arglist.append((lock, share_cancel, self.tmpdir,
                                         overwrite, gen_num, id_num, tar_path,
-                                        self.bufsize, self.use_fsync))
+                                        self.bufsize, self.use_fsync,
+                                        self.dry_run))
                     # InfoDB.generate_one is staticmethod,
                     # because ProcessPoolExecutor cannot serialize
                     # members of "self" object.
@@ -4767,9 +4839,9 @@ class InfoDB:
 
     @staticmethod
     def compress_copy(in_db_path, out_dbgz_path, bufsize, use_fsync,
-                      move=True):
+                      dry_run, move=True):
         dbgz_path_tmp = out_dbgz_path + '.tmp'
-        dbgz_url_tmp = GfURL.init(dbgz_path_tmp)
+        dbgz_url_tmp = GfURL.init(dbgz_path_tmp, dry_run=dry_run)
         db_url = GfURL.init(in_db_path)
         if dbgz_url_tmp.exists():
             dbgz_url_tmp.remove()
@@ -4829,7 +4901,7 @@ class InfoDB:
     @classmethod
     def generate_one(cls, args):
         (lock, share_cancel, tmpdir, overwrite, gen_num, id_num,
-         tar_path, bufsize, use_fsync) = args
+         tar_path, bufsize, use_fsync, dry_run) = args
         if share_cancel.value != 0:
             # logger.debug('Canceled (2)')
             return 0, 0
@@ -4884,7 +4956,7 @@ class InfoDB:
             infodb.commit_close()
             db_close = True
             InfoDB.compress_copy(infodb.db.filename, db_path, bufsize,
-                                 use_fsync)
+                                 use_fsync, dry_run)
         except Exception:
             has_error = True
             raise
@@ -5043,13 +5115,14 @@ Options:
   --test-long               run long  tests (-q option is recommended)
   --test-workdir-local=DIR  local directory for test [default: /tmp]
   --test-workdir-gfarm=DIR  Gfarm directory for test [default: gfarm:/tmp]
-  --dummy-num=NUM           the number of dummy (random) files for input
-                            (for -c option) (ignore <member> arguments)
-                            (create dummy 1000 entries per dir)
+  --dummy-num=NUM           the number of dummy input entries for --create
+                            (ignore <member> arguments)
+                            (create 1000 files and directories per 1 unit)
                             (default: disabled)
   --dummy-size-min=BYTES    minimum size of dummy files [default: 0]
   --dummy-size-max=BYTES    maximum size of dummy files [default: 1Mi]
   --dummy-sleep=SEC         sleep time per dummy file [default: 0.0]
+  --dry-run                 not create output files
   -q, --quiet               quiet messages
   -v, --verbose             verbose output
   -d, --debug               debug mode
@@ -5099,6 +5172,7 @@ _schema = Schema({
     '--dummy-size-min': Use(unhumanize_number),
     '--dummy-size-max': Use(unhumanize_number),
     '--dummy-sleep': Use(float),
+    '--dry-run': bool,
     '--quiet': bool,
     '--verbose': bool,
     '--debug': bool,
