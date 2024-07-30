@@ -451,6 +451,7 @@ empty_mdhost_load(void *closure, void (*callback)(void *,
 const struct db_ops empty_ops = {
 	empty_initialize,
 	empty_terminate,
+	NULL,
 
 	empty_nop,
 	empty_nop,
