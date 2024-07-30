@@ -2507,7 +2507,7 @@ class GfptarCommand(Command):
 
             indir = self.opt['--list']
             if indir:
-                if self.verbose:
+                if self.opt['--verbose']:
                     self.cmd_list_verbose(indir)
                 else:
                     self.cmd_list_simple(indir)
@@ -4429,6 +4429,8 @@ class GfptarCommand(Command):
 
     def cmd_list(self, indir, quiet=False, verbose=True):
         self.options_init()
+        if self.quiet:
+            quiet = self.quiet
         indir_url = GfURL.init(indir)
 
         def print_quiet(id_num, gen_num, path, fattr):
@@ -4620,15 +4622,18 @@ class GfptarCommand(Command):
         for sig in sigs:
             orig_sig_handler[sig] = signal.getsignal(sig)
 
+        self.sig_ignore()  # for parent process
+
         # Concurrent execution for each generation
-        with multiprocessing.Manager() as manager:
+        with multiprocessing.Manager() as manager:  # subprocess
             lock = manager.Lock()
             share_cancel = manager.Value('i', 0)
 
             def sig_handler(signum, frame):
-                # logger.warning(f'Interrupt (signal={signum}')
-                sys.stderr.write(f'\nInterrupt (signal={signum})\n')
-                share_cancel.value = 1
+                if share_cancel.value == 0:
+                    # logger.warning(f'Interrupt (signal={signum}')
+                    sys.stderr.write(f'\nInterrupt (signal={signum})\n')
+                    share_cancel.value = 1
 
             signal.signal(signal.SIGHUP, sig_handler)
             signal.signal(signal.SIGINT, sig_handler)
@@ -4797,15 +4802,16 @@ class InfoDB:
         return db_url
 
     signal_initialized = False
+    signal_canceled = False
 
     @classmethod
-    def signal_init(cls, share_cancel):
+    def signal_init(cls):
         if not cls.signal_initialized:
             def sig_handler(signum, frame):
-                if share_cancel.value != 0:
-                    # logger.warning(f'Interrupt (signal={signum})')
-                    sys.stderr.write(f'\nInterrupt (signal={signum})\n')
-                    share_cancel.value = 1
+                if not cls.signal_canceled:
+                    pid = os.getpid()
+                    logger.info(f'Interrupt (signal={signum}) (PID={pid})')
+                    cls.signal_canceled = True
 
             signal.signal(signal.SIGHUP, sig_handler)
             signal.signal(signal.SIGINT, sig_handler)
@@ -4814,8 +4820,8 @@ class InfoDB:
             cls.signal_initialized = True
             logger.debug('InfoDB.signal_init')
 
-    @staticmethod
-    def generate_one(args):
+    @classmethod
+    def generate_one(cls, args):
         (lock, share_cancel, tmpdir, overwrite, gen_num, id_num,
          tar_path, bufsize, use_fsync) = args
         if share_cancel.value != 0:
@@ -4829,7 +4835,7 @@ class InfoDB:
         if not overwrite and db_url.exists():
             logger.debug(f'not overwrite: {db_path}')
             return 0, 0
-        InfoDB.signal_init(share_cancel)
+        InfoDB.signal_init()
 
         # Local file
         tmpdb_path = os.path.join(tmpdir.name, str(id_num) + '_info.db')
@@ -4843,6 +4849,9 @@ class InfoDB:
             interval = 1  # sec. | for interrupt
             next_check = time.time() + interval
             while True:
+                if cls.signal_canceled:
+                    logger.info('Canceled')
+                    break
                 now = time.time()
                 if now >= next_check:
                     # access manager.Value(): very high cost
