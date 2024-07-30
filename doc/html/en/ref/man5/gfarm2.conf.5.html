@@ -1664,6 +1664,16 @@ When "enable" is specified, verbose messages about authentication are logged.
 	log_auth_verbose enable<br>
 </p></div>
 </dd>
+<dt><span class="term"><span class="token">log_tls_verbose</span> <em class="parameter"><code>validity</code></em></span></dt>
+<dd>
+<p>
+When "enable" is specified, verbose messages about TLS are logged.
+</p>
+<p>Example:</p>
+<div class="literallayout"><p><br>
+	log_tls_verbose enable<br>
+</p></div>
+</dd>
 <dt><span class="term"><span class="token">file_trace</span> <em class="parameter"><code>validity</code></em></span></dt>
 <dd>
 <p>
@@ -2038,6 +2048,26 @@ This parameter is only available in gfmd.conf.
 <p>Example:</p>
 <div class="literallayout"><p><br>
 	metadb_journal_recvq_size 100000<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">metadb_backend_sync_commit_at_initialization</span> <em class="parameter"><code>validity</code></em></span></dt>
+<dd>
+<p>
+If metadb_replication is enabled, gfmd reflects the journal file contents
+to the backend database at startup,
+This directive controls whether or not synchronous commit is performed
+on the backend database side.
+If this setting is disable, asynchronous commit is performed,
+which speeds up gfmd startup.
+The default is <span class="token">disable</span>.
+This directive is currently implemented only in the PostgreSQL backend.
+</p>
+<p>
+This parameter is only available in gfmd.conf.
+</p>
+<p>Example:</p>
+<div class="literallayout"><p><br>
+	metadb_backend_sync_commit_at_initialization disable<br>
 </p></div>
 </dd>
 <dt><span class="term"><span class="token">metadb_replica_remover_by_host_sleep_time</span> <em class="parameter"><code>nanoseconds</code></em></span></dt>
@@ -2824,6 +2854,7 @@ The default for this parameter is determined at OpenSSL compile time.
 	&lt;log_level_statement&gt; |<br>
 	&lt;log_message_verbose_level_statement&gt; |<br>
 	&lt;log_auth_verbose_statement&gt; |<br>
+	&lt;log_tls_verbose_statement&gt; |<br>
 	&lt;file_trace_statement&gt; |<br>
 	&lt;fatal_action_statement&gt; |<br>
 	&lt;debug_command_statement&gt; |<br>
@@ -2848,6 +2879,7 @@ The default for this parameter is determined at OpenSSL compile time.
 	&lt;metadb_journal_dir_statement&gt; |<br>
 	&lt;metadb_journal_max_size_statement&gt; |<br>
 	&lt;metadb_journal_recvq_size_statement&gt; |<br>
+	&lt;metadb_backend_sync_commit_at_initialization_statement&gt; |<br>
 	&lt;metadb_replica_remover_by_host_sleep_time_statement&gt; |<br>
 	&lt;metadb_replica_remover_by_host_inode_step_statement&gt; |<br>
 	&lt;replica_check_statement&gt; |<br>
@@ -3085,6 +3117,8 @@ The default for this parameter is determined at OpenSSL compile time.
 <dd><div class="literallayout"><p>"log_message_verbose_level" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;log_auth_verbose_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"log_auth_verbose" &lt;validity&gt;</p></div></dd>
+<dt><span class="term">&lt;log_tls_verbose_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"log_tls_verbose" &lt;validity&gt;</p></div></dd>
 <dt><span class="term">&lt;file_trace_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"file_trace" &lt;validity&gt;</p></div></dd>
 <dt><span class="term">&lt;fatal_action_statement&gt; ::=</span></dt>
@@ -3134,6 +3168,8 @@ The default for this parameter is determined at OpenSSL compile time.
 <dd><div class="literallayout"><p>"metadb_journal_max_size" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;metadb_journal_recvq_size_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"metadb_journal_recvq_size" &lt;number&gt;</p></div></dd>
+<dt><span class="term">&lt;metadb_backend_sync_commit_at_initialization_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"metadb_backend_sync_commit_at_initialization" &lt;validity&gt;</p></div></dd>
 <dt><span class="term">&lt;metadb_replica_remover_by_host_sleep_time_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"metadb_replica_remover_by_host_sleep_time" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;metadb_replica_remover_by_host_inode_step_statement&gt; ::=</span></dt>

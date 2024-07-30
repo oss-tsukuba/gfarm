@@ -2040,6 +2040,23 @@ Example:
 .\}
 .RE
 .PP
+log_tls_verbose \fIvalidity\fR
+.RS 4
+When "enable" is specified, verbose messages about TLS are logged\&.
+.sp
+Example:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	log_tls_verbose enable
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 file_trace \fIvalidity\fR
 .RS 4
 When "enable" is specified, an audit log feature for file creation, modification and removal is enabled\&.
@@ -2515,6 +2532,26 @@ Example:
 .\}
 .nf
 	metadb_journal_recvq_size 100000
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+metadb_backend_sync_commit_at_initialization \fIvalidity\fR
+.RS 4
+If metadb_replication is enabled, gfmd reflects the journal file contents to the backend database at startup, This directive controls whether or not synchronous commit is performed on the backend database side\&. If this setting is disable, asynchronous commit is performed, which speeds up gfmd startup\&. The default is
+disable\&. This directive is currently implemented only in the PostgreSQL backend\&.
+.sp
+This parameter is only available in gfmd\&.conf\&.
+.sp
+Example:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	metadb_backend_sync_commit_at_initialization disable
 .fi
 .if n \{\
 .RE
@@ -3463,6 +3500,7 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 	<log_level_statement> |
 	<log_message_verbose_level_statement> |
 	<log_auth_verbose_statement> |
+	<log_tls_verbose_statement> |
 	<file_trace_statement> |
 	<fatal_action_statement> |
 	<debug_command_statement> |
@@ -3487,6 +3525,7 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 	<metadb_journal_dir_statement> |
 	<metadb_journal_max_size_statement> |
 	<metadb_journal_recvq_size_statement> |
+	<metadb_backend_sync_commit_at_initialization_statement> |
 	<metadb_replica_remover_by_host_sleep_time_statement> |
 	<metadb_replica_remover_by_host_inode_step_statement> |
 	<replica_check_statement> |
@@ -4893,6 +4932,20 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 .\}
 .RE
 .PP
+<log_tls_verbose_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"log_tls_verbose" <validity>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 <file_trace_statement> ::=
 .RS 4
 .sp
@@ -5224,6 +5277,20 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 .\}
 .nf
 "metadb_journal_recvq_size" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<metadb_backend_sync_commit_at_initialization_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"metadb_backend_sync_commit_at_initialization" <validity>
 .fi
 .if n \{\
 .RE

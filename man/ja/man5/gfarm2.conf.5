@@ -771,7 +771,7 @@ sharedsecret 認証を行なう Gfarm ユーザーのホームディレクトリ
 .sp
 この文はgfmd\&.confのみで有効であり、gfarm2\&.confでは無視されます。
 .sp
-Example:
+例:
 .sp
 .if n \{\
 .RS 4
@@ -1878,6 +1878,23 @@ enableと指定した場合、認証処理に関する詳細なログを記録�
 .\}
 .RE
 .PP
+log_tls_verbose \fI有効性\fR
+.RS 4
+enableと指定した場合、TLS処理に関する詳細なログを記録します。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	log_tls_verbose enable
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 file_trace \fI有効性\fR
 .RS 4
 enableと指定した場合、ファイル作成・変更・削除に関する 監査ログの出力機能を有効にします。
@@ -2344,6 +2361,25 @@ metadb_journal_recvq_size \fIキュー長\fR
 .\}
 .nf
 	metadb_journal_recvq_size 100000
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+metadb_backend_sync_commit_at_initialization \fI有効性\fR
+.RS 4
+metadb_replication が enable の場合、gfmd は起動時にジャーナルファイルの 内容をバックエンドデータベースへ反映しますが、 この反映時にバックエンドデータベース側で同期コミットを行なうか否かを このディレクティブで制御します。 この設定が disable だと非同期にコミットを行なうため gfmd の起動が 高速化します。 デフォルトは disable です。 このディレクティブは現在 PostgreSQL バックエンドのみで実装されています。
+.sp
+この文はgfmd\&.confのみで有効であり、gfarm2\&.confでは無視されます。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	metadb_backend_sync_commit_at_initialization disable
 .fi
 .if n \{\
 .RE
@@ -3318,6 +3354,7 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 	<log_level_statement> |
 	<log_message_verbose_level_statement> |
 	<log_auth_verbose_statement> |
+	<log_tls_verbose_statement> |
 	<file_trace_statement> |
 	<fatal_action_statement> |
 	<debug_command_statement> |
@@ -3342,6 +3379,7 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 	<metadb_journal_dir_statement> |
 	<metadb_journal_max_size_statement> |
 	<metadb_journal_recvq_size_statement> |
+	<metadb_backend_sync_commit_at_initialization_statement> |
 	<metadb_replica_remover_by_host_sleep_time_statement> |
 	<metadb_replica_remover_by_host_inode_step_statement> |
 	<replica_check_statement> |
@@ -4748,6 +4786,20 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .RE
 .PP
+<log_tls_verbose_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"log_tls_verbose" <validity>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 <file_trace_statement> ::=
 .RS 4
 .sp
@@ -5079,6 +5131,20 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .nf
 "metadb_journal_recvq_size" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<metadb_backend_sync_commit_at_initialization_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"metadb_backend_sync_commit_at_initialization" <validity>
 .fi
 .if n \{\
 .RE

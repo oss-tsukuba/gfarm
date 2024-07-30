@@ -707,7 +707,7 @@ gfmdのCPU負荷を若干低減できます。
 <p>
 この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
 </p>
-<p>Example:</p>
+<p>例:</p>
 <div class="literallayout"><p><br>
 	metadb_server_nfs_root_squash_support disable<br>
 </p></div>
@@ -1611,6 +1611,16 @@ enableと指定した場合、認証処理に関する詳細なログを記録�
 	log_auth_verbose enable<br>
 </p></div>
 </dd>
+<dt><span class="term"><span class="token">log_tls_verbose</span> <em class="parameter"><code>有効性</code></em></span></dt>
+<dd>
+<p>
+enableと指定した場合、TLS処理に関する詳細なログを記録します。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	log_tls_verbose enable<br>
+</p></div>
+</dd>
 <dt><span class="term"><span class="token">file_trace</span> <em class="parameter"><code>有効性</code></em></span></dt>
 <dd>
 <p>
@@ -1965,6 +1975,26 @@ gfsd や gfmd は、gfarm2.conf や gfmd.conf 中のこの文を無視します�
 <p>例:</p>
 <div class="literallayout"><p><br>
 	metadb_journal_recvq_size 100000<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">metadb_backend_sync_commit_at_initialization</span> <em class="parameter"><code>有効性</code></em></span></dt>
+<dd>
+<p>
+metadb_replication が enable の場合、gfmd は起動時にジャーナルファイルの
+内容をバックエンドデータベースへ反映しますが、
+この反映時にバックエンドデータベース側で同期コミットを行なうか否かを
+このディレクティブで制御します。
+この設定が disable だと非同期にコミットを行なうため gfmd の起動が
+高速化します。
+デフォルトは disable です。
+このディレクティブは現在 PostgreSQL バックエンドのみで実装されています。
+</p>
+<p>
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	metadb_backend_sync_commit_at_initialization disable<br>
 </p></div>
 </dd>
 <dt><span class="term"><span class="token">metadb_replica_remover_by_host_sleep_time</span> <em class="parameter"><code>ナノ秒</code></em></span></dt>
@@ -2777,6 +2807,7 @@ OpenSSL の security_level 機能の数値を指定します。
 	&lt;log_level_statement&gt; |<br>
 	&lt;log_message_verbose_level_statement&gt; |<br>
 	&lt;log_auth_verbose_statement&gt; |<br>
+	&lt;log_tls_verbose_statement&gt; |<br>
 	&lt;file_trace_statement&gt; |<br>
 	&lt;fatal_action_statement&gt; |<br>
 	&lt;debug_command_statement&gt; |<br>
@@ -2801,6 +2832,7 @@ OpenSSL の security_level 機能の数値を指定します。
 	&lt;metadb_journal_dir_statement&gt; |<br>
 	&lt;metadb_journal_max_size_statement&gt; |<br>
 	&lt;metadb_journal_recvq_size_statement&gt; |<br>
+	&lt;metadb_backend_sync_commit_at_initialization_statement&gt; |<br>
 	&lt;metadb_replica_remover_by_host_sleep_time_statement&gt; |<br>
 	&lt;metadb_replica_remover_by_host_inode_step_statement&gt; |<br>
 	&lt;replica_check_statement&gt; |<br>
@@ -3038,6 +3070,8 @@ OpenSSL の security_level 機能の数値を指定します。
 <dd><div class="literallayout"><p>"log_message_verbose_level" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;log_auth_verbose_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"log_auth_verbose" &lt;validity&gt;</p></div></dd>
+<dt><span class="term">&lt;log_tls_verbose_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"log_tls_verbose" &lt;validity&gt;</p></div></dd>
 <dt><span class="term">&lt;file_trace_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"file_trace" &lt;validity&gt;</p></div></dd>
 <dt><span class="term">&lt;fatal_action_statement&gt; ::=</span></dt>
@@ -3087,6 +3121,8 @@ OpenSSL の security_level 機能の数値を指定します。
 <dd><div class="literallayout"><p>"metadb_journal_max_size" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;metadb_journal_recvq_size_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"metadb_journal_recvq_size" &lt;number&gt;</p></div></dd>
+<dt><span class="term">&lt;metadb_backend_sync_commit_at_initialization_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"metadb_backend_sync_commit_at_initialization" &lt;validity&gt;</p></div></dd>
 <dt><span class="term">&lt;metadb_replica_remover_by_host_sleep_time_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"metadb_replica_remover_by_host_sleep_time" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;metadb_replica_remover_by_host_inode_step_statement&gt; ::=</span></dt>
