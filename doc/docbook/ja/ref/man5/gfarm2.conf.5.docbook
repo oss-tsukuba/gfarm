@@ -881,7 +881,7 @@ gfmdのCPU負荷を若干低減できます。
 <para>
 この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
 </para>
-<para>Example:</para>
+<para>例:</para>
 <literallayout format="linespecific" class="normal">
 	metadb_server_nfs_root_squash_support disable
 </literallayout>
@@ -2591,7 +2591,7 @@ metadb_replication が enable の場合、gfmd は起動時にジャーナルフ
 <para>
 この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
 </para>
-<para>Example:</para>
+<para>例:</para>
 <literallayout format="linespecific" class="normal">
 	metadb_backend_sync_commit_at_initialization disable
 </literallayout>
