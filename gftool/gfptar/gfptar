@@ -2197,7 +2197,8 @@ class GfTarFile(tarfile.TarFile):
         if tarinfo is None:  # warning, skip
             return
         if entry.is_file():
-            time.sleep(getattr(self, self.ATTR_DUMMY_SLEEP))
+            if self.dummy_sleep > 0:
+                time.sleep(self.dummy_sleep)
             with RandomStream(entry.size) as f:
                 self.addfile(tarinfo, fileobj=f)
         else:
@@ -3155,7 +3156,8 @@ class GfptarCommand(Command):
     def list_dummy_files(self, base_dir, num, size_min, size_max, dummy_sleep):
         # defaults
         files_per_dir = 1000
-        dummy_sleep_per_entry = dummy_sleep / 512  # for each readdir()
+        # dummy_sleep_per_entry = dummy_sleep / 512  # for each readdir()
+        dummy_sleep_per_entry = 0
         dir_min_depth = 5
         dir_max_depth = 5
         dir_min_length = 30
@@ -3209,7 +3211,9 @@ class GfptarCommand(Command):
                                  size, mtime, linkname)
 
         def rand_file(dir_path, idx):
-            time.sleep(dummy_sleep_per_entry)
+            if dummy_sleep_per_entry > 0:
+                # time.sleep(0): long time since Python 3.11
+                time.sleep(dummy_sleep_per_entry)
             # f = generate_random_filename()
             f = f'{idx}.txt'
             path = os.path.join(dir_path, f)
@@ -5120,7 +5124,7 @@ Options:
                             (create 1000 files and directories per 1 unit)
                             (default: disabled)
   --dummy-size-min=BYTES    minimum size of dummy files [default: 0]
-  --dummy-size-max=BYTES    maximum size of dummy files [default: 1Mi]
+  --dummy-size-max=BYTES    maximum size of dummy files [default: 0]
   --dummy-sleep=SEC         sleep time per dummy file [default: 0.0]
   --dry-run                 not create output files
   -q, --quiet               quiet messages
