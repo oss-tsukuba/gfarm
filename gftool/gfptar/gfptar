@@ -3748,9 +3748,12 @@ class GfptarCommand(Command):
                     (status, exc_type_name, exc_value_str,
                      exc_traceback_str) = result
                     inq.put(self.MSG_PARENT_ERROR_COMPLETE)
-                    raise Exception(
-                        f'{exc_type_name}: {exc_value_str}\n'
-                        f'{"".join(exc_traceback_str)}')
+                    if self.verbose or self.debug:
+                        raise GfException(
+                            f'{exc_type_name}: {exc_value_str}\n'
+                            f'{"".join(exc_traceback_str)}')
+                    else:
+                        raise GfException(f'{exc_type_name}: {exc_value_str}')
                 else:
                     logger.error('unknown message from child process:'
                                  f' {str(result)}')
@@ -3764,11 +3767,11 @@ class GfptarCommand(Command):
             self.name, loglevel=self.loglevel,
             debug=self.debug, verbose=self.verbose)
 
-        self.sig_default()
-        while True:  # not exit
-            pid = os.getpid()
-            logger.debug('create_a_tar_process: start, pid=%d', pid)
-            self.create_a_tar_process0(input_queue, output_queue)
+        logger.debug('create_a_tar_process: start, pid=%d', os.getpid())
+
+        self.sig_ignore()
+        while self.create_a_tar_process0(input_queue, output_queue):
+            pass
 
     def create_a_tar_process0(self, input_queue, output_queue):
         request = input_queue.get()
@@ -3786,6 +3789,7 @@ class GfptarCommand(Command):
             output_queue.put((self.MSG_CHILD_DONE, tar_size,
                               cannot_be_archived, outurl, infodb_url))
             logger.debug('subprocess exits: serial=%d', serial)
+            return True  # next job
         except Exception as e:
             logger.debug('create_a_tar_process: error (serial=%d)', serial)
             self.print_trace(e)
@@ -3801,6 +3805,7 @@ class GfptarCommand(Command):
                 # expect: self.MSG_PARENT_ERROR_COMPLETE
             except queue.Empty:
                 pass
+            return False  # process exit
 
     def create_a_tar_process1(self, input_queue, output_queue,
                               gen, serial, dbfile):
