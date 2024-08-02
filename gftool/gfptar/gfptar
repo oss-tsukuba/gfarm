@@ -49,6 +49,7 @@ import queue
 import inspect
 from collections import defaultdict
 import datetime
+import atexit
 
 from docopt import docopt
 from schema import Schema, Use, Or
@@ -2634,16 +2635,19 @@ class GfptarCommand(Command):
         out = gfwhoami()
         self.gfarm_user = out.strip()
         self.test_mode = True
+        self.test_workdir_init()
 
     def test_main_short(self):
         self.test_init()
-        self.test_member()
         self.test_opt_pattern(full=False)
+        self.test_member()
         self.test_specified_dir()
 
     def test_main_long(self):
         self.test_init()
         self.test_unit()
+        self.test_opt_pattern(full=True)
+        self.test_member()
         # self.test_invalid('url', 'gfarm:/tmp', 'dst', False)  # allowed
         self.test_invalid('dot1', '.', 'dst', True)
         self.test_invalid('dot2', '', 'dst', False)
@@ -2653,8 +2657,6 @@ class GfptarCommand(Command):
         self.test_invalid('dotdot2', '../', 'dst', False)
         self.test_invalid('dotdot3', '../abc', 'dst', False)
         self.test_invalid('dotdot4', './..', 'dst', False)
-        self.test_member()
-        self.test_opt_pattern(full=True)
 
     def test_unit(self):
         verbosity = 2
@@ -2675,7 +2677,8 @@ class GfptarCommand(Command):
         # create tar per one entry
         self.opt['--size'] = 0
 
-        # test --verbose and --sync-db
+        # test --sync-db
+        # --verbose: test report_path (SEE ALSO: create_a_tar_process1)
         self.opt['--verbose'] = True
         self.opt['--sync-db'] = True
         self.test_simple('syncdb')
@@ -2740,16 +2743,43 @@ class GfptarCommand(Command):
         self.opt['--type'] = save_opt_type
         self.opt['--use-compress-program'] = save_opt_compress_prog
 
-    def test_invalid(self, name, src, dst, for_gfarm):
-        testname = f'gfptar-test-invalid-{name}'
-        d_name = f'{testname}-{self.gfarm_user}-{self.uid}-{self.pid}'
+    def test_workdir_init(self):
+        def remove_tree(url):
+            logger.debug('remove_tree: %s', url.url_str)
+            url.remove_tree(remove_readonly=True)
 
+        test_dname = f"gfptar-test-{self.gfarm_user}-{self.uid}-{self.pid}"
+        self.testdir_gfarm = os.path.join(self.opt['--test-workdir-gfarm'],
+                                          test_dname)
+        self.testdir_gfarm_url = GfURL.init(self.testdir_gfarm)
+        self.testdir_gfarm_url.mkdir()
+        atexit.register(remove_tree, self.testdir_gfarm_url)
+
+        self.testdir_local = os.path.join(self.opt['--test-workdir-local'],
+                                          test_dname)
+        self.testdir_local_url = GfURL.init(self.testdir_local)
+        self.testdir_local_url.mkdir()
+        atexit.register(remove_tree, self.testdir_local_url)
+
+    def test_workdir_set(self, dname, gfarm=True, local=True):
+        if gfarm:
+            self.workdir_gfarm = os.path.join(self.testdir_gfarm, dname)
+            self.workdir_gfarm_url = GfURL.init(self.workdir_gfarm)
+            self.workdir_gfarm_url.mkdir()
+        if local:
+            self.workdir_local = os.path.join(self.testdir_local, dname)
+            self.workdir_local_url = GfURL.init(self.workdir_local)
+            self.workdir_local_url.mkdir()
+
+    def test_invalid(self, name, src, dst, for_gfarm):
+        testname = f'invalid-{name}'
+        self.test_workdir_set(testname, gfarm=for_gfarm, local=not for_gfarm)
         if for_gfarm:
-            workdir = os.path.join(self.opt['--test-workdir-gfarm'], d_name)
+            workdir = self.workdir_gfarm
+            workdir_url = self.workdir_gfarm_url
         else:
-            workdir = os.path.join(self.opt['--test-workdir-local'], d_name)
-        workdir_url = GfURL.init(workdir)
-        workdir_url.mkdir()
+            workdir = self.workdir_local
+            workdir_url = self.workdir_local_url
 
         testsrc_name = src
         # srcdir = workdir_url.url_join(testsrc_name)
@@ -2776,14 +2806,12 @@ class GfptarCommand(Command):
             print(testname + ' ... FAIL (unexpected success)')
 
     def test_simple(self, name, use_all_files=False):
-        testname = f'gfptar-test-simple-{name}'
-        d_name = f'{testname}-{self.gfarm_user}-{self.uid}-{self.pid}'
-        workdir_local = os.path.join(self.opt['--test-workdir-local'], d_name)
-        workdir_gfarm = os.path.join(self.opt['--test-workdir-gfarm'], d_name)
-        workdir_local_url = GfURL.init(workdir_local)
-        workdir_gfarm_url = GfURL.init(workdir_gfarm)
-        workdir_local_url.mkdir()
-        workdir_gfarm_url.mkdir()
+        testname = f'simple-{name}'
+        self.test_workdir_set(testname)
+        workdir_local = self.workdir_local
+        workdir_gfarm = self.workdir_gfarm
+        workdir_local_url = self.workdir_local_url
+        workdir_gfarm_url = self.workdir_gfarm_url
 
         testsrc_name = 'test-src'
         srcdir_local = workdir_local_url.url_join(testsrc_name)
@@ -2844,15 +2872,14 @@ class GfptarCommand(Command):
         # Local(tar) -> Local
         self.cmd_extract(test4_dir_local, test3_dir_local, [])
 
-        quiet = not (self.debug or self.verbose)
         # --list for gfarm
-        count = self.cmd_list_simple(test1_dir_gfarm, quiet=quiet)
+        count = self.cmd_list_simple(test1_dir_gfarm)
         if count != count1:
             logger.error(f'count({count}) != count1({count1})')
             logger.error_exit(1, testname +
                               '(list_simple(test1_dir_gfarm)) ... FAIL')
         # --verbose --list for local
-        count = self.cmd_list_verbose(test3_dir_local, quiet=quiet)
+        count = self.cmd_list_verbose(test3_dir_local)
         if count != count1:
             logger.error(f'count({count}) != count1({count1})')
             logger.error_exit(1, testname +
@@ -2922,13 +2949,11 @@ class GfptarCommand(Command):
 
     def test_member(self):
         testname = 'gfptar-test-member'
-        d_name = f'{testname}-{self.gfarm_user}-{self.uid}-{self.pid}'
-        workdir_local = os.path.join(self.opt['--test-workdir-local'], d_name)
-        workdir_gfarm = os.path.join(self.opt['--test-workdir-gfarm'], d_name)
-        workdir_local_url = GfURL.init(workdir_local)
-        workdir_gfarm_url = GfURL.init(workdir_gfarm)
-        workdir_local_url.mkdir()
-        workdir_gfarm_url.mkdir()
+        self.test_workdir_set(testname)
+        # workdir_local = self.workdir_local
+        # workdir_gfarm = self.workdir_gfarm
+        workdir_local_url = self.workdir_local_url
+        workdir_gfarm_url = self.workdir_gfarm_url
 
         testsrc_name = 'test-src'
         srcdir_local = workdir_local_url.url_join(testsrc_name)
@@ -3102,13 +3127,11 @@ class GfptarCommand(Command):
         basedir_url = GfURL.init(basedir)
 
         testname = 'gfptar-test-specified-dir'
-        d_name = f'{testname}-{self.gfarm_user}-{self.uid}-{self.pid}'
-        workdir_local = os.path.join(self.opt['--test-workdir-local'], d_name)
-        workdir_gfarm = os.path.join(self.opt['--test-workdir-gfarm'], d_name)
-        workdir_local_url = GfURL.init(workdir_local)
-        workdir_gfarm_url = GfURL.init(workdir_gfarm)
-        workdir_local_url.mkdir()
-        workdir_gfarm_url.mkdir()
+        self.test_workdir_set(testname)
+        # workdir_local = self.workdir_local
+        # workdir_gfarm = self.workdir_gfarm
+        workdir_local_url = self.workdir_local_url
+        workdir_gfarm_url = self.workdir_gfarm_url
 
         test9_name = 'test-9-create'
         test9_dir_gfarm = workdir_gfarm_url.url_join(test9_name)
@@ -4570,17 +4593,20 @@ class GfptarCommand(Command):
                          f'{bytes_per_sec_str}B/s '
                          f'{ent_per_sec_str}Ent/s')
 
-    def cmd_list_simple(self, indir, quiet=False):
-        return self.cmd_list(indir, quiet=quiet, verbose=False)
+    def cmd_list_simple(self, indir):
+        return self.cmd_list(indir, verbose=False)
 
-    def cmd_list_verbose(self, indir, quiet=False):
-        return self.cmd_list(indir, quiet=quiet, verbose=True)
+    def cmd_list_verbose(self, indir):
+        return self.cmd_list(indir, verbose=True)
 
-    def cmd_list(self, indir, quiet=False, verbose=True):
+    def cmd_list(self, indir, verbose=True):
         self.options_init()
-        if self.quiet:
-            quiet = self.quiet
+        quiet = self.quiet
         indir_url = GfURL.init(indir)
+        if self.test_mode:
+            f = os.devnull
+        else:
+            f = sys.stdout
 
         def print_quiet(serial, gen, path, fattr):
             pass
@@ -4595,13 +4621,13 @@ class GfptarCommand(Command):
             mtime_str = dt_object.strftime('%Y-%m-%d %H:%M')
             print(f'g{gen}_{serial:04} {fattr.ftype} {fattr.mode:04o}'
                   f' {fattr.user:>8}/{fattr.group:<8}'
-                  f' {fattr.size:9d} {mtime_str} {name}')
+                  f' {fattr.size:9d} {mtime_str} {name}', file=f)
 
         def print_simple(serial, gen, path, fattr):
             name = path
             if fattr.ftype == InfoDB.TYPE_DIR:
                 name = name + '/'
-            print(f'{fattr.ftype} {name}')
+            print(f'{fattr.ftype} {name}', file=f)
 
         if quiet:
             print_func = print_quiet
