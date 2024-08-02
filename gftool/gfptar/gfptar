@@ -4118,7 +4118,7 @@ class GfptarCommand(Command):
                 else:
                     if file_type == InfoDB.TYPE_DIR:  # all directories
                         logger.debug('directory_set.add: %s', path)
-                        directory_set.add(path.rstrip('/'))
+                        directory_set.add(path.strip('/'))
             logger.debug('os.remove: %s', db_path)
             os.remove(db_path)
 
@@ -4187,8 +4187,9 @@ class GfptarCommand(Command):
          member_set, error_num) = self.extract_schedule()
         self.outdir_url.create_new_dir()
 
+        # NOTE: Directories are created in threads
         # self.extract_directories(directory_set)  # slow
-        self.extract_directories_fast(directory_set)
+        # self.extract_directories_fast(directory_set)
 
         self.extracted_num = 0
         self.extracted_size = 0
@@ -4377,21 +4378,27 @@ class GfptarCommand(Command):
                     member_set.remove(tarinfo.name)
             # members_num == 0 -> extract all
 
-            # ex. /a/b/c/ -> a/b/c
+            # ex. //a/b/c// -> a/b/c
             outfile = tarinfo.name.strip('/')  # relative path only
             outurl_str = self.outdir_url.url_join(outfile)
             outurl = GfURL.init(outurl_str, dry_run=self.dry_run)
 
-            parent = outurl.parent
+            # create directories if not exist
+            if tarinfo.isdir():
+                dir_url = outurl
+                dir_path = outfile
+            else:
+                dir_url = outurl.parent
+                dir_path = dir_url.path
             with self.lock():
-                exist_dir = parent.path in self.created_directory_set
-            if not exist_dir:
-                if not parent.exists():
-                    with ignore_exception(True):
-                        self.info('created(D): {}', parent.path)
-                        parent.makedirs()  # default 0700
+                dir_exists = dir_path in self.created_directory_set
+            if not dir_exists:
+                if not dir_url.exists():
+                    with ignore_exception(True):  # may be race condition
+                        dir_url.makedirs()  # default 0700
+                    self.info('created(D): {}', dir_path)
                 with self.lock():
-                    self.created_directory_set.add(parent.path)
+                    self.created_directory_set.add(dir_path)
 
             if tarinfo.isfile():
                 target_host = self.select_a_target_host(outurl, index)
@@ -4420,7 +4427,7 @@ class GfptarCommand(Command):
                 fattr = FileAttr1(tarinfo.mode, tarinfo.mtime,
                                   tarinfo.uname, tarinfo.gname)
                 with self.lock():
-                    self.dirstat_dict[outfile.rstrip('/')] = fattr
+                    self.dirstat_dict[outfile] = fattr
             elif tarinfo.issym():
                 logger.debug('extract,link: %s, %s', outfile,
                              tarinfo.linkname)
