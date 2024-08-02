@@ -2801,11 +2801,14 @@ class GfptarCommand(Command):
             noread = False
             link = False
             longname = False
-        self.test_prepare_srcdir(srcdir_local,
-                                 readonly, noread, link, longname)
-        self.test_prepare_srcdir(srcdir_gfarm,
-                                 readonly, noread, link, longname)
-
+        count1 = self.test_prepare_srcdir(srcdir_local,
+                                          readonly, noread, link, longname)
+        count2 = self.test_prepare_srcdir(srcdir_gfarm,
+                                          readonly, noread, link, longname)
+        if count1 != count2:
+            logger.error(f'count1({count1}) != count2({count2})')
+            logger.error_exit(1, testname + '(count1 != count2) ' +
+                              '... FAIL (test_prepare_srcdir is broken)')
         test1_name = 'test-1-create'
         test1_dir_gfarm = workdir_gfarm_url.url_join(test1_name)
         test2_name = 'test-2-extract'
@@ -2817,6 +2820,7 @@ class GfptarCommand(Command):
 
         # Gfarm -> Gfarm(tar)
         try:
+            # from srcdir_gfarm
             self.cmd_create(test1_dir_gfarm, workdir_gfarm, [testsrc_name])
             if noread:
                 logger.error_exit(1, testname + '(create:Gfarm->Gfarm) ' +
@@ -2840,11 +2844,19 @@ class GfptarCommand(Command):
         # Local(tar) -> Local
         self.cmd_extract(test4_dir_local, test3_dir_local, [])
 
-        # --list
-        self.cmd_list_simple(test1_dir_gfarm, quiet=True)
-        self.cmd_list_simple(test3_dir_local, quiet=True)
-        self.cmd_list_verbose(test1_dir_gfarm, quiet=True)
-        self.cmd_list_verbose(test3_dir_local, quiet=True)
+        quiet = not (self.debug or self.verbose)
+        # --list for gfarm
+        count = self.cmd_list_simple(test1_dir_gfarm, quiet=quiet)
+        if count != count1:
+            logger.error(f'count({count}) != count1({count1})')
+            logger.error_exit(1, testname +
+                              '(list_simple(test1_dir_gfarm)) ... FAIL')
+        # --verbose --list for local
+        count = self.cmd_list_verbose(test3_dir_local, quiet=quiet)
+        if count != count1:
+            logger.error(f'count({count}) != count1({count1})')
+            logger.error_exit(1, testname +
+                              '(list_verbose(test3_dir_local)) ... FAIL')
 
         if readonly:
             # extract a member (SEE ALSO: test_prepare_srcdir)
@@ -2998,28 +3010,30 @@ class GfptarCommand(Command):
         L = 'hardlink'
         longname = ('0123456789' * 30)[:255]
         tree = [
-            # (F, 'file1', 0o664, 1234567890, None),
-            (F, 'gfarm:abc', 0o644, 1234567890, None),  # not Gfarm URL
-            (D, 'dir1', 0o715, 2234567890, None),
+            # (F, 'file1', 0o664, 1234567890, None, True),
+            (F, 'gfarm:abc', 0o644, 1234567890, None, True),  # not Gfarm URL
+            (D, 'dir1', 0o715, 2234567890, None, True),
         ]
         tree_readonly = [
-            (D, 'dir1/readonly', 0o700, 3234567891, None),  # chmod 500 later
-            (F, 'dir1/readonly/file#2', 0o456, 4234567892, None),
+            (D, 'dir1/readonly', 0o700,  # chmod 0o500 later
+             3234567891, None, True),
+            (F, 'dir1/readonly/file#2', 0o456, 4234567892, None, True),
         ]
         tree_noread = [
-            (F, 'dir1/noread-file', 0o000, 1234567891, None),
-            (D, 'dir1/noread-dir', 0o700, 1234567892, None),  # chmod 000 later
-            (F, 'dir1/noread-dir/file3', 0o400, 1234567893, None),
+            (F, 'dir1/noread-file', 0o000, 1234567891, None, False),
+            (D, 'dir1/noread-dir', 0o700,  # chmod 0o000 later
+             1234567892, None, True),
+            (F, 'dir1/noread-dir/file3', 0o400, 1234567893, None, False),
         ]
         tree_link = [
-            (D, 'dir1/ディレクトリ 2', 0o755, 5234567890, None),
+            (D, 'dir1/ディレクトリ 2', 0o755, 5234567890, None, True),
             (L, 'dir1/ディレクトリ 2/hardlink1',
-             0o400, 6234567890, 'gfarm:abc'),
+             0o400, 6234567890, 'gfarm:abc', True),
             (S, 'dir1/ディレクトリ 2/symlink1',
-             0o777, 7234567890, 'hardlink1'),
+             0o777, 7234567890, 'hardlink1', True),
         ]
         tree_longname = [
-            (F, 'dir1/' + longname, 0o775, 9234567890, None),
+            (F, 'dir1/' + longname, 0o775, 9234567890, None, True),
         ]
         if readonly:
             tree += tree_readonly
@@ -3029,14 +3043,17 @@ class GfptarCommand(Command):
             tree += tree_link
         if longname:
             tree += tree_longname
+        count = 0
         srcdir_url = GfURL.init(dir_url_str)
         srcdir_url.mkdir()
+        count += 1
         for ent in tree:
             ftype = ent[0]
             path = ent[1]
             mode = ent[2]
             mtime = ent[3]
             linkname = ent[4]
+            readable = ent[5]
             url = GfURL.init(srcdir_url.url_join(path))
             if ftype == F:
                 with url.writeopen(textmode=True,
@@ -3052,6 +3069,10 @@ class GfptarCommand(Command):
             elif ftype == L:
                 url.hardlink(srcdir_url.url_join(linkname))
                 url.chmod(mode, mtime=mtime)
+            else:
+                raise Exception(f'Unexpected ftype={ftype}')
+            if readable:
+                count += 1
         for ent in reversed(tree):
             ftype = ent[0]
             path = ent[1]
@@ -3068,6 +3089,7 @@ class GfptarCommand(Command):
         if noread:
             noread_url = GfURL.init(srcdir_url.url_join('dir1/noread-dir'))
             noread_url.chmod(mode=0o000)
+        return count  # the number of readable files
 
     def test_specified_dir(self):
         basedir = self.opt['--basedir']
@@ -4077,7 +4099,7 @@ class GfptarCommand(Command):
         error_num = 0
         for serial, gen, tar_path, dbgz_path, db_path in \
                 self.list_tar_dbgz_db(self.indir_url, sort=False,
-                                      progress=self.progress_enabled):
+                                      progress=False):
             if self.is_canceled():
                 raise self.error_canceled()
             if dbgz_path is None or tar_path is None:
@@ -4094,9 +4116,9 @@ class GfptarCommand(Command):
                     logger.debug('archive_dict[%s]: %s', path, file_type)
                     archive_dict[path] = file_type
                 else:
-                    if file_type == InfoDB.TYPE_DIR:
+                    if file_type == InfoDB.TYPE_DIR:  # all directories
                         logger.debug('directory_set.add: %s', path)
-                        directory_set.add(path)  # all directories
+                        directory_set.add(path.rstrip('/'))
             logger.debug('os.remove: %s', db_path)
             os.remove(db_path)
 
@@ -4398,7 +4420,7 @@ class GfptarCommand(Command):
                 fattr = FileAttr1(tarinfo.mode, tarinfo.mtime,
                                   tarinfo.uname, tarinfo.gname)
                 with self.lock():
-                    self.dirstat_dict[outfile] = fattr
+                    self.dirstat_dict[outfile.rstrip('/')] = fattr
             elif tarinfo.issym():
                 logger.debug('extract,link: %s, %s', outfile,
                              tarinfo.linkname)
@@ -4539,10 +4561,10 @@ class GfptarCommand(Command):
                          f'{ent_per_sec_str}Ent/s')
 
     def cmd_list_simple(self, indir, quiet=False):
-        self.cmd_list(indir, quiet=quiet, verbose=False)
+        return self.cmd_list(indir, quiet=quiet, verbose=False)
 
     def cmd_list_verbose(self, indir, quiet=False):
-        self.cmd_list(indir, quiet=quiet, verbose=True)
+        return self.cmd_list(indir, quiet=quiet, verbose=True)
 
     def cmd_list(self, indir, quiet=False, verbose=True):
         self.options_init()
@@ -4578,12 +4600,15 @@ class GfptarCommand(Command):
         else:
             print_func = print_simple
 
+        count = 0
         for serial, gen, ent_path, fattr in self.list_entries(
                 indir_url, resolve_ugmap=True):
             if self.is_canceled():
                 break
             print_func(serial, gen, ent_path, fattr)
+            count += 1
         self.tmpdir.cleanup()
+        return count
 
     def list_entries(self, indir_url, resolve_ugmap=False, progress=False):
         # SEE ALSO: extract_schedule()
@@ -4704,7 +4729,7 @@ class GfptarCommand(Command):
         del dbgz_list
 
         self.start_time = time.time()
-        save_e = None
+        self.save_e = None
         cancel = False
 
         sigs = [signal.SIGHUP, signal.SIGINT, signal.SIGTERM]
@@ -4742,16 +4767,48 @@ class GfptarCommand(Command):
             else:
                 gen_tarlist_list = gen_tarlist_dict.items()
 
+            def result_one(one, gen):
+                future, serial, tar_path, dbgz_path = one
+                try:
+                    db_path, dbgz_path, ent_num, size = future.result()
+                    self.current_ent_num += ent_num
+                    self.current_size += size
+                    self.current_tar_num += 1
+                    if ent_num > 0 and progress:
+                        now = time.time()
+                        self.progress_for_sync_infodb(now)
+                    yield serial, gen, tar_path, dbgz_path, db_path
+                except Exception as e:
+                    # logger.error(f'{e}')
+                    self.print_trace(e)
+                    share_cancel.value = 1
+                    if self.save_e is None:
+                        self.save_e = e
+
+            def result_all(previous_list, gen):
+                for one in previous_list:
+                    yield from result_one(one, gen)
+
             for gen, tarlist in gen_tarlist_list:
                 if sort:  # sort by serial
                     self.sort_tar_or_db_list(tarlist)
 
                 # concurrent processes per generation (gen)
-                futures = {}
+                job_list = []
                 with concurrent.futures.ProcessPoolExecutor(
                         max_workers=self.max_workers) as executor:
                     for serial, tar_path, dbgz_path in tarlist:
+                        if len(job_list) >= self.max_workers:
+                            # wait for a previous job
+                            yield from result_one(job_list[0], gen)
+                            job_list = job_list[1:]  # remove first
                         if tar_path is None:
+                            # missing tar file
+                            db_path = None
+                            # wait for all previous jobs
+                            yield from result_all(job_list, gen)
+                            job_list = []
+                            yield serial, gen, tar_path, dbgz_path, db_path
                             continue
                         if dbgz_path is None:
                             update = True
@@ -4765,29 +4822,8 @@ class GfptarCommand(Command):
                         # members of "GfptarCommand (self)" object.
                         future = executor.submit(InfoDB.generate_db_and_dbgz,
                                                  arg)
-                        futures[serial] = future
-
-                    for serial, tar_path, dbgz_path in tarlist:
-                        if tar_path is None:
-                            db_path = None
-                            # missing tar file
-                            yield serial, gen, tar_path, dbgz_path, db_path
-                        try:
-                            future = futures[serial]
-                            db_path, dbgz_path, ent_num, size = future.result()
-                            self.current_ent_num += ent_num
-                            self.current_size += size
-                            self.current_tar_num += 1
-                            if ent_num > 0 and progress:
-                                now = time.time()
-                                self.progress_for_sync_infodb(now)
-                            yield serial, gen, tar_path, dbgz_path, db_path
-                        except Exception as e:
-                            # logger.error(f'{e}')
-                            self.print_trace(e)
-                            share_cancel.value = 1
-                            if save_e is None:
-                                save_e = e
+                        job_list.append((future, serial, tar_path, dbgz_path))
+                    yield from result_all(job_list, gen)
             if share_cancel.value != 0:
                 cancel = True
         # no longer be able to access Manager
@@ -4799,8 +4835,8 @@ class GfptarCommand(Command):
             now = time.time()
             self.progress_for_sync_infodb(now)
             sys.stdout.write('\n')
-        if save_e:
-            raise save_e
+        if self.save_e:
+            raise self.save_e
         if cancel:
             raise self.error_canceled()
 
