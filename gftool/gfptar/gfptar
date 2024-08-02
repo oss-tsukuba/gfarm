@@ -2532,7 +2532,7 @@ class GfptarCommand(Command):
         def sig_handler(signum, frame):
             if message:
                 # logger.warning(f'Interrupt (signal={signum})')
-                sys.stderr.write(f'\nInterrupt[1] (signal={signum})\n')
+                sys.stderr.write(f'\nInterrupt (signal={signum})\n')
             self.canceled = True
 
         signal.signal(signal.SIGHUP, sig_handler)
@@ -4717,8 +4717,14 @@ class GfptarCommand(Command):
 
     # yield tuple(serial, gen, tar_path, dbgz_path, db_path)
     def list_tar_dbgz_db(self, indir_url, sort=False, progress=False):
-        logger.debug('list_tar_dbgz_db')
+        logger.debug('list_tar_dbgz_db: start: %s', indir_url.url_str)
+        try:
+            yield from self.list_tar_dbgz_db0(indir_url,
+                                              sort=sort, progress=progress)
+        finally:
+            logger.debug('list_tar_dbgz_db: done: %s', indir_url.url_str)
 
+    def list_tar_dbgz_db0(self, indir_url, sort=False, progress=False):
         tar_list, dbgz_list = self.list_tar_list_dbgz_from_dir(indir_url)
 
         tar_dict = {}
@@ -4773,7 +4779,7 @@ class GfptarCommand(Command):
         for sig in sigs:
             orig_sig_handler[sig] = signal.getsignal(sig)
 
-        self.sig_ignore()  # for parent process
+        self.sig_ignore()
 
         # Concurrent execution for each generation
         with multiprocessing.Manager() as manager:  # subprocess
@@ -4783,10 +4789,10 @@ class GfptarCommand(Command):
             def sig_handler(signum, frame):
                 if share_cancel.value == 0:
                     # logger.warning(f'Interrupt (signal={signum}')
-                    sys.stderr.write(f'\nInterrupt[2] (signal={signum})\n')
+                    sys.stderr.write(f'\nInterrupt (signal={signum})\n')
                     share_cancel.value = 1
+                    self.cancel()
 
-            # for Manager process
             signal.signal(signal.SIGHUP, sig_handler)
             signal.signal(signal.SIGINT, sig_handler)
             signal.signal(signal.SIGTERM, sig_handler)
@@ -4860,8 +4866,9 @@ class GfptarCommand(Command):
                                                  arg)
                         job_list.append((future, serial, tar_path, dbgz_path))
                     yield from result_all(job_list, gen)
-            if share_cancel.value != 0:
-                cancel = True
+                if share_cancel.value != 0:
+                    cancel = True
+                    break
         # no longer be able to access Manager
         for sig in sigs:
             # restore
@@ -4992,7 +4999,7 @@ class InfoDB:
             def sig_handler(signum, frame):
                 if not cls.signal_canceled:
                     pid = os.getpid()
-                    logger.info(f'Interrupt[3] (signal={signum}) (PID={pid})')
+                    logger.info(f'Interrupt (signal={signum}) (PID={pid})')
                     cls.signal_canceled = True
 
             signal.signal(signal.SIGHUP, sig_handler)
