@@ -62,3 +62,25 @@ check_N() {
     exit $exit_fail
   fi
 }
+
+get_mtime() {
+    file="$1"
+    case $file in
+	gfarm:*)
+	    gfstat "$file" | grep ^Modify | cut -d' ' -f 2,3
+	    ;;
+	file:*)
+	    f=${file#file:}
+	    stat "$f" | grep ^Modify | cut -d' ' -f 2,3
+	    ;;
+    esac
+}
+
+compare_mtime() {
+    m1=`get_mtime $1`
+    m2=`get_mtime $2`
+    if [ "$m1" != "$m2" ]; then
+	echo "compare_mtime: $m1 != $m2 ($1, $2)"
+	exit $exit_fail
+    fi
+}

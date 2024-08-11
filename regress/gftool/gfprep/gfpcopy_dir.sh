@@ -57,6 +57,7 @@ else
   exit $exit_fail
 fi
 check_local_entries $local_dir1
+compare_mtime gfarm:$gf_dir1/dir/1byte file:$local_dir1/dir/1byte
 
 if $GFPCOPY $OPT file:$local_dir1 gfarm:$gf_dir2; then
   :
@@ -74,6 +75,7 @@ else
   exit $exit_fail
 fi
 check_local_entries $local_dir2
+compare_mtime gfarm:$gf_dir2/dir/1byte file:$local_dir2/dir/1byte
 
 if $GFPCOPY $OPT gfarm:$gf_dir2 file:$local_dir2; then
   :
@@ -84,6 +86,7 @@ else
 fi
 BASENAME=`basename $gf_dir2`
 check_local_entries $local_dir2/$BASENAME
+compare_mtime gfarm:$gf_dir2/dir/1byte file:$local_dir2/$BASENAME/dir/1byte
 
 clean_test
 exit $exit_pass

@@ -21,10 +21,11 @@ fi
 test_copy() {
   SIZE=$1
   filename=COPYFILE
-  OPT="-b 65536 -f -d ${ADD_OPT}"
+  OPT="-b 65536 -f ${ADD_OPT}"
   lfile=$local_dir1/$filename
   gfile=$gf_dir1/$filename
-  if dd if=/dev/urandom of=$lfile bs=$SIZE count=1 > /dev/null; then
+  lfile2=$local_dir2/$filename
+  if dd if=/dev/urandom of=$lfile bs=$SIZE count=1 2> /dev/null; then
     :
   else
     echo dd failed
@@ -38,6 +39,8 @@ test_copy() {
     clean_test
     exit $exit_fail
   fi
+  compare_mtime file:$lfile gfarm:$gfile
+
   if $GFPCOPY $OPT gfarm:$gfile file:$local_dir2; then
     :
   else
@@ -45,7 +48,8 @@ test_copy() {
     clean_test
     exit $exit_fail
   fi
-  if cmp $lfile $local_dir2/$filename; then
+  compare_mtime gfarm:$gfile file:$lfile2
+  if cmp $lfile $lfile2; then
     :
   else
     echo copied data is different

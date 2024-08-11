@@ -652,6 +652,8 @@ pfunc_copy_by_gfcp(gfarm_pfunc_t *handle,
 	const char *src_url, char *src_host, gfarm_off_t src_size,
 	const char *dst_url, char *dst_host)
 {
+	gfarm_error_t e;
+	struct pfunc_stat src_st;
 	int result = PFUNC_RESULT_OK, retv;
 	char *src_url_uc = (char *)src_url; /* UNCONST */
 	char *dst_url_uc = (char *)dst_url; /* UNCONST */
@@ -706,7 +708,23 @@ pfunc_copy_by_gfcp(gfarm_pfunc_t *handle,
 		fprintf(stderr, "ERROR: copy failed: gfcp(%s, %s)\n",
 		    src_url, dst_url);
 		result = PFUNC_RESULT_NG;
+		goto end;
 	}
+	e = pfunc_lstat(src_url, &src_st);
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "ERROR: copy failed: lstat(%s): %s\n",
+		    src_url, gfarm_error_string(e));
+		result = PFUNC_RESULT_NG;
+		goto end;
+	}
+	e = pfunc_lutimens(dst_url, &src_st);
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "ERROR: copy failed: utime(%s): %s\n",
+		    dst_url, gfarm_error_string(e));
+		result = PFUNC_RESULT_NG;
+		goto end;
+	}
+end:
 	return (result);
 }
 
