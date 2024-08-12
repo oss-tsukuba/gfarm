@@ -1970,7 +1970,7 @@ class GfURLLocal(GfURL):
                   user=None, group=None, use_fsync=True, hostname=None):
         tmpmode = mode | 0o200  # necessary (Permission denied at ex.0o400)
         fd = os.open(path=self.url_str,
-                     flags=(os.O_WRONLY | os.O_CREAT | os.O_EXCL),
+                     flags=(os.O_WRONLY | os.O_CREAT | os.O_TRUNC),
                      mode=tmpmode,
                      )
         if textmode:
@@ -2642,6 +2642,7 @@ class GfptarProgram(Program):
         self.test_init()
         self.test_opt_pattern(full=False)
         self.test_member()
+        self.test_update()
         self.test_specified_dir()
 
     def test_main_long(self):
@@ -2649,6 +2650,7 @@ class GfptarProgram(Program):
         self.test_unit()
         self.test_opt_pattern(full=True)
         self.test_member()
+        self.test_update()
         # self.test_invalid('url', 'gfarm:/tmp', 'dst', False)  # allowed
         self.test_invalid('dot1', '.', 'dst', True)
         self.test_invalid('dot2', '', 'dst', False)
@@ -3025,41 +3027,118 @@ class GfptarProgram(Program):
         workdir_local_url.remove_tree(remove_readonly=True)
         workdir_gfarm_url.remove_tree(remove_readonly=True)
 
+    def test_update(self):
+        testname = 'gfptar-test-update'
+        self.test_workdir_set(testname)
+        # workdir_local = self.workdir_local
+        # workdir_gfarm = self.workdir_gfarm
+        workdir_local_url = self.workdir_local_url
+        workdir_gfarm_url = self.workdir_gfarm_url
+
+        testsrc_name1 = 'test-src1'
+        testsrc_name2 = 'test-src2'
+        srcdir_local1 = workdir_local_url.url_join(testsrc_name1)
+        srcdir_local2 = workdir_local_url.url_join(testsrc_name2)
+        srcdir_gfarm1 = workdir_gfarm_url.url_join(testsrc_name1)
+        srcdir_gfarm2 = workdir_gfarm_url.url_join(testsrc_name2)
+
+        tree = [
+            (self.D, 'dir1', 0o715, 10, None, True),
+            (self.F, 'dir1/file1', 0o664, 10, None, True),
+            (self.F, 'dir1/file2', 0o664, 10, None, True),
+            (self.S, 'dir1/symlink1', 0o777, 10, 'file1', True),
+        ]
+        self.test_create_tree(srcdir_local1, tree)
+        self.test_create_tree(srcdir_gfarm1, tree)
+        tree = [
+            (self.D, 'dir1', 0o750, 11, None, True),
+            (self.F, 'dir1/file1', 0o660, 100, None, True),
+            (self.F, 'dir1/file2', 0o664, 10, None, True),  # not updated
+            (self.S, 'dir1/symlink1', 0o770, 11, 'file1', True),
+        ]
+        self.test_create_tree(srcdir_local2, tree)
+        self.test_create_tree(srcdir_gfarm2, tree)
+
+        test1_name = 'test-1-create'
+        test1_dir_local = workdir_local_url.url_join(test1_name)
+        test2_name = 'test-2-extract'
+        test2_dir_local = workdir_local_url.url_join(test2_name)
+
+        test3_name = 'test-3-create'
+        test3_dir_gfarm = workdir_gfarm_url.url_join(test3_name)
+        test4_name = 'test-4-extract'
+        test4_dir_local = workdir_local_url.url_join(test4_name)
+
+        members = ['dir1']
+
+        # Local -> Local(tar)
+        self.cmd_create(test1_dir_local, srcdir_local1, members)
+        # Local -> Local(tar) (update)
+        self.cmd_update(test1_dir_local, srcdir_local2, members)
+        # Local(tar) -> Local
+        self.cmd_extract(test2_dir_local, test1_dir_local, [])
+
+        # self.test_mode = False
+        # self.cmd_list_verbose(test1_dir_local)
+        # self.test_mode = True
+
+        if not self.test_compare_local(test2_dir_local, srcdir_local2,
+                                       same_owner=True):
+            logger.error_exit(1, testname + ' ... FAIL (different data)(1)')
+
+        # Gfarm -> Gfarm(tar)
+        self.cmd_create(test3_dir_gfarm, srcdir_gfarm1, members)
+        # Gfarm -> Gfarm(tar) (update)
+        self.cmd_update(test3_dir_gfarm, srcdir_gfarm2, members)
+        # Gfarm(tar) -> Local
+        self.cmd_extract(test4_dir_local, test3_dir_gfarm, [])
+
+        if not self.test_compare_local(test4_dir_local, srcdir_local2,
+                                       same_owner=True):
+            logger.error_exit(1, testname + ' ... FAIL (different data)(2)')
+
+        print(testname + ' ... PASS')
+        workdir_local_url.remove_tree(remove_readonly=True)
+        workdir_gfarm_url.remove_tree(remove_readonly=True)
+
+    # for test
+    F = 'file'
+    D = 'directory'
+    S = 'symlink'
+    L = 'hardlink'
+
     def test_prepare_srcdir(self, dir_url_str,
                             readonly=False, noread=False,
                             link=False, longname=False):
         logger.debug('readonly=%s, noread=%s, link=%s, longname=%s',
                      readonly, noread, link, longname)
-        F = 'file'
-        D = 'directory'
-        S = 'symlink'
-        L = 'hardlink'
         longname = ('0123456789' * 30)[:255]
         tree = [
-            # (F, 'file1', 0o664, 1234567890, None, True),
-            (F, 'gfarm:abc', 0o644, 1234567890, None, True),  # not Gfarm URL
-            (D, 'dir1', 0o715, 2234567890, None, True),
+            # (self.F, 'file1', 0o664, 1234567890, None, True),
+            (self.F, 'gfarm:abc', 0o644, 1234567890,
+             None, True),  # not Gfarm URL
+            (self.D, 'dir1', 0o715, 2234567890, None, True),
         ]
         tree_readonly = [
-            (D, 'dir1/readonly', 0o700,  # chmod 0o500 later
+            (self.D, 'dir1/readonly', 0o700,  # chmod 0o500 later
              3234567891, None, True),
-            (F, 'dir1/readonly/file#2', 0o456, 4234567892, None, True),
+            (self.F, 'dir1/readonly/file#2', 0o456, 4234567892, None, True),
         ]
         tree_noread = [
-            (F, 'dir1/noread-file', 0o000, 1234567891, None, False),
-            (D, 'dir1/noread-dir', 0o700,  # chmod 0o000 later
+            (self.F, 'dir1/noread-file', 0o000, 1234567891, None, False),
+            (self.D, 'dir1/noread-dir', 0o700,  # chmod 0o000 later
              1234567892, None, True),
-            (F, 'dir1/noread-dir/file3', 0o400, 1234567893, None, False),
+            (self.F, 'dir1/noread-dir/file3', 0o400, 1234567893, None, False),
         ]
         tree_link = [
-            (D, 'dir1/ディレクトリ 2', 0o755, 5234567890, None, True),
-            (L, 'dir1/ディレクトリ 2/hardlink1',
+            (self.D, 'dir1/ディレクトリ 2', 0o755, 5234567890, None, True),
+            (self.L, 'dir1/ディレクトリ 2/hardlink1',
              0o400, 6234567890, 'gfarm:abc', True),
-            (S, 'dir1/ディレクトリ 2/symlink1',
+            (self.S, 'dir1/ディレクトリ 2/symlink1',
              0o777, 7234567890, 'hardlink1', True),
         ]
         tree_longname = [
-            (F, 'dir1/' + longname, 0o775, 9234567890, None, True),
+            (self.F, 'dir1/' + longname, 0o775, 9234567890, None, True),
         ]
         if readonly:
             tree += tree_readonly
@@ -3069,6 +3148,19 @@ class GfptarProgram(Program):
             tree += tree_link
         if longname:
             tree += tree_longname
+
+        count = self.test_create_tree(dir_url_str, tree)
+        if readonly:
+            url_str = os.path.join(dir_url_str, 'dir1/readonly')
+            readonly_url = GfURL.init(url_str)
+            readonly_url.chmod(mode=0o500)
+        if noread:
+            url_str = os.path.join(dir_url_str, 'dir1/noread-dir')
+            noread_url = GfURL.init(url_str)
+            noread_url.chmod(mode=0o000)
+        return count
+
+    def test_create_tree(self, dir_url_str, tree):
         count = 0
         srcdir_url = GfURL.init(dir_url_str)
         srcdir_url.mkdir()
@@ -3081,18 +3173,18 @@ class GfptarProgram(Program):
             linkname = ent[4]
             readable = ent[5]
             url = GfURL.init(srcdir_url.url_join(path))
-            if ftype == F:
+            if ftype == self.F:
                 with url.writeopen(textmode=True,
                                    mode=mode,
                                    mtime=mtime,
                                    use_fsync=self.use_fsync) as f:
-                    f.write(path)
-            elif ftype == D:
+                    f.write(path + str(mtime))
+            elif ftype == self.D:
                 url.mkdir()
-            elif ftype == S:
+            elif ftype == self.S:
                 url.symlink(linkname)
                 url.chmod(mode, mtime=mtime, follow_symlinks=False)
-            elif ftype == L:
+            elif ftype == self.L:
                 url.hardlink(srcdir_url.url_join(linkname))
                 url.chmod(mode, mtime=mtime)
             else:
@@ -3106,15 +3198,9 @@ class GfptarProgram(Program):
             mtime = ent[3]
             # linkname = ent[4]
             url = GfURL.init(srcdir_url.url_join(path))
-            if ftype == D:
+            if ftype == self.D:
                 url.chmod(mode, mtime=mtime)
         srcdir_url.chmod(mode=0o700, mtime=0)
-        if readonly:
-            readonly_url = GfURL.init(srcdir_url.url_join('dir1/readonly'))
-            readonly_url.chmod(mode=0o500)
-        if noread:
-            noread_url = GfURL.init(srcdir_url.url_join('dir1/noread-dir'))
-            noread_url.chmod(mode=0o000)
         return count  # the number of readable files
 
     def test_specified_dir(self):
@@ -3374,7 +3460,7 @@ class GfptarProgram(Program):
         suffix = '.' + self.compress_type
         for serial, gen, tar_path, dbgz_path, db_path in \
                 self.list_tar_dbgz_db(self.outdir_url, sort=True,
-                                      progress=True):
+                                      progress=self.progress_enabled):
             if self.is_canceled():
                 raise self.error_canceled()
             if serial > max_serial:
@@ -4160,7 +4246,6 @@ class GfptarProgram(Program):
         self.extract_main()
         tmpdir.cleanup()
 
-    TABLE_target_set = 'target_set'
     TABLE_directory_set = 'directory_set'
     TABLE_member_set = 'member_set'
     TABLE_archive_dict = 'archive_dict'
@@ -4169,7 +4254,6 @@ class GfptarProgram(Program):
     TABLE_dirstat_dict = 'dirstat_dict'
 
     def extract_schedule(self):
-        target_set = DBSet(self.db_target, StrObj, self.TABLE_target_set)
         directory_set = DBSet(self.db, StrObj, self.TABLE_directory_set)
         member_set = DBSet(self.db, StrObj, self.TABLE_member_set)
         archive_dict = DBDict(self.db, JsonObj, self.TABLE_archive_dict)
@@ -4188,6 +4272,8 @@ class GfptarProgram(Program):
                     path = path.lstrip('/')
                 member_check_dict[path] = False  # initialize
 
+        gen_tarlist_dict = defaultdict(list)  # gen -> tarlist
+
         self.total_num = 0
         self.total_size = 0
         self.start_time = time.time()
@@ -4197,7 +4283,7 @@ class GfptarProgram(Program):
 
         error_num = 0
         for serial, gen, tar_path, dbgz_path, db_path in \
-                self.list_tar_dbgz_db(self.indir_url, sort=False,
+                self.list_tar_dbgz_db(self.indir_url, sort=True,
                                       progress=False):
             if self.is_canceled():
                 raise self.error_canceled()
@@ -4257,11 +4343,12 @@ class GfptarProgram(Program):
                         is_target = True
                 archive_dict.clear()  # re-use for next tar file
                 if is_target:
-                    logger.debug('target_set.add: %s', tar_path)
-                    target_set.add(tar_path)  # select this tar file
+                    logger.debug('gen_tarlist_dict[%d].append(%s)',
+                                 gen, tar_path)
+                    gen_tarlist_dict[gen].append(tar_path)
             else:
-                # TODO gen -> tar_path
-                target_set.add(tar_path)  # use all tar files
+                # use all tar files
+                gen_tarlist_dict[gen].append(tar_path)
             if self.progress_enabled:
                 now = time.time()
                 if now >= self.next_time:
@@ -4280,10 +4367,10 @@ class GfptarProgram(Program):
                                   ' in archive files: ' + member)
         member_check_dict.clear()
         archive_dict.clear()
-        return target_set, directory_set, member_set, error_num
+        return gen_tarlist_dict, directory_set, member_set, error_num
 
     def extract_main(self):
-        (target_set, directory_set,
+        (gen_tarlist_dict, directory_set,
          member_set, error_num) = self.extract_schedule()
         self.outdir_url.create_new_dir()
 
@@ -4303,9 +4390,11 @@ class GfptarProgram(Program):
         self.gfsched_list = None
 
         if self.MT_enabled():
-            self.extract_from_archives_MT(target_set, member_set)
+            for gen, tarlist in gen_tarlist_dict.items():
+                self.extract_from_archives_MT(tarlist, member_set)
         else:
-            self.extract_from_archives(target_set, member_set)
+            for gen, tarlist in gen_tarlist_dict.items():
+                self.extract_from_archives(tarlist, member_set)
         if self.progress_enabled:
             self.progress_for_extract(time.time())
             sys.stdout.write('\n')
@@ -4390,25 +4479,25 @@ class GfptarProgram(Program):
                 dir_url.chmod(tarinfo.mode, mtime=tarinfo.mtime)
             self.info('update_stat: {}, mode={}', d, oct(tarinfo.mode))
 
-    def extract_from_archives(self, target_set, member_set):
+    def extract_from_archives(self, tarlist, member_set):
         self.lock_init(False)
-        serial = 0
-        for target in target_set.iterator(sort='ASC'):
-            logger.debug('target_set: %s', target)
-            serial += 1
-            self.extract_from_a_tar(serial, target, member_set)
+        index = 0
+        for target in tarlist:
+            logger.debug('target tar: %s', target)
+            index += 1
+            self.extract_from_a_tar(index, target, member_set)
 
-    def extract_from_archives_MT(self, target_set, member_set):
+    def extract_from_archives_MT(self, tarlist, member_set):
         self.lock_init(True)
         with concurrent.futures.ThreadPoolExecutor(
                 max_workers=self.max_workers) as executor:
             self.futures = {}  # tar filenames
-            serial = 0
-            for target in target_set.iterator(sort='ASC'):
-                logger.debug('target_set: %s', target)
-                serial += 1
+            index = 0
+            for target in tarlist:
+                logger.debug('target tar: %s', target)
+                index += 1
                 t = executor.submit(self.extract_from_a_tar,
-                                    serial, target, member_set)
+                                    index, target, member_set)
                 self.futures[t] = target
 
             for t in concurrent.futures.as_completed(self.futures,
@@ -4428,17 +4517,17 @@ class GfptarProgram(Program):
                         #     t2.cancel()
                     raise exc
 
-    def extract_from_a_tar(self, serial, target, member_set):
+    def extract_from_a_tar(self, index, target, member_set):
         try:
-            self.extract_from_a_tar0(serial, target, member_set)
+            self.extract_from_a_tar0(index, target, member_set)
         except Exception:
             if self.is_canceled():
                 raise self.error_canceled()
             else:
                 raise
 
-    def extract_from_a_tar0(self, serial, target, member_set):
-        logger.debug('extract_from_a_tar start: serial=%d', serial)
+    def extract_from_a_tar0(self, index, target, member_set):
+        logger.debug('extract_from_a_tar start: index=%d', index)
         if self.is_canceled():
             logger.debug('Canceled (extract 1): name=%s', target)
             return
@@ -4446,16 +4535,15 @@ class GfptarProgram(Program):
                               use_gfarm_command=self.use_gfarm_command)
         tar = GfTarFile.extract_open(arch_url, self.bufsize)
         try:
-            self.extract_from_a_tar1(serial, target, member_set, tar)
+            self.extract_from_a_tar1(index, target, member_set, tar)
             with self.lock():
                 self.info('DONE: {}', arch_url.url_str)
         finally:
             tar.close()
 
-    def extract_from_a_tar1(self, serial, target, member_set, tar):
+    def extract_from_a_tar1(self, index, target, member_set, tar):
         with self.lock():
             members_num = len(member_set)
-        index = serial
         while True:
             if self.is_canceled():
                 logger.debug('Canceled (extract 2): name=%s', target)
@@ -4532,7 +4620,14 @@ class GfptarProgram(Program):
             elif tarinfo.issym():
                 logger.debug('extract,link: %s, %s', outfile,
                              tarinfo.linkname)
-                outurl.symlink(tarinfo.linkname)
+                try:
+                    outurl.symlink(tarinfo.linkname)
+                except Exception:
+                    if outurl.exists():
+                        outurl.remove()
+                        outurl.symlink(tarinfo.linkname)
+                    else:
+                        raise
                 if self.same_owner:
                     outurl.chmod(tarinfo.mode, mtime=tarinfo.mtime,
                                  user=tarinfo.uname, group=tarinfo.gname,
@@ -4675,13 +4770,20 @@ class GfptarProgram(Program):
         return self.cmd_list(indir, verbose=True)
 
     def cmd_list(self, indir, verbose=True):
+        if self.test_mode:
+            outf = open(os.devnull, 'w')
+        else:
+            outf = sys.stdout
+        try:
+            return self.cmd_list0(outf, indir, verbose)
+        finally:
+            if self.test_mode:
+                outf.close()
+
+    def cmd_list0(self, outf, indir, verbose):
         self.options_init()
         quiet = self.quiet
         indir_url = GfURL.init(indir)
-        if self.test_mode:
-            f = os.devnull
-        else:
-            f = sys.stdout
 
         def print_quiet(serial, gen, path, fattr):
             pass
@@ -4696,13 +4798,13 @@ class GfptarProgram(Program):
             mtime_str = dt_object.strftime('%Y-%m-%d %H:%M')
             print(f'g{gen}_{serial:04} {fattr.ftype} {fattr.mode:04o}'
                   f' {fattr.user:>8}/{fattr.group:<8}'
-                  f' {fattr.size:9d} {mtime_str} {name}', file=f)
+                  f' {fattr.size:9d} {mtime_str} {name}', file=outf)
 
         def print_simple(serial, gen, path, fattr):
             name = path
             if fattr.ftype == InfoDB.TYPE_DIR:
                 name = name + '/'
-            print(f'{fattr.ftype} {name}', file=f)
+            print(f'{fattr.ftype} {name}', file=outf)
 
         if quiet:
             print_func = print_quiet
