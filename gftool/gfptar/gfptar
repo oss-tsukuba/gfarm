@@ -736,7 +736,7 @@ def convert_message(error):
         return f'{error.__class__.__name__}: {str(error)}'
 
 
-class Command(metaclass=abc.ABCMeta):
+class Program(metaclass=abc.ABCMeta):
     def init(self, name) -> NoReturn:
         self.name = name
         self._docopt = docopt(self.getDoc())
@@ -2453,7 +2453,7 @@ def ignore_exception(ignore):
         raise
 
 
-class GfptarCommand(Command):
+class GfptarProgram(Program):
     LIST_SUFFIX = '.lst'  # to ignore old files
     TMP_SUFFIX = '.tmp'
     SERIAL_FORMAT = '%04d'
@@ -2613,6 +2613,7 @@ class GfptarCommand(Command):
                     # already reported
                     pass
                 else:
+                    sys.stderr.write('\n')
                     logger.error(convert_message(e))
                 sys.exit(1)
         finally:
@@ -3304,7 +3305,8 @@ class GfptarCommand(Command):
 
     TABLE_tar_entry = 'tar_entry'
 
-    def create_common(self, outdir, basedir, infiles):
+    def cmd_create_init(self, cmd_name, outdir, basedir):
+        self.cmd_name = cmd_name
         self.options_init()
         logger.debug('create start: outdir=%s, basedir=%s', outdir, basedir)
         self.outdir = outdir
@@ -3346,8 +3348,6 @@ class GfptarCommand(Command):
         self.start_time = time.time()
         self.next_time = self.start_time + self.progress_interval
         self.listing = True
-        if self.progress_enabled:
-            self.progress_for_create(self.start_time)
 
         self.gfsched_lock = None
         self.gfsched_next = 0
@@ -3355,17 +3355,51 @@ class GfptarCommand(Command):
 
         self.cannot_be_archived = 0
         self.create_job_init()  # before creating threads
-
-    def cmd_update(self, outdir, basedir, infiles):
-        self.create_common(outdir, basedir, infiles)
-        # TODO
-        print("TODO...")
+        self.fattr_dict_list = []
 
     def cmd_create(self, outdir, basedir, infiles):
-        self.create_common(outdir, basedir, infiles)
+        self.cmd_create_init('create', outdir, basedir)
         self.outdir_url.create_new_dir()
+        serial = 1
+        gen = 1
+        self.cmd_create_common(serial, gen, infiles)
 
-        infiles_checked = []
+    def cmd_update(self, outdir, basedir, infiles):
+        self.cmd_create_init('update', outdir, basedir)
+        if not self.outdir_url.exists():
+            raise FileNotFoundError(outdir)
+        broken_count = 0
+        max_serial = 0
+        max_gen = 0
+        suffix = '.' + self.compress_type
+        for serial, gen, tar_path, dbgz_path, db_path in \
+                self.list_tar_dbgz_db(self.outdir_url, sort=True,
+                                      progress=True):
+            if self.is_canceled():
+                raise self.error_canceled()
+            if serial > max_serial:
+                max_serial = serial
+            if gen > max_gen:
+                max_gen = gen
+            if dbgz_path is None or tar_path is None:
+                broken_count += 1
+                continue
+            if not tar_path.endswith(suffix):
+                raise GfptarError(f"Tar compression type mismatch: {tar_path}")
+            db = DB(db_path)
+            fattr_dict = DBDict(db, FileAttr2, InfoDB.TABLE_ENTRY)
+            self.fattr_dict_list.append(fattr_dict)
+        max_serial += 1
+        max_gen += 1
+        self.start_time = time.time()
+        self.next_time = self.start_time + self.progress_interval
+        self.cmd_create_common(max_serial, max_gen, infiles)
+        if broken_count > 0:
+            raise GfptarError("Some .tar.* or .db.gz are broken:"
+                              f" error={broken_count}")
+
+    def cmd_create_common(self, serial, gen, infiles):
+        infiles_checked = set()
         for infile in infiles:
             # infile_url = GfURL.init(infile)
             # if not infile_url.is_local():
@@ -3384,7 +3418,7 @@ class GfptarCommand(Command):
             if infile == '..' or infile.startswith('../'):
                 raise GfException('specifying parent directory (..) '
                                   + 'as members is not allowed: ' + infile)
-            infiles_checked.append(infile)
+            infiles_checked.add(infile)
 
         def listdir_switch(gfurl):
             if self.dummy_num is not None:
@@ -3397,11 +3431,42 @@ class GfptarCommand(Command):
                 return gfurl.listdir(recursive=True, first=True,
                                      hardlink_warn=self.hardlink_warn)
 
+        def is_update_target1(entry):
+            return True
+
+        def is_update_target2(entry):
+            # entry is an input file.
+            path = entry.subpath(self.basedir_url)
+            # compare mtime from newer .db
+            for fattr_dict in reversed(self.fattr_dict_list):
+                # fattr_dict has existing files.
+                fattr = fattr_dict.get(path)
+                if fattr is None:
+                    continue
+                elif int(entry.mtime) > int(fattr.mtime):  # sec.
+                    logger.debug(f"is_update_target2: path={path}:"
+                                 f" entry.mtime({entry.mtime}) >"
+                                 f" fattr.mtime({fattr.mtime})")
+                    return True
+                elif fattr.size != entry.size:
+                    logger.debug(f"is_update_target2: path={path}:"
+                                 f" fattr.size({fattr.size})"
+                                 f" != entry.size({entry.size})")
+                    return True
+                else:
+                    return False
+            # not found
+            logger.debug(f"is_update_target2: path={path}: not found (True)")
+            return True
+
+        if len(self.fattr_dict_list) > 0:
+            is_update_target = is_update_target2
+        else:
+            is_update_target = is_update_target1
+
         tmpdir = self.tmpdir
-        tardb_prefix = os.path.join(tmpdir.name, 'create')
+        tardb_prefix = os.path.join(tmpdir.name, self.cmd_name)
         tardb_fmt = f'_{self.SERIAL_FORMAT}.db'
-        serial = 1
-        gen = 1  # TODO
         # to reduce memory usage
         filelist_db = DB(tardb_prefix + tardb_fmt % serial)
         filelist = DBList(filelist_db, GfURLEntry, self.TABLE_tar_entry)
@@ -3410,6 +3475,9 @@ class GfptarCommand(Command):
 
         cannot_read_dir = 0
         has_error = None
+
+        if self.progress_enabled:
+            self.progress_for_create(self.start_time)
 
         for infile in infiles_checked:
             if self.is_canceled():
@@ -3425,6 +3493,9 @@ class GfptarCommand(Command):
                         logger.debug('Canceled (listdir 2): serial=%d', serial)
                         break
                     logger.debug('listdir: entry.path=%s', entry.path)
+                    if not is_update_target(entry):
+                        continue
+
                     # include length of path
                     this_size = entry.size_all()
                     with self.lock():  # for progress
@@ -3515,6 +3586,8 @@ class GfptarCommand(Command):
             raise has_error
         if self.is_canceled():
             raise self.error_canceled()
+        if self.total_num == 0:
+            print('No files were updated.')
 
     def create_job_init(self):
         if self.MT_enabled():
@@ -4187,6 +4260,7 @@ class GfptarCommand(Command):
                     logger.debug('target_set.add: %s', tar_path)
                     target_set.add(tar_path)  # select this tar file
             else:
+                # TODO gen -> tar_path
                 target_set.add(tar_path)  # use all tar files
             if self.progress_enabled:
                 now = time.time()
@@ -4242,7 +4316,8 @@ class GfptarCommand(Command):
         self.db_target.close()
         self.db_target.unlink()
         if error_num > 0:
-            raise GfptarError(f'Total errors encountered: {error_num}')
+            raise GfptarError("Some .tar.* or .db.gz are broken:"
+                              f" error={error_num}")
 
     def extract_directories(self, directory_set):
         logger.debug('extract_directories')
@@ -4553,7 +4628,7 @@ class GfptarCommand(Command):
         total_size_str = self._humanize(self.total_size)
         bytes_per_sec_str = self._humanize(bytes_per_sec)
         ent_per_sec_str = self._humanize(ent_per_sec)
-        sys.stdout.write(f'\rcreate: {percent_str}% '
+        sys.stdout.write(f'\r{self.cmd_name}: {percent_str}% '
                          f'{stored_size_str}/{total_size_str}B '
                          f'{stored_num_str}/{total_num_str}Ent '
                          f'{sec_str} '
@@ -4663,11 +4738,12 @@ class GfptarCommand(Command):
             logger.debug('os.remove: %s', db_path)
             os.remove(db_path)
         if error_num > 0:
-            raise GfptarError(f'Total errors encountered: {error_num}')
+            raise GfptarError("Some .tar.* or .db.gz are broken:"
+                              f" error={error_num}")
 
     def sort_tar_or_db_list(self, tar_or_db_list):
         def id_key(value):
-            return value[0]  # serial
+            return value[0]  # 0:serial, 1:gen, 2:path
 
         tar_or_db_list.sort(key=id_key)
         return tar_or_db_list
@@ -4805,7 +4881,8 @@ class GfptarCommand(Command):
                 self.progress_for_sync_infodb(now)
 
             if sort:  # sort by gen
-                gen_tarlist_list = sorted(gen_tarlist_dict.items())
+                gen_tarlist_list = sorted(gen_tarlist_dict.items(),
+                                          key=lambda x: x[0])
             else:
                 gen_tarlist_list = gen_tarlist_dict.items()
 
@@ -4861,7 +4938,7 @@ class GfptarCommand(Command):
                                self.bufsize, self.use_fsync, self.dry_run)
                         # InfoDB.generate_db_and_dbgz is classmethod,
                         # because ProcessPoolExecutor cannot serialize
-                        # members of "GfptarCommand (self)" object.
+                        # members of "GfptarProgram (self)" object.
                         future = executor.submit(InfoDB.generate_db_and_dbgz,
                                                  arg)
                         job_list.append((future, serial, tar_path, dbgz_path))
@@ -5183,7 +5260,7 @@ Options:
   -j, --jobs=NUM            the number of jobs to copy per tar file in parallel
                             [default: 4]
   -s, --size=BYTES          assumed bytes per output file [default: 200Mi]
-  -T, --type=TYPE           compression type (and tar archive suffix)
+  -T, --type=TYPE           compression type and tar archive suffix
                               - gz : use gzip  (*.tar.gz)
                               - bz2: use bzip2 (*.tar.bz2)
                               - xz : use xz    (*.tar.xz)
@@ -5296,5 +5373,5 @@ _schema = Schema({
 
 
 if __name__ == '__main__':
-    gfptar = GfptarCommand(progname)
+    gfptar = GfptarProgram(progname)
     gfptar.run()
