@@ -1415,7 +1415,7 @@ class GfURLGfarm(GfURL):
     def remove_tree(self, remove_readonly=False):
         path = self.url_str
         if path == '/' or path == '':
-            raise AssertionError
+            raise AssertionError('remove_tree: "/" or ""')
         try:
             execcmd(['gfrm', '-rf', path])
         except MemoryError:
@@ -1588,7 +1588,8 @@ class GfURLGfarm(GfURL):
                 # ex. gfarm:/home/user1/dir: -> gfarm:/home/user1/dir
                 dirname = line[:-1]
                 if not dirname.startswith(self.url_str):
-                    raise AssertionError
+                    raise AssertionError(f'{dirname}.startswith('
+                                         f'{self.url_str})')
                 first = False
 
     def gfsched(self, is_file=False, write_mode=False, number=None):
@@ -1825,7 +1826,7 @@ class GfURLLocal(GfURL):
     def remove_tree(self, remove_readonly=False):
         path = self.path
         if path == '/' or path == '':
-            raise AssertionError
+            raise AssertionError('remove_tree: "/" or ""')
         if remove_readonly:
             self._chmod_recursive(path, 0o700, 0o600)
         shutil.rmtree(path)
@@ -3736,25 +3737,28 @@ class GfptarProgram(Program):
         # timeout = 10
         # process.join(timeout)
         process.terminate()
-        process.kill()  # no effect in Python 3.6
-        # process.close() may raise ValueError.
-        # (I don't know the reason):
-        #   ValueError: Cannot close a process while it is still
-        #   running. You should first call join() or terminate().
-        #
-        # Retry process.close() if ValueError is caught.
-        ok = False
-        for i in range(50):  # retry, max 5s
-            try:
-                process.close()
-                ok = True
-                break
-            except ValueError as e:
-                logger.debug('retry[%d] process.close() (index=%d):',
-                             i, index, exc_info=e)
-                time.sleep(0.1)
-            if not ok:
-                process.close()
+
+        if hasattr(process, 'kill'):
+            process.kill()  # Python 3.7 or later
+
+            # process.close() may raise ValueError.
+            # (I don't know the reason):
+            #   ValueError: Cannot close a process while it is still
+            #   running. You should first call join() or terminate().
+            #
+            # Retry process.close() if ValueError is caught.
+            ok = False
+            for i in range(50):  # retry, max 5s
+                try:
+                    process.close()  # Python 3.7 or later
+                    ok = True
+                    break
+                except ValueError as e:
+                    logger.debug('retry[%d] process.close() (index=%d):',
+                                 i, index, exc_info=e)
+                    time.sleep(0.1)
+                if not ok:
+                    process.close()
         logger.debug('process_close() finished (index=%d)', index)
 
     def create_job_final(self, timeout=None):
@@ -3767,9 +3771,6 @@ class GfptarProgram(Program):
         self.worker_terminate()
 
     def worker_terminate(self):
-        if getattr(self, 'worker_list', None) is None:
-            return
-        err_list = []
         for index, worker in enumerate(self.worker_list):
             started, process, inq, outq = worker
             if started.status:
@@ -3785,9 +3786,10 @@ class GfptarProgram(Program):
                 if started.status:
                     self.process_close(process, index=index)
                 started.status = False
-            except Exception:
-                err_list.append(worker)
-        self.worker_list = err_list
+            except Exception as e:
+                logger.debug("self.process_close", exc_info=e)
+                # ignore
+        self.worker_list = []
 
     def _create_job_check_MT(self, timeout=0.1):
         has_error = None
