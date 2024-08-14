@@ -3734,31 +3734,9 @@ class GfptarProgram(Program):
             return
         logger.debug('process_close() start (index=%s): pid=%s',
                      index, process.pid)
-        # timeout = 10
-        # process.join(timeout)
-        process.terminate()
-
-        if hasattr(process, 'kill'):
-            process.kill()  # Python 3.7 or later
-
-            # process.close() may raise ValueError.
-            # (I don't know the reason):
-            #   ValueError: Cannot close a process while it is still
-            #   running. You should first call join() or terminate().
-            #
-            # Retry process.close() if ValueError is caught.
-            ok = False
-            for i in range(50):  # retry, max 5s
-                try:
-                    process.close()  # Python 3.7 or later
-                    ok = True
-                    break
-                except ValueError as e:
-                    logger.debug('retry[%d] process.close() (index=%d):',
-                                 i, index, exc_info=e)
-                    time.sleep(0.1)
-                if not ok:
-                    process.close()
+        # process.terminate()
+        os.kill(process.pid, signal.SIGKILL)
+        process.join()
         logger.debug('process_close() finished (index=%d)', index)
 
     def create_job_final(self, timeout=None):
