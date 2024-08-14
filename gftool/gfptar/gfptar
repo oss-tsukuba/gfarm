@@ -3995,6 +3995,7 @@ class GfptarProgram(Program):
         pid = os.getpid()
         logger.debug('create_a_tar_process: start, pid=%d', pid)
 
+        self.lock_init(False)  # child process
         self.sig_init(message=False)
         while self.create_a_tar_process0(input_queue, output_queue):
             pass
