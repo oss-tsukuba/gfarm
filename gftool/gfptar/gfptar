@@ -4931,9 +4931,7 @@ class GfptarProgram(Program):
         self.total_tar_num = 0
         self.current_tar_num = 0
 
-        # generation -> tar files
-        gen_tarlist_dict = defaultdict(list)
-        # tar_dbgz_list = []
+        tar_dbgz_list = []
         for serial, gen_dbgz in dbgz_dict.items():
             gen, dbgz_path = gen_dbgz
             gen_tar = tar_dict.get(serial, None)
@@ -4941,9 +4939,10 @@ class GfptarProgram(Program):
                 gen2, tar_path = gen_tar
             else:
                 tar_path = None
-            # tar_dbgz_list.append((serial, gen, tar_path, dbgz_path))
-            gen_tarlist_dict[gen].append((serial, tar_path, dbgz_path))
+            tar_dbgz_list.append((serial, gen, tar_path, dbgz_path))
             self.total_tar_num += 1
+        if sort:  # sort by serial
+            tar_dbgz_list.sort(key=lambda x: x[0])
 
         del dbgz_dict
         del tar_dict
@@ -4984,14 +4983,8 @@ class GfptarProgram(Program):
                 now = time.time()
                 self.progress_for_sync_infodb(now)
 
-            if sort:  # sort by gen
-                gen_tarlist_list = sorted(gen_tarlist_dict.items(),
-                                          key=lambda x: x[0])
-            else:
-                gen_tarlist_list = gen_tarlist_dict.items()
-
-            def result_one(one, gen):
-                future, serial, tar_path, dbgz_path = one
+            def result_one(one):
+                future, gen, serial, tar_path, dbgz_path = one
                 try:
                     db_path, dbgz_path, ent_num, size = future.result()
                     self.current_ent_num += ent_num
@@ -5008,48 +5001,43 @@ class GfptarProgram(Program):
                     if self.save_e is None:
                         self.save_e = e
 
-            def result_all(previous_list, gen):
+            def result_all(previous_list):
                 for one in previous_list:
-                    yield from result_one(one, gen)
+                    yield from result_one(one)
 
-            for gen, tarlist in gen_tarlist_list:
-                if sort:  # sort by serial
-                    self.sort_tar_or_db_list(tarlist)
-
-                # concurrent processes per generation (gen)
-                job_list = []
-                with concurrent.futures.ProcessPoolExecutor(
-                        max_workers=self.max_workers) as executor:
-                    for serial, tar_path, dbgz_path in tarlist:
-                        if len(job_list) >= self.max_workers:
-                            # wait for a previous job
-                            yield from result_one(job_list[0], gen)
-                            job_list = job_list[1:]  # remove first
-                        if tar_path is None:
-                            # missing tar file
-                            db_path = None
-                            # wait for all previous jobs
-                            yield from result_all(job_list, gen)
-                            job_list = []
-                            yield serial, gen, tar_path, dbgz_path, db_path
-                            continue
-                        if dbgz_path is None:
-                            update = True
-                        else:
-                            update = self.sync_infodb
-                        arg = (lock, share_cancel, self.tmpdir.name,
-                               update, gen, serial, tar_path,
-                               self.bufsize, self.use_fsync, self.dry_run)
-                        # InfoDB.generate_db_and_dbgz is classmethod,
-                        # because ProcessPoolExecutor cannot serialize
-                        # members of "GfptarProgram (self)" object.
-                        future = executor.submit(InfoDB.generate_db_and_dbgz,
-                                                 arg)
-                        job_list.append((future, serial, tar_path, dbgz_path))
-                    yield from result_all(job_list, gen)
-                if share_cancel.value != 0:
-                    cancel = True
-                    break
+            # concurrent processes per generation (gen)
+            job_list = []
+            with concurrent.futures.ProcessPoolExecutor(
+                    max_workers=self.max_workers) as executor:
+                for serial, gen, tar_path, dbgz_path in tar_dbgz_list:
+                    if share_cancel.value != 0:
+                        cancel = True
+                        break
+                    if len(job_list) >= self.max_workers:
+                        # wait for a previous job
+                        yield from result_one(job_list[0])
+                        job_list = job_list[1:]  # remove first
+                    if tar_path is None:
+                        # missing tar file
+                        db_path = None
+                        # wait for all previous jobs
+                        yield from result_all(job_list)
+                        job_list = []
+                        yield serial, gen, tar_path, dbgz_path, db_path
+                        continue
+                    if dbgz_path is None:
+                        update = True
+                    else:
+                        update = self.sync_infodb
+                    arg = (lock, share_cancel, self.tmpdir.name,
+                           update, gen, serial, tar_path,
+                           self.bufsize, self.use_fsync, self.dry_run)
+                    # InfoDB.generate_db_and_dbgz is classmethod,
+                    # because ProcessPoolExecutor cannot serialize
+                    # members of "GfptarProgram (self)" object.
+                    future = executor.submit(InfoDB.generate_db_and_dbgz, arg)
+                    job_list.append((future, serial, gen, tar_path, dbgz_path))
+                yield from result_all(job_list)
         # no longer be able to access Manager
         for sig in sigs:
             # restore
