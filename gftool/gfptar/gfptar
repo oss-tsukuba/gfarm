@@ -3705,7 +3705,6 @@ class GfptarProgram(Program):
             # multiprocessing.Manager().Queue() can be used
             # for ProcessPoolExecutor, but it is very slow.
             started = Started()
-            inq.gfptar_my_closed = False
             process = multiprocessing.Process(target=self.create_a_tar_process,
                                               args=(inq, outq))
             started.status = False  # lock required
@@ -3751,12 +3750,11 @@ class GfptarProgram(Program):
     def worker_terminate(self):
         for index, worker in enumerate(self.worker_list):
             started, process, inq, outq = worker
-            if started.status:
-                if not inq.gfptar_my_closed:  # avoid AssertionError
-                    with ignore_exception(True):
-                        inq.put(self.MSG_PARENT_EXIT)
+            # NOTE: processes will be killed.
+            # if started.status:
+            #     with ignore_exception(True):
+            #         inq.put(self.MSG_PARENT_EXIT)
             with ignore_exception(True):
-                inq.gfptar_my_closed = True
                 inq.close()
             with ignore_exception(True):
                 outq.close()
@@ -3988,7 +3986,7 @@ class GfptarProgram(Program):
                 if self.is_canceled():  # SIGTERM from parent
                     return False  # exit
         logger.debug('create_a_tar_process0: request=%s', request)
-        if request == self.MSG_PARENT_EXIT:
+        if request == self.MSG_PARENT_EXIT:  # not used
             return False  # exit
         elif request[0] == self.MSG_PARENT_START:
             output_queue.put(self.MSG_CHILD_READY)
