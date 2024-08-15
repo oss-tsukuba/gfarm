@@ -2514,6 +2514,14 @@ class GfptarProgram(Program):
         if self.memory_limit is not None:
             self.set_memory_limit(self.memory_limit)
 
+        soft_lim, hard_lim = resource.getrlimit(resource.RLIMIT_NOFILE)
+        logger.info(f"current soft RLIMIT_NOFILE: {soft_lim}")
+        logger.info(f"current hard RLIMIT_NOFILE: {hard_lim}")
+        new_soft_lim = hard_lim
+        resource.setrlimit(resource.RLIMIT_NOFILE, (new_soft_lim, hard_lim))
+        soft_lim, hard_lim = resource.getrlimit(resource.RLIMIT_NOFILE)
+        logger.info(f"new soft RLIMIT_NOFILE: {soft_lim}")
+
         self.compress_type = self.opt['--type']
         self.compress_prog = self.opt['--use-compress-program']
         self.gzip_prog = self.opt['--gzip-program']
@@ -3655,6 +3663,8 @@ class GfptarProgram(Program):
 
         self.create_job_final()
 
+        for fattr_dict in self.fattr_dict_list:
+            fattr_dict.close()
         tmpdir.cleanup()
 
         if self.progress_enabled:
@@ -4659,14 +4669,24 @@ class GfptarProgram(Program):
         sec_str = format_seconds(sec, minhour=True)
         current_tar_num_str = self._humanize(self.current_tar_num)
         total_tar_num_str = self._humanize(self.total_tar_num)
-        current_ent_num_str = self._humanize(self.current_ent_num)
-        current_size_str = self._humanize(self.current_size)
+        if self.current_ent_num > 0:
+            current_ent_num_str = self._humanize(self.current_ent_num)
+        else:
+            current_ent_num_str = '?'
+        if self.current_size > 0:
+            current_size_str = self._humanize(self.current_size)
+        else:
+            current_size_str = '?'
         if sec > 0:
             ent_per_sec = self.current_ent_num / sec
         else:
             ent_per_sec = 0
         ent_per_sec_str = self._humanize(ent_per_sec)
-        sys.stdout.write(f'\rsync-db: '
+        if self.sync_infodb:
+            name = 'sync-db'
+        else:
+            name = 'load-db'
+        sys.stdout.write(f'\r{name}: '
                          f'{current_tar_num_str}/{total_tar_num_str}Tar '
                          f'{current_size_str}B '
                          f'{current_ent_num_str}Ent '
@@ -4775,9 +4795,12 @@ class GfptarProgram(Program):
                 name = name + ' -> ' + fattr.linkname
             dt_object = datetime.datetime.fromtimestamp(fattr.mtime)
             mtime_str = dt_object.strftime('%Y-%m-%d %H:%M')
-            print(f'g{gen}_{serial:04} {fattr.ftype} {fattr.mode:04o}'
-                  f' {fattr.user:>8}/{fattr.group:<8}'
-                  f' {fattr.size:9d} {mtime_str} {name}', file=outf)
+            # print(f'g{gen}_{serial:04} {fattr.ftype} {fattr.mode:04o}'
+            #       f' {fattr.user:>8}/{fattr.group:<8}'
+            #       f' {fattr.size:9d} {mtime_str} {name}', file=outf)
+            outf.write('g%d_%04d %s %04o %8s/%-8s %9d %s %s\n' % (
+                gen, serial, fattr.ftype, fattr.mode, fattr.user,
+                fattr.group, fattr.size, mtime_str, name))
 
         def print_simple(serial, gen, path, fattr):
             name = path
@@ -4967,7 +4990,7 @@ class GfptarProgram(Program):
                     self.current_ent_num += ent_num
                     self.current_size += size
                     self.current_tar_num += 1
-                    if ent_num > 0 and progress:
+                    if progress:
                         now = time.time()
                         self.progress_for_sync_infodb(now)
                     yield serial, gen, tar_path, dbgz_path, db_path
@@ -5013,7 +5036,7 @@ class GfptarProgram(Program):
                     # because ProcessPoolExecutor cannot serialize
                     # members of "GfptarProgram (self)" object.
                     future = executor.submit(InfoDB.generate_db_and_dbgz, arg)
-                    job_list.append((future, serial, gen, tar_path, dbgz_path))
+                    job_list.append((future, gen, serial, tar_path, dbgz_path))
                 yield from result_all(job_list)
         # no longer be able to access Manager
         for sig in sigs:
@@ -5178,7 +5201,12 @@ class InfoDB:
         size = 0
         if not update and dbgz_url.exists():
             logger.debug('not update, decompress dbgz: %s', dbgz_path)
-            InfoDB.decompress_copy(dbgz_path, db_path, bufsize, use_fsync)
+            use_fsync2 = False  # workdir
+            InfoDB.decompress_copy(dbgz_path, db_path, bufsize, use_fsync2)
+            # NOTE: slow
+            # infodb = InfoDB(db_path)
+            # num = len(infodb.fattr_dict)
+            # infodb.db.close()
         else:
             # generate db and dbgz
             tar = GfTarFile.extract_open(tar_url, bufsize)
@@ -5314,6 +5342,8 @@ Limitations:
   - Hard links are not preserved.
   - File names cannot include newline characters.
   - Subsecond (less than a second) for mtime is not preserved.
+  - --update: If many *.db.gz files exists, input files may not be appended.
+    (For the upper limit, see the output of `ulimit -n -H`)
 
 Options:
   -t, --list=DIR            list mode,
