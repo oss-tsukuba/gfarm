@@ -2579,6 +2579,12 @@ class GfptarProgram(Program):
                 self.cmd_create(outdir, basedir, infiles)
                 return
 
+            outdir = self.opt['--append']
+            if outdir:
+                basedir = self.opt['--basedir']
+                infiles = self.opt['<member>']
+                self.cmd_append(outdir, basedir, infiles)
+
             outdir = self.opt['--update']
             if outdir:
                 basedir = self.opt['--basedir']
@@ -2651,7 +2657,7 @@ class GfptarProgram(Program):
         self.test_init()
         self.test_opt_pattern(full=False)
         self.test_member()
-        self.test_update()
+        self.test_update_append()
         self.test_specified_dir()
 
     def test_main_long(self):
@@ -2659,7 +2665,7 @@ class GfptarProgram(Program):
         self.test_unit()
         self.test_opt_pattern(full=True)
         self.test_member()
-        self.test_update()
+        self.test_update_append()
         # self.test_invalid('url', 'gfarm:/tmp', 'dst', False)  # allowed
         self.test_invalid('dot1', '.', 'dst', True)
         self.test_invalid('dot2', '', 'dst', False)
@@ -3036,8 +3042,8 @@ class GfptarProgram(Program):
         workdir_local_url.remove_tree(remove_readonly=True)
         workdir_gfarm_url.remove_tree(remove_readonly=True)
 
-    def test_update(self):
-        testname = 'gfptar-test-update'
+    def test_update_append(self):
+        testname = 'gfptar-test-update-append'
         self.test_workdir_set(testname)
         # workdir_local = self.workdir_local
         # workdir_gfarm = self.workdir_gfarm
@@ -3046,10 +3052,15 @@ class GfptarProgram(Program):
 
         testsrc_name1 = 'test-src1'
         testsrc_name2 = 'test-src2'
+        testsrc_name3 = 'test-src3'
         srcdir_local1 = workdir_local_url.url_join(testsrc_name1)
         srcdir_local2 = workdir_local_url.url_join(testsrc_name2)
+        srcdir_local3 = workdir_local_url.url_join(testsrc_name3)
         srcdir_gfarm1 = workdir_gfarm_url.url_join(testsrc_name1)
         srcdir_gfarm2 = workdir_gfarm_url.url_join(testsrc_name2)
+        srcdir_gfarm3 = workdir_gfarm_url.url_join(testsrc_name3)
+        expect_dir_name = 'test-expect'
+        expect_dir_local = workdir_local_url.url_join(expect_dir_name)
 
         tree = [
             (self.D, 'dir1', 0o715, 10, None, True),
@@ -3059,31 +3070,53 @@ class GfptarProgram(Program):
         ]
         self.test_create_tree(srcdir_local1, tree)
         self.test_create_tree(srcdir_gfarm1, tree)
+
         tree = [
             (self.D, 'dir1', 0o750, 11, None, True),
-            (self.F, 'dir1/file1', 0o660, 100, None, True),
-            (self.F, 'dir1/file2', 0o664, 10, None, True),  # not updated
+            (self.F, 'dir1/file1', 0o660, 11, None, True),
+            (self.F, 'dir1/file2', 0o664, 9, None, True),  # not updated
             (self.S, 'dir1/symlink1', 0o770, 11, 'file1', True),
         ]
         self.test_create_tree(srcdir_local2, tree)
         self.test_create_tree(srcdir_gfarm2, tree)
 
-        test1_name = 'test-1-create'
+        tree = [
+            (self.D, 'dir2', 0o700, 10, None, True),
+            (self.F, 'dir2/file3', 0o660, 100, None, True),
+        ]
+        self.test_create_tree(srcdir_local3, tree)
+        self.test_create_tree(srcdir_gfarm3, tree)
+
+        # expected tree
+        tree = [
+            (self.D, 'dir1', 0o750, 11, None, True),
+            (self.F, 'dir1/file1', 0o660, 11, None, True),
+            (self.F, 'dir1/file2', 0o664, 10, None, True),
+            (self.D, 'dir2', 0o700, 10, None, True),
+            (self.F, 'dir2/file3', 0o660, 100, None, True),
+            (self.S, 'dir1/symlink1', 0o770, 11, 'file1', True),
+        ]
+        self.test_create_tree(expect_dir_local, tree)
+
+        test1_name = 'test-1-create-l'
         test1_dir_local = workdir_local_url.url_join(test1_name)
-        test2_name = 'test-2-extract'
+        test2_name = 'test-2-extract-l'
         test2_dir_local = workdir_local_url.url_join(test2_name)
 
-        test3_name = 'test-3-create'
+        test3_name = 'test-3-create-g'
         test3_dir_gfarm = workdir_gfarm_url.url_join(test3_name)
-        test4_name = 'test-4-extract'
+        test4_name = 'test-4-extract-g'
         test4_dir_local = workdir_local_url.url_join(test4_name)
 
-        members = ['dir1']
+        members1 = ['dir1']
+        members2 = ['dir2']
 
         # Local -> Local(tar)
-        self.cmd_create(test1_dir_local, srcdir_local1, members)
+        self.cmd_create(test1_dir_local, srcdir_local1, members1)
         # Local -> Local(tar) (update)
-        self.cmd_update(test1_dir_local, srcdir_local2, members)
+        self.cmd_update(test1_dir_local, srcdir_local2, members1)
+        # Local -> Local(tar) (append)
+        self.cmd_append(test1_dir_local, srcdir_local3, members2)
         # Local(tar) -> Local
         self.cmd_extract(test2_dir_local, test1_dir_local, [])
 
@@ -3091,18 +3124,20 @@ class GfptarProgram(Program):
         # self.cmd_list_verbose(test1_dir_local)
         # self.test_mode = True
 
-        if not self.test_compare_local(test2_dir_local, srcdir_local2,
+        if not self.test_compare_local(test2_dir_local, expect_dir_local,
                                        same_owner=True):
             logger.error_exit(1, testname + ' ... FAIL (different data)(1)')
 
         # Gfarm -> Gfarm(tar)
-        self.cmd_create(test3_dir_gfarm, srcdir_gfarm1, members)
+        self.cmd_create(test3_dir_gfarm, srcdir_gfarm1, members1)
         # Gfarm -> Gfarm(tar) (update)
-        self.cmd_update(test3_dir_gfarm, srcdir_gfarm2, members)
+        self.cmd_update(test3_dir_gfarm, srcdir_gfarm2, members1)
+        # Gfarm -> Gfarm(tar) (append)
+        self.cmd_append(test3_dir_gfarm, srcdir_gfarm3, members2)
         # Gfarm(tar) -> Local
         self.cmd_extract(test4_dir_local, test3_dir_gfarm, [])
 
-        if not self.test_compare_local(test4_dir_local, srcdir_local2,
+        if not self.test_compare_local(test4_dir_local, expect_dir_local,
                                        same_owner=True):
             logger.error_exit(1, testname + ' ... FAIL (different data)(2)')
 
@@ -3273,7 +3308,7 @@ class GfptarProgram(Program):
         diff_args += ['-r', dir1, dir2]
         out, err, ret = execcmd_raw(diff_args)
         if ret != 0:
-            logger.error(f'diff -r {dir1} {dir2}: {err}')
+            logger.error(f'diff -r {dir1} {dir2}: {out}: {err}')
             return False
         logger.debug('diff -r (data check): PASS')
         return self.test_compare(dir1, dir2, data=data, same_owner=same_owner,
@@ -3459,6 +3494,26 @@ class GfptarProgram(Program):
         gen = 1
         self.cmd_create_common(serial, gen, infiles)
 
+    def error_type_mismatch(self, tar_path):
+        return GfptarError(f"Tar compression type mismatch: {tar_path}")
+
+    def cmd_append(self, outdir, basedir, infiles):
+        self.cmd_create_init('append', outdir, basedir)
+        if not self.outdir_url.exists():
+            raise FileNotFoundError(outdir)
+        max_serial = 0
+        max_gen = 0
+        suffix = '.' + self.compress_type
+        tar_list, dbgz_list = self.list_tar_list_dbgz_from_dir(self.outdir_url)
+        for serial, gen, tar_path in tar_list:
+            if not tar_path.endswith(suffix):
+                raise self.error_type_mismatch(tar_path)
+            if serial > max_serial:
+                max_serial = serial
+            if gen > max_gen:
+                max_gen = gen
+        self.cmd_create_common(max_serial + 1, max_gen + 1, infiles)
+
     def cmd_update(self, outdir, basedir, infiles):
         self.cmd_create_init('update', outdir, basedir)
         if not self.outdir_url.exists():
@@ -3472,6 +3527,8 @@ class GfptarProgram(Program):
                                       progress=self.progress_enabled):
             if self.is_canceled():
                 raise self.error_canceled()
+            if not tar_path.endswith(suffix):
+                raise self.error_type_mismatch(tar_path)
             if serial > max_serial:
                 max_serial = serial
             if gen > max_gen:
@@ -3479,16 +3536,12 @@ class GfptarProgram(Program):
             if dbgz_path is None or tar_path is None:
                 broken_count += 1
                 continue
-            if not tar_path.endswith(suffix):
-                raise GfptarError(f"Tar compression type mismatch: {tar_path}")
             db = DB(db_path)
             fattr_dict = DBDict(db, FileAttr2, InfoDB.TABLE_ENTRY)
             self.fattr_dict_list.append(fattr_dict)
-        max_serial += 1
-        max_gen += 1
         self.start_time = time.time()
         self.next_time = self.start_time + self.progress_interval
-        self.cmd_create_common(max_serial, max_gen, infiles)
+        self.cmd_create_common(max_serial + 1, max_gen + 1, infiles)
         if broken_count > 0:
             raise GfptarError("Some .tar.* or .db.gz are broken:"
                               f" error={broken_count}")
@@ -3543,11 +3596,12 @@ class GfptarProgram(Program):
                                  f" entry.mtime({entry.mtime}) >"
                                  f" fattr.mtime({fattr.mtime})")
                     return True
-                elif fattr.size != entry.size:
-                    logger.debug(f"is_update_target2: path={path}:"
-                                 f" fattr.size({fattr.size})"
-                                 f" != entry.size({entry.size})")
-                    return True
+                # NOTE: compare only mtime
+                # elif fattr.size != entry.size:
+                #     logger.debug(f"is_update_target2: path={path}:"
+                #                  f" fattr.size({fattr.size})"
+                #                  f" != entry.size({entry.size})")
+                #     return True
                 else:
                     return False
             # not found
@@ -5346,15 +5400,13 @@ Limitations:
     (For the upper limit, see the output of `ulimit -n -H`)
 
 Options:
-  -t, --list=DIR            list mode,
-                            list the members of <indir>
-                            (use with --verbose to see more details)
-  -x, --extract=DIR         extract mode,
-                            extract all members or specified <member>s
+  -c, --create=DIR          create tar files in <outdir> from <member>s
+  -r, --append=DIR          append files (create new tar files)
+  -u, --update=DIR          append files newer than same entries in tar files
+  -x, --extract=DIR         extract all members or specified <member>s
                             from <indir> to <outdir>
-  -c, --create=DIR          create mode,
-                            create tar files in <outdir> from <member>s
-  -u, --update=DIR          append files newer than same entries in archive
+  -t, --list=DIR            list the members of <indir>
+                            (use with --verbose to see more details)
   -C, --basedir=DIR         base directory for <member>s  [default: .]
   -j, --jobs=NUM            the number of jobs to copy per tar file in parallel
                             [default: 4]
@@ -5365,7 +5417,7 @@ Options:
                               - xz : use xz    (*.tar.xz)
                               - no : no compression (*.tar)
                             [default: gz]
-  -r, --ratio=RATIO         assumed compression ratio (%) [default: 50]
+  --ratio=RATIO             assumed compression ratio (%) [default: 50]
   -I, --use-compress-program=COMMAND
                             filter data through COMMAND,
                             the command must accept -d option for decompression
@@ -5416,9 +5468,10 @@ Options:
 
 Usage:
   {f} [options] -c <outdir> [-C <basedir>] [--] <member>...
+  {f} [options] -r <outdir> [-C <basedir>] [--] <member>...
+  {f} [options] -u <outdir> [-C <basedir>] [--] <member>...
   {f} [options] -x <outdir> [--] <indir> [<member>...]
   {f} [options] -t <indir>
-  {f} [options] -u <outdir> [-C <basedir>] [--] <member>...
   {f} [options] --test
   {f} [options] --test -C <basedir> <member>...
   {f} [options] --test-long
@@ -5430,6 +5483,7 @@ _schema = Schema({
     '--list': Or(str, None),
     '--extract': Or(str, None),
     '--create': Or(str, None),
+    '--append': Or(str, None),
     '--update': Or(str, None),
     '--basedir': Or(str, None),
     '--encoding': str,
