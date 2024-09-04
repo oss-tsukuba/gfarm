@@ -1,3 +1,26 @@
+Release note for Gfarm 2.8.5
+============================
+
+[2024.9.4]
+
+New configuration directive
+* log_tls_verbose to display verbose messages in TLS
+* metadb_backend_sync_commit_at_initialization to disable asynchronous
+  commit at initialization.
+
+Updated feature
+* gfrm - -v option to print file names to be deleted
+* gfmd - improve the startup time by asynchronous commits to flush
+  uncommitted journals
+* improve log messages in TLS and SASL authentication
+* log related directives, log_level, log_message_verbose_level,
+  log_auth_verbose, log_tls_verbose, can be modified by gfstatus in
+  runtime
+
+Bug fix
+* gfpcopy - preserve times when the file size is larger than 1 GiB by
+  default, introduced in the version 2.8.0
+
 Release note for Gfarm 2.8.4
 ============================
 
