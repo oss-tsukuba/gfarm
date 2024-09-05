@@ -118,7 +118,7 @@ gflog_set_priority_string(int priority, char *string)
 	if (priority >= 0 && priority < GFLOG_PRIORITY_SIZE)
 		gflog_priority_string[priority] = string;
 	else
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1005664,
 		    "syslog priority %d (%s) exceeds GFLOG_PRIORITY_SIZE (%d),"
 		    " please increase GFLOG_PRIORITY_SIZE",
 		    priority, string, GFLOG_PRIORITY_SIZE);
@@ -164,7 +164,7 @@ gflog_syslog_priority_to_name(int priority)
 	 * this shouldn't happen, unless a libgfarm user calls gflog_message()
 	 * with an invalid priority argument.
 	 */
-	gflog_warning(GFARM_MSG_UNFIXED,
+	gflog_warning(GFARM_MSG_1005665,
 	    "unknown syslog priority %d", priority);
 	return ("unknown_syslog_priority");
 }

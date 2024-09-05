@@ -118,7 +118,7 @@ gfarm_config_read(void)
 	if ((config = fopen(rc, "r")) == NULL) {
 		user_config_errno = errno;
 		if (errno != ENOENT) /* something went wrong */
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1005669,
 			    "%s: %s", rc, strerror(errno));
 	} else {
 		user_config_errno = 0;

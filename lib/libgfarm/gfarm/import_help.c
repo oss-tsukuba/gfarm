@@ -43,7 +43,7 @@ gfarm_import_fragment_config_read(char *config,
 	if (strcmp(config, "-") == 0) {
 		fp = stdin;
 	} else if ((fp = fopen(config, "r")) == NULL) {
-		gflog_message(GFARM_MSG_UNFIXED,
+		gflog_message(GFARM_MSG_1005670,
 		    errno == ENOENT ? LOG_DEBUG : LOG_WARNING,
 		    __FILE__, __LINE__, __func__,
 		    "Failed to open file (%s): %s",

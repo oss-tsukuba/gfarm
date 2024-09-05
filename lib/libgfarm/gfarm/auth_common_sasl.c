@@ -76,7 +76,7 @@ gfarm_sasl_addr_string(int fd,
 
 	if (self_addr.ss_family == AF_UNIX) {
 		/* sasl_client_new() and sasl_server_new() doesn't work */
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005735,
 		    "%s: SASL authentication doesn't work with AF_UNIX", diag);
 		return (EAFNOSUPPORT);
 	}

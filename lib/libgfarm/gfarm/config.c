@@ -3317,7 +3317,7 @@ parse_include(char *p, const char **op, const char *file, int lineno)
 	config = fopen(s, "r");
 	if (config == NULL) {
 		*op = s;
-		gflog_message(GFARM_MSG_UNFIXED,
+		gflog_message(GFARM_MSG_1005666,
 		    errno == ENOENT ? LOG_DEBUG : LOG_WARNING,
 		    __FILE__, __LINE__, __func__,
 		    "%s: cannot open include file: %s", s, strerror(errno));
@@ -4639,7 +4639,7 @@ gfarm_config_copyout_log_level(const struct gfarm_config_type *type,
 	storage->s =
 	    strdup(gflog_syslog_priority_to_name(gfarm_ctxp->log_level));
 	if (storage->s == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED, "no memory for log_level %s",
+		gflog_error(GFARM_MSG_1005667, "no memory for log_level %s",
 		    gflog_syslog_priority_to_name(gfarm_ctxp->log_level));
 		return (GFARM_ERR_NO_MEMORY);
 	}

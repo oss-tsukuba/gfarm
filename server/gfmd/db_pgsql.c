@@ -272,10 +272,10 @@ gfarm_pgsql_sync_commit_at_initialization(int mode)
 	}
 	res = PQexec(conn, cmd);
 	if (PQresultStatus(res) == PGRES_COMMAND_OK) {
-		gflog_info(GFARM_MSG_UNFIXED, "postgresql backend: %s", cmd);
+		gflog_info(GFARM_MSG_1005736, "postgresql backend: %s", cmd);
 		e = GFARM_ERR_NO_ERROR;
 	} else {
-		gflog_error(GFARM_MSG_UNFIXED, "%s: %s: %s",
+		gflog_error(GFARM_MSG_1005737, "%s: %s: %s",
 		    diag, cmd, PQresultErrorMessage(res));
 		e = GFARM_ERR_UNKNOWN;
 	}

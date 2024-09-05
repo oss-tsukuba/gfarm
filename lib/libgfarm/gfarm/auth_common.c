@@ -230,7 +230,7 @@ gfarm_auth_shared_key_get(unsigned int *expirep, char *shared_key,
 	}
 
 	if ((fp = fopen(keyfilename, "r+")) == NULL) {
-		gflog_message(GFARM_MSG_UNFIXED,
+		gflog_message(GFARM_MSG_1005671,
 		    errno == ENOENT ? LOG_DEBUG : LOG_WARNING,
 		    __FILE__, __LINE__, __func__,
 		     "%s: %s", keyfilename, strerror(errno));

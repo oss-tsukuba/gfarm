@@ -7190,7 +7190,7 @@ main(int argc, char **argv)
 			gflog_error_errno(GFARM_MSG_1002395,
 			    "seteuid(%d)", (int)gfsd_uid);
 		if (pid_fp == NULL)
-			accepting_fatal(GFARM_MSG_UNFIXED,
+			accepting_fatal(GFARM_MSG_1005738,
 			    "%s: failed to open file: %s",
 			    pid_file, strerror(save_errno));
 	}

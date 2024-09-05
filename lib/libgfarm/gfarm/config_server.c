@@ -36,7 +36,7 @@ gfarm_server_config_read(void)
 	char *config_file = gfarm_config_get_filename();
 
 	if ((config = fopen(config_file, "r")) == NULL) {
-		gflog_message(GFARM_MSG_UNFIXED,
+		gflog_message(GFARM_MSG_1005668,
 		    errno == ENOENT ? LOG_DEBUG : LOG_WARNING,
 		    __FILE__, __LINE__, __func__,
 		    "open operation on server config file (%s) failed: %s",
