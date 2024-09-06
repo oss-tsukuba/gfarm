@@ -3629,7 +3629,8 @@ tls_session_shutdown(struct tls_session_ctx_struct *ctx)
 
 		gflog_tls_verbose_debug(GFARM_MSG_1005649,
 			"%s(%s): shutdown SSL issued : %s",
-			__func__, ctx->peer_cn_, (st == 1) ? "OK" : "NG");
+			__func__, ctx->peer_cn_,
+		       (st == 1) ? "OK" : (st == 0) ? "NOT-YET" : "NG");
 
 		if (st == 1) {
 			ctx->last_ssl_error_ = SSL_ERROR_SSL;
