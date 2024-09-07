@@ -2487,7 +2487,7 @@ class GfptarProgram(Program):
             self.max_workers = 1
         self.bufsize = self.opt['--bufsize']
         self.use_fsync = not self.opt['--disable-fsync']
-        self.sync_infodb = self.opt['--sync-db']
+        self.sync_infodb = self.opt['--generate-db']
 
         self.workdir = self.opt['--workdir']
         euid = os.geteuid()
@@ -2734,18 +2734,18 @@ class GfptarProgram(Program):
         save_opt_jobs = self.opt['--jobs']
         save_opt_type = self.opt['--type']
         save_opt_compress_prog = self.opt['--use-compress-program']
-        save_opt_syncdb = self.opt['--sync-db']
+        save_opt_gendb = self.opt['--generate-db']
         save_opt_verbose = self.opt['--verbose']
 
         # create tar per one entry
         self.opt['--size'] = 0
 
-        # test --sync-db
+        # test --generate-db
         # --verbose: test report_path (SEE ALSO: create_a_tar_process1)
         self.opt['--verbose'] = True
-        self.opt['--sync-db'] = True
-        self.test_simple('syncdb')
-        self.opt['--sync-db'] = save_opt_syncdb
+        self.opt['--generate-db'] = True
+        self.test_simple('generate_db')
+        self.opt['--generate-db'] = save_opt_gendb
         self.opt['--verbose'] = save_opt_verbose
 
         # test --jobs
@@ -5523,7 +5523,7 @@ Options:
   --gzip-program=COMMAND    gzip command (ex. pigz) [default: gzip]
   --bzip2-program=COMMAND   bzip2 command (ex. pbzip2) [default: bzip2]
   --xz-program=COMMAND      xz command [default: xz]
-  --sync-db                 regenerate gfptar*_info.db.gz
+  --generate-db             regenerate gfptar*_info.db.gz
   --same-owner              extract files with the same ownership
                             (for euid=0 on local, or gfarmroot on Gfarm)
   --disable-gfarm-command   disable the use of gfreg and gfexport
@@ -5601,7 +5601,7 @@ _schema = Schema({
     '--disable-gfarm-command': bool,
     '--disable-fsync': bool,
     '--gfsched-interval': Use(int),
-    '--sync-db': bool,
+    '--generate-db': bool,
     '--same-owner': bool,
     '--workdir': Or(str, None),
     '--max-entries-per-tar': Use(unhumanize_number),
