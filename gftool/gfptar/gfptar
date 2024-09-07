@@ -2629,6 +2629,8 @@ class GfptarProgram(Program):
                 self.cmd_append(outdir, basedir, infiles)
 
             outdir = self.opt['--update']
+            if not outdir:
+                outdir = self.opt['--resume']
             if outdir:
                 basedir = self.opt['--basedir']
                 infiles = self.opt['MEMBER']
@@ -5494,6 +5496,7 @@ Options:
   -c, --create=OUTDIR       create tar files in OUTDIR from MEMBERs
   -r, --append=OUTDIR       append files (create new tar files)
   -u, --update=OUTDIR       append files newer than same entries in tar files
+      --resume=OUTDIR       same as --update
   -x, --extract=OUTDIR      extract all members or specified MEMBERs
                             from INDIR to OUTDIR
   -t, --list=DIR            list the members of DIR
@@ -5564,6 +5567,7 @@ Options:
 Usage:
   {f} [options] [--exclude=PATTERN]... -c OUTDIR [-C DIR] [--] MEMBER...
   {f} [options] [--exclude=PATTERN]... -r OUTDIR [-C DIR] [--] MEMBER...
+  {f} [options] [--exclude=PATTERN]... --resume OUTDIR [-C DIR] [--] MEMBER...
   {f} [options] [--exclude=PATTERN]... -u OUTDIR [-C DIR] [--] MEMBER...
   {f} [options] [--exclude=PATTERN]... -x OUTDIR [--] INDIR [MEMBER...]
   {f} [options] -t DIR
@@ -5580,6 +5584,7 @@ _schema = Schema({
     '--create': Or(str, None),
     '--append': Or(str, None),
     '--update': Or(str, None),
+    '--resume': Or(str, None),
     '--basedir': Or(str, None),
     '--exclude': Or([str], None),
     '--exclude-from': Or(str, None),
