@@ -50,6 +50,7 @@ import inspect
 from collections import defaultdict
 import datetime
 import atexit
+import fnmatch
 
 from docopt import docopt
 from schema import Schema, Use, Or
@@ -2210,7 +2211,7 @@ class GfTarFile(tarfile.TarFile):
     # NOTE: add() is not expected behavior. Use addfile() instead.
     # - add() can copy a hard link,
     #   but a hard link cannot be extracted from gfexport (stream open)
-    # - When the specified <member> for --create is a symlink,
+    # - When the specified MEMBER for --create is a symlink,
     #   the entry will be archived as symlink.
     def _add_entry(self, subpath, entry):
         tarinfo = entry.toTarinfo(subpath)
@@ -2534,6 +2535,48 @@ class GfptarProgram(Program):
 
         self.dry_run = self.opt['--dry-run']
 
+        self.exclude_re_list = []
+        self.exclude = self.opt['--exclude']
+        if isinstance(self.exclude, str):
+            reobj = re.compile(fnmatch.translate(self.exclude))
+            self.exclude_re_list.append(reobj)
+        elif isinstance(self.exclude, list):
+            for ex in self.exclude:
+                reobj = re.compile(fnmatch.translate(ex))
+                self.exclude_re_list.append(reobj)
+
+        self.exclude_from = self.opt['--exclude-from']
+        if self.exclude_from is not None:
+            logger.debug(f"exclude_from={self.exclude_from}")
+            exclude_url = GfURL.init(self.exclude_from)
+            with exclude_url.readopen(textmode=True) as f:
+                while True:
+                    line = f.readline().strip()
+                    if not line:
+                        break
+                    if len(line) == 0:
+                        continue
+                    logger.debug(f"exclude_from: line=`{line}`")
+                    reobj = re.compile(fnmatch.translate(line))
+                    self.exclude_re_list.append(reobj)
+
+        if len(self.exclude_re_list) > 0:
+            self.exclude_match = self.exclude_match0
+        else:
+            self.exclude_match = self.exclude_match_noop
+
+    def exclude_match0(self, path):
+        if path.startswith('./'):  # equal to removeprefix('./')
+            path = path[2:]
+        # logger.debug(f"exclude_match0(): path={path}")
+        if any(reobj.match(path) for reobj in self.exclude_re_list):
+            logger.debug(f"exclude_match0()=True: path={path}")
+            return True
+        return False
+
+    def exclude_match_noop(self, path):
+        return False
+
     def set_memory_limit(self, max_memory):
         resource.setrlimit(resource.RLIMIT_AS, (max_memory, max_memory))
 
@@ -2575,27 +2618,27 @@ class GfptarProgram(Program):
             outdir = self.opt['--create']
             if outdir:
                 basedir = self.opt['--basedir']
-                infiles = self.opt['<member>']
+                infiles = self.opt['MEMBER']
                 self.cmd_create(outdir, basedir, infiles)
                 return
 
             outdir = self.opt['--append']
             if outdir:
                 basedir = self.opt['--basedir']
-                infiles = self.opt['<member>']
+                infiles = self.opt['MEMBER']
                 self.cmd_append(outdir, basedir, infiles)
 
             outdir = self.opt['--update']
             if outdir:
                 basedir = self.opt['--basedir']
-                infiles = self.opt['<member>']
+                infiles = self.opt['MEMBER']
                 self.cmd_update(outdir, basedir, infiles)
                 return
 
             outdir = self.opt['--extract']
             if outdir:
-                indir = self.opt['<indir>']
-                members = self.opt['<member>']
+                indir = self.opt['INDIR']
+                members = self.opt['MEMBER']
                 self.cmd_extract(outdir, indir, members)
                 return
 
@@ -2657,7 +2700,7 @@ class GfptarProgram(Program):
         self.test_init()
         self.test_opt_pattern(full=False)
         self.test_member()
-        self.test_update_append()
+        self.test_update_append_exclude()
         self.test_specified_dir()
 
     def test_main_long(self):
@@ -2665,7 +2708,7 @@ class GfptarProgram(Program):
         self.test_unit()
         self.test_opt_pattern(full=True)
         self.test_member()
-        self.test_update_append()
+        self.test_update_append_exclude()
         # self.test_invalid('url', 'gfarm:/tmp', 'dst', False)  # allowed
         self.test_invalid('dot1', '.', 'dst', True)
         self.test_invalid('dot2', '', 'dst', False)
@@ -3042,8 +3085,8 @@ class GfptarProgram(Program):
         workdir_local_url.remove_tree(remove_readonly=True)
         workdir_gfarm_url.remove_tree(remove_readonly=True)
 
-    def test_update_append(self):
-        testname = 'gfptar-test-update-append'
+    def test_update_append_exclude(self):
+        testname = 'gfptar-test-update-append-exclude'
         self.test_workdir_set(testname)
         # workdir_local = self.workdir_local
         # workdir_gfarm = self.workdir_gfarm
@@ -3062,27 +3105,42 @@ class GfptarProgram(Program):
         expect_dir_name = 'test-expect'
         expect_dir_local = workdir_local_url.url_join(expect_dir_name)
 
+        exclude_name = 'exclude.txt'
+        exclude_file_l = workdir_local_url.url_join(exclude_name)
+        exclude_file_l_url = GfURL.init(exclude_file_l)
+        exclude_file_g = workdir_gfarm_url.url_join(exclude_name)
+        exclude_file_g_url = GfURL.init(exclude_file_g)
+
+        # for cmd_create
         tree = [
             (self.D, 'dir1', 0o715, 10, None, True),
             (self.F, 'dir1/file1', 0o664, 10, None, True),
             (self.F, 'dir1/file2', 0o664, 10, None, True),
             (self.S, 'dir1/symlink1', 0o777, 10, 'file1', True),
+            (self.F, 'dir1/exclude1.ext1', 0o660, 10, None, True),
         ]
         self.test_create_tree(srcdir_local1, tree)
         self.test_create_tree(srcdir_gfarm1, tree)
 
+        # for cmd_update
         tree = [
             (self.D, 'dir1', 0o750, 11, None, True),
             (self.F, 'dir1/file1', 0o660, 11, None, True),
             (self.F, 'dir1/file2', 0o664, 9, None, True),  # not updated
             (self.S, 'dir1/symlink1', 0o770, 11, 'file1', True),
+            (self.F, 'dir1/exclude2.ext2', 0o660, 10, None, True),
+            (self.F, 'dir1/exclude2.ext3', 0o660, 10, None, True),
         ]
         self.test_create_tree(srcdir_local2, tree)
         self.test_create_tree(srcdir_gfarm2, tree)
 
+        # for cmd_append
         tree = [
             (self.D, 'dir2', 0o700, 10, None, True),
             (self.F, 'dir2/file3', 0o660, 100, None, True),
+            (self.F, 'dir2/exclude4.ext4', 0o660, 10, None, True),
+            (self.F, 'dir2/exclude5.ext5', 0o660, 10, None, True),
+            (self.F, 'dir2/exclude6.ext6', 0o660, 10, None, True),
         ]
         self.test_create_tree(srcdir_local3, tree)
         self.test_create_tree(srcdir_gfarm3, tree)
@@ -3092,9 +3150,9 @@ class GfptarProgram(Program):
             (self.D, 'dir1', 0o750, 11, None, True),
             (self.F, 'dir1/file1', 0o660, 11, None, True),
             (self.F, 'dir1/file2', 0o664, 10, None, True),
+            (self.S, 'dir1/symlink1', 0o770, 11, 'file1', True),
             (self.D, 'dir2', 0o700, 10, None, True),
             (self.F, 'dir2/file3', 0o660, 100, None, True),
-            (self.S, 'dir1/symlink1', 0o770, 11, 'file1', True),
         ]
         self.test_create_tree(expect_dir_local, tree)
 
@@ -3109,15 +3167,34 @@ class GfptarProgram(Program):
         test4_dir_local = workdir_local_url.url_join(test4_name)
 
         members1 = ['dir1']
-        members2 = ['dir2']
+        members2 = ['dir2']  # for cmd_append
+
+        save_opt_exclude = self.opt['--exclude']
+        save_opt_exclude_from = self.opt['--exclude-from']
+
+        # for cmd_update
+        with exclude_file_l_url.writeopen(textmode=True) as f:
+            f.write('*.ext2\n')
+            f.write('*.ext3\n')
+        with exclude_file_g_url.writeopen(textmode=True) as f:
+            f.write('*.ext2\n')
+            f.write('*.ext3\n')
 
         # Local -> Local(tar)
+        self.opt['--exclude'] = ['*.ext1']
+        self.opt['--exclude-from'] = None
         self.cmd_create(test1_dir_local, srcdir_local1, members1)
         # Local -> Local(tar) (update)
+        self.opt['--exclude'] = None
+        self.opt['--exclude-from'] = exclude_file_l
         self.cmd_update(test1_dir_local, srcdir_local2, members1)
         # Local -> Local(tar) (append)
+        self.opt['--exclude'] = ['*.ext4', '*.ext5']
+        self.opt['--exclude-from'] = None
         self.cmd_append(test1_dir_local, srcdir_local3, members2)
         # Local(tar) -> Local
+        self.opt['--exclude'] = ['*.ext6']
+        self.opt['--exclude-from'] = None
         self.cmd_extract(test2_dir_local, test1_dir_local, [])
 
         # self.test_mode = False
@@ -3129,12 +3206,20 @@ class GfptarProgram(Program):
             logger.error_exit(1, testname + ' ... FAIL (different data)(1)')
 
         # Gfarm -> Gfarm(tar)
+        self.opt['--exclude'] = ['*.ext1']
+        self.opt['--exclude-from'] = None
         self.cmd_create(test3_dir_gfarm, srcdir_gfarm1, members1)
         # Gfarm -> Gfarm(tar) (update)
+        self.opt['--exclude'] = None
+        self.opt['--exclude-from'] = exclude_file_g
         self.cmd_update(test3_dir_gfarm, srcdir_gfarm2, members1)
         # Gfarm -> Gfarm(tar) (append)
+        self.opt['--exclude'] = ['*.ext4', '*.ext5']
+        self.opt['--exclude-from'] = None
         self.cmd_append(test3_dir_gfarm, srcdir_gfarm3, members2)
         # Gfarm(tar) -> Local
+        self.opt['--exclude'] = ['*.ext6']
+        self.opt['--exclude-from'] = None
         self.cmd_extract(test4_dir_local, test3_dir_gfarm, [])
 
         if not self.test_compare_local(test4_dir_local, expect_dir_local,
@@ -3144,6 +3229,8 @@ class GfptarProgram(Program):
         print(testname + ' ... PASS')
         workdir_local_url.remove_tree(remove_readonly=True)
         workdir_gfarm_url.remove_tree(remove_readonly=True)
+        self.opt['--exclude'] = save_opt_exclude
+        self.opt['--exclude-from'] = save_opt_exclude_from
 
     # for test
     F = 'file'
@@ -3251,7 +3338,7 @@ class GfptarProgram(Program):
         basedir = self.opt['--basedir']
         if basedir is None:
             return
-        infiles = self.opt['<member>']
+        infiles = self.opt['MEMBER']
         if len(infiles) == 0:
             return
 
@@ -3579,10 +3666,10 @@ class GfptarProgram(Program):
                 return gfurl.listdir(recursive=True, first=True,
                                      hardlink_warn=self.hardlink_warn)
 
-        def is_update_target1(entry):
+        def is_update_target_true(entry):
             return True
 
-        def is_update_target2(entry):
+        def is_update_target0(entry):
             # entry is an input file.
             path = entry.subpath(self.basedir_url)
             # compare mtime from newer .db
@@ -3609,9 +3696,9 @@ class GfptarProgram(Program):
             return True
 
         if len(self.fattr_dict_list) > 0:
-            is_update_target = is_update_target2
+            is_update_target = is_update_target0
         else:
-            is_update_target = is_update_target1
+            is_update_target = is_update_target_true
 
         tmpdir = self.tmpdir
         tardb_prefix = os.path.join(tmpdir.name, self.cmd_name)
@@ -3643,7 +3730,9 @@ class GfptarProgram(Program):
                         break
                     logger.debug('listdir: entry.path=%s', entry.path)
                     if not is_update_target(entry):
-                        continue
+                        continue  # skip
+                    if self.exclude_match(entry.path):
+                        continue  # skip
 
                     # include length of path
                     this_size = entry.size_all()
@@ -4602,11 +4691,13 @@ class GfptarProgram(Program):
                 tarinfo = None
             if tarinfo is None:
                 break
+            if self.exclude_match(tarinfo.name):
+                continue  # skip
             if members_num > 0:
                 with self.lock():
                     # perfect match
                     if tarinfo.name not in member_set:
-                        continue
+                        continue  # skip
                     member_set.remove(tarinfo.name)
             # members_num == 0 -> extract all
 
@@ -4857,10 +4948,10 @@ class GfptarProgram(Program):
                 fattr.group, fattr.size, mtime_str, name))
 
         def print_simple(serial, gen, path, fattr):
-            name = path
             if fattr.ftype == InfoDB.TYPE_DIR:
-                name = name + '/'
-            print(f'{fattr.ftype} {name}', file=outf)
+                print(f'{fattr.ftype} {path}/', file=outf)
+            else:
+                print(f'{fattr.ftype} {path}', file=outf)
 
         if quiet:
             print_func = print_quiet
@@ -5400,24 +5491,28 @@ Limitations:
     (For the upper limit, see the output of `ulimit -n -H`)
 
 Options:
-  -c, --create=DIR          create tar files in <outdir> from <member>s
-  -r, --append=DIR          append files (create new tar files)
-  -u, --update=DIR          append files newer than same entries in tar files
-  -x, --extract=DIR         extract all members or specified <member>s
-                            from <indir> to <outdir>
-  -t, --list=DIR            list the members of <indir>
+  -c, --create=OUTDIR       create tar files in OUTDIR from MEMBERs
+  -r, --append=OUTDIR       append files (create new tar files)
+  -u, --update=OUTDIR       append files newer than same entries in tar files
+  -x, --extract=OUTDIR      extract all members or specified MEMBERs
+                            from INDIR to OUTDIR
+  -t, --list=DIR            list the members of DIR
                             (use with --verbose to see more details)
-  -C, --basedir=DIR         base directory for <member>s  [default: .]
+  -C, --basedir=DIR         change to directory for MEMBERs [default: .]
+  --exclude=<patt>          Exclude files matching wildcard patterns
+             (https://docs.python.org/ja/3/library/fnmatch.html)
+  -X, --exclude-from=FILE   Exclude files matching wildcard patterns
+                            listed in FILE
   -j, --jobs=NUM            the number of jobs to copy per tar file in parallel
                             [default: 4]
   -s, --size=BYTES          assumed bytes per output file [default: 200Mi]
+  --ratio=RATIO             assumed compression ratio (%) [default: 50]
   -T, --type=TYPE           compression type and tar archive suffix
                               - gz : use gzip  (*.tar.gz)
                               - bz2: use bzip2 (*.tar.bz2)
                               - xz : use xz    (*.tar.xz)
                               - no : no compression (*.tar)
                             [default: gz]
-  --ratio=RATIO             assumed compression ratio (%) [default: 50]
   -I, --use-compress-program=COMMAND
                             filter data through COMMAND,
                             the command must accept -d option for decompression
@@ -5454,7 +5549,7 @@ Options:
   --test-workdir-local=DIR  local directory for test [default: /tmp]
   --test-workdir-gfarm=DIR  Gfarm directory for test [default: gfarm:/tmp]
   --dummy-num=NUM           the number of dummy input entries for --create
-                            (ignore <member> arguments)
+                            (ignore MEMBER arguments)
                             (create 1000 files and directories per 1 unit)
                             (default: disabled)
   --dummy-size-min=BYTES    minimum size of dummy files [default: 0]
@@ -5467,13 +5562,13 @@ Options:
   -?, -h, --help            show this help and exit
 
 Usage:
-  {f} [options] -c <outdir> [-C <basedir>] [--] <member>...
-  {f} [options] -r <outdir> [-C <basedir>] [--] <member>...
-  {f} [options] -u <outdir> [-C <basedir>] [--] <member>...
-  {f} [options] -x <outdir> [--] <indir> [<member>...]
-  {f} [options] -t <indir>
+  {f} [options] [--exclude=PATTERN]... -c OUTDIR [-C DIR] [--] MEMBER...
+  {f} [options] [--exclude=PATTERN]... -r OUTDIR [-C DIR] [--] MEMBER...
+  {f} [options] [--exclude=PATTERN]... -u OUTDIR [-C DIR] [--] MEMBER...
+  {f} [options] [--exclude=PATTERN]... -x OUTDIR [--] INDIR [MEMBER...]
+  {f} [options] -t DIR
   {f} [options] --test
-  {f} [options] --test -C <basedir> <member>...
+  {f} [options] --test -C DIR MEMBER...
   {f} [options] --test-long
   {f} -h | --help
 """.format(f=progname)
@@ -5486,6 +5581,8 @@ _schema = Schema({
     '--append': Or(str, None),
     '--update': Or(str, None),
     '--basedir': Or(str, None),
+    '--exclude': Or([str], None),
+    '--exclude-from': Or(str, None),
     '--encoding': str,
     '--size': Use(unhumanize_number),
     '--bufsize': Use(unhumanize_number),
@@ -5520,8 +5617,8 @@ _schema = Schema({
     '--debug': bool,
     '--help': bool,
     '--': bool,
-    '<indir>': Or(str, None),
-    '<member>': [str],
+    'INDIR': Or(str, None),
+    'MEMBER': [str],
 })
 
 
