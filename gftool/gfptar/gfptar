@@ -3170,6 +3170,7 @@ class GfptarProgram(Program):
 
         members1 = ['dir1']
         members2 = ['dir2']  # for cmd_append
+        members_all = members1 + members2
 
         save_opt_exclude = self.opt['--exclude']
         save_opt_exclude_from = self.opt['--exclude-from']
@@ -3197,7 +3198,7 @@ class GfptarProgram(Program):
         # Local(tar) -> Local
         self.opt['--exclude'] = ['*.ext6']
         self.opt['--exclude-from'] = None
-        self.cmd_extract(test2_dir_local, test1_dir_local, [])
+        self.cmd_extract(test2_dir_local, test1_dir_local, members_all)
 
         # self.test_mode = False
         # self.cmd_list_verbose(test1_dir_local)
@@ -3222,6 +3223,7 @@ class GfptarProgram(Program):
         # Gfarm(tar) -> Local
         self.opt['--exclude'] = ['*.ext6']
         self.opt['--exclude-from'] = None
+        # self.cmd_extract(test4_dir_local, test3_dir_gfarm, members_all)
         self.cmd_extract(test4_dir_local, test3_dir_gfarm, [])
 
         if not self.test_compare_local(test4_dir_local, expect_dir_local,
@@ -4700,7 +4702,8 @@ class GfptarProgram(Program):
                     # perfect match
                     if tarinfo.name not in member_set:
                         continue  # skip
-                    member_set.remove(tarinfo.name)
+                    # NOTE: DO NOT remove for --update
+                    # member_set.remove(tarinfo.name)
             # members_num == 0 -> extract all
 
             # ex. //a/b/c// -> a/b/c
