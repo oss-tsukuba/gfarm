@@ -212,6 +212,17 @@ gfs_client_connection_is_local(struct gfs_connection *gfs_server)
 	return (gfs_server->is_local);
 }
 
+/*
+ * is this conneciton is shareable between multiple processes?
+ * i.e. is this plain-text connection? (i.e. NOT encrypted?)
+ */
+int
+gfs_client_is_connection_sharable(struct gfs_connection *gfs_server)
+{
+	return (gfarm_auth_method_connection_is_shareable(
+	    gfs_server->auth_method));
+}
+
 gfarm_pid_t
 gfs_client_pid(struct gfs_connection *gfs_server)
 {

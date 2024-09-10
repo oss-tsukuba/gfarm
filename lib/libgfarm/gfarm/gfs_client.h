@@ -44,6 +44,7 @@ gfarm_error_t gfs_client_connect(const char *, int, const char *,
 void gfs_client_connection_gc(void);
 int gfs_client_sockaddr_is_local(struct sockaddr *);
 int gfs_client_connection_is_local(struct gfs_connection *);
+int gfs_client_is_connection_sharable(struct gfs_connection *);
 
 gfarm_error_t gfs_client_connection_enter_cache(struct gfs_connection *);
 gfarm_error_t gfs_client_connection_enter_cache_tail(struct gfs_connection *);

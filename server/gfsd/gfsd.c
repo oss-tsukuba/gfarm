@@ -6350,6 +6350,15 @@ replication_result_notify(struct gfp_xdr *bc_conn,
 
 	if (gfs_client_is_connection_error(res.recv.e.src_errcode))
 		gfs_client_purge_from_cache(rep->src_gfsd);
+	if (!gfs_client_is_connection_sharable(rep->src_gfsd)) {
+		/*
+		 * throw away this conneciton everytime,
+		 * because the encryption state of the connection cannot be
+		 * shared between the client and the paret process
+		 */
+		(void)shutdown(gfs_client_connection_fd(rep->src_gfsd),
+		    SHUT_RDWR);
+	}
 	gfs_client_connection_free(rep->src_gfsd);
 
 	rep->ongoing_prev->ongoing_next = rep->ongoing_next;

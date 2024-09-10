@@ -129,6 +129,7 @@ enum gfarm_auth_sasl_step_type {
 	GFARM_AUTH_SASL_STEP_CONTINUE,
 };
 
+int gfarm_auth_method_connection_is_shareable(enum gfarm_auth_method);
 int gfarm_auth_client_method_is_avaiable(enum gfarm_auth_method,
 	enum gfarm_auth_id_role);
 int gfarm_auth_server_method_is_avaiable(enum gfarm_auth_method);
