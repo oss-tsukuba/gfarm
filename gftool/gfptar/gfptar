@@ -3570,9 +3570,7 @@ class GfptarProgram(Program):
         self.next_time = self.start_time + self.progress_interval
         self.listing = True
 
-        self.gfsched_lock = None
-        self.gfsched_next = 0
-        self.gfsched_list = None
+        self.gfsched_init()
 
         self.cannot_be_archived = 0
         self.create_job_init()  # before creating threads
@@ -3982,32 +3980,49 @@ class GfptarProgram(Program):
     def is_canceled(self):
         return self.canceled
 
+    def gfsched_init(self):
+        self.gfsched_lock = threading.Lock()
+        self.gfsched_next = 0
+        self.gfsched_list = []
+
     def _gfsched_sometimes(self, gfurl):
         # if gfurl.is_gfarm() is not True:
         #     raise AssertionError
-        if self.gfsched_lock is None:
-            self.gfsched_lock = threading.Lock()
+        now = time.time()
         with self.gfsched_lock:
-            now = time.time()
-            if now >= self.gfsched_next:
-                # access to Gfarm
-                self.gfsched_list = gfurl.gfsched(write_mode=True,
-                                                  number=self.jobs)
-                # prevent IndexError
-                self.gfsched_list = self.gfsched_list[:self.jobs]
-                logger.debug("update gfsched_list")
-                self.gfsched_next = now + self.gfsched_interval
+            if now < self.gfsched_next:
+                return  # not updated
+            # access to Gfarm
+            old_schedlist = self.gfsched_list
+            try:
+                schedlist = gfurl.gfsched(write_mode=True,
+                                          number=self.jobs)
+            except Exception:
+                logger.warning('Error occurred in gfsched')
+                schedlist = old_schedlist
+            self.gfsched_list = schedlist
+            logger.debug("update gfsched_list")
+            self.gfsched_next = now + self.gfsched_interval
 
     def select_a_target_host(self, outurl, index):
         if self.dry_run:
             return
         if not outurl.is_gfarm():
             return None
-        if self.jobs <= 1:
+        if self.jobs <= 1:  # not use gfsched
             return None
         self._gfsched_sometimes(outurl)
-        with self.lock():
-            target_host = self.gfsched_list[index % len(self.gfsched_list)]
+        with self.gfsched_lock:
+            schedlist_len = len(self.gfsched_list)
+            if schedlist_len == 0:
+                logger.warning(
+                    'The destination host cannot be selected by gfptar')
+                return None  # no candidate
+            if schedlist_len > self.jobs:
+                # use only top hosts
+                self.gfsched_list = self.gfsched_list[:self.jobs]
+                schedlist_len = len(self.gfsched_list)
+            target_host = self.gfsched_list[index % schedlist_len]
         logger.debug("selected target_host: %s", target_host)
         return target_host
 
@@ -4529,9 +4544,7 @@ class GfptarProgram(Program):
         if self.progress_enabled:
             self.progress_for_extract(self.start_time)
 
-        self.gfsched_lock = None
-        self.gfsched_next = 0
-        self.gfsched_list = None
+        self.gfsched_init()
 
         if self.MT_enabled():
             for gen, tarlist in gen_tarlist_dict.items():
