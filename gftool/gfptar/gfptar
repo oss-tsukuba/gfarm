@@ -4394,13 +4394,10 @@ class GfptarProgram(Program):
 
         tmpdir = self.tmpdir
         db_file = os.path.join(tmpdir.name, 'extract.db')
-        db_file_target = os.path.join(tmpdir.name, 'target.db')
         logger.debug('db_file=%s', db_file)
-        logger.debug('db_file_target=%s', db_file_target)
 
         # to reduce memory usage
         self.db = DB(db_file, check_same_thread=False)
-        self.db_target = DB(db_file_target, check_same_thread=False)
 
         self.extract_main()
         tmpdir.cleanup()
@@ -4559,8 +4556,6 @@ class GfptarProgram(Program):
         self.update_stat_for_directories(directory_set)
         self.db.close()
         self.db.unlink()
-        self.db_target.close()
-        self.db_target.unlink()
         if error_num > 0:
             raise GfptarError("Some .tar.* or .db.gz are broken:"
                               f" error={error_num}")
