@@ -4376,6 +4376,7 @@ class GfptarProgram(Program):
         logger.debug('extract start: outdir=%s, indir=%s', outdir, indir)
         self.outdir = outdir
         self.outdir_url = GfURL.init(outdir, dry_run=self.dry_run)
+        self.outdir_url.create_new_dir()
         self.indir = indir
         self.specified_members = specified_members
         self.same_owner = self.opt['--same-owner']
@@ -4540,7 +4541,6 @@ class GfptarProgram(Program):
     def extract_main(self):
         (gen_tarlist_dict, directory_set,
          member_set, error_num) = self.extract_schedule()
-        self.outdir_url.create_new_dir()
 
         # NOTE: Directories are created in threads
         # self.extract_directories(directory_set)  # slow
