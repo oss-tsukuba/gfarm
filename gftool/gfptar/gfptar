@@ -4432,6 +4432,8 @@ class GfptarProgram(Program):
 
         self.total_num = 0
         self.total_size = 0
+        self.selected_num = 0
+        self.selected_size = 0
         self.start_time = time.time()
         self.next_time = self.start_time + self.progress_interval
         if self.progress_enabled:
@@ -4450,12 +4452,13 @@ class GfptarProgram(Program):
                     db_path, resolve_ugmap=False):
                 if self.is_canceled():
                     raise self.error_canceled()
-                self.total_num += 1
-                self.total_size += fattr.size
+                size = fattr.size
                 file_type = fattr.ftype
+                self.total_num += 1
+                self.total_size += size
                 if self.search_target:
                     logger.debug('archive_dict[%s]: %s', path, file_type)
-                    archive_dict[path] = file_type
+                    archive_dict[path] = (file_type, size)
                 else:
                     if file_type == InfoDB.TYPE_DIR:  # all directories
                         logger.debug('directory_set.add: %s', path)
@@ -4466,13 +4469,16 @@ class GfptarProgram(Program):
             if self.search_target:
                 is_target = False
                 for member in member_check_dict.keys():
-                    file_type = archive_dict.get(member, None)
+                    ftype_size = archive_dict.get(member, None)
                     logger.debug('from member_check_dict.keys: %s [%s]',
-                                 member, file_type)
+                                 member, str(ftype_size))
                     found = False
-                    if file_type is not None:
+                    if ftype_size is not None:
+                        file_type, size = ftype_size
                         logger.debug('member_set.add: %s', member)
                         member_set.add(member)
+                        self.selected_num += 1
+                        self.selected_size += size
                         found = True
                         if file_type == InfoDB.TYPE_DIR:
                             logger.debug('directory_set.add: %s', member)
@@ -4486,10 +4492,14 @@ class GfptarProgram(Program):
                         is_dir = True
                     if is_dir:
                         # find {member}/* files
-                        for path, file_type in archive_dict.find_by_prefix(
+                        for path, ftype_size in archive_dict.find_by_prefix(
                                 member + '/'):
-                            logger.debug('member_set.add: %s', path)
+                            logger.debug('find_by_prefix: %s [%s]',
+                                         path, str(ftype_size))
+                            file_type, size = ftype_size
                             member_set.add(path)
+                            self.selected_num += 1
+                            self.selected_size += size
                             found = True
                             if file_type == InfoDB.TYPE_DIR:
                                 logger.debug('directory_set.add: %s', path)
@@ -4514,7 +4524,9 @@ class GfptarProgram(Program):
             self.progress_for_schedule(time.time())
             sys.stdout.write('\n')
         if self.search_target:
-            self.total_num = len(member_set)  # update
+            # update for progress
+            self.total_num = self.selected_num
+            self.total_size = self.selected_size
 
         for member, found in member_check_dict.items():
             logger.debug('check member_check_dict: %s, %s', member, found)
@@ -4824,11 +4836,20 @@ class GfptarProgram(Program):
         else:
             ent_per_sec = 0
         ent_per_sec_str = self._humanize(ent_per_sec)
-        sys.stdout.write(f'\rschedule: '
-                         f'{total_size_str}B '
-                         f'{total_num_str}Ent '
-                         f'{sec_str} '
-                         f'{ent_per_sec_str}Ent/s')
+        if self.selected_num > 0:
+            selected_num_str = self._humanize(self.selected_num)
+            selected_size_str = self._humanize(self.selected_size)
+            sys.stdout.write(f'\rschedule: '
+                             f'{selected_size_str}/{total_size_str}B '
+                             f'{selected_num_str}/{total_num_str}Ent '
+                             f'{sec_str} '
+                             f'{ent_per_sec_str}Ent/s')
+        else:
+            sys.stdout.write(f'\rschedule: '
+                             f'{total_size_str}B '
+                             f'{total_num_str}Ent '
+                             f'{sec_str} '
+                             f'{ent_per_sec_str}Ent/s')
 
     def progress_for_sync_infodb(self, now):
         sec = now - self.start_time
