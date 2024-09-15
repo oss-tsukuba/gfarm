@@ -4555,11 +4555,12 @@ class GfptarProgram(Program):
 
         self.gfsched_init()
 
+        # sort by generation ID
         if self.MT_enabled():
-            for gen, tarlist in gen_tarlist_dict.items():
+            for gen, tarlist in sorted(gen_tarlist_dict.items()):
                 self.extract_from_archives_MT(tarlist, member_set)
         else:
-            for gen, tarlist in gen_tarlist_dict.items():
+            for gen, tarlist in sorted(gen_tarlist_dict.items()):
                 self.extract_from_archives(tarlist, member_set)
         if self.progress_enabled:
             self.progress_for_extract(time.time())
