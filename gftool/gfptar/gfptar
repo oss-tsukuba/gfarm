@@ -2002,8 +2002,8 @@ class GfURLLocal(GfURL):
 
 class GfURLLocalDD(GfURLLocal):
     def dd_read(self, textmode=False):
-        # dd if=file
-        args = ['dd', 'if=' + self.url_str]
+        # dd if=file bs=64K
+        args = ['dd', 'if=' + self.url_str, 'bs=64K']
         logger.debug('%s', args)
         if textmode:
             encoding = get_encoding()
@@ -2035,8 +2035,8 @@ class GfURLLocalDD(GfURLLocal):
                         self.url.utime(mtime, mtime)
                     self.url.chown(user, group)
 
-        # dd of=file
-        args = ['dd', 'of=' + self.url_str]
+        # dd of=file bs=64K
+        args = ['dd', 'of=' + self.url_str, 'bs=64K']
         if use_fsync:
             args.append('conv=fdatasync')
         logger.debug('%s', args)
