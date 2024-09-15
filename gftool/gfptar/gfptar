@@ -2578,7 +2578,7 @@ class GfptarProgram(Program):
             self.max_workers = 1
         self.bufsize = self.opt['--bufsize']
         self.use_fsync = not self.opt['--disable-fsync']
-        self.use_dd = not self.opt['--disable-dd']
+        self.use_dd = self.opt['--use-dd']
         GfURL.use_dd(self.use_dd)
         self.sync_infodb = self.opt['--generate-db']
 
@@ -5669,7 +5669,7 @@ Options:
   --disable-gfarm-command   disable the use of gfreg and gfexport
                             for tar files on gfarm2fs
   --disable-fsync           disable calling fsync() before close()
-  --disable-dd              use Python for local I/O instead of dd command
+  --use-dd                  use dd for local I/O instead of Python
   --gfsched-interval=SEC    interval of updating candidate hosts to write
                             (for Gfarm URL only) [default: 120]
   --progress-interval=SEC   interval of updating progress [default: 1.0]
@@ -5741,7 +5741,7 @@ _schema = Schema({
     '--xz-program': Or(str, None),
     '--disable-gfarm-command': bool,
     '--disable-fsync': bool,
-    '--disable-dd': bool,
+    '--use-dd': bool,
     '--gfsched-interval': Use(int),
     '--generate-db': bool,
     '--same-owner': bool,
