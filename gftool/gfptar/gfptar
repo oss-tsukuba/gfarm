@@ -2014,7 +2014,8 @@ class GfURLLocalDD(GfURLLocal):
             stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL)  # shut up stderr
 
-    def dd_write(self, textmode=False, mode=None, mtime=None,
+    def dd_write(self, textmode=False, use_fsync=True,
+                 mode=None, mtime=None,
                  user=None, group=None, hostname=None):
         class DDWrite():
             def __init__(self, url, proc, stdin):
@@ -2036,6 +2037,8 @@ class GfURLLocalDD(GfURLLocal):
 
         # dd of=file
         args = ['dd', 'of=' + self.url_str]
+        if use_fsync:
+            args.append('conv=fdatasync')
         logger.debug('%s', args)
         if textmode:
             encoding = get_encoding()
@@ -2062,7 +2065,8 @@ class GfURLLocalDD(GfURLLocal):
     @contextmanager
     def writeopen(self, textmode=False, mode=0o600, mtime=None,
                   user=None, group=None, use_fsync=True, hostname=None):
-        dd_obj = self.dd_write(textmode=textmode, mode=mode, mtime=mtime,
+        dd_obj = self.dd_write(textmode=textmode, use_fsync=use_fsync,
+                               mode=mode, mtime=mtime,
                                user=user, group=group, hostname=hostname)
         proc = dd_obj.proc
         try:
