@@ -941,7 +941,7 @@ class GfURL(metaclass=abc.ABCMeta):
         scheme, host, path = self.parse(url)
         self._scheme = scheme
         self._host = host
-        self._path = path
+        self.path = os.path.normpath(path)
         self.dry_run = dry_run
         if dry_run:
             self.chmod = self.dryrun_chmod
@@ -1015,10 +1015,6 @@ class GfURL(metaclass=abc.ABCMeta):
     @property
     def url_str(self):
         return self._url_str
-
-    @property
-    def path(self):
-        return os.path.normpath(self._path)
 
     @property
     def root_url_str(self):
