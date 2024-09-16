@@ -907,29 +907,18 @@ class GfURLEntry(DBObj):
 
 class GfURL(metaclass=abc.ABCMeta):
     MAXNAMLEN = 255  # SEE ALSO: dirent.h, gfarm/gfs.h (GFS_MAXNAMLEN)
-    USE_DD = False
 
     @classmethod
     def shutup_stderr(cls):
         shutup_stderr()
 
     @classmethod
-    def use_dd(cls, enable):
-        cls.USE_DD = enable
-
-    @classmethod
     def init(cls, url, use_gfarm_command=False, local=False, dry_run=False):
         if local:
-            if cls.USE_DD:
-                return GfURLLocalDD(url, dry_run)
-            else:
-                return GfURLLocal(url, dry_run)
+            return GfURLLocal(url, dry_run)
         if GfURLGfarm.is_my_URL(url):
             return GfURLGfarm(url, dry_run)
-        if cls.USE_DD:
-            gfurl1 = GfURLLocalDD(url, dry_run)
-        else:
-            gfurl1 = GfURLLocal(url, dry_run)
+        gfurl1 = GfURLLocal(url, dry_run)
         if not use_gfarm_command:
             return gfurl1
         if dry_run:  # cannot resolve the Gfarm URL from gfarm2fs
@@ -2000,86 +1989,6 @@ class GfURLLocal(GfURL):
             self.chmod(mode, mtime=mtime, user=user, group=group)
 
 
-class GfURLLocalDD(GfURLLocal):
-    def dd_read(self, textmode=False):
-        # dd if=file bs=64K
-        args = ['dd', 'if=' + self.url_str, 'bs=64K']
-        logger.debug('%s', args)
-        if textmode:
-            encoding = get_encoding()
-        else:
-            encoding = None
-        return subprocess.Popen(
-            args, shell=False, encoding=encoding, close_fds=True,
-            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL)  # shut up stderr
-
-    def dd_write(self, textmode=False, use_fsync=True,
-                 mode=None, mtime=None,
-                 user=None, group=None, hostname=None):
-        class DDWrite():
-            def __init__(self, url, proc, stdin):
-                self.url = url
-                self.proc = proc
-                self.stdin = stdin
-
-            def close(self):
-                self.stdin.close()
-
-            def post(self):
-                # must be called after wait()
-                if mode is not None:
-                    self.url.chmod(mode, mtime=mtime, user=user, group=group)
-                else:
-                    if mtime is not None:
-                        self.url.utime(mtime, mtime)
-                    self.url.chown(user, group)
-
-        # dd of=file bs=64K
-        args = ['dd', 'of=' + self.url_str, 'bs=64K']
-        if use_fsync:
-            args.append('conv=fdatasync')
-        logger.debug('%s', args)
-        if textmode:
-            encoding = get_encoding()
-        else:
-            encoding = None
-        proc = subprocess.Popen(
-            args, shell=False, encoding=encoding, close_fds=True,
-            stdin=subprocess.PIPE, stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL)  # shut up stderr
-        return DDWrite(self, proc, proc.stdin)
-
-    @contextmanager
-    def readopen(self, textmode=False):
-        proc = self.dd_read(textmode=textmode)
-        try:
-            yield proc.stdout
-        finally:
-            proc.stdout.close()
-            ret = proc.wait()
-            if ret != 0:
-                raise GfException('{}: returncode={}'.format(
-                    ' '.join(proc.args), ret))
-
-    @contextmanager
-    def writeopen(self, textmode=False, mode=0o600, mtime=None,
-                  user=None, group=None, use_fsync=True, hostname=None):
-        dd_obj = self.dd_write(textmode=textmode, use_fsync=use_fsync,
-                               mode=mode, mtime=mtime,
-                               user=user, group=group, hostname=hostname)
-        proc = dd_obj.proc
-        try:
-            yield dd_obj.stdin
-        finally:
-            dd_obj.close()
-            ret = proc.wait()
-            if ret != 0:
-                raise GfException('{}: returncode={}'.format(
-                    ' '.join(proc.args), ret))
-            dd_obj.post()
-
-
 class Compress:
     TYPE_NO = 'no'
     TYPE_GZIP = 'gz'
@@ -2578,8 +2487,6 @@ class GfptarProgram(Program):
             self.max_workers = 1
         self.bufsize = self.opt['--bufsize']
         self.use_fsync = not self.opt['--disable-fsync']
-        self.use_dd = self.opt['--use-dd']
-        GfURL.use_dd(self.use_dd)
         self.sync_infodb = self.opt['--generate-db']
 
         self.workdir = self.opt['--workdir']
@@ -5669,7 +5576,6 @@ Options:
   --disable-gfarm-command   disable the use of gfreg and gfexport
                             for tar files on gfarm2fs
   --disable-fsync           disable calling fsync() before close()
-  --use-dd                  use dd for local I/O instead of Python
   --gfsched-interval=SEC    interval of updating candidate hosts to write
                             (for Gfarm URL only) [default: 120]
   --progress-interval=SEC   interval of updating progress [default: 1.0]
@@ -5741,7 +5647,6 @@ _schema = Schema({
     '--xz-program': Or(str, None),
     '--disable-gfarm-command': bool,
     '--disable-fsync': bool,
-    '--use-dd': bool,
     '--gfsched-interval': Use(int),
     '--generate-db': bool,
     '--same-owner': bool,
