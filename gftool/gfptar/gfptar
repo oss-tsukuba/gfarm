@@ -912,6 +912,7 @@ class GfURLEntry(DBObj):
 
 class GfURL(metaclass=abc.ABCMeta):
     MAXNAMLEN = 255  # SEE ALSO: dirent.h, gfarm/gfs.h (GFS_MAXNAMLEN)
+    DEBUG_SLEEP = 0
 
     @classmethod
     def shutup_stderr(cls):
@@ -1060,6 +1061,15 @@ class GfURL(metaclass=abc.ABCMeta):
     def is_my_URL(cls, url):
         raise NotImplementedError
 
+    @classmethod
+    def set_debug_sleep(cls, sec):
+        cls.DEBUG_SLEEP = sec
+
+    def debug_sleep(self):
+        if self.DEBUG_SLEEP > 0:
+            # time.sleep(0): long time since Python 3.11
+            time.sleep(self.DEBUG_SLEEP)
+
     @abc.abstractmethod
     def chmod(self, mode, mtime=None, user=None, group=None,
               follow_symlinks=True):
@@ -1186,6 +1196,7 @@ class GfURL(metaclass=abc.ABCMeta):
     @contextmanager
     def dryrun_writeopen(self, textmode=False, mode=0o600, mtime=None,
                          user=None, group=None, use_fsync=True, hostname=None):
+        self.debug_sleep()
         f = open(os.devnull, 'wb')
         try:
             yield f
@@ -1688,6 +1699,7 @@ class GfURLGfarm(GfURL):
 
     @contextmanager
     def readopen(self, textmode=False):
+        self.debug_sleep()
         proc = self.gfexport(textmode=textmode)
         try:
             yield proc.stdout
@@ -1701,6 +1713,7 @@ class GfURLGfarm(GfURL):
     @contextmanager
     def writeopen(self, textmode=False, mode=0o600, mtime=None,
                   user=None, group=None, use_fsync=True, hostname=None):
+        self.debug_sleep()
         # TODO XXX add gfreg option for use_fsync
         gfreg_obj = self.gfreg(textmode=textmode, mode=mode, mtime=mtime,
                                user=user, group=group, hostname=hostname)
@@ -1974,6 +1987,7 @@ class GfURLLocal(GfURL):
 
     @contextmanager
     def readopen(self, textmode=False):
+        self.debug_sleep()
         if textmode:
             f = open(self.url_str, 'rt', encoding=get_encoding())
         else:
@@ -1986,6 +2000,7 @@ class GfURLLocal(GfURL):
     @contextmanager
     def writeopen(self, textmode=False, mode=0o600, mtime=None,
                   user=None, group=None, use_fsync=True, hostname=None):
+        self.debug_sleep()
         tmpmode = mode | 0o200  # necessary (Permission denied at ex.0o400)
         fd = os.open(path=self.url_str,
                      flags=(os.O_WRONLY | os.O_CREAT | os.O_TRUNC),
@@ -2071,7 +2086,6 @@ class Compress:
 class GfTarFile(tarfile.TarFile):
     ATTR_PROC_LIST = '_gfptar_proc_list'  # [(proc, fileobj, fileobj), ...]
     ATTR_USE_FSYNC = 'use_fsync'
-    ATTR_DUMMY_SLEEP = 'dummy_sleep'
     METHOD_add_entry = 'add_entry'
 
     @classmethod
@@ -2126,7 +2140,7 @@ class GfTarFile(tarfile.TarFile):
     @classmethod
     def create_open(cls, gfurl, compress_type, copybufsize, compress_prog=None,
                     use_fsync=True, target_host=None,
-                    dummy_input=False, dummy_sleep=0):
+                    dummy_input=False):
         if compress_prog is None:
             compress_prog = Compress.compress_prog
         # use Stream (not seekable)
@@ -2181,7 +2195,6 @@ class GfTarFile(tarfile.TarFile):
         setattr(tar, cls.ATTR_USE_FSYNC, use_fsync)
         if dummy_input:
             setattr(tar, cls.METHOD_add_entry, tar._add_entry_dummy)
-            setattr(tar, cls.ATTR_DUMMY_SLEEP, dummy_sleep)
         else:
             setattr(tar, cls.METHOD_add_entry, tar._add_entry)
         return tar
@@ -2216,8 +2229,6 @@ class GfTarFile(tarfile.TarFile):
         if tarinfo is None:  # warning, skip
             return
         if entry.is_file():
-            if self.dummy_sleep > 0:
-                time.sleep(self.dummy_sleep)
             with RandomStream(entry.size) as f:
                 self.addfile(tarinfo, fileobj=f)
         else:
@@ -2550,6 +2561,9 @@ class GfptarProgram(Program):
             raise GfException('gzip: command not found. Please install gzip.')
 
         self.dry_run = self.opt['--dry-run']
+
+        self.debug_sleep = self.opt['--debug-sleep']
+        GfURL.set_debug_sleep(self.debug_sleep)
 
         self.exclude_re_list = []
         self.exclude = self.opt['--exclude']
@@ -3445,11 +3459,9 @@ class GfptarProgram(Program):
             tb = traceback.TracebackException.from_exception(exc)
             logger.info(''.join(tb.format()))
 
-    def list_dummy_files(self, base_dir, num, size_min, size_max, dummy_sleep):
+    def list_dummy_files(self, base_dir, num, size_min, size_max):
         # defaults
         files_per_dir = 1000
-        # dummy_sleep_per_entry = dummy_sleep / 512  # for each readdir()
-        dummy_sleep_per_entry = 0
         dir_min_depth = 5
         dir_max_depth = 5
         dir_min_length = 30
@@ -3503,9 +3515,6 @@ class GfptarProgram(Program):
                                  size, mtime, linkname)
 
         def rand_file(dir_path, idx):
-            if dummy_sleep_per_entry > 0:
-                # time.sleep(0): long time since Python 3.11
-                time.sleep(dummy_sleep_per_entry)
             # f = generate_random_filename()
             f = f'{idx}.txt'
             path = os.path.join(dir_path, f)
@@ -3568,7 +3577,6 @@ class GfptarProgram(Program):
             self.dummy_input = False
         self.dummy_size_min = self.opt['--dummy-size-min']
         self.dummy_size_max = self.opt['--dummy-size-max']
-        self.dummy_sleep = self.opt['--dummy-sleep']
 
         if self.compress_type == Compress.TYPE_NO:
             self.split_size = self.assumed_size
@@ -3678,8 +3686,7 @@ class GfptarProgram(Program):
                 return self.list_dummy_files(gfurl.url_str,
                                              self.dummy_num,
                                              self.dummy_size_min,
-                                             self.dummy_size_max,
-                                             self.dummy_sleep)
+                                             self.dummy_size_max)
             else:
                 return gfurl.listdir(recursive=True, first=True,
                                      hardlink_warn=self.hardlink_warn)
@@ -4276,8 +4283,7 @@ class GfptarProgram(Program):
                                         self.bufsize,
                                         use_fsync=self.use_fsync,
                                         target_host=target_host,
-                                        dummy_input=self.dummy_input,
-                                        dummy_sleep=self.dummy_sleep)
+                                        dummy_input=self.dummy_input)
         # to reduce memory usage
         # SEE ALSO: InfoDB.generate_db_and_dbgz()
         db_name = InfoDB.dbgz_filename(gen, serial)
@@ -5628,7 +5634,7 @@ Options:
                             (default: disabled)
   --dummy-size-min=BYTES    minimum size of dummy files [default: 0]
   --dummy-size-max=BYTES    maximum size of dummy files [default: 0]
-  --dummy-sleep=SEC         sleep time per dummy file [default: 0.0]
+  --debug-sleep=SEC         sleep time per file for debug [default: 0.0]
   --dry-run                 not create output files
   -q, --quiet               quiet messages
   -v, --verbose             verbose output
@@ -5686,7 +5692,7 @@ _schema = Schema({
     '--dummy-num': Or(Use(unhumanize_number), None),
     '--dummy-size-min': Use(unhumanize_number),
     '--dummy-size-max': Use(unhumanize_number),
-    '--dummy-sleep': Use(float),
+    '--debug-sleep': Use(float),
     '--dry-run': bool,
     '--quiet': bool,
     '--verbose': bool,
