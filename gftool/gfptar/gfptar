@@ -1111,6 +1111,7 @@ class GfURL(metaclass=abc.ABCMeta):
     def dryrun_remove(self):
         pass
 
+    # For test purposes only
     @abc.abstractmethod
     def remove_tree(self, remove_readonly=False):
         raise NotImplementedError
