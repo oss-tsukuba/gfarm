@@ -731,6 +731,11 @@ def convert_message(error):
     if hasattr(error, 'filename') and hasattr(error, 'strerror'):
         if error.filename is not None and error.strerror is not None:
             return f'{error.filename}: {error.strerror}'
+    if error.__context__:
+        # "During handling of the above exception, another exception occurred"
+        error = error.__context__
+    # if error.__cause__:
+    #     error = error.__cause__
     if isinstance(error, GfException):  # custom errors
         return str(error)
     else:
@@ -1190,8 +1195,8 @@ class GfURL(metaclass=abc.ABCMeta):
         finally:
             f.close()
 
-    def copy_from(self, inf, bufsize, mode=0o600, mtime=None,
-                  user=None, group=None, use_fsync=True, hostname=None):
+    def copy_from0(self, inf, bufsize, mode, mtime,
+                   user, group, use_fsync, hostname):
         readlen = 0
         with self.writeopen(mode=mode, mtime=mtime,
                             user=user, group=group,
@@ -1204,6 +1209,20 @@ class GfURL(metaclass=abc.ABCMeta):
                 wlen = outf.write(buf)
                 readlen += wlen
         return readlen
+
+    def copy_from(self, inf, bufsize, overwrite=False, mode=0o600, mtime=None,
+                  user=None, group=None, use_fsync=True, hostname=None):
+        try:
+            return self.copy_from0(inf, bufsize, mode, mtime,
+                                   user, group, use_fsync, hostname)
+        except Exception:
+            if not overwrite:
+                raise
+            if self.is_writable():
+                raise
+            self.chmod(mode | 0o200)
+            return self.copy_from0(inf, bufsize, mode, mtime,
+                                   user, group, use_fsync, hostname)
 
     def sha256(self, bufsize=1048576):
         h = hashlib.sha256()
@@ -3116,7 +3135,7 @@ class GfptarProgram(Program):
         # for cmd_create
         tree = [
             (self.D, 'dir1', 0o715, 10, None, True),
-            (self.F, 'dir1/file1', 0o664, 10, None, True),
+            (self.F, 'dir1/file1', 0o644, 10, None, True),
             (self.F, 'dir1/file2', 0o664, 10, None, True),
             (self.S, 'dir1/symlink1', 0o777, 10, 'file1', True),
             (self.F, 'dir1/exclude1.ext1', 0o660, 10, None, True),
@@ -3127,7 +3146,7 @@ class GfptarProgram(Program):
         # for cmd_update
         tree = [
             (self.D, 'dir1', 0o750, 11, None, True),
-            (self.F, 'dir1/file1', 0o660, 11, None, True),
+            (self.F, 'dir1/file1', 0o444, 11, None, True),
             (self.F, 'dir1/file2', 0o664, 9, None, True),  # not updated
             (self.S, 'dir1/symlink1', 0o770, 11, 'file1', True),
             (self.F, 'dir1/exclude2.ext2', 0o660, 10, None, True),
@@ -3150,7 +3169,7 @@ class GfptarProgram(Program):
         # expected tree
         tree = [
             (self.D, 'dir1', 0o750, 11, None, True),
-            (self.F, 'dir1/file1', 0o660, 11, None, True),
+            (self.F, 'dir1/file1', 0o444, 11, None, True),
             (self.F, 'dir1/file2', 0o664, 10, None, True),
             (self.S, 'dir1/symlink1', 0o770, 11, 'file1', True),
             (self.D, 'dir2', 0o700, 10, None, True),
@@ -4768,13 +4787,16 @@ class GfptarProgram(Program):
                 inf = tar.extractfile(tarinfo)  # io.BufferedReader
                 logger.debug('extract,file(before): %s, %s',
                              outurl_str, outfile)
-                size = outurl.copy_from(inf, self.bufsize,
-                                        mode=tarinfo.mode,
-                                        mtime=tarinfo.mtime,
-                                        user=user, group=group,
-                                        use_fsync=self.use_fsync,
-                                        hostname=target_host)
-                inf.close()
+                try:
+                    size = outurl.copy_from(inf, self.bufsize,
+                                            overwrite=True,
+                                            mode=tarinfo.mode,
+                                            mtime=tarinfo.mtime,
+                                            user=user, group=group,
+                                            use_fsync=self.use_fsync,
+                                            hostname=target_host)
+                finally:
+                    inf.close()
                 logger.debug('extract,file: %s, %d', outfile, size)
                 with self.lock():
                     self.info('extracted(F): {}', outfile)
@@ -5060,7 +5082,12 @@ class GfptarProgram(Program):
                 # int("0001") -> 1
                 dbgz_list.append((int(serial), int(gen), path))
                 continue
-            if ent.path.endswith(self.LIST_SUFFIX):  # ignore *.lst, *.tar.lst
+            if ent.path.endswith(self.LIST_SUFFIX):  # ignore *.lst
+                if self.progress_enabled:
+                    logger.warning('')
+                logger.warning(f"{ent.path}:"
+                               " This file (*.lst) is no longer required."
+                               " Please remove it.")
                 continue
             if not tar_pattern.match(base):  # ignore not *.tar.*
                 continue
