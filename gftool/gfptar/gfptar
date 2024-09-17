@@ -731,14 +731,14 @@ def convert_message(error):
     if hasattr(error, 'filename') and hasattr(error, 'strerror'):
         if error.filename is not None and error.strerror is not None:
             return f'{error.filename}: {error.strerror}'
-    if error.__context__:
-        # "During handling of the above exception, another exception occurred"
-        error = error.__context__
-    # if error.__cause__:
-    #     error = error.__cause__
     if isinstance(error, GfException):  # custom errors
         return str(error)
     else:
+        # "During handling of the above exception, another exception occurred"
+        if error.__context__:
+            error = error.__context__
+        # if error.__cause__:
+        #     error = error.__cause__
         return f'{error.__class__.__name__}: {str(error)}'
 
 
@@ -1225,6 +1225,8 @@ class GfURL(metaclass=abc.ABCMeta):
                                    user, group, use_fsync, hostname)
         except Exception:
             if not overwrite:
+                raise
+            if not self.exists():
                 raise
             if self.is_writable():
                 raise
@@ -1833,7 +1835,12 @@ class GfURLLocal(GfURL):
             for p in reversed(list(self.parent_iter)):
                 if p.exists():
                     continue
-                os.mkdir(p.url_str, mode | 0o700)
+                try:
+                    os.mkdir(p.url_str, mode | 0o700)
+                except FileExistsError:  # race condition
+                    pass  # ignored
+                except Exception:
+                    raise
             os.mkdir(self.url_str, mode)
         else:
             os.mkdir(self.url_str, mode)
@@ -4631,19 +4638,19 @@ class GfptarProgram(Program):
             if parent_url.path in created_set:  # parent exists
                 dir_url.mkdir()
                 created_set.add(dir_url.path)
-                self.info('created(D): {}', dir_url.path)
+                self.info('created(D): {}', dir_url.url_str)
             else:  # no parent
                 dir_url.makedirs()
                 created_set.add(dir_url.path)
-                self.info('created(D): {}', dir_url.path)
+                self.info('created(D): {}', dir_url.url_str)
                 created_set.add(parent_url.path)
-                self.info('created(D): {}', parent_url.path)
+                self.info('created(D): {}', parent_url.url_str)
                 for p in parent_url.parent_iter:
                     path = p.path
                     if path == '.' or path == '/':
                         continue
                     created_set.add(path)
-                    self.info('created(D): {}', path)
+                    self.info('created(D): {}', p.url_str)
 
     def update_stat_for_directories(self, directory_set):
         logger.debug('update_stat_for_directories')
@@ -4765,7 +4772,7 @@ class GfptarProgram(Program):
             # create directories if not exist
             if tarinfo.isdir():
                 dir_url = outurl
-                dir_path = outfile
+                dir_path = outurl.path
             else:
                 dir_url = outurl.parent
                 dir_path = dir_url.path
@@ -4775,7 +4782,7 @@ class GfptarProgram(Program):
                 if not dir_url.exists():
                     with ignore_exception(True):  # may be race condition
                         dir_url.makedirs()  # default 0700
-                    self.info('created(D): {}', dir_path)
+                    self.info('created(D): {}', dir_url.url_str)
                 with self.lock():
                     self.created_directory_set.add(dir_path)
 
