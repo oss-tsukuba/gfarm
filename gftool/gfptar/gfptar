@@ -5580,6 +5580,7 @@ Options:
   -c, --create=OUTDIR       create tar files in OUTDIR from MEMBERs
   -r, --append=OUTDIR       append files (create new tar files)
   -u, --update=OUTDIR       append files newer than same entries in tar files
+                            (Large amounts of space in --workdir may be used)
       --resume=OUTDIR       same as --update
   -x, --extract=OUTDIR      extract all members or specified MEMBERs
                             from INDIR to OUTDIR
