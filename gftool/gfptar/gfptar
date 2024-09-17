@@ -927,7 +927,10 @@ class GfURL(metaclass=abc.ABCMeta):
         gfurl1 = GfURLLocal(url, dry_run)
         if not use_gfarm_command:
             return gfurl1
-        if dry_run:  # cannot resolve the Gfarm URL from gfarm2fs
+        if dry_run:
+            # cannot resolve the Gfarm URL from gfarm2fs
+            # when creating files.
+            # Because the parent directory is not created.
             return gfurl1
         # use_gfarm_command=True: use gf* commands on gfarm2fs
         gfurl2 = gfurl1.get_gfarm_url_by_gfarm2fs()
