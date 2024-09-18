@@ -3763,9 +3763,11 @@ class GfptarProgram(Program):
                         logger.debug('Canceled (listdir 2): serial=%d', serial)
                         break
                     logger.debug('listdir: entry.path=%s', entry.path)
-                    if not is_update_target(entry):
-                        continue  # skip
                     if self.exclude_match(entry.path):
+                        logger.info(f"Not added (excluded): {entry.path}")
+                        continue  # skip
+                    if not is_update_target(entry):
+                        logger.info(f"Not added (not new): {entry.path}")
                         continue  # skip
 
                     # include length of path
@@ -5581,78 +5583,81 @@ Limitations:
     (For the upper limit, see the output of `ulimit -n -H`)
 
 Options:
-  -c, --create=OUTDIR       create tar files in OUTDIR from MEMBERs
-  -r, --append=OUTDIR       append files (create new tar files)
-  -u, --update=OUTDIR       append files newer than same entries in tar files
+  -c, --create=OUTDIR       Create tar files in OUTDIR from MEMBERs
+  -r, --append=OUTDIR       Append files (create new tar files)
+  -u, --update=OUTDIR       Append files newer than same entries in tar files
                             (--workdir with sufficient space is required)
                             (Approximately 300MiB is used per 1000000 entries)
-      --resume=OUTDIR       same as --update
-  -x, --extract=OUTDIR      extract all members or specified MEMBERs
+      --resume=OUTDIR       Same as --update
+  -x, --extract=OUTDIR      Extract all members or specified MEMBERs
                             from INDIR to OUTDIR
-  -t, --list=DIR            list the members of DIR
-                            (use with --verbose to see more details)
-  -C, --basedir=DIR         change to directory for MEMBERs [default: .]
+  -t, --list=DIR            List the members of DIR
+                            (--verbose to see more details)
+  -C, --basedir=DIR         Change to directory for MEMBERs [default: .]
   --exclude=PATTERN         Exclude files matching wildcard patterns
                             (https://docs.python.org/ja/3/library/fnmatch.html)
-  -X, --exclude-from=FILE   Exclude files matching wildcard patterns
-                            listed in FILE
-  --workdir=DIR             local directory for temporary files
+                            (Ex. --exclude=*.txt)
+                            (Ex. --exclude=*/dirname/*)
+                            (Ex. --exclude=*/??_abcde.pdf)
+  -X, --exclude-from=FILE   Exclude files matching wildcard patterns listed
+                            in FILE
+  --workdir=DIR             Local directory for temporary files
                             (default: system temporary directory)
-  --max-entries-per-tar=NUM the number of entries per tar file
+  --max-entries-per-tar=NUM The number of entries per tar file
                             to limit memory usage [default: 100k]
-  -j, --jobs=NUM            the number of jobs to copy per tar file in parallel
+  -j, --jobs=NUM            The number of jobs to copy per tar file in parallel
                             [default: 4]
-  -s, --size=BYTES          assumed bytes per output file [default: 200Mi]
-  --ratio=RATIO             assumed compression ratio (%) [default: 50]
-  -T, --type=TYPE           compression type and tar archive suffix
+  -s, --size=BYTES          Assumed bytes per output file [default: 200Mi]
+  --ratio=RATIO             Assumed compression ratio (%) [default: 50]
+  -T, --type=TYPE           Compression type and tar archive suffix
                               - gz : use gzip  (*.tar.gz)
                               - bz2: use bzip2 (*.tar.bz2)
                               - xz : use xz    (*.tar.xz)
                               - no : no compression (*.tar)
                             [default: gz]
   -I, --use-compress-program=COMMAND
-                            filter data through COMMAND,
+                            Filter data through COMMAND,
                             the command must accept -d option for decompression
                             (ex. lz4, lzip, lzop)
   --gzip-program=COMMAND    gzip command (ex. pigz) [default: gzip]
   --bzip2-program=COMMAND   bzip2 command (ex. pbzip2) [default: bzip2]
   --xz-program=COMMAND      xz command [default: xz]
-  --generate-db             regenerate gfptar*_info.db.gz
-  --same-owner              extract files with the same ownership
+  --generate-db             Regenerate gfptar*_info.db.gz
+  --same-owner              Extract files with the same ownership
                             (for euid=0 on local, or gfarmroot on Gfarm)
-  --disable-gfarm-command   disable the use of gfreg and gfexport
+  --disable-gfarm-command   Disable the use of gfreg and gfexport
                             for tar files on gfarm2fs
   --disable-fsync           disable calling fsync() before close()
-  --gfsched-interval=SEC    interval of updating candidate hosts to write
+  --gfsched-interval=SEC    Interval of updating candidate hosts to write
                             (for Gfarm URL only) [default: 120]
-  --progress-interval=SEC   interval of updating progress [default: 1.0]
-  --encoding=CODEC          codec for filename encoding
+  --progress-interval=SEC   Interval of updating progress [default: 1.0]
+  --encoding=CODEC          Codec for filename encoding
              (https://docs.python.org/3/library/codecs.html#standard-encodings)
                             [default: utf-8]
-  --bufsize=BYTES           buffer size to copy [default: 1Mi]
-  --progress-unit=TYPE      unit for progress
+  --bufsize=BYTES           Buffer size to copy [default: 1Mi]
+  --progress-unit=TYPE      Unit for progress
                               - si: SI prefix
                               - bin: Binary prefix
                               - raw: no conversion
                             [default: si]
-  --memory=BYTES            upper limit of memory size (bytes)
+  --memory=BYTES            Upper limit of memory size (bytes)
                             (default: no limit) (ex. 2Gi)
-  --test                    run short tests (-q option is recommended)
-  --test-long               run long  tests (-q option is recommended)
-  --test-workdir-local=DIR  local directory for test [default: /tmp]
+  --test                    Run short tests (-q option is recommended)
+  --test-long               Run long  tests (-q option is recommended)
+  --test-workdir-local=DIR  Local directory for test [default: /tmp]
   --test-workdir-gfarm=DIR  Gfarm directory for test [default: gfarm:/tmp]
-  --dummy-num=NUM           the number of dummy input entries for --create
+  --dummy-num=NUM           The number of dummy input entries for --create
                             (ignore MEMBER arguments)
                             (create 1000 files and directories per 1 unit)
                             (default: disabled)
-  --dummy-size-min=BYTES    minimum size of dummy files [default: 0]
-  --dummy-size-max=BYTES    maximum size of dummy files [default: 0]
-  --debug-sleep=SEC         sleep time per file for debug [default: 0.0]
-  --dry-run                 not create output files
-  -q, --quiet               quiet messages
-  -v, --verbose             verbose output
-  -d, --debug               debug mode
-  -?, -h, --help            show this help and exit
+  --dummy-size-min=BYTES    Minimum size of dummy files [default: 0]
+  --dummy-size-max=BYTES    Maximum size of dummy files [default: 0]
+  --debug-sleep=SEC         Sleep time per file for debug [default: 0.0]
+  --dry-run                 Not create output files
+  -q, --quiet               Quiet messages
+  -v, --verbose             Verbose output
+  -d, --debug               Debug mode
+  -?, -h, --help            Show this help and exit
 
 Usage:
   {f} [options] [--exclude=PATTERN]... -c OUTDIR [-C DIR] [--] MEMBER...
