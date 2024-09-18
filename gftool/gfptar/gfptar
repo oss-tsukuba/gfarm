@@ -91,7 +91,7 @@ def humanize_number(num, binary_prefix=False):
         d = n.quantize(Decimal('0.0'), rounding=ROUND_DOWN)
     else:
         d = n.quantize(Decimal('0'), rounding=ROUND_DOWN)
-    return f'{d}{units[scale]}'
+    return f"{d}{units[scale]}"
 
 
 def unhumanize_number(numstr, binary_prefix=False):
@@ -271,7 +271,7 @@ class DBCollection:
         raise NotImplementedError
 
     def clear(self):
-        self.con.execute(f'DROP TABLE IF EXISTS {self.table_name}')
+        self.con.execute(f"DROP TABLE IF EXISTS {self.table_name}")
         self.create_table()
 
     def commit(self):
@@ -287,26 +287,26 @@ class DBCollection:
         self.db.unlink()
 
     def __len__(self):
-        res = self.con.execute(f'SELECT COUNT(*) FROM {self.table_name}')
+        res = self.con.execute(f"SELECT COUNT(*) FROM {self.table_name}")
         return res.fetchone()[0]
 
 
 class DBDict(DBCollection):
     def create_table(self):
-        self.con.execute(f'''
+        self.con.execute(f"""
         CREATE TABLE IF NOT EXISTS {self.table_name}
         (key TEXT PRIMARY KEY, value TEXT)
-        ''')
+        """)
         self.for_dict = True
 
     def __setitem__(self, key, value):
-        self.con.execute(f'''
+        self.con.execute(f"""
         INSERT OR REPLACE INTO {self.table_name} (key, value) VALUES (?, ?)
-        ''', (key, self.obj2txt(value)))
+        """, (key, self.obj2txt(value)))
 
     def __getitem__(self, key):
         res = self.con.execute(
-            f'SELECT value FROM {self.table_name} WHERE key = ?', (key,))
+            f"SELECT value FROM {self.table_name} WHERE key = ?", (key,))
         row = res.fetchone()
         if row:
             return self.txt2obj(key, row[0])
@@ -316,13 +316,13 @@ class DBDict(DBCollection):
     def __delitem__(self, key):
         if key in self:  # __contains__()
             self.con.execute(
-                f'DELETE FROM {self.table_name} WHERE key = ?', (key,))
+                f"DELETE FROM {self.table_name} WHERE key = ?", (key,))
         else:
             raise KeyError(key)
 
     def __contains__(self, key):
         res = self.con.execute(
-            f'SELECT 1 FROM {self.table_name} WHERE key = ?', (key,))
+            f"SELECT 1 FROM {self.table_name} WHERE key = ?", (key,))
         row = res.fetchone()
         return row is not None
 
@@ -332,17 +332,17 @@ class DBDict(DBCollection):
         return default
 
     def keys(self):
-        res = self.con.execute(f'SELECT key FROM {self.table_name}')
+        res = self.con.execute(f"SELECT key FROM {self.table_name}")
         for row in res:
             yield row[0]
 
     def values(self):
-        res = self.con.execute(f'SELECT key,value FROM {self.table_name}')
+        res = self.con.execute(f"SELECT key,value FROM {self.table_name}")
         for row in res:
             yield self.txt2obj(row[0], row[1])
 
     def items(self):
-        res = self.con.execute(f'SELECT key,value FROM {self.table_name}')
+        res = self.con.execute(f"SELECT key,value FROM {self.table_name}")
         for row in res:
             yield row[0], self.txt2obj(row[0], row[1])
 
@@ -358,7 +358,7 @@ class DBDict(DBCollection):
 
     # sort: None, 'ASC', 'DESC'
     def iterator(self, like=None, sort=None, offset=0, limit=-1):
-        sql = f'SELECT key,value FROM {self.table_name}'
+        sql = f"SELECT key,value FROM {self.table_name}"
         if like is not None:
             sql += " WHERE key LIKE ? ESCAPE '\\'"
         if sort is not None:
@@ -367,8 +367,8 @@ class DBDict(DBCollection):
             elif sort.upper() == 'DESC':
                 sql += ' ORDER BY key DESC'
             else:
-                raise AssertionError(f'unknown sort type: {str(sort)}')
-        sql += f' LIMIT {limit} OFFSET {offset}'
+                raise AssertionError(f"unknown sort type: {str(sort)}")
+        sql += f" LIMIT {limit} OFFSET {offset}"
         if like is not None:
             res = self.con.execute(sql, (like,))
         else:
@@ -387,10 +387,10 @@ class DBDict(DBCollection):
 
 class DBSet(DBCollection):
     def create_table(self):
-        self.con.execute(f'''
+        self.con.execute(f"""
         CREATE TABLE IF NOT EXISTS {self.table_name}
         (key TEXT PRIMARY KEY)
-        ''')
+        """)
         self.for_dict = False
 
     def update(self, others):
@@ -398,45 +398,45 @@ class DBSet(DBCollection):
             self.add(key)
 
     def add(self, key):
-        self.con.execute(f'''
+        self.con.execute(f"""
         INSERT OR IGNORE INTO {self.table_name} (key) VALUES (?)
-        ''', (self.obj2txt(key),))
+        """, (self.obj2txt(key),))
 
     def remove(self, key):
         if key in self:
-            self.con.execute(f'DELETE FROM {self.table_name} WHERE key = ?',
+            self.con.execute(f"DELETE FROM {self.table_name} WHERE key = ?",
                              (self.obj2txt(key),))
         else:
             raise KeyError(key)
 
     def discard(self, key):
-        self.con.execute(f'DELETE FROM {self.table_name} WHERE key = ?',
+        self.con.execute(f"DELETE FROM {self.table_name} WHERE key = ?",
                          (self.obj2txt(key),))
 
     def __delitem__(self, key):
         self.remove(key)
 
     def __contains__(self, key):
-        res = self.con.execute(f'''
+        res = self.con.execute(f"""
         SELECT 1 FROM {self.table_name} WHERE key = ?
-        ''', (self.obj2txt(key),))
+        """, (self.obj2txt(key),))
         row = res.fetchone()
         return row is not None
 
     def __iter__(self):
-        res = self.con.execute(f'SELECT key FROM {self.table_name}')
+        res = self.con.execute(f"SELECT key FROM {self.table_name}")
         for row in res:
             yield self.txt2obj(row[0], row[0])
 
     # sort: None, 'ASC', 'DESC'
     def iterator(self, sort=None, offset=0, limit=-1):
-        sql = f'SELECT key FROM {self.table_name}'
+        sql = f"SELECT key FROM {self.table_name}"
         if sort is not None:
             if sort.upper() == 'ASC':
                 sql += ' ORDER BY key ASC'
             elif sort.upper() == 'DESC':
                 sql += ' ORDER BY key DESC'
-        sql += f' LIMIT {limit} OFFSET {offset}'
+        sql += f" LIMIT {limit} OFFSET {offset}"
         res = self.con.execute(sql)
         for row in res:
             yield self.txt2obj(row[0], row[0])
@@ -446,10 +446,10 @@ class DBList(DBCollection):
     ERRMSG_INDEX = 'list index out of range'
 
     def create_table(self):
-        self.con.execute(f'''
+        self.con.execute(f"""
         CREATE TABLE IF NOT EXISTS {self.table_name}
         (id INTEGER PRIMARY KEY AUTOINCREMENT, value TEXT)
-        ''')
+        """)
         self.for_dict = False
 
     def __repr__(self):
@@ -459,18 +459,18 @@ class DBList(DBCollection):
         return str(list(self))
 
     def append(self, obj):
-        self.con.execute(f'''
+        self.con.execute(f"""
         INSERT INTO {self.table_name} (value) VALUES (?)
-        ''', (self.obj2txt(obj),))
+        """, (self.obj2txt(obj),))
 
     def extend(self, lst):
         for obj in lst:
             self.append(obj)
 
     def __getitem__(self, index):
-        res = self.con.execute(f'''
+        res = self.con.execute(f"""
         SELECT id,value FROM {self.table_name} ORDER BY id LIMIT 1 OFFSET ?
-        ''', (index,))
+        """, (index,))
         row = res.fetchone()
         if row is None:
             raise IndexError(self.ERRMSG_INDEX)
@@ -478,51 +478,51 @@ class DBList(DBCollection):
 
     def __setitem__(self, index, value):
         with self.con:
-            res = self.con.execute(f'''
+            res = self.con.execute(f"""
             SELECT id FROM {self.table_name} ORDER BY id LIMIT 1 OFFSET ?
-            ''', (index,))
+            """, (index,))
             row = res.fetchone()
             if row is None:
                 raise IndexError(self.ERRMSG_INDEX)
-            self.con.execute(f'''
+            self.con.execute(f"""
             UPDATE {self.table_name} SET value = ? WHERE id = ?
-            ''', (self.obj2txt(value), row[0]))
+            """, (self.obj2txt(value), row[0]))
 
     def __delitem__(self, index):
         with self.con:
-            res = self.con.execute(f'''
+            res = self.con.execute(f"""
             SELECT id FROM {self.table_name} ORDER BY id LIMIT 1 OFFSET ?
-            ''', (index,))
+            """, (index,))
             row = res.fetchone()
             if row is None:
                 raise IndexError(self.ERRMSG_INDEX)
-            self.con.execute(f'''
+            self.con.execute(f"""
             DELETE FROM {self.table_name} WHERE id = ?
-            ''', (row[0],))
+            """, (row[0],))
 
     def __iter__(self):
-        res = self.con.execute(f'''
+        res = self.con.execute(f"""
         SELECT id,value FROM {self.table_name} ORDER BY id ASC
-        ''')
+        """)
         for row in res:
             yield self.txt2obj(row[0], row[1])
 
     def __reversed__(self):
-        res = self.con.execute(f'''
+        res = self.con.execute(f"""
         SELECT id,value FROM {self.table_name} ORDER BY id DESC
-        ''')
+        """)
         for row in res:
             yield self.txt2obj(row[0], row[1])
 
     # sort: None, 'ASC', 'DESC'
     def iterator(self, sort=None, offset=0, limit=-1):
-        sql = f'SELECT id,value FROM {self.table_name}'
+        sql = f"SELECT id,value FROM {self.table_name}"
         if sort is not None:
             if sort.upper() == 'ASC':
                 sql += ' ORDER BY id ASC'
             elif sort.upper() == 'DESC':
                 sql += ' ORDER BY id DESC'
-        sql += f' LIMIT {limit} OFFSET {offset}'
+        sql += f" LIMIT {limit} OFFSET {offset}"
         res = self.con.execute(sql)
         for row in res:
             yield self.txt2obj(row[0], row[1])
@@ -668,7 +668,7 @@ def execcmd(args, stdin=subprocess.DEVNULL, stderr=subprocess.PIPE,
         except Exception:
             logger.debug('cannot decode: err={}', err)
             pass
-        msg = f'{str(args)} (exit={ret}): {err}'
+        msg = f"{str(args)} (exit={ret}): {err}"
         if err and use_stderr:
             logger.debug(msg)
         raise GfException(msg)
@@ -688,12 +688,12 @@ def execcmd_readline(args, stdin=subprocess.DEVNULL):
         def handle_stderr(process):
             prefix = ''
             if logger.isEnabledFor(logging.INFO):
-                prefix = f'({args[0]}) '
+                prefix = f"({args[0]}) "
             while True:
                 eline = process.stderr.readline()
                 if eline:
                     eline = eline.rstrip('\r\n')
-                    logger.warning(f'{prefix}{eline}')
+                    logger.warning(f"{prefix}{eline}")
                 elif process.poll() is not None:
                     break
 
@@ -730,7 +730,7 @@ def am_I_gfarmroot():
 def convert_message(error):
     if hasattr(error, 'filename') and hasattr(error, 'strerror'):
         if error.filename is not None and error.strerror is not None:
-            return f'{error.filename}: {error.strerror}'
+            return f"{error.filename}: {error.strerror}"
     if isinstance(error, GfException):  # custom errors
         return str(error)
     else:
@@ -739,7 +739,7 @@ def convert_message(error):
             error = error.__context__
         # if error.__cause__:
         #     error = error.__cause__
-        return f'{error.__class__.__name__}: {str(error)}'
+        return f"{error.__class__.__name__}: {str(error)}"
 
 
 class Program(metaclass=abc.ABCMeta):
@@ -802,11 +802,11 @@ class GfURLEntry(DBObj):
             self.size = 0
 
     def __str__(self):
-        return f'{self.path}, {self.mode:o}, {self.file_type}'
+        return f"{self.path}, {self.mode:o}, {self.file_type}"
 
     def __repr__(self):
-        return (f'Entry(path={self.path},mode={oct(self.mode)},'
-                f'user={self.uname},group={self.gname})')
+        return (f"Entry(path={self.path},mode={oct(self.mode)},"
+                f"user={self.uname},group={self.gname})")
 
     # only path must be specified for key when using DBDict
     @classmethod
@@ -887,7 +887,7 @@ class GfURLEntry(DBObj):
                 b = oct(b & 0o7777)
             if a != b:
                 raise GfException(
-                    f'{ent1.path} vs {ent2.path}: prop={name}: {a} != {b}')
+                    f"{ent1.path} vs {ent2.path}: prop={name}: {a} != {b}")
             logger.debug('GfURLEntry.compare:prop=%s: PASS', name)
 
         def cmpprop(ent1, ent2, properties):
@@ -905,7 +905,7 @@ class GfURLEntry(DBObj):
             url2 = GfURL.init(ent2.path)
             if not url1.compare_data(url2, bufsize=bufsize):
                 raise GfException(
-                    f'{ent1.path} vs {ent2.path}: different data')
+                    f"{ent1.path} vs {ent2.path}: different data")
             logger.debug('GfURLEntry.compare:data: PASS')
         return True
 
@@ -967,7 +967,7 @@ class GfURL(metaclass=abc.ABCMeta):
             supported_classes = [cls]
 
         for c in supported_classes:
-            if c.SCHEME_LEN > 0 and url.startswith(f'{c.SCHEME}:'):
+            if c.SCHEME_LEN > 0 and url.startswith(f"{c.SCHEME}:"):
                 # gfarm://host/path -> //host/path
                 hostpath = url[(c.SCHEME_LEN+1):]
                 scheme = c.SCHEME
@@ -1026,16 +1026,16 @@ class GfURL(metaclass=abc.ABCMeta):
         # ex. gfarm:/abc.def/gh -> gfarm:
         if self._scheme:
             if self._host:
-                return f'{self._scheme}:{self._host}'
+                return f"{self._scheme}:{self._host}"
             else:
-                return f'{self._scheme}:'
+                return f"{self._scheme}:"
         return ''
 
     def subpath(self, fullpath):
         base = self.url_str
         if not fullpath.startswith(base):
             logger.error('subpath: %s, %s', base, fullpath)
-            raise AssertionError(f'base={base}, fullpath={fullpath}')
+            raise AssertionError(f"base={base}, fullpath={fullpath}")
         # logger.debug('subpath: %s, %s', base, fullpath)
         return fullpath[len(base):].lstrip('/')  # relative path
 
@@ -1499,7 +1499,7 @@ class GfURLGfarm(GfURL):
         if ret == 0:
             val = int.from_bytes(out, byteorder='big')
             return val & mode > 0
-        raise GfException(f'{self.url_str}: gfarm.effective_perm: {err}')
+        raise GfException(f"{self.url_str}: gfarm.effective_perm: {err}")
 
     def is_readable(self):
         return self.access(self.R_OK)
@@ -1621,8 +1621,8 @@ class GfURLGfarm(GfURL):
                 # ex. gfarm:/home/user1/dir: -> gfarm:/home/user1/dir
                 dirname = line[:-1]
                 if not dirname.startswith(self.url_str):
-                    raise AssertionError(f'{dirname}.startswith('
-                                         f'{self.url_str})')
+                    raise AssertionError(f"{dirname}.startswith("
+                                         f"{self.url_str})")
                 first = False
 
     def gfsched(self, is_file=False, write_mode=False, number=None):
@@ -2056,7 +2056,7 @@ class Compress:
         if compress_prog is not None:
             compress_prog0 = shutil.which(compress_prog)
             if compress_prog0 is None:
-                raise GfptarError(f'{compress_prog}: command not found.')
+                raise GfptarError(f"{compress_prog}: command not found.")
             compress_prog = compress_prog0
         else:
             if compress_type == cls.TYPE_GZIP:
@@ -2361,7 +2361,7 @@ class TestGfptar(unittest.TestCase):
 
     def test_DBDict(self):
         euid = os.geteuid()
-        tmpdir = tempfile.TemporaryDirectory(prefix=f'gfptar-test-{euid}-',
+        tmpdir = tempfile.TemporaryDirectory(prefix=f"gfptar-test-{euid}-",
                                              dir=None)
         testdb = DB(os.path.join(tmpdir.name, 'test.db'))
         d = DBDict(testdb, IntObj, 'test_dict')
@@ -2403,7 +2403,7 @@ class TestGfptar(unittest.TestCase):
 
     def test_DBSet(self):
         euid = os.geteuid()
-        tmpdir = tempfile.TemporaryDirectory(prefix=f'gfptar-test-{euid}-',
+        tmpdir = tempfile.TemporaryDirectory(prefix=f"gfptar-test-{euid}-",
                                              dir=None)
         testdb = DB(os.path.join(tmpdir.name, 'test.db'))
         s = DBSet(testdb, IntObj, 'test_set')
@@ -2434,7 +2434,7 @@ class TestGfptar(unittest.TestCase):
 
     def test_DBList(self):
         euid = os.geteuid()
-        tmpdir = tempfile.TemporaryDirectory(prefix=f'gfptar-test-{euid}',
+        tmpdir = tempfile.TemporaryDirectory(prefix=f"gfptar-test-{euid}",
                                              dir=None)
         testdb = DB(os.path.join(tmpdir.name, 'test.db'))
         lst = DBList(testdb, IntObj, 'test_list')
@@ -2466,18 +2466,18 @@ class CannotBeArchivedError(GfptarError):
     def __init__(self, files=0, directories=0):
         msg = ''
         if files >= 1:
-            msg += f'{files} file'
+            msg += f"{files} file"
             if files >= 2:
                 msg += 's'
         if directories >= 1:
             if msg:
                 msg += ' and '
-            msg += f'{directories} '
+            msg += f"{directories} "
             if directories >= 2:
                 msg += 'directories'
             else:
                 msg += 'directory'
-        self.message = f'{msg} cannot be archived'
+        self.message = f"{msg} cannot be archived"
         super().__init__(self.message)
 
 
@@ -2532,7 +2532,7 @@ class GfptarProgram(Program):
         # dir=None: system default
         if self.tmpdir:
             self.tmpdir.cleanup()
-        self.tmpdir = tempfile.TemporaryDirectory(prefix=f'gfptar-{euid}-',
+        self.tmpdir = tempfile.TemporaryDirectory(prefix=f"gfptar-{euid}-",
                                                   dir=self.workdir)
         self.sig_init()  # to clean tmpdir
 
@@ -2623,8 +2623,7 @@ class GfptarProgram(Program):
     def sig_init(self, message=True):
         def sig_handler(signum, frame):
             if message:
-                # logger.warning(f'Interrupt (signal={signum})')
-                sys.stderr.write(f'\nInterrupt (signal={signum})\n')
+                sys.stderr.write(f"\nInterrupt (signal={signum})\n")
             self.canceled = True
 
         signal.signal(signal.SIGHUP, sig_handler)
@@ -2875,7 +2874,7 @@ class GfptarProgram(Program):
             self.workdir_local_url.mkdir()
 
     def test_invalid(self, name, src, dst, for_gfarm):
-        testname = f'invalid-{name}'
+        testname = f"invalid-{name}"
         self.test_workdir_set(testname, gfarm=for_gfarm, local=not for_gfarm)
         if for_gfarm:
             workdir = self.workdir_gfarm
@@ -2909,7 +2908,7 @@ class GfptarProgram(Program):
             print(testname + ' ... FAIL (unexpected success)')
 
     def test_simple(self, name, use_all_files=False):
-        testname = f'simple-{name}'
+        testname = f"simple-{name}"
         self.test_workdir_set(testname)
         workdir_local = self.workdir_local
         workdir_gfarm = self.workdir_gfarm
@@ -2937,7 +2936,7 @@ class GfptarProgram(Program):
         count2 = self.test_prepare_srcdir(srcdir_gfarm,
                                           readonly, noread, link, longname)
         if count1 != count2:
-            logger.error(f'count1({count1}) != count2({count2})')
+            logger.error(f"count1({count1}) != count2({count2})")
             logger.error_exit(1, testname + '(count1 != count2) ' +
                               '... FAIL (test_prepare_srcdir is broken)')
         test1_name = 'test-1-create'
@@ -2959,7 +2958,7 @@ class GfptarProgram(Program):
         except GfptarError as e:
             if not noread:
                 raise
-            logger.info(f'IGNORED: {str(e)}')
+            logger.info(f"IGNORED: {str(e)}")
         # Gfarm(tar) -> Gfarm
         self.cmd_extract(test2_dir_gfarm, test1_dir_gfarm, [])
         # Gfarm -> Local(tar)
@@ -2971,20 +2970,20 @@ class GfptarProgram(Program):
         except GfptarError as e:
             if not noread:
                 raise
-            logger.info(f'IGNORED: {str(e)}')
+            logger.info(f"IGNORED: {str(e)}")
         # Local(tar) -> Local
         self.cmd_extract(test4_dir_local, test3_dir_local, [])
 
         # --list for gfarm
         count = self.cmd_list_simple(test1_dir_gfarm)
         if count != count1:
-            logger.error(f'count({count}) != count1({count1})')
+            logger.error(f"count({count}) != count1({count1})")
             logger.error_exit(1, testname +
                               '(list_simple(test1_dir_gfarm)) ... FAIL')
         # --verbose --list for local
         count = self.cmd_list_verbose(test3_dir_local)
         if count != count1:
-            logger.error(f'count({count}) != count1({count1})')
+            logger.error(f"count({count}) != count1({count1})")
             logger.error_exit(1, testname +
                               '(list_verbose(test3_dir_local)) ... FAIL')
 
@@ -3033,7 +3032,7 @@ class GfptarProgram(Program):
         except GfptarError as e:
             if not noread:
                 raise
-            logger.info(f'IGNORED: {str(e)}')
+            logger.info(f"IGNORED: {str(e)}")
         # Gfarm(tar) -> Local
         self.cmd_extract(test6_dir_local, test5_dir_gfarm, [])
 
@@ -3099,7 +3098,7 @@ class GfptarProgram(Program):
             logger.error_exit(1, testname + '(not found in archive files) ' +
                               '... FAIL (unexpected success)')
         except GfptarError as e:
-            logger.info(f'Expected error, ignored: {str(e)}')
+            logger.info(f"Expected error, ignored: {str(e)}")
 
         # check mode=0o700 for parents without tarinfo of file#2
         gd1 = GfURL.init(os.path.join(test2_dir_gfarm, 'dir1/readonly'))
@@ -3107,11 +3106,11 @@ class GfptarProgram(Program):
         gd1_mode = gd1.mode()
         if gd1_mode != 0o700:
             logger.error_exit(
-                1, f'{testname} ... FAIL: gd1.mode={gd1_mode:#o}')
+                1, f"{testname} ... FAIL: gd1.mode={gd1_mode:#o}")
         ld1_mode = ld1.mode()
         if ld1_mode != 0o700:
             logger.error_exit(
-                1, f'{testname} ... FAIL: ld1.mode={ld1_mode:#o}')
+                1, f"{testname} ... FAIL: ld1.mode={ld1_mode:#o}")
 
         for f in files:
             g_member = GfURL.init(os.path.join(test2_dir_gfarm, f))
@@ -3363,7 +3362,7 @@ class GfptarProgram(Program):
                 url.hardlink(srcdir_url.url_join(linkname))
                 url.chmod(mode, mtime=mtime)
             else:
-                raise Exception(f'Unexpected ftype={ftype}')
+                raise Exception(f"Unexpected ftype={ftype}")
             if readable:
                 count += 1
         for ent in reversed(tree):
@@ -3439,7 +3438,7 @@ class GfptarProgram(Program):
         diff_args += ['-r', dir1, dir2]
         out, err, ret = execcmd_raw(diff_args)
         if ret != 0:
-            logger.error(f'diff -r {dir1} {dir2}: {out}: {err}')
+            logger.error(f"diff -r {dir1} {dir2}: {out}: {err}")
             return False
         logger.debug('diff -r (data check): PASS')
         return self.test_compare(dir1, dir2, data=data, same_owner=same_owner,
@@ -3501,7 +3500,7 @@ class GfptarProgram(Program):
                     file_min_length, file_max_length))) + '.' + suffix
 
         def rand_dir(first_dir_index):
-            first_dir = f'dir{first_dir_index:04d}'
+            first_dir = f"dir{first_dir_index:04d}"
 
             mode = 0o755
             file_type = GfURLEntry.TYPE_DIR
@@ -3526,7 +3525,7 @@ class GfptarProgram(Program):
 
         def rand_file(dir_path, idx):
             # f = generate_random_filename()
-            f = f'{idx}.txt'
+            f = f"{idx}.txt"
             path = os.path.join(dir_path, f)
             mode = 0o600
             file_type = GfURLEntry.TYPE_FILE
@@ -3737,7 +3736,7 @@ class GfptarProgram(Program):
 
         tmpdir = self.tmpdir
         tardb_prefix = os.path.join(tmpdir.name, self.cmd_name)
-        tardb_fmt = f'_{self.SERIAL_FORMAT}.db'
+        tardb_fmt = f"_{self.SERIAL_FORMAT}.db"
         # to reduce memory usage
         filelist_db = DB(tardb_prefix + tardb_fmt % serial)
         filelist = DBList(filelist_db, GfURLEntry, self.TABLE_tar_entry)
@@ -4101,7 +4100,7 @@ class GfptarProgram(Program):
         inq.put((self.MSG_PARENT_START, gen, serial, arg))
         response = outq.get()
         if response != self.MSG_CHILD_READY:
-            logger.error(f'Unexpected response from child process: {response}')
+            logger.error(f"Unexpected response from child process: {response}")
             return
 
         try:
@@ -4122,7 +4121,7 @@ class GfptarProgram(Program):
                         break
                 if result is None:
                     logger.debug('waiting for message from child process:'
-                                 f' serial={serial}')
+                                 f" serial={serial}")
                     continue
                 if len(result) == 0:
                     logger.warning('unknown result (None) from child process')
@@ -4156,13 +4155,13 @@ class GfptarProgram(Program):
                     inq.put(self.MSG_PARENT_ERROR_COMPLETE)
                     if self.verbose or self.debug:
                         raise GfException(
-                            f'{exc_type_name}: {exc_value_str}\n'
-                            f'{"".join(exc_traceback_str)}')
+                            f"{exc_type_name}: {exc_value_str}\n"
+                            f"{''.join(exc_traceback_str)}")
                     else:
-                        raise GfException(f'{exc_type_name}: {exc_value_str}')
+                        raise GfException(f"{exc_type_name}: {exc_value_str}")
                 else:
                     logger.error('Unexpected message from child process:'
-                                 f' {result}')
+                                 f" {result}")
                     break
         finally:
             logger.debug('(parent) subprocess finished: serial=%d', serial)
@@ -4235,7 +4234,7 @@ class GfptarProgram(Program):
         if len(filelist) == 0:
             tardb.close()
             tardb.unlink()
-            logger.warning(f'empty filelist: {dbfile}')
+            logger.warning(f"empty filelist: {dbfile}")
             return 0, 0, '', ''
         first = None
         last = None
@@ -4257,10 +4256,10 @@ class GfptarProgram(Program):
             lastpath = last.subpath(self.basedir_url)
             outname = '%s..%s%s' % (firstpath, lastpath, self.suffix)
 
-        serial_str = f'{self.SERIAL_FORMAT}_' % serial
+        serial_str = f"{self.SERIAL_FORMAT}_" % serial
         if gen >= 2:
             # SEE ALSO: InfoDB.dbgz_filename()
-            prefix_str = f'g{gen}_{serial_str}'
+            prefix_str = f"g{gen}_{serial_str}"
         else:
             prefix_str = serial_str
         outname_max = self.outdir_url.MAXNAMLEN \
@@ -4632,7 +4631,7 @@ class GfptarProgram(Program):
             url_str = self.outdir_url.url_join(d)
             dir_url = GfURL.init(url_str, dry_run=self.dry_run)
             logger.debug('extract_directories_fast: '
-                         f'out_url={self.outdir_url.url_str}, d={d}')
+                         f"out_url={self.outdir_url.url_str}, d={d}")
             # url.path is normalized
             if dir_url.path in created_set:
                 logger.debug('skip (already created): %s', url_str)
@@ -4751,8 +4750,8 @@ class GfptarProgram(Program):
                 raise
             except Exception as e:
                 logger.debug('tar.next()', exc_info=e)
-                logger.warning(f'{target}: SKIPPED: invalid or empty tar: '
-                               f' {str(e)}')
+                logger.warning(f"{target}: SKIPPED: invalid or empty tar: "
+                               f" {str(e)}")
                 tarinfo = None
             if tarinfo is None:
                 break
@@ -4875,17 +4874,17 @@ class GfptarProgram(Program):
         if self.selected_num > 0:
             selected_num_str = self._humanize(self.selected_num)
             selected_size_str = self._humanize(self.selected_size)
-            sys.stdout.write(f'\rschedule: '
-                             f'{selected_size_str}/{total_size_str}B '
-                             f'{selected_num_str}/{total_num_str}Ent '
-                             f'{sec_str} '
-                             f'{ent_per_sec_str}Ent/s')
+            sys.stdout.write(f"\rschedule: "
+                             f"{selected_size_str}/{total_size_str}B "
+                             f"{selected_num_str}/{total_num_str}Ent "
+                             f"{sec_str} "
+                             f"{ent_per_sec_str}Ent/s")
         else:
-            sys.stdout.write(f'\rschedule: '
-                             f'{total_size_str}B '
-                             f'{total_num_str}Ent '
-                             f'{sec_str} '
-                             f'{ent_per_sec_str}Ent/s')
+            sys.stdout.write(f"\rschedule: "
+                             f"{total_size_str}B "
+                             f"{total_num_str}Ent "
+                             f"{sec_str} "
+                             f"{ent_per_sec_str}Ent/s")
 
     def progress_for_sync_infodb(self, now):
         sec = now - self.start_time
@@ -4909,12 +4908,12 @@ class GfptarProgram(Program):
             name = 'sync-db'
         else:
             name = 'load-db'
-        sys.stdout.write(f'\r{name}: '
-                         f'{current_tar_num_str}/{total_tar_num_str}Tar '
-                         f'{current_size_str}B '
-                         f'{current_ent_num_str}Ent '
-                         f'{sec_str} '
-                         f'{ent_per_sec_str}Ent/s')
+        sys.stdout.write(f"\r{name}: "
+                         f"{current_tar_num_str}/{total_tar_num_str}Tar "
+                         f"{current_size_str}B "
+                         f"{current_ent_num_str}Ent "
+                         f"{sec_str} "
+                         f"{ent_per_sec_str}Ent/s")
 
     # lock required
     def progress_for_create(self, now):
@@ -4932,7 +4931,7 @@ class GfptarProgram(Program):
                 percent = (percent1 + percent2) / 2
             else:
                 percent = percent1
-            percent_str = f'{percent:.0f}'
+            percent_str = f"{percent:.0f}"
         if sec > 0:
             bytes_per_sec = self.stored_size / sec
             ent_per_sec = self.stored_num / sec
@@ -4945,12 +4944,12 @@ class GfptarProgram(Program):
         total_size_str = self._humanize(self.total_size)
         bytes_per_sec_str = self._humanize(bytes_per_sec)
         ent_per_sec_str = self._humanize(ent_per_sec)
-        sys.stdout.write(f'\r{self.cmd_name}: {percent_str}% '
-                         f'{stored_size_str}/{total_size_str}B '
-                         f'{stored_num_str}/{total_num_str}Ent '
-                         f'{sec_str} '
-                         f'{bytes_per_sec_str}B/s '
-                         f'{ent_per_sec_str}Ent/s')
+        sys.stdout.write(f"\r{self.cmd_name}: {percent_str}% "
+                         f"{stored_size_str}/{total_size_str}B "
+                         f"{stored_num_str}/{total_num_str}Ent "
+                         f"{sec_str} "
+                         f"{bytes_per_sec_str}B/s "
+                         f"{ent_per_sec_str}Ent/s")
 
     # lock required
     def progress_for_extract(self, now):
@@ -4965,7 +4964,7 @@ class GfptarProgram(Program):
             percent = (percent1 + percent2) / 2
         else:
             percent = percent1
-        percent_str = f'{percent:.0f}'
+        percent_str = f"{percent:.0f}"
         if sec > 0:
             bytes_per_sec = self.extracted_size / sec
             ent_per_sec = self.extracted_num / sec
@@ -4978,12 +4977,12 @@ class GfptarProgram(Program):
         extracted_size_str = self._humanize(self.extracted_size)
         bytes_per_sec_str = self._humanize(bytes_per_sec)
         ent_per_sec_str = self._humanize(ent_per_sec)
-        sys.stdout.write(f'\rextract: {percent_str}% '
-                         f'{extracted_size_str}/{total_size_str}B '
-                         f'{extracted_num_str}/{total_num_str}Ent '
-                         f'{sec_str} '
-                         f'{bytes_per_sec_str}B/s '
-                         f'{ent_per_sec_str}Ent/s')
+        sys.stdout.write(f"\rextract: {percent_str}% "
+                         f"{extracted_size_str}/{total_size_str}B "
+                         f"{extracted_num_str}/{total_num_str}Ent "
+                         f"{sec_str} "
+                         f"{bytes_per_sec_str}B/s "
+                         f"{ent_per_sec_str}Ent/s")
 
     def cmd_list_simple(self, indir):
         return self.cmd_list(indir, verbose=False)
@@ -5018,18 +5017,15 @@ class GfptarProgram(Program):
                 name = name + ' -> ' + fattr.linkname
             dt_object = datetime.datetime.fromtimestamp(fattr.mtime)
             mtime_str = dt_object.strftime('%Y-%m-%d %H:%M')
-            # print(f'g{gen}_{serial:04} {fattr.ftype} {fattr.mode:04o}'
-            #       f' {fattr.user:>8}/{fattr.group:<8}'
-            #       f' {fattr.size:9d} {mtime_str} {name}', file=outf)
             outf.write('g%d_%04d %s %04o %8s/%-8s %9d %s %s\n' % (
                 gen, serial, fattr.ftype, fattr.mode, fattr.user,
                 fattr.group, fattr.size, mtime_str, name))
 
         def print_simple(serial, gen, path, fattr):
             if fattr.ftype == InfoDB.TYPE_DIR:
-                print(f'{fattr.ftype} {path}/', file=outf)
+                print(f"{fattr.ftype} {path}/", file=outf)
             else:
-                print(f'{fattr.ftype} {path}', file=outf)
+                print(f"{fattr.ftype} {path}", file=outf)
 
         if quiet:
             print_func = print_quiet
@@ -5144,15 +5140,15 @@ class GfptarProgram(Program):
             dbgz_dict[serial] = (gen, dbgz_path)
             gen_tar = tar_dict.get(serial, None)
             if gen_tar is None:
-                logger.error(f'lost *.tar.* tied to {dbgz_path}')
+                logger.error(f"lost *.tar.* tied to {dbgz_path}")
                 tar_dict[serial] = (gen, None)
 
         for serial, gen, tar_path in tar_list:
             gen_dbgz = dbgz_dict.get(serial, None)
             if gen_dbgz is None:
                 dbgz_fname = InfoDB.dbgz_filename(gen, serial)
-                logger.info(f'lost {dbgz_fname} (auto re-creation)'
-                            f' tied to {tar_path}')
+                logger.info(f"lost {dbgz_fname} (auto re-creation)"
+                            f" tied to {tar_path}")
                 dbgz_dict[serial] = (gen, None)
 
         # for progress
@@ -5195,8 +5191,7 @@ class GfptarProgram(Program):
 
             def sig_handler(signum, frame):
                 if share_cancel.value == 0:
-                    # logger.warning(f'Interrupt (signal={signum}')
-                    sys.stderr.write(f'\nInterrupt (signal={signum})\n')
+                    sys.stderr.write(f"\nInterrupt (signal={signum})\n")
                     share_cancel.value = 1
                     self.cancel()
 
@@ -5223,7 +5218,7 @@ class GfptarProgram(Program):
                         self.progress_for_sync_infodb(now)
                     yield serial, gen, tar_path, dbgz_path, db_path
                 except Exception as e:
-                    # logger.error(f'{e}')
+                    # logger.error(f"{e}")
                     self.print_trace(e)
                     share_cancel.value = 1
                     if self.save_e is None:
@@ -5306,7 +5301,7 @@ class InfoDB:
         # gen (>= 1): the generation number
         # serial  (>= 1): the serial number
         # ex. g2_0099_gfptar.db.gz
-        return f'g{gen}_{int(serial):04}_gfptar.db'
+        return f"g{gen}_{int(serial):04}_gfptar.db"
 
     @classmethod
     def dbgz_filename(cls, gen, serial):
@@ -5402,7 +5397,7 @@ class InfoDB:
             def sig_handler(signum, frame):
                 if not cls.signal_canceled:
                     pid = os.getpid()
-                    logger.info(f'Interrupt (signal={signum}) (PID={pid})')
+                    logger.info(f"Interrupt (signal={signum}) (PID={pid})")
                     cls.signal_canceled = True
 
             signal.signal(signal.SIGHUP, sig_handler)
@@ -5467,8 +5462,8 @@ class InfoDB:
                     except MemoryError:
                         raise
                     except Exception as e:
-                        logger.warning(f'{tar_path}: SKIPPED:'
-                                       f' invalid or empty tar: {str(e)}')
+                        logger.warning(f"{tar_path}: SKIPPED:"
+                                       f" invalid or empty tar: {str(e)}")
                         t = None
                     if t is None:
                         break
