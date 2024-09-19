@@ -4284,20 +4284,27 @@ class GfptarProgram(Program):
             offset += 1
         # ex.: home/user1/dir -> home_user1_dir
         outname = prefix_str + outname.replace('/', '_')
-        outname_path = self.outdir_url.url_join(outname)
-        outname_path_tmp = outname_path + self.TMP_SUFFIX
-        outurl_tmp = GfURL.init(outname_path_tmp,
-                                use_gfarm_command=self.use_gfarm_command,
-                                dry_run=self.dry_run)
-        target_host = self.select_a_target_host(outurl_tmp, serial)
+        out_urlstr = self.outdir_url.url_join(outname)
+        tmp_urlstr = out_urlstr + self.TMP_SUFFIX
+        tmp_url = GfURL.init(tmp_urlstr,
+                             use_gfarm_command=self.use_gfarm_command,
+                             dry_run=self.dry_run)
+        if tmp_url.is_gfarm():
+            # direct access when outdir is gfarm2fs
+            tmp_url_direct = GfURL.init(tmp_urlstr,
+                                        use_gfarm_command=False,
+                                        dry_run=self.dry_run)
+        else:
+            tmp_url_direct = tmp_url
+        target_host = self.select_a_target_host(tmp_url, serial)
 
         def remove(gfurl):
             if gfurl.exists():
                 gfurl.remove()
 
-        atexit.register(remove, outurl_tmp)
-        remove(outurl_tmp)
-        tar_tmp = GfTarFile.create_open(outurl_tmp, self.compress_type,
+        atexit.register(remove, tmp_url_direct)
+        remove(tmp_url_direct)
+        tar_tmp = GfTarFile.create_open(tmp_url, self.compress_type,
                                         self.bufsize,
                                         use_fsync=self.use_fsync,
                                         target_host=target_host,
@@ -4392,18 +4399,18 @@ class GfptarProgram(Program):
         if self.dry_run:
             tar_size = 1024 ** 2  # no particular reason
         else:
-            tar_size = outurl_tmp.size()
-        outurl_tmp.rename(outname_path)
+            tar_size = tmp_url.size()
+        tmp_url_direct.rename(out_urlstr)
         atexit.unregister(remove)
 
-        out_db_path = self.outdir_url.url_join(db_name)
-        InfoDB.compress_copy(infodb.db.filename, out_db_path,
+        dbgz_urlstr = self.outdir_url.url_join(db_name)
+        InfoDB.compress_copy(infodb.db.filename, dbgz_urlstr,
                              self.bufsize, self.use_fsync, self.dry_run)
 
         # for DEBUG
         # raise Exception('unexpected raise')
 
-        return tar_size, cannot_be_archived, outname_path, out_db_path
+        return tar_size, cannot_be_archived, out_urlstr, dbgz_urlstr
 
     def error_canceled(self):
         return GfptarError('Canceled')
@@ -5655,6 +5662,7 @@ Options:
   --test-long               Run long  tests (-q option is recommended)
   --test-workdir-local=DIR  Local directory for test [default: /tmp]
   --test-workdir-gfarm=DIR  Gfarm directory for test [default: gfarm:/tmp]
+                            (A path in gfarm2fs can be specified)
   --dummy-num=NUM           The number of dummy input entries for --create
                             (ignore MEMBER arguments)
                             (create 1000 files and directories per 1 unit)
