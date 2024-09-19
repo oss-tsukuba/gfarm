@@ -3597,6 +3597,8 @@ class GfptarProgram(Program):
         self.archived_size = 0
         self.stored_size = 0
         self.stored_num = 0
+        self.selected_size = 0
+        self.selected_num = 0
         self.total_size = 0
         self.total_num = 0
         self.start_time = time.time()
@@ -3762,7 +3764,21 @@ class GfptarProgram(Program):
                     if self.is_canceled():
                         logger.debug('Canceled (listdir 2): serial=%d', serial)
                         break
+
+                    if self.progress_enabled:
+                        now = time.time()
+                        with self.lock():
+                            if now >= self.next_time:
+                                self.next_time = now + self.progress_interval
+                                self.progress_for_create(now)
+
                     logger.debug('listdir: entry.path=%s', entry.path)
+                    # include length of path
+                    this_size = entry.size_all()
+                    with self.lock():  # for progress
+                        self.total_size += this_size
+                        self.total_num += 1
+
                     if self.exclude_match(entry.path):
                         logger.info(f"Not added (excluded): {entry.path}")
                         continue  # skip
@@ -3770,11 +3786,9 @@ class GfptarProgram(Program):
                         logger.info(f"Not added (not new): {entry.path}")
                         continue  # skip
 
-                    # include length of path
-                    this_size = entry.size_all()
                     with self.lock():  # for progress
-                        self.total_size += this_size
-                        self.total_num += 1
+                        self.selected_size += this_size
+                        self.selected_num += 1
 
                     if filelist_num > 0 \
                        and (filelist_size + this_size > self.split_size
@@ -3799,13 +3813,6 @@ class GfptarProgram(Program):
                     filelist.append(entry)
                     filelist_num += 1
                     filelist_size += this_size
-
-                    # progress for listing before starting threads
-                    if serial == 1 and self.progress_enabled:
-                        now = time.time()
-                        if now >= self.next_time:
-                            self.next_time = now + self.progress_interval
-                            self.progress_for_create(now)
 
                     if has_error is not None:
                         break  # from listdir_switch()
@@ -3858,12 +3865,12 @@ class GfptarProgram(Program):
             print('compression ratio: %.2f%% (%d/%d)' %
                   (100 * self.archived_size / self.stored_size,
                    self.archived_size, self.stored_size))
+        if self.selected_num == 0:
+            print('No files were updated.')
         if has_error is not None:
             raise has_error
         if self.is_canceled():
             raise self.error_canceled()
-        if self.total_num == 0:
-            print('No files were updated.')
 
     def create_job_init(self):
         if self.MT_enabled():
@@ -4929,12 +4936,12 @@ class GfptarProgram(Program):
         if self.listing:
             percent_str = '?'
         else:
-            if self.total_num > 0:
-                percent1 = self.stored_num * 100 / self.total_num
+            if self.selected_num > 0:
+                percent1 = self.stored_num * 100 / self.selected_num
             else:
                 percent1 = 0
-            if self.total_size > 0:
-                percent2 = self.stored_size * 100 / self.total_size
+            if self.selected_size > 0:
+                percent2 = self.stored_size * 100 / self.selected_size
                 percent = (percent1 + percent2) / 2
             else:
                 percent = percent1
@@ -4946,14 +4953,16 @@ class GfptarProgram(Program):
             bytes_per_sec = 0
             ent_per_sec = 0
         stored_num_str = self._humanize(self.stored_num)
+        sel_num_str = self._humanize(self.selected_num)
         total_num_str = self._humanize(self.total_num)
         stored_size_str = self._humanize(self.stored_size)
-        total_size_str = self._humanize(self.total_size)
+        sel_size_str = self._humanize(self.selected_size)
+        # total_size_str = self._humanize(self.total_size)
         bytes_per_sec_str = self._humanize(bytes_per_sec)
         ent_per_sec_str = self._humanize(ent_per_sec)
         sys.stdout.write(f"\r{self.cmd_name}: {percent_str}% "
-                         f"{stored_size_str}/{total_size_str}B "
-                         f"{stored_num_str}/{total_num_str}Ent "
+                         f"{stored_size_str}/{sel_size_str}B "
+                         f"{stored_num_str}/{sel_num_str}/{total_num_str}Ent "
                          f"{sec_str} "
                          f"{bytes_per_sec_str}B/s "
                          f"{ent_per_sec_str}Ent/s")
