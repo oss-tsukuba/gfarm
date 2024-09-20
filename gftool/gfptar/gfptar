@@ -2477,6 +2477,7 @@ class CannotBeArchivedError(GfptarError):
                 msg += 'directories'
             else:
                 msg += 'directory'
+            msg += '(readdir)'
         self.message = f"{msg} cannot be archived"
         super().__init__(self.message)
 
@@ -3608,7 +3609,7 @@ class GfptarProgram(Program):
         self.gfsched_init()
 
         self.cannot_be_archived = 0
-        self.create_job_init()  # before creating threads
+        self.create_job_init()  # before starting threads
         self.fattr_dict_list = []
 
     def cmd_create(self, outdir, basedir, infiles):
@@ -3890,6 +3891,7 @@ class GfptarProgram(Program):
         class Started():
             pass
 
+        # create Process()es before starting threads
         self.worker_ident_dict = {}
         for i in range(self.max_workers):
             inq = multiprocessing.Queue()
@@ -4138,7 +4140,7 @@ class GfptarProgram(Program):
                 msg = result[0]
                 if msg == self.MSG_CHILD_PROGRESS:
                     logger.debug('MSG_CHILD_PROGRESS')
-                    status, num, size, path_list = result
+                    _msg, num, size, path_list = result
                     with self.lock():
                         for entry_path in path_list:
                             self.info('archived: {}', entry_path)
@@ -4151,15 +4153,16 @@ class GfptarProgram(Program):
                                     + self.progress_interval
                                 self.progress_for_create(now)
                 elif msg == self.MSG_CHILD_DONE:
-                    (status, tar_size, cannot_be_archived,
+                    (_msg, tar_size, cannot_be_archived,
                      out_tar_path, out_dbgz_path) = result
                     with self.lock():
                         self.archived_size += tar_size
+                        self.cannot_be_archived += cannot_be_archived
                         self.info('created({}): {}', self.suffix, out_tar_path)
                         self.info('created(.db.gz): {}', out_dbgz_path)
                     break
                 elif msg == self.MSG_CHILD_ERROR:
-                    (status, exc_type_name, exc_value_str,
+                    (_msg, exc_type_name, exc_value_str,
                      exc_traceback_str) = result
                     inq.put(self.MSG_PARENT_ERROR_COMPLETE)
                     if self.verbose or self.debug:
