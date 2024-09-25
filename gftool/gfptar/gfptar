@@ -2035,10 +2035,13 @@ class Compress:
     TYPE_GZIP = 'gz'
     TYPE_BZIP2 = 'bz2'
     TYPE_XZ = 'xz'
+    compress_type = None
+    prog_for_create = None
+    prog_for_extract = None
 
     @classmethod
-    def set_default(cls, compress_type, compress_prog,
-                    gzip_prog, bzip2_prog, xz_prog):
+    def init(cls, compress_type, compress_prog,
+             gzip_prog, bzip2_prog, xz_prog):
         if gzip_prog is not None:
             cls.gzip_prog = shutil.which(gzip_prog)
         else:
@@ -2058,21 +2061,38 @@ class Compress:
             if compress_prog0 is None:
                 raise GfptarError(f"{compress_prog}: command not found.")
             compress_prog = compress_prog0
+            cls.prog_for_create = compress_prog
+            cls.prog_for_extract = compress_prog
         else:
+            # auto selection
             if compress_type == cls.TYPE_GZIP:
                 compress_prog = cls.gzip_prog
             elif compress_type == cls.TYPE_BZIP2:
                 compress_prog = cls.bzip2_prog
             elif compress_type == cls.TYPE_XZ:
                 compress_prog = cls.xz_prog
-            # else:
-            #     compress_prog = None
-        cls.compress_prog = compress_prog  # may be None
+            else:
+                compress_prog = None
+            cls.prog_for_create = compress_prog
+            cls.prog_for_extract = None  # use get_compress_prog()
+
         logger.debug('compress_type=%s', cls.compress_type)
-        logger.debug('compress_prog=%s', cls.compress_prog)
+        logger.debug('prog_for_create=%s', cls.prog_for_create)
+        logger.debug('prog_for_extract=%s', cls.prog_for_extract)
         logger.debug('gzip_prog=%s', cls.gzip_prog)
         logger.debug('bzip2_prog=%s', cls.bzip2_prog)
         logger.debug('xz_prog=%s', cls.xz_prog)
+
+    @classmethod
+    def get_compress_prog(cls, name):
+        if name.endswith('.gz'):
+            return cls.gzip_prog
+        elif name.endswith('.bz2'):
+            return cls.bzip2_prog
+        elif name.endswith('.xz'):
+            return cls.xz_prog
+        else:
+            return None
 
     @classmethod
     def compress(cls, compress_prog, outf):
@@ -2101,12 +2121,16 @@ class GfTarFile(tarfile.TarFile):
     @classmethod
     def extract_open(cls, gfurl, copybufsize, compress_prog=None):
         if compress_prog is None:
-            compress_prog = Compress.compress_prog
+            compress_prog = Compress.prog_for_extract
+        if compress_prog is None:
+            compress_prog = Compress.get_compress_prog(gfurl.url_str)
+        logger.debug('extract_open: compress_prog=%s', compress_prog)
         # use Stream (not seekable)
-        if compress_prog is not None:
-            openmode = 'r|'
-        else:
+        if compress_prog is None \
+           and Compress.compress_type != Compress.TYPE_NO:
             openmode = 'r|*'  # any type (gz, bz2, xz)
+        else:
+            openmode = 'r|'
         if not gfurl.exists():
             raise FileNotFoundError(gfurl.url_str)
         # list of tuple(proc, closeable obj, synchronizable obj)
@@ -2148,15 +2172,15 @@ class GfTarFile(tarfile.TarFile):
         return tar
 
     @classmethod
-    def create_open(cls, gfurl, compress_type, copybufsize, compress_prog=None,
+    def create_open(cls, gfurl, copybufsize, compress_prog=None,
                     use_fsync=True, target_host=None,
                     dummy_input=False):
         if compress_prog is None:
-            compress_prog = Compress.compress_prog
+            compress_prog = Compress.prog_for_create
         # use Stream (not seekable)
         if compress_prog is None \
-           and compress_type != Compress.TYPE_NO:
-            openmode = 'w|' + compress_type
+           and Compress.compress_type != Compress.TYPE_NO:
+            openmode = 'w|' + Compress.compress_type
         else:
             openmode = 'w|'
         if gfurl.exists():
@@ -2566,8 +2590,8 @@ class GfptarProgram(Program):
         self.gzip_prog = self.opt['--gzip-program']
         self.xz_prog = self.opt['--xz-program']
         self.bzip2_prog = self.opt['--bzip2-program']
-        Compress.set_default(self.compress_type, self.compress_prog,
-                             self.gzip_prog, self.bzip2_prog, self.xz_prog)
+        Compress.init(self.compress_type, self.compress_prog,
+                      self.gzip_prog, self.bzip2_prog, self.xz_prog)
         if Compress.gzip_prog is None:
             raise GfException('gzip: command not found. Please install gzip.')
 
@@ -2777,6 +2801,8 @@ class GfptarProgram(Program):
         save_opt_gendb = self.opt['--generate-db']
         save_opt_verbose = self.opt['--verbose']
 
+        self.opt['--use-compress-program'] = None
+
         # create tar per one entry
         self.opt['--size'] = 0
 
@@ -2823,10 +2849,10 @@ class GfptarProgram(Program):
                 'pigz': 'gz',
                 'bzip2': 'bz2',
                 'xz': 'xz',
-                # 'pbzip2': 'bz2',
-                # 'lzip': 'lz',
-                # 'lzop': 'lzo',
-                # 'lz4': 'lz4',
+                'pbzip2': 'bz2',
+                'lzip': 'lz',
+                'lzop': 'lzo',
+                'lz4': 'lz4',
             }
         else:
             pattern_compress_prog = {
@@ -3096,7 +3122,7 @@ class GfptarProgram(Program):
         # error
         try:
             self.cmd_extract(test6_dir_local, test3_dir_local, ['abcde'])
-            logger.error_exit(1, testname + '(not found in archive files) ' +
+            logger.error_exit(1, testname + '(not found in tar files) ' +
                               '... FAIL (unexpected success)')
         except GfptarError as e:
             logger.info(f"Expected error, ignored: {str(e)}")
@@ -3588,13 +3614,6 @@ class GfptarProgram(Program):
         self.dummy_size_min = self.opt['--dummy-size-min']
         self.dummy_size_max = self.opt['--dummy-size-max']
 
-        if self.compress_type == Compress.TYPE_NO:
-            self.split_size = self.assumed_size
-            self.suffix = '.tar'
-        else:
-            self.split_size = self.assumed_size * 100 / self.ratio
-            self.suffix = '.tar.' + self.compress_type
-
         self.archived_size = 0
         self.stored_size = 0
         self.stored_num = 0
@@ -3620,7 +3639,24 @@ class GfptarProgram(Program):
         self.cmd_create_common(serial, gen, infiles)
 
     def error_type_mismatch(self, tar_path):
-        return GfptarError(f"Tar compression type mismatch: {tar_path}")
+        return GfptarError(f"Compression type mismatch: {tar_path}")
+
+    def suffix_check(self, suffix, tar_path):
+        if suffix is None:
+            suffix = os.path.splitext(tar_path)[1]
+            dottype = suffix.split('.')
+            if len(dottype) == 2:
+                self.compress_type = dottype[1]
+                if self.compress_type == 'tar':
+                    self.compress_type = Compress.TYPE_NO
+            if self.progress_enabled:
+                logger.info('')
+            logger.info(f"recognized type is {self.compress_type}")
+            Compress.init(self.compress_type, self.compress_prog,
+                          self.gzip_prog, self.bzip2_prog, self.xz_prog)
+        elif not tar_path.endswith(suffix):
+            raise self.error_type_mismatch(tar_path)
+        return suffix
 
     def cmd_append(self, outdir, basedir, infiles):
         self.cmd_create_init('append', outdir, basedir)
@@ -3628,15 +3664,14 @@ class GfptarProgram(Program):
             raise FileNotFoundError(outdir)
         max_serial = 0
         max_gen = 0
-        suffix = '.' + self.compress_type
+        suffix = None
         tar_list, dbgz_list = self.list_tar_list_dbgz_from_dir(self.outdir_url)
         for serial, gen, tar_path in tar_list:
-            if not tar_path.endswith(suffix):
-                raise self.error_type_mismatch(tar_path)
             if serial > max_serial:
                 max_serial = serial
             if gen > max_gen:
                 max_gen = gen
+            suffix = self.suffix_check(suffix, tar_path)
         self.cmd_create_common(max_serial + 1, max_gen + 1, infiles)
 
     def cmd_update(self, outdir, basedir, infiles):
@@ -3646,14 +3681,12 @@ class GfptarProgram(Program):
         broken_count = 0
         max_serial = 0
         max_gen = 0
-        suffix = '.' + self.compress_type
+        suffix = None
         for serial, gen, tar_path, dbgz_path, db_path in \
                 self.list_tar_dbgz_db(self.outdir_url, sort=True,
                                       progress=self.progress_enabled):
             if self.is_canceled():
                 raise self.error_canceled()
-            if not tar_path.endswith(suffix):
-                raise self.error_type_mismatch(tar_path)
             if serial > max_serial:
                 max_serial = serial
             if gen > max_gen:
@@ -3661,6 +3694,7 @@ class GfptarProgram(Program):
             if dbgz_path is None or tar_path is None:
                 broken_count += 1
                 continue
+            suffix = self.suffix_check(suffix, tar_path)
             db = DB(db_path)
             fattr_dict = DBDict(db, FileAttr2, InfoDB.TABLE_ENTRY)
             self.fattr_dict_list.append(fattr_dict)
@@ -3669,9 +3703,16 @@ class GfptarProgram(Program):
         self.cmd_create_common(max_serial + 1, max_gen + 1, infiles)
         if broken_count > 0:
             raise GfptarError("Some .tar.* or .db.gz are broken:"
-                              f" error={broken_count}")
+                              f" num={broken_count}")
 
     def cmd_create_common(self, serial, gen, infiles):
+        if self.compress_type == Compress.TYPE_NO:
+            self.split_size = self.assumed_size
+            self.suffix = '.tar'
+        else:
+            self.split_size = self.assumed_size * 100 / self.ratio
+            self.suffix = '.tar.' + self.compress_type
+
         infiles_checked = set()
         for infile in infiles:
             # infile_url = GfURL.init(infile)
@@ -4307,8 +4348,7 @@ class GfptarProgram(Program):
 
         atexit.register(remove, tmp_url_direct)
         remove(tmp_url_direct)
-        tar_tmp = GfTarFile.create_open(tmp_url, self.compress_type,
-                                        self.bufsize,
+        tar_tmp = GfTarFile.create_open(tmp_url, self.bufsize,
                                         use_fsync=self.use_fsync,
                                         target_host=target_host,
                                         dummy_input=self.dummy_input)
@@ -4583,7 +4623,7 @@ class GfptarProgram(Program):
             logger.debug('check member_check_dict: %s, %s', member, found)
             if not found:
                 raise GfptarError('The specified file is not found'
-                                  ' in archive files: ' + member)
+                                  ' in tar files: ' + member)
         member_check_dict.clear()
         archive_dict.clear()
         return gen_tarlist_dict, directory_set, member_set, error_num
@@ -4621,7 +4661,7 @@ class GfptarProgram(Program):
         self.db.unlink()
         if error_num > 0:
             raise GfptarError("Some .tar.* or .db.gz are broken:"
-                              f" error={error_num}")
+                              f" num={error_num}")
 
     def extract_directories(self, directory_set):
         logger.debug('extract_directories')
@@ -5089,7 +5129,7 @@ class GfptarProgram(Program):
             os.remove(db_path)
         if error_num > 0:
             raise GfptarError("Some .tar.* or .db.gz are broken:"
-                              f" error={error_num}")
+                              f" num={error_num}")
 
     def sort_tar_or_db_list(self, tar_or_db_list):
         def id_key(value):
@@ -5121,7 +5161,7 @@ class GfptarProgram(Program):
             if ent.path.endswith(self.LIST_SUFFIX):  # ignore *.lst
                 if self.progress_enabled:
                     logger.warning('')
-                logger.warning(f"{ent.path}:"
+                logger.warning(f"NOTICE: {ent.path}:"
                                " This file (*.lst) is no longer required."
                                " Please remove it.")
                 continue
@@ -5606,7 +5646,7 @@ Options:
   -r, --append=OUTDIR       Append files (create new tar files)
   -u, --update=OUTDIR       Append files newer than same entries in tar files
                             (--workdir with sufficient space is required)
-                            (Approximately 300MiB is used per 1000000 entries)
+                            (About 300MiB is used per 1000000 entries)
       --resume=OUTDIR       Same as --update
   -x, --extract=OUTDIR      Extract all members or specified MEMBERs
                             from INDIR to OUTDIR
@@ -5615,30 +5655,33 @@ Options:
   -C, --basedir=DIR         Change to directory for MEMBERs [default: .]
   --exclude=PATTERN         Exclude files matching wildcard patterns
                             (https://docs.python.org/ja/3/library/fnmatch.html)
-                            (Ex. --exclude=*.txt)
-                            (Ex. --exclude=*/dirname/*)
-                            (Ex. --exclude=*/??_abcde.pdf)
+                            (ex. --exclude=*.txt)
+                            (ex. --exclude=*/dirname/*)
+                            (ex. --exclude=*/??_abcde.pdf)
   -X, --exclude-from=FILE   Exclude files matching wildcard patterns listed
                             in FILE
   --workdir=DIR             Local directory for temporary files
                             (default: system temporary directory)
-  --max-entries-per-tar=NUM The number of entries per tar file
-                            to limit memory usage [default: 100k]
   -j, --jobs=NUM            The number of jobs to copy per tar file in parallel
                             [default: 4]
-  -s, --size=BYTES          Assumed bytes per output file [default: 200Mi]
+  -s, --size=BYTES          Maximum assumed size per output file
+                            [default: 200Mi]
   --ratio=RATIO             Assumed compression ratio (%) [default: 50]
-  -T, --type=TYPE           Compression type and tar archive suffix
+  --max-entries-per-tar=NUM The maximum number of entries per tar file
+                            to limit memory usage [default: 100k]
+  -T, --type=TYPE           Compression type and tar file suffix
                               - gz : use gzip  (*.tar.gz)
                               - bz2: use bzip2 (*.tar.bz2)
                               - xz : use xz    (*.tar.xz)
                               - no : no compression (*.tar)
+                              - (other): --use-compress-program is required
                             [default: gz]
   -I, --use-compress-program=COMMAND
-                            Filter data through COMMAND,
-                            the command must accept -d option for decompression
+                            Command to compress or decompress tar files
+                            when using --type other than gz, bz2 or xz
+                            (The command must accept -d option to decompress)
                             (ex. lz4, lzip, lzop)
-  --gzip-program=COMMAND    gzip command (ex. pigz) [default: gzip]
+  --gzip-program=COMMAND    gzip command  (ex. pigz)   [default: gzip]
   --bzip2-program=COMMAND   bzip2 command (ex. pbzip2) [default: bzip2]
   --xz-program=COMMAND      xz command [default: xz]
   --generate-db             Regenerate gfptar*_info.db.gz
