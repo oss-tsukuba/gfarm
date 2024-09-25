@@ -4947,15 +4947,15 @@ class GfptarProgram(Program):
             selected_size_str = self._humanize(self.selected_size)
             sys.stdout.write(f"\r{name}: "
                              f"{selected_size_str}/{total_size_str}B "
-                             f"{selected_num_str}/{total_num_str}Ent "
+                             f"{selected_num_str}/{total_num_str}E "
                              f"{sec_str} "
-                             f"{ent_per_sec_str}Ent/s")
+                             f"{ent_per_sec_str}E/s")
         else:
             sys.stdout.write(f"\r{name}: "
                              f"{total_size_str}B "
-                             f"{total_num_str}Ent "
+                             f"{total_num_str}E "
                              f"{sec_str} "
-                             f"{ent_per_sec_str}Ent/s")
+                             f"{ent_per_sec_str}E/s")
 
     def progress_for_infodb(self, now):
         sec = now - self.start_time
@@ -4980,9 +4980,9 @@ class GfptarProgram(Program):
             sys.stdout.write(f"\r{name}: "
                              f"{current_tar_num_str}/{total_tar_num_str}(DB) "
                              f"{current_size_str}B "
-                             f"{current_ent_num_str}Ent "
+                             f"{current_ent_num_str}E "
                              f"{sec_str} "
-                             f"{ent_per_sec_str}Ent/s")
+                             f"{ent_per_sec_str}E/s")
         else:
             name = 'load-db'
             sys.stdout.write(f"\r{name}: "
@@ -5022,10 +5022,10 @@ class GfptarProgram(Program):
         ent_per_sec_str = self._humanize(ent_per_sec)
         sys.stdout.write(f"\r{self.cmd_name}: {percent_str}% "
                          f"{stored_size_str}/{sel_size_str}B "
-                         f"{stored_num_str}/{sel_num_str}/{total_num_str}Ent "
+                         f"{stored_num_str}/{sel_num_str}/{total_num_str}E "
                          f"{sec_str} "
                          f"{bytes_per_sec_str}B/s "
-                         f"{ent_per_sec_str}Ent/s")
+                         f"{ent_per_sec_str}E/s")
 
     # lock required
     def progress_for_extract(self, now):
@@ -5056,10 +5056,10 @@ class GfptarProgram(Program):
         name = "extract"
         sys.stdout.write(f"\r{name}: {percent_str}% "
                          f"{extracted_size_str}/{total_size_str}B "
-                         f"{extracted_num_str}/{total_num_str}Ent "
+                         f"{extracted_num_str}/{total_num_str}E "
                          f"{sec_str} "
                          f"{bytes_per_sec_str}B/s "
-                         f"{ent_per_sec_str}Ent/s")
+                         f"{ent_per_sec_str}E/s")
 
     def cmd_list_simple(self, indir):
         return self.cmd_list(indir, verbose=False)
