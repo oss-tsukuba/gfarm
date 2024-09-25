@@ -5683,7 +5683,8 @@ Options:
                             (ex. lz4, lzip, lzop)
   --gzip-program=COMMAND    gzip command  (ex. pigz)   [default: gzip]
   --bzip2-program=COMMAND   bzip2 command (ex. pbzip2) [default: bzip2]
-  --xz-program=COMMAND      xz command [default: xz]
+  --xz-program=COMMAND      xz command (ex. environment XZ_OPT="-T4" for speed)
+                            [default: xz]
   --generate-db             Regenerate gfptar*_info.db.gz
   --same-owner              Extract files with the same ownership
                             (for euid=0 on local, or gfarmroot on Gfarm)
