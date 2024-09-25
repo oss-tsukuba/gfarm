@@ -248,6 +248,21 @@ class FileAttr2(DBObj):
                    array[4], array[5], array[6])
 
 
+class FileAttr3(DBObj):
+    def __init__(self, mtime):
+        self.mtime = mtime
+
+    @classmethod
+    def dumps(cls, obj, for_dict):
+        array = [obj.mtime]
+        return json.dumps(array, separators=(',', ':'))
+
+    @classmethod
+    def loads(cls, key, txt, for_dict):
+        array = json.loads(txt)
+        return cls(array[0])
+
+
 # Abstract
 class DBCollection:
     def __init__(self, db, obj_cls, table_name, clear=False):
@@ -3688,6 +3703,10 @@ class GfptarProgram(Program):
         max_serial = 0
         max_gen = 0
         suffix = None
+        mtime_db_idx = 0
+        fattr_dict = None
+        num_entries = 0
+        MAX_ENTRIES = 10000000  # limit for performance of SQLite3
         for serial, gen, tar_path, dbgz_path, db_path in \
                 self.list_tar_dbgz_db(self.outdir_url, sort=True,
                                       progress=self.progress_enabled):
@@ -3701,9 +3720,22 @@ class GfptarProgram(Program):
                 broken_count += 1
                 continue
             suffix = self.suffix_check(suffix, tar_path)
-            db = DB(db_path)
-            fattr_dict = DBDict(db, FileAttr2, InfoDB.TABLE_ENTRY)
-            self.fattr_dict_list.append(fattr_dict)
+            if fattr_dict is None or num_entries >= MAX_ENTRIES:
+                tmpdb_path = os.path.join(self.tmpdir.name,
+                                          f"mtime-{mtime_db_idx}.db")
+                db = DB(tmpdb_path)
+                fattr_dict = DBDict(db, FileAttr3, 'mtime')
+                self.fattr_dict_list.append(fattr_dict)
+                mtime_db_idx += 1
+                num_entries = 0
+            for path, fattr in InfoDB.list_entries_from_db(
+                    db_path, resolve_ugmap=False):
+                if self.is_canceled():
+                    raise self.error_canceled()
+                fattr_dict[path] = FileAttr3(fattr.mtime)
+                num_entries += 1
+            logger.debug('os.remove: %s', db_path)
+            os.remove(db_path)
         self.start_time = time.time()
         self.next_time = self.start_time + self.progress_interval
         self.cmd_create_common(max_serial + 1, max_gen + 1, infiles)
@@ -3763,20 +3795,20 @@ class GfptarProgram(Program):
                 if fattr is None:
                     continue
                 elif int(entry.mtime) > int(fattr.mtime):  # sec.
-                    logger.debug(f"is_update_target2: path={path}:"
+                    logger.debug(f"is_update_target0: path={path}:"
                                  f" entry.mtime({entry.mtime}) >"
                                  f" fattr.mtime({fattr.mtime})")
                     return True
                 # NOTE: compare only mtime
                 # elif fattr.size != entry.size:
-                #     logger.debug(f"is_update_target2: path={path}:"
+                #     logger.debug(f"is_update_target0: path={path}:"
                 #                  f" fattr.size({fattr.size})"
                 #                  f" != entry.size({entry.size})")
                 #     return True
                 else:
                     return False
             # not found
-            logger.debug(f"is_update_target2: path={path}: not found (True)")
+            logger.debug(f"is_update_target0: path={path}: not found (True)")
             return True
 
         if len(self.fattr_dict_list) > 0:
@@ -4307,7 +4339,7 @@ class GfptarProgram(Program):
             if entry.is_file():
                 last = entry
                 break
-        if last is None or first == last:
+        if last is None or first.path == last.path:
             firstpath = first.subpath(self.basedir_url)
             outname = '%s%s' % (firstpath, self.suffix)
         else:
