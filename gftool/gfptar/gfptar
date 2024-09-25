@@ -5173,7 +5173,7 @@ class GfptarProgram(Program):
                 if self.progress_enabled:
                     logger.warning('')
                 logger.warning(f"NOTICE: {ent.path}:"
-                               " This file (*.lst) is no longer required."
+                               " This file (*.lst) is no longer needed."
                                " Please remove it.")
                 continue
             if not tar_pattern.match(base):  # ignore not *.tar.*
@@ -5616,13 +5616,13 @@ Example of --create (Gfarm to Gfarm):
     ...
     gfarm:/home/user1/out/0010_dir_test9000.data..dir_test9999.data.tar.gz
     gfarm:/home/user1/out/g1_0010_gfptar.db.gz
-  Contents of gMM_NN_gfptar.db.gz file (sqlite3 and gzip):
+  Contents of gMM_NN_gfptar.db.gz file (SQLite3 and gzip):
     MM: the generation number for each append operation
     NN: the serial number
     table 'path_entry': map of path name to JSON string
-      json.dumps([ int(file_mode), int(mtime),
-                   int(user_unique_id), int(group_unique_id),
-                   int(size), symlink_path, file_type(D,F,S) ]
+      json.dumps([ file_mode (int), mtime (int),
+                   user_unique_id (int), group_unique_id (int),
+                   size (int), symlink_path, file_type (D,F,S) ]
       file_type 'D': directory
       file_type 'F': file
       file_type 'S': symbolic link
@@ -5680,8 +5680,11 @@ Options:
   -s, --size=BYTES          Maximum assumed size per output file
                             [default: 200Mi]
   --ratio=RATIO             Assumed compression ratio (%) [default: 50]
-  --max-entries-per-tar=NUM The maximum number of entries per tar file
-                            to limit memory usage [default: 100k]
+  --max-entries-per-tar=NUM
+                            The maximum number of entries per tar file
+                            (Too many entries in a tar may use a lot of memory,
+                             and may work slowly)
+                            [default: 100k]
   -T, --type=TYPE           Compression type and tar file suffix
                               - gz : use gzip  (*.tar.gz)
                               - bz2: use bzip2 (*.tar.bz2)
