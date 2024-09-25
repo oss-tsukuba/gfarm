@@ -5661,7 +5661,7 @@ Options:
   -X, --exclude-from=FILE   Exclude files matching wildcard patterns listed
                             in FILE
   --workdir=DIR             Local directory for temporary files
-                            (default: system temporary directory)
+                            (default: {tempdir})
   -j, --jobs=NUM            The number of jobs to copy per tar file in parallel
                             [default: 4]
   -s, --size=BYTES          Maximum assumed size per output file
@@ -5734,7 +5734,7 @@ Usage:
   {f} [options] --test -C DIR MEMBER...
   {f} [options] --test-long
   {f} -h | --help
-""".format(f=progname)
+""".format(f=progname, tempdir=tempfile.gettempdir())
 
 
 _schema = Schema({
