@@ -2549,7 +2549,7 @@ class GfptarProgram(Program):
             self.max_workers = 1
         self.bufsize = self.opt['--bufsize']
         self.use_fsync = not self.opt['--disable-fsync']
-        self.sync_infodb = self.opt['--generate-db']
+        self.gen_db = self.opt['--generate-db']
 
         self.workdir = self.opt['--workdir']
         euid = os.geteuid()
@@ -4957,7 +4957,7 @@ class GfptarProgram(Program):
                              f"{sec_str} "
                              f"{ent_per_sec_str}Ent/s")
 
-    def progress_for_sync_infodb(self, now):
+    def progress_for_infodb(self, now):
         sec = now - self.start_time
         sec_str = format_seconds(sec, minhour=True)
         current_tar_num_str = self._humanize(self.current_tar_num)
@@ -4975,7 +4975,7 @@ class GfptarProgram(Program):
         else:
             ent_per_sec = 0
         ent_per_sec_str = self._humanize(ent_per_sec)
-        if self.sync_infodb:
+        if self.gen_db:
             name = 'generate-db'
             sys.stdout.write(f"\r{name}: "
                              f"{current_tar_num_str}/{total_tar_num_str}(DB) "
@@ -4987,8 +4987,7 @@ class GfptarProgram(Program):
             name = 'load-db'
             sys.stdout.write(f"\r{name}: "
                              f"{current_tar_num_str}/{total_tar_num_str}(DB) "
-                             f"{sec_str} "
-                             f"{ent_per_sec_str}Ent/s")
+                             f"{sec_str} ")
 
     # lock required
     def progress_for_create(self, now):
@@ -5282,7 +5281,7 @@ class GfptarProgram(Program):
             self.current_size = 0
             if progress:
                 now = time.time()
-                self.progress_for_sync_infodb(now)
+                self.progress_for_infodb(now)
 
             def result_one(one):
                 future, gen, serial, tar_path, dbgz_path = one
@@ -5293,7 +5292,7 @@ class GfptarProgram(Program):
                     self.current_tar_num += 1
                     if progress:
                         now = time.time()
-                        self.progress_for_sync_infodb(now)
+                        self.progress_for_infodb(now)
                     yield serial, gen, tar_path, dbgz_path, db_path
                 except Exception as e:
                     # logger.error(f"{e}")
@@ -5327,11 +5326,11 @@ class GfptarProgram(Program):
                         yield serial, gen, tar_path, dbgz_path, db_path
                         continue
                     if dbgz_path is None:
-                        update = True
+                        gen_db = True
                     else:
-                        update = self.sync_infodb
+                        gen_db = self.gen_db
                     arg = (lock, share_cancel, self.tmpdir.name,
-                           update, gen, serial, tar_path,
+                           gen_db, gen, serial, tar_path,
                            self.bufsize, self.use_fsync, self.dry_run)
                     # InfoDB.generate_db_and_dbgz is classmethod,
                     # because ProcessPoolExecutor cannot serialize
@@ -5346,7 +5345,7 @@ class GfptarProgram(Program):
 
         if progress:
             now = time.time()
-            self.progress_for_sync_infodb(now)
+            self.progress_for_infodb(now)
             sys.stdout.write('\n')
         if self.save_e:
             raise self.save_e
@@ -5464,8 +5463,8 @@ class InfoDB:
             proc.stdout.close()
             ret = proc.wait()
             if ret != 0:
-                raise GfException('{}: returncode={}'.format(
-                    ' '.join(proc.args), ret))
+                raise GfException('{} (from {} to {}): returncode={}'.format(
+                    ' '.join(proc.args), in_dbgz_path, out_db_path, ret))
         return db_url
 
     signal_initialized = False
@@ -5490,7 +5489,7 @@ class InfoDB:
     # return db_path, dbgz_path, ent_num, size
     @classmethod
     def generate_db_and_dbgz(cls, args):
-        (lock, share_cancel, db_dir, update, gen, serial,
+        (lock, share_cancel, db_dir, gen_db, gen, serial,
          tar_path, bufsize, use_fsync, dry_run) = args
         if share_cancel.value != 0:
             # logger.debug('Canceled (2)')
@@ -5508,9 +5507,9 @@ class InfoDB:
 
         num = 0
         size = 0
-        if not update and dbgz_url.exists():
-            logger.debug('not update, decompress dbgz: %s', dbgz_path)
-            use_fsync2 = False  # workdir
+        if not gen_db and dbgz_url.exists():
+            logger.debug('not generate, decompress dbgz: %s', dbgz_path)
+            use_fsync2 = False  # disable fsync for workdir
             InfoDB.decompress_copy(dbgz_path, db_path, bufsize, use_fsync2)
             # NOTE: slow
             # infodb = InfoDB(db_path)
