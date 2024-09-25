@@ -4340,14 +4340,26 @@ class GfptarProgram(Program):
                                         dry_run=self.dry_run)
         else:
             tmp_url_direct = tmp_url
-        target_host = self.select_a_target_host(tmp_url, serial)
 
         def remove(gfurl):
             if gfurl.exists():
                 gfurl.remove()
 
-        atexit.register(remove, tmp_url_direct)
         remove(tmp_url_direct)
+        try:
+            return self.create_a_tar_process2(gen, serial, tardb,
+                                              input_queue, output_queue,
+                                              tmp_url, tmp_url_direct,
+                                              filelist, out_urlstr)
+        except Exception:
+            remove(tmp_url_direct)
+            raise
+
+    def create_a_tar_process2(self, gen, serial, tardb,
+                              input_queue, output_queue,
+                              tmp_url, tmp_url_direct,
+                              filelist, out_urlstr):
+        target_host = self.select_a_target_host(tmp_url, serial)
         tar_tmp = GfTarFile.create_open(tmp_url, self.bufsize,
                                         use_fsync=self.use_fsync,
                                         target_host=target_host,
@@ -4444,7 +4456,6 @@ class GfptarProgram(Program):
         else:
             tar_size = tmp_url.size()
         tmp_url_direct.rename(out_urlstr)
-        atexit.unregister(remove)
 
         dbgz_urlstr = self.outdir_url.url_join(db_name)
         InfoDB.compress_copy(infodb.db.filename, dbgz_urlstr,
@@ -5419,20 +5430,22 @@ class InfoDB:
                 gfurl.remove()
 
         remove(dbgz_url_tmp)
-        atexit.register(remove, dbgz_url_tmp)
-        with dbgz_url_tmp.writeopen(use_fsync=use_fsync) as outf:
-            proc = Compress.compress(Compress.gzip_prog, outf)
-            with db_url.readopen() as inf:
-                shutil.copyfileobj(inf, proc.stdin, bufsize)
-            proc.stdin.close()
-            ret = proc.wait()
-            if ret != 0:
-                raise GfException('{}: returncode={}'.format(
-                    ' '.join(proc.args), ret))
+        try:
+            with dbgz_url_tmp.writeopen(use_fsync=use_fsync) as outf:
+                proc = Compress.compress(Compress.gzip_prog, outf)
+                with db_url.readopen() as inf:
+                    shutil.copyfileobj(inf, proc.stdin, bufsize)
+                proc.stdin.close()
+                ret = proc.wait()
+                if ret != 0:
+                    raise GfException('{}: returncode={}'.format(
+                        ' '.join(proc.args), ret))
+            # atomic operation to avoid leaving junk files
+            dbgz_url_tmp.rename(out_dbgz_path)
+        except Exception:
+            remove(dbgz_url_tmp)
+            raise
 
-        # atomic operation to avoid leaving junk files
-        dbgz_url_tmp.rename(out_dbgz_path)
-        atexit.unregister(remove)
         logger.debug('created(.db.gz): %s', out_dbgz_path)
         if move:
             db_url.remove()
