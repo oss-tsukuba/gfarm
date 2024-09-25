@@ -75,8 +75,8 @@ def humanize_number(num, binary_prefix=False):
     else:  # SI prefix
         units = ['', 'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y']
         base = Decimal(1000)
-    if num < base:
-        return str(int(num))
+    if num < base and isinstance(num, int):
+        return str(num)
     n = Decimal(num)
     ulen = len(units) - 1
     scale = 0
@@ -84,11 +84,12 @@ def humanize_number(num, binary_prefix=False):
         n /= base
         scale += 1
     if n < 10:
-        d = n.quantize(Decimal('0.000'), rounding=ROUND_DOWN)
-    elif n < 100:
         d = n.quantize(Decimal('0.00'), rounding=ROUND_DOWN)
-    elif n < 1000:
+    elif n < 100:
         d = n.quantize(Decimal('0.0'), rounding=ROUND_DOWN)
+    elif n < 1000:
+        d = n.quantize(Decimal('0'), rounding=ROUND_DOWN)
+        d = f" {d}"
     else:
         d = n.quantize(Decimal('0'), rounding=ROUND_DOWN)
     return f"{d}{units[scale]}"
@@ -2326,16 +2327,20 @@ class TestGfptar(unittest.TestCase):
         return suite
 
     def test_humanize(self):
-        self.assertEqual(humanize_number(0.1), '0')
-        self.assertEqual(humanize_number(1.9), '1')
+        self.assertEqual(humanize_number(0.001), '0.00')
+        self.assertEqual(humanize_number(0.1), '0.10')
+        self.assertEqual(humanize_number(10.11), '10.1')
+        self.assertEqual(humanize_number(100.11), ' 100')
         self.assertEqual(humanize_number(1023, binary_prefix=True), '1023')
-        self.assertEqual(humanize_number(1024, binary_prefix=True), '1.000Ki')
+        self.assertEqual(humanize_number(1024, binary_prefix=True), '1.00Ki')
+        self.assertEqual(humanize_number(1), '1')
         self.assertEqual(humanize_number(999), '999')
-        self.assertEqual(humanize_number(1000), '1.000k')
-        self.assertEqual(humanize_number(99999), '99.99k')
-        self.assertEqual(humanize_number(100000), '100.0k')
-        self.assertEqual(humanize_number(1900000), '1.900M')
-        self.assertEqual(humanize_number(2000000), '2.000M')
+        self.assertEqual(humanize_number(1000), '1.00k')
+        self.assertEqual(humanize_number(99999), '99.9k')
+        self.assertEqual(humanize_number(100000), ' 100k')
+        self.assertEqual(humanize_number(999999), ' 999k')
+        self.assertEqual(humanize_number(1000000), '1.00M')
+        self.assertEqual(humanize_number(6100000000000000000), '6.10E')
 
     def test_unhumanize(self):
         self.assertEqual(unhumanize_number('999'), 999)
@@ -2764,6 +2769,7 @@ class GfptarProgram(Program):
 
     def test_main_short(self):
         self.test_init()
+        # self.test_unit()
         self.test_opt_pattern(full=False)
         self.test_member()
         self.test_update_append_exclude()
@@ -4947,15 +4953,15 @@ class GfptarProgram(Program):
             selected_size_str = self._humanize(self.selected_size)
             sys.stdout.write(f"\r{name}: "
                              f"{selected_size_str}/{total_size_str}B "
-                             f"{selected_num_str}/{total_num_str}E "
+                             f"{selected_num_str}/{total_num_str}Ent "
                              f"{sec_str} "
-                             f"{ent_per_sec_str}E/s")
+                             f"{ent_per_sec_str}Ent/s")
         else:
             sys.stdout.write(f"\r{name}: "
                              f"{total_size_str}B "
-                             f"{total_num_str}E "
+                             f"{total_num_str}Ent "
                              f"{sec_str} "
-                             f"{ent_per_sec_str}E/s")
+                             f"{ent_per_sec_str}Ent/s")
 
     def progress_for_infodb(self, now):
         sec = now - self.start_time
@@ -4980,9 +4986,9 @@ class GfptarProgram(Program):
             sys.stdout.write(f"\r{name}: "
                              f"{current_tar_num_str}/{total_tar_num_str}(DB) "
                              f"{current_size_str}B "
-                             f"{current_ent_num_str}E "
+                             f"{current_ent_num_str}Ent "
                              f"{sec_str} "
-                             f"{ent_per_sec_str}E/s")
+                             f"{ent_per_sec_str}Ent/s")
         else:
             name = 'load-db'
             sys.stdout.write(f"\r{name}: "
@@ -5022,10 +5028,10 @@ class GfptarProgram(Program):
         ent_per_sec_str = self._humanize(ent_per_sec)
         sys.stdout.write(f"\r{self.cmd_name}: {percent_str}% "
                          f"{stored_size_str}/{sel_size_str}B "
-                         f"{stored_num_str}/{sel_num_str}/{total_num_str}E "
+                         f"{stored_num_str}/{sel_num_str}/{total_num_str}Ent "
                          f"{sec_str} "
                          f"{bytes_per_sec_str}B/s "
-                         f"{ent_per_sec_str}E/s")
+                         f"{ent_per_sec_str}Ent/s")
 
     # lock required
     def progress_for_extract(self, now):
@@ -5056,10 +5062,10 @@ class GfptarProgram(Program):
         name = "extract"
         sys.stdout.write(f"\r{name}: {percent_str}% "
                          f"{extracted_size_str}/{total_size_str}B "
-                         f"{extracted_num_str}/{total_num_str}E "
+                         f"{extracted_num_str}/{total_num_str}Ent "
                          f"{sec_str} "
                          f"{bytes_per_sec_str}B/s "
-                         f"{ent_per_sec_str}E/s")
+                         f"{ent_per_sec_str}Ent/s")
 
     def cmd_list_simple(self, indir):
         return self.cmd_list(indir, verbose=False)
