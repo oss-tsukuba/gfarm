@@ -5794,7 +5794,7 @@ Options:
   -q, --quiet               Quiet messages.
   -v, --verbose             Verbose output.
   -d, --debug               Debug mode.
-  -h, --help                Show this help and exit.
+  -?, --help                Show this help and exit.
 
 Usage:
   {f} [options] [--exclude=PATTERN]... -c OUTDIR [-C DIR] [--] MEMBER...
@@ -5806,7 +5806,7 @@ Usage:
   {f} [options] --test
   {f} [options] --test -C DIR MEMBER...
   {f} [options] --test-long
-  {f} -h | --help
+  {f} -? | --help
 """.format(f=progname, tempdir=tempfile.gettempdir())
 
 
