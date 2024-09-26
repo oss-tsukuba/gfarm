@@ -248,19 +248,17 @@ class FileAttr2(DBObj):
                    array[4], array[5], array[6])
 
 
-class FileAttr3(DBObj):
+class Mtime(DBObj):
     def __init__(self, mtime):
         self.mtime = mtime
 
     @classmethod
     def dumps(cls, obj, for_dict):
-        array = [obj.mtime]
-        return json.dumps(array, separators=(',', ':'))
+        return str(obj.mtime)
 
     @classmethod
     def loads(cls, key, txt, for_dict):
-        array = json.loads(txt)
-        return cls(array[0])
+        return cls(int(txt))
 
 
 # Abstract
@@ -2570,6 +2568,7 @@ class GfptarProgram(Program):
         self.bufsize = self.opt['--bufsize']
         self.use_fsync = not self.opt['--disable-fsync']
         self.gen_db = self.opt['--generate-db']
+        self.merge_db_for_update = self.opt['--merge-db-for-update']
 
         self.workdir = self.opt['--workdir']
         euid = os.geteuid()
@@ -3703,10 +3702,12 @@ class GfptarProgram(Program):
         max_serial = 0
         max_gen = 0
         suffix = None
+
+        # self.merge_db_for_update is True
         mtime_db_idx = 0
         fattr_dict = None
         num_entries = 0
-        MAX_ENTRIES = 10000000  # limit for performance of SQLite3
+        MAX_ENTRIES = self.merge_db_for_update
         for serial, gen, tar_path, dbgz_path, db_path in \
                 self.list_tar_dbgz_db(self.outdir_url, sort=True,
                                       progress=self.progress_enabled):
@@ -3720,22 +3721,29 @@ class GfptarProgram(Program):
                 broken_count += 1
                 continue
             suffix = self.suffix_check(suffix, tar_path)
-            if fattr_dict is None or num_entries >= MAX_ENTRIES:
-                tmpdb_path = os.path.join(self.tmpdir.name,
-                                          f"mtime-{mtime_db_idx}.db")
-                db = DB(tmpdb_path)
-                fattr_dict = DBDict(db, FileAttr3, 'mtime')
+            if MAX_ENTRIES > 0:
+                # limit for performance of SQLite3
+                if fattr_dict is None or num_entries >= MAX_ENTRIES:
+                    tmpdb_path = os.path.join(self.tmpdir.name,
+                                              f"mtime-{mtime_db_idx}.db")
+                    db = DB(tmpdb_path)
+                    fattr_dict = DBDict(db, Mtime, 'mtime')
+                    self.fattr_dict_list.append(fattr_dict)
+                    mtime_db_idx += 1
+                    num_entries = 0
+                for path, fattr in InfoDB.list_entries_from_db(
+                        db_path, resolve_ugmap=False):
+                    if self.is_canceled():
+                        raise self.error_canceled()
+                    fattr_dict[path] = Mtime(fattr.mtime)
+                    num_entries += 1
+                logger.debug('os.remove: %s', db_path)
+                os.remove(db_path)
+            else:
+                db = DB(db_path)
+                fattr_dict = DBDict(db, FileAttr2, InfoDB.TABLE_ENTRY)
                 self.fattr_dict_list.append(fattr_dict)
-                mtime_db_idx += 1
-                num_entries = 0
-            for path, fattr in InfoDB.list_entries_from_db(
-                    db_path, resolve_ugmap=False):
-                if self.is_canceled():
-                    raise self.error_canceled()
-                fattr_dict[path] = FileAttr3(fattr.mtime)
-                num_entries += 1
-            logger.debug('os.remove: %s', db_path)
-            os.remove(db_path)
+
         self.start_time = time.time()
         self.next_time = self.start_time + self.progress_interval
         self.cmd_create_common(max_serial + 1, max_gen + 1, infiles)
@@ -5692,46 +5700,47 @@ Limitations:
     (For the upper limit, see the output of `ulimit -n -H`)
 
 Options:
-  -c, --create=OUTDIR       Create tar files in OUTDIR from MEMBERs
-  -r, --append=OUTDIR       Append files (create new tar files)
-  -u, --update=OUTDIR       Append files newer than same entries in tar files
-                            (--workdir with sufficient space is required)
+  -c, --create=OUTDIR       Create tar files in OUTDIR from MEMBERs.
+  -r, --append=OUTDIR       Append files. (create new tar files)
+  -u, --update=OUTDIR       Append files newer than same entries in tar files.
+                            (Sufficient space for --workdir is required)
                             (About 300MiB is used per 1000000 entries)
       --resume=OUTDIR       Same as --update
   -x, --extract=OUTDIR      Extract all members or specified MEMBERs
-                            from INDIR to OUTDIR
-  -t, --list=DIR            List the members of DIR
+                            from INDIR to OUTDIR.
+  -t, --list=DIR            List the members of DIR.
                             (--verbose to see more details)
   -C, --basedir=DIR         Change to directory for MEMBERs [default: .]
-  --exclude=PATTERN         Exclude files matching wildcard patterns
-                            (https://docs.python.org/ja/3/library/fnmatch.html)
+  --exclude=PATTERN         Exclude files matching wildcard patterns.
                             (ex. --exclude=*.txt)
                             (ex. --exclude=*/dirname/*)
                             (ex. --exclude=*/??_abcde.pdf)
+                            (https://docs.python.org/ja/3/library/fnmatch.html)
   -X, --exclude-from=FILE   Exclude files matching wildcard patterns listed
-                            in FILE
-  --workdir=DIR             Local directory for temporary files
+                            in FILE.
+  --workdir=DIR             Local directory for temporary files.
                             (default: {tempdir})
-  -j, --jobs=NUM            The number of jobs to copy per tar file in parallel
+  -j, --jobs=NUM            The number of jobs to copy per tar file
+                            in parallel.
                             [default: 4]
-  -s, --size=BYTES          Maximum assumed size per output file
+  -s, --size=BYTES          Maximum assumed size per output file.
                             [default: 200Mi]
-  --ratio=RATIO             Assumed compression ratio (%) [default: 50]
+  --ratio=RATIO             Assumed compression ratio (%). [default: 50]
   --max-entries-per-tar=NUM
-                            The maximum number of entries per tar file
-                            (Too many entries in a tar may use a lot of memory,
-                             and may work slowly)
+                            The maximum number of entries per tar file.
+                            Too many entries in a tar may use a lot of memory,
+                            and may work slowly.
                             [default: 100k]
-  -T, --type=TYPE           Compression type and tar file suffix
-                              - gz : use gzip  (*.tar.gz)
-                              - bz2: use bzip2 (*.tar.bz2)
-                              - xz : use xz    (*.tar.xz)
-                              - no : no compression (*.tar)
-                              - (other): --use-compress-program is required
+  -T, --type=TYPE           Compression type and tar file suffix.
+                                gz : use gzip  (*.tar.gz)
+                                bz2: use bzip2 (*.tar.bz2)
+                                xz : use xz    (*.tar.xz)
+                                no : no compression (*.tar)
+                                (other): --use-compress-program is required
                             [default: gz]
   -I, --use-compress-program=COMMAND
                             Command to compress or decompress tar files
-                            when using --type other than gz, bz2 or xz
+                            when using --type other than gz, bz2 or xz.
                             (The command must accept -d option to decompress)
                             (ex. lz4, lzip, lzop)
   --gzip-program=COMMAND    gzip command  (ex. pigz)   [default: gzip]
@@ -5739,18 +5748,29 @@ Options:
   --xz-program=COMMAND      xz command (ex. environment XZ_OPT="-T4" for speed)
                             [default: xz]
   --generate-db             Regenerate gfptar*_info.db.gz
-  --same-owner              Extract files with the same ownership
+  --same-owner              Extract files with the same ownership.
                             (for euid=0 on local, or gfarmroot on Gfarm)
   --disable-gfarm-command   Disable the use of gfreg and gfexport
-                            for tar files on gfarm2fs
-  --disable-fsync           disable calling fsync() before close()
-  --gfsched-interval=SEC    Interval of updating candidate hosts to write
+                            for tar files on gfarm2fs.
+  --disable-fsync           disable calling fsync() before close().
+  --gfsched-interval=SEC    Interval of updating candidate hosts to write.
                             (for Gfarm URL only) [default: 120]
-  --progress-interval=SEC   Interval of updating progress [default: 1.0]
-  --encoding=CODEC          Codec for filename encoding
+  --progress-interval=SEC   Interval of updating progress. [default: 1.0]
+  --encoding=CODEC          Codec for filename encoding.
              (https://docs.python.org/3/library/codecs.html#standard-encodings)
                             [default: utf-8]
-  --bufsize=BYTES           Buffer size to copy [default: 1Mi]
+  --bufsize=BYTES           Buffer size to copy. [default: 1Mi]
+  --merge-db-for-update=NUM
+                            The maximum number of entries in temporary DB
+                            for --update.  If the specified number is large,
+                            *.db.gz file are merged to fewer files
+                            on --workdir.  If there are a lot of *.db.gz
+                            files, using this option will improve comparison
+                            performance for --update.
+                            However, if there are a lot of entries
+                            in tar files, the merge cost may be higher than
+                            file comparison cost.
+                            (0 = not merged) [default: 1M]
   --progress-unit=TYPE      Unit for progress
                               - si: SI prefix
                               - bin: Binary prefix
@@ -5763,18 +5783,18 @@ Options:
   --test-workdir-local=DIR  Local directory for test [default: /tmp]
   --test-workdir-gfarm=DIR  Gfarm directory for test [default: gfarm:/tmp]
                             (A path in gfarm2fs can be specified)
-  --dummy-num=NUM           The number of dummy input entries for --create
-                            (ignore MEMBER arguments)
-                            (create 1000 files and directories per 1 unit)
-                            (default: disabled)
+  --dummy-num=NUM           The number of dummy input entries for --create.
+                            (MEMBER arguments are ignored.)
+                            (1000 files are created per directory)
+                            (default: disabled) (ex. 1M)
   --dummy-size-min=BYTES    Minimum size of dummy files [default: 0]
   --dummy-size-max=BYTES    Maximum size of dummy files [default: 0]
   --debug-sleep=SEC         Sleep time per file for debug [default: 0.0]
-  --dry-run                 Not create output files
-  -q, --quiet               Quiet messages
-  -v, --verbose             Verbose output
-  -d, --debug               Debug mode
-  -?, -h, --help            Show this help and exit
+  --dry-run                 Not create output files.
+  -q, --quiet               Quiet messages.
+  -v, --verbose             Verbose output.
+  -d, --debug               Debug mode.
+  -h, --help                Show this help and exit.
 
 Usage:
   {f} [options] [--exclude=PATTERN]... -c OUTDIR [-C DIR] [--] MEMBER...
@@ -5813,6 +5833,7 @@ _schema = Schema({
     '--disable-gfarm-command': bool,
     '--disable-fsync': bool,
     '--gfsched-interval': Use(int),
+    '--merge-db-for-update': Use(unhumanize_number),
     '--generate-db': bool,
     '--same-owner': bool,
     '--workdir': Or(str, None),
