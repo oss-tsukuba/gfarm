@@ -5777,10 +5777,10 @@ Options:
                             in tar files, the merge cost may be higher than
                             file comparison cost.
                             (0 = not merged) [default: 1M]
-  --progress-unit=TYPE      Unit for progress
-                              - si: SI prefix
-                              - bin: Binary prefix
-                              - raw: no conversion
+  --progress-unit=TYPE      Unit type for progress
+                                si : SI prefix
+                                bin: Binary prefix
+                                raw: no conversion
                             [default: si]
   --memory=BYTES            Upper limit of memory size (bytes)
                             (default: no limit) (ex. 2Gi)
