@@ -5648,45 +5648,50 @@ progname = os.path.basename(__file__)
 __doc__ = """
 gfptar - archive files in parallel
 
-Example of --create (Gfarm to Gfarm):
+Example of --create (Local to Gfarm):
   Command line:
-    gfptar -c gfarm:/home/user1/out -C gfarm:/home/user1 ./dir
-  Input files (any files):
-    gfarm:/home/user1/dir/test0000.data
+    gfptar -c gfarm:/home/gfuser1/out1 -C /home/user1 ./dir1
+
+  Input files (in /home/user1):
+    dir1/test0000.data
     ...
-    gfarm:/home/user1/dir/test9999.data
+    dir1/test9999.data
+
   Output files:
-    gfarm:/home/user1/out/0001_dir_test0000.data..dir_test0999.data.tar.gz
-    gfarm:/home/user1/out/g1_0001_gfptar.db.gz
+    gfarm:/home/gfuser1/out1/0001_dir_test0000.data..dir_test0999.data.tar.gz
+    gfarm:/home/gfuser1/out1/g1_0001_gfptar.db.gz
     ...
-    gfarm:/home/user1/out/0010_dir_test9000.data..dir_test9999.data.tar.gz
-    gfarm:/home/user1/out/g1_0010_gfptar.db.gz
-  Contents of gMM_NN_gfptar.db.gz file (SQLite3 and gzip):
-    MM: the generation number for each append operation
-    NN: the serial number
-    table 'path_entry': map of path name to JSON string
-      json.dumps([ file_mode (int), mtime (int),
-                   user_unique_id (int), group_unique_id (int),
-                   size (int), symlink_path, file_type (D,F,S) ]
-      file_type 'D': directory
-      file_type 'F': file
-      file_type 'S': symbolic link
-    table 'user_map' : map of unique id (not uid) to user name
-    table 'group_map': map of unique id (not gid) to group name
+    gfarm:/home/gfuser1/out1/0010_dir_test9000.data..dir_test9999.data.tar.gz
+    gfarm:/home/gfuser1/out1/g1_0010_gfptar.db.gz
 
 Example of --extract (Gfarm to Local):
   Command line:
-    gfptar -x /home/user1/out2 gfarm:/home/user1/gfptar-dir
+    gfptar -x /home/user1/dir2 gfarm:/home/gfuser1/out1
+
   Output files:
-    /home/user1/out2/dir/test0000.data
+    /home/user1/dir2/dir1/test0000.data
     ...
-    /home/user1/out2/dir/test9999.data
+    /home/user1/dir2/dir1/test9999.data
+
+Contents of gMM_NN_gfptar.db.gz file (SQLite3 and gzip):
+  MM: the generation number for each append operation
+  NN: the serial number
+  table 'path_entry': map of path name to JSON string
+    json.dumps([ file_mode (int), mtime (int),
+                 user_unique_id (int), group_unique_id (int),
+                 size (int), symlink_path, file_type (D,F,S) ]
+    file_type 'D': directory
+    file_type 'F': file
+    file_type 'S': symbolic link
+  table 'user_map' : map of unique id (not uid) to user name
+  table 'group_map': map of unique id (not gid) to group name
 
 SI prefix or Binary prefix:
   SI prefix:
     - 1k  = 10^3 = 1000^1 (kilo) (not K)
     - 1M  = 10^6 = 1000^2 (mega)
     - ...
+
   Binary prefix:
     - 1Ki = 2^10 = 1024^1 (kibi)
     - 1Mi = 2^20 = 1024^2 (mebi)
@@ -5696,8 +5701,9 @@ Limitations:
   - Hard links are not preserved.
   - File names cannot include newline characters.
   - Subsecond (less than a second) for mtime is not preserved.
-  - --update: If many *.db.gz files exists, input files may not be appended.
-    (For the upper limit, see the output of `ulimit -n -H`)
+  - --merge-db-for-update=0 --update: If many *.db.gz files exists,
+    input files may not be appended.  (For the upper limit, see the
+    output of `ulimit -n -H`)
 
 Options:
   -c, --create=OUTDIR       Create tar files in OUTDIR from MEMBERs.
