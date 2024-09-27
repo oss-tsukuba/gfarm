@@ -6,7 +6,7 @@
 
 <refentry id="gfptar.1">
 
-<refentryinfo><date>29 Jan 2023</date></refentryinfo>
+<refentryinfo><date>27 Sep 2024</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfptar</refentrytitle>
@@ -43,6 +43,22 @@
   <arg choice="plain" rep="norepeat">-t <replaceable>indir</replaceable></arg>
 </cmdsynopsis>
 
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfptar</command>
+  <arg choice="opt" rep="norepeat">OPTIONS</arg>
+  <arg choice="plain" rep="norepeat">-r <replaceable>outdir</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-C <replaceable>basedir</replaceable></arg>
+  <arg choice="plain" rep="repeat"><replaceable>member</replaceable></arg>
+</cmdsynopsis>
+
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfptar</command>
+  <arg choice="opt" rep="norepeat">OPTIONS</arg>
+  <arg choice="plain" rep="norepeat">-u <replaceable>outdir</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-C <replaceable>basedir</replaceable></arg>
+  <arg choice="plain" rep="repeat"><replaceable>member</replaceable></arg>
+</cmdsynopsis>
+
 </refsynopsisdiv>
 
 <!-- body begins here -->
@@ -51,9 +67,9 @@
 
 <para>
   <command moreinfo="none">gfptar</command>
-  creates archive files to Gfarm, or extracts files from archive files on Gfarm.
-  The archive files consist of multiple tar files and list files of archived members in a directory.
-  Creation or extraction is performed in parallel for each tar file in a directory for archive.
+  creates archive files to Gfarm or local file system, or extracts the archive files.
+  The archive files consist of multiple tar files and database files in a directory.
+  Creation or extraction is performed in parallel for each tar file.
 </para>
 
 </refsect1>
@@ -63,7 +79,8 @@
 
 <varlistentry>
   <term><option>-c(--create)</option> <parameter moreinfo="none">outdir</parameter>
-    <option>-C(--basedir)</option> <parameter moreinfo="none">basedir</parameter> <parameter moreinfo="none">member...</parameter>
+    [<option>-C(--basedir)</option> <parameter moreinfo="none">basedir</parameter>]
+    <parameter moreinfo="none">member...</parameter>
   </term>
   <listitem>
     <para>
@@ -95,6 +112,31 @@
   <listitem>
     <para>
       List the contents of archive files in <parameter moreinfo="none">indir</parameter>.
+    </para>
+  </listitem>
+</varlistentry>
+
+<varlistentry>
+  <term><option>-r(--append)</option> <parameter moreinfo="none">outdir</parameter>
+    [<option>-C(--basedir)</option> <parameter moreinfo="none">basedir</parameter>]
+    <parameter moreinfo="none">member...</parameter>
+  </term>
+  <listitem>
+    <para>
+      Append archive files in <parameter moreinfo="none">outdir</parameter> directory.
+    </para>
+  </listitem>
+</varlistentry>
+
+<varlistentry>
+  <term><option>-u(--update)</option> <parameter moreinfo="none">outdir</parameter>
+    [<option>-C(--basedir)</option> <parameter moreinfo="none">basedir</parameter>]
+    <parameter moreinfo="none">member...</parameter>
+  </term>
+  <listitem>
+    <para>
+      Append archive files with newer files
+      in existing <parameter moreinfo="none">outdir</parameter> directory.
     </para>
   </listitem>
 </varlistentry>
@@ -136,6 +178,12 @@
 </refsect1>
 
 <refsect1 id="options"><title>OPTIONS</title>
+
+<para>
+  The primary options are listed below.
+  For additional options, please refer to <command moreinfo="none">gfptar --help</command>.
+</para>
+
 <variablelist>
 
 <varlistentry>
@@ -161,13 +209,13 @@
     for each group of files divided by the assumed size calculated considering the assumed compression ratio (--ratio option).
   </para>
   <para>
-    The default value is 200M (200 * 1024^2 = 209715200) (200 MiB).
+    The default value is 200Mi (200 * 1024^2 = 209715200) (200 mebibytes).
   </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-r, --ratio=</option><parameter moreinfo="none">RATIO</parameter></term>
+<term><option>--ratio=</option><parameter moreinfo="none">RATIO</parameter></term>
 <listitem>
   <para>
     Specifies the assumed compression ratio in percentage for <option>--create</option>.
@@ -187,9 +235,6 @@
     "bz2" means bzip2 type (suffix is .tar.bz2).
     "xz" means xz type (suffix is .tar.xz).
     "no" means no compression.
-  </para>
-  <para>
-    This option is unnecessary for --extract (determine type automatically).
   </para>
   <para>
     The default value is gz.
@@ -236,7 +281,7 @@
 </varlistentry>
 
 <varlistentry>
-<term><option>-?, -h, --help</option></term>
+<term><option>-?, --help</option></term>
 <listitem>
 <para>
   Displays a list of command options.
@@ -292,6 +337,9 @@
 </refsect1>
 
 <refsect1 id="see-also"><title>SEE ALSO</title>
+<para>
+  <command moreinfo="none">gfptar --help</command>
+</para>
 <para>
   <citerefentry>
   <refentrytitle>gfreg</refentrytitle><manvolnum>1</manvolnum>
