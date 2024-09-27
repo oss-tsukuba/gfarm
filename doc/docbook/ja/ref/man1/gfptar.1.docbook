@@ -6,7 +6,7 @@
 
 <refentry id="gfptar.1">
 
-<refentryinfo><date>29 Jan 2023</date></refentryinfo>
+<refentryinfo><date>27 Sep 2024</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfptar</refentrytitle>
@@ -43,6 +43,22 @@
   <arg choice="plain" rep="norepeat">-t <replaceable>indir</replaceable></arg>
 </cmdsynopsis>
 
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfptar</command>
+  <arg choice="opt" rep="norepeat">OPTIONS</arg>
+  <arg choice="plain" rep="norepeat">-r <replaceable>outdir</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-C <replaceable>basedir</replaceable></arg>
+  <arg choice="plain" rep="repeat"><replaceable>member</replaceable></arg>
+</cmdsynopsis>
+
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfptar</command>
+  <arg choice="opt" rep="norepeat">OPTIONS</arg>
+  <arg choice="plain" rep="norepeat">-u <replaceable>outdir</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-C <replaceable>basedir</replaceable></arg>
+  <arg choice="plain" rep="repeat"><replaceable>member</replaceable></arg>
+</cmdsynopsis>
+
 </refsynopsisdiv>
 
 <!-- body begins here -->
@@ -51,9 +67,9 @@
 
 <para>
 <command moreinfo="none">gfptar</command>
-は、アーカイブファイルをGfarm上に作成します。また、そのアーカイブファイルからファイルを抽出します。
-作成されるアーカイブファイルは、ディレクトリの中に複数のtarファイルと複数のファイル一覧のファイルで構成されます。
-アーカイブの作成または抽出処理を、アーカイブ用ディレクトリ内のtarファイルごとに並列でおこないます。
+は、アーカイブファイルをGfarmまたはローカルファイルシステムに作成します。または、そのアーカイブファイルからファイルを抽出します。
+作成されるアーカイブファイルは、一つのディレクトリの中に、複数のtarファイルと複数のデータベースファイルで構成されます。
+アーカイブの作成または抽出処理を、tarファイルごとに並列でおこないます。
 </para>
 
 </refsect1>
@@ -63,7 +79,8 @@
 
 <varlistentry>
   <term><option>-c(--create)</option> <parameter moreinfo="none">outdir</parameter>
-    <option>-C(--basedir)</option> <parameter moreinfo="none">basedir</parameter> <parameter moreinfo="none">member...</parameter>
+    [<option>-C(--basedir)</option> <parameter moreinfo="none">basedir</parameter>]
+    <parameter moreinfo="none">member...</parameter>
   </term>
   <listitem>
     <para>
@@ -96,6 +113,30 @@
   <listitem>
     <para>
       <parameter moreinfo="none">inidir</parameter> ディレクトリにあるアーカイブ群の内容一覧を表示します。
+    </para>
+  </listitem>
+</varlistentry>
+
+<varlistentry>
+  <term><option>-r(--append)</option> <parameter moreinfo="none">outdir</parameter>
+    [<option>-C(--basedir)</option> <parameter moreinfo="none">basedir</parameter>]
+    <parameter moreinfo="none">member...</parameter>
+  </term>
+  <listitem>
+    <para>
+      <parameter moreinfo="none">outdir</parameter> に、既存アーカイブファイル群を含むディレクトリを指定し、アーカイブファイルを追加します。
+    </para>
+  </listitem>
+</varlistentry>
+
+<varlistentry>
+  <term><option>-u(--update)</option> <parameter moreinfo="none">outdir</parameter>
+    [<option>-C(--basedir)</option> <parameter moreinfo="none">basedir</parameter>]
+    <parameter moreinfo="none">member...</parameter>
+  </term>
+  <listitem>
+    <para>
+      <parameter moreinfo="none">outdir</parameter> に、アーカイブファイル群を含むディレクトリを指定し、既存ファイルよりも新しいファイルのみを格納したアーカイブファイル追加します。
     </para>
   </listitem>
 </varlistentry>
@@ -137,6 +178,12 @@
 </refsect1>
 
 <refsect1 id="options"><title>OPTIONS</title>
+
+<para>
+  主なオプションは以下の通りです。
+  その他オプションは <command moreinfo="none">gfptar --help</command> を参照してください。
+</para>
+
 <variablelist>
 
 <varlistentry>
@@ -160,13 +207,13 @@
   仮定圧縮率(別オプション --ratio)を考慮して計算された想定サイズで分割されたファイル群ごとにアーカイブファイルを作成します。
 </para>
 <para>
-  デフォルト値は 200M (200 * 1024^2 = 209715200) (200 メビバイト) です。
+  デフォルト値は 200Mi (200 * 1024^2 = 209715200) (200 メビバイト) です。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-r, --ratio=</option><parameter moreinfo="none">RATIO</parameter></term>
+<term><option>--ratio=</option><parameter moreinfo="none">RATIO</parameter></term>
 <listitem>
 <para>
   アーカイブを作成時に、分割されるアーカイブファイルの仮定圧縮率(%)を指定します。
@@ -181,13 +228,10 @@
 <term><option>-T, --type=</option><parameter moreinfo="none">TYPE</parameter></term>
 <listitem>
 <para>
-  アーカイブを作成時に、圧縮する形式を指定します。
+  アーカイブ新規作成時(--create)の圧縮形式を指定します。
   gz は gzip、bz2 は bzip2、xz は xz 形式で圧縮されます。
-  拡張子もそれぞれ tar.gz, tar.bz2, tar,xz になります。
+  拡張子はそれぞれ tar.gz, tar.bz2, tar.xz になります。
   no を指定すると圧縮しません。
-</para>
-<para>
-  抽出時にこのオプションは使用されず、形式が自動で認識されます。
 </para>
 <para>
   デフォルト値は gz です。
@@ -201,7 +245,7 @@
 <para>
   アーカイブを作成時または抽出時に、圧縮・伸張するための外部コマンドを指定します。
   作成されるアーカイブファイルの拡張子を <option>--type</option> オプションで指定します。
-  抽出時にはそのコマンドに -d オプションが指定されます。
+  抽出時にはその外部コマンドに -d オプションが指定されます。
 </para>
 </listitem>
 </varlistentry>
@@ -234,7 +278,7 @@
 </varlistentry>
 
 <varlistentry>
-<term><option>-?, -h, --help</option></term>
+<term><option>-?, --help</option></term>
 <listitem>
 <para>
   コマンドオプションを出力します。
@@ -292,6 +336,9 @@
 </refsect1>
 
 <refsect1 id="see-also"><title>SEE ALSO</title>
+<para>
+  <command moreinfo="none">gfptar --help</command>
+</para>
 <para>
   <citerefentry>
   <refentrytitle>gfreg</refentrytitle><manvolnum>1</manvolnum>
