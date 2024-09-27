@@ -5773,10 +5773,10 @@ Options:
                             on --workdir.  If there are a lot of *.db.gz
                             files, using this option will improve comparison
                             performance for --update.
-                            However, if there are a lot of entries
-                            in tar files, the merge cost may be higher than
-                            file comparison cost.
-                            (0 = not merged) [default: 1M]
+                            However, when there are few input files and
+                            many existing files in tar files, the merge cost
+                            may be higher than file comparison cost.
+                            (0 = not merged) [default: 100M]
   --progress-unit=TYPE      Unit type for progress
                                 si : SI prefix
                                 bin: Binary prefix
