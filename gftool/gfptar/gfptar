@@ -65,7 +65,9 @@ def format_seconds(seconds, minhour=False):
         return f"{seconds:.0f}s({minutes:.1f}m)"
     else:
         hours = seconds / 3600
-        return f"{seconds:.0f}s({hours:.1f}h)"
+        # Prevent the string from being shortened
+        # ex. '1.1h' -> ' 1.1h'
+        return f"{seconds:.0f}s({hours:4.1f}h)"
 
 
 def humanize_number(num, binary_prefix=False):
@@ -84,13 +86,18 @@ def humanize_number(num, binary_prefix=False):
         n /= base
         scale += 1
     if n < 10:
+        # ex. '1.23'
         d = n.quantize(Decimal('0.00'), rounding=ROUND_DOWN)
     elif n < 100:
+        # ex. '12.3'
         d = n.quantize(Decimal('0.0'), rounding=ROUND_DOWN)
     elif n < 1000:
         d = n.quantize(Decimal('0'), rounding=ROUND_DOWN)
+        # Prevent the string from being shortened
+        # ex. ' 123'
         d = f" {d}"
     else:
+        # ex. '1234'
         d = n.quantize(Decimal('0'), rounding=ROUND_DOWN)
     return f"{d}{units[scale]}"
 
