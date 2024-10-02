@@ -11,7 +11,10 @@ ENV TZ=${TZ}
 
 ARG USE_GCT_SRC=0
 
-RUN yes | unminimize \
+RUN apt-get update \
+    && apt-get -y install \
+    unminimize \
+    && yes | unminimize \
     && apt-get update \
     && apt-get -y upgrade \
     && apt-get -y install \
