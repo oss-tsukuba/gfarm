@@ -117,14 +117,6 @@ proxy: http://PROXY-SERVER-NAME:PROXY-PORT-NUMBER/
 </PRE>
 Modify "PROXY-SERVER-NAME" and "PROXY-PORT-NUMBER" as appropriate.
 
-<P>
-On Ubuntu, authentication to gfsd may fail due to the error
-"unable to open Berkeley db /etc/sasldb2: Permission denied".
-This is a workaround for this error.
-<PRE>
-% sudo chown _gfarmfs /etc/sasldb2
-</PRE>
-
 <H3>Gfarm configuration</H3>
 
 Add the following settings to gfmd.conf for gfmd,
@@ -151,6 +143,13 @@ When the user name in SASL (SASL-username) and Gfarm (Gfarm-username)
 is different, register SASL user name as follows.
 <PRE>
 % gfuser -A Gfarm-username SASL SASL-username
+</PRE>
+
+<P>
+To use ANONYMOUS mechanism, create an anonymous user in Gfarm as
+follows.
+<PRE>
+% gfuser -c anonymous anon / ""
 </PRE>
 
 <HR>
