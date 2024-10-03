@@ -41,10 +41,10 @@ This section is an option only for VS Code users.
     % docker compose down
 
 If the gfarm source repository is not clean, link errors may happen during the `all.sh` execution.  In this case, clean the repository.
-```
-   % cd ~/gfarm
-   % git clean -dxf
-```
+
+    % cd ~/gfarm
+    % git clean -dxf
+
 When you would like to execute `all.sh` (or `all-rpm.sh`) again, execute `unconfig.sh`.
 
 When you change the source code, execute `docker/dist/install.sh -m` in the top source directory and `restart.sh`.
