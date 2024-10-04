@@ -3759,7 +3759,7 @@ class GfptarProgram(Program):
                     mtime_db_idx += 1
                     num_entries = 0
                 for path, fattr in InfoDB.list_entries_from_db(
-                        db_path, resolve_ugmap=False):
+                        db_path, resolve_ugmap=False, sort=None):
                     if self.is_canceled():
                         raise self.error_canceled()
                     fattr_dict[path] = Mtime(fattr.mtime)
@@ -4624,7 +4624,7 @@ class GfptarProgram(Program):
                 error_num += 1
                 continue
             for path, fattr in InfoDB.list_entries_from_db(
-                    db_path, resolve_ugmap=False):
+                    db_path, resolve_ugmap=False, sort=None):
                 if self.is_canceled():
                     raise self.error_canceled()
                 size = fattr.size
@@ -5640,7 +5640,7 @@ class InfoDB:
         return db_path, dbgz_path, num, size
 
     @staticmethod
-    def list_entries_from_db(db_path, resolve_ugmap=False):
+    def list_entries_from_db(db_path, resolve_ugmap=False, sort='ASC'):
         db = DB(db_path)
         has_error = False
         try:
@@ -5655,7 +5655,7 @@ class InfoDB:
                     user_dict_mem[k] = v
                 for k, v in group_dict.items():
                     group_dict_mem[k] = v
-            for path, fattr in fattr_dict.iterator(sort='ASC'):
+            for path, fattr in fattr_dict.iterator(sort=sort):
                 if resolve_ugmap:
                     # unique id -> name
                     fattr.user = user_dict_mem.get(fattr.user, '???')
