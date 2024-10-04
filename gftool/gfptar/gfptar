@@ -2571,6 +2571,7 @@ class GfptarProgram(Program):
         self.tmpdir = None
         self.test_mode = False
         self.worker_list = []  # (started, process, inq, outq)
+        self.progress_enabled = True
 
     def options_init(self):
         self.log_init()
@@ -3626,7 +3627,7 @@ class GfptarProgram(Program):
 
     TABLE_tar_entry = 'tar_entry'
 
-    def cmd_create_init(self, cmd_name, outdir, basedir):
+    def cmd_create_init(self, cmd_name, outdir, basedir, infiles):
         self.cmd_name = cmd_name
         self.options_init()
         logger.debug('create start: outdir=%s, basedir=%s', outdir, basedir)
@@ -3670,12 +3671,38 @@ class GfptarProgram(Program):
         self.create_job_init()  # before starting threads
         self.fattr_dict_list = []  # to compare mtime for --update
 
+        self.infiles_checked = set()
+        for infile in infiles:
+            # infile_url = GfURL.init(infile)
+            # if not infile_url.is_local():
+            #     raise GfException('specifying a relative path is required '
+            #                       'instead of a URL: ' + infile)
+            # NOTE: allow members named gfarm:* (ex. gfarm:/tmp/gfarm:abc)
+            infile_url = GfURL.init(infile, local=True)
+            infile = infile_url.path  # normalize and ignore scheme
+            # normalized: ex. .///abc -> ./abc
+            infile = infile.lstrip('/')  # relative path only
+            if infile.startswith('./'):
+                infile = infile[2:]
+            if infile == '' or infile == '.':
+                raise GfException('specifying current directory (.) '
+                                  + 'as members is not allowed: ' + infile)
+            if infile == '..' or infile.startswith('../'):
+                raise GfException('specifying parent directory (..) '
+                                  + 'as members is not allowed: ' + infile)
+
+            url_str = os.path.join(self.basedir_url.url_str, infile)
+            url = GfURL.init(url_str)
+            if not url.exists():
+                raise FileNotFoundError(url_str)
+            self.infiles_checked.add(infile)
+
     def cmd_create(self, outdir, basedir, infiles):
-        self.cmd_create_init('create', outdir, basedir)
+        self.cmd_create_init('create', outdir, basedir, infiles)
         self.outdir_url.create_new_dir()
         serial = 1
         gen = 1
-        self.cmd_create_common(serial, gen, infiles)
+        self.cmd_create_common(serial, gen)
 
     def error_type_mismatch(self, suffix, tar_path):
         return GfptarError(f"Compression type mismatch ({suffix}): {tar_path}")
@@ -3698,7 +3725,7 @@ class GfptarProgram(Program):
         return suffix
 
     def cmd_append(self, outdir, basedir, infiles):
-        self.cmd_create_init('append', outdir, basedir)
+        self.cmd_create_init('append', outdir, basedir, infiles)
         if not self.outdir_url.exists():
             raise FileNotFoundError(outdir)
         max_serial = 0
@@ -3711,10 +3738,10 @@ class GfptarProgram(Program):
             if gen > max_gen:
                 max_gen = gen
             suffix = self.suffix_check(suffix, tar_path)
-        self.cmd_create_common(max_serial + 1, max_gen + 1, infiles)
+        self.cmd_create_common(max_serial + 1, max_gen + 1)
 
     def cmd_update(self, outdir, basedir, infiles):
-        self.cmd_create_init('update', outdir, basedir)
+        self.cmd_create_init('update', outdir, basedir, infiles)
         if not self.outdir_url.exists():
             raise FileNotFoundError(outdir)
 
@@ -3771,39 +3798,18 @@ class GfptarProgram(Program):
 
         self.start_time = time.time()
         self.next_time = self.start_time + self.progress_interval
-        self.cmd_create_common(max_serial + 1, max_gen + 1, infiles)
+        self.cmd_create_common(max_serial + 1, max_gen + 1)
         if broken_count > 0:
             raise GfptarError("Some .tar.* or .db.gz are broken:"
                               f" count={broken_count}")
 
-    def cmd_create_common(self, serial, gen, infiles):
+    def cmd_create_common(self, serial, gen):
         if self.compress_type == Compress.TYPE_NO:
             self.split_size = self.assumed_size
             self.suffix = '.tar'
         else:
             self.split_size = self.assumed_size * 100 / self.ratio
             self.suffix = '.tar.' + self.compress_type
-
-        infiles_checked = set()
-        for infile in infiles:
-            # infile_url = GfURL.init(infile)
-            # if not infile_url.is_local():
-            #     raise GfException('specifying a relative path is required '
-            #                       'instead of a URL: ' + infile)
-            # NOTE: allow members named gfarm:* (ex. gfarm:/tmp/gfarm:abc)
-            infile_url = GfURL.init(infile, local=True)
-            infile = infile_url.path  # normalize and ignore scheme
-            # normalized: ex. .///abc -> ./abc
-            infile = infile.lstrip('/')  # relative path only
-            if infile.startswith('./'):
-                infile = infile[2:]
-            if infile == '' or infile == '.':
-                raise GfException('specifying current directory (.) '
-                                  + 'as members is not allowed: ' + infile)
-            if infile == '..' or infile.startswith('../'):
-                raise GfException('specifying parent directory (..) '
-                                  + 'as members is not allowed: ' + infile)
-            infiles_checked.add(infile)
 
         def listdir_switch(gfurl):
             if self.dummy_num is not None:
@@ -3864,7 +3870,7 @@ class GfptarProgram(Program):
         if self.progress_enabled:
             self.progress_for_create(self.start_time)
 
-        for infile in infiles_checked:
+        for infile in self.infiles_checked:
             if self.is_canceled():
                 logger.debug('Canceled (listdir 1): serial=%d', serial)
                 break
@@ -3938,6 +3944,8 @@ class GfptarProgram(Program):
                 break  # from loop of infiles_checked
             except Exception as e2:
                 cannot_read_dir += 1
+                if self.progress_enabled:
+                    logger.warning('')
                 logger.warning('%s: error while reading directory (%s)',
                                gfurl.url_str, convert_message(e2))
                 self.print_trace(e2)
@@ -3978,7 +3986,7 @@ class GfptarProgram(Program):
             print('compression ratio: %.2f%% (%d/%d)' %
                   (100 * self.archived_size / self.stored_size,
                    self.archived_size, self.stored_size))
-        if self.selected_num == 0:
+        if self.selected_num == 0 and self.cmd_name == 'update':
             print('No files were updated.')
         if has_error is not None:
             raise has_error
