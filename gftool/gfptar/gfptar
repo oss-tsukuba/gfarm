@@ -2733,8 +2733,6 @@ class GfptarProgram(Program):
                 self.cmd_append(outdir, basedir, infiles)
 
             outdir = self.opt['--update']
-            if not outdir:
-                outdir = self.opt['--resume']
             if outdir:
                 basedir = self.opt['--basedir']
                 infiles = self.opt['MEMBER']
@@ -5737,12 +5735,14 @@ Limitations:
 
 Options:
   -c, --create=OUTDIR       Create tar files in OUTDIR from MEMBERs.
-  -r, --append=OUTDIR       Append files. (create new tar files)
-  -u, --update=OUTDIR       Append files newer than same entries in tar files.
+  -r, --append=OUTDIR       Append files to new tar files.
+  -u, --update=OUTDIR       Append only files (to new tar files) newer than
+                            same entries in existing tar files.
+                            This option can also be used to resume operation
+                            after interruption (including errors).
                             (Sufficient space for --workdir is required)
-                            (About 300MiB is used per 1000000 entries)
-      --resume=OUTDIR       Same as --update
-  -x, --extract=OUTDIR      Extract all members or specified MEMBERs
+                            (About 300MiB is used per existing 1000000 entries)
+  -x, --extract=OUTDIR      Extract all entries or specified MEMBERs
                             from INDIR to OUTDIR.
   -t, --list=DIR            List the members of DIR.
                             (--verbose to see more details)
@@ -5839,7 +5839,6 @@ Usage:
   {f} [options] [--exclude=PATTERN]... -c OUTDIR [-C DIR] [--] MEMBER...
   {f} [options] [--exclude=PATTERN]... -r OUTDIR [-C DIR] [--] MEMBER...
   {f} [options] [--exclude=PATTERN]... -u OUTDIR [-C DIR] [--] MEMBER...
-  {f} [options] [--exclude=PATTERN]... --resume OUTDIR [-C DIR] [--] MEMBER...
   {f} [options] [--exclude=PATTERN]... -x OUTDIR [--] INDIR [MEMBER...]
   {f} [options] -t DIR
   {f} [options] --test
@@ -5857,7 +5856,6 @@ _schema = Schema({
     '--create': Or(str, None),
     '--append': Or(str, None),
     '--update': Or(str, None),
-    '--resume': Or(str, None),
     '--basedir': Or(str, None),
     '--exclude': Or([str], None),
     '--exclude-from': Or(str, None),
