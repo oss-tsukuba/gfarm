@@ -634,6 +634,21 @@ def logger_init_without_lock(name, loglevel=logging.WARNING,
     return logger
 
 
+def get_max_openfiles():
+    _, hard_lim = resource.getrlimit(resource.RLIMIT_NOFILE)
+    return hard_lim
+
+
+def update_max_openfiles():
+    soft_lim, hard_lim = resource.getrlimit(resource.RLIMIT_NOFILE)
+    logger.info(f"current soft RLIMIT_NOFILE: {soft_lim}")
+    logger.info(f"current hard RLIMIT_NOFILE: {hard_lim}")
+    new_soft_lim = hard_lim
+    resource.setrlimit(resource.RLIMIT_NOFILE, (new_soft_lim, hard_lim))
+    soft_lim, hard_lim = resource.getrlimit(resource.RLIMIT_NOFILE)
+    logger.info(f"new soft RLIMIT_NOFILE: {soft_lim}")
+
+
 _encoding = sys.getfilesystemencoding()
 
 
@@ -2575,8 +2590,10 @@ class GfptarProgram(Program):
         self.bufsize = self.opt['--bufsize']
         self.use_fsync = not self.opt['--disable-fsync']
         self.gen_db = self.opt['--generate-db']
-        self.merge_db_for_update = self.opt['--merge-db-for-update']
-
+        self.enable_tempdb_aggregation \
+            = not self.opt['--disable-tempdb-aggregation']
+        self.max_tempdb_aggregation \
+            = self.opt['--max-entries-for-tempdb-aggregation']
         self.workdir = self.opt['--workdir']
         euid = os.geteuid()
         # Temporary files are removed when the process exits.
@@ -2602,14 +2619,6 @@ class GfptarProgram(Program):
         self.memory_limit = self.opt['--memory']
         if self.memory_limit is not None:
             self.set_memory_limit(self.memory_limit)
-
-        soft_lim, hard_lim = resource.getrlimit(resource.RLIMIT_NOFILE)
-        logger.info(f"current soft RLIMIT_NOFILE: {soft_lim}")
-        logger.info(f"current hard RLIMIT_NOFILE: {hard_lim}")
-        new_soft_lim = hard_lim
-        resource.setrlimit(resource.RLIMIT_NOFILE, (new_soft_lim, hard_lim))
-        soft_lim, hard_lim = resource.getrlimit(resource.RLIMIT_NOFILE)
-        logger.info(f"new soft RLIMIT_NOFILE: {soft_lim}")
 
         self.compress_type = self.opt['--type']
         self.compress_prog = self.opt['--use-compress-program']
@@ -3656,7 +3665,7 @@ class GfptarProgram(Program):
 
         self.cannot_be_archived = 0
         self.create_job_init()  # before starting threads
-        self.fattr_dict_list = []
+        self.fattr_dict_list = []  # to compare mtime for --update
 
     def cmd_create(self, outdir, basedir, infiles):
         self.cmd_create_init('create', outdir, basedir)
@@ -3705,16 +3714,23 @@ class GfptarProgram(Program):
         self.cmd_create_init('update', outdir, basedir)
         if not self.outdir_url.exists():
             raise FileNotFoundError(outdir)
+
+        # To open all DB files at the same time
+        update_max_openfiles()
+
         broken_count = 0
         max_serial = 0
         max_gen = 0
         suffix = None
-
-        # self.merge_db_for_update is True
-        mtime_db_idx = 0
         fattr_dict = None
+
+        mtime_db_idx = 0
         num_entries = 0
-        MAX_ENTRIES = self.merge_db_for_update
+        if self.enable_tempdb_aggregation:
+            MAX_ENTRIES = self.max_tempdb_aggregation
+        else:
+            MAX_ENTRIES = 0
+
         for serial, gen, tar_path, dbgz_path, db_path in \
                 self.list_tar_dbgz_db(self.outdir_url, sort=True,
                                       progress=self.progress_enabled):
@@ -3729,7 +3745,6 @@ class GfptarProgram(Program):
                 continue
             suffix = self.suffix_check(suffix, tar_path)
             if MAX_ENTRIES > 0:
-                # limit for performance of SQLite3
                 if fattr_dict is None or num_entries >= MAX_ENTRIES:
                     tmpdb_path = os.path.join(self.tmpdir.name,
                                               f"mtime-{mtime_db_idx}.db")
@@ -5664,7 +5679,7 @@ Example of --create (Local to Gfarm):
     ...
     dir1/test9999.data
 
-  Output files:
+  Output files in archive directory:
     gfarm:/home/gfuser1/out1/0001_dir_test0000.data..dir_test0999.data.tar.gz
     gfarm:/home/gfuser1/out1/g1_0001_gfptar.db.gz
     ...
@@ -5674,6 +5689,9 @@ Example of --create (Local to Gfarm):
 Example of --extract (Gfarm to Local):
   Command line:
     gfptar -x /home/user1/dir2 gfarm:/home/gfuser1/out1
+
+  Input archive directory:
+    gfarm:/home/gfuser1/out1
 
   Output files:
     /home/user1/dir2/dir1/test0000.data
@@ -5708,9 +5726,6 @@ Limitations:
   - Hard links are not preserved.
   - File names cannot include newline characters.
   - Subsecond (less than a second) for mtime is not preserved.
-  - --merge-db-for-update=0 --update: If many *.db.gz files exists,
-    input files may not be appended.  (For the upper limit, see the
-    output of `ulimit -n -H`)
 
 Options:
   -c, --create=OUTDIR       Create tar files in OUTDIR from MEMBERs.
@@ -5765,7 +5780,7 @@ Options:
                             (for euid=0 on local, or gfarmroot on Gfarm)
   --disable-gfarm-command   Disable the use of gfreg and gfexport
                             for tar files on gfarm2fs.
-  --disable-fsync           disable calling fsync() before close().
+  --disable-fsync           Disable calling fsync() before close().
   --gfsched-interval=SEC    Interval of updating candidate hosts to write.
                             (for Gfarm URL only) [default: 120]
   --progress-interval=SEC   Interval of updating progress. [default: 1.0]
@@ -5773,17 +5788,20 @@ Options:
              (https://docs.python.org/3/library/codecs.html#standard-encodings)
                             [default: utf-8]
   --bufsize=BYTES           Buffer size to copy. [default: 1Mi]
-  --merge-db-for-update=NUM
-                            The maximum number of entries in temporary DB
-                            for --update.  If the specified number is large,
-                            *.db.gz file are merged to fewer files
-                            on --workdir.  If there are a lot of *.db.gz
-                            files, using this option will improve comparison
-                            performance for --update.
-                            However, when there are few input files and
-                            many existing files in tar files, the merge cost
-                            may be higher than file comparison cost.
-                            (0 = not merged) [default: 100M]
+  --disable-tempdb-aggregation
+                            This option only effective with --update option.
+                            When there are few files in MEMBERs, this option
+                            may improve the execution speed.
+                            However, if more than about {max_openfiles}
+                            tar files in archive directory exist,
+                            the execution with this option will fail.
+  --max-entries-for-tempdb-aggregation=NUM
+                            This option only effective with --update option.
+                            A larger value is generally recommended
+                            for this option.  However, if the value is
+                            excessively large and there are too many entries
+                            in archive directory, performance may degrade.
+                            [default: 100M]
   --progress-unit=TYPE      Unit type for progress
                                 si : SI prefix
                                 bin: Binary prefix
@@ -5820,7 +5838,9 @@ Usage:
   {f} [options] --test -C DIR MEMBER...
   {f} [options] --test-long
   {f} -? | --help
-""".format(f=progname, tempdir=tempfile.gettempdir())
+""".format(f=progname,
+           tempdir=tempfile.gettempdir(),
+           max_openfiles=get_max_openfiles())
 
 
 _schema = Schema({
@@ -5846,7 +5866,8 @@ _schema = Schema({
     '--disable-gfarm-command': bool,
     '--disable-fsync': bool,
     '--gfsched-interval': Use(int),
-    '--merge-db-for-update': Use(unhumanize_number),
+    '--disable-tempdb-aggregation': bool,
+    '--max-entries-for-tempdb-aggregation': Use(unhumanize_number),
     '--generate-db': bool,
     '--same-owner': bool,
     '--workdir': Or(str, None),
