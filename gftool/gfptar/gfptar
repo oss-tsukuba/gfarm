@@ -5179,14 +5179,17 @@ class GfptarProgram(Program):
 
         if quiet:
             print_func = print_quiet
+            resolve_ugmap = False
         elif verbose:
             print_func = print_verbose
+            resolve_ugmap = True
         else:
             print_func = print_simple
+            resolve_ugmap = False
 
         count = 0
         for serial, gen, ent_path, fattr in self.list_entries(
-                indir_url, resolve_ugmap=True):
+                indir_url, resolve_ugmap=resolve_ugmap):
             if self.is_canceled():
                 break
             print_func(serial, gen, ent_path, fattr)
