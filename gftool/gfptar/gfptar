@@ -2620,7 +2620,12 @@ class GfptarProgram(Program):
         if self.memory_limit is not None:
             self.set_memory_limit(self.memory_limit)
 
-        self.compress_type = self.opt['--type']
+        self.compress_type_specified = self.opt['--type']
+        if self.compress_type_specified is None:
+            self.compress_type = Compress.TYPE_GZIP
+        else:
+            self.compress_type = self.compress_type_specified
+
         self.compress_prog = self.opt['--use-compress-program']
         self.gzip_prog = self.opt['--gzip-program']
         self.xz_prog = self.opt['--xz-program']
@@ -3674,8 +3679,8 @@ class GfptarProgram(Program):
         gen = 1
         self.cmd_create_common(serial, gen, infiles)
 
-    def error_type_mismatch(self, tar_path):
-        return GfptarError(f"Compression type mismatch: {tar_path}")
+    def error_type_mismatch(self, suffix, tar_path):
+        return GfptarError(f"Compression type mismatch ({suffix}): {tar_path}")
 
     def suffix_check(self, suffix, tar_path):
         if suffix is None:
@@ -3691,7 +3696,7 @@ class GfptarProgram(Program):
             Compress.init(self.compress_type, self.compress_prog,
                           self.gzip_prog, self.bzip2_prog, self.xz_prog)
         elif not tar_path.endswith(suffix):
-            raise self.error_type_mismatch(tar_path)
+            raise self.error_type_mismatch(suffix, tar_path)
         return suffix
 
     def cmd_append(self, outdir, basedir, infiles):
@@ -3700,7 +3705,7 @@ class GfptarProgram(Program):
             raise FileNotFoundError(outdir)
         max_serial = 0
         max_gen = 0
-        suffix = None
+        suffix = self.compress_type_specified  # may be None
         tar_list, dbgz_list = self.list_tar_list_dbgz_from_dir(self.outdir_url)
         for serial, gen, tar_path in tar_list:
             if serial > max_serial:
@@ -3721,7 +3726,7 @@ class GfptarProgram(Program):
         broken_count = 0
         max_serial = 0
         max_gen = 0
-        suffix = None
+        suffix = self.compress_type_specified  # may be None
         fattr_dict = None
 
         mtime_db_idx = 0
@@ -5765,7 +5770,7 @@ Options:
                                 xz : use xz    (*.tar.xz)
                                 no : no compression (*.tar)
                                 (other): --use-compress-program is required
-                            [default: gz]
+                            (default: gz)
   -I, --use-compress-program=COMMAND
                             Command to compress or decompress tar files
                             when using --type other than gz, bz2 or xz.
@@ -5856,7 +5861,7 @@ _schema = Schema({
     '--encoding': str,
     '--size': Use(unhumanize_number),
     '--bufsize': Use(unhumanize_number),
-    '--type': str,
+    '--type': Or(str, None),
     '--ratio': Use(int),
     '--jobs': Use(int),
     '--use-compress-program': Or(str, None),
