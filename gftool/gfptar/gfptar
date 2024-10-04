@@ -3774,7 +3774,7 @@ class GfptarProgram(Program):
         self.cmd_create_common(max_serial + 1, max_gen + 1, infiles)
         if broken_count > 0:
             raise GfptarError("Some .tar.* or .db.gz are broken:"
-                              f" num={broken_count}")
+                              f" count={broken_count}")
 
     def cmd_create_common(self, serial, gen, infiles):
         if self.compress_type == Compress.TYPE_NO:
@@ -4743,7 +4743,7 @@ class GfptarProgram(Program):
         self.db.unlink()
         if error_num > 0:
             raise GfptarError("Some .tar.* or .db.gz are broken:"
-                              f" num={error_num}")
+                              f" count={error_num}")
 
     def extract_directories(self, directory_set):
         logger.debug('extract_directories')
@@ -5213,7 +5213,7 @@ class GfptarProgram(Program):
             os.remove(db_path)
         if error_num > 0:
             raise GfptarError("Some .tar.* or .db.gz are broken:"
-                              f" num={error_num}")
+                              f" count={error_num}")
 
     def sort_tar_or_db_list(self, tar_or_db_list):
         def id_key(value):
