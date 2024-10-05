@@ -767,15 +767,22 @@ def convert_message(error):
     if hasattr(error, 'filename') and hasattr(error, 'strerror'):
         if error.filename is not None and error.strerror is not None:
             return f"{error.filename}: {error.strerror}"
-    if isinstance(error, GfException):  # custom errors
-        return str(error)
-    else:
+
+    def to_str(error):
+        if isinstance(error, GfException):  # custom errors
+            return f"gfptar error: {str(error)}"
+        else:
+            return f"{error.__class__.__name__}: {str(error)}"
+
+    message = to_str(error)
+
+    if error.__context__:
         # "During handling of the above exception, another exception occurred"
-        if error.__context__:
-            error = error.__context__
-        # if error.__cause__:
-        #     error = error.__cause__
-        return f"{error.__class__.__name__}: {str(error)}"
+        message += " (Possible cause: " + to_str(error.__context__) + ")"
+    if error.__cause__:
+        # "The above exception was the direct cause of the following exception"
+        message += " (Direct cause: " + to_str(error.__cause__) + ")"
+    return message
 
 
 class Program(metaclass=abc.ABCMeta):
@@ -2280,8 +2287,12 @@ class GfTarFile(tarfile.TarFile):
                 if use_fsync and sync_obj:
                     sync_obj.flush()
                     os.fsync(sync_obj.fileno())
+            for proc_tuple in proc_list:
+                proc, close_obj, sync_obj = proc_tuple
                 if close_obj:
                     close_obj.close()
+            for proc_tuple in proc_list:
+                proc, close_obj, sync_obj = proc_tuple
                 if proc is not None:
                     logger.debug('close external process for tar: %s',
                                  str(proc.args))
@@ -2289,6 +2300,8 @@ class GfTarFile(tarfile.TarFile):
                     if ret != 0:
                         raise GfException('{}: returncode={}'.format(
                             ' '.join(proc.args), ret))
+            for proc_tuple in proc_list:
+                proc, close_obj, sync_obj = proc_tuple
                 if close_obj:
                     post_func = getattr(close_obj, 'post', None)
                     if post_func:
@@ -4192,9 +4205,9 @@ class GfptarProgram(Program):
     def create_a_tar_thread(self, gen, serial, dbfile):
         try:
             self.create_a_tar_thread0(gen, serial, dbfile)
-        except Exception:
+        except Exception as e:
             if self.is_canceled():
-                raise self.error_canceled()
+                raise self.error_canceled() from e
             else:
                 raise
 
@@ -4881,9 +4894,10 @@ class GfptarProgram(Program):
     def extract_from_a_tar(self, index, target, member_set):
         try:
             self.extract_from_a_tar0(index, target, member_set)
-        except Exception:
+        except Exception as e:
             if self.is_canceled():
-                raise self.error_canceled()
+                self.cancel()
+                raise self.error_canceled() from e
             else:
                 raise
 
