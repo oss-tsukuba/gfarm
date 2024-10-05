@@ -3418,7 +3418,7 @@ class GfptarProgram(Program):
                 with url.writeopen(textmode=True,
                                    mode=mode,
                                    mtime=mtime,
-                                   use_fsync=self.use_fsync) as f:
+                                   use_fsync=False) as f:
                     f.write(path + str(mtime))
             elif ftype == self.D:
                 url.mkdir()
@@ -4577,6 +4577,15 @@ class GfptarProgram(Program):
         db_file = os.path.join(tmpdir.name, 'extract.db')
         logger.debug('db_file=%s', db_file)
 
+        # If outdir is gfarm2fs, the path will be converted into Gfarm URL.
+        outdir_url_gf = GfURL.init(outdir, use_gfarm_command=True)
+        if outdir_url_gf.is_local():
+            self.use_fsync_for_x = False  # to improve performance
+            self.outdir_is_local = True
+        else:
+            self.use_fsync_for_x = self.use_fsync
+            self.outdir_is_local = False
+
         # to reduce memory usage
         self.db = DB(db_file, check_same_thread=False)
 
@@ -4749,6 +4758,13 @@ class GfptarProgram(Program):
         self.update_stat_for_directories(directory_set)
         self.db.close()
         self.db.unlink()
+
+        # use sync() instead of applying fsync() to each local file
+        if self.outdir_is_local:
+            logger.debug("sync() START: %f", time.time())
+            os.sync()
+            logger.debug("sync() END  : %f", time.time())
+
         if error_num > 0:
             raise GfptarError("Some .tar.* or .db.gz are broken:"
                               f" count={error_num}")
@@ -4954,7 +4970,7 @@ class GfptarProgram(Program):
                                             mode=tarinfo.mode,
                                             mtime=tarinfo.mtime,
                                             user=user, group=group,
-                                            use_fsync=self.use_fsync,
+                                            use_fsync=self.use_fsync_for_x,
                                             hostname=target_host)
                 finally:
                     inf.close()
