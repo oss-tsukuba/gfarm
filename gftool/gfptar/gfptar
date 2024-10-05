@@ -2729,7 +2729,7 @@ class GfptarProgram(Program):
         return _schema
 
     def _progress_enabled(self):
-        return not self.debug and not self.verbose and not self.quiet
+        return not self.quiet
 
     def run(self):
         try:
@@ -3728,8 +3728,8 @@ class GfptarProgram(Program):
                 self.compress_type = dottype[1]
                 if self.compress_type == 'tar':
                     self.compress_type = Compress.TYPE_NO
-            if self.progress_enabled:
-                logger.info('')
+            if self.verbose:
+                self.progress_newline()
             logger.info(f"recognized type is {self.compress_type}")
             Compress.init(self.compress_type, self.compress_prog,
                           self.gzip_prog, self.bzip2_prog, self.xz_prog)
@@ -3957,8 +3957,7 @@ class GfptarProgram(Program):
                 break  # from loop of infiles_checked
             except Exception as e2:
                 cannot_read_dir += 1
-                if self.progress_enabled:
-                    logger.warning('')
+                self.progress_newline()
                 logger.warning('%s: error while reading directory (%s)',
                                gfurl.url_str, convert_message(e2))
                 self.print_trace(e2)
@@ -3989,7 +3988,7 @@ class GfptarProgram(Program):
 
         if self.progress_enabled:
             self.progress_for_create(time.time())
-            sys.stdout.write('\n')
+            self.progress_newline()
         if self.cannot_be_archived > 0 or cannot_read_dir > 0:
             e = CannotBeArchivedError(self.cannot_be_archived, cannot_read_dir)
             logger.warning(str(e))
@@ -4725,7 +4724,7 @@ class GfptarProgram(Program):
                     self.progress_for_schedule(now)
         if self.progress_enabled:
             self.progress_for_schedule(time.time())
-            sys.stdout.write('\n')
+            self.progress_newline()
         if self.search_target:
             # update for progress
             self.total_num = self.selected_num
@@ -4766,7 +4765,7 @@ class GfptarProgram(Program):
                 self.extract_from_archives(tarlist, member_set)
         if self.progress_enabled:
             self.progress_for_extract(time.time())
-            sys.stdout.write('\n')
+            self.progress_newline()
 
         self.update_stat_for_directories(directory_set)
         self.db.close()
@@ -5040,6 +5039,26 @@ class GfptarProgram(Program):
     def _humanize_raw(self, n):
         return int(n)
 
+    def progress_print(self, msg):
+        if self.debug:
+            logger.debug('Progress: ' + msg)
+        elif self.verbose:
+            self.info('Progress: ' + msg)
+        else:
+            sys.stdout.write("\r")
+            sys.stdout.write(msg)
+            sys.stdout.write("  ")
+
+    def progress_newline(self):
+        if self.debug:
+            pass
+        elif self.verbose:
+            pass
+        elif self.quiet:
+            pass
+        else:
+            sys.stdout.write("\n")
+
     def progress_for_schedule(self, now):
         sec = now - self.start_time
         sec_str = format_seconds(sec, minhour=True)
@@ -5054,17 +5073,18 @@ class GfptarProgram(Program):
         if self.selected_num > 0:
             selected_num_str = self._humanize(self.selected_num)
             selected_size_str = self._humanize(self.selected_size)
-            sys.stdout.write(f"\r{name}: "
-                             f"{selected_size_str}/{total_size_str}B "
-                             f"{selected_num_str}/{total_num_str}Ent "
-                             f"{sec_str} "
-                             f"{ent_per_sec_str}Ent/s")
+            msg = (f"{name}: "
+                   f"{selected_size_str}/{total_size_str}B "
+                   f"{selected_num_str}/{total_num_str}Ent "
+                   f"{sec_str} "
+                   f"{ent_per_sec_str}Ent/s")
         else:
-            sys.stdout.write(f"\r{name}: "
-                             f"{total_size_str}B "
-                             f"{total_num_str}Ent "
-                             f"{sec_str} "
-                             f"{ent_per_sec_str}Ent/s")
+            msg = (f"{name}: "
+                   f"{total_size_str}B "
+                   f"{total_num_str}Ent "
+                   f"{sec_str} "
+                   f"{ent_per_sec_str}Ent/s")
+        self.progress_print(msg)
 
     def progress_for_infodb(self, now):
         sec = now - self.start_time
@@ -5086,17 +5106,18 @@ class GfptarProgram(Program):
         ent_per_sec_str = self._humanize(ent_per_sec)
         if self.gen_db:
             name = 'generate-db'
-            sys.stdout.write(f"\r{name}: "
-                             f"{current_tar_num_str}/{total_tar_num_str}(DB) "
-                             f"{current_size_str}B "
-                             f"{current_ent_num_str}Ent "
-                             f"{sec_str} "
-                             f"{ent_per_sec_str}Ent/s")
+            msg = (f"{name}: "
+                   f"{current_tar_num_str}/{total_tar_num_str}(DB) "
+                   f"{current_size_str}B "
+                   f"{current_ent_num_str}Ent "
+                   f"{sec_str} "
+                   f"{ent_per_sec_str}Ent/s")
         else:
             name = 'load-db'
-            sys.stdout.write(f"\r{name}: "
-                             f"{current_tar_num_str}/{total_tar_num_str}(DB) "
-                             f"{sec_str} ")
+            msg = (f"{name}: "
+                   f"{current_tar_num_str}/{total_tar_num_str}(DB) "
+                   f"{sec_str} ")
+        self.progress_print(msg)
 
     # lock required
     def progress_for_create(self, now):
@@ -5129,12 +5150,13 @@ class GfptarProgram(Program):
         # total_size_str = self._humanize(self.total_size)
         bytes_per_sec_str = self._humanize(bytes_per_sec)
         ent_per_sec_str = self._humanize(ent_per_sec)
-        sys.stdout.write(f"\r{self.cmd_name}: {percent_str}% "
-                         f"{stored_size_str}/{sel_size_str}B "
-                         f"{stored_num_str}/{sel_num_str}/{total_num_str}Ent "
-                         f"{sec_str} "
-                         f"{bytes_per_sec_str}B/s "
-                         f"{ent_per_sec_str}Ent/s")
+        msg = (f"{self.cmd_name}: {percent_str}% "
+               f"{stored_size_str}/{sel_size_str}B "
+               f"{stored_num_str}/{sel_num_str}/{total_num_str}Ent "
+               f"{sec_str} "
+               f"{bytes_per_sec_str}B/s "
+               f"{ent_per_sec_str}Ent/s")
+        self.progress_print(msg)
 
     # lock required
     def progress_for_extract(self, now):
@@ -5163,12 +5185,13 @@ class GfptarProgram(Program):
         bytes_per_sec_str = self._humanize(bytes_per_sec)
         ent_per_sec_str = self._humanize(ent_per_sec)
         name = "extract"
-        sys.stdout.write(f"\r{name}: {percent_str}% "
-                         f"{extracted_size_str}/{total_size_str}B "
-                         f"{extracted_num_str}/{total_num_str}Ent "
-                         f"{sec_str} "
-                         f"{bytes_per_sec_str}B/s "
-                         f"{ent_per_sec_str}Ent/s")
+        msg = (f"{name}: {percent_str}% "
+               f"{extracted_size_str}/{total_size_str}B "
+               f"{extracted_num_str}/{total_num_str}Ent "
+               f"{sec_str} "
+               f"{bytes_per_sec_str}B/s "
+               f"{ent_per_sec_str}Ent/s")
+        self.progress_print(msg)
 
     def cmd_list_simple(self, indir):
         return self.cmd_list(indir, verbose=False)
@@ -5281,8 +5304,7 @@ class GfptarProgram(Program):
                 dbgz_list.append((int(serial), int(gen), path))
                 continue
             if ent.path.endswith(self.LIST_SUFFIX):  # ignore *.lst
-                if self.progress_enabled:
-                    logger.warning('')
+                self.progress_newline()
                 logger.warning(f"NOTICE: {ent.path}:"
                                " This file (*.lst) is no longer needed."
                                " Please remove it.")
@@ -5458,7 +5480,7 @@ class GfptarProgram(Program):
         if progress:
             now = time.time()
             self.progress_for_infodb(now)
-            sys.stdout.write('\n')
+            self.progress_newline()
         if self.save_e:
             raise self.save_e
         if cancel:
