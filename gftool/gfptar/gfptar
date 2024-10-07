@@ -4834,6 +4834,11 @@ class GfptarProgram(Program):
     def update_stat_for_directories(self, directory_set):
         logger.debug('update_stat_for_directories')
         self.clear_canceled()
+
+        self.start_time = time.time()
+        self.next_time = self.start_time + self.progress_interval
+        total = len(directory_set)
+        i = 0
         # DESC: process from leaves
         for d in directory_set.iterator(sort='DESC'):
             if self.is_canceled():
@@ -4851,6 +4856,15 @@ class GfptarProgram(Program):
             else:
                 dir_url.chmod(tarinfo.mode, mtime=tarinfo.mtime)
             self.info('update_stat: {}, mode={}', d, oct(tarinfo.mode))
+            i += 1
+            if self.progress_enabled:
+                now = time.time()
+                if now >= self.next_time:
+                    self.next_time = now + self.progress_interval
+                    self.progress_for_chmod(now, i, total)
+        if self.progress_enabled:
+            self.progress_for_chmod(now, i, total)
+            self.progress_newline()
 
     def extract_from_archives(self, tarlist, member_set):
         self.lock_init(False)
@@ -5190,6 +5204,27 @@ class GfptarProgram(Program):
                f"{extracted_num_str}/{total_num_str}Ent "
                f"{sec_str} "
                f"{bytes_per_sec_str}B/s "
+               f"{ent_per_sec_str}Ent/s")
+        self.progress_print(msg)
+
+    def progress_for_chmod(self, now, current, total):
+        sec = now - self.start_time
+        sec_str = format_seconds(sec, minhour=True)
+        if total > 0:
+            percent = current * 100 / total
+        else:
+            percent = 0
+        percent_str = f"{percent:.0f}"
+        if sec > 0:
+            ent_per_sec = current / sec
+        else:
+            ent_per_sec = 0
+        current_str = self._humanize(current)
+        total_str = self._humanize(total)
+        ent_per_sec_str = self._humanize(ent_per_sec)
+        msg = (f"chmod: {percent_str}% "
+               f"{current_str}/{total_str}Ent "
+               f"{sec_str} "
                f"{ent_per_sec_str}Ent/s")
         self.progress_print(msg)
 
