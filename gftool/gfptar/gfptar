@@ -1873,6 +1873,11 @@ class GfURLLocal(GfURL):
 
     def mkdir(self, mode=0o700, parents=False):
         if parents:
+            try:
+                os.mkdir(self.url_str, mode)
+                return  # OK
+            except FileExistsError:
+                return  # OK
             # Reference: https://docs.python.org/3/library/os.html#os.makedirs
             # Changed in version 3.7: The mode argument no longer
             # affects the file permission bits of newly created
