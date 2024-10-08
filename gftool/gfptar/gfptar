@@ -1878,6 +1878,8 @@ class GfURLLocal(GfURL):
                 return  # OK
             except FileExistsError:
                 return  # OK
+            except Exception:
+                pass
             # Reference: https://docs.python.org/3/library/os.html#os.makedirs
             # Changed in version 3.7: The mode argument no longer
             # affects the file permission bits of newly created
