@@ -4939,6 +4939,7 @@ class GfptarProgram(Program):
     def extract_from_a_tar1(self, index, target, member_set, tar):
         with self.lock():
             members_num = len(member_set)
+        is_local = self.outdir_url.is_local()
         while True:
             if self.is_canceled():
                 logger.debug('Canceled (extract 2): name=%s', target)
@@ -4970,22 +4971,31 @@ class GfptarProgram(Program):
             outurl_str = self.outdir_url.url_join(outfile)
             outurl = GfURL.init(outurl_str, dry_run=self.dry_run)
 
-            # create directories if not exist
-            if tarinfo.isdir():
-                dir_url = outurl
-                dir_path = outurl.path
-            else:
-                dir_url = outurl.parent
-                dir_path = dir_url.path
-            with self.lock():
-                dir_exists = dir_path in self.created_directory_set
-            if not dir_exists:
-                if not dir_url.exists():
-                    with ignore_exception(True):  # may be race condition
+            if is_local:
+                if tarinfo.isdir():
+                    dir_url = outurl
+                else:
+                    dir_url = outurl.parent
+                with ignore_exception(True):  # may be race condition
+                    if not dir_url.exists():
                         dir_url.makedirs()  # default 0700
-                    self.info('created(D): {}', dir_url.url_str)
+            else:  # speed up directory creation for Gfarm using SQLite3
+                # create directories if not exist
+                if tarinfo.isdir():
+                    dir_url = outurl
+                    dir_path = outurl.path
+                else:
+                    dir_url = outurl.parent
+                    dir_path = dir_url.path
                 with self.lock():
-                    self.created_directory_set.add(dir_path)
+                    dir_exists = dir_path in self.created_directory_set
+                if not dir_exists:
+                    if not dir_url.exists():
+                        with ignore_exception(True):  # may be race condition
+                            dir_url.makedirs()  # default 0700
+                        self.info('created(D): {}', dir_url.url_str)
+                    with self.lock():
+                        self.created_directory_set.add(dir_path)
 
             if tarinfo.isfile():
                 target_host = self.select_a_target_host(outurl, index)
