@@ -3779,7 +3779,7 @@ class GfptarProgram(Program):
         if self.enable_tempdb_aggregation:
             MAX_ENTRIES = self.max_tempdb_aggregation
         else:
-            MAX_ENTRIES = 0
+            MAX_ENTRIES = -1
 
         for serial, gen, tar_path, dbgz_path, db_path in \
                 self.list_tar_dbgz_db(self.outdir_url, sort=True,
@@ -3794,8 +3794,9 @@ class GfptarProgram(Program):
                 broken_count += 1
                 continue
             suffix = self.suffix_check(suffix, tar_path)
-            if MAX_ENTRIES > 0:
-                if fattr_dict is None or num_entries >= MAX_ENTRIES:
+            if MAX_ENTRIES >= 0:
+                if fattr_dict is None or \
+                   (MAX_ENTRIES != 0 and num_entries >= MAX_ENTRIES):
                     tmpdb_path = os.path.join(self.tmpdir.name,
                                               f"mtime-{mtime_db_idx}.db")
                     db = DB(tmpdb_path)
@@ -5916,12 +5917,13 @@ Options:
                             tar files in archive directory exist,
                             the execution with this option will fail.
   --max-entries-for-tempdb-aggregation=NUM
+                            The maximum number of entries per working DB file.
                             This option only effective with --update option.
-                            A larger value is generally recommended
-                            for this option.  However, if the value is
-                            excessively large and there are too many entries
-                            in archive directory, performance may degrade.
-                            [default: 100M]
+                            Normally, you don't need to change this value.
+                            If a smaller value is specified, performance
+                            may degrade.
+                            (0: unlimited (using one file as working DB))
+                            [default: 0]
   --progress-unit=TYPE      Unit type for progress
                                 si : SI prefix
                                 bin: Binary prefix
