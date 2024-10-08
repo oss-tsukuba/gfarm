@@ -12,6 +12,10 @@
 # (required: python3-pip)
 # pip3 install --user docopt schema
 
+# Envrionment variables:
+# GFPTAR_ORJSON=True : Use orjson instead of json
+# GFPTAR_UJSON=True  : Use ujson  instead of json
+
 # Coding style check:
 # flake8 ./gfptar
 
@@ -42,7 +46,6 @@ import string
 import random
 from decimal import Decimal, ROUND_DOWN
 import sqlite3
-import json
 import tempfile
 import multiprocessing
 import queue
@@ -56,7 +59,39 @@ from docopt import docopt
 from schema import Schema, Use, Or
 
 
-# library
+def str2bool(s):
+    return s.upper() in ['TRUE', '1', 'ON', 'ENABLE', 'ENABLED']
+
+
+USE_ORJSON = str2bool(os.getenv('GFPTAR_ORJSON', 'False'))
+USE_UJSON = str2bool(os.getenv('GFPTAR_UJSON', 'False'))
+
+try:
+    if USE_ORJSON:
+        import orjson as json
+
+        def _dumps(obj):  # compact
+            return json.dumps(obj).decode()
+
+        json_dumps = _dumps
+    else:
+        raise ImportError()
+except ImportError:
+    try:
+        if USE_UJSON:
+            import ujson as json
+            json_dumps = json.dumps  # compact
+        else:
+            raise ImportError()
+    except ImportError:
+        import json
+
+        def _dumps_compact(obj):
+            return json.dumps(obj, separators=(',', ':'))
+
+        json_dumps = _dumps_compact
+
+
 def format_seconds(seconds, minhour=False):
     if minhour is False:
         return f"{seconds:.0f}s"
@@ -176,7 +211,7 @@ class DBObj:
 class JsonObj(DBObj):
     @classmethod
     def dumps(cls, obj, for_dict):
-        return json.dumps(obj, separators=(',', ':'))
+        return json_dumps(obj)
 
     @classmethod
     def loads(cls, key, txt, for_dict):
@@ -224,7 +259,7 @@ class FileAttr1(DBObj):
     @classmethod
     def dumps(cls, obj, for_dict):
         array = [obj.mode, obj.mtime, obj.user, obj.group]
-        return json.dumps(array, separators=(',', ':'))
+        return json_dumps(array)
 
     @classmethod
     def loads(cls, key, txt, for_dict):
@@ -246,7 +281,7 @@ class FileAttr2(DBObj):
     def dumps(cls, obj, for_dict):
         array = [obj.mode, obj.mtime, obj.user, obj.group,
                  obj.size, obj.linkname, obj.ftype]
-        return json.dumps(array, separators=(',', ':'))
+        return json_dumps(array)
 
     @classmethod
     def loads(cls, key, txt, for_dict):
@@ -861,7 +896,7 @@ class GfURLEntry(DBObj):
         # save path to key when using dict, so don't save path to value
         if not for_dict:
             array.append(obj.path)  # [7]
-        return json.dumps(array, separators=(',', ':'))
+        return json_dumps(array)
 
     @classmethod
     def loads(cls, key, txt, for_dict):
@@ -1390,10 +1425,6 @@ class GfURL(metaclass=abc.ABCMeta):
             return False
         logger.debug('compare_entries: PASS')
         return True
-
-
-def str2bool(s):
-    return s.upper() in ['TRUE', '1', 'ON', 'ENABLE', 'ENABLED']
 
 
 USE_GFMKDIR_PLUS = str2bool(os.getenv('GFMKDIR_PLUS', 'True'))
