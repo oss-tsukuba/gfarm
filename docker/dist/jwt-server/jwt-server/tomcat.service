@@ -1,0 +1,19 @@
+#
+# Systemd unit file for Apache Tomcat
+#
+[Unit]
+Description=Apache Tomcat 10 Web Application Server
+After=network.target
+[Service]
+User=tomcat
+Type=oneshot
+PIDFile=/opt/tomcat/tomcat.pid
+RemainAfterExit=yes
+
+ExecStart=/opt/tomcat/bin/startup.sh
+ExecStop=/opt/tomcat/bin/shutdown.sh
+ExecReStart=/opt/tomcat/bin/shutdown.sh;/opt/tomcat/bin/startup.sh
+
+[Install]
+WantedBy=multi-user.target
+
