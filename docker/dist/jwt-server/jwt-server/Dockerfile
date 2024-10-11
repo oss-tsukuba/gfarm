@@ -21,7 +21,7 @@ COPY jwt-server.conf /etc/httpd/conf.d/
 COPY server.xml /opt/tomcat/conf/
 RUN rm -rf /opt/tomcat/webapps/*
 
-RUN git clone -b dev_oauth2_client https://github.com/oss-tsukuba/jwt-server.git
+RUN git clone https://github.com/oss-tsukuba/jwt-server.git
 
 COPY application.properties /jwt-server/src/main/resources/
 
