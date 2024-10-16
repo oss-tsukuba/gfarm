@@ -1,4 +1,4 @@
-FROM rockylinux/rockylinux:9.3
+FROM rockylinux/rockylinux:9
 
 RUN dnf -y update \
  && dnf -y install \
@@ -7,12 +7,14 @@ RUN dnf -y update \
 RUN alternatives --set java java-21-openjdk.x86_64
 RUN alternatives --set javac java-21-openjdk.x86_64
 
-RUN wget https://dlcdn.apache.org/tomcat/tomcat-10/v10.1.30/bin/apache-tomcat-10.1.30.tar.gz
-RUN tar -xvf apache-tomcat-10.1.30.tar.gz -C /opt
-RUN ln -s /opt/apache-tomcat-10.1.30 /opt/tomcat
+ARG TOMCAT_VER=10.1.31
+
+RUN wget https://dlcdn.apache.org/tomcat/tomcat-10/v$TOMCAT_VER/bin/apache-tomcat-$TOMCAT_VER.tar.gz
+RUN tar -xvf apache-tomcat-$TOMCAT_VER.tar.gz -C /opt
+RUN ln -s /opt/apache-tomcat-$TOMCAT_VER /opt/tomcat
 
 RUN useradd -s /sbin/nologin tomcat
-RUN chown -R tomcat: /opt/apache-tomcat-10.1.30
+RUN chown -R tomcat: /opt/apache-tomcat-$TOMCAT_VER
 RUN sh -c 'chmod +x /opt/tomcat/bin/*.sh'
 
 COPY tomcat.service /etc/systemd/system
