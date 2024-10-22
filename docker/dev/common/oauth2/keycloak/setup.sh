@@ -63,6 +63,8 @@ KCADM=${BINDIR}/kcadm.sh
 REALM=${KEYCLOAK_REALM}
 ADMIN_REALM=${KEYCLOAK_ADMIN_REALM}
 
+/opt/jboss/tools/docker-entrypoint.sh -b 0.0.0.0 &
+
 wait_for_keycloak_to_become_ready ${MY_KEYCLOAK_SERVER}
 
 ### login
