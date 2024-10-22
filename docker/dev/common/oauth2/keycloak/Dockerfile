@@ -6,3 +6,6 @@ RUN microdnf update -y && microdnf install -y jq && microdnf clean all
 
 ADD oauth2/keycloak/setup.sh /setup.sh
 ADD functions.sh /functions.sh
+
+ENTRYPOINT []
+CMD ["/sbin/init"]

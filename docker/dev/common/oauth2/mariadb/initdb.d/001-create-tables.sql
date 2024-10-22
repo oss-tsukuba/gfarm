@@ -34,6 +34,8 @@ CREATE TABLE IF NOT EXISTS `issues` (
   `date` timestamp NULL,
   `ip_addr` varchar(256) DEFAULT NULL,
   `hostname` varchar(256) DEFAULT NULL,
+  `type` int DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `id` (`id`)
 );
+
