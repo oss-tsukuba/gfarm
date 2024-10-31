@@ -161,4 +161,8 @@ jq					(jwt-parse の実行に必要)
 * Kerberos がインストールされていない場合、Kerberos 認証が無効なバイナリが
   構築されます。
 
+* pip (Python Package Installer) パッケージ
+
+orjson		(インストールされていれば gfptar を高速化)
+
 $Id$

@@ -147,4 +147,8 @@ Note
   are missing, it is still possible to build Gfarm without these
   authentication methods.
 
+* pip (Python Package Installer) Package
+
+orjson		(If it is installed, use it to accelerate gfptar)
+
 $Id$
