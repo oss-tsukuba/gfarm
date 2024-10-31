@@ -141,4 +141,8 @@ postgresql, postgresql-client		(config-gfarm の実行に必要)
 libfuse-dev				(gfarm2fs の構築に必要)
 python3, python3-docopt, python3-schema	(gfptar の実行に必要)
 
+* pip (Python Package Installer) パッケージ
+
+orjson		(インストールされていれば gfptar を高速化)
+
 $Id$

@@ -11,10 +11,9 @@
 # --- Or, install to ~/.local just for user's environment ---
 # (required: python3-pip)
 # pip3 install --user docopt schema
-
-# Envrionment variables:
-# GFPTAR_ORJSON=True : Use orjson instead of json
-# GFPTAR_UJSON=True  : Use ujson  instead of json
+#
+# --- To use orjson ---
+# pip3 install --user orjson
 
 # Coding style check:
 # flake8 ./gfptar
@@ -63,33 +62,31 @@ def str2bool(s):
     return s.upper() in ['TRUE', '1', 'ON', 'ENABLE', 'ENABLED']
 
 
-USE_ORJSON = str2bool(os.getenv('GFPTAR_ORJSON', 'False'))
-USE_UJSON = str2bool(os.getenv('GFPTAR_UJSON', 'False'))
+USE_ORJSON = str2bool(os.getenv('GFPTAR_USE_ORJSON', 'True'))
+
+json_dumps = None
+json_loads = None
+json_type = None
 
 try:
     if USE_ORJSON:
-        import orjson as json
+        import orjson
 
-        def _dumps(obj):  # compact
-            return json.dumps(obj).decode()
-
-        json_dumps = _dumps
-    else:
-        raise ImportError()
+        json_dumps = orjson.dumps   # byte array
+        json_loads = orjson.loads
+        json_type = "orjson"
 except ImportError:
-    try:
-        if USE_UJSON:
-            import ujson as json
-            json_dumps = json.dumps  # compact
-        else:
-            raise ImportError()
-    except ImportError:
-        import json
+    pass
 
-        def _dumps_compact(obj):
-            return json.dumps(obj, separators=(',', ':'))
+if json_type is None:
+    import json
 
-        json_dumps = _dumps_compact
+    def _dumps_compact(obj):
+        return json.dumps(obj, separators=(',', ':')).encode()
+
+    json_dumps = _dumps_compact
+    json_loads = json.loads
+    json_type = "json"
 
 
 def format_seconds(seconds, minhour=False):
@@ -215,7 +212,7 @@ class JsonObj(DBObj):
 
     @classmethod
     def loads(cls, key, txt, for_dict):
-        return json.loads(txt)
+        return json_loads(txt)
 
 
 # Example of DBObj
@@ -263,7 +260,7 @@ class FileAttr1(DBObj):
 
     @classmethod
     def loads(cls, key, txt, for_dict):
-        array = json.loads(txt)
+        array = json_loads(txt)
         return cls(array[0], array[1], array[2], array[3])
 
 
@@ -285,7 +282,7 @@ class FileAttr2(DBObj):
 
     @classmethod
     def loads(cls, key, txt, for_dict):
-        array = json.loads(txt)
+        array = json_loads(txt)
         return cls(array[0], array[1], array[2], array[3],
                    array[4], array[5], array[6])
 
@@ -316,6 +313,7 @@ class DBCollection:
             self.create_table()
 
     def obj2txt(self, obj):
+        # byte array
         return self.obj_cls.dumps(obj, self.for_dict)
 
     def txt2obj(self, key, txt):
@@ -351,7 +349,7 @@ class DBDict(DBCollection):
     def create_table(self):
         self.con.execute(f"""
         CREATE TABLE IF NOT EXISTS {self.table_name}
-        (key TEXT PRIMARY KEY, value TEXT)
+        (key TEXT PRIMARY KEY, value BLOB)
         """)
         self.for_dict = True
 
@@ -504,7 +502,7 @@ class DBList(DBCollection):
     def create_table(self):
         self.con.execute(f"""
         CREATE TABLE IF NOT EXISTS {self.table_name}
-        (id INTEGER PRIMARY KEY AUTOINCREMENT, value TEXT)
+        (id INTEGER PRIMARY KEY AUTOINCREMENT, value BLOB)
         """)
         self.for_dict = False
 
@@ -900,7 +898,7 @@ class GfURLEntry(DBObj):
 
     @classmethod
     def loads(cls, key, txt, for_dict):
-        o = json.loads(txt)
+        o = json_loads(txt)
         if for_dict:
             path = key
         else:
@@ -2631,6 +2629,8 @@ class GfptarProgram(Program):
         logger.debug('USE_GFMKDIR_PLUS: %s', USE_GFMKDIR_PLUS)
         logger.debug('USE_GFCHMOD_PLUS: %s', USE_GFCHMOD_PLUS)
         logger.debug('USE_GFREG_PLUS: %s', USE_GFREG_PLUS)
+
+        logger.debug(f'JSON library: {json_type}')
 
         set_encoding(self.opt['--encoding'])
         self.jobs = self.opt['--jobs']
@@ -4902,6 +4902,7 @@ class GfptarProgram(Program):
                     self.next_time = now + self.progress_interval
                     self.progress_for_chmod(now, i, total)
         if self.progress_enabled:
+            now = time.time()
             self.progress_for_chmod(now, i, total)
             self.progress_newline()
 
@@ -5851,7 +5852,7 @@ Example of --extract (Gfarm to Local):
 Contents of gMM_NN_gfptar.db.gz file (SQLite3 and gzip):
   MM: the generation number for each append operation
   NN: the serial number
-  table 'path_entry': map of path name to JSON string
+  table 'path_entry': map of path name to JSON string (BLOB)
     json.dumps([ file_mode (int), mtime (int),
                  user_unique_id (int), group_unique_id (int),
                  size (int), symlink_path, file_type (D,F,S) ]
@@ -5876,6 +5877,13 @@ Limitations:
   - Hard links are not preserved.
   - File names cannot include newline characters.
   - Subsecond (less than a second) for mtime is not preserved.
+
+Envrionment variables:
+  - GFPTAR_USE_ORJSON: Use orjson instead of json.
+    (1 ... enable, 0 ... disable) (default: 1)
+  - GFMKDIR_PLUS
+  - GFCHMOD_PLUS
+  - GFREG_PLUS
 
 Options:
   -c, --create=OUTDIR       Create tar files in OUTDIR from MEMBERs.
