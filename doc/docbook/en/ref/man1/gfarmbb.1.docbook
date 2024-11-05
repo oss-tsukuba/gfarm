@@ -103,6 +103,8 @@ gfarmbb stop.  Default is /tmp/gfarmbb-scratch.
 <term><option>-conf</option> <parameter moreinfo="none">conf_dir</parameter></term>
 <listitem>
 <para>
+This option is only required if -mpi option is specified.
+This option
 specifies a scratch directory that can be shared among compute nodes
 to store temporal configuration files.  If it does not exist, it is
 created.  This directory will be removed by gfarmbb stop.
