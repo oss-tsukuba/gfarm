@@ -2,7 +2,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfarmbb</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
 <a name="gfarmbb.1"></a><div class="titlepage"></div>
@@ -64,6 +64,8 @@ gfarmbb stop.  Default is /tmp/gfarmbb-scratch.
 </p></dd>
 <dt><span class="term"><code class="option">-conf</code> <em class="parameter"><code>conf_dir</code></em></span></dt>
 <dd><p>
+This option is only required if -mpi option is specified.
+This option
 specifies a scratch directory that can be shared among compute nodes
 to store temporal configuration files.  If it does not exist, it is
 created.  This directory will be removed by gfarmbb stop.
