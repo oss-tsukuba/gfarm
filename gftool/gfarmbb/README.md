@@ -7,14 +7,14 @@ node-local storages to exploit node-local storages.
 
 ## How to use
 ```
-gfarmbb -h hostfile -scr /scr/scratch -m /scr/gfarmbb start
+eval `gfarmbb -h hostfile -scr /scr/scratch -m /scr/gfarmbb start`
 ...
 gfarmbb -h hostfile -scr /scr/scratch -m /scr/gfarmbb stop
 ```
 
 ## Usage
 ```
-usage: gfarmbb [-h hostfile] [-scr scratch_dir] [-m mount_point] [options] start | stop
+usage: gfarmbb [-h hostfile] [-scr scratch_dir] [-m mount_point] [options] start | stop | status
 
 options:
         -e
