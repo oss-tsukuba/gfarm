@@ -103,3 +103,26 @@ generates C\-shell commands\&. This option is available only for gfarmbb start\&
 .RS 4
 generates Bourne shell commands\&. This option is available only for gfarmbb start\&. This is default\&.
 .RE
+.SH "ENVIRONMENT VARIABLES"
+.PP
+\fBPRUN_RSH\fR
+.RS 4
+Specifies a remote shell command\&. Default is
+\fBssh\fR\&.
+.RE
+.PP
+\fBPRUN_RCP\fR
+.RS 4
+Specifies a remote copy command\&. When \*(Aqno\*(Aq is specified, use remote shell to copy\&. Default is
+\fBscp \-pr\fR\&.
+.RE
+.PP
+\fBGFARMBB_START_HOOK\fR
+.RS 4
+Specifies a hook program executed on all hosts before creating Gfarm/BB\&.
+.RE
+.PP
+\fBGFARMBB_STOP_HOOK\fR
+.RS 4
+Specifies a hook program executed on all hosts after terminating Gfarm/BB\&.
+.RE

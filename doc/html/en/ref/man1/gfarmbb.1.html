@@ -110,5 +110,18 @@ gfarmbb start.  This is default.
 </p></dd>
 </dl></div>
 </div>
+<div class="refsect1">
+<a name="environment-variables"></a><h2>ENVIRONMENT VARIABLES</h2>
+<div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><code class="envar">PRUN_RSH</code></span></dt>
+<dd><p>Specifies a remote shell command.  Default is <span class="command"><strong>ssh</strong></span>.</p></dd>
+<dt><span class="term"><code class="envar">PRUN_RCP</code></span></dt>
+<dd><p>Specifies a remote copy command.  When 'no' is specified, use remote shell to copy.  Default is <span class="command"><strong>scp -pr</strong></span>.</p></dd>
+<dt><span class="term"><code class="envar">GFARMBB_START_HOOK</code></span></dt>
+<dd><p>Specifies a hook program executed on all hosts before creating Gfarm/BB.</p></dd>
+<dt><span class="term"><code class="envar">GFARMBB_STOP_HOOK</code></span></dt>
+<dd><p>Specifies a hook program executed on all hosts after terminating Gfarm/BB.</p></dd>
+</dl></div>
+</div>
 </div></body>
 </html>

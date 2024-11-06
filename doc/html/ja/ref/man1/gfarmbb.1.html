@@ -109,5 +109,18 @@ Bourneシェルのコマンドを出力します。本オプションはstartの
 </p></dd>
 </dl></div>
 </div>
+<div class="refsect1">
+<a name="environment-variables"></a><h2>ENVIRONMENT VARIABLES</h2>
+<div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><code class="envar">PRUN_RSH</code></span></dt>
+<dd><p>リモートシェルコマンドを指定します。デフォルトは<span class="command"><strong>ssh</strong></span>です。</p></dd>
+<dt><span class="term"><code class="envar">PRUN_RCP</code></span></dt>
+<dd><p>リモートコピーコマンドを指定します。noが指定されるとリモートシェルコマンドを用いてコピーします。デフォルトは<span class="command"><strong>scp -pr</strong></span>です。</p></dd>
+<dt><span class="term"><code class="envar">GFARMBB_START_HOOK</code></span></dt>
+<dd><p>Gfarm/BBを構築する前に全てのホストで実行するプログラムを指定します。</p></dd>
+<dt><span class="term"><code class="envar">GFARMBB_STOP_HOOK</code></span></dt>
+<dd><p>Gfarm/BBを終了した後で全てのホストで実行するプログラムを指定します。</p></dd>
+</dl></div>
+</div>
 </div></body>
 </html>

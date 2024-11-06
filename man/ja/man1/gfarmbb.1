@@ -98,3 +98,24 @@ Cシェルのコマンドを出力します。本オプションはstartの時�
 .RS 4
 Bourneシェルのコマンドを出力します。本オプションはstartの時だけ有 効です。デフォルト設定です。
 .RE
+.SH "ENVIRONMENT VARIABLES"
+.PP
+\fBPRUN_RSH\fR
+.RS 4
+リモートシェルコマンドを指定します。デフォルトは\fBssh\fRです。
+.RE
+.PP
+\fBPRUN_RCP\fR
+.RS 4
+リモートコピーコマンドを指定します。noが指定されるとリモートシェルコマンドを用いてコピーします。デフォルトは\fBscp \-pr\fRです。
+.RE
+.PP
+\fBGFARMBB_START_HOOK\fR
+.RS 4
+Gfarm/BBを構築する前に全てのホストで実行するプログラムを指定します。
+.RE
+.PP
+\fBGFARMBB_STOP_HOOK\fR
+.RS 4
+Gfarm/BBを終了した後で全てのホストで実行するプログラムを指定します。
+.RE
