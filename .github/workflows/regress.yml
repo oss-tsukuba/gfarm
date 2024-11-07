@@ -18,6 +18,7 @@ jobs:
         id: compose
         run: |
           cd docker/dist
+          sh ./minica.sh
           docker compose build --build-arg UID=$(id -u) c1
 
       - name: docker compose up
