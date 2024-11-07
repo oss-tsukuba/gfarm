@@ -21,12 +21,14 @@ This section is an option only for VS Code users.
 - Open Terminal -> New Terminal
 ```
    % cd docker/dist
+   % sh ./minica.sh
 ```
 - follow the instructions below after "(in a container)"
 
 ## Explore on virtual clusters
 
     % cd gfarm/docker/dist
+    % sh ./minica.sh
     % DIST=<distribution> docker compose build --build-arg UID=$(id -u) c1
     % DIST=<distribution> docker compose up -d
     ubuntu, rockylinux9, almalinux8, and centos7 are available as $DIST.  Default is ubuntu
