@@ -7,7 +7,7 @@ cd minica
 
 docker build . -t gfarm-minica
 
-MINICA="docker run -u $(id -u):$(id -g) -it -w /minica -v .:/minica gfarm-minica minica"
+MINICA="docker run -u $(id -u):$(id -g) -w /minica -v .:/minica gfarm-minica minica"
 
 $MINICA -domains keycloak
 $MINICA -domains jwt-server
