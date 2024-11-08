@@ -9,6 +9,14 @@ docker build . -t gfarm-minica
 
 MINICA="docker run -u $(id -u):$(id -g) -w /minica -v .:/minica gfarm-minica minica"
 
-$MINICA -domains keycloak
-$MINICA -domains jwt-server
-$MINICA -domains jwt-server2
+create_key() {
+	HOST=$1
+	$MINICA -domains $HOST
+	chmod go+r *.pem
+	chmod go+rx $HOST
+	chmod go+r $HOST/*.pem
+}
+
+create_key keycloak
+create_key jwt-server
+create_key jwt-server2
