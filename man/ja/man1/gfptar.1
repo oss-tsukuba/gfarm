@@ -2,12 +2,12 @@
 .\"     Title: gfptar
 .\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 29 Jan 2023
+.\"      Date: 27 Sep 2024
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFPTAR" "1" "29 Jan 2023" "Gfarm" "Gfarm"
+.TH "GFPTAR" "1" "27 Sep 2024" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,13 +36,17 @@ gfptar \- ファイルを並列にアーカイブする
 \fBgfptar\fR [OPTIONS] \-x\ \fIoutdir\fR \fIindir\fR [\fImember\fR...]
 .HP \w'\fBgfptar\fR\ 'u
 \fBgfptar\fR [OPTIONS] \-t\ \fIindir\fR
+.HP \w'\fBgfptar\fR\ 'u
+\fBgfptar\fR [OPTIONS] \-r\ \fIoutdir\fR [\-C\ \fIbasedir\fR] \fImember\fR...
+.HP \w'\fBgfptar\fR\ 'u
+\fBgfptar\fR [OPTIONS] \-u\ \fIoutdir\fR [\-C\ \fIbasedir\fR] \fImember\fR...
 .SH "DESCRIPTION"
 .PP
 \fBgfptar\fR
-は、アーカイブファイルをGfarm上に作成します。また、そのアーカイブファイルからファイルを抽出します。 作成されるアーカイブファイルは、ディレクトリの中に複数のtarファイルと複数のファイル一覧のファイルで構成されます。 アーカイブの作成または抽出処理を、アーカイブ用ディレクトリ内のtarファイルごとに並列でおこないます。
+は、アーカイブファイルをGfarmまたはローカルファイルシステムに作成します。または、そのアーカイブファイルからファイルを抽出します。 作成されるアーカイブファイルは、一つのディレクトリの中に、複数のtarファイルと複数のデータベースファイルで構成されます。 アーカイブの作成または抽出処理を、tarファイルごとに並列でおこないます。
 .SH "OPERATION MODE"
 .PP
-\fB\-c(\-\-create)\fR \fIoutdir\fR \fB\-C(\-\-basedir)\fR \fIbasedir\fR \fImember\&.\&.\&.\fR
+\fB\-c(\-\-create)\fR \fIoutdir\fR [\fB\-C(\-\-basedir)\fR \fIbasedir\fR] \fImember\&.\&.\&.\fR
 .RS 4
 \fIoutdir\fR
 ディレクトリを新規に作成し、そのディレクトリにアーカイブファイル群を作成します。
@@ -70,6 +74,18 @@ gfptar \- ファイルを並列にアーカイブする
 \fIinidir\fR
 ディレクトリにあるアーカイブ群の内容一覧を表示します。
 .RE
+.PP
+\fB\-r(\-\-append)\fR \fIoutdir\fR [\fB\-C(\-\-basedir)\fR \fIbasedir\fR] \fImember\&.\&.\&.\fR
+.RS 4
+\fIoutdir\fR
+に、既存アーカイブファイル群を含むディレクトリを指定し、アーカイブファイルを追加します。
+.RE
+.PP
+\fB\-u(\-\-update)\fR \fIoutdir\fR [\fB\-C(\-\-basedir)\fR \fIbasedir\fR] \fImember\&.\&.\&.\fR
+.RS 4
+\fIoutdir\fR
+に、アーカイブファイル群を含むディレクトリを指定し、既存ファイルよりも新しいファイルのみを格納したアーカイブファイル追加します。
+.RE
 .SH "PATH STYLE"
 .PP
 \fIoutdir\fR
@@ -89,6 +105,10 @@ Gfarm のファイルやディレクトリを Gfarm URL で指定します。
 .RE
 .SH "OPTIONS"
 .PP
+主なオプションは以下の通りです。 その他オプションは
+\fBgfptar \-\-help\fR
+を参照してください。
+.PP
 \fB\-j, \-\-jobs=\fR\fINUM\fR
 .RS 4
 複数のアーカイブファイルを作成、または複数のアーカイブファイルから抽出するための最大同時処理数を指定します。
@@ -100,10 +120,10 @@ Gfarm のファイルやディレクトリを Gfarm URL で指定します。
 .RS 4
 アーカイブを作成時に、分割されるアーカイブファイル1個あたりの想定サイズを指定します。 ファイルの内容や圧縮方法によって圧縮率は異なるため、 仮定圧縮率(別オプション \-\-ratio)を考慮して計算された想定サイズで分割されたファイル群ごとにアーカイブファイルを作成します。
 .sp
-デフォルト値は 200M (200 * 1024^2 = 209715200) (200 メビバイト) です。
+デフォルト値は 200Mi (200 * 1024^2 = 209715200) (200 メビバイト) です。
 .RE
 .PP
-\fB\-r, \-\-ratio=\fR\fIRATIO\fR
+\fB\-\-ratio=\fR\fIRATIO\fR
 .RS 4
 アーカイブを作成時に、分割されるアーカイブファイルの仮定圧縮率(%)を指定します。
 .sp
@@ -112,9 +132,7 @@ Gfarm のファイルやディレクトリを Gfarm URL で指定します。
 .PP
 \fB\-T, \-\-type=\fR\fITYPE\fR
 .RS 4
-アーカイブを作成時に、圧縮する形式を指定します。 gz は gzip、bz2 は bzip2、xz は xz 形式で圧縮されます。 拡張子もそれぞれ tar\&.gz, tar\&.bz2, tar,xz になります。 no を指定すると圧縮しません。
-.sp
-抽出時にこのオプションは使用されず、形式が自動で認識されます。
+アーカイブ新規作成時(\-\-create)の圧縮形式を指定します。 gz は gzip、bz2 は bzip2、xz は xz 形式で圧縮されます。 拡張子はそれぞれ tar\&.gz, tar\&.bz2, tar\&.xz になります。 no を指定すると圧縮しません。
 .sp
 デフォルト値は gz です。
 .RE
@@ -123,7 +141,7 @@ Gfarm のファイルやディレクトリを Gfarm URL で指定します。
 .RS 4
 アーカイブを作成時または抽出時に、圧縮・伸張するための外部コマンドを指定します。 作成されるアーカイブファイルの拡張子を
 \fB\-\-type\fR
-オプションで指定します。 抽出時にはそのコマンドに \-d オプションが指定されます。
+オプションで指定します。 抽出時にはその外部コマンドに \-d オプションが指定されます。
 .RE
 .PP
 \fB\-q, \-\-quiet\fR
@@ -141,7 +159,7 @@ Gfarm のファイルやディレクトリを Gfarm URL で指定します。
 デバッグ情報を出力します。
 .RE
 .PP
-\fB\-?, \-h, \-\-help\fR
+\fB\-?, \-\-help\fR
 .RS 4
 コマンドオプションを出力します。
 .RE
@@ -217,6 +235,8 @@ Gfarmにあるアーカイブディレクトリからローカルのディレク
 .\}
 .sp
 .SH "SEE ALSO"
+.PP
+\fBgfptar \-\-help\fR
 .PP
 \fBgfreg\fR(1),
 \fBgfexport\fR(1)

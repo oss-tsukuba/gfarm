@@ -15,21 +15,24 @@
 <div class="cmdsynopsis"><p><code class="command">gfptar</code>  [OPTIONS]  -c <em class="replaceable"><code>outdir</code></em>  [-C <em class="replaceable"><code>basedir</code></em>]  <em class="replaceable"><code>member</code></em>... </p></div>
 <div class="cmdsynopsis"><p><code class="command">gfptar</code>  [OPTIONS]  -x <em class="replaceable"><code>outdir</code></em>   <em class="replaceable"><code>indir</code></em>  [<em class="replaceable"><code>member</code></em>...]</p></div>
 <div class="cmdsynopsis"><p><code class="command">gfptar</code>  [OPTIONS]  -t <em class="replaceable"><code>indir</code></em> </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfptar</code>  [OPTIONS]  -r <em class="replaceable"><code>outdir</code></em>  [-C <em class="replaceable"><code>basedir</code></em>]  <em class="replaceable"><code>member</code></em>... </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfptar</code>  [OPTIONS]  -u <em class="replaceable"><code>outdir</code></em>  [-C <em class="replaceable"><code>basedir</code></em>]  <em class="replaceable"><code>member</code></em>... </p></div>
 </div>
 <div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p>
 <span class="command"><strong>gfptar</strong></span>
-は、アーカイブファイルをGfarm上に作成します。また、そのアーカイブファイルからファイルを抽出します。
-作成されるアーカイブファイルは、ディレクトリの中に複数のtarファイルと複数のファイル一覧のファイルで構成されます。
-アーカイブの作成または抽出処理を、アーカイブ用ディレクトリ内のtarファイルごとに並列でおこないます。
+は、アーカイブファイルをGfarmまたはローカルファイルシステムに作成します。または、そのアーカイブファイルからファイルを抽出します。
+作成されるアーカイブファイルは、一つのディレクトリの中に、複数のtarファイルと複数のデータベースファイルで構成されます。
+アーカイブの作成または抽出処理を、tarファイルごとに並列でおこないます。
 </p>
 </div>
 <div class="refsect1">
 <a name="operation-mode"></a><h2>OPERATION MODE</h2>
 <div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="option">-c(--create)</code> <em class="parameter"><code>outdir</code></em>
-    <code class="option">-C(--basedir)</code> <em class="parameter"><code>basedir</code></em> <em class="parameter"><code>member...</code></em>
+    [<code class="option">-C(--basedir)</code> <em class="parameter"><code>basedir</code></em>]
+    <em class="parameter"><code>member...</code></em>
   </span></dt>
 <dd>
 <p>
@@ -56,6 +59,20 @@
 <dd><p>
       <em class="parameter"><code>inidir</code></em> ディレクトリにあるアーカイブ群の内容一覧を表示します。
     </p></dd>
+<dt><span class="term"><code class="option">-r(--append)</code> <em class="parameter"><code>outdir</code></em>
+    [<code class="option">-C(--basedir)</code> <em class="parameter"><code>basedir</code></em>]
+    <em class="parameter"><code>member...</code></em>
+  </span></dt>
+<dd><p>
+      <em class="parameter"><code>outdir</code></em> に、既存アーカイブファイル群を含むディレクトリを指定し、アーカイブファイルを追加します。
+    </p></dd>
+<dt><span class="term"><code class="option">-u(--update)</code> <em class="parameter"><code>outdir</code></em>
+    [<code class="option">-C(--basedir)</code> <em class="parameter"><code>basedir</code></em>]
+    <em class="parameter"><code>member...</code></em>
+  </span></dt>
+<dd><p>
+      <em class="parameter"><code>outdir</code></em> に、アーカイブファイル群を含むディレクトリを指定し、既存ファイルよりも新しいファイルのみを格納したアーカイブファイル追加します。
+    </p></dd>
 </dl></div>
 </div>
 <div class="refsect1">
@@ -80,6 +97,10 @@
 </div>
 <div class="refsect1">
 <a name="options"></a><h2>OPTIONS</h2>
+<p>
+  主なオプションは以下の通りです。
+  その他オプションは <span class="command"><strong>gfptar --help</strong></span> を参照してください。
+</p>
 <div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="option">-j, --jobs=</code><em class="parameter"><code>NUM</code></em></span></dt>
 <dd>
@@ -98,10 +119,10 @@
   仮定圧縮率(別オプション --ratio)を考慮して計算された想定サイズで分割されたファイル群ごとにアーカイブファイルを作成します。
 </p>
 <p>
-  デフォルト値は 200M (200 * 1024^2 = 209715200) (200 メビバイト) です。
+  デフォルト値は 200Mi (200 * 1024^2 = 209715200) (200 メビバイト) です。
 </p>
 </dd>
-<dt><span class="term"><code class="option">-r, --ratio=</code><em class="parameter"><code>RATIO</code></em></span></dt>
+<dt><span class="term"><code class="option">--ratio=</code><em class="parameter"><code>RATIO</code></em></span></dt>
 <dd>
 <p>
   アーカイブを作成時に、分割されるアーカイブファイルの仮定圧縮率(%)を指定します。
@@ -113,13 +134,10 @@
 <dt><span class="term"><code class="option">-T, --type=</code><em class="parameter"><code>TYPE</code></em></span></dt>
 <dd>
 <p>
-  アーカイブを作成時に、圧縮する形式を指定します。
+  アーカイブ新規作成時(--create)の圧縮形式を指定します。
   gz は gzip、bz2 は bzip2、xz は xz 形式で圧縮されます。
-  拡張子もそれぞれ tar.gz, tar.bz2, tar,xz になります。
+  拡張子はそれぞれ tar.gz, tar.bz2, tar.xz になります。
   no を指定すると圧縮しません。
-</p>
-<p>
-  抽出時にこのオプションは使用されず、形式が自動で認識されます。
 </p>
 <p>
   デフォルト値は gz です。
@@ -129,7 +147,7 @@
 <dd><p>
   アーカイブを作成時または抽出時に、圧縮・伸張するための外部コマンドを指定します。
   作成されるアーカイブファイルの拡張子を <code class="option">--type</code> オプションで指定します。
-  抽出時にはそのコマンドに -d オプションが指定されます。
+  抽出時にはその外部コマンドに -d オプションが指定されます。
 </p></dd>
 <dt><span class="term"><code class="option">-q, --quiet</code></span></dt>
 <dd><p>
@@ -143,7 +161,7 @@
 <dd><p>
   デバッグ情報を出力します。
 </p></dd>
-<dt><span class="term"><code class="option">-?, -h, --help</code></span></dt>
+<dt><span class="term"><code class="option">-?, --help</code></span></dt>
 <dd><p>
   コマンドオプションを出力します。
 </p></dd>
@@ -201,6 +219,9 @@
 </div>
 <div class="refsect1">
 <a name="see-also"></a><h2>SEE ALSO</h2>
+<p>
+  <span class="command"><strong>gfptar --help</strong></span>
+</p>
 <p>
   <span class="citerefentry"><span class="refentrytitle">gfreg</span>(1)</span>,
   <span class="citerefentry"><span class="refentrytitle">gfexport</span>(1)</span>

@@ -15,21 +15,24 @@
 <div class="cmdsynopsis"><p><code class="command">gfptar</code>  [OPTIONS]  -c <em class="replaceable"><code>outdir</code></em>  [-C <em class="replaceable"><code>basedir</code></em>]  <em class="replaceable"><code>member</code></em>... </p></div>
 <div class="cmdsynopsis"><p><code class="command">gfptar</code>  [OPTIONS]  -x <em class="replaceable"><code>outdir</code></em>   <em class="replaceable"><code>indir</code></em>  [<em class="replaceable"><code>member</code></em>...]</p></div>
 <div class="cmdsynopsis"><p><code class="command">gfptar</code>  [OPTIONS]  -t <em class="replaceable"><code>indir</code></em> </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfptar</code>  [OPTIONS]  -r <em class="replaceable"><code>outdir</code></em>  [-C <em class="replaceable"><code>basedir</code></em>]  <em class="replaceable"><code>member</code></em>... </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfptar</code>  [OPTIONS]  -u <em class="replaceable"><code>outdir</code></em>  [-C <em class="replaceable"><code>basedir</code></em>]  <em class="replaceable"><code>member</code></em>... </p></div>
 </div>
 <div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p>
   <span class="command"><strong>gfptar</strong></span>
-  creates archive files to Gfarm, or extracts files from archive files on Gfarm.
-  The archive files consist of multiple tar files and list files of archived members in a directory.
-  Creation or extraction is performed in parallel for each tar file in a directory for archive.
+  creates archive files to Gfarm or local file system, or extracts the archive files.
+  The archive files consist of multiple tar files and database files in a directory.
+  Creation or extraction is performed in parallel for each tar file.
 </p>
 </div>
 <div class="refsect1">
 <a name="operation-mode"></a><h2>OPERATION MODE</h2>
 <div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="option">-c(--create)</code> <em class="parameter"><code>outdir</code></em>
-    <code class="option">-C(--basedir)</code> <em class="parameter"><code>basedir</code></em> <em class="parameter"><code>member...</code></em>
+    [<code class="option">-C(--basedir)</code> <em class="parameter"><code>basedir</code></em>]
+    <em class="parameter"><code>member...</code></em>
   </span></dt>
 <dd>
 <p>
@@ -55,6 +58,21 @@
 <dd><p>
       List the contents of archive files in <em class="parameter"><code>indir</code></em>.
     </p></dd>
+<dt><span class="term"><code class="option">-r(--append)</code> <em class="parameter"><code>outdir</code></em>
+    [<code class="option">-C(--basedir)</code> <em class="parameter"><code>basedir</code></em>]
+    <em class="parameter"><code>member...</code></em>
+  </span></dt>
+<dd><p>
+      Append archive files in <em class="parameter"><code>outdir</code></em> directory.
+    </p></dd>
+<dt><span class="term"><code class="option">-u(--update)</code> <em class="parameter"><code>outdir</code></em>
+    [<code class="option">-C(--basedir)</code> <em class="parameter"><code>basedir</code></em>]
+    <em class="parameter"><code>member...</code></em>
+  </span></dt>
+<dd><p>
+      Append archive files with newer files
+      in existing <em class="parameter"><code>outdir</code></em> directory.
+    </p></dd>
 </dl></div>
 </div>
 <div class="refsect1">
@@ -67,7 +85,7 @@
 <dt><span class="term"><em class="parameter"><code>path-name</code></em></span></dt>
 <dd><p>
       is a relative path or an absolute path of a local file system.
-      When the path is a mount point on gfarm2fs, tar files are copied
+      When the path is a mount point on gfarm2fs, tar files are operated
       without passing through the gfarm2fs.
       (Non-tar files are operated via gfarm2fs.)
     </p></dd>
@@ -79,6 +97,10 @@
 </div>
 <div class="refsect1">
 <a name="options"></a><h2>OPTIONS</h2>
+<p>
+  The primary options are listed below.
+  For additional options, please refer to <span class="command"><strong>gfptar --help</strong></span>.
+</p>
 <div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="option">-j, --jobs=</code><em class="parameter"><code>NUM</code></em></span></dt>
 <dd>
@@ -99,10 +121,10 @@
     for each group of files divided by the assumed size calculated considering the assumed compression ratio (--ratio option).
   </p>
 <p>
-    The default value is 200M (200 * 1024^2 = 209715200) (200 MiB).
+    The default value is 200Mi (200 * 1024^2 = 209715200) (200 mebibytes).
   </p>
 </dd>
-<dt><span class="term"><code class="option">-r, --ratio=</code><em class="parameter"><code>RATIO</code></em></span></dt>
+<dt><span class="term"><code class="option">--ratio=</code><em class="parameter"><code>RATIO</code></em></span></dt>
 <dd>
 <p>
     Specifies the assumed compression ratio in percentage for <code class="option">--create</code>.
@@ -119,9 +141,6 @@
     "bz2" means bzip2 type (suffix is .tar.bz2).
     "xz" means xz type (suffix is .tar.xz).
     "no" means no compression.
-  </p>
-<p>
-    This option is unnecessary for --extract (determine type automatically).
   </p>
 <p>
     The default value is gz.
@@ -145,7 +164,7 @@
 <dd><p>
   Displays debug output.
 </p></dd>
-<dt><span class="term"><code class="option">-?, -h, --help</code></span></dt>
+<dt><span class="term"><code class="option">-?, --help</code></span></dt>
 <dd><p>
   Displays a list of command options.
 </p></dd>
@@ -201,6 +220,9 @@
 </div>
 <div class="refsect1">
 <a name="see-also"></a><h2>SEE ALSO</h2>
+<p>
+  <span class="command"><strong>gfptar --help</strong></span>
+</p>
 <p>
   <span class="citerefentry"><span class="refentrytitle">gfreg</span>(1)</span>,
   <span class="citerefentry"><span class="refentrytitle">gfexport</span>(1)</span>
