@@ -37,8 +37,7 @@ GFDOCKER_TENANTNAME_PREFIX = tenant
 PRIMARY_CLIENT_CONTAINER = $(GFDOCKER_HOSTNAME_PREFIX_CLIENT)1
 TOP = $(ROOTDIR)/../..
 
-#COMPOSE_YML = $(TOP)/docker/dev/docker-compose.yml
-COMPOSE_YML = $(ROOTDIR)/docker-compose.yml
+COMPOSE_YML = $$(realpath $(ROOTDIR)/docker-compose.yml)
 
 ifneq ($(GFDOCKER_NO_CACHE), 0)
 NO_CACHE = --no-cache
