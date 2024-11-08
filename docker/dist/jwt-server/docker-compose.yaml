@@ -50,6 +50,14 @@ services:
       - gfarm_net
     ports:
       - 13389:3389
+  squid:
+    image: ubuntu/squid
+    networks:
+      gfarm_net:
+    ports:
+      - 13128:3128
+    volumes:
+      - ../../dev/common/oauth2/allow-ssl-ports.conf:/etc/squid/conf.d/allow-ssl-ports.conf:ro
 
 networks:
   gfarm_net:

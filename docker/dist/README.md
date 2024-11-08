@@ -86,6 +86,16 @@ Passphrase: (paste the passphrase displayed)
 % sh edconf.sh oauth2
 ```
 
+### Use http proxy instead of remote desktop
+
+- proxy server settings for any web browser on your desktop
+  - protocol: HTTP
+  - server: (IP address of the host where Docker containers for Gfarm is running)
+  - port: 13128
+- connect to https://jwt-server/ by web browser
+- ignore the certificate warning on https://jwt-server/
+- ignore the certificate warning on https://keycloak/
+
 ### Update keys in minica/
 
 ```
