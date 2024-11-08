@@ -2,12 +2,12 @@
 .\"     Title: gfptar
 .\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 29 Jan 2023
+.\"      Date: 27 Sep 2024
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFPTAR" "1" "29 Jan 2023" "Gfarm" "Gfarm"
+.TH "GFPTAR" "1" "27 Sep 2024" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,13 +36,17 @@ gfptar \- archive files in parallel
 \fBgfptar\fR [OPTIONS] \-x\ \fIoutdir\fR \fIindir\fR [\fImember\fR...]
 .HP \w'\fBgfptar\fR\ 'u
 \fBgfptar\fR [OPTIONS] \-t\ \fIindir\fR
+.HP \w'\fBgfptar\fR\ 'u
+\fBgfptar\fR [OPTIONS] \-r\ \fIoutdir\fR [\-C\ \fIbasedir\fR] \fImember\fR...
+.HP \w'\fBgfptar\fR\ 'u
+\fBgfptar\fR [OPTIONS] \-u\ \fIoutdir\fR [\-C\ \fIbasedir\fR] \fImember\fR...
 .SH "DESCRIPTION"
 .PP
 \fBgfptar\fR
-creates archive files to Gfarm, or extracts files from archive files on Gfarm\&. The archive files consist of multiple tar files and list files of archived members in a directory\&. Creation or extraction is performed in parallel for each tar file in a directory for archive\&.
+creates archive files to Gfarm or local file system, or extracts the archive files\&. The archive files consist of multiple tar files and database files in a directory\&. Creation or extraction is performed in parallel for each tar file\&.
 .SH "OPERATION MODE"
 .PP
-\fB\-c(\-\-create)\fR \fIoutdir\fR \fB\-C(\-\-basedir)\fR \fIbasedir\fR \fImember\&.\&.\&.\fR
+\fB\-c(\-\-create)\fR \fIoutdir\fR [\fB\-C(\-\-basedir)\fR \fIbasedir\fR] \fImember\&.\&.\&.\fR
 .RS 4
 Create
 \fIoutdir\fR
@@ -71,6 +75,20 @@ When
 List the contents of archive files in
 \fIindir\fR\&.
 .RE
+.PP
+\fB\-r(\-\-append)\fR \fIoutdir\fR [\fB\-C(\-\-basedir)\fR \fIbasedir\fR] \fImember\&.\&.\&.\fR
+.RS 4
+Append archive files in
+\fIoutdir\fR
+directory\&.
+.RE
+.PP
+\fB\-u(\-\-update)\fR \fIoutdir\fR [\fB\-C(\-\-basedir)\fR \fIbasedir\fR] \fImember\&.\&.\&.\fR
+.RS 4
+Append archive files with newer files in existing
+\fIoutdir\fR
+directory\&.
+.RE
 .SH "PATH STYLE"
 .PP
 \fIoutdir\fR,
@@ -81,7 +99,7 @@ must be one of the following formats\&.
 .PP
 \fIpath\-name\fR
 .RS 4
-is a relative path or an absolute path of a local file system\&. When the path is a mount point on gfarm2fs, tar files are copied without passing through the gfarm2fs\&. (Non\-tar files are operated via gfarm2fs\&.)
+is a relative path or an absolute path of a local file system\&. When the path is a mount point on gfarm2fs, tar files are operated without passing through the gfarm2fs\&. (Non\-tar files are operated via gfarm2fs\&.)
 .RE
 .PP
 \fIgfarm:\&.\&.\&.\fR
@@ -89,6 +107,9 @@ is a relative path or an absolute path of a local file system\&. When the path i
 is a Gfarm URL of a Gfarm file system\&.
 .RE
 .SH "OPTIONS"
+.PP
+The primary options are listed below\&. For additional options, please refer to
+\fBgfptar \-\-help\fR\&.
 .PP
 \fB\-j, \-\-jobs=\fR\fINUM\fR
 .RS 4
@@ -102,10 +123,10 @@ The default value is 4\&.
 Specifies assumed size in bytes per output tar file for
 \fB\-\-create\fR\&. Since compression ratios vary depending on the content of the file and the compression type, Archive files will be created for each group of files divided by the assumed size calculated considering the assumed compression ratio (\-\-ratio option)\&.
 .sp
-The default value is 200M (200 * 1024^2 = 209715200) (200 MiB)\&.
+The default value is 200Mi (200 * 1024^2 = 209715200) (200 mebibytes)\&.
 .RE
 .PP
-\fB\-r, \-\-ratio=\fR\fIRATIO\fR
+\fB\-\-ratio=\fR\fIRATIO\fR
 .RS 4
 Specifies the assumed compression ratio in percentage for
 \fB\-\-create\fR\&.
@@ -117,8 +138,6 @@ The default value is 50 (50 %)\&.
 .RS 4
 Specifies a compression type for
 \fB\-\-create\fR\&. "gz" means gzip type (suffix is \&.tar\&.gz)\&. "bz2" means bzip2 type (suffix is \&.tar\&.bz2)\&. "xz" means xz type (suffix is \&.tar\&.xz)\&. "no" means no compression\&.
-.sp
-This option is unnecessary for \-\-extract (determine type automatically)\&.
 .sp
 The default value is gz\&.
 .RE
@@ -145,7 +164,7 @@ Displays verbose output\&.
 Displays debug output\&.
 .RE
 .PP
-\fB\-?, \-h, \-\-help\fR
+\fB\-?, \-\-help\fR
 .RS 4
 Displays a list of command options\&.
 .RE
@@ -221,6 +240,8 @@ Extract a specified file from a Gfarm directory to a local directory\&. The extr
 .\}
 .sp
 .SH "SEE ALSO"
+.PP
+\fBgfptar \-\-help\fR
 .PP
 \fBgfreg\fR(1),
 \fBgfexport\fR(1)
