@@ -4,6 +4,14 @@
 *.la
 .libs
 
+/build
+
+/TAGS
+/doc/html/en/ref/docbook2html.xsl
+/doc/html/ja/ref/docbook2html.xsl
+/man/docbook2man.xsl
+/man/ja/docbook2man.xsl
+
 /include/gfarm/gfarm_config.h
 /Makefile
 /makes/config.mk
