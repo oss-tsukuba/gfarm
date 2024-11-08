@@ -71,7 +71,7 @@ done
 ## create directories to keep keys
 for user in $users; do
   sudo mkdir -p ${MNTDIR}/${user}
-  sudo chown ${user} ${MNTDIR}/${user}
+  sudo chown -R ${user}:${user} ${MNTDIR}/${user}
 done
 
 GFDOCKER_COPY_SHARED_KEY=/usr/local/bin/gfdocker_copy_shared_key
