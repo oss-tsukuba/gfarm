@@ -18,7 +18,7 @@ done
 [ X$REGRESS = X ] && REGRESS=false
 
 SASL_USER=user1
-SERVER=http://jwt-server
+SERVER=https://jwt-server
 
 run_jwt_agent()
 {
