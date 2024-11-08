@@ -78,7 +78,7 @@ When you install Gfarm by `all.sh`, `regress.sh` and `failover.sh` are available
 (in a host)
 % make          # login to a container
 (in a container at docker/dist/)
-% jwt-agent -s http://jwt-server/ -l user1
+% jwt-agent -s https://jwt-server/ -l user1
 Passphrase: (paste the passphrase displayed)
 % gfuser -A $(id -un) SASL user1
 % sh edconf.sh oauth2
