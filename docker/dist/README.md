@@ -15,13 +15,17 @@
 
 This section is an option only for VS Code users.
 
-- Install VS Code and Dev Containers extension
 - Open gfarm/ directory
-- Open a command palette by Ctrl+Shift+p and execute "Dev Containers: Rebulid and Reopen in Container"
 - Open Terminal -> New Terminal
 ```
    % cd docker/dist
    % sh ./minica.sh
+```
+- Install VS Code and Dev Containers extension
+- Open a command palette by Ctrl+Shift+p and execute "Dev Containers: Rebulid and Reopen in Container"
+- Open Terminal -> New Terminal
+```
+   % cd docker/dist
 ```
 - follow the instructions below after "(in a container)"
 
