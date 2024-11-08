@@ -2,7 +2,24 @@
 
 set -eu
 
+UPDATE="${1:-}"
+
+HOSTS="keycloak jwt-server jwt-server2"
+
 cd minica
+
+remove_key() {
+	HOST=$1
+	rm -f $HOST/*.pem
+}
+
+if [ "$UPDATE" = "--update" ]; then
+	rm -f minica.pem minica-key.pem
+	for h in $HOSTS; do
+		remove_key $h
+	done
+fi
+
 [ -f minica.pem ] && exit 0
 
 docker build . -t gfarm-minica
@@ -17,6 +34,6 @@ create_key() {
 	chmod go+r $HOST/*.pem
 }
 
-create_key keycloak
-create_key jwt-server
-create_key jwt-server2
+for h in $HOSTS; do
+	create_key $h
+done

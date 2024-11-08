@@ -69,7 +69,9 @@ When you install Gfarm by `all.sh`, `regress.sh` and `failover.sh` are available
 - launch Firefox
 - open a terminal
 - execute `/rdesktop/install-ca-for-browser.sh`
-- connect to jwt-server/ by Firefox
+- close Firefox
+- launch Firefox
+- connect to https://jwt-server/ by Firefox
 - login user1/PASSWORD
 - click "Generate and Store a JSON Web Token" button
 - user name and passphrase are displayed
@@ -82,6 +84,18 @@ When you install Gfarm by `all.sh`, `regress.sh` and `failover.sh` are available
 Passphrase: (paste the passphrase displayed)
 % gfuser -A $(id -un) SASL user1
 % sh edconf.sh oauth2
+```
+
+### Update keys in minica/
+
+```
+(in a host)
+% sh ./minica.sh --update
+% cd jwt-server
+% docker compose down
+% docker compose up -d
+% make setup
+% cd ..
 ```
 
 ## For HPCI Storage
