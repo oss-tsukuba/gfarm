@@ -47,6 +47,9 @@ test()
 	docker compose down
 }
 
+# create certificates
+sh ./minica.sh
+
 # clean up
 make down
 
