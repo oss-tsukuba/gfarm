@@ -43,6 +43,7 @@
 #include "journal_file.h"
 #include "db_access.h"
 #include "db_ops.h"
+#include "db_common.h"
 #include "db_journal.h"
 /* Do not depend other object files such as host.o, mdhost.o, ... */
 
@@ -434,9 +435,7 @@ db_journal_user_info_destroy(struct gfarm_user_info *ui)
 static void
 db_journal_user_auth_arg_destroy(struct db_user_auth_arg *arg)
 {
-	free(arg->username);
-	free(arg->auth_id_type);
-	free(arg->auth_user_id);
+	db_user_auth_arg_free(arg);
 	free(arg);
 }
 

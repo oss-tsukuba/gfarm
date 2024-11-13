@@ -200,6 +200,10 @@ static const char *journal_operation_names[] = {
 
 	"QUOTA_DIR_ADD",
 	"QUOTA_DIR_REMOVE",
+
+	"QUOTA_DIR_USER_AUTH_ADD",
+	"QUOTA_DIR_USER_AUTH_MODIFY",
+	"QUOTA_DIR_USER_AUTH_REMOVE",
 };
 
 struct journal_file_writer *

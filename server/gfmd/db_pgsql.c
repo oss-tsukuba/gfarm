@@ -2119,7 +2119,7 @@ static gfarm_error_t
 gfarm_pgsql_user_auth_load(void *closure,
 	void (*callback)(void *, struct db_user_auth_arg *))
 {
-	struct db_inode_dirset_arg tmp_info;
+	struct db_user_auth_arg tmp_info;
 	struct db_user_auth_trampoline_closure c;
 
 	c.closure = closure;
