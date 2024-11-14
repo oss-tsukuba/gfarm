@@ -54,6 +54,7 @@ sh ./minica.sh
 make down
 
 # JWT Server
+docker compose build --build-arg UID=$(id -u) c1
 docker compose up -d	# for gfarm_net
 (cd jwt-server && docker compose up -d && make setup)
 docker compose down
