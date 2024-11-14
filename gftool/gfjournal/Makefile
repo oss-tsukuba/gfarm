@@ -23,12 +23,14 @@ PUBLIC_OBJS  =
 
 SRCS =	$(GFMD_SRCDIR)/db_access.c \
 	$(GFMD_SRCDIR)/db_none.c \
+	$(GFMD_SRCDIR)/db_common.c \
 	$(GFMD_SRCDIR)/subr.c \
 	$(GFMD_SRCDIR)/journal_file.c \
 	$(GFMD_SRCDIR)/db_journal.c \
 	gfjournal.c
 
 OBJS =	$(GFMD_BUILDDIR)/db_access.o \
+	$(GFMD_BUILDDIR)/db_common.o \
 	$(GFMD_BUILDDIR)/db_none.o \
 	$(GFMD_BUILDDIR)/subr.o \
 	$(GFMD_BUILDDIR)/journal_file.o \
