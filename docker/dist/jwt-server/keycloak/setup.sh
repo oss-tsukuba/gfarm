@@ -1,6 +1,9 @@
 #!/usr/bin/bash
+set -eu
+set -x
 
-set -eux
+# NOTE: This is old script.
+# Use setup-keycloak container instead of this.
 
 ignore() {
     echo 1>&2 "ERROR IGNORED"

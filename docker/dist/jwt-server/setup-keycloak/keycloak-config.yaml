@@ -1,0 +1,14 @@
+keycloak_url: https://keycloak:8443/auth/
+admin_username: admin
+admin_password: admin
+realm_master: master
+realm: HPCI
+client_secret: eJxl5z1EHU0u6BVLpR5MG0v4NLgCZWWG
+jwt_server_urls:
+  - https://jwt-server.test/*
+  - http://jwt-server.test/*
+  - https://jwt-server/*
+  - http://jwt-server/*
+  - https://jwt-server2/*
+  - http://jwt-server2/*
+verify_cert: true

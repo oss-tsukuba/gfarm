@@ -7,7 +7,7 @@ RUN dnf -y update \
 RUN alternatives --set java java-21-openjdk.x86_64
 RUN alternatives --set javac java-21-openjdk.x86_64
 
-ARG TOMCAT_VER=10.1.31
+ARG TOMCAT_VER=10.1.33
 
 RUN wget https://archive.apache.org/dist/tomcat/tomcat-10/v$TOMCAT_VER/bin/apache-tomcat-$TOMCAT_VER.tar.gz
 RUN tar -xvf apache-tomcat-$TOMCAT_VER.tar.gz -C /opt

@@ -1,5 +1,8 @@
 TERM_INHERIT = $${TERM+--env TERM='${TERM}'}
 
+ps:
+	docker compose ps
+
 login-jwt-server:
 	docker exec $(TERM_INHERIT) -it gfarm-jwt-server /bin/bash
 
@@ -12,11 +15,31 @@ login-keycloak:
 login-rdesktop:
 	docker exec $(TERM_INHERIT) -it gfarm-rdesktop /bin/bash
 
+login-setup-keycloak:
+	docker compose run $(TERM_INHERIT) --remove-orphans --rm -it setup-keycloak /bin/bash
+
+build-jwt-server:
+	docker compose build jwt-server
+
+build-setup-keycloak:
+	docker compose build setup-keycloak
+
 setup: setup-keycloak setup-jwt-server
 
-setup-keycloak:
+setup-keycloak-old:
 	docker exec gfarm-keycloak /keycloak/setup.sh
+
+.PHONY: setup-keycloak
+setup-keycloak:
+	docker compose run --remove-orphans --rm -it setup-keycloak \
+    python3 /setup-keycloak/keycloak-config.py /setup-keycloak/keycloak-config.yaml
 
 setup-jwt-server:
 	docker exec gfarm-jwt-server /jwt/setup_master1.sh
 	docker exec gfarm-jwt-server2 /jwt/setup_master2.sh
+
+up:
+	docker compose up -d
+
+down:
+	docker compose down -v --remove-orphans

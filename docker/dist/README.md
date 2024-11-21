@@ -44,7 +44,7 @@ This section is an option only for VS Code users.
     This will install and setup Gfarm.  Enjoy!
     % Ctrl-D
 
-    % docker compose down
+    % docker compose down -v --remove-orphans
 
 If the gfarm source repository is not clean, link errors may happen during the `all.sh` execution.  In this case, clean the repository.
 
@@ -102,7 +102,7 @@ Passphrase: (paste the passphrase displayed)
 (in a host)
 % sh ./minica.sh --update
 % cd jwt-server
-% docker compose down
+% docker compose down -v --remove-orphans
 % docker compose up -d
 % make setup
 % cd ..

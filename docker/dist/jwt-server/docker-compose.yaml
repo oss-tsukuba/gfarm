@@ -1,5 +1,6 @@
 services:
   keycloak:
+    init: true
     build: keycloak
     hostname: keycloak
     container_name: gfarm-keycloak
@@ -16,6 +17,16 @@ services:
     ports:
       - 8080:8080
       - 8443:8443
+  setup-keycloak:
+    build: setup-keycloak
+    image: gfarm-setup-keycloak
+    hostname: setup-keycloak
+    container_name: gfarm-setup-keycloak
+    volumes:
+      - ../minica/minica.pem:/myca.pem:ro
+      - ./setup-keycloak:/setup-keycloak:ro
+    networks:
+      gfarm_net:
   jwt-server:
     build: jwt-server
     hostname: jwt-server
@@ -41,6 +52,7 @@ services:
       - gfarm_net
     privileged: true
   rdesktop:
+    init: true
     build: rdesktop
     container_name: gfarm-rdesktop
     volumes:
@@ -51,7 +63,9 @@ services:
     ports:
       - 13389:3389
   squid:
+    init: true
     image: ubuntu/squid
+    container_name: gfarm-squid
     networks:
       gfarm_net:
     ports:
