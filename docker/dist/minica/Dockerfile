@@ -14,4 +14,4 @@ RUN cd \
  && go build \
  && cp minica /usr/bin
 
-CMD sleep infinity
+ENTRYPOINT ["minica"]

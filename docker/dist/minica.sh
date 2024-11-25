@@ -24,7 +24,7 @@ fi
 
 docker build . -t gfarm-minica
 
-MINICA="docker run -u $(id -u):$(id -g) -w /minica -v .:/minica gfarm-minica minica"
+MINICA="docker run --rm -u $(id -u):$(id -g) -w /minica -v .:/minica gfarm-minica"
 
 create_key() {
 	HOST=$1
