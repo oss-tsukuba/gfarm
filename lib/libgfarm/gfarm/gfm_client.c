@@ -1927,6 +1927,21 @@ gfm_client_user_auth_get(struct gfm_connection *gfm_server,
 }
 
 gfarm_error_t
+gfm_client_user_auth_get_request(struct gfm_connection *gfm_server,
+	const char *username, const char *auth_id_type)
+{
+	return (gfm_client_rpc_request(gfm_server,
+		GFM_PROTO_USER_AUTH_GET, "ss", username, auth_id_type));
+}
+
+gfarm_error_t
+gfm_client_user_auth_get_result(struct gfm_connection *gfm_server,
+	char **auth_user_idp)
+{
+	return (gfm_client_rpc_result(gfm_server, 0, "s", auth_user_idp));
+}
+
+gfarm_error_t
 gfm_client_user_auth_modify(struct gfm_connection *gfm_server,
 	const char *username, const char *auth_id_type,
 	const char *auth_user_id)

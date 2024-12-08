@@ -49,7 +49,7 @@ usage(void)
 	fprintf(stderr,
 	    "\t%s [-P <path>] -A username auth_id_type auth_id\n",
 	    program_name);
-	exit(1);
+	exit(2);
 }
 
 /*
@@ -59,9 +59,52 @@ static gfarm_error_t
 display_user(int op, int nusers, char *names[],
 	gfarm_error_t *errs, struct gfarm_user_info *users)
 {
-	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+	gfarm_error_t e = GFARM_ERR_NO_ERROR, e2;
 	int i, j;
 	char *auth_id;
+
+	if (op == OP_LIST_AUTH) {
+		if ((e = gfm_client_compound_begin_request(gfm_server))
+		    != GFARM_ERR_NO_ERROR) {
+			fprintf(stderr, "%s: %s",
+			    program_name, gfarm_error_string(e));
+			return (e);
+		}
+
+		for (i = 0; i < nusers; i++) {
+			if (errs != NULL && errs[i] != GFARM_ERR_NO_ERROR)
+				continue;
+
+			for (j = 0; j < gfarm_auth_user_id_type_number; j++) {
+				e = gfm_client_user_auth_get_request(
+					    gfm_server,
+					     users[i].username,
+					     gfarm_auth_user_id_type_list[j]);
+				if (e != GFARM_ERR_NO_ERROR) {
+					fprintf(stderr, "%s: %s",
+					    program_name,
+					    gfarm_error_string(e));
+					return (e);
+				}
+			}
+		}
+
+		if ((e = gfm_client_compound_end_request(gfm_server))
+		    != GFARM_ERR_NO_ERROR) {
+			fprintf(stderr, "%s: %s",
+			    program_name, gfarm_error_string(e));
+			return (e);
+		}
+
+		if (op == OP_LIST_AUTH &&
+		    (e2 = gfm_client_compound_begin_result(gfm_server))
+		    != GFARM_ERR_NO_ERROR) {
+			fprintf(stderr, "%s: %s",
+			    program_name, gfarm_error_string(e2));
+			if (e == GFARM_ERR_NO_ERROR)
+				e = e2;
+		}
+	}
 
 	for (i = 0; i < nusers; i++) {
 		if (errs != NULL && errs[i] != GFARM_ERR_NO_ERROR) {
@@ -87,10 +130,8 @@ display_user(int op, int nusers, char *names[],
 			       users[i].homedir, users[i].gsi_dn);
 
 			for (j = 0; j < gfarm_auth_user_id_type_number; j++) {
-				e = gfm_client_user_auth_get(gfm_server,
-					     users[i].username,
-					     gfarm_auth_user_id_type_list[j],
-					     &auth_id);
+				e = gfm_client_user_auth_get_result(
+					    gfm_server, &auth_id);
 				if (e == GFARM_ERR_NO_ERROR) {
 					if (strcmp(auth_id, "") != 0)
 						printf("\t%s:%s\n",
@@ -110,6 +151,16 @@ display_user(int op, int nusers, char *names[],
 		}
 		gfarm_user_info_free(&users[i]);
 	}
+
+	if (op == OP_LIST_AUTH &&
+	    (e2 = gfm_client_compound_end_result(gfm_server))
+	    != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "%s: %s",
+		    program_name, gfarm_error_string(e2));
+		if (e == GFARM_ERR_NO_ERROR)
+			e = e2;
+	}
+
 	return (e);
 }
 
@@ -258,7 +309,7 @@ main(int argc, char **argv)
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: %s\n",
 		    program_name, gfarm_error_string(e));
-		status = 1;
+		status = EXIT_FAILURE;
 	}
 
 	gfm_client_connection_free(gfm_server);
@@ -267,7 +318,7 @@ main(int argc, char **argv)
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: %s\n", program_name,
 		    gfarm_error_string(e));
-		status = 1;
+		status = EXIT_FAILURE;
 	}
 	return (status);
 }

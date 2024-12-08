@@ -130,6 +130,10 @@ gfarm_error_t gfm_client_user_info_get_by_auth_id(struct gfm_connection *,
 	const char *, const char *, struct gfarm_user_info *);
 gfarm_error_t gfm_client_user_auth_get(struct gfm_connection *,
        const char *, const char *, char **);
+gfarm_error_t gfm_client_user_auth_get_request(struct gfm_connection *,
+       const char *, const char *);
+gfarm_error_t gfm_client_user_auth_get_result(struct gfm_connection *,
+       char **);
 gfarm_error_t gfm_client_user_auth_modify(struct gfm_connection *,
 	const char *, const char *, const char *);
 
