@@ -25,13 +25,13 @@ gfarm_sasl_log(void *context, int sasl_priority, const char *message)
 		prio = LOG_DEBUG;
 		break;
 	case SASL_LOG_ERR:
-		prio = LOG_ERR;
+		prio = LOG_NOTICE; /* LOG_ERR raises zabbix alert: noisy */
 		break;
 	case SASL_LOG_FAIL:
-		prio = LOG_ERR;
+		prio = LOG_NOTICE; /* LOG_ERR raises zabbix alert: noisy */
 		break;
 	case SASL_LOG_WARN:
-		prio = LOG_WARNING;
+		prio = LOG_NOTICE; /* LOG_WARNING raises zabbix alert: noisy */
 		break;
 	case SASL_LOG_NOTE:
 		prio = LOG_INFO;
