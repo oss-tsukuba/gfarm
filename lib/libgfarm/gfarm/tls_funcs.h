@@ -2902,7 +2902,7 @@ tls_session_io_continuable(int sslerr, struct tls_session_ctx_struct *ctx,
 			 */
 			ctx->last_gfarm_error_ =
 			    GFARM_ERR_TLS_RUNTIME_ERROR;
-			gflog_tls_error(GFARM_MSG_1005623,
+			gflog_tls_notice(GFARM_MSG_1005623,
 			    "TLS error during %s", diag);
 		}
 		ctx->is_got_fatal_ssl_error_ = true;
