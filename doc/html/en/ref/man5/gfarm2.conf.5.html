@@ -2490,6 +2490,10 @@ If the cyrus-sasl-xoauth2-idp package is installed,
 <span class="token">XOAUTH2</span> can additionally be specified.
 </p>
 <p>
+If the environment variable GFARM_SASL_MECHANISMS is set,
+it takes precedence over this directive.
+</p>
+<p>
 This directive can be omitted on the server side,
 in which case the mechanism is selected
 according to the Cyrus SASL configuration.
@@ -2504,6 +2508,10 @@ according to the Cyrus SASL configuration.
 <p>
 Specifies a user name for SASL authentication.
 </p>
+<p>
+If the environment variable GFARM_SASL_USER is set,
+it takes precedence over this directive.
+</p>
 <p>For example,</p>
 <div class="literallayout"><p><br>
 	sasl_user "MyAccount"<br>
@@ -2515,6 +2523,10 @@ Specifies a user name for SASL authentication.
 Specifies the password used for SASL authentication mechanisms
 such as LOGIN, PLAIN, etc.
 JWT token for the XOAUTH2 mechanism can be specified too.
+</p>
+<p>
+If the environment variable GFARM_SASL_PASSWORD is set,
+it takes precedence over this directive.
 </p>
 <p>
 If this directive is not specified, the file pointed to by the
