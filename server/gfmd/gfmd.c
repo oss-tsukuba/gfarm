@@ -685,7 +685,7 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 			gflog_debug(GFARM_MSG_1000182, "gfp_xdr_flush");
 		e2 = gfp_xdr_flush(peer_get_conn(peer));
 		if (e2 != GFARM_ERR_NO_ERROR) {
-			gflog_warning(GFARM_MSG_1000183, "protocol flush: %s",
+			gflog_notice(GFARM_MSG_1000183, "protocol flush: %s",
 			    gfarm_error_string(e2));
 			peer_record_protocol_error(peer);
 		}
