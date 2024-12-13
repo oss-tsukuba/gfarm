@@ -3063,6 +3063,8 @@ for possible values\&. If the cyrus\-sasl\-xoauth2\-idp package is installed,
 XOAUTH2
 can additionally be specified\&.
 .sp
+If the environment variable GFARM_SASL_MECHANISMS is set, it takes precedence over this directive\&.
+.sp
 This directive can be omitted on the server side, in which case the mechanism is selected according to the Cyrus SASL configuration\&.
 .sp
 For example,
@@ -3082,6 +3084,8 @@ sasl_user \fIuser_name\fR
 .RS 4
 Specifies a user name for SASL authentication\&.
 .sp
+If the environment variable GFARM_SASL_USER is set, it takes precedence over this directive\&.
+.sp
 For example,
 .sp
 .if n \{\
@@ -3098,6 +3102,8 @@ For example,
 sasl_password \fI"password_string"\fR
 .RS 4
 Specifies the password used for SASL authentication mechanisms such as LOGIN, PLAIN, etc\&. JWT token for the XOAUTH2 mechanism can be specified too\&.
+.sp
+If the environment variable GFARM_SASL_PASSWORD is set, it takes precedence over this directive\&.
 .sp
 If this directive is not specified, the file pointed to by the JWT_USER_PATH environment variable, or if the environment is not set either, the contents of the file /tmp/jwt_user_u<USER_ID>/token\&.jwt is used as the password\&. Note that reading from the file is a function intended for use with the XOAUTH2 mechanism, but the password may be read from this file even when non\-XOAUTH2 mechanisms such as LOGIN or PLAIN are used\&.
 .sp
