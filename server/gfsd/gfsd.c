@@ -1339,7 +1339,7 @@ gfs_server_process_set(struct gfp_xdr *client)
 		gflog_debug(GFARM_MSG_1003400,
 		    "gfm_client_process_set: %s", gfarm_error_string(e));
 	else
-		(void)gfarm_proctitle_set("cilent/%lld %s",
+		(void)gfarm_proctitle_set("client/%lld %s",
 		    (long long)pid, gflog_get_auxiliary_info());
 
 	gfs_server_put_reply(client, diag, e, "");
@@ -1373,7 +1373,7 @@ gfs_server_process_reset(struct gfp_xdr *client)
 		    keylen, pid);
 		if (e == GFARM_ERR_NO_ERROR) {
 			fd_usable_to_gfmd = 1;
-			(void)gfarm_proctitle_set("cilent/%lld %s",
+			(void)gfarm_proctitle_set("client/%lld %s",
 			    (long long)pid, gflog_get_auxiliary_info());
 			break;
 		}
