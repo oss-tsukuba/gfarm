@@ -4,6 +4,9 @@ srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 
-SCRIPTS = $(srcdir)/gfarmbb
+BUILT_SCRIPTS = gfarmbb
 
 include $(top_srcdir)/makes/script.mk
+
+gfarmbb: $(srcdir)/gfarmbb.in
+	$(SHELL) $(top_builddir)/makes/build-script $? $@
