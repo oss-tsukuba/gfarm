@@ -1,7 +1,7 @@
 '\" t
 .\"     Title: gfarmbb
-.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
 .\"      Date: 4 Oct 2019
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
@@ -71,7 +71,7 @@ specifies a scratch directory on each compute node for Gfarm/BB\&. If it does no
 .PP
 \fB\-conf\fR \fIconf_dir\fR
 .RS 4
-specifies a scratch directory that can be shared among compute nodes to store temporal configuration files\&. If it does not exist, it is created\&. This directory will be removed by gfarmbb stop\&.
+This option is only required if \-mpi option is specified\&. This option specifies a scratch directory that can be shared among compute nodes to store temporal configuration files\&. If it does not exist, it is created\&. This directory will be removed by gfarmbb stop\&.
 .RE
 .PP
 \fB\-l\fR
@@ -102,4 +102,27 @@ generates C\-shell commands\&. This option is available only for gfarmbb start\&
 \fB\-s\fR
 .RS 4
 generates Bourne shell commands\&. This option is available only for gfarmbb start\&. This is default\&.
+.RE
+.SH "ENVIRONMENT VARIABLES"
+.PP
+\fBPRUN_RSH\fR
+.RS 4
+Specifies a remote shell command\&. Default is
+\fBssh\fR\&.
+.RE
+.PP
+\fBPRUN_RCP\fR
+.RS 4
+Specifies a remote copy command\&. When \*(Aqno\*(Aq is specified, use remote shell to copy\&. Default is
+\fBscp \-pr\fR\&.
+.RE
+.PP
+\fBGFARMBB_START_HOOK\fR
+.RS 4
+Specifies a hook program executed on all hosts before creating Gfarm/BB\&.
+.RE
+.PP
+\fBGFARMBB_STOP_HOOK\fR
+.RS 4
+Specifies a hook program executed on all hosts after terminating Gfarm/BB\&.
 .RE

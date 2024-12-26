@@ -1,7 +1,7 @@
 '\" t
 .\"     Title: gfarmbb
-.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
 .\"      Date: 4 Oct 2019
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
@@ -66,7 +66,7 @@ Gfarm/BBを構成するための各計算ノードのスクラッチディレク
 .PP
 \fB\-conf\fR \fIconf_dir\fR
 .RS 4
-Gfarm/BBの設定ファイルを一時的に保持するためのディレクトリを指定し ます。本ディレクトリは全計算ノードからアクセスできる必要があります。 指定されたディレクトリが存在しない場合は作成されます。またこのディ レクトリ以下のファイルはgfarmbb stopで削除されます。
+本オプションは\-mpiオプションが指定されたときにのみ指定する必要があり、 それ以外は指定する必要はありません。 Gfarm/BBの設定ファイルを一時的に保持するためのディレクトリを指定し ます。本ディレクトリは全計算ノードからアクセスできる必要があります。 指定されたディレクトリが存在しない場合は作成されます。またこのディ レクトリ以下のファイルはgfarmbb stopで削除されます。
 .RE
 .PP
 \fB\-l\fR
@@ -97,4 +97,25 @@ Cシェルのコマンドを出力します。本オプションはstartの時�
 \fB\-s\fR
 .RS 4
 Bourneシェルのコマンドを出力します。本オプションはstartの時だけ有 効です。デフォルト設定です。
+.RE
+.SH "ENVIRONMENT VARIABLES"
+.PP
+\fBPRUN_RSH\fR
+.RS 4
+リモートシェルコマンドを指定します。デフォルトは\fBssh\fRです。
+.RE
+.PP
+\fBPRUN_RCP\fR
+.RS 4
+リモートコピーコマンドを指定します。noが指定されるとリモートシェルコマンドを用いてコピーします。デフォルトは\fBscp \-pr\fRです。
+.RE
+.PP
+\fBGFARMBB_START_HOOK\fR
+.RS 4
+Gfarm/BBを構築する前に全てのホストで実行するプログラムを指定します。
+.RE
+.PP
+\fBGFARMBB_STOP_HOOK\fR
+.RS 4
+Gfarm/BBを終了した後で全てのホストで実行するプログラムを指定します。
 .RE

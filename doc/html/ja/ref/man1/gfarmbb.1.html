@@ -2,7 +2,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfarmbb</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
 <a name="gfarmbb.1"></a><div class="titlepage"></div>
@@ -64,6 +64,8 @@ Gfarm/BBを構成するための各計算ノードのスクラッチディレク
 </p></dd>
 <dt><span class="term"><code class="option">-conf</code> <em class="parameter"><code>conf_dir</code></em></span></dt>
 <dd><p>
+本オプションは-mpiオプションが指定されたときにのみ指定する必要があり、
+それ以外は指定する必要はありません。
 Gfarm/BBの設定ファイルを一時的に保持するためのディレクトリを指定し
 ます。本ディレクトリは全計算ノードからアクセスできる必要があります。
 指定されたディレクトリが存在しない場合は作成されます。またこのディ
@@ -105,6 +107,19 @@ Cシェルのコマンドを出力します。本オプションはstartの時�
 Bourneシェルのコマンドを出力します。本オプションはstartの時だけ有
 効です。デフォルト設定です。
 </p></dd>
+</dl></div>
+</div>
+<div class="refsect1">
+<a name="environment-variables"></a><h2>ENVIRONMENT VARIABLES</h2>
+<div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><code class="envar">PRUN_RSH</code></span></dt>
+<dd><p>リモートシェルコマンドを指定します。デフォルトは<span class="command"><strong>ssh</strong></span>です。</p></dd>
+<dt><span class="term"><code class="envar">PRUN_RCP</code></span></dt>
+<dd><p>リモートコピーコマンドを指定します。noが指定されるとリモートシェルコマンドを用いてコピーします。デフォルトは<span class="command"><strong>scp -pr</strong></span>です。</p></dd>
+<dt><span class="term"><code class="envar">GFARMBB_START_HOOK</code></span></dt>
+<dd><p>Gfarm/BBを構築する前に全てのホストで実行するプログラムを指定します。</p></dd>
+<dt><span class="term"><code class="envar">GFARMBB_STOP_HOOK</code></span></dt>
+<dd><p>Gfarm/BBを終了した後で全てのホストで実行するプログラムを指定します。</p></dd>
 </dl></div>
 </div>
 </div></body>

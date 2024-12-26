@@ -2,9 +2,9 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfrm</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.69.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 </head>
-<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" lang="en">
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
 <a name="gfrm.1"></a><div class="titlepage"></div>
 <div class="refnamediv">
 <a name="name"></a><h2>Name</h2>
@@ -12,24 +12,24 @@
 </div>
 <div class="refsynopsisdiv">
 <a name="synopsis"></a><h2>Synopsis</h2>
-<div class="cmdsynopsis"><p><code class="command">gfrm</code>  [-frn] [-h <em class="replaceable"><code>filesystem-node</code></em>] [-D <em class="replaceable"><code>domain-name</code></em>]  <em class="replaceable"><code>gfarm-URL</code></em>... </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfrm</code>  [-frvn] [-h <em class="replaceable"><code>filesystem-node</code></em>] [-D <em class="replaceable"><code>domain-name</code></em>]  <em class="replaceable"><code>gfarm-URL</code></em>... </p></div>
 </div>
-<div class="refsect1" lang="en">
+<div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
-<p><span><strong class="command">gfrm</strong></span> removes each specified file.  It does
+<p><span class="command"><strong>gfrm</strong></span> removes each specified file.  It does
 not remove directories unless the <code class="option">-r</code> option is specified.
 </p>
 <p>
 With the <code class="option">-h</code> or <code class="option">-D</code> option,
-<span><strong class="command">gfrm</strong></span> removes
+<span class="command"><strong>gfrm</strong></span> removes
 file replicas on the specified filesystem node(s).
 A file replica cannot be removed
 when the number of replicas is less than gfarm.ncopy or gfarm.replicainfo extended attribute.
 </p>
 </div>
-<div class="refsect1" lang="en">
+<div class="refsect1">
 <a name="options"></a><h2>OPTIONS</h2>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="option">-f</code></span></dt>
 <dd><p>Ignores no such file or directory error.</p></dd>
 <dt><span class="term"><code class="option">-n</code></span></dt>
@@ -38,6 +38,8 @@ when the number of replicas is less than gfarm.ncopy or gfarm.replicainfo extend
 <dt><span class="term"><code class="option">-r</code></span></dt>
 <dd><p>Removes all entries under the directories specified by the
 command-line argument recursively.</p></dd>
+<dt><span class="term"><code class="option">-v</code></span></dt>
+<dd><p>Prints file names to be deleted.</p></dd>
 <dt><span class="term"><code class="option">-h</code> <em class="parameter"><code>filesystem-node</code></em></span></dt>
 <dd><p>Specifies a filesystem node from which file replicas will be removed.
 </p></dd>
@@ -49,7 +51,7 @@ replicas will be removed.
 <dd><p>Displays a list of command options.</p></dd>
 </dl></div>
 </div>
-<div class="refsect1" lang="en">
+<div class="refsect1">
 <a name="see-also"></a><h2>SEE ALSO</h2>
 <p>
   <span class="citerefentry"><span class="refentrytitle">gfncopy</span>(1)</span>,
