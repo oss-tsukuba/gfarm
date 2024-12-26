@@ -1,3 +1,20 @@
+Release note for Gfarm 2.7.28
+=============================
+
+[2024.12.26]
+
+Updated feature
+* gfptar - --update and --append options and many other enhancements,
+  see the manual page of gfptar(1) or gfptar --help.
+* gfptar - reduce memory consumption
+* gfrm - -v option to print file names to be deleted
+* gfperf - allow new authentication methods.  support PHP7 or later
+
+Bug fix
+* gfptar - fix issues of file names containing sharps and semicolons,
+  and long multi-bytes file names
+* gfptar - fix possible stall when I/O error occurs
+
 Release note for Gfarm 2.7.27
 =============================
 
