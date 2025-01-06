@@ -394,7 +394,7 @@ gfarm_auth_method_connection_is_shareable(enum gfarm_auth_method auth_method)
 {
 	if (auth_method < GFARM_AUTH_METHOD_NONE ||
 	    auth_method >= GFARM_AUTH_METHOD_NUMBER) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005739,
 		    "invalid auth method %d", (int)auth_method);
 		gfarm_log_backtrace_symbols();
 		return (0);

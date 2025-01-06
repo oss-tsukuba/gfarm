@@ -94,7 +94,7 @@ gfarm_auth_uid_to_global_username_panic(void *closure,
 	return (GFARM_ERR_PROTOCOL);
 }
 
-#if defined(HAVE_GSS) || defined(HAVE_TLS_1_3)
+#if defined(HAVE_GSI) || defined(HAVE_TLS_1_3)
 
 static gfarm_error_t
 gfarm_auth_uid_to_global_username_by_dn(void *closure,

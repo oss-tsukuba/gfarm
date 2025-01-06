@@ -207,10 +207,10 @@ gfarm_context_init(void)
 	ctxp->tls_proxy_certificate = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->tls_security_level = GFARM_CONFIG_MISC_DEFAULT;
 
-	ctxp->sasl_mechanisms = NULL;
-	ctxp->sasl_realm = NULL;
-	ctxp->sasl_user = NULL;
-	ctxp->sasl_password = NULL;
+	ctxp->sasl_mechanisms = gfarm_getenv_dup("GFARM_SASL_MECHANISMS");
+	ctxp->sasl_realm = gfarm_getenv_dup("GFARM_SASL_REALM");
+	ctxp->sasl_user = gfarm_getenv_dup("GFARM_SASL_USER");
+	ctxp->sasl_password = gfarm_getenv_dup("GFARM_SASL_PASSWORD");
 
 	ctxp->on_demand_replication = 0;
 	ctxp->call_rpc_instead_syscall = 0;

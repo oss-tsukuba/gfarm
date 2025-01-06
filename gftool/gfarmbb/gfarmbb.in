@@ -4,6 +4,8 @@
 
 set -e
 
+bindir="@bindir@"
+
 PROGRAM=gfarmbb
 TMPDIR=/tmp/gfarmbb-scratch
 PERIOD=-1
@@ -151,10 +153,10 @@ start() {
     fi
     $TMPDIR/etc/init.d/gfmd start
     pcp $GFARM_CONFIG_FILE $GFSD_CONF $USERMAP_FILE $SHARED_KEY_FILE $TMPDIR/etc > /dev/null
-    prun "config-gfsd --prefix $TMPDIR --confdir $CONFDIR -S > /dev/null"
+    prun "$bindir/config-gfsd --prefix $TMPDIR --confdir $CONFDIR -S > /dev/null"
     if [ X"$MDIR" != X ]; then
 	gfmkdir -p $MDIR || :
-	prun "env GFARMFS_ROOT=$MDIR mount.gfarm2fs $GFARM_CONFIG_FILE $MDIR $MOPTIONS > /dev/null || :"
+	prun "env GFARMFS_ROOT=$MDIR $bindir/mount.gfarm2fs $GFARM_CONFIG_FILE $MDIR $MOPTIONS > /dev/null || :"
     fi
     if [ $SHELL_TYPE = bsh ]; then
 	echo "GFARM_CONFIG_FILE=$GFARM_CONFIG_FILE; export GFARM_CONFIG_FILE;"
@@ -164,7 +166,7 @@ start() {
 }
 
 stop() {
-    prun-all "umount.gfarm2fs > /dev/null 2>&1 || :"
+    prun-all "$bindir/umount.gfarm2fs > /dev/null 2>&1 || :"
     prun-all "pkill gfsd > /dev/null 2>&1 || :"
     prun-all "pkill gfmd > /dev/null 2>&1 || :"
     prun-all "rm -rf $TMPDIR > /dev/null 2>&1 || :"

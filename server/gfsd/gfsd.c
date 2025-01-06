@@ -718,40 +718,40 @@ negotiate_with_gfm_server(int n_config_vars, void **config_vars,
 
 	if ((e = gfm_client_compound_begin_request(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_1004374, "compound_begin request: %s",
+		gflog_notice(GFARM_MSG_1004374, "compound_begin request: %s",
 		    gfarm_error_string(e));
 	else if (canonical_self_name != NULL &&
 	    (e = gfm_client_hostname_set_request(gfm_server,
 	    canonical_self_name)) != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_1004375,
+		gflog_notice(GFARM_MSG_1004375,
 		    "hostname_set(%s) request: %s", canonical_self_name,
 		    gfarm_error_string(e));
 	else if ((e = gfm_client_config_get_vars_request(
 	    gfm_server, n_config_vars, config_vars)) != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_1004376,
+		gflog_notice(GFARM_MSG_1004376,
 		    "config_get_vars() request: %s", gfarm_error_string(e));
 	else if ((e = gfm_client_compound_end_request(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_1004377, "compound_end request: %s",
+		gflog_notice(GFARM_MSG_1004377, "compound_end request: %s",
 		    gfarm_error_string(e));
 
 	else if ((e = gfm_client_compound_begin_result(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_1004378, "compound_begin result: %s",
+		gflog_notice(GFARM_MSG_1004378, "compound_begin result: %s",
 		    gfarm_error_string(e));
 	else if (canonical_self_name != NULL &&
 	    (e = gfm_client_hostname_set_result(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_1004379,
+		gflog_notice(GFARM_MSG_1004379,
 		    "hostname_set(%s) result: %s", canonical_self_name,
 		    gfarm_error_string(e));
 	else if ((e = gfm_client_config_get_vars_result(
 	    gfm_server, n_config_vars, config_vars)) != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_1004380,
+		gflog_notice(GFARM_MSG_1004380,
 		    "config_get_vars() result: %s", gfarm_error_string(e));
 	else if ((e = gfm_client_compound_end_result(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_1004381, "compound_end result: %s",
+		gflog_notice(GFARM_MSG_1004381, "compound_end result: %s",
 		    gfarm_error_string(e));
 
 	*ep = e;

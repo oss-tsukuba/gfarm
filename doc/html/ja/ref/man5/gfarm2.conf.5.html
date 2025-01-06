@@ -2483,6 +2483,9 @@ cyrus-sasl-xoauth2-idp パッケージを導入している場合は、
 サーバー側ではこの指定を省略することもでき、
 その場合は Cyrus SASL の設定に応じたメカニズムが選択されます。
 </p>
+<p>
+環境変数 GFARM_SASL_MECHANISMS が設定されている場合は、それがこのディレクティブよりも優先されます。
+</p>
 <p>例:</p>
 <div class="literallayout"><p><br>
 	sasl_mechanisms "PLAIN XOAUTH2"<br>
@@ -2492,6 +2495,9 @@ cyrus-sasl-xoauth2-idp パッケージを導入している場合は、
 <dd>
 <p>
 SASL 認証のユーザー名を指定します。
+</p>
+<p>
+環境変数 GFARM_SASL_USER が設定されている場合は、それがこのディレクティブよりも優先されます。
 </p>
 <p>例:</p>
 <div class="literallayout"><p><br>
@@ -2503,6 +2509,9 @@ SASL 認証のユーザー名を指定します。
 <p>
 SASL 認証の LOGIN や PLAIN 等のメカニズムで利用するパスワードを指定します。
 XOAUTH2 メカニズムの場合ののトークンもこれで指定できます。
+</p>
+<p>
+環境変数 GFARM_SASL_PASSWORD が設定されている場合は、それがこのディレクティブよりも優先されます。
 </p>
 <p>
 なお、この設定がない場合、環境変数 JWT_USER_PATH が指すファイル、
