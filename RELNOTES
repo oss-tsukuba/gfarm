@@ -19,6 +19,7 @@ Bug fix
 * gfptar - fix possible stall when I/O error occurs
 * gfjournal - fix assersion failure with -l option, introduced in the
   version 2.8.0
+* gfsd - fix noisy error log if inter-gfsd connection is encrypted [#1164]
 
 Release note for Gfarm 2.8.5
 ============================
