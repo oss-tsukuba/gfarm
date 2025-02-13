@@ -309,11 +309,17 @@ gfs_pio_local_copyfile(int r_fd, gfarm_off_t r_off,
 	off_t sendfile_offset = r_off;
 
 	if (md_ctx == NULL && w_off == 0) {
-		written = sendfile(w_fd, r_fd, &sendfile_offset, len);
-		if (written != -1) {
-			if (writtenp != NULL)
-				*writtenp = written;
-			return (GFARM_ERR_NO_ERROR);
+		for (;;) {
+			rv = sendfile(w_fd, r_fd, &sendfile_offset, len);
+			if (rv == -1)
+				break; /* fall through */
+			len -= rv;
+			written += rv;
+			if (len == 0) {
+				if (writtenp != NULL)
+					*writtenp = written;
+				return (GFARM_ERR_NO_ERROR);
+			}
 		}
 	}
 #endif
