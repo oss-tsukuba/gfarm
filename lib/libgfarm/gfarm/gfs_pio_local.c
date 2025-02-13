@@ -313,6 +313,7 @@ gfs_pio_local_copyfile(int r_fd, gfarm_off_t r_off,
 			rv = sendfile(w_fd, r_fd, &sendfile_offset, len);
 			if (rv == -1)
 				break; /* fall through */
+			r_off += rv;
 			len -= rv;
 			written += rv;
 			if (len == 0) {
