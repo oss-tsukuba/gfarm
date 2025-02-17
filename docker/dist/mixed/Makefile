@@ -6,5 +6,4 @@ login:
 
 down:
 	(cd ../jwt-server; docker compose down)
-	(cd ../minica; docker compose down)
 	docker compose down
