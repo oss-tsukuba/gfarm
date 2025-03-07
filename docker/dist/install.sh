@@ -25,12 +25,14 @@ cyrus-sasl-xoauth2-idp)
 esac
 
 CONF=true
+BUILD_ONLY=false
 install_option=all
 while [ $# -gt 0 ]
 do
 	case $1 in
 	-m) CONF=false ;;
 	single) install_option=$1 ;;
+	build_only) BUILD_ONLY=true ;;
 	*) exit 1 ;;
 	esac
 	shift
@@ -46,12 +48,21 @@ else
 	cd build
 fi
 make -j $(nproc) > /dev/null
+
+if $BUILD_ONLY; then
+	status=0
+	echo Done
+	exit 0
+fi
+
 sudo make install > /dev/null
 
 if [ $install_option = all ]; then
+	OPT=-p
 	# -p cannot be used because the following error happens
 	# mv: cannot stat 'libgfsl_gsi.so.1.0.0': No such file or directory
-	gfarm-prun $PRUN_ARG "(cd $PWD; sudo make install > /dev/null)"
+	[ $PKG = gfarm ] && OPT=
+	gfarm-prun $OPT $PRUN_ARG "(cd $PWD; sudo make install > /dev/null)"
 fi
 
 status=0
