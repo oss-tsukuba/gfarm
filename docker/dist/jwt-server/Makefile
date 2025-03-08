@@ -19,7 +19,7 @@ login-setup-keycloak:
 	docker compose run $(TERM_INHERIT) --remove-orphans --rm -it setup-keycloak /bin/bash
 
 build-jwt-server:
-	docker compose build jwt-server
+	docker compose build jwt-server --no-cache
 
 build-setup-keycloak:
 	docker compose build setup-keycloak
