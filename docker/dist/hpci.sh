@@ -15,6 +15,7 @@ grep "NAME_COMPATIBILITY=HYBRID" $GSICONF || {
 sudo mkdir -p /etc/grid-security/certificates
 OPWD=$PWD
 cd /etc/grid-security/certificates
+# HPCI CA (will be deprecated soon)
 HASH=61cd35bd
 for suf in signing_policy 0
 do
@@ -24,6 +25,14 @@ do
 			sudo wget https://www.hpci.nii.ac.jp/ca/$HASH.$suf
 	}
 done
+
+# HPCI SS CA
+CERT=21d9c8b3.0
+[ -f $CERT ] || {
+	[ -f $OPWD/hpci/$CERT ] &&
+		sudo cp $OPWD/hpci/$CERT . ||
+		sudo wget https://www.hpci-office.jp/info/download/attachments/425328655/$CERT
+}
 cd $OPWD
 
 [ -f get_gfarm2conf.sh ] ||
