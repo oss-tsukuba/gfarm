@@ -14,9 +14,6 @@ services:
       KEYCLOAK_PASSWORD: admin
     networks:
       gfarm_net:
-    ports:
-      - 8080:8080
-      - 8443:8443
   setup-keycloak:
     build: setup-keycloak
     image: gfarm-setup-keycloak
