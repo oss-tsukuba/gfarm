@@ -65,13 +65,14 @@ When you install Gfarm by `all.sh`, `regress.sh` and `failover.sh` are available
     % cd ..
 
 - connect remote desktop to localhost:13389
-- login ubuntu/ubuntu
-- launch Firefox
+- login user/user
+- launch Firefox (or Chromium (/rdesktop/chromium-start.sh))
 - open a terminal
 - execute `/rdesktop/install-ca-for-browser.sh`
 - close Firefox
 - launch Firefox
 - connect to https://jwt-server/ by Firefox
+- (Automatically redirect to http://keycloak:8443/)
 - login user1/PASSWORD
 - click "Generate and Store a JSON Web Token" button
 - user name and passphrase are displayed
@@ -96,7 +97,7 @@ Passphrase: (paste the passphrase displayed)
 - ignore the certificate warning on https://jwt-server/
 - ignore the certificate warning on https://keycloak/
 
-### Update keys in minica/
+## How to update keys in minica/ if those expires
 
 ```
 (in a host)
