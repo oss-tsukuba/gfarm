@@ -452,6 +452,10 @@ doc/internal/png/gfmd-thread-dependency.png
     確認し、送信が滞留していた場合には、host_peer_busy() で
     コネクションを切断する
 
+■ 世代番号に関する処理
+
+inode-generation.txt 参照
+
 ■ ファイル複製管理
 
 ○ 基本的には、同一の世代番号を持つレプリカは全て同一の内容を持つ。

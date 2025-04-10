@@ -159,6 +159,9 @@ Updated feature
 * gfuser - -L option to display more user information
 * gfstatus - -S option to display static settings
 
+Bug fix
+* race condition about GFM_PROTO_CLOSE_WRITE_V2_4 [#1126]
+
 Release note for Gfarm 2.7.25
 =============================
 
