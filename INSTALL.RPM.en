@@ -18,11 +18,12 @@ Instruction to build RPM binary packages
 ========================================
 
 RPM binary packages are built from the RPM source package (SRPM).  To
-build the binary packages, development packages of OpenSSL, OpenLDAP
-and PostgreSQL are required.
+build the binary packages, at least development packages of OpenSSL
+and PostgreSQL are required.  For SASL XOAUTH2 and other
+authentications, other development packages are required.  For
+details, see INSTALL.en document.
 
-
-	# yum install openssl-devel openldap-devel postgresql-devel
+	# yum install openssl-devel postgresql-devel
 	# rpmbuild --rebuild gfarm-X.X.X-X.src.rpm
 
 Binary packages are located at /usr/src/redhat/RPM/ARCH/.

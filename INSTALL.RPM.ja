@@ -22,10 +22,11 @@ Gfarm ファイルシステムの導入にあたり，メタデータサーバ�
 =================================
 
 RPM バイナリパッケージは，RPM ソースパッケージ(SRPM)から作成します．バ
-イナリパッケージの構築には OpenSSL，OpenLDAP，PostgreSQL の開発用ライブ
-ラリが必要となります．
+イナリパッケージの構築には少なくとも OpenSSL，PostgreSQL の開発用ライ
+ブラリが必要となります．SASL XOAUTH2認証等を有効にするためには他の開発
+用ライブラリも必要となります。詳細は INSTALL.ja を参照してください。
 
-	# yum install openssl-devel openldap-devel postgresql-devel
+	# yum install openssl-devel postgresql-devel
 	# rpmbuild --rebuild gfarm-X.X.X-X.src.rpm
 
 なお，バイナリパッケージは /usr/src/redhat/RPM/ARCH/ に作成されます．

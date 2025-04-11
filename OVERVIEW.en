@@ -91,8 +91,8 @@ A Gfarm system consists of the following kinds of nodes:
 
   A metadata server node manages Gfarm filesystem metadata.  On the
   metadata server node, a Gfarm filesystem metaserver (gfmd), and a
-  backend database server such as an LDAP server (slapd) or a
-  PostgreSQL server (postmaster) are running.
+  backend database server such as a PostgreSQL server (postmaster) are
+  running.
 
 The three types of nodes just introduced are not necessarily different
 hosts,
@@ -116,9 +116,9 @@ The Gfarm filesystem consists of the following software:
 
   A metadata server for the Gfarm file system that runs on a metadata
   server node.  It manages directory structure, file information,
-  replica catalog, user/group information, and host information.
-  Gfmd keeps the metadata in memory, but it stored a backend databse
-  such as PostgreSQL server or OpenLDAP server, on background.
+  replica catalog, user/group information, and host information.  Gfmd
+  keeps the metadata in memory, but it stored in a backend databse
+  such as PostgreSQL server.
 
  - gfsd - the Gfarm filesystem daemon
 
@@ -137,26 +137,6 @@ The Gfarm filesystem consists of the following software:
 About authentication
 ====================
 
-gfmd and gfsd support the following three authentication methods.
-Please read the security section in Gfarm-FAQ.en, too.
+Please refer to the "Security" section in Gfarm-FAQ.en and the "Authentication settings" in the following document.
 
-1. sharedsecret
-  This uses a shared key in the ~/.gfarm_shared_key file which will be
-  generated automatically by the Gfarm software.
-  This is suitable for an environment that is protected by a firewall.
-  This authentication method is easy to use in an environment which
-  shares users' home directories via NFS.
-
-2. gsi
-  This is the GSI -- Grid Security Infrastructure -- method, and it uses
-  public key authentication, which is based on a PKI-style certificate.
-  This method encrypts network communication, and is suitable for
-  use over the Internet.
-  Please read the following page provided by the Globus project for details:
-	http://www.globus.org/security/overview.html
-
-3. gsi_auth
-  This method uses GSI for its authentication, but switches to a plain
-  TCP connection after the authentication is completed.
-  This method is suitable for an environment that is protected
-  by a firewall.
+https://oss-tsukuba.org/gfarm/share/doc/gfarm/html/en/user/index.html

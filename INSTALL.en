@@ -9,10 +9,10 @@ This section describes how to build Gfarm binaries from the source
 distribution.  You can skip this document if you use a binary
 distribution.
 
-To build the Gfarm system, the OpenSSL library and either the OpenLDAP
-library, or the PostgreSQL library are required.  Regarding RPM
-packages and Debian packages for them, see required package section
-below.
+To build the Gfarm system, at least the OpenSSL library and the
+PostgreSQL library are required.  For SASL XOAUTH2 and other
+authentications, other libraries are required.  For details, see
+"Required Package" section below.
 
 The following is the installation procedure for the Gfarm system.
 Please use GNU make on operating systems other than Linux and NetBSD.
@@ -147,8 +147,7 @@ Note
   are missing, it is still possible to build Gfarm without these
   authentication methods.
 
-* pip (Python Package Installer) Package
-
-orjson		(If it is installed, use it to accelerate gfptar)
+* gfptar works better if orjson pip (Python Package Installer) package
+  is installed.
 
 $Id$

@@ -2,55 +2,6 @@
 
 ● gfarm 全体に関わる問題点
 
-- Linux のいくつかのバージョンにおいて、/etc/nsswitch.conf で ldap を
-  指定した場合、メモリーリークが発生する場合があります。
-  gfmd, gfsd, gfarm アプリケーションなどすべてがこの問題の影響を受けま
-  すが、特に gfarm2fs のプロセス・サイズの肥大が顕著です。
-  この問題は、Gfarm のバグではなく、システム附属の nss_ldap パッケージ
-  の問題です。
-
-  問題が生じることがあると確認ディストリビューション:
-	CentOS 5.4 with glibc-2.5-49.x86_64.rpm
-	CentOS 5.5 with glibc-2.5-49.el5_5.7.x86_64.rpm	
-
-  対策:
-	nscd を起動しておけば、この問題を回避できるようです。
-
-- Linux のいくつかのバージョンにおいて、/etc/nsswitch.conf で ldap を
-  指定した場合、gfarm プログラムや gfsd がハングする場合があります。
-
-  この問題は、Gfarm のバグではなく、システム附属のライブラリのバグです。
-  具体的には、以下の条件全てが成り立つ場合に発生します。
-  1. あるプログラムが fork(2) システムコールを呼び出す。
-  2. そのプログラムが、fork(2) システムコールを呼び出す前に、getpwuid(3)
-    のような、間接的に nss_ldap モジュールを呼び出す関数を呼び出す。
-  3. そのプログラムの親プロセスと子プロセスの両方が、fork(2) システム
-    コール呼び出し後に、そのような種類の関数を呼び出す。
-  4. そのプログラムは、pthread ライブラリとリンクされている。
-  この症状は Fedora Core 3, Fedora Core 5 および CentOS 4.4 で確認され
-  ていますが、Red Hat 8 では確認されていません。
-
-  対処予定:
-	nss_ldap の開発元に関しては、下記のバグデータベースを参照して
-	ください。
-		http://bugzilla.padl.com/show_bug.cgi?id=271
-		http://bugzilla.padl.com/show_bug.cgi?id=414
-
-	具体的な解決策は、各 Linux ディストリビューション作成側に依存します。
-
-	Fedore Core Linux に関しては下記のバグデータベースを参照して
-	ください。
-		https://bugzilla.redhat.com/bugzilla/show_bug.cgi?id=154314
-
-	Red Hat Enterprise Linux に関しては下記のバグデータベースを参照して
-	ください。
-		https://bugzilla.redhat.com/show_bug.cgi?id=474181
-	Red Hat Enterprise Linux 5 および CentOS 5 については、
-	nss_ldap-253-17.el5 以降の RPM で症状が緩和する可能性がありますが、
-	未確認です。この RPM に含まれる修正については、以下の RHBA-2009:0241-4
-	を参照してください。
-	    http://www.jp.redhat.com/support/errata/RHBA/RHBA-2009-0241J.html
-
 - gfs_pio_sync() は、現在のところメタデータの更新を行なっていません。
 
   対処予定:
@@ -96,11 +47,6 @@
   たとえ gfrep コマンドを kill しても、既にネットワーク間でのコピーを
   開始しているファイルについては、それが完了するまで、コピーが続いてし
   まいます。
-
-  対処予定:
-	未定です。
-
-- gfarm ライブラリは multithread safe ではありません。
 
   対処予定:
 	未定です。
@@ -172,30 +118,12 @@
   対処予定:
 	未定です。
 
-- gfmd の冗長構成において用いられる gfmd 間の通信では、GSI認証がサポート
-  されていません。
-
-  対処予定:
-	未定です。
-
-- バックエンド・データベースとして LDAP を用いた場合、gfmd の冗長構成は
-　サポートされていません。
-
-  対処予定:
-	未定です。
-
-- バックエンド・データベースとして LDAP を用いた場合、quota 機能は
-　サポートされていません。
-
-  対処予定:
-	未定です。
-
 
 ● gfarm コマンド群に関する問題点
 
 - 下記のコマンドが存在しません。
 
-  gfdump, gfcd, gfpwd
+  gfcd, gfpwd
 
   対処予定:
 	未定です。

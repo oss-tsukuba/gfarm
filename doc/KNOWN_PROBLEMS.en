@@ -2,56 +2,6 @@ This document only describes some important problems.
 
 *** General problems with Gfarm
 
-- On some Linux distributions, memory leaks are observed, if ldap is
-  specified in /etc/nsswitch.conf.
-  All gfarm related programs, including gfmd, gfsd, gfarm applications
-  are affected by this problem, but the leaks are most significant in
-  gfarm2fs.
-  This is not a bug of Gfarm itself, but a bug of nss_ldap module which
-  is supplied by the distributions.
-
-  The Linux distribution which this problem is observed on:
-	CentOS 5.4 with glibc-2.5-49.x86_64.rpm
-	CentOS 5.5 with glibc-2.5-49.el5_5.7.x86_64.rpm	
-	CentOS 5.6 with glibc-2.5-58.el5_6.4.i386.rpm
-
-  Countermeasure:
-	This problem is workarounded by using nscd.
-
-- On some Linux distributions, gfarm programs and gfsd sometimes hang,
-  if ldap is specified in /etc/nsswitch.conf.
-
-  This is not a bug of Gfarm itself, but a bug of system supplied libraries.
-  More specifically, this problem occurs when the following conditions are
-  all satisfied:
-  1. A program calls fork(2) system call.
-  2. The program calls a function like getpwuid(3) that indirectly calls
-    nss_ldap module before calling fork(2).
-  3. Both the parent process and the child process of the program call
-    such functions after calling fork(2).
-  4. The program is linked with pthread library.
-  This symptom is observed in Fedora Core 3, Fedora Core 5 and CentOS 4.4,
-  but haven't been observed in Red Hat 8.
-
-  Plans for fixes:
-	For original vendor of the nss_ldap, please refer the following
-	bug database:
-		http://bugzilla.padl.com/show_bug.cgi?id=271
-		http://bugzilla.padl.com/show_bug.cgi?id=414
-
-	The concrete solution depends on each Linux distributon vendors.
-
-	For Fedore Core Linux, please refer the following bug database:
-		https://bugzilla.redhat.com/bugzilla/show_bug.cgi?id=154314
-
-	For Red Hat Enterprise Linux, please refer the following bug database:
-		https://bugzilla.redhat.com/show_bug.cgi?id=474181
-	For Red Hat Enterprise Linux 5 and CentOS 5, 
-	nss_ldap-253-17.el5 RPM or later version may mitigate this problem,
-	but we haven't tested it yet.  Please refer RHBA-2009:0241-4 below
-	for the changes in the RPM:
-		http://rhn.redhat.com/errata/RHBA-2009-0241.html
-
 - gfs_pio_sync() doesn't really update the metadata now.
 
   Plans for fixes:
@@ -101,11 +51,6 @@ call
 
   Even if you kill a gfrep command, a network copy process cannot be
   stopped until the ongoing copy completes.
-
-  Plans for fixes:
-	Not determined yet.
-
-- The Gfarm library isn't multithread safe.
 
   Plans for fixes:
 	Not determined yet.
@@ -169,29 +114,12 @@ command.
   at client side but gfs_findxmlattr() executes the process at gfmd that
   traverses files under a directory.
 
-- The GSI authentication is not supported for the inter-gfmd
-  communication which is used for the redundant configuration of gfmd.
-
-  Plans for fixes:
-	Not determined yet.
-
-- The redundant configuration of gfmd is not supported, if LDAP is
-  used as the backend database.
-
-  Plans for fixes:
-	Not determined yet.
-
-- The quota feature is not supported, if LDAP is used as the backend database.
-
-  Plans for fixes:
-	Not determined yet.
-
 
 *** Problems with gfarm commands
 
 - The following commands are not provided yet:
 
-  gfdump, gfcd, gfpwd
+  gfcd, gfpwd
 
   Plans for fixes:
 	Not determined yet.
