@@ -1,7 +1,7 @@
 # Part 1 data definition
 %define pkg	gfarm
 %if %{undefined ver}
-%define ver	2.8.6
+%define ver	2.8.7
 %endif
 %if %{undefined rel}
 %define rel	1
