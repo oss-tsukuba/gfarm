@@ -35,7 +35,6 @@ PKG=hpcissh-clients; export PKG
 (cd ~/gfarm/$PKG && sudo sh ./install.sh > /dev/null)
 
 echo \# YOU NEED TO DO THE FOLLOWING
-echo mv ~/.globus ~/.globus.bak
 echo export GFARM_CONFIG_FILE=$HOME/.gfarm2rc.hpci
 echo jwt-agent -s https://elpis.hpci.nii.ac.jp/ -l HPCI_ID
 status=0
