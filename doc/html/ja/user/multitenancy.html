@@ -23,7 +23,7 @@ td.speed { text-align: right; }
 <IMG alt="[GFARM LOGO]" src="../../pic/gfarm-logo.gif" align=right border=0></A>
 <A href="../../index.html">文書集</A> &gt;
 <A href="index.html">ユーザーズマニュアル</A> &gt;
-認証設定
+マルチテナント機能
 
 <HR>
 <H1>認証設定</H1>
@@ -41,8 +41,12 @@ Gfarm の認証処理の段階では user1+tenantA のように + の後に
 認証完了後、このユーザーによるファイルシステムアクセスでは
 あたかも /.tenants/tenantA/ がルートディレクトリであるかのように
 扱われます。
+<P>
 またテナント内のユーザーから見ると、自身のユーザー名は
 あたかも user1 のように見えます。
+<P>
+同様に、テナントA に属するグループ group1 は内部的には
+group1+tenantA というグループ名を持ちます。
 <P>
 例:
 <pre>
@@ -56,7 +60,8 @@ drwxrwxrwt 2 user1     group1            0 Mar 22 20:41 /tmp
 <H2>テナントの作成</H2>
 
 テナント tenantA を作成し、tenantA 内の管理権限を持つ user1 を
-登録するには、以下を行ないます。
+登録するには、デフォルト・テナント(後述) の gfarmadm 権限を持つ
+ユーザーで以下を行ないます。
 
 <PRE>
 $ gfuser -c user1+tenantA 'user1 in tenantA' /home/user1 ""
@@ -67,6 +72,17 @@ $ gfsudo gfchmod 000 /.tenants
 $ gfsudo gfchmod 755 /.tenants
 $ gfsudo gfchown user1+tenantA:gfarmadm+tenantA /.tenants/tenantA
 </PRE>
+
+<HR>
+<H2>デフォルト・テナント</H2>
+
+最初から存在し「+テナント名」を付加しないユーザ名でアクセスする
+テナントのことをデフォルト・テナントと呼びます。
+<P>
+デフォルト・テナントで gfarmadm グループ権限を持つユーザは、
+全テナントのユーザー、グループにアクセスできる権限権限を持ちます。
+またデフォルト・テナントで gfarmroot グループ権限を持つユーザは、
+全テナントのファイルシステムにアクセスできる権限を持ちます。
 
 <HR>
 
