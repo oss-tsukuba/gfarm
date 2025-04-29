@@ -1,0 +1,94 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD>
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<META http-equiv="Content-Style-Type" content="text/css">
+<TITLE>Multi-tenancy feature</TITLE>
+
+<STYLE type="text/css">
+<!-- /* BEGIN ... hide style from old browser */
+
+pre { background:#e0ffff; margin-left: 2em; margin-right: 2em }
+
+table { border-collapse: collapse; }
+thead { background:#e0e0e0; }
+th { border: solid 1px; padding: 0.5em; }
+td { border: solid 1px; padding: 0.5em; }
+td.speed { text-align: right; }
+
+     /* END ... hide style from old browser */ -->
+</STYLE>
+
+</HEAD>
+<BODY><A href="http://oss-tsukuba.org/software/gfarm">
+<IMG alt="[GFARM LOGO]" src="../../pic/gfarm-logo.gif" align=right border=0></A>
+<A href="../../index.html">文書集</A> &gt;
+<A href="index.html">ユーザーズマニュアル</A> &gt;
+Multi-tenancy feature
+
+<HR>
+<H1>Authentication configuration</H1>
+English | <A href="../../ja/user/multitenancy.html">Japanese</A>
+<P>
+This document describes the multi-tenancy feature of Gfarm.
+<P>
+The multi-tenancy feature is a function that virtually divides
+a single Gfarm file system into multiple tenants and provides them to users.
+<P>
+When using multi-tenant functionality,
+
+In the Gfarm authentication process,
+a user name user1+tenantA is treated as a user1 who belongs to tenantA.
+In other words, a “+” followed by a tenant name is treated as a user
+belonging to that tenant.
+After the authentication is completed, the file system access by this
+user will be handled as if /.tenants/tenantA were the root directory.
+<P>
+Also, from the perspective of a user in the tenant, his or her user name
+will appear as if it were user1.
+<P>
+Similarly, group group1 which belongs to tenantA has the group name
+group1+tenantA internally.
+<P>
+Example:
+<pre>
+$ gfwhomai
+user1
+$ gfls -ld /tmp
+drwxrwxrwt 2 user1     group1            0 Mar 22 20:41 /tmp
+</pre>
+
+<HR>
+<H2>Creating a tenant</H2>
+
+To create tenantA and register user1 with administrative privileges in
+tenantA, do the following as a user with gfarmadm privileges
+in the default tenant (see below).
+
+<PRE>
+$ gfuser -c user1+tenantA 'user1 in tenantA' /home/user1 ""
+$ gfgroup -c gfarmadm+tenantA user1+tenantA
+$ gfgroup -c gfarmroot+tenantA
+$ gfsudo gfmkdir -p /.tenants/tenantA
+$ gfsudo gfchmod 000 /.tenants
+$ gfsudo gfchmod 755 /.tenants
+$ gfsudo gfchown user1+tenantA:gfarmadm+tenantA /.tenants/tenantA
+</PRE>
+
+<HR>
+<H2>default tenant</H2>
+
+A tenant that exists from the beginning and is accessed with a user
+name that is not appended with “+tenant name” is called
+the default tenant.
+<P>
+Users with the gfarmadm group privileges in the default tenant can
+access to all users and groups in all tenants.
+Users with the gfarmroot group privilege in the default tenant can
+access to the all filesystems in all tenants.
+
+<HR>
+
+<ADDRESS><A href="http://oss-tsukuba.org/software/gfarm">Gfarm File System</A> &lt;<TT>gfarmfs at gmail.com</TT>&gt;</ADDRESS>
+
+</BODY>
+</HTML>
