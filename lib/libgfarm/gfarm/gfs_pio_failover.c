@@ -83,9 +83,17 @@ gfs_pio_should_failover_at_gfs_open(GFS_File gf, gfarm_error_t e)
 	fs = gfarm_filesystem_get_by_connection(gfs_pio_metadb(gf));
 	if (gfarm_filesystem_in_failover_process(fs))
 		return (0);
-	return (gfarm_filesystem_failover_detected(fs) ||
-	    e == GFARM_ERR_GFMD_FAILED_OVER ||
-	    e == GFARM_ERR_BAD_FILE_DESCRIPTOR);
+	if (gfarm_filesystem_failover_detected(fs) ||
+	    e == GFARM_ERR_GFMD_FAILED_OVER)
+		return (1);
+	if (e == GFARM_ERR_BAD_FILE_DESCRIPTOR) {
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "file %s, inode: %llu:%llu, fd %d: %s",
+		    gf->url, (long long)gf->ino, (long long)gf->gen, gf->fd,
+		    gfarm_error_string(e));
+		return (1);
+	}
+	return (0);
 #else /* __KERNEL__ */
 	return (0);
 #endif /* __KERNEL__ */

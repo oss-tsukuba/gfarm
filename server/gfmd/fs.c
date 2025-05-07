@@ -144,9 +144,12 @@ gfm_server_put_fd(struct peer *peer, int from_client, int skip)
 	if ((process = peer_get_process(peer)) == NULL)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	else if ((e = process_verify_fd(process, peer, fd, diag))
-	    != GFARM_ERR_NO_ERROR)
-		;
-	else {
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "%s (%s@%s) put_fd=%d request failed: %s",
+		    diag, peer_get_username(peer), peer_get_hostname(peer),
+		    (int)fd, gfarm_error_string(e));
+	} else {
 		peer_fdpair_set_current(peer, fd, diag);
 		e = peer_fdpair_externalize_current(peer);
 	}
