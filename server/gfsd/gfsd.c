@@ -1527,7 +1527,6 @@ static void
 file_entry_set_mtime(struct file_entry *fe,
 	gfarm_time_t sec, gfarm_int32_t nsec)
 {
-gflog_info(GFARM_MSG_UNFIXED, "file_entry_set_mtime"); gfarm_log_backtrace_symbols();
 	fe->flags |= FILE_FLAG_WRITTEN;
 	fe->mtime = sec;
 	fe->mtimensec = nsec;
@@ -1536,7 +1535,6 @@ gflog_info(GFARM_MSG_UNFIXED, "file_entry_set_mtime"); gfarm_log_backtrace_symbo
 static void
 file_entry_set_size(struct file_entry *fe, gfarm_off_t size)
 {
-gflog_info(GFARM_MSG_UNFIXED, "file_entry_set_size"); gfarm_log_backtrace_symbols();
 	fe->flags |= FILE_FLAG_WRITTEN;
 	fe->size = size;
 }
@@ -1717,10 +1715,7 @@ file_table_add(gfarm_int32_t net_fd,
 	if (flags & O_CREAT)
 		fe->flags |= FILE_FLAG_CREATED;
 	if ((flags & O_TRUNC) != 0)
-{
-gflog_info(GFARM_MSG_UNFIXED, "O_TRUNC"); gfarm_log_backtrace_symbols();
 		fe->flags |= FILE_FLAG_WRITTEN;
-}
 	/*
 	 * if it's opened for O_RDONLY, do not set FILE_FLAG_WRITTEN,
 	 * even if is_new_file is true, because the FILE_FLAG_WRITTEN flag
@@ -1744,7 +1739,6 @@ gflog_info(GFARM_MSG_UNFIXED, "O_TRUNC"); gfarm_log_backtrace_symbols();
 			 * and won't be written this time as well,
 			 * undesired st_mtime change will happen.
 			 */
-gflog_info(GFARM_MSG_UNFIXED, "is_new_file"); gfarm_log_backtrace_symbols();
 			fe->flags |= FILE_FLAG_WRITTEN;
 		}
 		fe->flags |= FILE_FLAG_WRITABLE;
@@ -1957,7 +1951,6 @@ file_table_set_written(gfarm_int32_t net_fd)
 	if (fe == NULL)
 		return;
 
-gflog_info(GFARM_MSG_UNFIXED, "file_entry_set_written"); gfarm_log_backtrace_symbols();
 	fe->flags |= FILE_FLAG_WRITTEN;
 }
 
@@ -2622,7 +2615,6 @@ gfarm_error_t
 close_request(struct file_entry *fe)
 {
 	if (fe->flags & FILE_FLAG_WRITTEN) {
-gflog_info(GFARM_MSG_UNFIXED, "close_request: written");
 		return (gfm_client_close_write_v2_8_request(gfm_server));
 	} else if (fe->flags & FILE_FLAG_READ) {
 		return (gfm_client_close_read_request(gfm_server,
