@@ -1,3 +1,12 @@
+Release note for Gfarm 2.8.7
+============================
+
+[2025.4.11]
+
+Bug fix
+* gfs_pio_sendfile(), gfs_pio_recvfile() - fix an issue that prevented
+  transfer of files larger than 2,147,479,552 bytes to/from local storage
+
 Release note for Gfarm 2.8.6
 ============================
 
@@ -158,6 +167,9 @@ Updated feature
   method
 * gfuser - -L option to display more user information
 * gfstatus - -S option to display static settings
+
+Bug fix
+* race condition about GFM_PROTO_CLOSE_WRITE_V2_4 [#1126]
 
 Release note for Gfarm 2.7.25
 =============================

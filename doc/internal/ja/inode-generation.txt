@@ -1,4 +1,50 @@
-■ 問題
+how-it-works.txt の「世代番号の増加」も参照
+
+○ Gfarm に固有の世代番号更新
+
+通常の UNIX ファイルシステムでは、inode の世代番号は、同一の inode 番号が
+異なるファイルに対して再利用された場合に増える。
+
+しかし gfarm 2.4 以降では、下記 #34 の課題を解決するために、この
+semantics を変更しており、異なるファイルとして再利用された場合のみならず、
+ファイルが更新された場合にも、その更新にともなうクローズ処理のたびに
+世代番号を増やしている。
+UNIX semantics を厳密に守るためには、UNIX 的な世代番号とは別に
+更新番号を追加すべきだが、gfarm 2.0 ではなく 2.4 という中途半端な
+タイミングで行なわれた変更であることと、実用上の問題はほぼないことから、
+このようにした。
+
+○ ファイル更新アクセス処理の概要
+
+* libgfarm gfs_pio_create() / gfs_pio_open()
+  gfmd へ GFM_PROTO_CREATE ないし GFM_PROTO_OPEN RPC を発行する
+
+* gfs_pio_write() や gfs_pio_read() などでファイルの実データに
+  アクセスしようとすると、gfs_pio_check_view_default() 経由で
+  実体ファイルアクセス先の gfsd をスケジュールする処理が走り、
+  libgfarm が gfsd へ (gfs_pio_local.c の場合) GFS_PROTO_OPEN_LOCAL
+  ないし (gfs_pio_remote.c の場合) GFS_OPEN RPC を発行する。
+  すると gfsd は gfmd へ GFS_PIO_REOPEN RPC を発行し、ファイル実体の
+  inode番号および世代番号を入手して、実体をオープンする。
+  なお、書き込みファイルクローズ時の
+
+  なお、libgfarm gfs_pio の実装が、
+	gfs_pio -> gfs_pio_section -> gfs_pio_local / gfs_pio_remote
+  の3層となっているのは、gfarm version 1 時代の名残り。
+  gfarm version 1 には、複数のファイル実体を一つの論理ファイルにまとめて
+  見せる機能があり、ファイル実体を section と呼んでいた。
+  gfarm version 2 ではこの機能は削除された。
+
+XXX
+オープン時に GFARM_FILE_TRUNC が指定された場合、そのファイルの実体
+に対する初回の REOPEN で O_TRUNC モードでの open(2) が実行され、
+ファイルサイズが0バイトになる。
+
+gfsd に
+
+■ 課題 #34 - race conditions at replication
+
+○ 問題点
 
 gfarm 2.3 までは、以下のシナリオのような race condition 問題があった。
 
@@ -16,33 +62,37 @@ gfarm 2.3 までは、以下のシナリオのような race condition 問題が
   その後、(2) のために複製が消されると、本来存在しなければけない複製が、
   消去されてしまう。
 
-■ 解決
+○ 解決策 (commit 6e3e706f5dd5df558ba5ca0f4254d4f63ca521c8)
 
 gfsd が v2.4 以降の場合 (この場合、gfmd も v2.4 以降である必要がある。)
 以下のような動作を行なう。
 
 ・書き込みを行なった後のファイルクローズ時、gfsd は、以下のような
   動作を行なう。
-  (1) GFM_PROTO_CLOSE_WRITE_V2_4 でクローズ通知が gfmd へ届く。
+  (1) GFM_PROTO_CLOSE_WRITE_V2_4 ないし GFM_PROTO_CLOSE_WRITE_V2_8 RPC
+      でクローズ通知が gfmd へ届く。
   (2) (1) の返答として、gfmd は、以下を gfsd へ返す。
-    ・新しい世代番号に改名する必要があるかを示すフラグ
+    ・新しい世代番号に改名する必要があるかを示すフラグ。
+      このフラグは常に true なので実際には不要なのだが、
+      gfsd ではこのフラグを見て、世代更新の必要性を判断している。
+      リリースされなかった当初の実装では、mtime を見て、最も新しい時刻の
+      GFM_PROTO_CLOSE_WRITE_V2_4 以外では世代更新を省略していた。
+      しかし最終的には常に世代更新を行なうこととし、常に true とした。
     ・改名前の古い世代番号 (上述のフラグがたっている場合のみ有効)
     ・改名後の新しい世代番号 (上述のフラグがたっている場合のみ有効)
   (3) gfsd は、
 	rename("inode番号"+"inode旧世代番号", "inode番号"+"inode新世代番号");
-      を行ない、GFM_PROTO_GENERATION_UPDATED で、完了を gfmd に通知する。
+      を行なう。
+  (4) gfsd は GFM_PROTO_GENERATION_UPDATED ないし
+      GFM_PROTO_GENERATION_UPDATED_V2_8 で、改名完了を gfmd に通知する。
 
-・gfmd は、GFM_PROTO_CLOSE_WRITE_V2_4 を受け取った場合、
-  より後の mtime で既に同時オープンの GFM_PROTO_CLOSE_WRITE_V2_4 を
-  受け取っていないか検査する。より後の mtime があれば、改名フラグなし。
-・改名フラグが必要な場合は、GFM_PROTO_CLOSE_WRITE_V2_4 の結果として、
-  それを通知し、かつ、inode に、世代変更中を示す状態を記録する。
+・inode に、世代変更中を示す状態を記録する。
 ・世代変更中に、以下のような要求がきた場合には、返答を保留する。
   * 新しいオープン要求がきた場合
   * より新しい世代に更新する GFM_PROTO_CLOSE_WRITE_V2_4 を受け取った場合
 ・世代更新が完了したら、遅延していた返答を返す。
 
-■ 破棄された案
+○ 破棄された案
 
 以下のような案も考えたが、とりやめた
 
@@ -138,3 +188,37 @@ gfsd が v2.4 以降の場合 (この場合、gfmd も v2.4 以降である必�
 rename(2) の競合や、RPC reply の紛失による問題は共通しており、
 回避が困難。
 
+■ 課題 #1126 - race condition about GFM_PROTO_CLOSE_WRITE_V2_4
+
+○ 問題点
+
+gfarm 2.8 までは、同一のファイルシステムノードで動作する
+複数の異なる gfsd から届く GFM_PROTO_CLOSE_WRITE_V2_4 RPC に
+関する race condition があった。
+
+異なる gfsd からの RPC は、異なる TCP 接続を介して送られるため、
+ファイルシステムノード側で発生した事象の時刻順に届くとは限らず、
+時刻とは異なる順序で gfmd に届くことが稀に発生する。
+
+gfarm 2.8 より前は、GFM_PROTO_CLOSE_WRITE_V2_4 RPC ハンドラで
+gfmd 内部のファイルサイズやファイルアクセス/ファイル更新時刻を
+更新を更新していた。
+このため RPC が届く順序に入れ替わりが発生した場合、
+メタデータに実際とは異なるファイルサイズが記録されることがあった。
+
+この問題は、gfcp や gfpconcat コマンドで顕著に観察された。
+
+○ 解決策
+   commit 07edb61ad7e1cd96fcce35eec03b118d6127c5fe
+   commit 8d817d87d11da4b5523330b7ccb3026b7ecf68ac
+
+gfmd はファイルの実体の更新順序をもともと GFM_PROTO_CLOSE_WRITE_V2_4 RPC
+への返答順序を使って直列化していた。
+gfarm 2.8 では、この仕組みを利用し、GFM_PROTO_CLOSE_WRITE_V2_8 および
+GFM_PROTO_GENERATION_UPDATED_V2_8 RPC を新設し、
+ファイルサイズ更新を close_write のタイミングから、
+GFM_PROTO_GENERATION_UPDATED_V2_8 RPC のタイミングへ移動して解決した。
+
+※ 2.7 ブランチでは commit f01c61c8203a7b8b8bbbaa2f7382e55457f38366
+   において、gfcp および gfpconcat をインストールしないことにして
+   影響を軽減している

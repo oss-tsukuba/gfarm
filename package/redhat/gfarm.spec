@@ -1,7 +1,7 @@
 # Part 1 data definition
 %define pkg	gfarm
 %if %{undefined ver}
-%define ver	2.8.6
+%define ver	2.8.7
 %endif
 %if %{undefined rel}
 %define rel	1
@@ -1148,10 +1148,12 @@ fi
 %{lib_prefix}/libgfutil.so.1
 %{lib_prefix}/libgfutil.so.1.0.0
 %if %{globus}
+%{lib_prefix}/libgfsl_gsi.so
 %{lib_prefix}/libgfsl_gsi.so.1
 %{lib_prefix}/libgfsl_gsi.so.1.0.0
 %endif
 %if %{kerberos}
+%{lib_prefix}/libgfsl_kerberos.so
 %{lib_prefix}/libgfsl_kerberos.so.1
 %{lib_prefix}/libgfsl_kerberos.so.1.0.0
 %endif
@@ -1392,12 +1394,10 @@ fi
 %if %{globus}
 %{lib_prefix}/libgfsl_gsi.a
 %{lib_prefix}/libgfsl_gsi.la
-%{lib_prefix}/libgfsl_gsi.so
 %endif
 %if %{kerberos}
 %{lib_prefix}/libgfsl_kerberos.a
 %{lib_prefix}/libgfsl_kerberos.la
-%{lib_prefix}/libgfsl_kerberos.so
 %endif
 %{lib_prefix}/libgfperf.a
 %{lib_prefix}/libgfperf.la
