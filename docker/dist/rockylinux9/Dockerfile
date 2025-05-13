@@ -28,11 +28,10 @@ RUN \
  # sshd
  dnf -y install openssh-server \
  # sshd_config
- && mv /etc/ssh/sshd_config /etc/ssh/sshd_config.orig \
- && awk ' \
-    /#PermitEmptyPasswords no/ { print "PermitEmptyPasswords yes"; next } \
-    /UsePAM yes/ { print "UsePAM no"; next } \
-    { print }' /etc/ssh/sshd_config.orig > /etc/ssh/sshd_config \
+ && printf '%s\n' \
+   'PermitEmptyPasswords yes' \
+   'UsePAM no' \
+   > /etc/ssh/sshd_config.d/10-insecure.conf \
  # ssh_config
  && printf '%s\n' \
     'Host *' \
