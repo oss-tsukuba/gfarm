@@ -12,7 +12,7 @@ RUN apt-get update \
     libscitokens-dev \
     golang python3 \
     python3-docopt python3-schema \
-    python3-venv \
+    python3-venv bzip2 xz-utils \
     fuse libfuse-dev libacl1-dev \
     jq \
     wget curl git
