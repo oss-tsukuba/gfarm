@@ -28,11 +28,10 @@ RUN \
  # sshd
  dnf -y install openssh-server \
  # sshd_config
- && mv /etc/ssh/sshd_config /etc/ssh/sshd_config.orig \
- && awk ' \
-    /#PermitEmptyPasswords no/ { print "PermitEmptyPasswords yes"; next } \
-    /UsePAM yes/ { print "UsePAM no"; next } \
-    { print }' /etc/ssh/sshd_config.orig > /etc/ssh/sshd_config \
+ && printf '%s\n' \
+   'PermitEmptyPasswords yes' \
+   'UsePAM no' \
+   > /etc/ssh/sshd_config.d/10-insecure.conf \
  # ssh_config
  && printf '%s\n' \
     'Host *' \
@@ -43,7 +42,9 @@ RUN \
 RUN useradd -m -u $UID -s /bin/bash $USERNAME \
  && echo "$USERNAME ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers.d/$USERNAME \
  # delete passwd
- && passwd -d $USERNAME
+ && passwd -d $USERNAME \
+ # Workaround for "sudo: PAM account management error: Authentication service cannot retrieve authentication info"
+ && chmod u+r /etc/shadow
 
 RUN useradd -m _gfarmfs \
  && useradd -m _gfarmmd

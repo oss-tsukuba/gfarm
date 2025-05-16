@@ -230,6 +230,9 @@ for t in $(seq 1 "$GFDOCKER_NUM_TENANTS"); do
  done
 done
 
+# Workaround for "sudo: PAM account management error: Authentication service cannot retrieve authentication info"
+chmod u+r /etc/shadow
+
 # for TLS
 mkdir -p /etc/pki/tls/certs
 ln -s /etc/grid-security/certificates /etc/pki/tls/certs/gfarm

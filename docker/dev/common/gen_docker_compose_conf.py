@@ -70,10 +70,10 @@ if is_cgroup_v2 == 'true':
     disable_security_opt = '#'
     disable_capadd = '#'
 else:
-    privileged = 'false'
-    disable_cgroupfs_mount = ''
-    disable_security_opt = ''
-    disable_capadd = ''
+    privileged = 'true'
+    disable_cgroupfs_mount = '#'
+    disable_security_opt = '#'
+    disable_capadd = '#'
 
 print('''\
 # This file was automatically generated.
