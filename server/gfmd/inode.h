@@ -1,4 +1,9 @@
-enum inode_close_mode { INODE_CLOSE_V2_0, INODE_CLOSE_V2_4, INODE_CLOSE_V2_8 };
+enum inode_close_mode {
+	INODE_CLOSE_CLIENT_ONLY,
+	INODE_CLOSE_V2_0,
+	INODE_CLOSE_V2_4,
+	INODE_CLOSE_V2_8
+};
 
 void inode_init(void);
 void inode_initial_entry(void);

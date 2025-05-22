@@ -786,6 +786,16 @@ inode_activity_free_try(struct inode *inode)
 	if (ia->openings.opening_next == &ia->openings &&
 	    ia->u.f.event_type == EVENT_NONE &&
 	    ia->u.f.rstate == NULL) {
+		if (ia->u.f.writers != 0 || ia->u.f.spool_writers != 0) {
+			gflog_notice(GFARM_MSG_UNFIXED,
+			    "inode_activity_free_try: "
+			    "unexpected behavior in inode(%lld:%lld): "
+			    "writers=%d, spool_writers=%d",
+			    (long long)inode->i_number,
+			    (long long)inode->i_gen,
+			    ia->u.f.writers, ia->u.f.spool_writers);
+			gfarm_log_backtrace_symbols();
+		}
 		inode_activity_free(ia);
 		inode->u.c.activity = NULL;
 		return (1);
@@ -5063,6 +5073,16 @@ inode_open(struct file_opening *fo, struct dirset *tdirset)
 		 *   || inode_has_writable_replica(inode)) != 0
 		 * related function: inode_schedule_file_default()
 		 */
+		/* sanity check */
+		if (ia->u.f.writers < 0) {
+			gflog_notice(GFARM_MSG_UNFIXED, "inode_open: "
+			    "unexpected behavior in inode(%lld:%lld): "
+			    "writers=%d, spool_writers=%d",
+			    (long long)inode->i_number,
+			    (long long)inode->i_gen,
+			    ia->u.f.writers, ia->u.f.spool_writers);
+			gfarm_log_backtrace_symbols();
+		}
 		++ia->u.f.writers;
 	}
 	if ((fo->flag & GFARM_FILE_TRUNC) != 0) {
@@ -5102,8 +5122,19 @@ inode_close_read(struct file_opening *fo, struct gfarm_timespec *atime,
 	struct dirset *tdirset = inode_get_tdirset(inode);
 	int read_only = gfarm_read_only_mode();
 
-	if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0)
+	if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0) {
 		--ia->u.f.writers;
+		/* sanity check */
+		if (ia->u.f.writers < 0) {
+			gflog_notice(GFARM_MSG_UNFIXED, "inode_close_read: "
+			    "unexpected behavior in inode(%lld:%lld): "
+			    "writers=%d, spool_writers=%d",
+			    (long long)inode->i_number,
+			    (long long)inode->i_gen,
+			    ia->u.f.writers, ia->u.f.spool_writers);
+			gfarm_log_backtrace_symbols();
+		}
+	}
 	if ((fo->flag & GFARM_FILE_TRUNC_PENDING) != 0 &&
 	    ia->u.f.writers == 0) {
 		/*
@@ -5122,7 +5153,7 @@ inode_close_read(struct file_opening *fo, struct gfarm_timespec *atime,
 			    (long long)inode_get_number(inode),
 			    (long long)inode_get_gen(inode));
 		} else {
-			inode_file_update(fo, INODE_CLOSE_V2_0, 0,
+			inode_file_update(fo, INODE_CLOSE_CLIENT_ONLY, 0,
 			    atime, &inode->i_mtimespec,
 			    NULL, NULL, trace_logp, diag);
 		}
@@ -5177,6 +5208,19 @@ inode_add_ref_spool_writers(struct inode *inode)
 	struct inode_activity *ia = inode->u.c.activity;
 
 	assert(ia != NULL);
+
+	/* sanity check */
+	if (ia->u.f.spool_writers < 0) {
+		gflog_notice(GFARM_MSG_UNFIXED,
+		    "inode_add_ref_spool_writers: "
+		    "unexpected behavior in inode(%lld:%lld): "
+		    "writers=%d, spool_writers=%d",
+		    (long long)inode->i_number,
+		    (long long)inode->i_gen,
+		    ia->u.f.writers, ia->u.f.spool_writers);
+		gfarm_log_backtrace_symbols();
+	}
+
 	++ia->u.f.spool_writers;
 }
 
@@ -5187,6 +5231,18 @@ inode_del_ref_spool_writers(struct inode *inode)
 
 	assert(ia != NULL);
 	--ia->u.f.spool_writers;
+
+	/* sanity check */
+	if (ia->u.f.spool_writers < 0) {
+		gflog_notice(GFARM_MSG_UNFIXED,
+		    "inode_add_ref_spool_writers: "
+		    "unexpected behavior in inode(%lld:%lld): "
+		    "writers=%d, spool_writers=%d",
+		    (long long)inode->i_number,
+		    (long long)inode->i_gen,
+		    ia->u.f.writers, ia->u.f.spool_writers);
+		gfarm_log_backtrace_symbols();
+	}
 }
 
 void
@@ -5262,6 +5318,9 @@ inode_metadata_update(struct inode *inode, gfarm_off_t size,
  *
  * spool_host may be NULL, if GFARM_FILE_TRUNC_PENDING.
  *
+ * if inode_close_mode == INODE_CLOSE_ONLY, i.e. GFARM_FILE_TRUNC
+ *	atime and mtime are all not NULL,
+ *	old_genp, new_genp, trace_logp are all NULL.
  * if inode_close_mode == INODE_CLOSE_V2_0, i.e. GFM_PROTO_CLOSE_WRITE:
  *	atime and mtime are all not NULL,
  *	old_genp, new_genp, trace_logp are all NULL.
@@ -5293,7 +5352,7 @@ inode_file_update_common(struct inode *inode, enum inode_close_mode close_mode,
 
 	old_gen = inode->i_gen;
 
-	if (close_mode == INODE_CLOSE_V2_0) {
+	if (close_mode <= INODE_CLOSE_V2_0) {
 		/*
 		 * if the RPC is V2_4 or later,
 		 * the following will be done at generation_updated RPC
