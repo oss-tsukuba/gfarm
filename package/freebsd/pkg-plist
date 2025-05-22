@@ -480,7 +480,7 @@ share/doc/gfarm/html/ja/user/nfs-gfarmfs.html
 share/doc/gfarm/html/ja/user/samba-gfarmfs.html
 share/doc/gfarm/html/ja/user/samba-hook.html
 share/doc/gfarm/html/ja/user/smboverssh.html
-share/doc/gfarm/html/pic/gfarm-logo.gif
+share/doc/gfarm/html/pic/Gfarm_logo_tate_color.svg
 share/gfarm/config/bdb.DB_CONFIG.in
 share/gfarm/config/config-gfarm.ldap
 share/gfarm/config/config-gfarm.postgresql

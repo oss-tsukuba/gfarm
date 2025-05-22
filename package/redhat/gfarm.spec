@@ -1104,7 +1104,7 @@ fi
 %{html_prefix}/ja/user/redundancy-tutorial.html
 %{html_prefix}/ja/user/cipher-comparison.html
 %{html_prefix}/ja/user/dirquota.html
-%{html_prefix}/pic/gfarm-logo.gif
+%{html_prefix}/pic/Gfarm_logo_tate_color.svg
 %{doc_prefix}/INSTALL.en
 %{doc_prefix}/INSTALL.ja
 %{doc_prefix}/INSTALL.RPM.en

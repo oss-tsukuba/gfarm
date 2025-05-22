@@ -8,6 +8,6 @@ include $(top_srcdir)/makes/var.mk
 
 datadir=$(default_htmldir)/pic
 
-DATA = $(srcdir)/gfarm-logo.gif
+DATA = $(srcdir)/Gfarm_logo_tate_color.svg
 
 include $(top_srcdir)/makes/data.mk
