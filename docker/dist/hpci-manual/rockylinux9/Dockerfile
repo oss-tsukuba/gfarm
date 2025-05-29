@@ -67,7 +67,7 @@ RUN cd \
 
 RUN cd \
  && wget https://www.hpci-office.jp/info/download/attachments/69471402/get_gfarm2conf.sh \
- && sh ./get_gfarm2conf.sh -g /usr/local/bin \
+ && sh ./get_gfarm2conf.sh \
  && chmod 644 /etc/gfarm2.conf \
  && if ! grep sasl /etc/gfarm2.conf 2>&1 /dev/null; then echo 'auth enable sasl *' >>/etc/gfarm2.conf; fi
 
