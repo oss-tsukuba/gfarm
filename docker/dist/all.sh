@@ -106,7 +106,7 @@ fi
 
 cat <<EOF | sudo tee $sasl_libdir/sasl2/gfarm.conf > /dev/null
 log_level: 7
-mech_list: XOAUTH2 ANONYMOUS
+mech_list: XOAUTH2 ANONYMOUS PLAIN
 xoauth2_scope: hpci
 xoauth2_aud: hpci
 xoauth2_user_claim: hpci.id
@@ -118,6 +118,11 @@ EOF
 cp $sasl_libdir/sasl2/gfarm*.conf ~/local
 gfarm-prun -p sudo cp local/gfarm*.conf $sasl_libdir/sasl2
 rm ~/local/gfarm*.conf
+
+PASS=PASSWORD
+gfarm-prun -p -a "echo $PASS | sudo saslpasswd2 -c $(id -un)"
+gfarm-prun -p -a \
+	"sudo chown _gfarmfs /etc/sasldb2 /etc/sasl2/sasldb2 > /dev/null 2>&1"
 
 # set up certificates
 sh ./key.sh
@@ -145,7 +150,7 @@ for a in $(gfstatus -S | grep 'client auth' | grep -v not | awk '{ print $3 }')
 do
 	[ $a = gsi ] && AUTH="$AUTH gsi gsi_auth"
 	[ $a = tls ] && AUTH="$AUTH tls_sharedsecret tls_client_certificate"
-	[ $a = sasl ] && AUTH="$AUTH anonymous anonymous_auth"
+	[ $a = sasl ] && AUTH="$AUTH sasl sasl_auth anonymous anonymous_auth"
 done
 AUTH="$AUTH sharedsecret"
 for a in $AUTH
@@ -161,7 +166,7 @@ do
 	fi
 	case $a in
 	gsi*|\
-	tls_sharedsecret|anonymous_auth)
+	tls_sharedsecret|sasl_auth|anonymous_auth)
 		$REGRESS_FULL || continue ;;
 	esac
 	$build_pkg && continue

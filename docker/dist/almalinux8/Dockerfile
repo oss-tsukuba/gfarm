@@ -20,7 +20,7 @@ RUN dnf -y upgrade almalinux-release \
     fuse fuse-devel libacl-devel \
     procps gdb valgrind \
     myproxy globus-simple-ca \
-    cyrus-sasl-devel scitokens-cpp-devel \
+    cyrus-sasl-devel cyrus-sasl-plain scitokens-cpp-devel \
     golang jq curl attr \
  && dnf config-manager --set-enabled powertools \
  && dnf -y install pandoc
