@@ -5,6 +5,7 @@
 .libs
 
 /build
+/build-*
 
 /TAGS
 /doc/html/en/ref/docbook2html.xsl
