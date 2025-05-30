@@ -4,7 +4,8 @@ status=1
 PROG=$(basename $0)
 trap '[ $status = 0 ] && echo All set || echo NG: $PROG; exit $status' 0 1 2 15
 
-REGRESS=false
+${REGRESS:=false} || :
+${REGRESS_FULL:=false} && REGRESS=true
 
 # sanity
 DISTDIR=$PWD/..
@@ -107,6 +108,11 @@ do
 		ssh $h sh $DISTDIR/edconf.sh $a > /dev/null
 		ssh $h sh $DISTDIR/check.sh
 	done
+	case $a in
+	gsi*|\
+	tls_sharedsecret|sasl_auth|anonymous_auth)
+		$REGRESS_FULL || continue ;;
+	esac
 	$REGRESS && sh $DISTDIR/regress.sh
 	$REGRESS && sh $DISTDIR/regress-xattr.sh
 done
