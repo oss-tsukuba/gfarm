@@ -41,6 +41,10 @@ DEFAULT_SCOPES = ['scitokens', 'openid', 'offline_access', 'hpci']
 OPTIONAL_SCOPES = []
 
 
+def W(*args):
+    print('Warning:', *args, file=sys.stderr)
+
+
 def E(*args):
     print('Error:', *args, file=sys.stderr)
 
@@ -62,8 +66,8 @@ while True:
     try:
         realms = kapi.get_realms()
         break
-    except Exception:
-        print("waiting for keycloak startup")
+    except Exception as e:
+        print("waiting for keycloak startup: ", str(e))
         time.sleep(1)
 
 # REALM
@@ -139,7 +143,7 @@ event_config = '''
   "CODE_TO_TOKEN", "VERIFY_PROFILE", "GRANT_CONSENT_ERROR",
   "IDENTITY_PROVIDER_FIRST_LOGIN_ERROR" ],
 
- "adminEventsEnabled" : true,
+ "adminEventsEnabled" : false,
  "adminEventsDetailsEnabled" : false
 }
 '''
@@ -337,7 +341,7 @@ client_public = {
     "redirectUris": ["http://localhost:8080/"],
     "attributes": {
         "oauth2.device.authorization.grant.enabled": True,
-        "client.offline.session.idle.timeout": 86400,
+        "client.offline.session.idle.timeout": 604800,
         "client.offline.session.max.lifespan": 604800,
     }
 }
@@ -349,7 +353,7 @@ client_private = {
     "redirectUris": JWT_SERVER_URLS,
     "attributes": {
         "oauth2.device.authorization.grant.enabled": True,
-        "client.offline.session.idle.timeout": 86400,
+        "client.offline.session.idle.timeout": 604800,
         "client.offline.session.max.lifespan": 31536000,
     }
 }
@@ -490,6 +494,53 @@ flow_display_name_fbl_review = "Review Profile"
 flow_display_name_fbl_create = "User creation or linking"
 update_execution(flow_alias_fbl, flow_display_name_fbl_review, "DISABLED")
 update_execution(flow_alias_fbl, flow_display_name_fbl_create, "DISABLED")
+
+
+# Define User Profile
+# (for Keycloak 22 or later)
+try:
+    users_profile = kapi.get_realm_users_profile()
+    use_user_profile = True
+except KeycloakError as e:
+    W("get_realm_users_profile", pf(e), str(e))
+    use_user_profile = False
+
+if use_user_profile:
+    users_profile_hpciid = {
+        "name" : "hpci.id",
+        "displayName" : "${hpci.id}",
+        "validations" : { },
+        "annotations" : { },
+        "permissions" : {
+            "view" : [ "admin", "user" ],
+            "edit" : [ "admin" ]
+        },
+        "multivalued" : False
+    }
+
+    users_profile_localaccounts = {
+        "name" : "local-accounts",
+        "displayName" : "${local-accounts}",
+        'validations': {'length': {'min': '0', 'max': '50000'}},
+        "annotations" : { },
+        "permissions" : {
+            "view" : [ "admin", "user" ],
+            "edit" : [ "admin" ]
+        },
+        "multivalued" : False
+    }
+
+    ignore_keys = ["hpci.id", "local-accounts"]
+    attributes = users_profile["attributes"]
+    filtered_attributes = [item for item in attributes if item.get("name") not in ignore_keys]
+    filtered_attributes.append(users_profile_hpciid)
+    filtered_attributes.append(users_profile_localaccounts)
+    users_profile["attributes"] = filtered_attributes
+
+    kapi.update_realm_users_profile(users_profile)
+
+    users_profile2 = kapi.get_realm_users_profile()
+    print(pf(users_profile2))
 
 
 # User
