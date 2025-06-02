@@ -1,8 +1,5 @@
 TERM_INHERIT = $${TERM+--env TERM='${TERM}'}
 
-ps:
-	docker compose ps
-
 login-jwt-server:
 	docker exec $(TERM_INHERIT) -it gfarm-jwt-server /bin/bash
 
@@ -45,3 +42,6 @@ up:
 
 down:
 	docker compose down -v --remove-orphans
+
+ps:
+	docker compose ps
