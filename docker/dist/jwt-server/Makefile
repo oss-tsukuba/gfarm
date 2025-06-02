@@ -1,8 +1,5 @@
 TERM_INHERIT = $${TERM+--env TERM='${TERM}'}
 
-ps:
-	docker compose ps
-
 login-jwt-server:
 	docker exec $(TERM_INHERIT) -it gfarm-jwt-server /bin/bash
 
@@ -22,7 +19,9 @@ build-jwt-server:
 	docker compose build jwt-server --no-cache
 
 build-setup-keycloak:
-	docker compose build setup-keycloak
+	docker compose build setup-keycloak --no-cache
+
+build: build-jwt-server build-setup-keycloak
 
 setup: setup-keycloak setup-jwt-server
 
@@ -43,3 +42,6 @@ up:
 
 down:
 	docker compose down -v --remove-orphans
+
+ps:
+	docker compose ps
