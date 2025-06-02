@@ -60,6 +60,7 @@ When you install Gfarm by `all.sh`, `regress.sh` and `failover.sh` are available
 ## For OAuth authentication
 
     % cd jwt-server
+    (To update images if necessary)% make build
     % docker compose up -d
     % make setup
     % cd ..
