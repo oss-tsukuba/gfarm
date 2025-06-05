@@ -915,10 +915,11 @@ fi
 %{html_prefix}/en/user/auth-gsi.html
 %{html_prefix}/en/user/auth-tls.html
 %{html_prefix}/en/user/auth-sasl.html
-%{html_prefix}/en/user/samba-gfarmfs.html
-%{html_prefix}/en/user/redundancy-tutorial.html
 %{html_prefix}/en/user/cipher-comparison.html
 %{html_prefix}/en/user/dirquota.html
+%{html_prefix}/en/user/multitenancy.html
+%{html_prefix}/en/user/redundancy-tutorial.html
+%{html_prefix}/en/user/samba-gfarmfs.html
 %if %{gfarm_v2_not_yet}
 %{html_prefix}/en/user/nfs-gfarmfs.html
 %endif
@@ -1095,15 +1096,16 @@ fi
 %{html_prefix}/ja/user/auth-gsi.html
 %{html_prefix}/ja/user/auth-tls.html
 %{html_prefix}/ja/user/auth-sasl.html
+%{html_prefix}/ja/user/cipher-comparison.html
+%{html_prefix}/ja/user/dirquota.html
+%{html_prefix}/ja/user/multitenancy.html
+%{html_prefix}/ja/user/redundancy-tutorial.html
 %{html_prefix}/ja/user/samba-gfarmfs.html
+%{html_prefix}/ja/user/smboverssh.html
 %if %{gfarm_v2_not_yet}
 %{html_prefix}/ja/user/export-gfarm.html
 %{html_prefix}/ja/user/nfs-gfarmfs.html
 %endif
-%{html_prefix}/ja/user/smboverssh.html
-%{html_prefix}/ja/user/redundancy-tutorial.html
-%{html_prefix}/ja/user/cipher-comparison.html
-%{html_prefix}/ja/user/dirquota.html
 %{html_prefix}/pic/gfarm-logo.gif
 %{doc_prefix}/INSTALL.en
 %{doc_prefix}/INSTALL.ja

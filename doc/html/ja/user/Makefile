@@ -15,11 +15,13 @@ HTML =	\
 	auth-gsi.html \
 	auth-tls.html \
 	auth-sasl.html \
-	samba-gfarmfs.html \
-	smboverssh.html \
-	redundancy-tutorial.html \
 	cipher-comparison.html \
-	dirquota.html
+	dirquota.html \
+	multitenancy.html \
+	redundancy-tutorial.html \
+	samba-gfarmfs.html \
+	smboverssh.html
+#	auth-kerberos.html
 #	export-gfarm.html
 #	nfs-gfarmfs.html
 #	samba-hook.html
