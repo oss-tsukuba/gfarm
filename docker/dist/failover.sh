@@ -9,7 +9,7 @@ gfmkdir -p /tmp
 gfchmod 1777 /tmp || :
 
 TOP=~/gfarm
-BUILD=$TOP/build
+BUILD=$TOP/build-$(gfarm.arch.guess)
 MAKE=$TOP/makes/make.sh
 cd $BUILD/regress
 $MAKE all

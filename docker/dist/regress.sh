@@ -18,7 +18,7 @@ gfmkdir -p /tmp
 gfchmod 1777 /tmp || :
 
 TOP=~/gfarm
-BUILD=$TOP/build
+BUILD=$TOP/build-$(gfarm.arch.guess)
 MAKE=$TOP/makes/make.sh
 cd $BUILD/regress
 $MAKE all > /dev/null
@@ -69,9 +69,11 @@ create_mismatch_file
 gfsudo $MAKE REGRESS_ARGS="-l $LOG1" check
 
 create_mismatch_file
-ssh c2 "(grid-proxy-init -q; cd gfarm/build/regress &&
+C2DIST=$(ssh c2 gfarm.arch.guess)
+C2DIR=~/gfarm/build-$C2DIST/regress
+ssh c2 "(grid-proxy-init -q; cd $C2DIR &&
 	$ENV $MAKE REGRESS_ARGS='-l $LOG2' check)"
 
-$TOP/regress/addup.sh $LOG1 $LOG2 | egrep '(UNSUPPORTED|FAIL)'
+$TOP/regress/addup.sh $LOG1 $C2DIR/$LOG2 | egrep '(UNSUPPORTED|FAIL)'
 
 status=0

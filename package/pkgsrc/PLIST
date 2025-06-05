@@ -468,7 +468,7 @@ share/doc/html/gfarm/ja/user/nfs-gfarmfs.html
 share/doc/html/gfarm/ja/user/samba-gfarmfs.html
 share/doc/html/gfarm/ja/user/samba-hook.html
 share/doc/html/gfarm/ja/user/smboverssh.html
-share/doc/html/gfarm/pic/gfarm-logo.gif
+share/doc/html/gfarm/pic/Gfarm_logo_tate_color.svg
 share/examples/rc.d/gfmd
 share/examples/rc.d/gfsd
 share/gfarm/config/bdb.DB_CONFIG.in

@@ -24,13 +24,11 @@ cyrus-sasl-xoauth2-idp)
 	;;
 esac
 
-CONF=true
 BUILD_ONLY=false
 install_option=all
 while [ $# -gt 0 ]
 do
 	case $1 in
-	-m) CONF=false ;;
 	single) install_option=$1 ;;
 	build_only) BUILD_ONLY=true ;;
 	*) exit 1 ;;
@@ -38,15 +36,19 @@ do
 	shift
 done
 
-if $CONF; then
-	rm -rf build
-	mkdir build
-	cd build
+ARCH_GUESS=gftool/config-gfarm/gfarm.arch.guess
+[ -f $ARCH_GUESS ] || ARCH_GUESS=gfarm.arch.guess
+BUILDDIR=build-$($ARCH_GUESS)
+
+if [ -d $BUILDDIR ]; then
+	cd $BUILDDIR
+else
+	mkdir $BUILDDIR
+	cd $BUILDDIR
 
 	../configure $CONF_OPT
-else
-	cd build
 fi
+
 make -j $(nproc) > /dev/null
 
 if $BUILD_ONLY; then

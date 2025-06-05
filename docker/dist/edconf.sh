@@ -18,7 +18,8 @@ do
 	sharedsecret|gsi|gsi_auth|\
 	tls_sharedsecret|tls_client_certificate|\
 	sasl|sasl_auth)
-		AUTH="$AUTH $1" ;;
+		AUTH="$AUTH $1"
+		SASL="sasl_mechanisms PLAIN\nsasl_user $(id -un)\nsasl_password PASSWORD" ;;
 	xoauth2|oauth2)
 		jwt-parse > /dev/null
 		AUTH="$AUTH sasl"

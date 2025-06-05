@@ -53,13 +53,14 @@ If the gfarm source repository is not clean, link errors may happen during the `
 
 When you would like to execute `all.sh` (or `all-rpm.sh`) again, execute `unconfig.sh`.
 
-When you change the source code, execute `docker/dist/install.sh -m` in the top source directory and `restart.sh`.
+When you change the source code, execute `docker/dist/install.sh` in the top source directory and `restart.sh`.
 
 When you install Gfarm by `all.sh`, `regress.sh` and `failover.sh` are available for tests.
 
 ## For OAuth authentication
 
     % cd jwt-server
+    (To update images if necessary)% make build
     % docker compose up -d
     % make setup
     % cd ..

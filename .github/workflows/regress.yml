@@ -45,7 +45,8 @@ jobs:
         if: always()
         run: |
           mkdir -p regress-log
-          docker exec -u ${USER} -w /home/${USER}/gfarm/build/regress \
+          DIST=$(docker exec gfarm-c1 gfarm.arch.guess)
+          docker exec -u ${USER} -w /home/${USER}/gfarm/build-${DIST}/regress \
               gfarm-c1 sh -c 'tar cf - log.*' | ( cd regress-log && tar pxf - )
 
       - name: upload log
