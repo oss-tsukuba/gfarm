@@ -5112,6 +5112,7 @@ class GfptarProgram(Program):
             sys.stdout.write("\r")
             sys.stdout.write(msg)
             sys.stdout.write("  ")
+            sys.stdout.flush()
 
     def progress_newline(self):
         if self.debug:
