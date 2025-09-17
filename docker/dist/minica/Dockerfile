@@ -9,7 +9,7 @@ RUN apt-get update \
  && apt-get -y install git golang
 
 RUN cd \
- && git clone https://github.com/jsha/minica.git \
+ && git clone https://github.com/jsha/minica.git -b v1.1.0 \
  && cd minica \
  && go build \
  && cp minica /usr/bin
