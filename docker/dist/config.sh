@@ -43,14 +43,14 @@ sudo systemctl start gfmd
 
 # update gfarm2.conf
 set $(cat $hostfile)
-MASTER=$1 && ML="$MASTER:601"
+MASTER=$1 && ML="$MASTER"
 if [ $# -gt 1 ]; then
-	shift; SSLAVE=$1; ML="$ML $SSLAVE:601"; GL="$SSLAVE"
+	shift; SSLAVE=$1; ML="$ML $SSLAVE"; GL="$SSLAVE"
 else
 	SSLAVE=; GL="$MASTER"
 fi
 if [ $# -gt 1 ]; then
-	shift; ASLAVE=$1; ML="$ML $ASLAVE:601"; GL="$GL $ASLAVE"
+	shift; ASLAVE=$1; ML="$ML $ASLAVE"; GL="$GL $ASLAVE"
 else
 	ASLAVE=
 fi
