@@ -5,7 +5,7 @@
 
 <refentry id="gfarm_environ.7">
 
-<refentryinfo><date>10 Aug 2015</date></refentryinfo>
+<refentryinfo><date>2 Oct 2025</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm_environ</refentrytitle>
@@ -116,6 +116,46 @@ AES128-SHA を指定することで、若干の安全性低下の見返りに、
 <literallayout format="linespecific" class="normal">
 	GLOBUS_GSSAPI_CIPHERS=AES128-GCM-SHA256
 </literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>GFARM_SASL_MECHANISMS</token></term>
+<listitem>
+<para>
+この設定は gfarm2.conf の <token>sasl_mechanisms</token> よりも優先されます。
+詳細は gfarm2.conf(5) の <token>sasl_mechanisms</token> を参照してください。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>GFARM_SASL_USER</token></term>
+<listitem>
+<para>
+この設定は gfarm2.conf の <token>sasl_user</token> よりも優先されます。
+詳細は gfarm2.conf(5) の <token>sasl_user</token> を参照してください。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>GFARM_SASL_PASSWORD</token></term>
+<listitem>
+<para>
+この設定は gfarm2.conf の <token>sasl_password</token> よりも優先されます。
+詳細は gfarm2.conf(5) の <token>sasl_password</token> を参照してください。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>GFARM_SASL_REALM</token></term>
+<listitem>
+<para>
+この設定は gfarm2.conf の <token>sasl_realm</token> よりも優先されます。
+詳細は gfarm2.conf(5) の <token>sasl_realm</token> を参照してください。
+</para>
 </listitem>
 </varlistentry>
 
