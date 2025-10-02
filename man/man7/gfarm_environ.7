@@ -1,13 +1,22 @@
 '\" t
 .\"     Title: gfarm_environ
-.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
-.\"      Date: 10 Aug 2015
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 2 Oct 2025
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFARM_ENVIRON" "7" "10 Aug 2015" "Gfarm" "Gfarm"
+.TH "GFARM_ENVIRON" "7" "2 Oct 2025" "Gfarm" "Gfarm"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -43,7 +52,7 @@ For example,
 .PP
 GFARM_CONFIG_FILE
 .RS 4
-The file specified by this variable is used as additional setting for Gfarm clients, instead of the \&.gfarm2rc file under the user\'s home directory\&. The settings in this file overrides the settings in gfarm2\&.conf\&.
+The file specified by this variable is used as additional setting for Gfarm clients, instead of the \&.gfarm2rc file under the user\*(Aqs home directory\&. The settings in this file overrides the settings in gfarm2\&.conf\&.
 .sp
 For example,
 .sp
@@ -90,9 +99,9 @@ or
 \fBciphers\fR(1)
 ) for the available cipher lists\&.
 .sp
-On x86 CPUs which have AES\-NI instruction set, specifying AES128\-GCM\-SHA256 may increase communication speed by few percent as a recompense for slight security decrease\&. On x86 CPUs which do not have AES\-NI instruction set, specifying AES128\-SHA may double communication speed as a recompense for slight security decrease\&. It\'s recommended to measure the gain of the communication speed before actually using this option, because the performace gain varies between CPUs\&. There are some measurement results in
+On x86 CPUs which have AES\-NI instruction set, specifying AES128\-GCM\-SHA256 may increase communication speed by few percent as a recompense for slight security decrease\&. On x86 CPUs which do not have AES\-NI instruction set, specifying AES128\-SHA may double communication speed as a recompense for slight security decrease\&. It\*(Aqs recommended to measure the gain of the communication speed before actually using this option, because the performace gain varies between CPUs\&. There are some measurement results in
 \(lq\fBNetwork Transfer Speed Comparison by ciphers\fR()\(rq
-section of the Gfarm Users\' Manual for reference\&.
+section of the Gfarm Users\*(Aq Manual for reference\&.
 .sp
 For example,
 .sp
@@ -106,9 +115,44 @@ For example,
 .RE
 .\}
 .RE
+.PP
+GFARM_SASL_MECHANISMS
+.RS 4
+This setting overrides the
+sasl_mechanisms
+directive in gfarm2\&.conf\&. For details, refer to
+sasl_mechanisms
+in gfarm2\&.conf(5)\&.
+.RE
+.PP
+GFARM_SASL_USER
+.RS 4
+This setting overrides the
+sasl_user
+directive in gfarm2\&.conf\&. For details, refer to
+sasl_user
+in gfarm2\&.conf(5)\&.
+.RE
+.PP
+GFARM_SASL_PASSWORD
+.RS 4
+This setting overrides the
+sasl_password
+directive in gfarm2\&.conf\&. For details, refer to
+sasl_password
+in gfarm2\&.conf(5)\&.
+.RE
+.PP
+GFARM_SASL_REALM
+.RS 4
+This setting overrides the
+sasl_realm
+directive in gfarm2\&.conf\&. For details, refer to
+sasl_realm
+in gfarm2\&.conf(5)\&.
+.RE
 .SH "SEE ALSO"
 .PP
-
 \fBgfls\fR(1),
 \fBgfarm2.conf\fR(5),
 \fBenviron\fR(7)

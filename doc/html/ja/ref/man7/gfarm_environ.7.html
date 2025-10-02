@@ -2,17 +2,17 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfarm_environ</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.75.2">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 </head>
-<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfarm_environ">
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
 <a name="gfarm_environ.7"></a><div class="titlepage"></div>
 <div class="refnamediv">
 <a name="name"></a><h2>Name</h2>
 <p>gfarm_environ — Gfarm が扱う環境変数</p>
 </div>
-<div class="refsect1" title="DESCRIPTION">
+<div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><span class="token">COLUMNS</span></span></dt>
 <dd>
 <p>
@@ -46,7 +46,7 @@
 Gfarmクライアントの動作を変更するフラグを指定します。
 下記のフラグがあります。
 </p>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><span class="token">r</span></span></dt>
 <dd><p>
       Gfarmクライアントをファイルシステムノード上で実行した場合、
@@ -92,9 +92,29 @@ AES128-SHA を指定することで、若干の安全性低下の見返りに、
 	GLOBUS_GSSAPI_CIPHERS=AES128-GCM-SHA256<br>
 </p></div>
 </dd>
+<dt><span class="term"><span class="token">GFARM_SASL_MECHANISMS</span></span></dt>
+<dd><p>
+この設定は gfarm2.conf の <span class="token">sasl_mechanisms</span> よりも優先されます。
+詳細は gfarm2.conf(5) の <span class="token">sasl_mechanisms</span> を参照してください。
+</p></dd>
+<dt><span class="term"><span class="token">GFARM_SASL_USER</span></span></dt>
+<dd><p>
+この設定は gfarm2.conf の <span class="token">sasl_user</span> よりも優先されます。
+詳細は gfarm2.conf(5) の <span class="token">sasl_user</span> を参照してください。
+</p></dd>
+<dt><span class="term"><span class="token">GFARM_SASL_PASSWORD</span></span></dt>
+<dd><p>
+この設定は gfarm2.conf の <span class="token">sasl_password</span> よりも優先されます。
+詳細は gfarm2.conf(5) の <span class="token">sasl_password</span> を参照してください。
+</p></dd>
+<dt><span class="term"><span class="token">GFARM_SASL_REALM</span></span></dt>
+<dd><p>
+この設定は gfarm2.conf の <span class="token">sasl_realm</span> よりも優先されます。
+詳細は gfarm2.conf(5) の <span class="token">sasl_realm</span> を参照してください。
+</p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="SEE ALSO">
+<div class="refsect1">
 <a name="see-also"></a><h2>SEE ALSO</h2>
 <p>
   <span class="citerefentry"><span class="refentrytitle">gfls</span>(1)</span>,
