@@ -1102,7 +1102,7 @@ class GfURL(metaclass=abc.ABCMeta):
         # ex. gfarm:/abc.def/gh -> gfarm:
         if self._scheme:
             if self._host:
-                return f"{self._scheme}:{self._host}"
+                return f"{self._scheme}://{self._host}"
             else:
                 return f"{self._scheme}:"
         return ''
@@ -2471,6 +2471,46 @@ class TestGfptar(unittest.TestCase):
                          (None, None, 'abc:/def://'))
         self.assertEqual(GfURLLocal.parse('gfarm:abc:/def://'),
                          (None, None, 'gfarm:abc:/def://'))
+
+    def test_root_url_str(self):
+        self.assertEqual(GfURL.init('gfarm://host/abc').root_url_str,
+                         "gfarm://host")
+        self.assertEqual(GfURL.init('gfarm://host:port/abc').root_url_str,
+                         "gfarm://host:port")
+        self.assertEqual(GfURL.init('gfarm:///abc').root_url_str,
+                         "gfarm:")
+        self.assertEqual(GfURL.init('gfarm:/abc').root_url_str,
+                         "gfarm:")
+        self.assertEqual(GfURL.init('/abc').root_url_str,
+                         "")
+
+    def test_url_parent(self):
+        self.assertEqual(
+            GfURL.init('gfarm://host/abc').parent.url_str,
+            "gfarm://host")
+        self.assertEqual(GfURL.init('gfarm://host/abc/def').parent.url_str,
+                         "gfarm://host/abc")
+        self.assertEqual(GfURL.init('gfarm://host:port/abc').parent.url_str,
+                         "gfarm://host:port")
+        self.assertEqual(
+            GfURL.init('gfarm://host:port/abc/def').parent.url_str,
+            "gfarm://host:port/abc")
+        self.assertEqual(GfURL.init('gfarm:///abc').parent.url_str,
+                         "gfarm:")
+        self.assertEqual(GfURL.init('gfarm:///abc/def').parent.url_str,
+                         "gfarm:/abc")
+        self.assertEqual(GfURL.init('gfarm:/abc').parent.url_str,
+                         "gfarm:")
+        self.assertEqual(GfURL.init('gfarm:/abc/def').parent.url_str,
+                         "gfarm:/abc")
+        self.assertEqual(GfURL.init('/abc').parent.url_str,
+                         "/")
+        self.assertEqual(GfURL.init('/abc/def').parent.url_str,
+                         "/abc")
+        self.assertEqual(GfURL.init('abc/def').parent.url_str,
+                         "abc")
+        self.assertEqual(GfURL.init('./abc/def').parent.url_str,
+                         "abc")
 
     def test_DBDict(self):
         euid = os.geteuid()
