@@ -123,8 +123,7 @@ AES128-SHA を指定することで、若干の安全性低下の見返りに、
 <term><token>GFARM_SASL_MECHANISMS</token></term>
 <listitem>
 <para>
-この設定は gfarm2.conf の <token>sasl_mechanisms</token> よりも優先されます。
-詳細は gfarm2.conf(5) の <token>sasl_mechanisms</token> を参照してください。
+この設定は gfarm2.conf の <token>sasl_mechanisms</token> よりも優先されます。詳細は gfarm2.conf(5) の <token>sasl_mechanisms</token> を参照してください。
 </para>
 </listitem>
 </varlistentry>
@@ -133,8 +132,7 @@ AES128-SHA を指定することで、若干の安全性低下の見返りに、
 <term><token>GFARM_SASL_USER</token></term>
 <listitem>
 <para>
-この設定は gfarm2.conf の <token>sasl_user</token> よりも優先されます。
-詳細は gfarm2.conf(5) の <token>sasl_user</token> を参照してください。
+この設定は gfarm2.conf の <token>sasl_user</token> よりも優先されます。詳細は gfarm2.conf(5) の <token>sasl_user</token> を参照してください。
 </para>
 </listitem>
 </varlistentry>
@@ -143,8 +141,7 @@ AES128-SHA を指定することで、若干の安全性低下の見返りに、
 <term><token>GFARM_SASL_PASSWORD</token></term>
 <listitem>
 <para>
-この設定は gfarm2.conf の <token>sasl_password</token> よりも優先されます。
-詳細は gfarm2.conf(5) の <token>sasl_password</token> を参照してください。
+この設定は gfarm2.conf の <token>sasl_password</token> よりも優先されます。詳細は gfarm2.conf(5) の <token>sasl_password</token> を参照してください。
 </para>
 </listitem>
 </varlistentry>
@@ -153,8 +150,7 @@ AES128-SHA を指定することで、若干の安全性低下の見返りに、
 <term><token>GFARM_SASL_REALM</token></term>
 <listitem>
 <para>
-この設定は gfarm2.conf の <token>sasl_realm</token> よりも優先されます。
-詳細は gfarm2.conf(5) の <token>sasl_realm</token> を参照してください。
+この設定は gfarm2.conf の <token>sasl_realm</token> よりも優先されます。詳細は gfarm2.conf(5) の <token>sasl_realm</token> を参照してください。
 </para>
 </listitem>
 </varlistentry>

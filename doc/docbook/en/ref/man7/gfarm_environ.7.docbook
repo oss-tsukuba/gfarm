@@ -126,8 +126,7 @@ section of the Gfarm Users' Manual for reference.
 <term><token>GFARM_SASL_MECHANISMS</token></term>
 <listitem>
 <para>
-This setting overrides the <token>sasl_mechanisms</token> directive in gfarm2.conf. 
-For details, refer to <token>sasl_mechanisms</token> in gfarm2.conf(5).
+This setting overrides the <token>sasl_mechanisms</token> directive in gfarm2.conf. For details, refer to <token>sasl_mechanisms</token> in gfarm2.conf(5).
 </para>
 </listitem>
 </varlistentry>
@@ -136,8 +135,7 @@ For details, refer to <token>sasl_mechanisms</token> in gfarm2.conf(5).
 <term><token>GFARM_SASL_USER</token></term>
 <listitem>
 <para>
-This setting overrides the <token>sasl_user</token> directive in gfarm2.conf. 
-For details, refer to <token>sasl_user</token> in gfarm2.conf(5).
+This setting overrides the <token>sasl_user</token> directive in gfarm2.conf. For details, refer to <token>sasl_user</token> in gfarm2.conf(5).
 </para>
 </listitem>
 </varlistentry>
@@ -146,8 +144,7 @@ For details, refer to <token>sasl_user</token> in gfarm2.conf(5).
 <term><token>GFARM_SASL_PASSWORD</token></term>
 <listitem>
 <para>
-This setting overrides the <token>sasl_password</token> directive in gfarm2.conf. 
-For details, refer to <token>sasl_password</token> in gfarm2.conf(5).
+This setting overrides the <token>sasl_password</token> directive in gfarm2.conf. For details, refer to <token>sasl_password</token> in gfarm2.conf(5).
 </para>
 </listitem>
 </varlistentry>
@@ -156,8 +153,7 @@ For details, refer to <token>sasl_password</token> in gfarm2.conf(5).
 <term><token>GFARM_SASL_REALM</token></term>
 <listitem>
 <para>
-This setting overrides the <token>sasl_realm</token> directive in gfarm2.conf. 
-For details, refer to <token>sasl_realm</token> in gfarm2.conf(5).
+This setting overrides the <token>sasl_realm</token> directive in gfarm2.conf. For details, refer to <token>sasl_realm</token> in gfarm2.conf(5).
 </para>
 </listitem>
 </varlistentry>
