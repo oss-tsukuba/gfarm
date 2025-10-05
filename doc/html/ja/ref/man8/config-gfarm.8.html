@@ -2,7 +2,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>config-gfarm</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
 <a name="confog-gfarm.8"></a><div class="titlepage"></div>
@@ -212,18 +212,16 @@ Gfarmを再度コンパイルする必要があるため、
 ホスト上にインストールされた OpenSSL ライブラリが対応している
 ダイジェストタイプ名を小文字 (例: "md5") で記します。
 </p></dd>
-<dt><span class="term"><code class="option">-U</code> <em class="parameter"><code>Gfarmの管理ユーザ名</code></em></span></dt>
+<dt><span class="term"><code class="option">-U</code> <em class="parameter"><code>管理ユーザ名</code></em></span></dt>
 <dd><p>
-Gfarmファイルシステムの管理ユーザ名を指定することができます。
+バックエンドデータベースの管理ユーザ名を指定することができます。
 デフォルト値はOSによって異なるため、
 <span class="command"><strong>config-gfarm -t</strong></span>を実行し、
 ユーザ名を確認してください。
 </p></dd>
 <dt><span class="term"><code class="option">-u</code> <em class="parameter"><code>ユーザ名</code></em></span></dt>
 <dd><p>
-このオプションを付与した場合、
-セットアップした<span class="command"><strong>gfmd</strong></span>は、
-指定したユーザ名でバックエンドDBに接続します。
+バックエンドデータベースをアクセスするユーザ名を指定することができます。
 デフォルトは、"gfarm"です。
 </p></dd>
 <dt><span class="term"><code class="option">-P</code> <em class="parameter"><code>インストール先のディレクトリ</code></em></span></dt>
