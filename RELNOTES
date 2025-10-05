@@ -14,7 +14,7 @@ Release note for Gfarm 2.8.6
 
 New environment variable
 * GFARM_SASL_USER, GFARM_SASL_PASSWORD, GFARM_SASL_MECHANISMS,
-  GFARM_SASL_REAML
+  GFARM_SASL_REALM
 
 Updated feature
 * gfptar - --update and --append options and many other enhancements,
@@ -141,7 +141,7 @@ New authentication method
   TLS.  After the authentication, sasl_auth uses a plain socket, while
   sasl uses TLS secure connection.
 * tls_sharedsecret, tls_client_certificate - shared secret and client
-  certificate authentications in TLS.  Afther the authentication, both
+  certificate authentications in TLS.  After the authentication, both
   uses TLS secure connection.
 * kerberos_auth, kerberos - Kerberos authentication.  After the
   authentication, kerberos_auth uses a plain socket, while kerberos
