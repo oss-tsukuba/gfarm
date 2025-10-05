@@ -279,7 +279,7 @@ such as "md5".
 <term><option>-U</option> <parameter moreinfo="none">username</parameter></term>
 <listitem>
 <para>
-Specify administrator's username of the Gfarm file system.
+Specify the administrator's username for the backend database.
 Since the default value differs depending on operating systems, execute
 <command moreinfo="none">config-gfarm -t</command> to confirm the username.
 </para>
@@ -290,8 +290,7 @@ Since the default value differs depending on operating systems, execute
 <term><option>-u</option> <parameter moreinfo="none">username</parameter></term>
 <listitem>
 <para>
-The configured <command moreinfo="none">gfmd</command> will connect to
-the backend database as the specified username.
+Specify the username for the backend database.
 The default is "gfarm".
 </para>
 </listitem>
