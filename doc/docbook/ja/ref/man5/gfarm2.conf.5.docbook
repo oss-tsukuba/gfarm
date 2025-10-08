@@ -132,6 +132,7 @@ IPアドレスと、"/"で区切られた0〜31までの数字で、ネットワ
 <listitem>
 <para><token>include</token> 文のネスティングの上限を指定します。
 デフォルトの制限値は 20 です。
+gfstatusコマンドでgfmdに対して有効です。
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
@@ -760,6 +761,7 @@ metadb_server_job_queue_length よりは少ない値を設定します。
 </para>
 <para>
 この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+gfstatusコマンドでgfmdに対して有効です。
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
@@ -780,6 +782,7 @@ CPU時間をどの程度使用してよいかを調整するパラメータを�
 </para>
 <para>
 この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+gfstatusコマンドでgfmdに対して有効です。
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
@@ -1033,7 +1036,10 @@ PostgreSQLサーバーが動作しているホスト名を指定します。
 <varlistentry>
 <term><token>auth</token> <parameter moreinfo="none">有効性</parameter>&nbsp; <parameter moreinfo="none">認証方法</parameter>&nbsp; <parameter moreinfo="none">ホスト指定</parameter></term>
 <listitem>
-<para>この文は、第3引数で指定したホストとの通信に用いる認証方法を設定します。</para>
+<para>
+この文は、第3引数で指定したホストとの通信に用いる認証方法を設定します。
+gfstatusコマンドでgfstatusコマンド自身とgfmdに対して有効です。
+</para>
 
 <para>第1引数の<parameter moreinfo="none">有効性</parameter>部には、<token>enable</token>ないし<token>disable</token>
 キーワードを指定します。
@@ -1132,6 +1138,7 @@ gfsd と gfmd、
 <para>
 gfmd.conf に記載した場合、
 スレーブ gfmd と マスター gfmd の間の接続で試行する認証方式を設定します。
+gfstatusコマンドでgfstatusコマンド自身とgfmdに対して有効です。
 </para>
 
 <para>例:</para>
@@ -1168,6 +1175,7 @@ digestタイプとして disable と指定した場合は、チェックサム�
 </para>
 <para>
 この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+gfstatusコマンドでgfmdに対して有効です。
 </para>
 <para>
 注:
@@ -1200,6 +1208,7 @@ digestタイプとして disable と指定した場合は、チェックサム�
 </para>
 <para>
 この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+gfstatusコマンドでgfmdに対して有効です。
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
@@ -1222,6 +1231,7 @@ directory quota の再集計が必要となったときに、
 </para>
 <para>
 この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+gfstatusコマンドでgfmdに対して有効です。
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
@@ -1249,6 +1259,7 @@ directory quota の集計がメタデータ更新のために中断した時に�
 </para>
 <para>
 この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+gfstatusコマンドでgfmdに対して有効です。
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
@@ -1276,6 +1287,7 @@ quota の集計がメタデータ更新のために中断した時に、
 </para>
 <para>
 この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+gfstatusコマンドでgfmdに対して有効です。
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
@@ -1297,6 +1309,7 @@ directory の深さとして許される最大値を設定します。
 </para>
 <para>
 この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+gfstatusコマンドでgfmdに対して有効です。
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
@@ -1909,6 +1922,7 @@ Gfarmファイルシステムを read only にします。
 </para>
 <para>
 この文はgfmdでのみ有効です。
+gfstatusコマンドでgfmdに対して有効です。
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
@@ -1923,6 +1937,7 @@ Gfarmファイルシステムを read only にします。
 <para>gfmd 主導の複製処理を、単一複製作成ホストに対して、
 同時にいくつまで並行して行なうことを許すかを設定します。
 デフォルトは 20です。
+gfstatusコマンドでgfmdに対して有効です。
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
@@ -1937,6 +1952,7 @@ Gfarmファイルシステムを read only にします。
 <para>gfmd主導の複製先にbusyホストを含むかどうか設定します。
 disableにすると、busyホストには複製は作成されません。
 デフォルトはenableです。
+gfstatusコマンドでgfmdに対して有効です。
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
@@ -2053,6 +2069,7 @@ disableにすると、busyホストには複製は作成されません。
 "notice", "info", "debug"です。
 デフォルトの出力レベルは"info"です。
 "crit"以上の優先度を指定することは、お勧めできません。
+gfstatusコマンドでgfstatusコマンド自身とgfmdに対して有効です。
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
@@ -2082,6 +2099,7 @@ disableにすると、busyホストには複製は作成されません。
 <listitem>
 <para>
 enableと指定した場合、認証処理に関する詳細なログを記録します。
+gfstatusコマンドでgfstatusコマンド自身とgfmdに対して有効です。
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
@@ -2095,6 +2113,7 @@ enableと指定した場合、認証処理に関する詳細なログを記録�
 <listitem>
 <para>
 enableと指定した場合、TLS処理に関する詳細なログを記録します。
+gfstatusコマンドでgfmdに対して有効です。
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
@@ -2316,6 +2335,7 @@ disable設定は、通常のファイルシステムにおける"noatime"オプ�
 </para>
 <para>
 この文はgfmd.confのみで有効です。
+gfstatusコマンドでgfmdに対して有効です。
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
@@ -2398,6 +2418,7 @@ gfsd や gfmd は、gfarm2.conf や gfmd.conf 中のこの文を無視します�
 <listitem>
 <para>
 このオプションがenableの場合、プロファイル情報を出力します。
+gfstatusコマンドでgfmdに対して有効です。
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
@@ -2725,6 +2746,7 @@ enableです。
 </para>
 <para>
 この文はgfmd.confのみで有効です。
+gfstatusコマンドでgfmdに対して有効です。
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
@@ -2751,6 +2773,7 @@ enableです。
 </para>
 <para>
 この文はgfmd.confのみで有効です。
+gfstatusコマンドでgfmdに対して有効です。
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
@@ -2796,6 +2819,7 @@ gfsdを保守するために有用です。デフォルトは10800秒(3時間)�
 </para>
 <para>
 この文はgfmd.confのみで有効です。
+gfstatusコマンドでgfmdに対して有効です。
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
@@ -2824,6 +2848,7 @@ replica_check以外の処理が多いと検出した場合に、replica_checkの
 </para>
 <para>
 この文はgfmd.confのみで有効です。
+gfstatusコマンドでgfmdに対して有効です。
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
@@ -2846,6 +2871,7 @@ replica_checkが次回動作するまでの最小間隔(秒)を指定します�
 </para>
 <para>
 この文はgfmd.confのみで有効です。
+gfstatusコマンドでgfmdに対して有効です。
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
@@ -2873,6 +2899,7 @@ gfstatus -Mm 'replicainfo disable' により、一時的に無効にすること
 </para>
 <para>
 この文はgfmd.confのみで有効です。
+gfstatusコマンドでgfmdに対して有効です。
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
@@ -2894,6 +2921,7 @@ enableと指定した場合、
 この文は gfmd.conf のみで有効です。
 gfarm2.confでは無視されます。
 gfsd はその起動時に、gfmd に対して、この設定を問い合わせて動作します。
+gfstatusコマンドでgfmdに対して有効です。
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
@@ -2920,6 +2948,7 @@ direct I/O を用います。しかし、ディスクコントローラ内のキ
 この文は gfmd.conf のみで有効です。
 gfarm2.confでは無視されます。
 gfsd はその起動時に、gfmd に対して、この設定を問い合わせて動作します。
+gfstatusコマンドでgfmdに対して有効です。
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
@@ -2945,6 +2974,7 @@ write_verify を試みたが、対象ファイルが書き込みオープンさ�
 この文は gfmd.conf のみで有効です。
 gfarm2.confでは無視されます。
 gfsd はその起動時に、gfmd に対して、この設定を問い合わせて動作します。
+gfstatusコマンドでgfmdに対して有効です。
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
@@ -2968,6 +2998,7 @@ write_verify に関する統計情報をログ出力する間隔を指定しま�
 この文は gfmd.conf のみで有効です。
 gfarm2.confでは無視されます。
 gfsd はその起動時に、gfmd に対して、この設定を問い合わせて動作します。
+gfstatusコマンドでgfmdに対して有効です。
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
