@@ -37,7 +37,9 @@ CLIENT_SECRET = config.client_secret
 JWT_SERVER_URLS = config.jwt_server_urls
 VERIFY_CERT = config.verify_cert
 
-DEFAULT_SCOPES = ['scitokens', 'openid', 'offline_access', 'hpci']
+# (Keycloak 25 or later): "basic" scope has "sub" and "auth_time" claims
+# (DETAIL) https://www.keycloak.org/docs/latest/upgrading/#new-default-client-scope-basic
+DEFAULT_SCOPES = ['basic', 'scitokens', 'openid', 'offline_access', 'hpci']
 OPTIONAL_SCOPES = []
 
 
