@@ -7,13 +7,14 @@ the documents in the following order:
 1. Overview
   Please read OVERVIEW.en.
 2. How to install Gfarm file system 
-  If you intend to install Gfarm from the source code, please read INSTALL.en.
+  If you intend to install Gfarm from the source code, please read
+  INSTALL-manual-en.md.
   If you intend to install Gfarm from the RPM binary package, please read
   INSTALL.RPM.en.
   If you intend to install Gfarm from the Debian binary package, please read
   INSTALL.Debian.en.
 3. How to setup Gfarm file system
-  Please read SETUP.en.
+  Please read SETUP-manual-en.md.
 4. How to use Gfarm file system
   If you intend to use GfarmFS-FUSE, please read the documents in that package.
 
@@ -34,6 +35,11 @@ List of Documents
   OVERVIEW.ja (in Japanese)
 	This document introduces an overview of Gfarm and its terminology.
 
+- INSTALL-manual-en.md (in English)
+  INSTALL-manual-ja.md (in Japanese)
+	This document describes how to install Gfarm and related software
+	from the source code.
+
 - INSTALL.en (in English)
   INSTALL.ja (in Japanese)
 	This document describes how to install Gfarm from the source code.
@@ -48,8 +54,8 @@ List of Documents
 	This document describes how to install Gfarm from the Debian binary
 	packages that are used in Debian and Ubuntu.
 
-- SETUP.en (in English)
-  SETUP.ja (in Japanese)
+- SETUP-manual-en.md (in English)
+  SETUP-manual-ja.md (in Japanese)
 	This document describes how to setup a Gfarm file system.
 
 - SETUP.private.en (in English)
