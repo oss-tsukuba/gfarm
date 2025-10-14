@@ -284,10 +284,10 @@ Gfarmを再度コンパイルする必要があるため、
 </varlistentry>
 
 <varlistentry>
-<term><option>-U</option> <parameter moreinfo="none">Gfarmの管理ユーザ名</parameter></term>
+<term><option>-U</option> <parameter moreinfo="none">管理ユーザ名</parameter></term>
 <listitem>
 <para>
-Gfarmファイルシステムの管理ユーザ名を指定することができます。
+バックエンドデータベースの管理ユーザ名を指定することができます。
 デフォルト値はOSによって異なるため、
 <command moreinfo="none">config-gfarm -t</command>を実行し、
 ユーザ名を確認してください。
@@ -299,9 +299,7 @@ Gfarmファイルシステムの管理ユーザ名を指定することができ
 <term><option>-u</option> <parameter moreinfo="none">ユーザ名</parameter></term>
 <listitem>
 <para>
-このオプションを付与した場合、
-セットアップした<command moreinfo="none">gfmd</command>は、
-指定したユーザ名でバックエンドDBに接続します。
+バックエンドデータベースをアクセスするユーザ名を指定することができます。
 デフォルトは、"gfarm"です。
 </para>
 </listitem>

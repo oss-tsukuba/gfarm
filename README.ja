@@ -9,11 +9,11 @@
 1. 概要
   OVERVIEW.ja
 2. インストール方法
-  ソースからインストールされる場合，INSTALL.ja，
+  ソースからインストールされる場合，INSTALL-manual-ja.md，
   RPM からインストールされる場合，INSTALL.RPM.ja．
   Debian パッケージでインストールされる場合，INSTALL.Debian.ja．
 3. 設定方法
-  SETUP.ja
+  SETUP-manual-ja.md
 4. 利用方法
   GfarmFS-FUSE を利用される場合，そちらに付属するドキュメント，
 
@@ -34,6 +34,11 @@
   OVERVIEW.ja (日本語)
 	Gfarm の概要や，各ドキュメントで使われる用語等を紹介します．	
 
+- INSTALL-manual-en.md (英語)
+  INSTALL-manual-ja.md (日本語)
+	Gfarm および関連ソフトウェアをソースコードからインストール
+  する手順を説明します．
+
 - INSTALL.en (英語)
   INSTALL.ja (日本語)
 	ソースコードからインストールする手順を説明します．
@@ -48,8 +53,8 @@
 	Debian, Ubuntu などで用いられている，
 	Debian バイナリパッケージからのインストール手順を説明します．
 
-- SETUP.en (英語)
-  SETUP.ja (日本語)
+- SETUP-manual-en.md (英語)
+  SETUP-manual-ja.md (日本語)
 	Gfarm の設定方法を説明します．
 
 - SETUP.private.en (英語)
