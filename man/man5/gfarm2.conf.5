@@ -2,12 +2,12 @@
 .\"     Title: gfarm2.conf
 .\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 11 Sep 2023
+.\"      Date: 15 Nov 2025
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFARM2\&.CONF" "5" "11 Sep 2023" "Gfarm" "Gfarm"
+.TH "GFARM2\&.CONF" "5" "15 Nov 2025" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -90,7 +90,7 @@ include_nesting_limit \fInumber\fR
 .RS 4
 This directive specifies the upper limit of nesting level of the
 include
-statement\&. The default limit is 20 level\&.
+statement\&. The default limit is 20 level\&. This parameter can be retrieved and modified using the gfstatus command targeting gfmd\&.
 .sp
 For example,
 .sp
@@ -706,7 +706,7 @@ metadb_server_remove_scan_log_interval \fIseconds\fR
 .RS 4
 This directive specifies the log output interval in seconds about gfmd removal queue processing\&. Default is 3600 seconds\&.
 .sp
-This parameter is only available in gfmd\&.conf, and ignored in gfarm2\&.conf\&.
+This parameter is only available in gfmd\&.conf, and ignored in gfarm2\&.conf\&. This parameter can be retrieved and modified using the gfstatus command targeting gfmd\&.
 .sp
 For example,
 .sp
@@ -725,7 +725,7 @@ metadb_server_remove_scan_interval_factor \fInumber\fR
 .RS 4
 This directive specifies the parameter about how much CPU time can be used for gfmd removal queue processing\&. The processing can use 1 / (metadb_server_remove_scan_interval_factor + 1) of the CPU time at most\&. Default is 5\&.
 .sp
-This parameter is only available in gfmd\&.conf, and ignored in gfarm2\&.conf\&.
+This parameter is only available in gfmd\&.conf, and ignored in gfarm2\&.conf\&. This parameter can be retrieved and modified using the gfstatus command targeting gfmd\&.
 .sp
 For example,
 .sp
@@ -1066,7 +1066,7 @@ For example,
 .PP
 auth \fIvalidity\fR \fImethod\fR \fIHost_specification\fR
 .RS 4
-This statement specifies the authentication method when communicating with the host(s) specified by the third argument\&.
+This statement specifies the authentication method when communicating with the host(s) specified by the third argument\&. This parameter can be retrieved and modified using the gfstatus command\&. However, modifying it is only meaningful when targeting gfmd\&.
 .sp
 The first argument should be either the
 enable
@@ -1153,7 +1153,7 @@ When described in the gfarm2\&.conf referenced by the client, it sets the authen
 .sp
 When described in the gfarm2\&.conf referenced by the gfsd, it sets the authentication method to be tried for connections between the gfsd and gfmd and between the gfsd and gfsd\&.
 .sp
-When described in gfmd\&.conf, it sets the authentication method to be tried for connections between the slave gfmd and master gfmd\&.
+When described in gfmd\&.conf, it sets the authentication method to be tried for connections between the slave gfmd and master gfmd\&. This parameter can be retrieved and modified using the gfstatus command\&. However, modifying it is only meaningful when targeting gfmd\&.
 .sp
 Example:
 .sp
@@ -1187,7 +1187,7 @@ is enabled, the digest_type has to be supported on clients as well\&.
 .sp
 Specifying "disable" as digest_type disables the checksum calculation\&.
 .sp
-This directive is only available in gfmd\&.conf, and ignored in gfarm2\&.conf\&.
+This directive is only available in gfmd\&.conf, and ignored in gfarm2\&.conf\&. This parameter can be retrieved and modified using the gfstatus command targeting gfmd\&.
 .sp
 NOTE: Even if checksum calculation is enabled by this directive, the digest checksum is not calculated when a client accesses a file replica which is managed by a local gfsd\&. This is because only gfsd calculates the checksum by default, but the client directly reads/writes the file replica in the local access case\&. To calculate the checksum of local files, You have to either disable the direct access feature by the
 direct_local_access
@@ -1216,7 +1216,7 @@ statement limits maximum number of dirset per user\&.
 .sp
 The default limit is 100\&.
 .sp
-This directive is only available in gfmd\&.conf, and ignored in gfarm2\&.conf\&.
+This directive is only available in gfmd\&.conf, and ignored in gfarm2\&.conf\&. This parameter can be retrieved and modified using the gfstatus command targeting gfmd\&.
 .sp
 For example,
 .sp
@@ -1239,7 +1239,7 @@ statement specifies the delay until starting re\-calculation of directory quota,
 .sp
 The default value is 60 seconds\&.
 .sp
-This directive is only available in gfmd\&.conf, and ignored in gfarm2\&.conf\&.
+This directive is only available in gfmd\&.conf, and ignored in gfarm2\&.conf\&. This parameter can be retrieved and modified using the gfstatus command targeting gfmd\&.
 .sp
 For example,
 .sp
@@ -1264,7 +1264,7 @@ Because metadata updates usually occur continuously, restarting without interval
 .sp
 The default value is 60 seconds\&.
 .sp
-This directive is only available in gfmd\&.conf, and ignored in gfarm2\&.conf\&.
+This directive is only available in gfmd\&.conf, and ignored in gfarm2\&.conf\&. This parameter can be retrieved and modified using the gfstatus command targeting gfmd\&.
 .sp
 For example,
 .sp
@@ -1289,7 +1289,7 @@ Because metadata updates usually occur continuously, restarting without interval
 .sp
 The default value is 60 seconds\&.
 .sp
-This directive is only available in gfmd\&.conf, and ignored in gfarm2\&.conf\&.
+This directive is only available in gfmd\&.conf, and ignored in gfarm2\&.conf\&. This parameter can be retrieved and modified using the gfstatus command targeting gfmd\&.
 .sp
 For example,
 .sp
@@ -1312,7 +1312,7 @@ statement specifies the maximum depth of directories\&. Note that this setting i
 .sp
 The default value is 100\&.
 .sp
-This directive is only available in gfmd\&.conf, and ignored in gfarm2\&.conf\&.
+This directive is only available in gfmd\&.conf, and ignored in gfarm2\&.conf\&. This parameter can be retrieved and modified using the gfstatus command targeting gfmd\&.
 .sp
 For example,
 .sp
@@ -1789,7 +1789,7 @@ directive for detail\&.
 The default is
 enable\&.
 .sp
-This directive is only available for clients in gfarm2\&.conf\&. Both gfsd and gfmd ignore this setting in gfarm2\&.conf and gfmd\&.conf\&.
+This directive is only available for clients in gfarm2\&.conf\&. Both gfsd and gfmd ignore this setting in gfarm2\&.conf and gfmd\&.conf\&. This parameter can be retrieved using the gfstatus command when the gfstatus command itself is the target\&.
 .sp
 For example,
 .sp
@@ -1809,7 +1809,7 @@ replication_at_write_open \fIvalidity\fR
 When all file replicas of a file are stored at read\-only filesystem nodes, it cannot be updated\&. When this directive is enabled, it is replicated to a read\-write filesystem node before opening in the write mode to make it possible to open in the write mode\&. The default is
 enable\&.
 .sp
-This directive is only available for clients in gfarm2\&.conf\&.
+This directive is only available for clients in gfarm2\&.conf\&. This parameter can be retrieved using the gfstatus command when the gfstatus command itself is the target\&.
 .sp
 For example,
 .sp
@@ -1829,7 +1829,7 @@ read_only \fIvalidity\fR
 This directive makes Gfarm file system read only\&. The default is
 disable\&.
 .sp
-This directive is only available in gfmd configuration files\&.
+This directive is only available in gfmd configuration files\&. This parameter can be retrieved and modified using the gfstatus command targeting gfmd\&.
 .sp
 For example,
 .sp
@@ -1846,7 +1846,7 @@ For example,
 .PP
 simultaneous_replication_receivers \fInumber\fR
 .RS 4
-This directive specifies maximum number of simultaneous gfmd\-initiated replications to same host\&. The default is 20\&.
+This directive specifies maximum number of simultaneous gfmd\-initiated replications to same host\&. The default is 20\&. This parameter can be retrieved and modified using the gfstatus command targeting gfmd\&.
 .sp
 For example,
 .sp
@@ -1863,7 +1863,7 @@ For example,
 .PP
 replication_busy_host \fIvalidity\fR
 .RS 4
-This directive specifies whether destination of gfmd\-initiated replication includes busy hosts or not\&. When it is disabled, a file replica is not created to busy hosts\&. The default is enabled\&.
+This directive specifies whether destination of gfmd\-initiated replication includes busy hosts or not\&. When it is disabled, a file replica is not created to busy hosts\&. The default is enabled\&. This parameter can be retrieved and modified using the gfstatus command targeting gfmd\&.
 .sp
 For example,
 .sp
@@ -1991,7 +1991,7 @@ This directive specifies a log file\&.
 .PP
 log_level \fIpriority_level\fR
 .RS 4
-This directive specifies a level of log priority\&. The log output, which priority is inferior to this level, will not be sent to syslog or standard error\&. The priority levels are "emerg", "alert", "crit", "err", "warning", "notice", "info" and "debug" in highest first order\&. The default level is "info"\&. It\*(Aqs not recommended to specify a level higher or equal to "crit"\&.
+This directive specifies a level of log priority\&. The log output, which priority is inferior to this level, will not be sent to syslog or standard error\&. The priority levels are "emerg", "alert", "crit", "err", "warning", "notice", "info" and "debug" in highest first order\&. The default level is "info"\&. It\*(Aqs not recommended to specify a level higher or equal to "crit"\&. This parameter can be retrieved and modified using the gfstatus command\&. However, modifying it is only meaningful when targeting gfmd\&.
 .sp
 For example,
 .sp
@@ -2008,7 +2008,7 @@ For example,
 .PP
 log_message_verbose_level \fIlevel\fR
 .RS 4
-This directive specifies how verbose the log message is\&. The default value is 0, which outputs the log message id\&. The level 1 additionally outputs the file name and the line of source code\&. The level 2 additionally outputs the function name\&.
+This directive specifies how verbose the log message is\&. The default value is 0, which outputs the log message id\&. The level 1 additionally outputs the file name and the line of source code\&. The level 2 additionally outputs the function name\&. This parameter can be retrieved and modified using the gfstatus command\&. However, modifying it is only meaningful when targeting gfmd\&.
 .sp
 For example,
 .sp
@@ -2025,7 +2025,7 @@ For example,
 .PP
 log_auth_verbose \fIvalidity\fR
 .RS 4
-When "enable" is specified, verbose messages about authentication are logged\&.
+When "enable" is specified, verbose messages about authentication are logged\&. This parameter can be retrieved and modified using the gfstatus command\&. However, modifying it is only meaningful when targeting gfmd\&.
 .sp
 Example:
 .sp
@@ -2042,7 +2042,7 @@ Example:
 .PP
 log_tls_verbose \fIvalidity\fR
 .RS 4
-When "enable" is specified, verbose messages about TLS are logged\&.
+When "enable" is specified, verbose messages about TLS are logged\&. This parameter can be retrieved and modified using the gfstatus command targeting gfmd\&.
 .sp
 Example:
 .sp
@@ -2234,7 +2234,7 @@ max_open_files \fInum\-of\-files\fR
 .RS 4
 This directive specifies the maximum number of open files\&. The default is 1024\&.
 .sp
-This parameter is only available in gfmd\&.conf\&.
+This parameter is only available in gfmd\&.conf\&. This parameter can be retrieved and modified using the gfstatus command targeting gfmd\&.
 .sp
 For example,
 .sp
@@ -2255,7 +2255,7 @@ When "enable" is specified, the Gfarm client library (libgfarm) calculates check
 .sp
 The default value is disable\&.
 .sp
-This directive is only available for clients in gfarm2\&.conf\&. Both gfsd and gfmd ignore this setting in gfarm2\&.conf and gfmd\&.conf\&.
+This directive is only available for clients in gfarm2\&.conf\&. Both gfsd and gfmd ignore this setting in gfarm2\&.conf and gfmd\&.conf\&. This parameter can be retrieved using the gfstatus command when the gfstatus command itself is the target\&.
 .sp
 For example,
 .sp
@@ -2274,7 +2274,7 @@ client_file_bufsize \fIbytes\fR
 .RS 4
 This directive specifies the file buffer size in bytes used in the Gfarm client library (libgfarm)\&. The default size is 1048576 bytes (= 1MiB)\&. The file buffer size should be less than the default value not for deterioration of remote access performance\&.
 .sp
-This directive is only available for clients in gfarm2\&.conf\&. Both gfsd and gfmd ignore this setting in gfarm2\&.conf and gfmd\&.conf\&.
+This directive is only available for clients in gfarm2\&.conf\&. Both gfsd and gfmd ignore this setting in gfarm2\&.conf and gfmd\&.conf\&. This parameter can be retrieved using the gfstatus command when the gfstatus command itself is the target\&.
 .sp
 For example,
 .sp
@@ -2333,7 +2333,7 @@ For example,
 .PP
 profile \fIvalidity\fR
 .RS 4
-When "enable" is specified, Gfarm outputs the profile information\&.
+When "enable" is specified, Gfarm outputs the profile information\&. This parameter can be retrieved and modified using the gfstatus command targeting gfmd\&.
 .sp
 Example:
 .sp
@@ -2654,7 +2654,7 @@ The percentage can be dynamically changed by the gfrepcheck command\&. The follo
 .RE
 .\}
 .sp
-This parameter is only available in gfmd\&.conf\&.
+This parameter is only available in gfmd\&.conf\&. This parameter can be retrieved and modified using the gfstatus command targeting gfmd\&.
 .sp
 Example:
 .sp
@@ -2685,7 +2685,7 @@ The grace time can be dynamically changed by the gfrepcheck command\&. The follo
 .RE
 .\}
 .sp
-This parameter is only available in gfmd\&.conf\&.
+This parameter is only available in gfmd\&.conf\&. This parameter can be retrieved and modified using the gfstatus command targeting gfmd\&.
 .sp
 Example:
 .sp
@@ -2727,7 +2727,7 @@ This statement specifies an interval to start replica check after a gfsd is down
 \fBgfrepcheck host_down_thresh\fR
 command\&.
 .sp
-This parameter is only available in gfmd\&.conf\&.
+This parameter is only available in gfmd\&.conf\&. This parameter can be retrieved and modified using the gfstatus command targeting gfmd\&.
 .sp
 Example:
 .sp
@@ -2748,7 +2748,7 @@ This statement specifies the sleep time in nanoseconds during the replica check 
 \fBgfrepcheck sleep_time\fR
 command\&.
 .sp
-This parameter is only available in gfmd\&.conf\&.
+This parameter is only available in gfmd\&.conf\&. This parameter can be retrieved and modified using the gfstatus command targeting gfmd\&.
 .sp
 Example:
 .sp
@@ -2769,7 +2769,7 @@ This statement specifies the minimum interval in seconds, to start the next repl
 \fBgfrepcheck minimum_interval\fR
 command\&.
 .sp
-This parameter is only available in gfmd\&.conf\&.
+This parameter is only available in gfmd\&.conf\&. This parameter can be retrieved and modified using the gfstatus command targeting gfmd\&.
 .sp
 Example:
 .sp
@@ -2792,7 +2792,7 @@ enable\&.
 .sp
 gfstatus \-Mm \*(Aqreplicainfo disable\*(Aq can disable this temporarily\&.
 .sp
-This parameter is only available in gfmd\&.conf\&.
+This parameter is only available in gfmd\&.conf\&. This parameter can be retrieved and modified using the gfstatus command targeting gfmd\&.
 .sp
 Example:
 .sp
@@ -2812,7 +2812,7 @@ write_verify \fIvalidity\fR
 This statement enables gfsd\*(Aqs write_verify feature that compares file data checksum by re\-reading the contents of the file sometime after the file is written\&. The default is
 disable\&.
 .sp
-This parameter is only available in gfmd\&.conf, and ignored in gfarm2\&.conf\&. gfsd uses this setting at its startup by asking gfmd\&.
+This parameter is only available in gfmd\&.conf, and ignored in gfarm2\&.conf\&. gfsd uses this setting at its startup by asking gfmd\&. This parameter can be retrieved and modified using the gfstatus command targeting gfmd\&.
 .sp
 For example,
 .sp
@@ -2833,7 +2833,7 @@ This statement specifies how long to wait before starting the write_verify featu
 .sp
 The write_verify feature uses direct I/O on OSes which have the O_DIRECT flag\&. But it does not flush caches on disk controllers and kernel metadata\&. Thus, it\*(Aqs recommended to specify long enough period in this parameter\&.
 .sp
-This parameter is only available in gfmd\&.conf, and ignored in gfarm2\&.conf\&. gfsd uses this setting at its startup by asking gfmd\&.
+This parameter is only available in gfmd\&.conf, and ignored in gfarm2\&.conf\&. gfsd uses this setting at its startup by asking gfmd\&. This parameter can be retrieved and modified using the gfstatus command targeting gfmd\&.
 .sp
 For example,
 .sp
@@ -2854,7 +2854,7 @@ This statement specifies how long to wait until retring the write_verify feature
 .sp
 It\*(Aqs recommended to keep this value smaller enough than the write_verify_interval setting\&. The default value is 600 seconds (10 minutes)\&.
 .sp
-This parameter is only available in gfmd\&.conf, and ignored in gfarm2\&.conf\&. gfsd uses this setting at its startup by asking gfmd\&.
+This parameter is only available in gfmd\&.conf, and ignored in gfarm2\&.conf\&. gfsd uses this setting at its startup by asking gfmd\&. This parameter can be retrieved and modified using the gfstatus command targeting gfmd\&.
 .sp
 For example,
 .sp
@@ -2875,7 +2875,7 @@ This statement specifies interval to record write_verify statistics in log\&. Wh
 .sp
 The default value is 3600 seconds (1 hour)\&.
 .sp
-This parameter is only available in gfmd\&.conf, and ignored in gfarm2\&.conf\&. gfsd uses this setting at its startup by asking gfmd\&.
+This parameter is only available in gfmd\&.conf, and ignored in gfarm2\&.conf\&. gfsd uses this setting at its startup by asking gfmd\&. This parameter can be retrieved and modified using the gfstatus command targeting gfmd\&.
 .sp
 For example,
 .sp

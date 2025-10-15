@@ -76,6 +76,7 @@ as a configuration file.
 This directive specifies the upper limit of nesting level of
 the <span class="token">include</span> statement.
 The default limit is 20 level.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </p>
 <p>For example,</p>
 <div class="literallayout"><p><br>
@@ -623,6 +624,7 @@ Default is 3600 seconds.
 </p>
 <p>
 This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </p>
 <p>For example,</p>
 <div class="literallayout"><p><br>
@@ -639,6 +641,7 @@ Default is 5.
 </p>
 <p>
 This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </p>
 <p>For example,</p>
 <div class="literallayout"><p><br>
@@ -853,7 +856,9 @@ port number of the PostgreSQL server.</p>
 <em class="parameter"><code>method</code></em> <em class="parameter"><code>Host_specification</code></em></span></dt>
 <dd>
 <p>This statement specifies the authentication method when
-communicating with the host(s) specified by the third argument.</p>
+communicating with the host(s) specified by the third argument.
+This parameter can be retrieved and modified using the gfstatus command. However, modifying it is only meaningful when targeting gfmd.
+</p>
 <p>The first argument should be either the <span class="token">enable</span> or
 <span class="token">disable</span> keyword.
 The second argument, <em class="parameter"><code>auth method</code></em>, should be
@@ -942,6 +947,7 @@ between the gfsd and gfmd and between the gfsd and gfsd.
 When described in gfmd.conf,
 it sets the authentication method to be tried for connections
 between the slave gfmd and master gfmd.
+This parameter can be retrieved and modified using the gfstatus command. However, modifying it is only meaningful when targeting gfmd.
 </p>
 <p>Example:</p>
 <div class="literallayout"><p><br>
@@ -971,6 +977,7 @@ Specifying "disable" as digest_type disables the checksum calculation.
 </p>
 <p>
 This directive is only available in gfmd.conf, and ignored in gfarm2.conf.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </p>
 <p>
 NOTE:
@@ -1001,6 +1008,7 @@ The default limit is 100.
 </p>
 <p>
 This directive is only available in gfmd.conf, and ignored in gfarm2.conf.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </p>
 <p>For example,</p>
 <div class="literallayout"><p><br>
@@ -1021,6 +1029,7 @@ The default value is 60 seconds.
 </p>
 <p>
 This directive is only available in gfmd.conf, and ignored in gfarm2.conf.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </p>
 <p>For example,</p>
 <div class="literallayout"><p><br>
@@ -1047,6 +1056,7 @@ The default value is 60 seconds.
 </p>
 <p>
 This directive is only available in gfmd.conf, and ignored in gfarm2.conf.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </p>
 <p>For example,</p>
 <div class="literallayout"><p><br>
@@ -1073,6 +1083,7 @@ The default value is 60 seconds.
 </p>
 <p>
 This directive is only available in gfmd.conf, and ignored in gfarm2.conf.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </p>
 <p>For example,</p>
 <div class="literallayout"><p><br>
@@ -1092,6 +1103,7 @@ The default value is 100.
 </p>
 <p>
 This directive is only available in gfmd.conf, and ignored in gfarm2.conf.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </p>
 <p>For example,</p>
 <div class="literallayout"><p><br>
@@ -1495,6 +1507,7 @@ The default is <span class="token">enable</span>.
 <p>
 This directive is only available for clients in gfarm2.conf.
 Both gfsd and gfmd ignore this setting in gfarm2.conf and gfmd.conf.
+This parameter can be retrieved using the gfstatus command when the gfstatus command itself is the target.
 </p>
 <p>For example,</p>
 <div class="literallayout"><p><br>
@@ -1512,6 +1525,7 @@ The default is <span class="token">enable</span>.
 </p>
 <p>
 This directive is only available for clients in gfarm2.conf.
+This parameter can be retrieved using the gfstatus command when the gfstatus command itself is the target.
 </p>
 <p>For example,</p>
 <div class="literallayout"><p><br>
@@ -1526,6 +1540,7 @@ The default is <span class="token">disable</span>.
 </p>
 <p>
 This directive is only available in gfmd configuration files.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </p>
 <p>For example,</p>
 <div class="literallayout"><p><br>
@@ -1537,6 +1552,7 @@ This directive is only available in gfmd configuration files.
 <p>This directive specifies maximum number of simultaneous
 gfmd-initiated replications to same host.
 The default is 20.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </p>
 <p>For example,</p>
 <div class="literallayout"><p><br>
@@ -1548,6 +1564,7 @@ The default is 20.
 <p>This directive specifies whether destination of gfmd-initiated
   replication includes busy hosts or not.  When it is disabled, a file
   replica is not created to busy hosts.  The default is enabled.
+  This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </p>
 <p>For example,</p>
 <div class="literallayout"><p><br>
@@ -1636,6 +1653,7 @@ The priority levels are "emerg", "alert", "crit", "err", "warning", "notice",
 "info" and "debug" in highest first order.
 The default level is "info".
 It's not recommended to specify a level higher or equal to "crit".
+This parameter can be retrieved and modified using the gfstatus command. However, modifying it is only meaningful when targeting gfmd.
 </p>
 <p>For example,</p>
 <div class="literallayout"><p><br>
@@ -1648,6 +1666,7 @@ It's not recommended to specify a level higher or equal to "crit".
 The default value is 0, which outputs the log message id.  The level 1
 additionally outputs the file name and the line of source code.  The
 level 2 additionally outputs the function name.
+This parameter can be retrieved and modified using the gfstatus command. However, modifying it is only meaningful when targeting gfmd.
 </p>
 <p>For example,</p>
 <div class="literallayout"><p><br>
@@ -1658,6 +1677,7 @@ level 2 additionally outputs the function name.
 <dd>
 <p>
 When "enable" is specified, verbose messages about authentication are logged.
+This parameter can be retrieved and modified using the gfstatus command. However, modifying it is only meaningful when targeting gfmd.
 </p>
 <p>Example:</p>
 <div class="literallayout"><p><br>
@@ -1668,6 +1688,7 @@ When "enable" is specified, verbose messages about authentication are logged.
 <dd>
 <p>
 When "enable" is specified, verbose messages about TLS are logged.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </p>
 <p>Example:</p>
 <div class="literallayout"><p><br>
@@ -1826,6 +1847,7 @@ default is 1024.
 </p>
 <p>
 This parameter is only available in gfmd.conf.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </p>
 <p>For example,</p>
 <div class="literallayout"><p><br>
@@ -1846,6 +1868,7 @@ The default value is disable.
 <p>
 This directive is only available for clients in gfarm2.conf.
 Both gfsd and gfmd ignore this setting in gfarm2.conf and gfmd.conf.
+This parameter can be retrieved using the gfstatus command when the gfstatus command itself is the target.
 </p>
 <p>For example,</p>
 <div class="literallayout"><p><br>
@@ -1862,6 +1885,7 @@ Both gfsd and gfmd ignore this setting in gfarm2.conf and gfmd.conf.
 <p>
 This directive is only available for clients in gfarm2.conf.
 Both gfsd and gfmd ignore this setting in gfarm2.conf and gfmd.conf.
+This parameter can be retrieved using the gfstatus command when the gfstatus command itself is the target.
 </p>
 <p>For example,</p>
 <div class="literallayout"><p><br>
@@ -1897,6 +1921,7 @@ parallel is 16.
 <dt><span class="term"><span class="token">profile </span><em class="parameter"><code>validity</code></em></span></dt>
 <dd>
 <p>When "enable" is specified, Gfarm outputs the profile information.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </p>
 <p>Example:</p>
 <div class="literallayout"><p><br>
@@ -2159,6 +2184,7 @@ The following example changes to 50%.
 </p></div>
 <p>
 This parameter is only available in gfmd.conf.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </p>
 <p>Example:</p>
 <div class="literallayout"><p><br>
@@ -2181,6 +2207,7 @@ The following example changes to 1 week (= 604800 seconds).
 </p></div>
 <p>
 This parameter is only available in gfmd.conf.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </p>
 <p>Example:</p>
 <div class="literallayout"><p><br>
@@ -2213,6 +2240,7 @@ This behavior can be dynamically chagned by the
 </p>
 <p>
 This parameter is only available in gfmd.conf.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </p>
 <p>Example:</p>
 <div class="literallayout"><p><br>
@@ -2231,6 +2259,7 @@ This behavior can be dynamically chagned by the
 </p>
 <p>
 This parameter is only available in gfmd.conf.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </p>
 <p>Example:</p>
 <div class="literallayout"><p><br>
@@ -2247,6 +2276,7 @@ This behavior can be dynamically chagned by the
 </p>
 <p>
 This parameter is only available in gfmd.conf.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </p>
 <p>Example:</p>
 <div class="literallayout"><p><br>
@@ -2270,6 +2300,7 @@ gfstatus -Mm 'replicainfo disable' can disable this temporarily.
 </p>
 <p>
 This parameter is only available in gfmd.conf.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </p>
 <p>Example:</p>
 <div class="literallayout"><p><br>
@@ -2287,6 +2318,7 @@ The default is <span class="token">disable</span>.
 <p>
 This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 gfsd uses this setting at its startup by asking gfmd.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </p>
 <p>For example,</p>
 <div class="literallayout"><p><br>
@@ -2308,6 +2340,7 @@ Thus, it's recommended to specify long enough period in this parameter.
 <p>
 This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 gfsd uses this setting at its startup by asking gfmd.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </p>
 <p>For example,</p>
 <div class="literallayout"><p><br>
@@ -2329,6 +2362,7 @@ The default value is 600 seconds (10 minutes).
 <p>
 This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 gfsd uses this setting at its startup by asking gfmd.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </p>
 <p>For example,</p>
 <div class="literallayout"><p><br>
@@ -2348,6 +2382,7 @@ The default value is 3600 seconds (1 hour).
 <p>
 This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 gfsd uses this setting at its startup by asking gfmd.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </p>
 <p>For example,</p>
 <div class="literallayout"><p><br>

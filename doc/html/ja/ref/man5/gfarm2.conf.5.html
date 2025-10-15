@@ -84,6 +84,7 @@ IPアドレスと、"/"で区切られた0〜31までの数字で、ネットワ
 <dd>
 <p><span class="token">include</span> 文のネスティングの上限を指定します。
 デフォルトの制限値は 20 です。
+このパラメータは、gfstatusコマンドでgfmdを対象とした場合に値の取得および設定ができます。
 </p>
 <p>例:</p>
 <div class="literallayout"><p><br>
@@ -604,6 +605,7 @@ metadb_server_job_queue_length よりは少ない値を設定します。
 </p>
 <p>
 この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+このパラメータは、gfstatusコマンドでgfmdを対象とした場合に値の取得および設定ができます。
 </p>
 <p>例:</p>
 <div class="literallayout"><p><br>
@@ -621,6 +623,7 @@ CPU時間をどの程度使用してよいかを調整するパラメータを�
 </p>
 <p>
 この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+このパラメータは、gfstatusコマンドでgfmdを対象とした場合に値の取得および設定ができます。
 </p>
 <p>例:</p>
 <div class="literallayout"><p><br>
@@ -821,7 +824,10 @@ PostgreSQLサーバーが動作しているホスト名を指定します。
 </dd>
 <dt><span class="term"><span class="token">auth</span> <em class="parameter"><code>有効性</code></em>  <em class="parameter"><code>認証方法</code></em>  <em class="parameter"><code>ホスト指定</code></em></span></dt>
 <dd>
-<p>この文は、第3引数で指定したホストとの通信に用いる認証方法を設定します。</p>
+<p>
+この文は、第3引数で指定したホストとの通信に用いる認証方法を設定します。
+このパラメータは、gfstatusコマンドによる値の取得および変更ができます。ただし変更については、gfmdを対象とした場合のみに意味があります。
+</p>
 <p>第1引数の<em class="parameter"><code>有効性</code></em>部には、<span class="token">enable</span>ないし<span class="token">disable</span>
 キーワードを指定します。
 第2引数の<em class="parameter"><code>認証方法</code></em>部には、
@@ -905,6 +911,7 @@ gfsd と gfmd、
 <p>
 gfmd.conf に記載した場合、
 スレーブ gfmd と マスター gfmd の間の接続で試行する認証方式を設定します。
+このパラメータは、gfstatusコマンドによる値の取得および変更ができます。ただし変更については、gfmdを対象とした場合のみに意味があります。
 </p>
 <p>例:</p>
 <div class="literallayout"><p><br>
@@ -931,6 +938,7 @@ digestタイプとして disable と指定した場合は、チェックサム�
 </p>
 <p>
 この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+このパラメータは、gfstatusコマンドでgfmdを対象とした場合に値の取得および設定ができます。
 </p>
 <p>
 注:
@@ -960,6 +968,7 @@ digestタイプとして disable と指定した場合は、チェックサム�
 </p>
 <p>
 この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+このパラメータは、gfstatusコマンドでgfmdを対象とした場合に値の取得および設定ができます。
 </p>
 <p>例:</p>
 <div class="literallayout"><p><br>
@@ -979,6 +988,7 @@ directory quota の再集計が必要となったときに、
 </p>
 <p>
 この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+このパラメータは、gfstatusコマンドでgfmdを対象とした場合に値の取得および設定ができます。
 </p>
 <p>例:</p>
 <div class="literallayout"><p><br>
@@ -1003,6 +1013,7 @@ directory quota の集計がメタデータ更新のために中断した時に�
 </p>
 <p>
 この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+このパラメータは、gfstatusコマンドでgfmdを対象とした場合に値の取得および設定ができます。
 </p>
 <p>例:</p>
 <div class="literallayout"><p><br>
@@ -1027,6 +1038,7 @@ quota の集計がメタデータ更新のために中断した時に、
 </p>
 <p>
 この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+このパラメータは、gfstatusコマンドでgfmdを対象とした場合に値の取得および設定ができます。
 </p>
 <p>例:</p>
 <div class="literallayout"><p><br>
@@ -1045,6 +1057,7 @@ directory の深さとして許される最大値を設定します。
 </p>
 <p>
 この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+このパラメータは、gfstatusコマンドでgfmdを対象とした場合に値の取得および設定ができます。
 </p>
 <p>例:</p>
 <div class="literallayout"><p><br>
@@ -1435,6 +1448,7 @@ gfsdによるチェックサム計算を行うために用意されています�
 <p>
 この文は、クライアントが参照するgfarm2.confのみで有効です。
 gfsd や gfmd は、gfarm2.conf や gfmd.conf 中のこの文を無視します。
+このパラメータは、gfstatusコマンド自身を対象とした場合に、gfstatusコマンドを使った値の取得ができます。
 </p>
 <p>例:</p>
 <div class="literallayout"><p><br>
@@ -1455,6 +1469,7 @@ enable にすると、その他のファイルシステムノードにファイ�
 </p>
 <p>
 この文は、Gfarmクライアントが参照するgfarm2.confのみで有効です。
+このパラメータは、gfstatusコマンド自身を対象とした場合に、gfstatusコマンドを使った値の取得ができます。
 </p>
 <p>例:</p>
 <div class="literallayout"><p><br>
@@ -1470,6 +1485,7 @@ Gfarmファイルシステムを read only にします。
 </p>
 <p>
 この文はgfmdでのみ有効です。
+このパラメータは、gfstatusコマンドでgfmdを対象とした場合に値の取得および設定ができます。
 </p>
 <p>例:</p>
 <div class="literallayout"><p><br>
@@ -1481,6 +1497,7 @@ Gfarmファイルシステムを read only にします。
 <p>gfmd 主導の複製処理を、単一複製作成ホストに対して、
 同時にいくつまで並行して行なうことを許すかを設定します。
 デフォルトは 20です。
+このパラメータは、gfstatusコマンドでgfmdを対象とした場合に値の取得および設定ができます。
 </p>
 <p>例:</p>
 <div class="literallayout"><p><br>
@@ -1492,6 +1509,7 @@ Gfarmファイルシステムを read only にします。
 <p>gfmd主導の複製先にbusyホストを含むかどうか設定します。
 disableにすると、busyホストには複製は作成されません。
 デフォルトはenableです。
+このパラメータは、gfstatusコマンドでgfmdを対象とした場合に値の取得および設定ができます。
 </p>
 <p>例:</p>
 <div class="literallayout"><p><br>
@@ -1582,6 +1600,7 @@ disableにすると、busyホストには複製は作成されません。
 "notice", "info", "debug"です。
 デフォルトの出力レベルは"info"です。
 "crit"以上の優先度を指定することは、お勧めできません。
+このパラメータは、gfstatusコマンドによる値の取得および変更ができます。ただし変更については、gfmdを対象とした場合のみに意味があります。
 </p>
 <p>例:</p>
 <div class="literallayout"><p><br>
@@ -1595,6 +1614,7 @@ disableにすると、busyホストには複製は作成されません。
 デフォルトは0です。レベル0では、ログIDが出力されます。
 レベル1では、レベル0に加えソースコードのファイル名と行番号が出力されます。
 レベル2では、レベル1に加え関数名が出力されます。
+このパラメータは、gfstatusコマンドによる値の取得および変更ができます。ただし変更については、gfmdを対象とした場合のみに意味があります。
 </p>
 <p>例:</p>
 <div class="literallayout"><p><br>
@@ -1605,6 +1625,7 @@ disableにすると、busyホストには複製は作成されません。
 <dd>
 <p>
 enableと指定した場合、認証処理に関する詳細なログを記録します。
+このパラメータは、gfstatusコマンドによる値の取得および変更ができます。ただし変更については、gfmdを対象とした場合のみに意味があります。
 </p>
 <p>例:</p>
 <div class="literallayout"><p><br>
@@ -1615,6 +1636,7 @@ enableと指定した場合、認証処理に関する詳細なログを記録�
 <dd>
 <p>
 enableと指定した場合、TLS処理に関する詳細なログを記録します。
+このパラメータは、gfstatusコマンドでgfmdを対象とした場合に値の取得および設定ができます。
 </p>
 <p>例:</p>
 <div class="literallayout"><p><br>
@@ -1765,6 +1787,7 @@ Gfarmクライアントライブラリはファイルシステムノードが利
 </p>
 <p>
 この文はgfmd.confのみで有効です。
+このパラメータは、gfstatusコマンドでgfmdを対象とした場合に値の取得および設定ができます。
 </p>
 <p>例:</p>
 <div class="literallayout"><p><br>
@@ -1784,6 +1807,7 @@ Gfarmクライアントライブラリはファイルシステムノードが利
 <p>
 この文は、クライアントが参照するgfarm2.confのみで有効です。
 gfsd や gfmd は、gfarm2.conf や gfmd.conf 中のこの文を無視します。
+このパラメータは、gfstatusコマンド自身を対象とした場合に、gfstatusコマンドを使った値の取得ができます。
 </p>
 <p>例:</p>
 <div class="literallayout"><p><br>
@@ -1800,6 +1824,7 @@ gfsd や gfmd は、gfarm2.conf や gfmd.conf 中のこの文を無視します�
 <p>
 この文は、クライアントが参照するgfarm2.confのみで有効です。
 gfsd や gfmd は、gfarm2.conf や gfmd.conf 中のこの文を無視します。
+このパラメータは、gfstatusコマンド自身を対象とした場合に、gfstatusコマンドを使った値の取得ができます。
 </p>
 <p>例:</p>
 <div class="literallayout"><p><br>
@@ -1832,6 +1857,7 @@ gfsd や gfmd は、gfarm2.conf や gfmd.conf 中のこの文を無視します�
 <dd>
 <p>
 このオプションがenableの場合、プロファイル情報を出力します。
+このパラメータは、gfstatusコマンドでgfmdを対象とした場合に値の取得および設定ができます。
 </p>
 <p>例:</p>
 <div class="literallayout"><p><br>
@@ -2113,6 +2139,7 @@ enableです。
 </p>
 <p>
 この文はgfmd.confのみで有効です。
+このパラメータは、gfstatusコマンドでgfmdを対象とした場合に値の取得および設定ができます。
 </p>
 <p>例:</p>
 <div class="literallayout"><p><br>
@@ -2136,6 +2163,7 @@ enableです。
 </p>
 <p>
 この文はgfmd.confのみで有効です。
+このパラメータは、gfstatusコマンドでgfmdを対象とした場合に値の取得および設定ができます。
 </p>
 <p>例:</p>
 <div class="literallayout"><p><br>
@@ -2175,6 +2203,7 @@ gfsdを保守するために有用です。デフォルトは10800秒(3時間)�
 </p>
 <p>
 この文はgfmd.confのみで有効です。
+このパラメータは、gfstatusコマンドでgfmdを対象とした場合に値の取得および設定ができます。
 </p>
 <p>例:</p>
 <div class="literallayout"><p><br>
@@ -2200,6 +2229,7 @@ replica_check以外の処理が多いと検出した場合に、replica_checkの
 </p>
 <p>
 この文はgfmd.confのみで有効です。
+このパラメータは、gfstatusコマンドでgfmdを対象とした場合に値の取得および設定ができます。
 </p>
 <p>例:</p>
 <div class="literallayout"><p><br>
@@ -2219,6 +2249,7 @@ replica_checkが次回動作するまでの最小間隔(秒)を指定します�
 </p>
 <p>
 この文はgfmd.confのみで有効です。
+このパラメータは、gfstatusコマンドでgfmdを対象とした場合に値の取得および設定ができます。
 </p>
 <p>例:</p>
 <div class="literallayout"><p><br>
@@ -2243,6 +2274,7 @@ gfstatus -Mm 'replicainfo disable' により、一時的に無効にすること
 </p>
 <p>
 この文はgfmd.confのみで有効です。
+このパラメータは、gfstatusコマンドでgfmdを対象とした場合に値の取得および設定ができます。
 </p>
 <p>例:</p>
 <div class="literallayout"><p><br>
@@ -2261,6 +2293,7 @@ enableと指定した場合、
 この文は gfmd.conf のみで有効です。
 gfarm2.confでは無視されます。
 gfsd はその起動時に、gfmd に対して、この設定を問い合わせて動作します。
+このパラメータは、gfstatusコマンドでgfmdを対象とした場合に値の取得および設定ができます。
 </p>
 <p>例:</p>
 <div class="literallayout"><p><br>
@@ -2284,6 +2317,7 @@ direct I/O を用います。しかし、ディスクコントローラ内のキ
 この文は gfmd.conf のみで有効です。
 gfarm2.confでは無視されます。
 gfsd はその起動時に、gfmd に対して、この設定を問い合わせて動作します。
+このパラメータは、gfstatusコマンドでgfmdを対象とした場合に値の取得および設定ができます。
 </p>
 <p>例:</p>
 <div class="literallayout"><p><br>
@@ -2306,6 +2340,7 @@ write_verify を試みたが、対象ファイルが書き込みオープンさ�
 この文は gfmd.conf のみで有効です。
 gfarm2.confでは無視されます。
 gfsd はその起動時に、gfmd に対して、この設定を問い合わせて動作します。
+このパラメータは、gfstatusコマンドでgfmdを対象とした場合に値の取得および設定ができます。
 </p>
 <p>例:</p>
 <div class="literallayout"><p><br>
@@ -2326,6 +2361,7 @@ write_verify に関する統計情報をログ出力する間隔を指定しま�
 この文は gfmd.conf のみで有効です。
 gfarm2.confでは無視されます。
 gfsd はその起動時に、gfmd に対して、この設定を問い合わせて動作します。
+このパラメータは、gfstatusコマンドでgfmdを対象とした場合に値の取得および設定ができます。
 </p>
 <p>例:</p>
 <div class="literallayout"><p><br>
