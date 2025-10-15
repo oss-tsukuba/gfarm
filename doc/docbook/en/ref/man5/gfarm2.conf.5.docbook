@@ -4,7 +4,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>11 Sep 2023</date></refentryinfo>
+<refentryinfo><date>15 Nov 2025</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -118,7 +118,7 @@ as a configuration file.
 This directive specifies the upper limit of nesting level of
 the <token>include</token> statement.
 The default limit is 20 level.
-The gfstatus command is effective for gfmd.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </para>
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
@@ -775,7 +775,7 @@ Default is 3600 seconds.
 </para>
 <para>
 This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
-The gfstatus command is effective for gfmd.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </para>
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
@@ -795,7 +795,7 @@ Default is 5.
 </para>
 <para>
 This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
-The gfstatus command is effective for gfmd.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </para>
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
@@ -1064,7 +1064,7 @@ port number of the PostgreSQL server.</para>
 <listitem>
 <para>This statement specifies the authentication method when
 communicating with the host(s) specified by the third argument.
-The gfstatus command is effective for the gfstatus command itself and for gfmd.
+This parameter can be retrieved and modified using the gfstatus command. However, modifying it is only meaningful when targeting gfmd.
 </para>
 
 <para>The first argument should be either the <token>enable</token> or
@@ -1168,7 +1168,7 @@ between the gfsd and gfmd and between the gfsd and gfsd.
 When described in gfmd.conf,
 it sets the authentication method to be tried for connections
 between the slave gfmd and master gfmd.
-The gfstatus command is effective for the gfstatus command itself and for gfmd.
+This parameter can be retrieved and modified using the gfstatus command. However, modifying it is only meaningful when targeting gfmd.
 </para>
 
 <para>Example:</para>
@@ -1208,7 +1208,7 @@ Specifying "disable" as digest_type disables the checksum calculation.
 </para>
 <para>
 This directive is only available in gfmd.conf, and ignored in gfarm2.conf.
-The gfstatus command is effective for gfmd.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </para>
 <para>
 NOTE:
@@ -1222,6 +1222,7 @@ You have to either disable the direct access feature by
 the <token>direct_local_access</token> statement,
 or enable the client-side checksum calculation feature by
 the <token>client_digest_check</token> statement.
+This parameter can be retrieved using the gfstatus command when the gfstatus command itself is the target.
 </para>
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
@@ -1242,7 +1243,7 @@ The default limit is 100.
 </para>
 <para>
 This directive is only available in gfmd.conf, and ignored in gfarm2.conf.
-The gfstatus command is effective for gfmd.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </para>
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
@@ -1266,7 +1267,7 @@ The default value is 60 seconds.
 </para>
 <para>
 This directive is only available in gfmd.conf, and ignored in gfarm2.conf.
-The gfstatus command is effective for gfmd.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </para>
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
@@ -1296,7 +1297,7 @@ The default value is 60 seconds.
 </para>
 <para>
 This directive is only available in gfmd.conf, and ignored in gfarm2.conf.
-The gfstatus command is effective for gfmd.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </para>
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
@@ -1326,7 +1327,7 @@ The default value is 60 seconds.
 </para>
 <para>
 This directive is only available in gfmd.conf, and ignored in gfarm2.conf.
-The gfstatus command is effective for gfmd.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </para>
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
@@ -1349,7 +1350,7 @@ The default value is 100.
 </para>
 <para>
 This directive is only available in gfmd.conf, and ignored in gfarm2.conf.
-The gfstatus command is effective for gfmd.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </para>
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
@@ -1960,6 +1961,7 @@ The default is <token>enable</token>.
 </para>
 <para>
 This directive is only available for clients in gfarm2.conf.
+This parameter can be retrieved using the gfstatus command when the gfstatus command itself is the target.
 </para>
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
@@ -1977,7 +1979,7 @@ The default is <token>disable</token>.
 </para>
 <para>
 This directive is only available in gfmd configuration files.
-The gfstatus command is effective for gfmd.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </para>
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
@@ -1992,7 +1994,7 @@ The gfstatus command is effective for gfmd.
 <para>This directive specifies maximum number of simultaneous
 gfmd-initiated replications to same host.
 The default is 20.
-The gfstatus command is effective for gfmd.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </para>
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
@@ -2007,7 +2009,7 @@ The gfstatus command is effective for gfmd.
 <para>This directive specifies whether destination of gfmd-initiated
   replication includes busy hosts or not.  When it is disabled, a file
   replica is not created to busy hosts.  The default is enabled.
-  The gfstatus command is effective for gfmd.
+  This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </para>
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
@@ -2122,7 +2124,7 @@ The priority levels are "emerg", "alert", "crit", "err", "warning", "notice",
 "info" and "debug" in highest first order.
 The default level is "info".
 It's not recommended to specify a level higher or equal to "crit".
-The gfstatus command is effective for the gfstatus command itself and for gfmd.
+This parameter can be retrieved and modified using the gfstatus command. However, modifying it is only meaningful when targeting gfmd.
 </para>
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
@@ -2138,7 +2140,7 @@ The gfstatus command is effective for the gfstatus command itself and for gfmd.
 The default value is 0, which outputs the log message id.  The level 1
 additionally outputs the file name and the line of source code.  The
 level 2 additionally outputs the function name.
-The gfstatus command is effective for the gfstatus command itself and for gfmd.
+This parameter can be retrieved and modified using the gfstatus command. However, modifying it is only meaningful when targeting gfmd.
 </para>
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
@@ -2152,7 +2154,7 @@ The gfstatus command is effective for the gfstatus command itself and for gfmd.
 <listitem>
 <para>
 When "enable" is specified, verbose messages about authentication are logged.
-The gfstatus command is effective for the gfstatus command itself and for gfmd.
+This parameter can be retrieved and modified using the gfstatus command. However, modifying it is only meaningful when targeting gfmd.
 </para>
 <para>Example:</para>
 <literallayout format="linespecific" class="normal">
@@ -2166,7 +2168,7 @@ The gfstatus command is effective for the gfstatus command itself and for gfmd.
 <listitem>
 <para>
 When "enable" is specified, verbose messages about TLS are logged.
-The gfstatus command is effective for gfmd.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </para>
 <para>Example:</para>
 <literallayout format="linespecific" class="normal">
@@ -2396,7 +2398,7 @@ default is 1024.
 </para>
 <para>
 This parameter is only available in gfmd.conf.
-The gfstatus command is effective for gfmd.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </para>
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
@@ -2420,6 +2422,7 @@ The default value is disable.
 <para>
 This directive is only available for clients in gfarm2.conf.
 Both gfsd and gfmd ignore this setting in gfarm2.conf and gfmd.conf.
+This parameter can be retrieved using the gfstatus command when the gfstatus command itself is the target.
 </para>
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
@@ -2439,6 +2442,7 @@ Both gfsd and gfmd ignore this setting in gfarm2.conf and gfmd.conf.
 <para>
 This directive is only available for clients in gfarm2.conf.
 Both gfsd and gfmd ignore this setting in gfarm2.conf and gfmd.conf.
+This parameter can be retrieved using the gfstatus command when the gfstatus command itself is the target.
 </para>
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
@@ -2483,7 +2487,7 @@ parallel is 16.
 <term><token>profile </token><parameter moreinfo="none">validity</parameter></term>
 <listitem>
 <para>When "enable" is specified, Gfarm outputs the profile information.
-The gfstatus command is effective for gfmd.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </para>
 
 <para>Example:</para>
@@ -2795,7 +2799,7 @@ The following example changes to 50%.
 </literallayout>
 <para>
 This parameter is only available in gfmd.conf.
-The gfstatus command is effective for gfmd.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </para>
 <para>Example:</para>
 <literallayout format="linespecific" class="normal">
@@ -2821,7 +2825,7 @@ The following example changes to 1 week (= 604800 seconds).
 </literallayout>
 <para>
 This parameter is only available in gfmd.conf.
-The gfstatus command is effective for gfmd.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </para>
 <para>Example:</para>
 <literallayout format="linespecific" class="normal">
@@ -2860,7 +2864,7 @@ This behavior can be dynamically chagned by the
 </para>
 <para>
 This parameter is only available in gfmd.conf.
-The gfstatus command is effective for gfmd.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </para>
 <para>Example:</para>
 <literallayout format="linespecific" class="normal">
@@ -2882,7 +2886,7 @@ This behavior can be dynamically chagned by the
 </para>
 <para>
 This parameter is only available in gfmd.conf.
-The gfstatus command is effective for gfmd.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </para>
 <para>Example:</para>
 <literallayout format="linespecific" class="normal">
@@ -2902,7 +2906,7 @@ This behavior can be dynamically chagned by the
 </para>
 <para>
 This parameter is only available in gfmd.conf.
-The gfstatus command is effective for gfmd.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </para>
 <para>Example:</para>
 <literallayout format="linespecific" class="normal">
@@ -2929,7 +2933,7 @@ gfstatus -Mm 'replicainfo disable' can disable this temporarily.
 </para>
 <para>
 This parameter is only available in gfmd.conf.
-The gfstatus command is effective for gfmd.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </para>
 <para>Example:</para>
 <literallayout format="linespecific" class="normal">
@@ -2950,7 +2954,7 @@ The default is <token>disable</token>.
 <para>
 This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 gfsd uses this setting at its startup by asking gfmd.
-The gfstatus command is effective for gfmd.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </para>
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
@@ -2975,7 +2979,7 @@ Thus, it's recommended to specify long enough period in this parameter.
 <para>
 This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 gfsd uses this setting at its startup by asking gfmd.
-The gfstatus command is effective for gfmd.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </para>
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
@@ -3000,7 +3004,7 @@ The default value is 600 seconds (10 minutes).
 <para>
 This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 gfsd uses this setting at its startup by asking gfmd.
-The gfstatus command is effective for gfmd.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </para>
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
@@ -3023,7 +3027,7 @@ The default value is 3600 seconds (1 hour).
 <para>
 This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 gfsd uses this setting at its startup by asking gfmd.
-The gfstatus command is effective for gfmd.
+This parameter can be retrieved and modified using the gfstatus command targeting gfmd.
 </para>
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
