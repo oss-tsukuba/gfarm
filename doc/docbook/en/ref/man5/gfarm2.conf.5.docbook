@@ -1222,7 +1222,6 @@ You have to either disable the direct access feature by
 the <token>direct_local_access</token> statement,
 or enable the client-side checksum calculation feature by
 the <token>client_digest_check</token> statement.
-This parameter can be retrieved using the gfstatus command when the gfstatus command itself is the target.
 </para>
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
@@ -1941,6 +1940,7 @@ The default is <token>enable</token>.
 <para>
 This directive is only available for clients in gfarm2.conf.
 Both gfsd and gfmd ignore this setting in gfarm2.conf and gfmd.conf.
+This parameter can be retrieved using the gfstatus command when the gfstatus command itself is the target.
 </para>
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
