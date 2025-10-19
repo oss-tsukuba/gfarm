@@ -27,6 +27,7 @@
 #define SASL_JWT_PATH_ENV	"JWT_USER_PATH"
 #define SASL_JWT_PATHNAME	"/tmp/jwt_user_u%lu/token.jwt"
 #define SASL_PASSWORD_LEN_MAX	16384	/* enough size to hold OAuth JWT */
+#define SASL_MECH_DELIMITER " \t"
 
 struct gfarm_auth_sasl_client_static {
 	gfarm_error_t sasl_client_initialized;
@@ -45,25 +46,25 @@ has_common_token(const char *words1, const char *words2) {
 
 	while (*p) {
 		/* get a word from words1 */
-		p += strspn(p, " \t");
+		p += strspn(p, SASL_MECH_DELIMITER);
 		if (!*p) {
 			break;
 		}
 
 		const char *word1 = p;
-		size_t len1 = strcspn(p, " \t");
+		size_t len1 = strcspn(p, SASL_MECH_DELIMITER);
 		p += len1;
 
 		/* compare to all words in words2 */
 		const char *n = words2;
 		while (*n) {
-			n += strspn(n, " \t");
+			n += strspn(n, SASL_MECH_DELIMITER);
 			if (!*n) {
 				break;
 			}
 
 			const char *word2 = n;
-			size_t len2 = strcspn(n, " \t");
+			size_t len2 = strcspn(n, SASL_MECH_DELIMITER);
 			n += len2;
 
 			if (len1 == len2 && strncmp(word1, word2, len2) == 0) {
