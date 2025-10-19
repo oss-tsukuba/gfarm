@@ -35,6 +35,46 @@ struct gfarm_auth_sasl_client_static {
 	char sasl_secret_password_storage[SASL_PASSWORD_LEN_MAX];
 };
 
+int
+has_common_token(const char *words1, const char *words2) {
+	if (!words1 || !words2 || !*words2) {
+		return (0);
+	}
+
+	const char *p = words1;
+
+	while (*p) {
+		/* get a word from words1 */
+		p += strspn(p, " \t");
+		if (!*p) {
+			break;
+		}
+
+		const char *word1 = p;
+		size_t len1 = strcspn(p, " \t");
+		p += len1;
+
+		/* compare to all words in words2 */
+		const char *n = words2;
+		while (*n) {
+			n += strspn(n, " \t");
+			if (!*n) {
+				break;
+			}
+
+			const char *word2 = n;
+			size_t len2 = strcspn(n, " \t");
+			n += len2;
+
+			if (len1 == len2 && strncmp(word1, word2, len2) == 0) {
+				return (1);
+			}
+		}
+	}
+
+	return (0);
+}
+
 gfarm_error_t
 gfarm_auth_request_sasl_common(struct gfp_xdr *conn,
 	const char *service_tag, const char *hostname,
@@ -160,8 +200,8 @@ gfarm_auth_request_sasl_common(struct gfp_xdr *conn,
 	}
 
 	if (gfarm_ctxp->sasl_mechanisms != NULL &&
-	    strstr(mechanism_candidates, gfarm_ctxp->sasl_mechanisms)
-	    == NULL) {
+	    has_common_token(mechanism_candidates, gfarm_ctxp->sasl_mechanisms)
+	    == 0) {
 
 		/* chosen_mechanism == "" means error */
 		e = gfp_xdr_send(conn, "s", "");
@@ -518,8 +558,8 @@ gfarm_auth_request_sasl_receive_mechanisms(int events, int fd, void *closure,
 		    state->hostname);
 		free(mechanism_candidates);
 	} else if (gfarm_ctxp->sasl_mechanisms != NULL &&
-	    strstr(mechanism_candidates, gfarm_ctxp->sasl_mechanisms)
-	    == NULL) {
+	    has_common_token(mechanism_candidates, gfarm_ctxp->sasl_mechanisms)
+	    == 0) {
 
 		/* chosen_mechanism == "" means error */
 		e = gfp_xdr_send(state->conn, "s", "");
