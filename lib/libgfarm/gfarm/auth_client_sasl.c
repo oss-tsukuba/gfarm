@@ -27,6 +27,7 @@
 #define SASL_JWT_PATH_ENV	"JWT_USER_PATH"
 #define SASL_JWT_PATHNAME	"/tmp/jwt_user_u%lu/token.jwt"
 #define SASL_PASSWORD_LEN_MAX	16384	/* enough size to hold OAuth JWT */
+#define SASL_MECH_DELIMITER " \t"
 
 struct gfarm_auth_sasl_client_static {
 	gfarm_error_t sasl_client_initialized;
@@ -34,6 +35,46 @@ struct gfarm_auth_sasl_client_static {
 	/* use static storage instead of malloc() to avoid race condition */
 	char sasl_secret_password_storage[SASL_PASSWORD_LEN_MAX];
 };
+
+static int
+has_common_token(const char *words1, const char *words2) {
+	if (!words1 || !words2 || !*words2) {
+		return (0);
+	}
+
+	const char *p = words1;
+
+	while (*p) {
+		/* get a word from words1 */
+		p += strspn(p, SASL_MECH_DELIMITER);
+		if (!*p) {
+			break;
+		}
+
+		const char *word1 = p;
+		size_t len1 = strcspn(p, SASL_MECH_DELIMITER);
+		p += len1;
+
+		/* compare to all words in words2 */
+		const char *n = words2;
+		while (*n) {
+			n += strspn(n, SASL_MECH_DELIMITER);
+			if (!*n) {
+				break;
+			}
+
+			const char *word2 = n;
+			size_t len2 = strcspn(n, SASL_MECH_DELIMITER);
+			n += len2;
+
+			if (len1 == len2 && strncmp(word1, word2, len2) == 0) {
+				return (1);
+			}
+		}
+	}
+
+	return (0);
+}
 
 gfarm_error_t
 gfarm_auth_request_sasl_common(struct gfp_xdr *conn,
@@ -160,8 +201,8 @@ gfarm_auth_request_sasl_common(struct gfp_xdr *conn,
 	}
 
 	if (gfarm_ctxp->sasl_mechanisms != NULL &&
-	    strstr(mechanism_candidates, gfarm_ctxp->sasl_mechanisms)
-	    == NULL) {
+	    !has_common_token(mechanism_candidates,
+				  gfarm_ctxp->sasl_mechanisms)) {
 
 		/* chosen_mechanism == "" means error */
 		e = gfp_xdr_send(conn, "s", "");
@@ -518,8 +559,8 @@ gfarm_auth_request_sasl_receive_mechanisms(int events, int fd, void *closure,
 		    state->hostname);
 		free(mechanism_candidates);
 	} else if (gfarm_ctxp->sasl_mechanisms != NULL &&
-	    strstr(mechanism_candidates, gfarm_ctxp->sasl_mechanisms)
-	    == NULL) {
+	    !has_common_token(mechanism_candidates,
+				  gfarm_ctxp->sasl_mechanisms)) {
 
 		/* chosen_mechanism == "" means error */
 		e = gfp_xdr_send(state->conn, "s", "");
