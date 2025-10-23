@@ -310,7 +310,3 @@ $ cd
 $ fusermount -u /tmp/gfarm
 $ rmdir /tmp/gfarm
 ```
-
-## バージョンアップの手順
-
-各ユーザがマウントしているGfarmファイルシステムをアンマウントし、Gfarmおよびgfarm2fsを上書きでインストールします。

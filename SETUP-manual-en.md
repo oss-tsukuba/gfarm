@@ -10,11 +10,11 @@ The metadata server can be configured in a master-slave redundant setup across m
 
 ### Setting up a master metadata server
 
-First, create the metadata server user and the filesystem node user on the local system at the master metadata server. These usernames cannot be changed.
+First, create the metadata server user and the filesystem node user on the local system at the master metadata server (assumed to be mds1). These usernames cannot be changed.
 
 ```console
-% sudo useradd -m _gfarmmd
-% sudo useradd -m _gfarmfs
+mds1% sudo useradd -m _gfarmmd
+mds1% sudo useradd -m _gfarmfs
 ```
 
 For TLS communication, place the metadata server's certificate and private key in `/etc/pki/tls/certs/gfmd.crt` and `/etc/pki/tls/private/gfmd.key`.  The private key must be owned by root with permissions set to 0600.  Place the CA certificate in the `/etc/pki/tls/certs/gfarm` directory with the filename `$HASH.0`. The `$HASH` can be calculated using `openssl x509 -hash -noout -in $CRT`, where `$CRT` is the CA certificate.
@@ -22,8 +22,8 @@ For TLS communication, place the metadata server's certificate and private key i
 If certificates are not installed, all communications will be in plaintext.  Authentication uses Gfarm's proprietary shared key method, requiring each user to generate a shared key.  Below, we generate a shared key valid for one year (=31,536,000 seconds).
 
 ```console
-% sudo -u _gfarmmd gfkey -f -p 31536000
-% sudo -u _gfarmfs gfkey -f -p 31536000
+mds1% sudo -u _gfarmmd gfkey -f -p 31536000
+mds1% sudo -u _gfarmfs gfkey -f -p 31536000
 ```
 
 The shared key is created in `$HOME/.gfarm_shared_key`. The `_gfarmmd` shared key must be copied to all metadata servers, and the `_gfarmfs` shared key must be copied to all metadata servers and filesystem nodes with the same owner and permissions. Additionally, it must be updated before its expiration date.
@@ -31,7 +31,7 @@ The shared key is created in `$HOME/.gfarm_shared_key`. The `_gfarmmd` shared ke
 Create the Gfarm file system.
 
 ```console
-% sudo config-gfarm -N -A $USER -r -X -d md5
+mds1% sudo config-gfarm -N -A $USER -r -X -d md5
 ```
 
 `config-gfarm` generates the necessary Gfarm configuration files (gfarm2.conf and gfmd.conf), configures the PostgreSQL backend database, and installs the startup scripts for the gfmd metadata server and the PostgreSQL server.  The configuration files are placed in the directory specified by the `--sysconfdir` option during Gfarm installation.  If not specified, they are placed in the directory specified by the `--prefix` option.  If we denote the `--prefix` directory as `$PREFIX`, the configuration files are placed in `$PREFIX/etc`.  The default for `$PREFIX` is /usr/local.
@@ -60,10 +60,10 @@ spool_server_cred_service gfsd
 Start the backend database and metadata server, and configure them to start automatically at system startup.
 
 ```console
-% sudo systemctl start gfarm-pgsql
-% sudo systemctl enable gfarm-pgsql
-% sudo systemctl start gfmd
-% sudo systemctl enable gfmd
+mds1% sudo systemctl start gfarm-pgsql
+mds1% sudo systemctl enable gfarm-pgsql
+mds1% sudo systemctl start gfmd
+mds1% sudo systemctl enable gfmd
 ```
 
 Next, update gfarm2.conf to add the list of metadata servers for the redundant configuration and the authentication method to enable.  The following is an example when the FQDNs of the metadata servers in the redundant configuration are set to mds1.example.com, mds2.example.com, and mds3.example.com.
@@ -93,9 +93,9 @@ When configuring Gfarm with the -A option, the local user specified for the mast
 Add master and slave metadata servers.  In the following example, mds1.example.com is the master server, while mds2.example.com and mds3.example.com are synchronous and asynchronous slave servers, respectively.  Metadata servers can be managed using freely assignable site names.  Slaves in the same site as the master are synchronous, while slaves in different sites are asynchronous.  In the example below, the master's site name is "east", and the asynchronous slave's site name is "west".
 
 ```console
-% gfmdhost -m mds1.example.com -C east
-% gfmdhost -c mds2.example.com -C east
-% gfmdhost -c mds3.example.com -C west
+mds1% gfmdhost -m mds1.example.com -C east
+mds1% gfmdhost -c mds2.example.com -C east
+mds1% gfmdhost -c mds3.example.com -C west
 ```
 
 ### Setting up slave metadata servers
@@ -103,17 +103,17 @@ Add master and slave metadata servers.  In the following example, mds1.example.c
 We will now proceed with configuring the slave metadata servers.  First, we will take a dump of the metadata from the master metadata server and transfer it to each slave server.
 
 ```console
-% sudo gfdump.postgresql -d -f dumpfile
-% scp dumpfile mds2.example.com:
-% scp dumpfile mds3.example.com:
-% sudo rm dumpfile
+mds1% sudo gfdump.postgresql -d -f dumpfile
+mds1% scp dumpfile mds2.example.com:
+mds1% scp dumpfile mds3.example.com:
+mds1% sudo rm dumpfile
 ```
 
 On each slave server (mds2, mds3), configure the slave metadata server as follows.  First, create the metadata server user and the filesystem node user locally on the slave metadata server.  These usernames cannot be changed.
 
 ```console
-% sudo useradd -m _gfarmmd
-% sudo useradd -m _gfarmfs
+mds[23]% sudo useradd -m _gfarmmd
+mds[23]% sudo useradd -m _gfarmfs
 ```
 
 For TLS communication, place the metadata server's certificate and private key in `/etc/pki/tls/certs/gfmd.crt` and `/etc/pki/tls/private/gfmd.key`.  The private key must be owned by root with permissions set to 0600.  Place the CA certificate in the `/etc/pki/tls/certs/gfarm` directory with the filename `$HASH.0`.
@@ -123,7 +123,7 @@ When using the shared key method, copy the shared key `$HOME/.gfarm_shared_key` 
 Perform the Gfarm setup in the same manner as for the master metadata server.
 
 ```console
-% sudo config-gfarm -N -A $USER -r -X -d md5
+mds[23]% sudo config-gfarm -N -A $USER -r -X -d md5
 ```
 
 Specify the same options for config-gfarm as when configuring the metadata server.  Next, add the authentication methods to enable, similar to the master, to gfmd.conf.
@@ -147,23 +147,22 @@ spool_server_cred_service gfsd
 < -->
 Unlike when configuring the master, only the backend database is started.
 
-
 ```console
-% sudo systemctl start gfarm-pgsql
-% sudo systemctl enable gfarm-pgsql
+mds[23]% sudo systemctl start gfarm-pgsql
+mds[23]% sudo systemctl enable gfarm-pgsql
 ```
 
 Update (restore) the backend database using the metadata dump file.  After restoration, the dump file is no longer needed and should be deleted.
 
 ```console
-% sudo gfdump.postgresql -r -f dumpfile
-% rm dumpfile
+mds[23]% sudo gfdump.postgresql -r -f dumpfile
+mds[23]% rm dumpfile
 ```
 
 Running `gfdump.postgresql -r` to restore metadata will start the metadata server.  Configure it to start automatically at system boot.
 
 ```console
-% sudo systemctl enable gfmd
+mds[23]% sudo systemctl enable gfmd
 ```
 
 Copy `gfarm2.conf` from the metadata server and overwrite it.
@@ -173,13 +172,13 @@ Copy `gfarm2.conf` from the metadata server and overwrite it.
 After completing the above setup on all slave servers, you can verify that the slave metadata servers are functioning correctly by executing the following on the initial user of the master metadata server.
 
 ```console
-% gfmdhost -l
+mds1% gfmdhost -l
 + master -     m east         mds1.example.com 601
 + slave  sync  c east         mds2.example.com 601
 + slave  async c west         mds3.example.com 601
 ```
 
-If the first column of the slave metadata server shows a `+`, it is synchronized correctly.  Note that slave metadata servers can be added at any time by using the latest dump file.
+If the first column of the slave metadata server shows a `+`, then it is synchronized correctly.  If it shows an `x` or `e`, synchronization has failed. Please restore using the latest dump file.  Note that you can add slave metadata servers at any time using the latest dump file.
 
 ## Setting up filesystem nodes
 
@@ -188,7 +187,7 @@ By making the server a Gfarm filesystem node, you can incorporate its local stor
 First, create a user for the filesystem node on the local system. This username cannot be changed.
 
 ```console
-% sudo useradd -m _gfarmfs
+fs% sudo useradd -m _gfarmfs
 ```
 
 For TLS communication, place the service certificate and private key for the filesystem node in `/etc/grid-security/gfsd/gfsdcert.pem` and `/etc/grid-security/gfsd/gfsdkey.pem`.  Set the owner under the `/etc/grid-security/gfsd` directory to `_gfarmfs` and the permissions for the private key to 0600.  The service certificate must have a DN starting with `gfsd/`, such as `DN=gfsd/host.domain`.  Place the CA certificate in the `/etc/pki/tls/certs/gfarm` directory with the filename `$HASH.0`.
@@ -198,7 +197,7 @@ When using the shared key method, copy the shared key `$HOME/.gfarm_shared_key` 
 Copy the configuration file `gfarm2.conf` from the metadata server, then configure the filesystem node using `config-gfsd`. The following example shows incorporating the directory `/var/spool/gfarm` and its subdirectories into the Gfarm filesystem on the filesystem node fs1.exemple.com.
 
 ```console
-% sudo config-gfsd /var/spool/gfarm
+fs% sudo config-gfsd /var/spool/gfarm
 created /var/spool/gfarm
 created /etc/systemd/system/gfsd.service
 created /usr/local/etc/unconfig-gfsd.sh
@@ -227,8 +226,8 @@ Environment=X509_USER_KEY=/etc/grid-security/gfsd/gfsdkey.pem
 Return to the filesystem node and start the gfsd filesystem server.
 
 ```console
-% sudo systemctl start gfsd.service
-% sudo systemctl enable gfsd.service
+fs% sudo systemctl start gfsd.service
+fs% sudo systemctl enable gfsd.service
 ```
 
 ### Testing
@@ -236,7 +235,7 @@ Return to the filesystem node and start the gfsd filesystem server.
 After performing the above setup on all filesystem nodes, you can verify that the filesystem server is functioning correctly by executing the following on the initial user of the master metadata server.
 
 ```console
-% gfdf
+mds1% gfdf
     1K-blocks          Used         Avail Use% Host
    1002059396      83752636     918306760   8% fs1.example.com
    1002059396      83752636     918306760   8% fs2.example.com
@@ -255,9 +254,9 @@ After applying the above settings, the initial user on the master metadata serve
 To register a user, you must first register the user with Gfarm and configure authentication settings.  The initial user is already registered, but other users must be registered using `gfuser`. Registration must be performed by a Gfarm administrative privilege user (currently the initial user).  The following example creates a user named Taro Yamada with the username `taro`, sets the home directory to `/home/taro`, and assigns the client certificate `/O=Gfarm/OU=Test/OU=CA/CN=taro`.
 
 ```console
-% gfuser -c taro "Taro Yamada" /home/taro /O=Gfarm/OU=Test/OU=CA/CN=taro
-% gfmkdir -p /home/taro
-% gfchown taro /home/taro
+mds1% gfuser -c taro "Taro Yamada" /home/taro /O=Gfarm/OU=Test/OU=CA/CN=taro
+mds1% gfmkdir -p /home/taro
+mds1% gfchown taro /home/taro
 ```
 
 If you are using a client certificate for authentication, you are done here.  You can leave this "" for now, as the client certificate can be changed later.
@@ -265,7 +264,7 @@ If you are using a client certificate for authentication, you are done here.  Yo
 If using a token, register the ID obtained from the token.  If the ID is the same as the username (e.g., `taro`), this is unnecessary.  Otherwise, add that ID using `gfuser -A`.
 
 ```console
-gfuser -A taro SASL $ID
+mds1% gfuser -A taro SASL $ID
 ```
 
 Which token attribute serves as the ID depends on the configuration of cyrus-sasl-xoauth2-idp.  For token-based authentication, this completes the setup.
@@ -297,7 +296,7 @@ After completing the authentication configuration, you can verify the operation 
 You can check authentication to the metadata server with the `gfstatus` command.
 
 ```console
-$ gfstatus
+% gfstatus
 ```
 
 ### Authentication testing for filesytem nodes
@@ -305,7 +304,7 @@ $ gfstatus
 You can check the connection to filesyste servers with the `gfhost` command. First, check UDP connectivity.
 
 ```console
-$ gfhost -lvuU
+% gfhost -lvuU
 ```
 
 The number on the far left indicates the server's load average. If it displays `-.--/-.--/-.--`, it indicates that the filesystem server is not running, and if it displays `x.xx/x.xx/x.xx`, it indicates that you cannot connect to that node.
@@ -313,8 +312,121 @@ The number on the far left indicates the server's load average. If it displays `
 Next, verify TCP connectivity and authentication.
 
 ```console
-$ gfhost -lvu
+% gfhost -lvu
 ```
 
 The characters in the second column indicate the authentication result, with `x` indicating authentication failure and `-` indicating communication failure. If authentication using a token is successful, the result will be `A` or `a`. For details, refer to the `gfhost` man page.  
 <http://oss-tsukuba.org/gfarm/share/doc/gfarm/html/en/ref/man1/gfhost.1.html>
+
+## Basic usage
+
+In addition to mounting and using it, you can configure file replication, perform high-speed copying of large numbers of files, and create high-speed archives.
+
+### Mounting
+
+The Gfarm file system can be mounted using `gfarm2fs`.
+
+```console
+% mkdir /tmp/foo
+% gfarm2fs /tmp/foo
+```
+
+After mounting, you can perform file operations using standard commands. Unmounting is done using the `fusermount` command.
+
+```console
+% fusermount -u /tmp/foo
+```
+
+For details, refer to the documentation included with `gfarm2fs`.
+
+### File replication
+
+You can set the number of file replicas using the `gfncopy` command. The following configuration maintains two replicas for all files under the `/` directory.
+
+```console
+% gfncopy -s 2 /
+```
+
+You can determine the file system nodes where files are stored using the `gfwhere` command.
+
+```console
+% gfwhere test
+linux-1.example.com linux-2.example.com
+```
+
+In this example, files are stored on `linux-1` and `linux-2`.
+
+### High-Speed Copy Command - gfpcopy
+
+This command is used to copy large numbers of (small) files. For details, refer to the `gfpcopy` manual page.
+
+### High-Speed Archive Command - gfptar
+
+This command is used to quickly store large numbers of (small) files on Gfarm. For details, refer to the `gfptar` manual page.
+
+## Upgrade Procedure
+
+When updating Gfarm, perform the upgrade in the following order: metadata servers, file system nodes, and clients.
+
+### Updating metadata servers
+
+If a slave metadata server is running, you can upgrade without stopping operations. First, stop the slave metadata server and perform the upgrade via an overwriting installation. The backend PostgreSQL instance can remain running. After the overwriting installation, execute `config-gfarm-update --update` to start the metadata server.
+
+```console
+mds2% sudo systemctl stop gfmd
+# Overwrite installation of Gfarm
+mds2% sudo config-gfarm-update --update
+mds2% sudo systemctl start gfmd
+```
+
+Verify that the slave metadata server has synchronized using `gfmdhost`, then fail over the metadata server from the master to the slave.
+
+```console
+mds1% gfmdhost -l
++ master -     m east         mds1.example.com 601
++ slave  sync  c east         mds2.example.com 601
++ slave  async c west         mds3.example.com 601
+mds1% sudo systemctl stop gfmd
+mds2% sudo pkill -USR1 gfmd
+mds2% gfmdhost -l
+- slave  sync  c east         mds1.example.com 601
++ master -     m east         mds2.example.com 601
++ slave  async c west         mds3.example.com 601
+```
+
+Update the old master metadata server.
+
+```console
+# Overwrite installation of Gfarm
+mds1% sudo config-gfarm-update --update
+mds1% sudo systemctl start gfmd
+mds1% gfmdhost -l
++ slave  sync  c east         mds1.example.com 601
++ master -     m east         mds2.example.com 601
++ slave  async c west         mds3.example.com 601
+```
+
+The master metadata server will remain on mds2, and continuing operations as is will not cause any issues. Alternatively, reverting the master to mds1 is also an option. Updating asynchronous slave metadata servers requires stopping the server and performing an overwriting installation.
+
+```console
+mds3% sudo systemctl stop gfmd
+# Overwrite installation of Gfarm
+mds3% sudo config-gfarm-update --update
+mds3% sudo systemctl start gfmd
+```
+
+Verify that the slave metadata server has synchronized using `gfmdhost`.
+
+### Updating file system nodes
+
+For file system nodes, if file replicas have been created, it is possible to update them one by one while continuing operations. Shut down the file system node server and perform an overwrite installation to upgrade.
+
+```console
+fs% sudo systemctl stop gfsd
+# Overwrite installation of Gfarm
+fs% sudo systemctl start gfsd
+```
+
+### Updating clients
+
+Unmount the Gfarm file system mounted by each user, and then install Gfarm and gfarm2fs by overwriting the existing files.

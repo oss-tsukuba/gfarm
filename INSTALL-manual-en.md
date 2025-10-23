@@ -314,7 +314,3 @@ $ cd
 $ fusermount -u /tmp/gfarm
 $ rmdir /tmp/gfarm
 ```
-
-## Upgrade Procedure
-
-Unmount the Gfarm file system mounted by each user, and then install Gfarm and gfarm2fs by overwriting the existing files.
