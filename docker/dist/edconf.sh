@@ -47,6 +47,7 @@ if $DEBUG; then
 	cat <<EOF >> $GFCONF
 log_level debug
 log_auth_verbose enable
+log_tls_verbose enable
 log_message_verbose_level 1
 EOF
 fi
