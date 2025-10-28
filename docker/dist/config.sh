@@ -16,9 +16,9 @@ hostfile=$1
 # master metadata server
 : ${USER:=$(id -un)}
 grid-proxy-init -q || :
-DN=$(grid-proxy-info -identity)
-[ X"$DN" = X ] && exit 1
-CONFIG_OPTIONS="-A $USER -r -X -d sha1 -a gsi -D $DN"
+DN=$(grid-proxy-info -identity || :)
+CONFIG_OPTIONS="-A $USER -r -X -d sha1 -a gsi"
+[ X"$DN" = X ] || CONFIG_OPTIONS="$CONFIG_OPTIONS -D $DN"
 sudo config-gfarm -N $CONFIG_OPTIONS
 
 # update gfmd.conf

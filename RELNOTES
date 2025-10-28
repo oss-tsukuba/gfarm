@@ -1,3 +1,15 @@
+Release note for Gfarm 2.8.8
+============================
+
+[2025.10.28]
+
+Documentation
+* update INSTALL and SETUP manuals
+
+Update feature
+* gfptar - support Gfarm URL
+* improve the comparison of SASL mechanisms
+
 Release note for Gfarm 2.8.7
 ============================
 
