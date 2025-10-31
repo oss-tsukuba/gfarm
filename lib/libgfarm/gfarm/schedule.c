@@ -40,6 +40,7 @@
 #include "conn_hash.h"
 #include "host.h" /* gfarm_host_info_address_get() */
 #include "hostspec.h"
+#include "known_network.h"
 #include "config.h"
 #include "gfm_proto.h"
 #include "gfm_client.h"

@@ -66,6 +66,7 @@ struct gfarm_context {
 	struct gfm_client_static *gfm_client_static;
 	struct gfs_client_static *gfs_client_static;
 	struct gfarm_host_static *host_static;
+	struct gfarm_known_network_static *known_network_static;
 	struct gfarm_auth_config_static *auth_config_static;
 	struct gfarm_auth_common_static *auth_common_static;
 #ifdef HAVE_GSI
@@ -137,6 +138,9 @@ void          gfs_client_static_term(struct gfarm_context *);
 
 gfarm_error_t gfarm_host_static_init(struct gfarm_context *);
 void          gfarm_host_static_term(struct gfarm_context *);
+
+gfarm_error_t gfarm_known_network_static_init(struct gfarm_context *);
+void          gfarm_known_network_static_term(struct gfarm_context *);
 
 gfarm_error_t gfarm_auth_config_static_init(struct gfarm_context *);
 void          gfarm_auth_config_static_term(struct gfarm_context *);

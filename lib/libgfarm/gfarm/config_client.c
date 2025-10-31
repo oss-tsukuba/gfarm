@@ -17,6 +17,7 @@
 #include "liberror.h"
 #include "gfs_profile.h"
 #include "host.h"
+#include "known_network.h"
 #include "auth.h"
 #include "gfpath.h"
 #define GFARM_USE_STDIO

@@ -37,6 +37,7 @@
 #include "liberror.h"
 #include "patmatch.h"
 #include "hostspec.h"
+#include "known_network.h"
 #if 0 /* not yet in gfarm v2 */
 #include "param.h"
 #endif

@@ -38,6 +38,10 @@ static const struct gfarm_context_module_entry module_entries[] = {
 		gfarm_host_static_init,
 		gfarm_host_static_term
 	},
+	{
+		gfarm_known_network_static_init,
+		gfarm_known_network_static_term
+	},
 #ifndef __KERNEL__	/* auth */
 	{
 		gfarm_auth_config_static_init,
