@@ -26,6 +26,7 @@
 #ifdef DEBUG_JOURNAL
 #include "timer.h"
 #endif
+#include "gflog_reduced.h"
 
 #include "xattr_info.h"
 #include "quota_info.h"
@@ -4648,6 +4649,8 @@ db_journal_recvq_proc(int *canceledp)
 	gfarm_error_t e, e2;
 	gfarm_uint64_t last_seqnum;
 	struct db_journal_recv_info *ri;
+	static struct gflog_reduced_state verbose_log_state =
+	    GFLOG_REDUCED_STATE_INITIALIZER(3, 3, 60, 60);
 	static const char diag[] = "db_journal_recvq_proc";
 
 	if ((e = db_journal_recvq_delete(&ri)) != GFARM_ERR_NO_ERROR)
@@ -4664,6 +4667,10 @@ db_journal_recvq_proc(int *canceledp)
 		*canceledp = 1;
 		return (GFARM_ERR_NO_ERROR);
 	}
+	if (journal_log_verbose_get())
+		gflog_reduced_info(GFARM_MSG_UNFIXED, &verbose_log_state,
+		    "db_journal_recvq_proc: writing seqnum %llu",
+		    (unsigned long long)db_journal_get_current_seqnum());
 	if ((e = journal_file_write_raw(self_jf, ri->recs_len, ri->recs,
 	    &last_seqnum, &journal_slave_transaction_nesting))
 	    == GFARM_ERR_NO_ERROR)

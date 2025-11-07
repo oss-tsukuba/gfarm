@@ -206,6 +206,37 @@ static const char *journal_operation_names[] = {
 	"QUOTA_DIR_USER_AUTH_REMOVE",
 };
 
+static pthread_mutex_t journal_log_verbose_mutex = PTHREAD_MUTEX_INITIALIZER;
+static int journal_log_verbose = 0;
+static const char journal_log_verbose_diag[] = "journal_log_verbose";
+
+int
+journal_log_verbose_get(void)
+{
+	int verbose;
+	static const char diag[] = "journal_log_verbose_get";
+
+	gfarm_mutex_lock(&journal_log_verbose_mutex,
+	    diag, journal_log_verbose_diag);
+	verbose = journal_log_verbose;
+	gfarm_mutex_unlock(&journal_log_verbose_mutex,
+	    diag, journal_log_verbose_diag);
+
+	return (verbose);
+}
+
+void
+journal_log_verbose_set(int verbose)
+{
+	static const char diag[] = "journal_log_verbose_get";
+
+	gfarm_mutex_lock(&journal_log_verbose_mutex,
+	    diag, journal_log_verbose_diag);
+	journal_log_verbose = verbose;
+	gfarm_mutex_unlock(&journal_log_verbose_mutex,
+	    diag, journal_log_verbose_diag);
+}
+
 struct journal_file_writer *
 journal_file_writer(struct journal_file *jf)
 {
@@ -1922,6 +1953,8 @@ journal_file_read(struct journal_file_reader *reader, void *op_arg,
 	size_t avail;
 	size_t min_rec_size = JOURNAL_RECORD_HEADER_SIZE
 		+ sizeof(gfarm_uint32_t);
+	static struct gflog_reduced_state verbose_log_state =
+	    GFLOG_REDUCED_STATE_INITIALIZER(3, 3, 60, 60);
 
 	if (eofp)
 		*eofp = 0;
@@ -1972,6 +2005,10 @@ journal_file_read(struct journal_file_reader *reader, void *op_arg,
 	if ((e = journal_read_rec_header(xdr, &ope, &seqnum, &len))
 	    != GFARM_ERR_NO_ERROR)
 		goto unlock;
+	if (journal_log_verbose_get())
+		gflog_reduced_info(GFARM_MSG_UNFIXED, &verbose_log_state,
+		    "journal_file_read: got seqnum %llu",
+		    (unsigned long long)seqnum);
 	if (eofp && *eofp)
 		goto unlock;
 	if ((e = read_op(op_arg, xdr, ope, &obj))
