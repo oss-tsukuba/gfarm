@@ -216,9 +216,21 @@ common_copy_file() {
             globus-url-copy $OPT ${TARGETFILE_FTP} file:${FILE2}
             ;;
         globus-url-copy-cksum-sha512-256)
+            # Expected error: sha512-256 differs from configured digest (md5) in Gfarm (docker/dev);
+            # server should return "500 gfarm_cksum(digest type mismatch)".
             local OPT="-verify-checksum -checksum-alg sha512-256"
-            globus-url-copy $OPT file:${FILE1} ${TARGETFILE_FTP}
-            globus-url-copy $OPT ${TARGETFILE_FTP} file:${FILE2}
+            if globus-url-copy $OPT file:${FILE1} ${TARGETFILE_FTP} > /dev/null 2>&1; then
+                gfrm -f ${TARGETFILE_GFARM}
+                return 1
+            fi
+            globus-url-copy file:${FILE1} ${TARGETFILE_FTP}
+            if globus-url-copy $OPT ${TARGETFILE_FTP} file:${FILE2} > /dev/null 2>&1; then
+                rm -f ${FILE2}
+                return 1
+            fi
+            gfrm -f ${TARGETFILE_GFARM}
+            PASS
+            return 0
             ;;
         uberftp-modeS)
             uberftp -mode S file:${FILE1} ${TARGETFILE_FTP}
