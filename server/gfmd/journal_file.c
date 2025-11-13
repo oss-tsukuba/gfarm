@@ -2138,7 +2138,7 @@ journal_file_wait_for_read_completion(struct journal_file_reader *reader)
 
 	journal_file_mutex_lock(jf, diag);
 	journal_file_reader_set_flag(reader, JOURNAL_FILE_READER_F_DRAIN, 1);
-	gfarm_cond_signal(&jf->nonempty_cond, diag, JOURNAL_FILE_STR);
+	gfarm_cond_broadcast(&jf->nonempty_cond, diag, JOURNAL_FILE_STR);
 	journal_file_mutex_unlock(jf, diag);
 
 	journal_file_mutex_lock(jf, diag);
@@ -2249,7 +2249,7 @@ journal_file_write_raw(struct journal_file *jf, int recs_len,
 		if (rec - recs >= recs_len)
 			break;
 	}
-	gfarm_cond_signal(&jf->nonempty_cond, diag, JOURNAL_FILE_STR);
+	gfarm_cond_broadcast(&jf->nonempty_cond, diag, JOURNAL_FILE_STR);
 unlock:
 	*last_seqnump = seqnum;
 	journal_file_mutex_unlock(jf, diag);
