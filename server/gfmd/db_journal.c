@@ -4146,6 +4146,8 @@ db_journal_apply_op(void *op_arg, gfarm_uint64_t seqnum,
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	struct db_journal_rec *ai, *tai;
 	struct db_journal_rec_list *c = closure;
+	static struct gflog_reduced_state verbose_log_state =
+	    GFLOG_REDUCED_STATE_INITIALIZER(3, 3, 60, 60);
 	static const char diag[] = "db_journal_apply_op";
 
 	*needs_freep = 0;
@@ -4189,6 +4191,13 @@ retry:
 		    (unsigned long long)ai->seqnum,
 		    journal_operation_name(ai->ope));
 #endif
+		if (journal_log_verbose_get())
+			gflog_reduced_info(GFARM_MSG_UNFIXED,
+			    &verbose_log_state,
+			    "apply seqnum=%llu ope=%s",
+			    (unsigned long long)ai->seqnum,
+			    journal_operation_name(ai->ope));
+
 		if ((e = db_journal_ops_call(store_ops, ai->seqnum, ai->ope,
 		    ai->obj, "db_journal_apply_op[store]"))
 		    == GFARM_ERR_DB_ACCESS_SHOULD_BE_RETRIED) {
