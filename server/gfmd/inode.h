@@ -156,7 +156,7 @@ gfarm_error_t dir_entry_add(gfarm_ino_t, char *, int, gfarm_ino_t);
 struct hostset;
 gfarm_error_t inode_schedule_replication_within_scope(
 	struct inode *, struct dirset *, int,
-	int, struct host **, int *,
+	int, struct host **,
 	int *, struct hostset *,
 	int *, struct hostset *, gfarm_time_t,
 	int *, struct hostset *, const char *, int *);

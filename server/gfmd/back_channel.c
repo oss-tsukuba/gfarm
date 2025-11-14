@@ -40,6 +40,7 @@
 #include "dead_file_copy.h"
 
 #include "back_channel.h"
+#include "known_network.h"
 
 static struct thread_pool *back_channel_send_thread_pool;
 static struct thread_pool *proto_status_send_thread_pool;
@@ -849,6 +850,30 @@ gfm_server_switch_back_channel_common(struct peer *peer, int from_client,
 		    SO_SNDBUF, gfarm_metadb_server_back_channel_sndbuf_limit,
 		    "metadb_server_back_channel_sndbuf_limit");
 		peer_watch_access(peer);
+
+		struct sockaddr_storage addr;
+		socklen_t addrlen = sizeof(addr);
+
+		if (getpeername(peer_get_fd(peer), (struct sockaddr *)&addr,
+						&addrlen) == 0) {
+			struct gfarm_hostspec *network = NULL;
+			e = gfarm_addr_network_get((struct sockaddr *)&addr,
+						   &network);
+			if (e == GFARM_ERR_NO_ERROR) {
+				host_set_network(host, network);
+			} else {
+				gflog_debug(GFARM_MSG_UNFIXED,
+					"gfm_server_switch_back_channel_common:"
+					" cannot get network for host %s",
+							host_name(host));
+			}
+		} else {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"gfm_server_switch_back_channel_common:"
+				"getpeername failed for host %s",
+						host_name(host));
+		}
+
 		giant_unlock();
 
 		callout_setfunc(host_status_callout(host),

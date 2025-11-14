@@ -177,7 +177,6 @@ fsngroup_schedule_replication(
 	}
 
 	if (gfarm_replicainfo_enabled) {
-		int next_src_index = host_select_one(n_srcs, srcs, diag);
 
 		for (i = 0; i < nreps; i++) {
 			const char *group = gfarm_repattr_group(reps[i]);
@@ -194,7 +193,7 @@ fsngroup_schedule_replication(
 				break;
 			}
 			e = inode_schedule_replication_within_scope(
-			    inode, tdirset, num, n_srcs, srcs, &next_src_index,
+				inode, tdirset, num, n_srcs, srcs,
 			    &n_scope, scope, n_existingp, existing, grace,
 			    n_being_removedp, being_removed, diag,
 			    req_ok_nump);

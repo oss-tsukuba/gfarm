@@ -1035,22 +1035,29 @@ static struct gflog_reduced_state rep_fixed_state =
 gfarm_error_t
 inode_schedule_replication_within_scope(
 	struct inode *inode, struct dirset *tdirset, int n_desired,
-	int n_srcs, struct host **srcs, int *next_src_indexp,
+	int n_srcs, struct host **srcs,
 	int *n_scopep, struct hostset *scope,
 	int *n_existingp, struct hostset *existing, gfarm_time_t grace,
 	int *n_being_removedp, struct hostset *being_removed, const char *diag,
 	int *req_ok_nump)
 {
 	gfarm_error_t e, save_e = GFARM_ERR_NO_ERROR;
-	struct host **targets, *src, *dst;
-	int busy = 0, n_success = 0, n_targets, i, n_valid, shortage;
+	struct host **targets_near, **targets_far, *src, *dst;
+	int busy = 0, n_success = 0, n_net_index,
+		n_targets_near, n_targets_far,
+		i, n_valid, shortage, n_targets;
+	struct host_network_index *net_index;
 	struct file_replicating *fr;
 	gfarm_off_t necessary_space;
 
 	necessary_space = inode_get_size(inode);
-	e = hostset_schedule_n_except(scope, existing, grace, being_removed,
+	e = hostset_schedule_n_except_by_network(scope, existing,
+		n_srcs, srcs, grace, being_removed,
 	    host_is_not_busy_and_disk_available_filter, &necessary_space,
-	    n_desired, &n_targets, &targets, &n_valid);
+	    n_desired, &n_targets_near, &targets_near,
+	    &n_targets_far, &targets_far, &n_valid);
+	n_targets = n_targets_near + n_targets_far;
+
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_warning(GFARM_MSG_1003693,
 		    "%s: inode %lld:%lld: cannot create replicas: "
@@ -1096,11 +1103,23 @@ inode_schedule_replication_within_scope(
 	}
 	/* but, retry is unnecessary when n_desired is too large */
 
+	e = host_sort_by_network(n_srcs, srcs, &net_index, &n_net_index);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"inode_schedule_replication_within_scope:"
+			"host sort failed");
+		return (e);
+	}
+
 	for (i = 0; i < n_targets; i++) {
-		if (*next_src_indexp >= n_srcs)
-			*next_src_indexp = 0;
-		src = srcs[*next_src_indexp];
-		dst = targets[i];
+		if (i < n_targets_near) {
+			dst = targets_near[i];
+			src = host_select_by_network(n_srcs, srcs,
+					  net_index, n_net_index, dst, diag);
+		} else {
+			dst = targets_far[i - n_targets_near];
+			src = srcs[host_select_one(n_srcs, srcs, diag)];
+		}
 
 		e = file_replicating_new(inode, dst, src, NULL, tdirset, &fr);
 		if (e == GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE) {
@@ -1160,7 +1179,9 @@ inode_schedule_replication_within_scope(
 			n_success++;
 		}
 	}
-	free(targets);
+	free(targets_near);
+	free(targets_far);
+	free(net_index);
 
 	*req_ok_nump += n_success;
 
@@ -1201,7 +1222,7 @@ inode_schedule_replication_from_all(
 	int *req_ok_nump)
 {
 	gfarm_error_t e;
-	int n_all_hosts, next_src_index;
+	int n_all_hosts;
 	struct hostset *all_hosts;
 
 	all_hosts = hostset_of_all_hosts_alloc(&n_all_hosts);
@@ -1215,9 +1236,8 @@ inode_schedule_replication_from_all(
 		    n_desired, *n_existingp, gfarm_error_string(e));
 		return (e);
 	}
-	next_src_index = host_select_one(n_srcs, srcs, diag);
 	e = inode_schedule_replication_within_scope(
-	    inode, tdirset, n_desired, n_srcs, srcs, &next_src_index,
+	    inode, tdirset, n_desired, n_srcs, srcs,
 	    &n_all_hosts, all_hosts, n_existingp, existing, grace,
 	    n_being_removedp, being_removed, diag, req_ok_nump);
 	hostset_free(all_hosts);

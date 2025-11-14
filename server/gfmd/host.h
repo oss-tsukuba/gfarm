@@ -10,6 +10,7 @@ struct sockaddr;
 struct peer;
 struct callout;
 struct dead_file_copy;
+struct host_network_index;
 
 struct host_status {
 	double loadavg_1min, loadavg_5min, loadavg_15min;
@@ -56,6 +57,9 @@ int host_get_result_callback(struct host *, struct peer *,
 int host_get_disconnect_callback(struct host *,
 	void (**)(void *, void *), struct peer **, void **);
 #endif
+
+struct gfarm_hostspec *host_get_network(struct host *);
+void host_set_network(struct host *, struct gfarm_hostspec *);
 
 int host_is_up(struct host *);
 int host_is_up_with_grace(struct host *, gfarm_time_t);
@@ -130,6 +134,16 @@ gfarm_error_t host_info_send(struct gfp_xdr *, struct host *);
 gfarm_error_t host_info_remove_default(const char *, const char *);
 extern gfarm_error_t (*host_info_remove)(const char *, const char *);
 
+gfarm_error_t host_sort_by_network(
+	int, struct host **,
+	struct host_network_index **, int *);
+
+struct host *host_select_by_network(
+	int, struct host **,
+	struct host_network_index *, int,
+	struct host *, const char *);
+
+
 /*
  * struct hostset
  */
@@ -148,3 +162,11 @@ gfarm_error_t hostset_schedule_n_except(struct hostset *,
 	int (*)(struct host *, void *), void *,
 	int,
 	int *, struct host ***, int *);
+gfarm_error_t hostset_schedule_n_except_by_network(struct hostset *,
+	struct hostset *, int, struct host **, gfarm_time_t grace,
+	struct hostset *,
+	int (*)(struct host *, void *), void *,
+	int,
+	int *, struct host ***,
+	int *, struct host ***, int *);
+

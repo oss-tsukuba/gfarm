@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <time.h>
+#include <stdint.h>
 
 /* for host_addr_lookup() */
 #include <sys/socket.h>
@@ -47,6 +48,7 @@
 #include "dead_file_copy.h"
 #include "back_channel.h"
 #include "replica_check.h"
+#include "known_network.h"
 
 #define HOST_HASHTAB_SIZE	3079	/* prime number */
 
@@ -87,6 +89,8 @@ struct host {
 	gfarm_uint64_t files_sent, files_received;
 	gfarm_uint64_t bytes_sent, bytes_received;
 	double time_sent, time_received;
+
+	struct gfarm_hostspec *network;
 
 	/*
 	 * the following members are protected by abstract_host_mutex
@@ -705,6 +709,17 @@ host_get_disconnect_callback(struct host *h,
 
 #endif /* COMPAT_GFARM_2_3 */
 
+struct gfarm_hostspec *
+host_get_network(struct host *host)
+{
+	return (host->network);
+}
+
+void host_set_network(struct host *host, struct gfarm_hostspec *network)
+{
+	host->network = network;
+}
+
 /*
  * PREREQUISITE: abstract_host::mutex
  * LOCKS: nothing
@@ -1159,6 +1174,7 @@ host_disable(struct abstract_host *ah)
 	h->report_flags = 0;
 	h->disconnect_time = time(NULL);
 	h->disk_used_change_in_byte = 0;
+	h->network = NULL;
 
 	host_total_disk_update(saved_used, saved_avail,
 	    saved_used_change_in_byte, 0, 0);
@@ -2954,6 +2970,185 @@ hostset_schedule_n_except(
 	hostset_filter(scope, filter, closure);
 	return (hostset_select_n(scope, n_shortage, n_targetsp, targetsp));
 }
+
+static int
+cmp_host_network(const void *a, const void *b)
+{
+	struct host *ha = *(struct host **)a;
+	struct host *hb = *(struct host **)b;
+	uintptr_t na = (uintptr_t)host_get_network(ha);
+	uintptr_t nb = (uintptr_t)host_get_network(hb);
+
+	if (na < nb)
+		return (-1);
+	if (na > nb)
+		return (1);
+	return (0);
+}
+
+struct host_network_index {
+	struct gfarm_hostspec *network;
+	int start;
+	int count;
+};
+
+gfarm_error_t
+host_sort_by_network(
+	int n_hosts, struct host **hosts,
+	struct host_network_index **indexp, int *n_indexp)
+{
+	struct host_network_index *index = NULL;
+	int n_index = 0, i;
+	struct gfarm_hostspec *prev_net = NULL;
+
+	if (n_hosts <= 0) {
+		*indexp = NULL;
+		*n_indexp = 0;
+		return (GFARM_ERR_NO_ERROR);
+	}
+
+	qsort(hosts, n_hosts, sizeof(*hosts), cmp_host_network);
+
+	GFARM_MALLOC_ARRAY(index, n_hosts);
+	if (index == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	prev_net = host_get_network(hosts[0]);
+	index[0].network = prev_net;
+	index[0].start = 0;
+	index[0].count = 1;
+	n_index = 1;
+
+	for (i = 1; i < n_hosts; i++) {
+		struct gfarm_hostspec *net = host_get_network(hosts[i]);
+		if (net == prev_net) {
+			index[n_index - 1].count++;
+		} else {
+			index[n_index].network = net;
+			index[n_index].start = i;
+			index[n_index].count = 1;
+			prev_net = net;
+			n_index++;
+		}
+	}
+
+	*indexp = index;
+	*n_indexp = n_index;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+struct host *
+host_select_by_network(
+	int n_hosts, struct host **hosts,
+	struct host_network_index *index, int n_index,
+	struct host *dst, const char *diag)
+{
+	struct gfarm_hostspec *dstnet = host_get_network(dst);
+	int i;
+
+	if (dstnet != NULL && index != NULL) {
+		for (i = 0; i < n_index; i++) {
+			if (index[i].network == dstnet) {
+				int idx = host_select_one(index[i].count,
+				    &hosts[index[i].start], diag);
+				return (hosts[index[i].start + idx]);
+			}
+		}
+	}
+
+	return (hosts[host_select_one(n_hosts, hosts, diag)]);
+}
+
+gfarm_error_t
+hostset_schedule_n_except_by_network(
+	struct hostset *scope,
+	struct hostset *existing,
+	int n_srcs, struct host **srcs,
+	gfarm_time_t grace, struct hostset *being_removed,
+	int (*filter)(struct host *, void *), void *closure,
+	int n_desired,
+	int *n_targets_near, struct host ***targets_near,
+	int *n_targets_far, struct host ***targets_far,
+	int *n_validp)
+{
+	struct hostset *scope_near, *scope_far;
+	struct host *h;
+	gfarm_error_t e;
+	int i, j;
+	struct gfarm_hostspec *hnet, *snet;
+
+	/* initialize outputs */
+	*n_targets_near = 0;
+	*n_targets_far = 0;
+	*targets_near = NULL;
+	*targets_far = NULL;
+
+	/* 1. allocate subnet groups */
+	scope_near = hostset_empty_alloc();
+	scope_far = hostset_empty_alloc();
+	if (scope_near == NULL || scope_far == NULL) {
+		hostset_free(scope_near);
+		hostset_free(scope_far);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+
+	/* 2. classify hosts by subnet relation to srcs */
+	for (i = 0; i < host_id_count; i++) {
+		h = host_id_to_host[i];
+		if (!hostset_has_host(scope, h))
+			continue;
+
+		hnet = host_get_network(h);
+		int same = 0;
+		for (j = 0; j < n_srcs; j++) {
+			snet = host_get_network(srcs[j]);
+			if (hnet != NULL && hnet == snet) {
+				same = 1;
+				break;
+			}
+		}
+		if (same)
+			hostset_add_host(scope_near, h);
+		else
+			hostset_add_host(scope_far, h);
+	}
+
+	/* 3. schedule within same-subnet scope first */
+	e = hostset_schedule_n_except(scope_near, existing,
+	    grace, being_removed,
+	    filter, closure,
+	    n_desired,
+	    n_targets_near, targets_near,
+	    n_validp);
+
+	if (e != GFARM_ERR_NO_ERROR) {
+		hostset_free(scope_near);
+		hostset_free(scope_far);
+		return (e);
+	}
+
+	/* 4. if shortage remains, schedule from other subnets */
+	if (*n_targets_near + *n_validp < n_desired) {
+		int n_short = n_desired - *n_validp - *n_targets_near;
+
+		e = hostset_schedule_n_except(scope_far, existing,
+		    grace, being_removed,
+		    filter, closure,
+		    n_short,
+		    n_targets_far, targets_far,
+		    n_validp);
+		if (e != GFARM_ERR_NO_ERROR) {
+			hostset_free(scope_near);
+			hostset_free(scope_far);
+			return (e);
+		}
+	}
+
+	hostset_free(scope_near);
+	hostset_free(scope_far);
+	return (GFARM_ERR_NO_ERROR);
+}
+
 
 /*
  * hostset cache by fsngroup
