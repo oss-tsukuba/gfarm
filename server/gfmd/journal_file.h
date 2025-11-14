@@ -102,6 +102,9 @@ typedef gfarm_error_t (*journal_read_op_t)(void *, struct gfp_xdr *,
 	enum journal_operation, void **);
 typedef void (*journal_free_op_t)(void *, enum journal_operation, void *);
 
+int journal_log_verbose_get(void);
+void journal_log_verbose_set(int);
+
 off_t journal_file_tail(struct journal_file *);
 off_t journal_file_size(struct journal_file *);
 void journal_file_mutex_lock(struct journal_file *, const char *);
