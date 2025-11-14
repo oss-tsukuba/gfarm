@@ -21,7 +21,8 @@ jobs:
       - name: Build
         run: |
           gcc --version
-          ./configure --enable-xmlattr --with-infiniband
+          ./configure --enable-xmlattr --with-infiniband \
+              --disable-check-python-mod
           make -j$(nproc)
 
       - name: correct scan
