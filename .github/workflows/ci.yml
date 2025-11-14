@@ -15,7 +15,7 @@ jobs:
       - name: Install deps
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y git libssl-dev libpq-dev libibvebs.dev \
+          sudo apt-get install -y git libssl-dev libpq-dev libibverbs.dev \
               libsasl2-dev
 
       - name: Build
