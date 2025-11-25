@@ -25,6 +25,8 @@ do
 	     REGRESS=true
 	     [ $1 = "regress_full" ] && REGRESS_FULL=true
 	     } ;;
+	asan|tsan)
+	     install_option="$install_option $1" ;;
 	*) exit 1 ;;
 	esac
 	shift

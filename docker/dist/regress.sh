@@ -10,6 +10,11 @@ ENV="GFARM_TEST_MDS2=c6:601 GFARM_TEST_MDS3=c7:601 \
 	GFARM_TEST_MDS4=c8:601 GFARM_TEST_CKSUM_MISMATCH=$TFILE"
 export $ENV
 
+: ${ASAN_OPTIONS=halt_on_error=false,log_exe_name=true,log_path=/var/tmp/gfarm.log.asan}
+: ${UBSAN_OPTIONS=halt_on_error=false,log_exe_name=true,log_path=/var/tmp/gfarm.log.ubsan}
+: ${TSAN_OPTIONS=halt_on_error=false,log_exe_name=true,log_path=/var/tmp/gfarm.log.tsan}
+export ASAN_OPTIONS UBSAN_OPTIONS TSAN_OPTIONS
+
 DISTDIR=$PWD
 
 grid-proxy-init -q || :
