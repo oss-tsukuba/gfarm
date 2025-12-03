@@ -29,6 +29,8 @@ install_option=all
 while [ $# -gt 0 ]
 do
 	case $1 in
+	asan) OPTFLAGS='-g -Og -Wall -fsanitize=address,undefined -fsanitize-recover=all -fno-omit-frame-pointer -fno-common';;
+	tsan) OPTFLAGS='-g -Og -Wall -fsanitize=thread -fsanitize-recover=all -fno-omit-frame-pointer -fno-common';;
 	single) install_option=$1 ;;
 	build_only) BUILD_ONLY=true ;;
 	*) exit 1 ;;
@@ -49,7 +51,11 @@ else
 	../configure $CONF_OPT
 fi
 
-make -j $(nproc) > /dev/null
+if [ $PKG = gfarm ]; then
+	make ${OPTFLAGS:+"OPTFLAGS=${OPTFLAGS}"} -j $(nproc) > /dev/null
+else # assume GNU automake
+	make ${OPTFLAGS:+"CFLAGS=${OPTFLAGS}"} -j $(nproc) > /dev/null
+fi
 
 if $BUILD_ONLY; then
 	status=0

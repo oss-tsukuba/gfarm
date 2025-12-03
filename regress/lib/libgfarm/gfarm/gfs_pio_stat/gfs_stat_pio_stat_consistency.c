@@ -158,11 +158,13 @@ main(int argc, char **argv)
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "gfs_pio_close(): %s\n",
 		    gfarm_error_string(e));
+		gfs_stat_free(&st1);
 		return (EXIT_FAILURE);
 	}
 	e = gfs_stat(pathname, &st2);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "gfs_stat(): %s\n", gfarm_error_string(e));
+		gfs_stat_free(&st1);
 		return (EXIT_FAILURE);
 	}
 
@@ -179,6 +181,8 @@ main(int argc, char **argv)
 		failed |=
 		    timespec_compare(&st1.st_mtimespec, &st2.st_mtimespec,
 		    "mtime");
+	gfs_stat_free(&st2);
+	gfs_stat_free(&st1);
 	if (failed)
 		return (EXIT_FAILURE);
 

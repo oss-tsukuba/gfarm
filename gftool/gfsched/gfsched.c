@@ -260,6 +260,8 @@ main(int argc, char **argv)
 	if (hosts == NULL || ports == NULL) {
 		fprintf(stderr, "%s: cannot allocate memory for %d hosts.\n",
 		    program_name, nhosts);
+		free(hosts);
+		free(ports);
 		exit(1);
 	}
 
@@ -283,12 +285,16 @@ main(int argc, char **argv)
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: client side scheduling: %s\n",
 		    program_name, gfarm_error_string(e));
+		free(hosts);
+		free(ports);
 		exit(1);
 	}
 
 	if (nhosts == 0) {
 		fprintf(stderr, "%s: %s\n", program_name,
 		    gfarm_error_string(GFARM_ERR_NO_FILESYSTEM_NODE));
+		free(hosts);
+		free(ports);
 		exit(1);
 	}
 	for (i = 0; i < nhosts; i++) {

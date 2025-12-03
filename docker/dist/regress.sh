@@ -12,6 +12,30 @@ export $ENV
 
 DISTDIR=$PWD
 
+: ${ASAN_OPTIONS=halt_on_error=false,log_exe_name=true,log_path=/var/tmp/gfarm.log.asan}
+: ${LSAN_OPTIONS=halt_on_error=false,log_exe_name=true,log_path=/var/tmp/gfarm.log.lsan}
+: ${UBSAN_OPTIONS=halt_on_error=false,log_exe_name=true,log_path=/var/tmp/gfarm.log.ubsan}
+: ${TSAN_OPTIONS=halt_on_error=false,log_exe_name=true,log_path=/var/tmp/gfarm.log.tsan}
+export ASAN_OPTIONS LSAN_OPTIONS UBSAN_OPTIONS TSAN_OPTIONS
+
+is_asan_enabled()
+{
+	ASAN_OPTIONS=help=true,halt_on_error=false gfstatus -V 2>&1 | sed q |
+		grep AddressSanitizer >/dev/null
+}
+
+is_tsan_enabled()
+{
+	TSAN_OPTIONS=help=true,halt_on_error=false gfstatus -V 2>&1 | sed q |
+		grep ThreadSanitizer >/dev/null
+}
+
+if is_asan_enabled; then
+	OPTFLAGS='-g -Og -Wall -fsanitize=address,undefined -fsanitize-recover=all -fno-omit-frame-pointer -fno-common'
+elif is_tsan_enabled; then
+	OPTFLAGS='-g -Og -Wall -fsanitize=thread -fsanitize-recover=all -fno-omit-frame-pointer -fno-common'
+fi
+
 grid-proxy-init -q || :
 
 gfmkdir -p /tmp
@@ -21,7 +45,7 @@ TOP=~/gfarm
 BUILD=$TOP/build-$(gfarm.arch.guess)
 MAKE=$TOP/makes/make.sh
 cd $BUILD/regress
-$MAKE all > /dev/null
+$MAKE ${OPTFLAGS:+"OPTFLAGS=${OPTFLAGS}"} all > /dev/null
 
 create_mismatch_file()
 {
