@@ -151,7 +151,7 @@ because gfpcopy and db_journal_test currently have known bugs:
     % sh ./all.sh asan
     % sh ./regress.sh
     % sh ./restart.sh
-    ... and check /var/tmp/gfarm.log/gfarm.log.{a,l,ub}san.*
+    ... and check /var/tmp/gfarm.log.{a,l,ub}san.* on host c{1..8}
 
 ### TSAN test
 
@@ -163,7 +163,7 @@ because gfpcopy and db_journal_test currently have known bugs:
     % sh ./all.sh tsan
     % sh ./regress.sh
     % sh ./restart.sh
-    ... and check /var/tmp/gfarm.log/gfarm.log.tsan.*
+    ... and check /var/tmp/gfarm.log.tsan.* on host c{1..8}
 
 ## Create RPM packages
 
