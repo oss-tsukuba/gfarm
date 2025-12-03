@@ -145,9 +145,6 @@ sh ./cert.sh
 sh ./usercert.sh
 sh ./tlscert.sh
 
-## to use gcc LSAN for gfsd: did not work, probably because gfsd uses seteuid()
-#gfarm-prun -p -a "sudo sysctl -w kernel.yama.ptrace_scope=0" >/dev/null
-
 if [ $gfarm_config = all ]; then
 	# set up Gfarm-1 with 5 nodes
 	echo c1 c2 c3 c4 c5 | sh ./config.sh - &
