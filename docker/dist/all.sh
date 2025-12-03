@@ -10,6 +10,12 @@ install_option=
 REGRESS=false
 REGRESS_FULL=false
 
+: ${ASAN_OPTIONS=halt_on_error=false,log_exe_name=true,log_path=/var/tmp/gfarm.log.asan}
+: ${LSAN_OPTIONS=halt_on_error=false,log_exe_name=true,log_path=/var/tmp/gfarm.log.lsan}
+: ${UBSAN_OPTIONS=halt_on_error=false,log_exe_name=true,log_path=/var/tmp/gfarm.log.ubsan}
+: ${TSAN_OPTIONS=halt_on_error=false,log_exe_name=true,log_path=/var/tmp/gfarm.log.tsan}
+export ASAN_OPTIONS LSAN_OPTIONS UBSAN_OPTIONS TSAN_OPTIONS
+
 while [ $# -gt 0 ]
 do
 	case $1 in
@@ -121,8 +127,14 @@ cp $sasl_libdir/sasl2/gfarm*.conf ~/local
 gfarm-prun -p sudo cp local/gfarm*.conf $sasl_libdir/sasl2
 rm ~/local/gfarm*.conf
 
+# if "asan" or "tsan" option specified, saslpasswd2 needs $LD_PRELOAD setting"
+LIBXSAN=$(ldd /usr/local/bin/gfstatus |
+	awk '$1 ~ /lib(hwa|a|l|ub|t)san\.so\./ && $2 == "=>" {
+		if (p) p = p ":" $3; else p = $3 } END {print p}')
+
 PASS=PASSWORD
-gfarm-prun -p -a "echo $PASS | sudo saslpasswd2 -c $(id -un)"
+gfarm-prun -p -a \
+  "echo $PASS | sudo ${LIBXSAN:+LD_PRELOAD=$LIBXSAN} saslpasswd2 -c $(id -un)"
 gfarm-prun -p -a \
 	"sudo chown _gfarmfs /etc/sasldb2 /etc/sasl2/sasldb2 > /dev/null 2>&1"
 
@@ -132,6 +144,9 @@ sh ./userkey.sh
 sh ./cert.sh
 sh ./usercert.sh
 sh ./tlscert.sh
+
+## to use gcc LSAN for gfsd: did not work, probably because gfsd uses seteuid()
+#gfarm-prun -p -a "sudo sysctl -w kernel.yama.ptrace_scope=0" >/dev/null
 
 if [ $gfarm_config = all ]; then
 	# set up Gfarm-1 with 5 nodes

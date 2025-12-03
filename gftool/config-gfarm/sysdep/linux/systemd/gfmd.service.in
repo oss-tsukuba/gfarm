@@ -10,6 +10,12 @@ User=root
 Group=root
 Environment=GLOBUS_THREAD_MODEL=pthread
 
+# for ASAN/LSAN/UBSAN/TSAN. Setting these when unnecessary causes no harm.
+Environment=ASAN_OPTIONS=halt_on_error=false,log_exe_name=true,log_path=/var/tmp/gfarm.log.asan
+Environment=LSAN_OPTIONS=halt_on_error=false,log_exe_name=true,log_path=/var/tmp/gfarm.log.lsan
+Environment=UBSAN_OPTIONS=halt_on_error=false,log_exe_name=true,log_path=/var/tmp/gfarm.log.ubsan
+Environment=TSAN_OPTIONS=halt_on_error=false,log_exe_name=true,log_path=/var/tmp/gfarm.log.tsan
+
 ExecStart=@config_gfarm_prefix@/sbin/gfmd -P @config_gfarm_gfmd_pid_file@ @config_gfarm_gfmd_option@
 PIDFile=@config_gfarm_gfmd_pid_file@
 
