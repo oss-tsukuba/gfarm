@@ -33,7 +33,10 @@ struct gfarm_auth_sasl_client_static {
 	gfarm_error_t sasl_client_initialized;
 
 	/* use static storage instead of malloc() to avoid race condition */
-	char sasl_secret_password_storage[SASL_PASSWORD_LEN_MAX];
+	union {
+		char sasl_secret_password_storage[SASL_PASSWORD_LEN_MAX];
+		double d; /* for alignment */
+	} u;
 };
 
 static int
@@ -996,15 +999,15 @@ gfarm_sasl_secret_password_set_by_string(char *s)
 	size_t len = strlen(s);
 	sasl_secret_t *r;
 
-	if (sizeof(staticp->sasl_secret_password_storage)
+	if (sizeof(staticp->u.sasl_secret_password_storage)
 	    <= offsetof(sasl_secret_t, data) + len) {
 		gflog_error(GFARM_MSG_1005342,
 		    "%zd bytes 'sasl_password' is too long, "
 		    "please increase SASL_PASSWORD_LEN_MAX (%zu)",
-		    len, sizeof(staticp->sasl_secret_password_storage));
+		    len, sizeof(staticp->u.sasl_secret_password_storage));
 		return (GFARM_ERR_VALUE_TOO_LARGE_TO_BE_STORED_IN_DATA_TYPE);
 	}
-	r = (sasl_secret_t *)staticp->sasl_secret_password_storage;
+	r = (sasl_secret_t *)staticp->u.sasl_secret_password_storage;
 	r->len = len;
 	strcpy((char *)r->data, s);
 
@@ -1061,12 +1064,12 @@ gfarm_sasl_secret_password_set_by_jwt_file(void)
 		return (e);
 	}
 
-	r = (sasl_secret_t *)staticp->sasl_secret_password_storage;
+	r = (sasl_secret_t *)staticp->u.sasl_secret_password_storage;
 	r->len = 0;
 	password = (char *)r->data;
 
 	if (fgets(password,
-	    sizeof(staticp->sasl_secret_password_storage) -
+	    sizeof(staticp->u.sasl_secret_password_storage) -
 	    offsetof(sasl_secret_t, data), fp) == NULL) {
 		gflog_warning(GFARM_MSG_1005345,
 		    "Contents of \"%s\" is empty", filename);
@@ -1089,13 +1092,13 @@ gfarm_sasl_secret_password_set_by_jwt_file(void)
 	} else if (getc(fp) == EOF) {
 		r->len = len;
 		e = GFARM_ERR_NO_ERROR;
-	} else if (len >= sizeof(staticp->sasl_secret_password_storage) -
+	} else if (len >= sizeof(staticp->u.sasl_secret_password_storage) -
 	    offsetof(sasl_secret_t, data) - 1) {
 		gflog_error(GFARM_MSG_1005347,
 		    "file %s is too large, "
 		    "please increase SASL_PASSWORD_LEN_MAX (%zu)",
 		    filename,
-		    sizeof(staticp->sasl_secret_password_storage));
+		    sizeof(staticp->u.sasl_secret_password_storage));
 		e = GFARM_ERR_VALUE_TOO_LARGE_TO_BE_STORED_IN_DATA_TYPE;
 	} else {
 		/* shouldn't happen */
@@ -1150,7 +1153,7 @@ sasl_getsecret(
 				return (SASL_FAIL);
 		}
 		*resultp =
-		    (sasl_secret_t *)staticp->sasl_secret_password_storage;
+		    (sasl_secret_t *)staticp->u.sasl_secret_password_storage;
 		break;
 	default:
 		gflog_notice(GFARM_MSG_1005350,
