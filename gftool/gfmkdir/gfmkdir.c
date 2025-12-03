@@ -70,7 +70,7 @@ gfmkdir_parent_plus(char *path, gfarm_mode_t mode,
     const struct gfarm_timespec *tsp,
     const char *username, const char *groupname)
 {
-	gfarm_error_t e;
+	gfarm_error_t e, e2 = GFARM_ERR_UNKNOWN;
 	struct gfs_stat sb;
 	char *parent, *realpath = NULL;
 	int is_dir = 0;
@@ -99,9 +99,11 @@ gfmkdir_parent_plus(char *path, gfarm_mode_t mode,
 		e = GFARM_ERR_ALREADY_EXISTS;
 	else if ((e = gfmkdir_plus(path, mode, tsp, username, groupname))
 		  == GFARM_ERR_ALREADY_EXISTS &&
-	    gfs_stat(path, &sb) == GFARM_ERR_NO_ERROR &&
+	    (e2 = gfs_stat(path, &sb)) == GFARM_ERR_NO_ERROR &&
 	    GFARM_S_ISDIR(sb.st_mode))
 		e = GFARM_ERR_NO_ERROR;
+	if (e2 == GFARM_ERR_NO_ERROR)
+		gfs_stat_free(&sb);
 	free(realpath);
 	return (e);
 }
