@@ -138,22 +138,27 @@ When regress or regress\_full option is specified this test includes regression 
 ## Sanitizer test
 
 Temporarily remove the following tests from regress/schedule,
-because gfpcopy and db_journal_test have known bugs:
+because gfpcopy and db_journal_test currently have known bugs:
 	gftool/gfprep/gfpcopy_dir_by_gfcp.sh
 	gftool/gfprep/gfpcopy_file_by_gfcp.sh
 	server/gfmd/db_journal/db_journal_write.sh
 	server/gfmd/db_journal/db_journal_apply.sh
 
-ASAN/LSAN/UBSAN test:
+### ASAN/LSAN/UBSAN test
 
+    (in a container)
     % rm -rf ~/gfarm/build-x86_64-* ~/gfarm/*/build-x86_64-*
     % sh ./all.sh asan
     % sh ./regress.sh
     % sh ./restart.sh
-    ... and check /var/tmp/gfarm.log/gfarm.log.*san.*
+    ... and check /var/tmp/gfarm.log/gfarm.log.{a,l,ub}san.*
 
-TSAN test:
+### TSAN test
 
+    (in a host)
+    % sudo sysctl -w kernel.randomize_va_space=0
+
+    (in a container)
     % rm -rf ~/gfarm/build-x86_64-* ~/gfarm/*/build-x86_64-*
     % sh ./all.sh tsan
     % sh ./regress.sh
