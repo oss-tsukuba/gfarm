@@ -5,18 +5,22 @@ PROG=$(basename $0)
 trap '[ $status = 0 ] && echo Done || echo NG: $PROG; \
 	gfrm -f $TFILE; exit $status' 0 1 2 15
 
-TFILE=/tmp/corrupted-file
-ENV="GFARM_TEST_MDS2=c6:601 GFARM_TEST_MDS3=c7:601 \
-	GFARM_TEST_MDS4=c8:601 GFARM_TEST_CKSUM_MISMATCH=$TFILE"
-export $ENV
-
-DISTDIR=$PWD
-
 : ${ASAN_OPTIONS=halt_on_error=false,log_exe_name=true,log_path=/var/tmp/gfarm.log.asan}
 : ${LSAN_OPTIONS=halt_on_error=false,log_exe_name=true,log_path=/var/tmp/gfarm.log.lsan}
 : ${UBSAN_OPTIONS=halt_on_error=false,log_exe_name=true,log_path=/var/tmp/gfarm.log.ubsan}
 : ${TSAN_OPTIONS=halt_on_error=false,log_exe_name=true,log_path=/var/tmp/gfarm.log.tsan}
 export ASAN_OPTIONS LSAN_OPTIONS UBSAN_OPTIONS TSAN_OPTIONS
+
+TFILE=/tmp/corrupted-file
+ENV="GFARM_TEST_MDS2=c6:601 GFARM_TEST_MDS3=c7:601 \
+	GFARM_TEST_MDS4=c8:601 GFARM_TEST_CKSUM_MISMATCH=$TFILE \
+	${ASAN_OPTIONS:+ASAN_OPTIONS=${ASAN_OPTIONS}} \
+	${LSAN_OPTIONS:+LSAN_OPTIONS=${LSAN_OPTIONS}} \
+	${UBSAN_OPTIONS:+UBSAN_OPTIONS=${UBSAN_OPTIONS}} \
+	${TSAN_OPTIONS:+TSAN_OPTIONS=${TSAN_OPTIONS}}"
+export $ENV
+
+DISTDIR=$PWD
 
 is_asan_enabled()
 {
