@@ -137,7 +137,7 @@ When regress or regress\_full option is specified this test includes regression 
 
 ## Sanitizer test
 
-Temporarily remove the following tests from regress/schedule,
+please remove the following tests temporarily from regress/schedule,
 because gfpcopy and db_journal_test currently have known bugs:
 	gftool/gfprep/gfpcopy_dir_by_gfcp.sh
 	gftool/gfprep/gfpcopy_file_by_gfcp.sh
@@ -152,6 +152,12 @@ because gfpcopy and db_journal_test currently have known bugs:
     % sh ./regress.sh
     % sh ./restart.sh
     ... and check /var/tmp/gfarm.log.{a,l,ub}san.* on host c{1..8}
+
+NOTE:
+
+- please ignore /var/tmp/gfarm.log.lsan.gfsd.*,
+  because LSAN does NOT work with gfsd due to ptrace(2) isssue.
+  instead, please use valgrind for gfsd.
 
 ### TSAN test
 
