@@ -108,8 +108,10 @@ get_inonum_result(struct gfm_connection *conn, struct file_info *f,
 		if ((e = gfm_client_fstat_result(conn, &st))
 		    != GFARM_ERR_NO_ERROR)
 			errf = "gfm_client_fstat_result";
-		else
+		else {
 			f->ino = st.st_ino;
+			gfs_stat_free(&st);
+		}
 	} else if ((e = gfm_client_open_result(
 		    conn, &ino, &gen, &mode)) != GFARM_ERR_NO_ERROR) {
 		errf = "gfm_client_open_result";

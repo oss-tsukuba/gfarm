@@ -135,6 +135,43 @@ When regress or regress\_full option is specified this test includes regression 
 
 - ubuntu, rockylinux9, almalinux8, centos7 - specifies a distrubution to test.  mutiple distributions can be specified
 
+## Sanitizer test
+
+please remove the following tests temporarily from regress/schedule,
+because gfpcopy and db_journal_test currently have known bugs:
+
+- gftool/gfprep/gfpcopy_dir_by_gfcp.sh
+- gftool/gfprep/gfpcopy_file_by_gfcp.sh
+- server/gfmd/db_journal/db_journal_write.sh
+- server/gfmd/db_journal/db_journal_apply.sh
+
+### ASAN/LSAN/UBSAN test
+
+    (in a container)
+    % rm -rf ~/gfarm/build-x86_64-* ~/gfarm/*/build-x86_64-*
+    % sh ./all.sh asan
+    % sh ./regress.sh
+    % sh ./restart.sh
+    ... and check /var/tmp/gfarm.log.{a,l,ub}san.* on host c{1..8}
+
+NOTE:
+
+- please ignore /var/tmp/gfarm.log.lsan.gfsd.*,
+  because LSAN does NOT work with gfsd due to ptrace(2) isssue.
+  instead, please use valgrind for gfsd.
+
+### TSAN test
+
+    (in a host)
+    % sudo sysctl -w kernel.randomize_va_space=0
+
+    (in a container)
+    % rm -rf ~/gfarm/build-x86_64-* ~/gfarm/*/build-x86_64-*
+    % sh ./all.sh tsan
+    % sh ./regress.sh
+    % sh ./restart.sh
+    ... and check /var/tmp/gfarm.log.tsan.* on host c{1..8}
+
 ## Create RPM packages
 
     % sh ./devrpm.sh

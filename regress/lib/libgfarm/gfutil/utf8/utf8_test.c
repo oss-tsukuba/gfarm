@@ -11,6 +11,7 @@ int
 main(int argc, char *argv[]) {
 	char *string;
 	unsigned char *pi, *po;
+	int valid;
 
 	if (argc != 2) {
 		fprintf(stderr, "Usage: %s STRING\n", argv[0]);
@@ -50,9 +51,11 @@ main(int argc, char *argv[]) {
 	}
 	*po = '\0';
 
-	if (!gfarm_utf8_validate_string(string))
+	valid = gfarm_utf8_validate_string(string);
+	free(string);
+
+	if (!valid)
 		return (1);
 
-	free(string);
 	return (0);
 }

@@ -399,6 +399,7 @@ main(int argc, char **argv)
 			}
 			if (verbose)
 				fprintf(stderr, "gfs_pio_stat()\n");
+			gfs_stat_free(&gst);
 			break;
 		case OP_READALL:
 			roff = 0;

@@ -10,6 +10,12 @@ Group=root
 Environment=X509_USER_CERT=/etc/grid-security/@config_gfarm_gfsd_rc_name@/gfsdcert.pem
 Environment=X509_USER_KEY=/etc/grid-security/@config_gfarm_gfsd_rc_name@/gfsdkey.pem
 
+# for ASAN/LSAN/UBSAN/TSAN. Setting these when unnecessary causes no harm.
+Environment=ASAN_OPTIONS=halt_on_error=false,log_exe_name=true,log_path=/var/tmp/gfarm.log.asan
+Environment=LSAN_OPTIONS=halt_on_error=false,log_exe_name=true,log_path=/var/tmp/gfarm.log.lsan
+Environment=UBSAN_OPTIONS=halt_on_error=false,log_exe_name=true,log_path=/var/tmp/gfarm.log.ubsan
+Environment=TSAN_OPTIONS=halt_on_error=false,log_exe_name=true,log_path=/var/tmp/gfarm.log.tsan
+
 ExecStart=@config_gfarm_prefix@/sbin/gfsd -P @config_gfarm_gfsd_pid_file@ @config_gfarm_gfsd_option@
 PIDFile=@config_gfarm_gfsd_pid_file@
 
