@@ -2605,6 +2605,92 @@ inode_dir_is_empty(struct inode *inode)
 	return (inode->i_nlink <= 2 && dir_is_empty(inode->u.c.s.d.entries));
 }
 
+static void
+inode_add_ref_writers(struct inode *inode)
+{
+	struct inode_activity *ia = inode->u.c.activity;
+
+	assert(ia != NULL);
+
+	/* sanity check */
+	if (ia->u.f.writers < 0) {
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "inode_add_ref_writers: "
+		    "unexpected behavior in inode(%lld:%lld): "
+		    "writers=%d, spool_writers=%d",
+		    (long long)inode->i_number,
+		    (long long)inode->i_gen,
+		    ia->u.f.writers, ia->u.f.spool_writers);
+		gfarm_log_backtrace_symbols();
+	}
+
+	++ia->u.f.writers;
+}
+
+static void
+inode_del_ref_writers(struct inode *inode)
+{
+	struct inode_activity *ia = inode->u.c.activity;
+
+	assert(ia != NULL);
+	--ia->u.f.writers;
+
+	/* sanity check */
+	if (ia->u.f.writers < 0) {
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "inode_del_ref_writers: "
+		    "unexpected behavior in inode(%lld:%lld): "
+		    "writers=%d, spool_writers=%d",
+		    (long long)inode->i_number,
+		    (long long)inode->i_gen,
+		    ia->u.f.writers, ia->u.f.spool_writers);
+		gfarm_log_backtrace_symbols();
+	}
+}
+
+void
+inode_add_ref_spool_writers(struct inode *inode)
+{
+	struct inode_activity *ia = inode->u.c.activity;
+
+	assert(ia != NULL);
+
+	/* sanity check */
+	if (ia->u.f.spool_writers < 0) {
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "inode_add_ref_spool_writers: "
+		    "unexpected behavior in inode(%lld:%lld): "
+		    "writers=%d, spool_writers=%d",
+		    (long long)inode->i_number,
+		    (long long)inode->i_gen,
+		    ia->u.f.writers, ia->u.f.spool_writers);
+		gfarm_log_backtrace_symbols();
+	}
+
+	++ia->u.f.spool_writers;
+}
+
+void
+inode_del_ref_spool_writers(struct inode *inode)
+{
+	struct inode_activity *ia = inode->u.c.activity;
+
+	assert(ia != NULL);
+	--ia->u.f.spool_writers;
+
+	/* sanity check */
+	if (ia->u.f.spool_writers < 0) {
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "inode_del_ref_spool_writers: "
+		    "unexpected behavior in inode(%lld:%lld): "
+		    "writers=%d, spool_writers=%d",
+		    (long long)inode->i_number,
+		    (long long)inode->i_gen,
+		    ia->u.f.writers, ia->u.f.spool_writers);
+		gfarm_log_backtrace_symbols();
+	}
+}
+
 int
 inode_desired_dead_file_copy(gfarm_ino_t inum)
 {
@@ -5093,17 +5179,7 @@ inode_open(struct file_opening *fo, struct dirset *tdirset)
 		 *   || inode_has_writable_replica(inode)) != 0
 		 * related function: inode_schedule_file_default()
 		 */
-		/* sanity check */
-		if (ia->u.f.writers < 0) {
-			gflog_notice(GFARM_MSG_UNFIXED, "inode_open: "
-			    "unexpected behavior in inode(%lld:%lld): "
-			    "writers=%d, spool_writers=%d",
-			    (long long)inode->i_number,
-			    (long long)inode->i_gen,
-			    ia->u.f.writers, ia->u.f.spool_writers);
-			gfarm_log_backtrace_symbols();
-		}
-		++ia->u.f.writers;
+		inode_add_ref_writers(inode);
 	}
 	if ((fo->flag & GFARM_FILE_TRUNC) != 0) {
 		/* do not change the metadata for close-to-open consistency */
@@ -5143,17 +5219,7 @@ inode_close_read(struct file_opening *fo, struct gfarm_timespec *atime,
 	int read_only = gfarm_read_only_mode();
 
 	if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0) {
-		--ia->u.f.writers;
-		/* sanity check */
-		if (ia->u.f.writers < 0) {
-			gflog_notice(GFARM_MSG_UNFIXED, "inode_close_read: "
-			    "unexpected behavior in inode(%lld:%lld): "
-			    "writers=%d, spool_writers=%d",
-			    (long long)inode->i_number,
-			    (long long)inode->i_gen,
-			    ia->u.f.writers, ia->u.f.spool_writers);
-			gfarm_log_backtrace_symbols();
-		}
+		inode_del_ref_writers(inode);
 	}
 	if ((fo->flag & GFARM_FILE_TRUNC_PENDING) != 0 &&
 	    ia->u.f.writers == 0) {
@@ -5220,49 +5286,6 @@ inode_fhclose_read(struct inode *inode, struct gfarm_timespec *atime)
 		inode_set_relatime(inode, atime);
 
 	return (GFARM_ERR_NO_ERROR);
-}
-
-void
-inode_add_ref_spool_writers(struct inode *inode)
-{
-	struct inode_activity *ia = inode->u.c.activity;
-
-	assert(ia != NULL);
-
-	/* sanity check */
-	if (ia->u.f.spool_writers < 0) {
-		gflog_notice(GFARM_MSG_UNFIXED,
-		    "inode_add_ref_spool_writers: "
-		    "unexpected behavior in inode(%lld:%lld): "
-		    "writers=%d, spool_writers=%d",
-		    (long long)inode->i_number,
-		    (long long)inode->i_gen,
-		    ia->u.f.writers, ia->u.f.spool_writers);
-		gfarm_log_backtrace_symbols();
-	}
-
-	++ia->u.f.spool_writers;
-}
-
-void
-inode_del_ref_spool_writers(struct inode *inode)
-{
-	struct inode_activity *ia = inode->u.c.activity;
-
-	assert(ia != NULL);
-	--ia->u.f.spool_writers;
-
-	/* sanity check */
-	if (ia->u.f.spool_writers < 0) {
-		gflog_notice(GFARM_MSG_UNFIXED,
-		    "inode_add_ref_spool_writers: "
-		    "unexpected behavior in inode(%lld:%lld): "
-		    "writers=%d, spool_writers=%d",
-		    (long long)inode->i_number,
-		    (long long)inode->i_gen,
-		    ia->u.f.writers, ia->u.f.spool_writers);
-		gfarm_log_backtrace_symbols();
-	}
 }
 
 void
