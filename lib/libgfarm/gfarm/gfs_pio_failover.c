@@ -124,7 +124,7 @@ gfs_pio_reopen(struct gfarm_filesystem *fs, GFS_File gf)
 {
 	gfarm_error_t e;
 	struct gfm_connection *gfm_server;
-	int fd, type;
+	int type, fd = -1;
 	gfarm_ino_t ino;
 	gfarm_uint64_t gen;
 	char *real_url = NULL;
