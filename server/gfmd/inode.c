@@ -786,8 +786,9 @@ inode_activity_free_try(struct inode *inode)
 	if (ia->openings.opening_next == &ia->openings &&
 	    ia->u.f.event_type == EVENT_NONE &&
 	    ia->u.f.rstate == NULL) {
+		/* sanity check */
 		if (ia->u.f.writers != 0 || ia->u.f.spool_writers != 0) {
-			gflog_notice(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_UNFIXED,
 			    "inode_activity_free_try: "
 			    "unexpected behavior in inode(%lld:%lld): "
 			    "writers=%d, spool_writers=%d",
