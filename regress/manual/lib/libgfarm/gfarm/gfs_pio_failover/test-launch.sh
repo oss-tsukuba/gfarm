@@ -25,7 +25,8 @@ utimes|lutimes|remove|unlink|link|symlink|\
 sched-read|sched-open-write|sched-create-write|\
 close|close-open|close-open2|fhopen-file|\
 read|read-stat|open-read-loop|getc|seek|seek-dirty|\
-write|write-stat|putc|truncate|flush|sync|datasync|read-close-read|\
+write|write-stat|write-flush|write-flush-stat|\
+putc|truncate|flush|sync|datasync|read-close-read|\
 getxattr|lgetxattr|getattrplus|lgetattrplus|setxattr|lsetxattr|\
 removexattr|lremovexattr|fgetxattr|fsetxattr|fremovexattr|\
 listxattr|llistxattr|getxmlattr|lgetxmlattr|setxmlattr|lsetxmlattr|\

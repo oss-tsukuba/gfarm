@@ -1227,7 +1227,7 @@ test_recvfile_stat(const char **argv)
 }
 
 static void
-test_write0(const char *path_base, int explicit_failover)
+test_write0(const char *path_base, int do_flush, int explicit_failover)
 {
 	GFS_File gf[NUM_FILES];
 	size_t sz;
@@ -1235,6 +1235,14 @@ test_write0(const char *path_base, int explicit_failover)
 	char path[NUM_FILES][PATH_MAX];
 
 	create_and_write_file(gf, path, path_base, NUM_FILES);
+
+	if (do_flush) {
+		for (i = 0; i < NUM_FILES; ++i) {
+			msg("gf[%d]: flush\n", i);
+			chkerr_n(gfs_pio_flush(gf[i]), "flush", i);
+			msg("gf[%d]: flush ok\n", i);
+		}
+	}
 
 	wait_for_failover();
 	if (explicit_failover)
@@ -1255,13 +1263,25 @@ test_write0(const char *path_base, int explicit_failover)
 static void
 test_write(const char **argv)
 {
-	test_write0(argv[0], 0);
+	test_write0(argv[0], 0, 0);
 }
 
 static void
 test_write_stat(const char **argv)
 {
-	test_write0(argv[0], 1);
+	test_write0(argv[0], 0, 1);
+}
+
+static void
+test_write_flush(const char **argv)
+{
+	test_write0(argv[0], 1, 0);
+}
+
+static void
+test_write_flush_stat(const char **argv)
+{
+	test_write0(argv[0], 1, 1);
 }
 
 static void
@@ -3108,6 +3128,8 @@ struct type_info {
 	{ "seek-dirty",		1, test_seek_dirty },
 	{ "write",		1, test_write },
 	{ "write-stat",		1, test_write_stat },
+	{ "write-flush",	1, test_write_flush },
+	{ "write-flush-stat",	1, test_write_flush_stat },
 	{ "sendfile",		2, test_sendfile },
 	{ "sendfile-stat",	2, test_sendfile_stat },
 	{ "putc",		1, test_putc },
