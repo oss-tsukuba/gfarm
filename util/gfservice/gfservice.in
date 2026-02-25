@@ -347,7 +347,7 @@ get_auth_type()
 	else
 		gfmd1_AUTH_TYPE=`@bindir@/config-gfarm -T \
 			$gfmd1_CONFIG_GFARM_OPTIONS \
-			| sed -ne '/^AUTH_TYPE=/s/^[^=]*=//p'`
+			| sed -ne '/^AUTH_TYPES=/s/^[^=]*=//p'`
 		[ "X$gfmd1_AUTH_TYPE" = X ] && gfmd1_AUTH_TYPE=sharedsecret
 		echo "$gfmd1_AUTH_TYPE"
 		log_debug "get_auth_type: AUTH_TYPE=$gfmd1_AUTH_TYPE"

@@ -182,9 +182,9 @@ in private mode.
 <para>
 Specify authentication type ("sharedsecret", "gsi" or "gsi_auth").
 If the variable is not declared, its value is chosen from
-<varname>AUTH_TYPE</varname> value output by
+<varname>AUTH_TYPES</varname> value output by
 <command moreinfo="none">config-gfarm -T</command> command executed on gfmd1.
-(Note that the value <varname>AUTH_TYPE</varname> above is affected by
+(Note that the value <varname>AUTH_TYPES</varname> above is affected by
 the variable <varname>gfmd1_CONFIG_GFARM_OPTIONS</varname>.)
 </para>
 </listitem>
@@ -305,9 +305,9 @@ in private mode.
 <para>
 Specify authentication type ("sharedsecret", "gsi" or "gsi_auth").
 If the variable is not declared, its value is chosen from
-<varname>AUTH_TYPE</varname> value output by
+<varname>AUTH_TYPES</varname> value output by
 <command moreinfo="none">config-gfarm -T</command> command executed on gfmd1.
-(Note that the value <varname>AUTH_TYPE</varname> above is affected by
+(Note that the value <varname>AUTH_TYPES</varname> above is affected by
 the variable <varname>gfmd1_CONFIG_GFARM_OPTIONS</varname>.)
 </para>
 </listitem>
@@ -458,9 +458,9 @@ the sub-command <command moreinfo="none">config-client</command> without root pr
 <para>
 Specify authentication type ("sharedsecret", "gsi" or "gsi_auth").
 If the variable is not declared, its value is chosen from
-<varname>AUTH_TYPE</varname> value output by
+<varname>AUTH_TYPES</varname> value output by
 <command moreinfo="none">config-gfarm -T</command> command executed on gfmd1.
-(Note that the value <varname>AUTH_TYPE</varname> above is affected by
+(Note that the value <varname>AUTH_TYPES</varname> above is affected by
 the variable <varname>gfmd1_CONFIG_GFARM_OPTIONS</varname>.)
 </para>
 </listitem>
