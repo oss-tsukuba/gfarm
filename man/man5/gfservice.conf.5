@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: gfservice.conf
-.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 6 Jun 2013
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 25 Feb 2026
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFSERVICE\&.CONF" "5" "6 Jun 2013" "Gfarm" "Gfarm"
+.TH "GFSERVICE\&.CONF" "5" "25 Feb 2026" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -31,7 +31,6 @@
 gfservice.conf \- configuration file of gfservice
 .SH "DESCRIPTION"
 .PP
-
 \fBgfservice\fR
 reads configuration data from the file\&. (\fBgfservice\-agent\fR
 doesn\*(Aqt read a configuration file\&.)
@@ -190,11 +189,11 @@ Set this variable to "true" if gfmd on the remote host is configured in private 
 \fIgfmd\fR\fI\fIn\fR\fR\fI_AUTH_TYPE\fR
 .RS 4
 Specify authentication type ("sharedsecret", "gsi" or "gsi_auth")\&. If the variable is not declared, its value is chosen from
-\fIAUTH_TYPE\fR
+\fIAUTH_TYPES\fR
 value output by
 \fBconfig\-gfarm \-T\fR
 command executed on gfmd1\&. (Note that the value
-\fIAUTH_TYPE\fR
+\fIAUTH_TYPES\fR
 above is affected by the variable
 \fIgfmd1_CONFIG_GFARM_OPTIONS\fR\&.)
 .RE
@@ -279,11 +278,11 @@ Set this variable to "true" if gfsd on the remote host is configured in private 
 \fIgfsd\fR\fI\fIn\fR\fR\fI_AUTH_TYPE\fR
 .RS 4
 Specify authentication type ("sharedsecret", "gsi" or "gsi_auth")\&. If the variable is not declared, its value is chosen from
-\fIAUTH_TYPE\fR
+\fIAUTH_TYPES\fR
 value output by
 \fBconfig\-gfarm \-T\fR
 command executed on gfmd1\&. (Note that the value
-\fIAUTH_TYPE\fR
+\fIAUTH_TYPES\fR
 above is affected by the variable
 \fIgfmd1_CONFIG_GFARM_OPTIONS\fR\&.)
 .RE
@@ -380,11 +379,11 @@ without root privilege\&.
 \fIclient\fR\fI\fIn\fR\fR\fI_AUTH_TYPE\fR
 .RS 4
 Specify authentication type ("sharedsecret", "gsi" or "gsi_auth")\&. If the variable is not declared, its value is chosen from
-\fIAUTH_TYPE\fR
+\fIAUTH_TYPES\fR
 value output by
 \fBconfig\-gfarm \-T\fR
 command executed on gfmd1\&. (Note that the value
-\fIAUTH_TYPE\fR
+\fIAUTH_TYPES\fR
 above is affected by the variable
 \fIgfmd1_CONFIG_GFARM_OPTIONS\fR\&.)
 .RE

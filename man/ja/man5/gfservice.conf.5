@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: gfservice.conf
-.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 8 Mar 2013
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 25 Feb 2026
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFSERVICE\&.CONF" "5" "8 Mar 2013" "Gfarm" "Gfarm"
+.TH "GFSERVICE\&.CONF" "5" "25 Feb 2026" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -31,7 +31,6 @@
 gfservice.conf \- gfservice の設定ファイル
 .SH "DESCRIPTION"
 .PP
-
 \fBgfservice\fR
 は、設定をファイルから読み込みます。 (\fBgfservice\-agent\fR
 は設定ファイルを読みません。)
@@ -164,7 +163,6 @@ gfmd サーバー上で
 .PP
 \fIgfmd\fR\fI\fIn\fR\fR\fI_CONFIG_GFARM_OPTIONS\fR
 .RS 4
-
 \fBconfig\-gfarm\fR
 コマンドのオプションを指定します。 デフォルト値は、空文字列 (オプションなし) です。
 \fBgfservice\fR
@@ -183,13 +181,13 @@ gfmd サーバー上で
 \fIgfmd\fR\fI\fIn\fR\fR\fI_AUTH_TYPE\fR
 .RS 4
 認証タイプ ("sharedsecret", "gsi", "gsi_auth" のいずれか) を指定します。 この変数が定義されていない場合は、gfmd1 上で
-\fBconfig\-gfarm\fR
+\fBconfig\-gfarm \-T\fR
 を実行したときの
-\fIAUTH_TYPE\fR
+\fIAUTH_TYPES\fR
 の値が採用されます。 (変数
 \fIgfmd1_CONFIG_GFARM_OPTIONS\fR
 の値によって、この ときの
-\fIAUTH_TYPE\fR
+\fIAUTH_TYPES\fR
 の値は変わるので、注意して下さい。)
 .RE
 .PP
@@ -250,7 +248,6 @@ gfsd サーバー上で
 .PP
 \fIgfsd\fR\fI\fIn\fR\fR\fI_CONFIG_GFSD_OPTIONS\fR
 .RS 4
-
 \fBconfig\-gfsd\fR
 コマンドのオプションを指定します。 デフォルト値は、空文字列 (オプションなし) です。
 \fBgfservice\fR
@@ -269,13 +266,13 @@ gfsd サーバー上で
 \fIgfsd\fR\fI\fIn\fR\fR\fI_AUTH_TYPE\fR
 .RS 4
 認証タイプ ("sharedsecret", "gsi", "gsi_auth" のいずれか) を指定します。 この変数が定義されていない場合は、gfmd1 上で
-\fBconfig\-gfarm\fR
+\fBconfig\-gfarm \-T\fR
 を実行したときの
-\fIAUTH_TYPE\fR
+\fIAUTH_TYPES\fR
 の値が採用されます。 (変数
 \fIgfmd1_CONFIG_GFARM_OPTIONS\fR
 の値によって、この ときの
-\fIAUTH_TYPE\fR
+\fIAUTH_TYPES\fR
 の値は変わるので、注意して下さい。)
 .RE
 .PP
@@ -315,7 +312,6 @@ Sudo コマンドのパスおよびオプションを指定します。
 .PP
 \fIclient\fR\fI\fIn\fR\fR\fI_MOUNT_GFARM2FS\fR
 .RS 4
-
 \fBmount\&.gfarm2fs\fR
 コマンドのパスおよび オプションを指定します。
 \fBgfservice\fR
@@ -326,7 +322,6 @@ Sudo コマンドのパスおよびオプションを指定します。
 .PP
 \fIclient\fR\fI\fIn\fR\fR\fI_UMOUNT_GFARM2FS\fR
 .RS 4
-
 \fBumount\&.gfarm2fs\fR
 コマンドのパスおよび オプションを指定します。
 \fBgfservice\fR
@@ -365,12 +360,12 @@ gfarm2\&.confファイルのパスを絶対パスで指定します。 この値
 \fIclient\fR\fI\fIn\fR\fR\fI_AUTH_TYPE\fR
 .RS 4
 認証タイプ ("sharedsecret", "gsi", "gsi_auth" のいずれか) を指定します。 この変数が定義されていない場合は、gfmd1 上で
-\fBconfig\-gfarm\fR
+\fBconfig\-gfarm \-T\fR
 を実行したときの
-\fIAUTH_TYPE\fR
+\fIAUTH_TYPES\fR
 の値が採用されます。 (変数
 \fIgfmd1_CONFIG_GFARM_OPTIONS\fR
 の値によって、この ときの
-\fIAUTH_TYPE\fR
+\fIAUTH_TYPES\fR
 の値は変わるので、注意して下さい。)
 .RE

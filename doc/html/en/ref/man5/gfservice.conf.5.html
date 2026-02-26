@@ -2,15 +2,15 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfservice.conf</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 </head>
-<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfservice.conf">
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
 <a name="gfservice.conf.5"></a><div class="titlepage"></div>
 <div class="refnamediv">
 <a name="name"></a><h2>Name</h2>
 <p>gfservice.conf — configuration file of gfservice</p>
 </div>
-<div class="refsect1" title="DESCRIPTION">
+<div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p>
 <span class="command"><strong>gfservice</strong></span> reads configuration data from the file.
@@ -83,7 +83,7 @@ by quotation marks.
 environment variable <code class="varname">VARNAME</code>.
 </p>
 </div>
-<div class="refsect1" title="VARIABLES ABOUT GFMD">
+<div class="refsect1">
 <a name="gfmd-variables"></a><h2>VARIABLES ABOUT GFMD</h2>
 <p>
 Variables named "gfmd<em class="replaceable"><code>n</code></em>" (gfmd1, gfmd2, ...)
@@ -93,7 +93,7 @@ as <em class="replaceable"><code>gfmd1_SSH</code></em> set configuration paramet
 the corresponding "gfmd<em class="replaceable"><code>n</code></em>" server.
 <span class="command"><strong>gfservice</strong></span> currently the following variables:
 </p>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="varname">gfmd<em class="replaceable"><code>n</code></em></code></span></dt>
 <dd>
 <p>
@@ -137,9 +137,9 @@ in private mode.
 <dd><p>
 Specify authentication type ("sharedsecret", "gsi" or "gsi_auth").
 If the variable is not declared, its value is chosen from
-<code class="varname">AUTH_TYPE</code> value output by
+<code class="varname">AUTH_TYPES</code> value output by
 <span class="command"><strong>config-gfarm -T</strong></span> command executed on gfmd1.
-(Note that the value <code class="varname">AUTH_TYPE</code> above is affected by
+(Note that the value <code class="varname">AUTH_TYPES</code> above is affected by
 the variable <code class="varname">gfmd1_CONFIG_GFARM_OPTIONS</code>.)
 </p></dd>
 <dt><span class="term"><code class="varname">gfmd<em class="replaceable"><code>n</code></em>_CLUSTER_NAME</code></span></dt>
@@ -164,7 +164,7 @@ The default value is "sudo".
 </p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="VARIABLES ABOUT GFSD">
+<div class="refsect1">
 <a name="gfsd-variables"></a><h2>VARIABLES ABOUT GFSD</h2>
 <p>
 Variables named "gfsd<em class="replaceable"><code>n</code></em>" (gfsd1, gfsd2, ...)
@@ -174,7 +174,7 @@ Variable names beginning with "gfsd<em class="replaceable"><code>n</code></em>_"
 corresponding "gfsd<em class="replaceable"><code>n</code></em>" server.
 <span class="command"><strong>gfservice</strong></span> currently recognizes the following variables:
 </p>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="varname">gfsd<em class="replaceable"><code>n</code></em></code></span></dt>
 <dd>
 <p>
@@ -218,9 +218,9 @@ in private mode.
 <dd><p>
 Specify authentication type ("sharedsecret", "gsi" or "gsi_auth").
 If the variable is not declared, its value is chosen from
-<code class="varname">AUTH_TYPE</code> value output by
+<code class="varname">AUTH_TYPES</code> value output by
 <span class="command"><strong>config-gfarm -T</strong></span> command executed on gfmd1.
-(Note that the value <code class="varname">AUTH_TYPE</code> above is affected by
+(Note that the value <code class="varname">AUTH_TYPES</code> above is affected by
 the variable <code class="varname">gfmd1_CONFIG_GFARM_OPTIONS</code>.)
 </p></dd>
 <dt><span class="term"><code class="varname">gfsd<em class="replaceable"><code>n</code></em>_SSH</code></span></dt>
@@ -239,7 +239,7 @@ The default value is "sudo".
 </p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="VARIABLES ABOUT CLIENT">
+<div class="refsect1">
 <a name="client-variables"></a><h2>VARIABLES ABOUT CLIENT</h2>
 <p>
 Variables named "client<em class="replaceable"><code>n</code></em>" (client1, client2, ...)
@@ -250,7 +250,7 @@ such as <em class="replaceable"><code>client1_SUDO</code></em> set configuration
 of the corresponding "client<em class="replaceable"><code>n</code></em>" host.
 <span class="command"><strong>gfservice</strong></span> currently recognizes the following variables:
 </p>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="varname">client<em class="replaceable"><code>n</code></em></code></span></dt>
 <dd><p>
 Register a client host.
@@ -312,9 +312,9 @@ the sub-command <span class="command"><strong>config-client</strong></span> with
 <dd><p>
 Specify authentication type ("sharedsecret", "gsi" or "gsi_auth").
 If the variable is not declared, its value is chosen from
-<code class="varname">AUTH_TYPE</code> value output by
+<code class="varname">AUTH_TYPES</code> value output by
 <span class="command"><strong>config-gfarm -T</strong></span> command executed on gfmd1.
-(Note that the value <code class="varname">AUTH_TYPE</code> above is affected by
+(Note that the value <code class="varname">AUTH_TYPES</code> above is affected by
 the variable <code class="varname">gfmd1_CONFIG_GFARM_OPTIONS</code>.)
 </p></dd>
 </dl></div>

@@ -2,15 +2,15 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfservice.conf</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 </head>
-<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfservice.conf">
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
 <a name="gfservice.conf.5"></a><div class="titlepage"></div>
 <div class="refnamediv">
 <a name="name"></a><h2>Name</h2>
 <p>gfservice.conf — gfservice の設定ファイル</p>
 </div>
-<div class="refsect1" title="DESCRIPTION">
+<div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p>
 <span class="command"><strong>gfservice</strong></span> は、設定をファイルから読み込みます。
@@ -83,7 +83,7 @@ gfsd サーバーとクライアントホストを指定するには、ホスト
 <code class="varname">VARNAME</code> の値に展開されます。
 </p>
 </div>
-<div class="refsect1" title="VARIABLES ABOUT GFMD">
+<div class="refsect1">
 <a name="gfmd-variables"></a><h2>VARIABLES ABOUT GFMD</h2>
 <p>
 変数「gfmd<em class="replaceable"><code>n</code></em>」(gfmd1, gfmd2, ...) は、gfmd
@@ -94,7 +94,7 @@ gfsd サーバーとクライアントホストを指定するには、ホスト
 に用います。
 <span class="command"><strong>gfservice</strong></span> が現在のところ認識する変数は、以下の通りです。
 </p>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="varname">gfmd<em class="replaceable"><code>n</code></em></code></span></dt>
 <dd>
 <p>
@@ -137,10 +137,10 @@ gfmd サーバー上で <span class="command"><strong>gfservice-agent</strong></
 <dd><p>
 認証タイプ ("sharedsecret", "gsi", "gsi_auth" のいずれか) を指定します。
 この変数が定義されていない場合は、gfmd1 上で
-<span class="command"><strong>config-gfarm</strong></span> を実行したときの
-<code class="varname">AUTH_TYPE</code> の値が採用されます。
+<span class="command"><strong>config-gfarm -T</strong></span> を実行したときの
+<code class="varname">AUTH_TYPES</code> の値が採用されます。
 (変数 <code class="varname">gfmd1_CONFIG_GFARM_OPTIONS</code> の値によって、この
-ときの <code class="varname">AUTH_TYPE</code> の値は変わるので、注意して下さい。)
+ときの <code class="varname">AUTH_TYPES</code> の値は変わるので、注意して下さい。)
 </p></dd>
 <dt><span class="term"><code class="varname">gfmd<em class="replaceable"><code>n</code></em>_CLUSTER_NAME</code></span></dt>
 <dd><p>
@@ -164,7 +164,7 @@ Sudo コマンドのパスおよびオプションを指定します。
 </p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="VARIABLES ABOUT GFSD">
+<div class="refsect1">
 <a name="gfsd-variables"></a><h2>VARIABLES ABOUT GFSD</h2>
 <p>
 変数「gfsd<em class="replaceable"><code>n</code></em>」(gfsd1, gfsd2, ...) は、gfsd
@@ -175,7 +175,7 @@ Sudo コマンドのパスおよびオプションを指定します。
 に用います。
 <span class="command"><strong>gfservice</strong></span> が現在のところ認識する変数は、以下の通りです。
 </p>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="varname">gfsd<em class="replaceable"><code>n</code></em></code></span></dt>
 <dd>
 <p>
@@ -218,10 +218,10 @@ gfsd サーバー上で <span class="command"><strong>gfservice-agent</strong></
 <dd><p>
 認証タイプ ("sharedsecret", "gsi", "gsi_auth" のいずれか) を指定します。
 この変数が定義されていない場合は、gfmd1 上で
-<span class="command"><strong>config-gfarm</strong></span> を実行したときの
-<code class="varname">AUTH_TYPE</code> の値が採用されます。
+<span class="command"><strong>config-gfarm -T</strong></span> を実行したときの
+<code class="varname">AUTH_TYPES</code> の値が採用されます。
 (変数 <code class="varname">gfmd1_CONFIG_GFARM_OPTIONS</code> の値によって、この
-ときの <code class="varname">AUTH_TYPE</code> の値は変わるので、注意して下さい。)
+ときの <code class="varname">AUTH_TYPES</code> の値は変わるので、注意して下さい。)
 </p></dd>
 <dt><span class="term"><code class="varname">gfsd<em class="replaceable"><code>n</code></em>_SSH</code></span></dt>
 <dd><p>
@@ -239,7 +239,7 @@ Sudo コマンドのパスおよびオプションを指定します。
 </p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="VARIABLES ABOUT CLIENT">
+<div class="refsect1">
 <a name="client-variables"></a><h2>VARIABLES ABOUT CLIENT</h2>
 <p>
 変数「client<em class="replaceable"><code>n</code></em>」(client1, client2, ...) は、
@@ -250,7 +250,7 @@ client サーバーを定義するために用います。
 ために用います。
 <span class="command"><strong>gfservice</strong></span> が現在のところ認識する変数は、以下の通りです。
 </p>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="varname">client<em class="replaceable"><code>n</code></em></code></span></dt>
 <dd><p>
 クライアントホストを登録します。
@@ -314,10 +314,10 @@ gfarm2.confファイルのパスと同じパスを使用します(gfarm2.confフ
 <dd><p>
 認証タイプ ("sharedsecret", "gsi", "gsi_auth" のいずれか) を指定します。
 この変数が定義されていない場合は、gfmd1 上で
-<span class="command"><strong>config-gfarm</strong></span> を実行したときの
-<code class="varname">AUTH_TYPE</code> の値が採用されます。
+<span class="command"><strong>config-gfarm -T</strong></span> を実行したときの
+<code class="varname">AUTH_TYPES</code> の値が採用されます。
 (変数 <code class="varname">gfmd1_CONFIG_GFARM_OPTIONS</code> の値によって、この
-ときの <code class="varname">AUTH_TYPE</code> の値は変わるので、注意して下さい。)
+ときの <code class="varname">AUTH_TYPES</code> の値は変わるので、注意して下さい。)
 </p></dd>
 </dl></div>
 </div>
