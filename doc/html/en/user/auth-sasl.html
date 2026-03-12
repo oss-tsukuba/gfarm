@@ -11,7 +11,7 @@ pre { background:#e0ffff; margin-left: 2em; margin-right: 2em }
 </STYLE>
 
 </HEAD>
-<BODY><A href="http://oss-tsukuba.org/software/gfarm">
+<BODY><A href="https://oss-tsukuba.org/en/gfarm">
 <IMG alt="[GFARM LOGO]" width=120 src="../../pic/Gfarm_logo_tate_color.svg" align=right border=0></A>
 <A href="../../index.html">documents</A> &gt;
 <A href="index.html">User's Manual</A> &gt;
@@ -92,9 +92,8 @@ mech_list: XOAUTH2
 xoauth2_scope: scope required in JWT, used for server-side validation
 xoauth2_aud: audience required in JWT, used for server-side validation
 xoauth2_user_claim: key name of claim to be used as user ID in JWT
-xoauth2_issuers: a list of trusted issures of JWT
 xoauth2_group_user: a list of the user ID, the scope, and the issuer
-
+xoauth2_issuers: a list of trusted issures of JWT
 </PRE>
 The specific configuration depends on the OAuth IdP, but here is an example.
 <PRE>
@@ -102,17 +101,25 @@ mech_list: XOAUTH2
 xoauth2_scope: hpci
 xoauth2_aud: hpci
 xoauth2_user_claim: hpci.id sub|https://keycloak.example.com/auth/realms/hpci
-xoauth2_issuers: https://keycloak.example.com/auth/realms/hpci https://keycloak.example.org/auth/realms/hpci
 xoauth2_group_user: web_read|st.read|https://keycloak.example.com/auth/realms/hpci anon|*|*
+xoauth2_issuers: https://keycloak.example.com/auth/realms/hpci https://keycloak.example.org/auth/realms/hpci
 </PRE>
 
 <P>
-The xoauth2_user_claim allows to set the default claim's key  name, and a claim's key name of a user ID for each issuers.
-The xoauth2_group_user allows to set a fixed user ID for each scope and issuer.
-When xoauth2_issuers is not specified, any issuer is trusted.  We
-highly recommend to specify xoauth2_issuers to accept JWTs issued by
-only trusted issuers.
-For more details, refer to <A HREF="https://github.com/oss-tsukuba/cyrus-sasl-xoauth2-idp/doc/configuration.md">here</A>.
+Multiple scopes can be specified in `xoauth2_scope`.
+In that case, any one of them must be satisfied.
+The same applies to `xoauth2_aud`.
+xoauth_user_claim specifies the claim used as the username.
+This claim can be set per issuer.
+xoauth_group_user specifies a group username by defining the issuer and scope.
+Wildcards can be used for both issuer and scope.
+xoauth2_issuers specifies a list of trusted issuers.
+Failing to configure xoauth2_issuers will result in trusting all issuers, creating a security risk.
+</P>
+
+<P>
+For more details, refer to <A HREF="https://github.com/oss-tsukuba/cyrus-sasl-xoauth2-idp/blob/feature/keycloak/doc/configuration.md">here</A>.
+</P>
 
 <P>
 The server side accesses the IdP,
@@ -190,17 +197,6 @@ sasl_password "PASSWORD"
 To prevent other users from reading this file,
 set the mode of the file to 0600 or 0400 using the chmod(1) command.
 
-<H3>For LOGIN mechanism</H3>
-
-<PRE>
-sasl_mechanisms "LOGIN"
-sasl_user "USER-NAME"
-sasl_password "PASSWORD"
-</PRE>
-<P>
-To prevent other users from reading this file,
-set the mode of the file to 0600 or 0400 using the chmod(1) command.
-
 <H3>For XOAUTH2 mechanism</H3>
 
 <PRE>
@@ -213,6 +209,7 @@ By placing the following configuration file named gfarm-client.conf
 in the Cyrus SASL configuration directory
 ($(pkg-config --variable=libdir libsasl2)/sasl2),
 it use the value in the JWT as the user ID.
+In this case, the sasl_user setting must be deleted.
 Additionally, you can specify the user ID via the environment variable (GFARM_SASL_USER).
 The priority order is GFARM_SASL_USER > sasl_user > xoauth2_user_claim.
 
@@ -220,8 +217,9 @@ The priority order is GFARM_SASL_USER > sasl_user > xoauth2_user_claim.
 xoauth2_user_claim: key name of claim to be used as user ID in JWT
 </PRE>
 
-In that case, since there is no user-specific setting,
-only sasl_mechanism can be set in gfarm2.conf.
+When specifying the user ID via the xoauth2_user_claim,
+user-specific configuration is unnecessary,
+so it is possible to configure only the sasl_mechanism setting system-wide in gfarm2.conf.
 
 <P>
 In addition, place the access token used by XOAUTH2
@@ -254,7 +252,7 @@ to 0600 or 0400 to prevent other users from reading it.
 
 <HR>
 
-<ADDRESS><A href="http://oss-tsukuba.org/software/gfarm">Gfarm File System</A> &lt;<TT>gfarmfs at gmail.com</TT>&gt;</ADDRESS>
+<ADDRESS><A href="https://oss-tsukuba.org/en/gfarm/">Gfarm File System</A> &lt;<TT>gfarmfs at gmail.com</TT>&gt;</ADDRESS>
 
 </BODY>
 </HTML>

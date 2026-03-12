@@ -11,7 +11,7 @@ pre { background:#e0ffff; margin-left: 2em; margin-right: 2em }
 </STYLE>
 
 </HEAD>
-<BODY><A href="http://oss-tsukuba.org/software/gfarm">
+<BODY><A href="https://oss-tsukuba.org/gfarm">
 <IMG alt="[GFARM LOGO]" width=120 src="../../pic/Gfarm_logo_tate_color.svg" align=right border=0></A>
 <A href="../../index.html">文書集</A> &gt;
 <A href="index.html">ユーザーズマニュアル</A> &gt;
@@ -93,8 +93,8 @@ mech_list: XOAUTH2
 xoauth2_scope: JWTのサーバー側検証時にJWTへ要求する scope
 xoauth2_aud: JWTのサーバー側検証時にJWTへ要求する audience
 xoauth2_user_claim: JWT中でユーザーIDとして用いるclaimのkey名
-xoauth2_issuers: 信頼できるJWT発行サーバのURL(issuer)のリスト
 xoauth2_group_user: ユーザIDとscopeとissuerのリスト
+xoauth2_issuers: 信頼できるJWT発行サーバのURL(issuer)のリスト
 </PRE>
 具体的な設定は OAuth IdP の構成に依存しますが、たとえば以下のようになります。
 <PRE>
@@ -102,18 +102,26 @@ mech_list: XOAUTH2
 xoauth2_scope: hpci
 xoauth2_aud: hpci
 xoauth2_user_claim: hpci.id sub|https://keycloak.example.com/auth/realms/hpci
-xoauth2_issuers: https://keycloak.example.com/auth/realms/hpci https://keycloak.example.org/auth/realms/hpci
 xoauth2_group_user: web_read|st.read|https://keycloak.example.com/auth/realms/hpci anon|*|*
+xoauth2_issuers: https://keycloak.example.com/auth/realms/hpci https://keycloak.example.org/auth/realms/hpci
 </PRE>
 
-xoauth2_user_claimはデフォルトのclaimのkey名とissuer毎にユーザーIDとして用いるclaimのkey名を設定できます。
-xoauth2_group_userはscopeとissuerの組に対して決まったユーザ名を設定できます。
-xoauth2_issuers を設定しない場合、
-どのサーバが発行した JWT でも受け入れます。
-しかしこれはセキュリティ的に危険ですので、
-必ず信頼できるサーバのみに制限するように設定してください。
-設定方法の詳細は<A HREF="https://github.com/oss-tsukuba/cyrus-sasl-xoauth2-idp/doc/configuration.md">こちら</A>
+<P>
+xoauth2_scopeでは複数のscopeを指定することが可能です。
+その場合、そのどれかを満たしていることが必要となります。
+xoauth2_audについても同様です。
+xoauth_user_claimはユーザIDとして使われるclaimのkey名を指定します。
+key名はissuer毎に設定することが可能です。
+xoauth_group_userはissuerとscopeを指定してグループユーザIDを指定します。
+issuerとscopeにはワイルドカードも利用可能です。
+xoauth2_issuersには信頼できるissuerのリストを指定します。
+xoauth2_issuersの設定をしないと全てのissuerを信頼してしまうためセキュリティ的な問題が生じます。
+</P>
+
+<P>
+設定方法の詳細は<A HREF="https://github.com/oss-tsukuba/cyrus-sasl-xoauth2-idp/blob/feature/keycloak/doc/configuration.md">こちら</A>
 を参照してください。
+</P>
 
 <P>
 サーバー側は OAuth IdP へアクセスしますが、このときに Web proxy サーバーを
@@ -188,18 +196,6 @@ sasl_password "パスワード"
 chmod(1) コマンドを用いてファイルのモードを 0600 ないし 0400 に
 設定してください。
 
-<H3>LOGIN メカニズムの場合</H3>
-
-<PRE>
-sasl_mechanisms "LOGIN"
-sasl_user "ユーザー名"
-sasl_password "パスワード"
-</PRE>
-
-このファイルが他のユーザーに読みとられないように、
-chmod(1) コマンドを用いてファイルのモードを 0600 ないし 0400 に
-設定してください。
-
 <H3>XOAUTH2 メカニズムの場合</H3>
 
 <PRE>
@@ -212,6 +208,7 @@ Cyrus SASL の設定を置くディレクトリ
 ($(pkg-config --variable=libdir libsasl2)/sasl2) に
 以下の内容の設定を gfarm-client.conf という名称で置くと、
 JWT中の値をユーザIDとして利用することもできます。
+この場合、sasl_userの設定は削除する必要があります。
 また、環境変数（GFARM_SASL_USER）でユーザIDを指定することもできます。
 優先度は環境変数GFARM_SASL_USER > sasl_user設定 > xoauth2_user_claimになります。
 
@@ -219,9 +216,9 @@ JWT中の値をユーザIDとして利用することもできます。
 xoauth2_user_claim: JWT中でユーザーIDとして用いるclaimのkey名
 </PRE>
 
-こうするとユーザ固有の設定は不要となりますから、
-.gfarm2rc では特に設定を行なわず、
-sasl_mechanism の設定を gfarm2.conf で行なうことも可能となります。
+xoauth2_user_claimによりユーザIDを指定する場合、
+ユーザ固有の設定は不要となるため、
+sasl_mechanismの設定だけをgfarm2.confでシステムワイドに設定することも可能となります。
 
 <P>
 さらに環境変数 JWT_USER_PATH で指定されたファイル、
@@ -255,7 +252,7 @@ chmod(1) コマンドを用いてファイルのモードを 0600 ないし 0400
 
 <HR>
 
-<ADDRESS><A href="http://oss-tsukuba.org/software/gfarm">Gfarm File System</A> &lt;<TT>gfarmfs at gmail.com</TT>&gt;</ADDRESS>
+<ADDRESS><A href="https://oss-tsukuba.org/gfarm">Gfarm File System</A> &lt;<TT>gfarmfs at gmail.com</TT>&gt;</ADDRESS>
 
 </BODY>
 </HTML>
