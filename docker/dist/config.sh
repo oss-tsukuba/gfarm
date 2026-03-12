@@ -17,29 +17,16 @@ hostfile=$1
 : ${USER:=$(id -un)}
 grid-proxy-init -q || :
 DN=$(grid-proxy-info -identity || :)
-CONFIG_OPTIONS="-A $USER -r -X -d sha1 -a gsi"
+CONFIG_OPTIONS="-A $USER -r -X -d sha1"
 [ X"$DN" = X ] || CONFIG_OPTIONS="$CONFIG_OPTIONS -D $DN"
-sudo config-gfarm -N $CONFIG_OPTIONS
+sudo config-gfarm $CONFIG_OPTIONS
 
-# update gfmd.conf
+# find CONFDIR
 for d in /etc /usr/local/etc
 do
 	[ -f $d/gfmd.conf ] && break
 done
 [ -f $d/gfmd.conf ] && CONFDIR=$d || exit 1
-cat <<_EOF_ | sudo tee -a $CONFDIR/gfmd.conf > /dev/null
-auth enable sharedsecret *
-auth enable gsi_auth *
-auth enable tls_client_certificate *
-auth enable tls_sharedsecret *
-auth enable sasl *
-auth enable sasl_auth *
-auth enable kerberos *
-auth enable kerberos_auth *
-_EOF_
-
-sudo systemctl start gfarm-pgsql
-sudo systemctl start gfmd
 
 # update gfarm2.conf
 set $(cat $hostfile)
@@ -59,14 +46,6 @@ if [ $# -gt 1 ]; then
 fi
 cat <<_EOF_ | sudo tee -a $CONFDIR/gfarm2.conf > /dev/null
 metadb_server_list $ML
-auth enable sharedsecret *
-auth enable gsi_auth *
-auth enable tls_client_certificate *
-auth enable tls_sharedsecret *
-auth enable sasl *
-auth enable sasl_auth *
-auth enable kerberos *
-auth enable kerberos_auth *
 _EOF_
 cp $CONFDIR/gfarm2.conf $TMPCONF
 
@@ -82,15 +61,6 @@ for h in $SSLAVE $ASLAVE; do echo $h; done > $TMPF
 gfarm-pcp -h $TMPF d .
 gfarm-prun -p -h $TMPF "
 	sudo config-gfarm -N $CONFIG_OPTIONS &&
-	sudo sh -c \"printf '%s\n' \
-'auth enable sharedsecret *' \
-'auth enable gsi_auth *' \
-'auth enable tls_client_certificate *' \
-'auth enable tls_sharedsecret *' \
-'auth enable sasl *' \
-'auth enable sasl_auth *' \
-'auth enable kerberos *' \
-'auth enable kerberos_auth *' >> $CONFDIR/gfmd.conf\" &&
 	sudo systemctl start gfarm-pgsql &&
 	sudo gfdump.postgresql -r -f d &&
 	rm d &&
