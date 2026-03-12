@@ -93,20 +93,26 @@ xoauth2_scope: scope required in JWT, used for server-side validation
 xoauth2_aud: audience required in JWT, used for server-side validation
 xoauth2_user_claim: key name of claim to be used as user ID in JWT
 xoauth2_issuers: a list of trusted issures of JWT
+xoauth2_group_user: a list of the user ID, the scope, and the issuer
+
 </PRE>
 The specific configuration depends on the OAuth IdP, but here is an example.
 <PRE>
 mech_list: XOAUTH2
 xoauth2_scope: hpci
 xoauth2_aud: hpci
-xoauth2_user_claim: hpci.id
+xoauth2_user_claim: hpci.id sub|https://keycloak.example.com/auth/realms/hpci
 xoauth2_issuers: https://keycloak.example.com/auth/realms/hpci https://keycloak.example.org/auth/realms/hpci
+xoauth2_group_user: web_read|st.read|https://keycloak.example.com/auth/realms/hpci anon|*|*
 </PRE>
 
 <P>
+The xoauth2_user_claim allows to set the default claim's key  name, and a claim's key name of a user ID for each issuers.
+The xoauth2_group_user allows to set a fixed user ID for each scope and issuer.
 When xoauth2_issuers is not specified, any issuer is trusted.  We
 highly recommend to specify xoauth2_issuers to accept JWTs issued by
 only trusted issuers.
+For more details, refer to <A HREF="https://github.com/oss-tsukuba/cyrus-sasl-xoauth2-idp/doc/configuration.md">here</A>.
 
 <P>
 The server side accesses the IdP,
@@ -206,7 +212,10 @@ sasl_user "USER-NAME"
 By placing the following configuration file named gfarm-client.conf
 in the Cyrus SASL configuration directory
 ($(pkg-config --variable=libdir libsasl2)/sasl2),
-the sasl_user specification can be omitted.
+it use the value in the JWT as the user ID.
+Additionally, you can specify the user ID via the environment variable (GFARM_SASL_USER).
+The priority order is GFARM_SASL_USER > sasl_user > xoauth2_user_claim.
+
 <PRE>
 xoauth2_user_claim: key name of claim to be used as user ID in JWT
 </PRE>
