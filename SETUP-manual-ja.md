@@ -31,13 +31,17 @@ mds1% sudo -u _gfarmfs gfkey -f -p 31536000
 Gfarmファイルシステムを構築します。
 
 ```console
-mds1% sudo config-gfarm -N -A $USER -r -X -d md5
+mds1% sudo config-gfarm -A $USER -r -X -d md5
 ```
 
 `config-gfarm`によりGfarmに必要な設定ファイル（gfarm2.confとgfmd.conf）およびバックエンドデータベースであるPostgreSQLの設定がなされ、メタデータサーバgfmdとPostgreSQLサーバの起動スクリプトが設置されます。設定ファイルはGfarmの構築時に`--sysconfdir`オプションにより指定したディレクトリ、指定していない場合は`--prefix`で指定したディレクトリを`$PREFIX`とすると`$PREFIX/etc`となります。`$PREFIX`のデフォルトは/usr/localです。
 
--Nオプションはconfig-gfarm実行時にサーバ起動を行わないオプションです。-AオプションでGfarmファイルシステムにおける初期ユーザを指定します。`$USER`ではマスターメタデータサーバの一般ユーザアカウントを指定してください。-rオプションでメタデータサーバの冗長構成用の設定を行います。-Xオプションで拡張XML属性を有効にします。-dオプションでデータ完全性を保証するための設定を有効とし、そのダイジェストのアルゴリズムを指定します。`config-gfarm`の詳細はマニュアルページを参照してください。
+<!-- >
+-Nオプションはconfig-gfarm実行時にサーバ起動を行わないオプションです。
+< -->
+-AオプションでGfarmファイルシステムにおける初期ユーザを指定します。`$USER`ではマスターメタデータサーバの一般ユーザアカウントを指定してください。-rオプションでメタデータサーバの冗長構成用の設定を行います。-Xオプションで拡張XML属性を有効にします。-dオプションでデータ完全性を保証するための設定を有効とし、そのダイジェストのアルゴリズムを指定します。`config-gfarm`の詳細はマニュアルページを参照してください。
 
+<!-- >
 次に、メタデータサーバとの通信において有効にする認証方式を`gfmd.conf`に追加します。
 
 ```text
@@ -49,6 +53,7 @@ auth enable kerberos *
 auth enable kerberos_auth *
 sasl_mechanisms XOAUTH2
 ```
+< -->
 <!-- >
 TLS通信を用いる場合で、gfsdのサービス証明書（DN=gfsd/host.domainのようにDNにgfsd/がついたもの）を用いないで、サーバ証明書を用いる場合は以下の2行を削除します。
 
@@ -57,6 +62,7 @@ spool_server_cred_type host
 spool_server_cred_service gfsd
 ```
 < -->
+<!-- >
 バックエンドデータベースとメタデータサーバを起動し、またシステム起動時に自動的に起動するように設定します。
 
 ```console
@@ -65,17 +71,18 @@ mds1% sudo systemctl enable gfarm-pgsql
 mds1% sudo systemctl start gfmd
 mds1% sudo systemctl enable gfmd
 ```
+< -->
+システム起動時にバックエンドデータベースとメタデータサーバを自動的に起動するように設定します。
+
+```console
+mds1% sudo systemctl enable gfarm-pgsql
+mds1% sudo systemctl enable gfmd
+```
 
 次に、`gfarm2.conf`を更新して、冗長構成をとるメタデータサーバのリストと有効にする認証方式を追加します。以下は冗長構成のメタデータサーバのFQDNをmds1.example.com, mds2.example.com, mds3.example.comとしたときの例です。
 
 ```text
 metadb_server_list mds1.example.com:601 mds2.example.com:601 mds3.example.com:601
-auth enable tls_client_certificate *
-auth enable tls_sharedsecret *
-auth enable sasl *
-auth enable sasl_auth *
-auth enable kerberos *
-auth enable kerberos_auth *
 sasl_mechanisms XOAUTH2
 ```
 
@@ -126,7 +133,10 @@ Gfarmの構築をマスターメタデータサーバと同様に行います。
 mds[23]% sudo config-gfarm -N -A $USER -r -X -d md5
 ```
 
-`config-gfarm`のオプションはメタデータサーバを構築したときと同じオプションを指定します。次に、マスターと同様に有効にする認証方式を`gfmd.conf`に追加します。
+`config-gfarm`のオプションはメタデータサーバを構築したときと同じオプションを指定します。
+-Nオプションはconfig-gfarm実行時にサーバ起動を行わないオプションです。
+<!-- >
+次に、マスターと同様に有効にする認証方式を`gfmd.conf`に追加します。
 
 ```text
 auth enable tls_client_certificate *
@@ -137,6 +147,7 @@ auth enable kerberos *
 auth enable kerberos_auth *
 sasl_mechanisms XOAUTH2
 ```
+< -->
 <!-- >
 TLS通信を用いる場合で、gfsdのサービス証明書（DN=gfsd/host.domainのようにDNにgfsd/がついたもの）を用いないで、サーバ証明書を用いる場合は以下の2行を削除します。
 

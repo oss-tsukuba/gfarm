@@ -31,13 +31,17 @@ The shared key is created in `$HOME/.gfarm_shared_key`. The `_gfarmmd` shared ke
 Create the Gfarm file system.
 
 ```console
-mds1% sudo config-gfarm -N -A $USER -r -X -d md5
+mds1% sudo config-gfarm -A $USER -r -X -d md5
 ```
 
 `config-gfarm` generates the necessary Gfarm configuration files (gfarm2.conf and gfmd.conf), configures the PostgreSQL backend database, and installs the startup scripts for the gfmd metadata server and the PostgreSQL server.  The configuration files are placed in the directory specified by the `--sysconfdir` option during Gfarm installation.  If not specified, they are placed in the directory specified by the `--prefix` option.  If we denote the `--prefix` directory as `$PREFIX`, the configuration files are placed in `$PREFIX/etc`.  The default for `$PREFIX` is /usr/local.
 
-The -N option prevents server startup when executing config-gfarm.  The -A option specifies the initial user for the Gfarm file system.  Use `$USER` to specify a general user account on the master metadata server.  The -r option configures settings for metadata server redundancy.  The -X option enables extended XML attributes.  The -d option enables settings to ensure data integrity and specifies the digest algorithm.  For details on `config-gfarm`, refer to the manual page.
+<!-- >
+The -N option prevents server startup when executing config-gfarm.
+< -->
+The -A option specifies the initial user for the Gfarm file system.  Use `$USER` to specify a general user account on the master metadata server.  The -r option configures settings for metadata server redundancy.  The -X option enables extended XML attributes.  The -d option enables settings to ensure data integrity and specifies the digest algorithm.  For details on `config-gfarm`, refer to the manual page.
 
+<!-- >
 Next, add the authentication method to enable for communication with the metadata server to gfmd.conf.
 
 ```text
@@ -49,6 +53,7 @@ auth enable kerberos *
 auth enable kerberos_auth *
 sasl_mechanisms XOAUTH2
 ```
+< -->
 <!-- >
 If you are using TLS communication and have chosen not to use the service certificate (one with a distinguished name (DN) starting with "gfsd/", such as "DN=gfsd/host.domain"), and are instead using the server certificate, delete the following two lines.
 
@@ -57,6 +62,7 @@ spool_server_cred_type host
 spool_server_cred_service gfsd
 ```
 < -->
+<!-- >
 Start the backend database and metadata server, and configure them to start automatically at system startup.
 
 ```console
@@ -65,17 +71,18 @@ mds1% sudo systemctl enable gfarm-pgsql
 mds1% sudo systemctl start gfmd
 mds1% sudo systemctl enable gfmd
 ```
+< -->
+Configure the backend database and metadata server to start automatically at system startup.
+
+```console
+mds1% sudo systemctl enable gfarm-pgsql
+mds1% sudo systemctl enable gfmd
+```
 
 Next, update gfarm2.conf to add the list of metadata servers for the redundant configuration and the authentication method to enable.  The following is an example when the FQDNs of the metadata servers in the redundant configuration are set to mds1.example.com, mds2.example.com, and mds3.example.com.
 
 ```text
 metadb_server_list mds1.example.com:601 mds2.example.com:601 mds3.example.com:601
-auth enable tls_client_certificate *
-auth enable tls_sharedsecret *
-auth enable sasl *
-auth enable sasl_auth *
-auth enable kerberos *
-auth enable kerberos_auth *
 sasl_mechanisms XOAUTH2
 ```
 
@@ -126,7 +133,10 @@ Perform the Gfarm setup in the same manner as for the master metadata server.
 mds[23]% sudo config-gfarm -N -A $USER -r -X -d md5
 ```
 
-Specify the same options for config-gfarm as when configuring the metadata server.  Next, add the authentication methods to enable, similar to the master, to gfmd.conf.
+Specify the same options for config-gfarm as when configuring the metadata server.
+The -N option prevents server startup when executing config-gfarm.
+<!-- >
+Next, add the authentication methods to enable, similar to the master, to gfmd.conf.
 
 ```text
 auth enable tls_client_certificate *
@@ -137,6 +147,7 @@ auth enable kerberos *
 auth enable kerberos_auth *
 sasl_mechanisms XOAUTH2
 ```
+< -->
 <!-- >
 If you are using TLS communication and have chosen not to use the service certificate (one with a distinguished name (DN) starting with "gfsd/", such as "DN=gfsd/host.domain"), and are instead using the server certificate, delete the following two lines.
 
