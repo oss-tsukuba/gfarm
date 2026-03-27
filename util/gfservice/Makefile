@@ -10,9 +10,12 @@ include $(top_srcdir)/makes/script.mk
 
 post-install-hook:
 	@$(MKDIR_P) $(DESTDIR)$(datadir)/gfarm/gfservice
-gfservice: $(srcdir)/gfservice.in
-	$(SHELL) $(top_builddir)/makes/build-script $? $@
-gfservice-agent: $(srcdir)/gfservice-agent.in
-	$(SHELL) $(top_builddir)/makes/build-script $? $@
-gfservice-timeout: $(srcdir)/gfservice-timeout.in
-	$(SHELL) $(top_builddir)/makes/build-script $? $@
+gfservice: $(srcdir)/gfservice.in \
+		$(top_builddir)/config.log
+	$(SHELL) $(top_builddir)/makes/build-script $< $@
+gfservice-agent: $(srcdir)/gfservice-agent.in \
+		$(top_builddir)/config.log
+	$(SHELL) $(top_builddir)/makes/build-script $< $@
+gfservice-timeout: $(srcdir)/gfservice-timeout.in \
+		$(top_builddir)/config.log
+	$(SHELL) $(top_builddir)/makes/build-script $< $@

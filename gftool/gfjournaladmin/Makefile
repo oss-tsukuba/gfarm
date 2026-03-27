@@ -14,5 +14,6 @@ DATA =	$(srcdir)/gfjournalfile.rb \
 include $(top_srcdir)/makes/script.mk
 include $(top_srcdir)/makes/data.mk
 
-gfjournaladmin: $(srcdir)/gfjournaladmin.in
-	$(SHELL) $(top_builddir)/makes/build-script $? $@
+gfjournaladmin: $(srcdir)/gfjournaladmin.in \
+		$(top_builddir)/config.log
+	$(SHELL) $(top_builddir)/makes/build-script $< $@

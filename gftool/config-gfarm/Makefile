@@ -44,17 +44,22 @@ include $(top_srcdir)/makes/script.mk
 include $(top_srcdir)/makes/data.mk
 include $(top_srcdir)/makes/subdir.mk
 
-config-gfarm: $(srcdir)/config-gfarm.in
-	$(SHELL) $(top_builddir)/makes/build-script $? $@
+config-gfarm: $(srcdir)/config-gfarm.in \
+		$(top_builddir)/config.log
+	$(SHELL) $(top_builddir)/makes/build-script $< $@
 
-config-gfarm-update: $(srcdir)/config-gfarm-update.in
-	$(SHELL) $(top_builddir)/makes/build-script $? $@
+config-gfarm-update: $(srcdir)/config-gfarm-update.in \
+		$(top_builddir)/config.log
+	$(SHELL) $(top_builddir)/makes/build-script $< $@
 
-config-gfsd: $(srcdir)/config-gfsd.in
-	$(SHELL) $(top_builddir)/makes/build-script $? $@
+config-gfsd: $(srcdir)/config-gfsd.in \
+		$(top_builddir)/config.log
+	$(SHELL) $(top_builddir)/makes/build-script $< $@
 
-config-gfmd-iostat: $(srcdir)/config-gfmd-iostat.in
-	$(SHELL) $(top_builddir)/makes/build-script $? $@
+config-gfmd-iostat: $(srcdir)/config-gfmd-iostat.in \
+		$(top_builddir)/config.log
+	$(SHELL) $(top_builddir)/makes/build-script $< $@
 
-config-gfsd-iostat: $(srcdir)/config-gfsd-iostat.in
-	$(SHELL) $(top_builddir)/makes/build-script $? $@
+config-gfsd-iostat: $(srcdir)/config-gfsd-iostat.in \
+		$(top_builddir)/config.log
+	$(SHELL) $(top_builddir)/makes/build-script $< $@

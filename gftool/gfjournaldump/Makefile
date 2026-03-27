@@ -12,5 +12,6 @@ BUILT_SCRIPTS = gfjournaldump
 
 include $(top_srcdir)/makes/script.mk
 
-gfjournaldump: $(srcdir)/gfjournaldump.in
-	$(SHELL) $(top_builddir)/makes/build-script $? $@
+gfjournaldump: $(srcdir)/gfjournaldump.in \
+		$(top_builddir)/config.log
+	$(SHELL) $(top_builddir)/makes/build-script $< $@
