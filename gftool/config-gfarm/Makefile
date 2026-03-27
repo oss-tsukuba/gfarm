@@ -45,21 +45,21 @@ include $(top_srcdir)/makes/data.mk
 include $(top_srcdir)/makes/subdir.mk
 
 config-gfarm: $(srcdir)/config-gfarm.in \
-		$(top_builddir)/config.log
+		$(top_builddir)/makes/build-script
 	$(SHELL) $(top_builddir)/makes/build-script $< $@
 
 config-gfarm-update: $(srcdir)/config-gfarm-update.in \
-		$(top_builddir)/config.log
+		$(top_builddir)/makes/build-script
 	$(SHELL) $(top_builddir)/makes/build-script $< $@
 
 config-gfsd: $(srcdir)/config-gfsd.in \
-		$(top_builddir)/config.log
+		$(top_builddir)/makes/build-script
 	$(SHELL) $(top_builddir)/makes/build-script $< $@
 
 config-gfmd-iostat: $(srcdir)/config-gfmd-iostat.in \
-		$(top_builddir)/config.log
+		$(top_builddir)/makes/build-script
 	$(SHELL) $(top_builddir)/makes/build-script $< $@
 
 config-gfsd-iostat: $(srcdir)/config-gfsd-iostat.in \
-		$(top_builddir)/config.log
+		$(top_builddir)/makes/build-script
 	$(SHELL) $(top_builddir)/makes/build-script $< $@

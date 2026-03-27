@@ -7,7 +7,7 @@ include $(top_srcdir)/makes/var.mk
 all: gfsk
 
 gfsk: $(srcdir)/gfsk.in \
-		$(top_builddir)/config.log
+		$(top_builddir)/makes/build-script
 	$(SHELL) $(top_builddir)/makes/build-script $< $@
 
 install: gfsk

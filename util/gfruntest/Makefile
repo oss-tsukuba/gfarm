@@ -13,5 +13,5 @@ post-install-hook:
 	@$(MKDIR_P) $(DESTDIR)$(datadir)/gfarm/systest/parameters
 	@$(MKDIR_P) $(DESTDIR)$(datadir)/gfarm/systest/common_scripts
 gfruntest: $(srcdir)/gfruntest.in \
-		$(top_builddir)/config.log
+		$(top_builddir)/makes/build-script
 	$(SHELL) $(top_builddir)/makes/build-script $< $@

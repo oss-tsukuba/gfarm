@@ -9,5 +9,5 @@ BUILT_SCRIPTS = gfarmbb
 include $(top_srcdir)/makes/script.mk
 
 gfarmbb: $(srcdir)/gfarmbb.in \
-		$(top_builddir)/config.log
+		$(top_builddir)/makes/build-script
 	$(SHELL) $(top_builddir)/makes/build-script $< $@

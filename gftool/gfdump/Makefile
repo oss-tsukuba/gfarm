@@ -11,5 +11,5 @@ BUILT_SCRIPTS = gfdump.postgresql
 include $(top_srcdir)/makes/script.mk
 
 gfdump.postgresql: $(srcdir)/gfdump.postgresql.in \
-		$(top_builddir)/config.log
+		$(top_builddir)/makes/build-script
 	$(SHELL) $(top_builddir)/makes/build-script $< $@
