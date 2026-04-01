@@ -1032,6 +1032,12 @@ static struct gflog_reduced_state rep_fixed_state =
  * and being_removed[] but they may be abled to be used later.
  *
  * srcs[] must be different from existing[].
+ *
+ * 1. divide existing[] into a set of candidates from the same network (targets_near[])
+ *  and a set of candidates from a different network (targets_far[])
+ * 2. sort srcs[] by network to find a node on the same network quickly
+ * 3. create replicas for targets_near[]
+ * 4. if there are not enough, create replicas for targets_far[]
  */
 gfarm_error_t
 inode_schedule_replication_within_scope(
