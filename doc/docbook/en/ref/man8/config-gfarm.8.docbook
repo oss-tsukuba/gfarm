@@ -429,8 +429,8 @@ The default value is 10601 in case of the private mode, 601 otherwise.
 <listitem>
 <para>
 Specify an authentication method.
-It currently recognizes "sharedsecret" or "gsi".
-The default is "sharedsecret".
+If this option is not specified, all available authentication methods are enabled.
+This option can be specified multiple times.
 </para>
 </listitem>
 </varlistentry>
