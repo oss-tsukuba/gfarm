@@ -1,3 +1,14 @@
+Release note for Gfarm 2.8.9
+============================
+
+[2026.4.1]
+
+Update feature
+* improve the replica scheduling to create replicas from the nearest
+  possible server and avoid long-distance transfers
+* config-gfarm - -a option can be specified multiple times.  If not
+  specified, all available authentication methods are enabled.
+
 Release note for Gfarm 2.8.8
 ============================
 
