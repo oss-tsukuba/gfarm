@@ -1033,8 +1033,9 @@ static struct gflog_reduced_state rep_fixed_state =
  *
  * srcs[] must be different from existing[].
  *
- * 1. divide existing[] into a set of candidates from the same network (targets_near[])
- *  and a set of candidates from a different network (targets_far[])
+ * 1. divide scope[] except existing[] into a set of candidates from the same
+ *  network as existing[] (targets_near[]) and a set of candidates from
+ *  a different network as existing[] (targets_far[])
  * 2. sort srcs[] by network to find a node on the same network quickly
  * 3. create replicas for targets_near[]
  * 4. if there are not enough, create replicas for targets_far[]
