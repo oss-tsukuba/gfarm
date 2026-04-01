@@ -293,8 +293,7 @@ Next, verify TCP connectivity and authentication.
 $ gfhost -lvu
 ```
 
-The characters in the second column indicate the authentication result, with `x` indicating authentication failure and `-` indicating communication failure. If authentication using a token is successful, the result will be `A` or `a`. For details, refer to the `gfhost` man page.  
-<http://oss-tsukuba.org/gfarm/share/doc/gfarm/html/en/ref/man1/gfhost.1.html>
+The characters in the second column indicate the authentication result, with `x` indicating authentication failure and `-` indicating communication failure. If authentication using a token is successful, the result will be `A` or `a`. For details, refer to the [`gfhost` man page](https://oss-tsukuba.org/share/doc/gfarm/html/en/ref/man1/gfhost.1.html).
 
 #### Checking with the gfarm2fs command
 

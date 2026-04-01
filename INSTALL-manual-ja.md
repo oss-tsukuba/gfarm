@@ -289,8 +289,7 @@ $ gfhost -lvuU
 $ gfhost -lvu
 ```
 
-第2欄の文字は認証結果を示しており、`x`は認証失敗、`-`は疎通失敗を示しています。トークンによる認証が成功している場合は`A`または`a`となります。詳細は`gfhost`のmanページを参照してください。  
-<http://oss-tsukuba.org/gfarm/share/doc/gfarm/html/ja/ref/man1/gfhost.1.html>
+第2欄の文字は認証結果を示しており、`x`は認証失敗、`-`は疎通失敗を示しています。トークンによる認証が成功している場合は`A`または`a`となります。詳細は[`gfhost`のmanページ](https://oss-tsukuba.org/share/doc/gfarm/html/ja/ref/man1/gfhost.1.html)を参照してください。
 
 #### gfarm2fsコマンドによる確認
 
