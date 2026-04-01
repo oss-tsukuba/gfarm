@@ -2006,7 +2006,7 @@ journal_file_read(struct journal_file_reader *reader, void *op_arg,
 	    != GFARM_ERR_NO_ERROR)
 		goto unlock;
 	if (journal_log_verbose_get())
-		gflog_reduced_info(GFARM_MSG_UNFIXED, &verbose_log_state,
+		gflog_reduced_info(GFARM_MSG_1005741, &verbose_log_state,
 		    "journal_file_read: got seqnum %llu",
 		    (unsigned long long)seqnum);
 	if (eofp && *eofp)

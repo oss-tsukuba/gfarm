@@ -1416,9 +1416,9 @@ transform_to_master(void)
 	 * wait for data transfer from the journal to the backend DB.
 	 * this must be done before dead_file_copy_init_load().
 	 */
-	gflog_info(GFARM_MSG_UNFIXED, "applying journal ...");
+	gflog_info(GFARM_MSG_1005753, "applying journal ...");
 	db_journal_wait_for_apply_thread();
-	gflog_info(GFARM_MSG_UNFIXED, "journal applied");
+	gflog_info(GFARM_MSG_1005754, "journal applied");
 
 	journal_log_verbose_set(0); /* end debugging slow transformation */
 

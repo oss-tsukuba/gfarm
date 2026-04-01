@@ -4192,7 +4192,7 @@ retry:
 		    journal_operation_name(ai->ope));
 #endif
 		if (journal_log_verbose_get())
-			gflog_reduced_info(GFARM_MSG_UNFIXED,
+			gflog_reduced_info(GFARM_MSG_1005750,
 			    &verbose_log_state,
 			    "apply seqnum=%llu ope=%s",
 			    (unsigned long long)ai->seqnum,
@@ -4677,7 +4677,7 @@ db_journal_recvq_proc(int *canceledp)
 		return (GFARM_ERR_NO_ERROR);
 	}
 	if (journal_log_verbose_get())
-		gflog_reduced_info(GFARM_MSG_UNFIXED, &verbose_log_state,
+		gflog_reduced_info(GFARM_MSG_1005751, &verbose_log_state,
 		    "db_journal_recvq_proc: writing seqnum %llu",
 		    (unsigned long long)db_journal_get_current_seqnum());
 	if ((e = journal_file_write_raw(self_jf, ri->recs_len, ri->recs,

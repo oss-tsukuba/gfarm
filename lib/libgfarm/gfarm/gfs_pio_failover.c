@@ -87,7 +87,7 @@ gfs_pio_should_failover_at_gfs_open(GFS_File gf, gfarm_error_t e)
 	    e == GFARM_ERR_GFMD_FAILED_OVER)
 		return (1);
 	if (e == GFARM_ERR_BAD_FILE_DESCRIPTOR) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1005740,
 		    "file %s, inode: %llu:%llu, fd %d: %s",
 		    gf->url, (long long)gf->ino, (long long)gf->gen, gf->fd,
 		    gfarm_error_string(e));

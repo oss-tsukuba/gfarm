@@ -862,13 +862,13 @@ gfm_server_switch_back_channel_common(struct peer *peer, int from_client,
 			if (e == GFARM_ERR_NO_ERROR) {
 				host_set_network(host, network);
 			} else {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1005748,
 					"gfm_server_switch_back_channel_common:"
 					" cannot get network for host %s",
 							host_name(host));
 			}
 		} else {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1005749,
 				"gfm_server_switch_back_channel_common:"
 				"getpeername failed for host %s",
 						host_name(host));
