@@ -208,7 +208,7 @@ sasl_user "USER-NAME"
 By placing the following configuration file named gfarm-client.conf
 in the Cyrus SASL configuration directory
 ($(pkg-config --variable=libdir libsasl2)/sasl2),
-it use the value in the JWT as the user ID.
+the value in the JWT is used as the user ID.
 In this case, the sasl_user setting must be deleted.
 Additionally, you can specify the user ID via the environment variable (GFARM_SASL_USER).
 The priority order is GFARM_SASL_USER > sasl_user > xoauth2_user_claim.
