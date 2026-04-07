@@ -12,9 +12,13 @@ DOC =	../LICENSE ../RELNOTES \
 	../INSTALL.RPM.en ../INSTALL.RPM.ja \
 	../INSTALL.Debian.en ../INSTALL.Debian.ja \
 	../SETUP.en ../SETUP.ja SETUP.private.en SETUP.private.ja \
+	DEVELOPER \
 	Gfarm-FAQ.en Gfarm-FAQ.ja \
 	KNOWN_PROBLEMS.en KNOWN_PROBLEMS.ja \
 	quota.en \
+	iostat-dev.ja iostat-setup.ja \
+	voms-dev.ja voms-install.ja \
+	xattr-dev.ja xattr-install.ja xattr-man.ja \
 	failover.ja disaster.ja \
 	encfs.en.md encfs.ja.md \
 	automount.en.md automount.ja.md
