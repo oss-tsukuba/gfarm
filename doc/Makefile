@@ -16,7 +16,8 @@ DOC =	../LICENSE ../RELNOTES \
 	KNOWN_PROBLEMS.en KNOWN_PROBLEMS.ja \
 	quota.en \
 	failover.ja disaster.ja \
-	encfs.en.md encfs.ja.md
+	encfs.en.md encfs.ja.md \
+	automount.en.md automount.ja.md
 
 include $(top_srcdir)/makes/subdir.mk
 
