@@ -355,7 +355,7 @@ for t in $(seq 1 "$GFDOCKER_NUM_TENANTS"); do
     *) gfuser -c "gfarmadm${tenant_user_suffix}" \
          "Gfarm administrator in tenant $t" '/' ''
        gfgroup -c "gfarmadm${tenant_user_suffix}" \
-         "gfarmadm${tenant_user_suffix}"
+         "gfarmadm${tenant_user_suffix}" "${guser}${tenant_user_suffix}"
        gfgroup -c "gfarmroot${tenant_user_suffix}"
 
        gfsudo gfmkdir "${tenant_path_prefix}"
