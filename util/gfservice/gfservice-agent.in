@@ -876,6 +876,8 @@ subcmd_unconfig_gfarm()
 	rm -f $GFMD_CONF
 	rm -f $GFMD_RC
 	rm -f $BACKEND_RC
+	rm -f $GFMD_FAILOVER_CONF
+	rm -f $GFMD_FAILOVER_AGENT_CONF
 	rm -f -r $METADATA_DIR
 	rm -f -r $JOURNAL_DIR
 	[ "X$GFSD_CONF" != X ] && rm -f $GFSD_CONF
