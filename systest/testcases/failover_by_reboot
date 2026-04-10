@@ -18,7 +18,7 @@ load "gfarm_v2::check_gfmd_connected"
 setup_failover_by_reboot()
 {
 	# default parameter
-	RETRY_COUNT=${RETRY_COUNT-"10"}
+	RETRY_COUNT=${RETRY_COUNT-"20"}
 	RETRY_INTERVAL=${RETRY_INTERVAL-"5"}
 	TIMEOUT=${TIMEOUT-"10"}
 
