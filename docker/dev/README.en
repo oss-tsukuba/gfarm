@@ -78,7 +78,8 @@ Quick start
 
   If you use other IdP provider, edit config.mk:
 
-  GFDOCKER_SASL_XOAUTH2_ISSUERS = {IdP URL}
+  GFDOCKER_SASL_XOAUTH2_ISSUER  = {IdP URL}     # single issuer
+  GFDOCKER_SASL_XOAUTH2_ISSUERS = {IdP URL(s)}  # space-separated list
 
 5. Setup sudo configuration
 
@@ -115,6 +116,33 @@ Quick start
     (this is currently tested only on centos8)
 
 	$ make kerberos-setup
+
+Testing xoauth2_group_user authentication in regress tests
+===============================
+
+By default, authentication may succeed via xoauth2_user_claim,
+so xoauth2_group_user-based authentication is not actually tested.
+
+To explicitly test xoauth2_group_user authentication, set a dummy
+(non-existent) xoauth2_user_claim and apply it to all servers.
+
+1. Update SASL configuration (gfarm.conf):
+
+   xoauth2_user_claim: dummy.claim
+
+2. Copy the configuration to all gfmd/gfsd servers.
+
+3. Restart all services:
+
+   gfservice restart-all
+
+4. Obtain JWT tokens for test users:
+
+   jwt-agent -s https://jwt-server/ -l user1
+   jwt-agent -s https://jwt-server/ -l user1+tenant2
+
+In this setup, authentication relies on xoauth2_group_user
+instead of xoauth2_user_claim.
 
 Use Rootless mode
 =================
