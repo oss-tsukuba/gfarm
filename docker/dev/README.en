@@ -128,18 +128,20 @@ To explicitly test xoauth2_group_user authentication, set a dummy
 
 1. Update SASL configuration (gfarm.conf):
 
-   xoauth2_user_claim: dummy.claim
+  xoauth2_user_claim: dummy.claim
 
 2. Copy the configuration to all gfmd/gfsd servers.
 
 3. Restart all services:
 
-   gfservice restart-all
+  gfservice restart-all
 
 4. Obtain JWT tokens for test users:
 
-   jwt-agent -s https://jwt-server/ -l user1
-   jwt-agent -s https://jwt-server/ -l user1+tenant2
+  as local user user1:
+    jwt-agent -s https://jwt-server/ -l user1
+  as local user user5:
+    jwt-agent -s https://jwt-server/ -l user1+tenant2
 
 In this setup, authentication relies on xoauth2_group_user
 instead of xoauth2_user_claim.
