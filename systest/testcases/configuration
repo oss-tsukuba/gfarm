@@ -35,6 +35,10 @@ setup_configuration()
 	$GFSERVICE config-gfsd gfsd1
 	[ $? -ne 0 ] && log_warn "$TESTNAME: config-gfsd on gfsd1 failed"
 
+	# prepare: config-client
+	$GFSERVICE config-client client1
+	[ $? -ne 0 ] && log_warn "$TESTNAME: config-client on client1 failed"
+
 	# prepare: check gfsd is added
 	check_gfsd_registered gfsd1 client1
 	[ $? -ne 0 ] && log_warn "$TESTNAME: gfsd is not configured correctly"
@@ -241,6 +245,9 @@ teardown_configuration()
 
 	# cleanup: remove directory
 	$GFSERVICE gfcmd client1 gfrmdir $GFARM_HOME/$TEST_EXEC_ID
+
+	# cleanup: unconfigure client
+	$GFSERVICE unconfig-client client1
 
 	# cleanup: unconfigure gfsd
 	$GFSERVICE unconfig-gfsd gfsd1

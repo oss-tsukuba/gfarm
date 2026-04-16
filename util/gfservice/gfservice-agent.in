@@ -12,6 +12,9 @@
 # PATH
 PATH=@bindir@:/usr/bin:/bin
 
+# Gfarm installation directory
+sysconfdir="@sysconfdir@"
+
 # Program name.
 PROGRAM=gfservice-agent
 
@@ -868,20 +871,12 @@ subcmd_unconfig_gfarm()
 {
 	log_debug "subcmd_unconfig_gfarm"
 
-	TIMEOUT=`get_param timeout || echo 'no'`
-	[ -f $GFMD_RC ] && stop_gfmd $TIMEOUT > /dev/null 2>&1
-	[ -f $BACKEND_RC ] && stop_backend_db $TIMEOUT > /dev/null 2>&1
-	rm -f $GFMD_PID_FILE
-	rm -f $GFARM_CONF
-	rm -f $GFMD_CONF
-	rm -f $GFMD_RC
-	rm -f $BACKEND_RC
-	rm -f $GFMD_FAILOVER_CONF
-	rm -f $GFMD_FAILOVER_AGENT_CONF
-	rm -f -r $METADATA_DIR
-	rm -f -r $JOURNAL_DIR
-	[ "X$GFSD_CONF" != X ] && rm -f $GFSD_CONF
-	[ "X$USERMAP_FILE" != X ] && rm -f $USERMAP_FILE
+	if [ X"$CONFIG_PREFIX" != X ]; then
+		: ${GFARM_CONF_DIR:="$CONFIG_PREFIX/etc"}
+	else
+		: ${GFARM_CONF_DIR:="$sysconfdir"}
+	fi
+	"$GFARM_CONF_DIR/unconfig-gfarm.sh" -f
 
 	log_debug "end subcmd_unconfig_gfarm"
 }
@@ -894,14 +889,12 @@ subcmd_unconfig_gfsd()
 {
 	log_debug "subcmd_unconfig_gfsd"
 
-	TIMEOUT=`get_param timeout || echo 'no'`
-	[ -f $GFSD_RC ] && stop_gfsd $TIMEOUT > /dev/null 2>&1
-	rm -f $GFSD_PID_FILE
-	rm -f $GFARM_CONF
-	rm -f $GFSD_RC
-	rm -f -r $SPOOL_DIR
-	[ "X$GFSD_CONF" != X ] && rm -f $GFSD_CONF
-	[ "X$USERMAP_FILE" != X ] && rm -f $USERMAP_FILE
+	if [ X"$CONFIG_PREFIX" != X ]; then
+		: ${GFARM_CONF_DIR:="$CONFIG_PREFIX/etc"}
+	else
+		: ${GFARM_CONF_DIR:="$sysconfdir"}
+	fi
+	"$GFARM_CONF_DIR/unconfig-gfsd.sh" -f
 
 	log_debug "end subcmd_unconfig_gfsd"
 }
@@ -915,6 +908,11 @@ subcmd_unconfig_client()
 	log_debug "subcmd_unconfig_client"
 
 	rm -f $GFARM_CONF
+
+	# XXX FIXME:
+	# Executed as root via ssh, so $HOME is /root.
+	# Client user's ~/.gfarm_shared_key is not removed.
+	# Should remove the key as the actual user.
 	rm -f $SHARED_KEY_FILE
 
 	log_debug "end subcmd_unconfig_client"
