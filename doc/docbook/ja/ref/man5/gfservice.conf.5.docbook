@@ -5,7 +5,7 @@
 
 <refentry id="gfservice.conf.5">
 
-<refentryinfo><date>25 Feb 2026</date></refentryinfo>
+<refentryinfo><date>17 Apr 2026</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfservice.conf</refentrytitle>
@@ -177,10 +177,12 @@ gfmd サーバー上で <command moreinfo="none">gfservice-agent</command> コ�
 </varlistentry>
 
 <varlistentry>
-<term><varname>gfmd<replaceable>n</replaceable>_AUTH_TYPE</varname></term>
+<term><varname>gfmd<replaceable>n</replaceable>_AUTH_TYPES</varname></term>
 <listitem>
 <para>
-認証タイプ ("sharedsecret", "gsi", "gsi_auth" のいずれか) を指定します。
+認証タイプ ("sharedsecret", "sasl_auth", "sasl", "tls_sharedsecret",
+ "tls_client_certificate", "kerberos_auth", "kerberos", "gsi_auth",
+ または "gsi") を空白区切りの文字列で指定します。
 この変数が定義されていない場合は、gfmd1 上で
 <command moreinfo="none">config-gfarm -T</command> を実行したときの
 <varname>AUTH_TYPES</varname> の値が採用されます。
@@ -300,10 +302,12 @@ gfsd サーバー上で <command moreinfo="none">gfservice-agent</command> コ�
 </varlistentry>
 
 <varlistentry>
-<term><varname>gfsd<replaceable>n</replaceable>_AUTH_TYPE</varname></term>
+<term><varname>gfsd<replaceable>n</replaceable>_AUTH_TYPES</varname></term>
 <listitem>
 <para>
-認証タイプ ("sharedsecret", "gsi", "gsi_auth" のいずれか) を指定します。
+認証タイプ ("sharedsecret", "sasl_auth", "sasl", "tls_sharedsecret",
+ "tls_client_certificate", "kerberos_auth", "kerberos", "gsi_auth",
+ または "gsi") を空白区切りの文字列で指定します。
 この変数が定義されていない場合は、gfmd1 上で
 <command moreinfo="none">config-gfarm -T</command> を実行したときの
 <varname>AUTH_TYPES</varname> の値が採用されます。
@@ -455,10 +459,12 @@ gfarm2.confファイルのパスと同じパスを使用します(gfarm2.confフ
 </varlistentry>
 
 <varlistentry>
-<term><varname>client<replaceable>n</replaceable>_AUTH_TYPE</varname></term>
+<term><varname>client<replaceable>n</replaceable>_AUTH_TYPES</varname></term>
 <listitem>
 <para>
-認証タイプ ("sharedsecret", "gsi", "gsi_auth" のいずれか) を指定します。
+認証タイプ ("sharedsecret", "sasl_auth", "sasl", "tls_sharedsecret",
+ "tls_client_certificate", "kerberos_auth", "kerberos", "gsi_auth",
+ または "gsi") を空白区切りの文字列で指定します。
 この変数が定義されていない場合は、gfmd1 上で
 <command moreinfo="none">config-gfarm -T</command> を実行したときの
 <varname>AUTH_TYPES</varname> の値が採用されます。

@@ -333,27 +333,27 @@ get_config_gfsd_options()
 #
 # Get authenticatoin type of a host ID.
 #
-get_auth_type()
+get_auth_types()
 {
-	log_debug "get_auth_type: HOSTID=$1"
+	log_debug "get_auth_types: HOSTID=$1"
 
-	if [ "X`eval echo \\$$1_AUTH_TYPE`" != X ]; then
-		eval echo "\$$1_AUTH_TYPE"
-		log_debug "get_auth_type:" \
-			"AUTH_TYPE="`eval echo \\$$1_AUTH_TYPE`
-	elif [ "X$gfmd1_AUTH_TYPE" != X ]; then
-		echo "$gfmd1_AUTH_TYPE"
-		log_debug "get_auth_type: AUTH_TYPE=$gfmd1_AUTH_TYPE"
+	if [ "X`eval echo \\$$1_AUTH_TYPES`" != X ]; then
+		eval echo "\$$1_AUTH_TYPES"
+		log_debug "get_auth_types:" \
+			"AUTH_TYPES="`eval echo \\$$1_AUTH_TYPES`
+	elif [ "X$gfmd1_AUTH_TYPES" != X ]; then
+		echo "$gfmd1_AUTH_TYPES"
+		log_debug "get_auth_types: AUTH_TYPES=$gfmd1_AUTH_TYPES"
 	else
-		gfmd1_AUTH_TYPE=`@bindir@/config-gfarm -T \
+		gfmd1_AUTH_TYPES=`@bindir@/config-gfarm -T \
 			$gfmd1_CONFIG_GFARM_OPTIONS \
 			| sed -ne '/^AUTH_TYPES=/s/^[^=]*=//p'`
-		[ "X$gfmd1_AUTH_TYPE" = X ] && gfmd1_AUTH_TYPE=sharedsecret
-		echo "$gfmd1_AUTH_TYPE"
-		log_debug "get_auth_type: AUTH_TYPE=$gfmd1_AUTH_TYPE"
+		[ "X$gfmd1_AUTH_TYPES" = X ] && gfmd1_AUTH_TYPES=sharedsecret
+		echo "$gfmd1_AUTH_TYPES"
+		log_debug "get_auth_types: AUTH_TYPES=$gfmd1_AUTH_TYPES"
 	fi
 
-	log_debug "end get_auth_type"
+	log_debug "end get_auth_types"
 }
 
 #
@@ -764,9 +764,19 @@ copy_gfarm_conf()
 		[ $? -ne 0 ] && log_error \
 			"gfservice-agent backup-gfarm-conf $1 failed"
 	fi
-	# if AUTH_TYPE is gsi*, this is necessary, and harmless if sharedsecret
+	# if any AUTH_TYPES contains gsi*, this is necessary, and harmless if sharedsecret
 	case $2 in
-	gfsd*) echo 'auth enable sharedsecret *' >> $TMP_FILE;;
+	gfsd*)
+		eval AUTH_TYPES=$(get_auth_types $2)
+		for t in $AUTH_TYPES; do
+			case $t in
+			gsi|gsi_auth)
+				sed -e '/^auth enable sharedsecret /d' $TMP_FILE > $TMP_FILE.tmp
+				echo 'auth enable sharedsecret *' >> $TMP_FILE.tmp
+				mv $TMP_FILE.tmp $TMP_FILE
+				;;
+			esac
+		done
 	esac
 
 	exec_remote_host_agent $2 root restore-gfarm-conf < $TMP_FILE
@@ -1574,8 +1584,14 @@ subcmd_config_gfarm_slave()
 	#
 	# Copy a shared secret key from the master gfmd host to the slave.
 	#
-	[ "X`get_auth_type $HOSTID`" = Xsharedsecret ] \
-		&& copy_shared_key $MASTER_HOSTID $HOSTID
+	eval AUTH_TYPES=$(get_auth_types $HOSTID)
+	for t in $AUTH_TYPES; do
+		case $t in
+			sharedsecret)
+				copy_shared_key $MASTER_HOSTID $HOSTID
+				;;
+		esac
+	done
 
 	#
 	# Copy PostgreSQL database from the master gfmd host to the slave.
@@ -1631,8 +1647,14 @@ subcmd_config_gfsd()
 	#
 	# Copy a shared secret key from $MASTER_HOSTID to the gfsd host.
 	#
-	[ "X`get_auth_type $HOSTID`" = Xsharedsecret ] \
-		&& copy_shared_key $MASTER_HOSTID $HOSTID
+	eval AUTH_TYPES=$(get_auth_types $HOSTID)
+	for t in $AUTH_TYPES; do
+		case $t in
+			sharedsecret)
+				copy_shared_key $MASTER_HOSTID $HOSTID
+				;;
+		esac
+	done
 
 	#
 	# Copy 'gfarm2.conf' from $MASTER_HOSTID to the gfsd host.
@@ -1688,8 +1710,14 @@ subcmd_config_client()
 	#
 	# Copy a shared secret key from $MASTER_HOSTID to the client host.
 	#
-	[ "X`get_auth_type $HOSTID`" = Xsharedsecret ] \
-		&& copy_shared_key $MASTER_HOSTID $HOSTID
+	eval AUTH_TYPES=$(get_auth_types $HOSTID)
+	for t in $AUTH_TYPES; do
+		case $t in
+			sharedsecret)
+				copy_shared_key $MASTER_HOSTID $HOSTID
+				;;
+		esac
+	done
 
 	#
 	# Copy 'gfarm2.conf' from $MASTER_HOSTID to the client host.

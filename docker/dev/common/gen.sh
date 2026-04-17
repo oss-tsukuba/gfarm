@@ -53,14 +53,14 @@ EOF
     gfmd="${GFDOCKER_HOSTNAME_PREFIX_GFMD}${i}"
     cat <<EOF
 
-## *_AUTH_TYPE=sharedsecret can copy ~/.gfarm_shared_key
+## if *_AUTH_TYPES contain sharedsecret, ~/.gfarm_shared_key can copied
 
 ##
 ## gfmd ${i}
 ##
 gfmd${i}=${gfmd}${GFDOCKER_HOSTNAME_SUFFIX}
 ${gfmd}_CONFIG_GFARM_OPTIONS="-r -j ${GFDOCKER_GFMD_JOURNAL_DIR} -X -A \$LOGNAME -h \$gfmd${i} -a ${GFDOCKER_AUTH_TYPE} -D ${ADMIN_DN}"
-gfmd${i}_AUTH_TYPE=sharedsecret
+gfmd${i}_AUTH_TYPES=sharedsecret
 EOF
   done
 
@@ -74,7 +74,7 @@ EOF
 ##
 gfsd${i}=${gfsd}${GFDOCKER_HOSTNAME_SUFFIX}
 gfsd${i}_CONFIG_GFSD_OPTIONS="-h \$gfsd${i} -l \$gfsd${i} -a ${GFDOCKER_PRJ_NAME}"
-gfsd${i}_AUTH_TYPE=sharedsecret
+gfsd${i}_AUTH_TYPES=sharedsecret
 EOF
   done
 
@@ -87,7 +87,7 @@ EOF
 ## client ${i}
 ##
 client${i}=${client}${GFDOCKER_HOSTNAME_SUFFIX}
-client${i}_AUTH_TYPE=sharedsecret
+client${i}_AUTH_TYPES=sharedsecret
 EOF
   done
 }

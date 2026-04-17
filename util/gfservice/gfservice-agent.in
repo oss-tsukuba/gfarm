@@ -136,7 +136,7 @@ set_gfmd_params()
 
 	[ "X$AUTH_TYPES" = X ] \
 		&& log_error "failed to get auth type"
-	log_debug "set_gfmd_params: set AUTH_TYPE=$AUTH_TYPES"
+	log_debug "set_gfmd_params: set AUTH_TYPES=$AUTH_TYPES"
 
 	[ "X$GFARM_CONF" = X ] \
 		&& log_error "failed to get gfarm client conf file"
@@ -808,9 +808,13 @@ subcmd_config_gfarm()
 	eval config-gfarm $CONFIG_GFARM_OPTIONS
 	[ $? -ne 0 ] && log_error "config-gfarm failed"
 
-	case $AUTH_TYPES in
-	gsi|gsi_auth) set_conf $GFMD_CONF 'auth enable sharedsecret' '*';;
-	esac
+	for t in $AUTH_TYPES; do
+		case $t in
+		gsi|gsi_auth)
+			set_conf $GFMD_CONF 'auth enable sharedsecret' '*'
+			;;
+		esac
+	done
 
 	TIMEOUT=`get_param timeout || echo 'no'`
 	stop_gfmd $TIMEOUT
@@ -833,9 +837,13 @@ subcmd_config_gfarm_master()
 	[ $? -ne 0 ] && log_error "config-gfarm failed"
 
 	unset_conf $GFMD_CONF metadb_server_force_slave
-	case $AUTH_TYPES in
-	gsi|gsi_auth) set_conf $GFMD_CONF 'auth enable sharedsecret' '*';;
-	esac
+	for t in $AUTH_TYPES; do
+		case $t in
+		gsi|gsi_auth)
+			set_conf $GFMD_CONF 'auth enable sharedsecret' '*'
+			;;
+		esac
+	done
 
 	set_conf $GFARM_CONF metadb_server_list \
 		"${BACKEND_HOSTNAME}:${GFMD_PORT}"
