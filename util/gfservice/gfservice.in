@@ -701,18 +701,31 @@ copy_shared_key()
 		return
 	fi
 
-	exec_remote_host_agent $2 _gfarmfs restore-shared-key < $TMP_FILE
-	[ $? -ne 0 ] && log_error \
-		"gfservice-agent restore-shared-key $2 failed"
-
 	if is_gfsd_hostid $2; then
-		log_debug "end copy_shared_key"
-		return
+		if [ X$1 != X- ]; then
+			rm -f $TMP_FILE
+			exec_remote_host_agent $1 _gfarmfs backup-shared-key > $TMP_FILE
+			[ $? -ne 0 ] && log_error \
+				"gfservice-agent backup-shared-key $1 failed"
+		fi
+
+		exec_remote_host_agent $2 _gfarmfs restore-shared-key < $TMP_FILE
+		[ $? -ne 0 ] && log_error \
+			"gfservice-agent restore-shared-key $2 failed"
 	fi
 
-	exec_remote_host_agent $2 _gfarmmd restore-shared-key < $TMP_FILE
-	[ $? -ne 0 ] && log_error \
-		"gfservice-agent restore-shared-key $2 failed"
+	if is_gfmd_hostid $2; then
+		if [ X$1 != X- ]; then
+			rm -f $TMP_FILE
+			exec_remote_host_agent $1 _gfarmmd backup-shared-key > $TMP_FILE
+			[ $? -ne 0 ] && log_error \
+				"gfservice-agent backup-shared-key $1 failed"
+		fi
+
+		exec_remote_host_agent $2 _gfarmmd restore-shared-key < $TMP_FILE
+		[ $? -ne 0 ] && log_error \
+			"gfservice-agent restore-shared-key $2 failed"
+	fi
 
 	log_debug "end copy_shared_key"
 }
@@ -1399,6 +1412,15 @@ subcmd_config_gfarm()
 		exec_remote_host_gfcmd $HOSTID - gfkey -f \
 			-p $SHARED_KEY_VALIDITY_PERIOD
 		[ $? -ne 0 ] && log_error "gfkey failed"
+
+		exec_remote_host_gfcmd $HOSTID _gfarmfs gfkey -f \
+			-p $SHARED_KEY_VALIDITY_PERIOD
+		[ $? -ne 0 ] && log_error "gfkey failed"
+
+		exec_remote_host_gfcmd $HOSTID _gfarmmd gfkey -f \
+			-p $SHARED_KEY_VALIDITY_PERIOD
+		[ $? -ne 0 ] && log_error "gfkey failed"
+
 		copy_shared_key $HOSTID $HOSTID
 	fi
 
@@ -1442,6 +1464,15 @@ subcmd_config_gfarm_master()
 		exec_remote_host_gfcmd $HOSTID - gfkey -f \
 			-p $SHARED_KEY_VALIDITY_PERIOD
 		[ $? -ne 0 ] && log_error "gfkey failed"
+
+		exec_remote_host_gfcmd $HOSTID _gfarmfs gfkey -f \
+			-p $SHARED_KEY_VALIDITY_PERIOD
+		[ $? -ne 0 ] && log_error "gfkey failed"
+
+		exec_remote_host_gfcmd $HOSTID _gfarmmd gfkey -f \
+			-p $SHARED_KEY_VALIDITY_PERIOD
+		[ $? -ne 0 ] && log_error "gfkey failed"
+
 		copy_shared_key $HOSTID $HOSTID
 	fi
 
