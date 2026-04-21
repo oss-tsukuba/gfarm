@@ -5,5 +5,5 @@ edition = "2021"
 
 [dependencies]
 docopt = "1"
-rand = "0.8.5"
+rand = "0.9.3"
 rayon = "1.10"
