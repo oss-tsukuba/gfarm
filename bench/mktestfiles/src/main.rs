@@ -1,7 +1,8 @@
 use docopt::Docopt;
 
-use rand::distributions::Alphanumeric;
-use rand::{thread_rng, Rng};
+use rand::distr::Alphanumeric;
+use rand::rng;
+use rand::RngExt;
 use rayon::prelude::*;
 use std::fs::create_dir;
 use std::fs::remove_dir_all;
@@ -186,14 +187,14 @@ fn main() {
             if disable_random {
                 file_name = "abcdefghij".chars().cycle().take(rand_name_len).collect();
             } else {
-                file_name = thread_rng()
+                file_name = rng()
                     .sample_iter(&Alphanumeric)
                     .take(rand_name_len)
                     .map(char::from)
                     .collect();
             }
             let file_path = format!("{}/{}_{}", dir_path, file_padded_len, file_name);
-            let file_size = thread_rng().gen_range(min_size..=max_size);
+            let file_size = rng().random_range(min_size..=max_size);
 
             size_atomic.fetch_add(file_size, Ordering::SeqCst);
 
@@ -207,7 +208,7 @@ fn main() {
                     .collect();
             } else {
                 contents = vec![0u8; file_size];
-                thread_rng().fill(&mut contents[..]);
+                rng().fill(&mut contents[..]);
             }
             let mut file = File::create(&file_path).expect("Failed to create file");
             file.write_all(&contents).expect("Failed to write to file");
