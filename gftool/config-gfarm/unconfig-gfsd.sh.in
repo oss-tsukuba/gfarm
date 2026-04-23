@@ -99,7 +99,7 @@ service_unconfig()
 			$prefix/bin/gfhost -d "$GFSD_HOSTNAME"
 		fi
 	else
-		if [ ! "$QUIET" ]; then
+		if ! $QUIET; then
 			echo Please execute the following command on your host:
 			echo
 			echo "$prefix/bin/gfhost -d $GFSD_HOSTNAME"
@@ -109,7 +109,7 @@ service_unconfig()
 
 	if [ -f "$GFMD_CONF" ]; then
 		if [ X"$TEST_OPT" = "X-n" ]; then
-			if [ ! "$QUIET" ]; then
+			if ! $QUIET; then
 				echo
 				echo "The following files will not be deleted, because also gfmd has been configured:"
 				echo "  $GFARM_CONF"
