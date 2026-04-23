@@ -920,7 +920,7 @@ subcmd_unconfig_gfsd()
 	else
 		: ${GFARM_CONF_DIR:="$sysconfdir"}
 	fi
-	"$GFARM_CONF_DIR/unconfig-gfsd.sh" -f
+	"$GFARM_CONF_DIR/unconfig-gfsd.sh" -f --quiet
 
 	log_debug "end subcmd_unconfig_gfsd"
 }
