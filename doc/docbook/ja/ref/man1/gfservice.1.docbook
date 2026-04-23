@@ -5,7 +5,7 @@
 
 <refentry id="gfservice.1">
 
-<refentryinfo><date>17 Apr 2026</date></refentryinfo>
+<refentryinfo><date>23 Apr 2026</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfservice</refentrytitle>
@@ -739,7 +739,7 @@ gfmd のレプリケーションが自動的に有効になります。
 変数「gfmd<replaceable>n</replaceable>_PRIVATE_MODE」の値が「true」に
 セットされている場合は、同様に <filename moreinfo="none">gfsd.conf</filename> ファイル
 を更新し、すべての gfmd ホストと gfsd ホストに配布します。
-変数「gfmd<replaceable>n</replaceable>_AUTH_TYPES」に「sharedsecret」が含まれている場合、
+変数「gfmd<replaceable>n</replaceable>_AUTH_TYPES」に「sharedsecret」ないし「tls_sharedsecret」が含まれている場合、
 共有秘密鍵ファイルをマスター gfmd ホストからこのスレーブ gfmd
 ホストへコピーします。
 </para>
@@ -949,7 +949,7 @@ gfmd 用の <command moreinfo="none">restore-usermap</command> サブコマン�
 その値が <command moreinfo="none">config-gfsd</command> にオプションとして付与されます。
 また、<command moreinfo="none">gfservice</command> は <command moreinfo="none">gfhost</command> コマンド
 を用いて、リモートホストをファイルシステムノードとして登録します。
-変数「gfsd<replaceable>n</replaceable>_AUTH_TYPES」に「sharedsecret」が含まれている場合、
+変数「gfsd<replaceable>n</replaceable>_AUTH_TYPES」に「sharedsecret」ないし「tls_sharedsecret」が含まれている場合、
 共有秘密鍵ファイルを gfmd1 から gfsd ホストへコピーします。
 </para>
 </listitem>
@@ -1130,7 +1130,7 @@ Gfarm2 ファイルシステムをアンマウントします。
 </term>
 <listitem>
 <para>
-変数「client<replaceable>n</replaceable>_AUTH_TYPES」に「sharedsecret」が含まれている場合、
+変数「client<replaceable>n</replaceable>_AUTH_TYPES」に「sharedsecret」ないし「tls_sharedsecret」が含まれている場合、
 共有秘密鍵ファイルを gfmd1 からクライアントホストへコピーします。
 </para>
 </listitem>

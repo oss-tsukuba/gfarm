@@ -160,6 +160,8 @@ Specify options of <command moreinfo="none">config-gfarm</command> command.
 The default value is empty (no option).
 <command moreinfo="none">gfservice</command> refers this variable to perform
 <command moreinfo="none">config-gfarm</command> and many other sub-commands.
+If only "sasl" is specified as the authentication type,
+"tls_client_certificate" will also be added as an authentication type to a gfarm2.conf file on all hosts.
 Do not delete or edit the declaration even after
 <command moreinfo="none">config-gfarm</command> has been complete.
 </para>

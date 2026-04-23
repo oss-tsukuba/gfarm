@@ -808,13 +808,22 @@ subcmd_config_gfarm()
 	eval config-gfarm $CONFIG_GFARM_OPTIONS
 	[ $? -ne 0 ] && log_error "config-gfarm failed"
 
+	only_sasl=true
 	for t in $AUTH_TYPES; do
 		case $t in
-		gsi|gsi_auth)
-			set_conf $GFMD_CONF 'auth enable sharedsecret' '*'
+		sasl|sasl_auth)
+			;;
+		*)
+			only_sasl=false
 			;;
 		esac
 	done
+
+	# Enable TLS client certificate authentication if only SASL is used
+	if $only_sasl; then
+		set_conf "$GFMD_CONF" 'auth enable tls_client_certificate' '*'
+		set_conf "$GFARM_CONF" 'auth enable tls_client_certificate' '*'
+	fi
 
 	TIMEOUT=`get_param timeout || echo 'no'`
 	stop_gfmd $TIMEOUT
@@ -837,13 +846,22 @@ subcmd_config_gfarm_master()
 	[ $? -ne 0 ] && log_error "config-gfarm failed"
 
 	unset_conf $GFMD_CONF metadb_server_force_slave
+	only_sasl=true
 	for t in $AUTH_TYPES; do
 		case $t in
-		gsi|gsi_auth)
-			set_conf $GFMD_CONF 'auth enable sharedsecret' '*'
+		sasl|sasl_auth)
+			;;
+		*)
+			only_sasl=false
 			;;
 		esac
 	done
+
+	# Enable TLS client certificate authentication if only SASL is used
+	if $only_sasl; then
+		set_conf "$GFMD_CONF" 'auth enable tls_client_certificate' '*'
+		set_conf "$GFARM_CONF" 'auth enable tls_client_certificate' '*'
+	fi
 
 	set_conf $GFARM_CONF metadb_server_list \
 		"${BACKEND_HOSTNAME}:${GFMD_PORT}"

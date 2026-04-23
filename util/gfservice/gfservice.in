@@ -764,20 +764,6 @@ copy_gfarm_conf()
 		[ $? -ne 0 ] && log_error \
 			"gfservice-agent backup-gfarm-conf $1 failed"
 	fi
-	# if any AUTH_TYPES contains gsi*, this is necessary, and harmless if sharedsecret
-	case $2 in
-	gfsd*)
-		eval AUTH_TYPES=$(get_auth_types $2)
-		for t in $AUTH_TYPES; do
-			case $t in
-			gsi|gsi_auth)
-				sed -e '/^auth enable sharedsecret /d' $TMP_FILE > $TMP_FILE.tmp
-				echo 'auth enable sharedsecret *' >> $TMP_FILE.tmp
-				mv $TMP_FILE.tmp $TMP_FILE
-				;;
-			esac
-		done
-	esac
 
 	exec_remote_host_agent $2 root restore-gfarm-conf < $TMP_FILE
 	[ $? -ne 0 ] && log_error \
@@ -1587,7 +1573,7 @@ subcmd_config_gfarm_slave()
 	eval AUTH_TYPES=$(get_auth_types $HOSTID)
 	for t in $AUTH_TYPES; do
 		case $t in
-			sharedsecret)
+			sharedsecret|tls_sharedsecret)
 				copy_shared_key $MASTER_HOSTID $HOSTID
 				;;
 		esac
@@ -1650,7 +1636,7 @@ subcmd_config_gfsd()
 	eval AUTH_TYPES=$(get_auth_types $HOSTID)
 	for t in $AUTH_TYPES; do
 		case $t in
-			sharedsecret)
+			sharedsecret|tls_sharedsecret)
 				copy_shared_key $MASTER_HOSTID $HOSTID
 				;;
 		esac
@@ -1713,7 +1699,7 @@ subcmd_config_client()
 	eval AUTH_TYPES=$(get_auth_types $HOSTID)
 	for t in $AUTH_TYPES; do
 		case $t in
-			sharedsecret)
+			sharedsecret|tls_sharedsecret)
 				copy_shared_key $MASTER_HOSTID $HOSTID
 				;;
 		esac

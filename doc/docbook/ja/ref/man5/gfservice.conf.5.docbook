@@ -160,6 +160,8 @@ gfmd サーバー上で <command moreinfo="none">gfservice-agent</command> コ�
 デフォルト値は、空文字列 (オプションなし) です。
 <command moreinfo="none">gfservice</command> は <command moreinfo="none">config-gfarm</command> サブコマンド
 およびその他多くのサブコマンドを実行する際に、この変数を参照します。
+認証タイプとして "sasl" のみが指定されている場合、全てのホストのgfarm2.confファイルに
+"tls_client_certificate" も認証タイプとして追加されます。
 <command moreinfo="none">config-gfarm</command> が完了した後であっても、この変数の宣言を
 削除したり、編集したりはしないで下さい。
 </para>

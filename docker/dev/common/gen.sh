@@ -53,7 +53,10 @@ EOF
     gfmd="${GFDOCKER_HOSTNAME_PREFIX_GFMD}${i}"
     cat <<EOF
 
-## if *_AUTH_TYPES contain sharedsecret, ~/.gfarm_shared_key can copied
+## if *_AUTH_TYPES contain sharedsecret or tls_sharedsecret,
+## ~/.gfarm_shared_key can be copied
+## if only sasl is specified by -a option of *_CONFIG_GFARM_OPTIONS,
+## tls_client_certificate will also be added to gfarm2.conf on all hosts
 
 ##
 ## gfmd ${i}
