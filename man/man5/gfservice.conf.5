@@ -2,12 +2,12 @@
 .\"     Title: gfservice.conf
 .\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 25 Feb 2026
+.\"      Date: 17 Apr 2026
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFSERVICE\&.CONF" "5" "25 Feb 2026" "Gfarm" "Gfarm"
+.TH "GFSERVICE\&.CONF" "5" "17 Apr 2026" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -176,7 +176,7 @@ command\&. The default value is empty (no option)\&.
 \fBgfservice\fR
 refers this variable to perform
 \fBconfig\-gfarm\fR
-and many other sub\-commands\&. Do not delete or edit the declaration even after
+and many other sub\-commands\&. If only "sasl" is specified as the authentication type, "tls_client_certificate" will also be added as an authentication type to a gfarm2\&.conf file on all hosts\&. Do not delete or edit the declaration even after
 \fBconfig\-gfarm\fR
 has been complete\&.
 .RE
@@ -186,9 +186,9 @@ has been complete\&.
 Set this variable to "true" if gfmd on the remote host is configured in private mode\&.
 .RE
 .PP
-\fIgfmd\fR\fI\fIn\fR\fR\fI_AUTH_TYPE\fR
+\fIgfmd\fR\fI\fIn\fR\fR\fI_AUTH_TYPES\fR
 .RS 4
-Specify authentication type ("sharedsecret", "gsi" or "gsi_auth")\&. If the variable is not declared, its value is chosen from
+Specify authentication types ("sharedsecret", "sasl_auth", "sasl", "tls_sharedsecret", "tls_client_certificate", "kerberos_auth", "kerberos", "gsi_auth", or "gsi") as a space\-separated string (e\&.g\&., "sharedsecret gsi")\&. If the variable is not declared, its value is chosen from
 \fIAUTH_TYPES\fR
 value output by
 \fBconfig\-gfarm \-T\fR
@@ -275,9 +275,9 @@ has been complete\&.
 Set this variable to "true" if gfsd on the remote host is configured in private mode\&.
 .RE
 .PP
-\fIgfsd\fR\fI\fIn\fR\fR\fI_AUTH_TYPE\fR
+\fIgfsd\fR\fI\fIn\fR\fR\fI_AUTH_TYPES\fR
 .RS 4
-Specify authentication type ("sharedsecret", "gsi" or "gsi_auth")\&. If the variable is not declared, its value is chosen from
+Specify authentication types ("sharedsecret", "sasl_auth", "sasl", "tls_sharedsecret", "tls_client_certificate", "kerberos_auth", "kerberos", "gsi_auth", or "gsi") as a space\-separated string (e\&.g\&., "sharedsecret gsi")\&. If the variable is not declared, its value is chosen from
 \fIAUTH_TYPES\fR
 value output by
 \fBconfig\-gfarm \-T\fR
@@ -376,9 +376,9 @@ processes the sub\-command
 without root privilege\&.
 .RE
 .PP
-\fIclient\fR\fI\fIn\fR\fR\fI_AUTH_TYPE\fR
+\fIclient\fR\fI\fIn\fR\fR\fI_AUTH_TYPES\fR
 .RS 4
-Specify authentication type ("sharedsecret", "gsi" or "gsi_auth")\&. If the variable is not declared, its value is chosen from
+Specify authentication types ("sharedsecret", "sasl_auth", "sasl", "tls_sharedsecret", "tls_client_certificate", "kerberos_auth", "kerberos", "gsi_auth", or "gsi") as a space\-separated string (e\&.g\&., "sharedsecret gsi")\&. If the variable is not declared, its value is chosen from
 \fIAUTH_TYPES\fR
 value output by
 \fBconfig\-gfarm \-T\fR

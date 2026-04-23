@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: gfservice
-.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 6 Jun 2013
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 23 Apr 2026
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFSERVICE" "1" "6 Jun 2013" "Gfarm" "Gfarm"
+.TH "GFSERVICE" "1" "23 Apr 2026" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -34,7 +34,6 @@ gfservice \- control Gfarm servers from a remote host
 \fBgfservice\fR [\fIoptions\fR] sub\-command [host\-id] [\fIargument\ \&.\&.\&.\fR]
 .SH "DESCRIPTION"
 .PP
-
 \fBgfservice\fR
 is an utility for Gfarm administrators to operate servers (\fBgfmd\fR,
 \fBgfsd\fR
@@ -84,7 +83,6 @@ uses host\-id instead of hostname\&. All host\-ids (\fIgfmd1\fR,
 .RE
 .\}
 .PP
-
 \fBgfservice\fR
 determines a path of the configuration file to be read with the following procedures:
 .sp
@@ -96,7 +94,6 @@ determines a path of the configuration file to be read with the following proced
 .sp -1
 .IP "  1." 4.2
 .\}
-
 \fB\-f\fR
 \fIfile\fR
 option is specified, read
@@ -135,7 +132,6 @@ fails to read a configuration file, it prints an error message and exits immedia
 includes (exactly to say,
 \fIevaluates\fR) the file\&. See gfservice\&.conf(5) for more details about the configuration file\&.
 .PP
-
 \fBgfservice\fR
 uses SSH (Secure Shell) to connect with a remote host\&. Since it may execute
 \fBssh\fR
@@ -175,7 +171,6 @@ on the remote host using SSH and Sudo,
 command must have been installed on all hosts you want to operate using
 \fBgfservice\fR\&.
 .PP
-
 \fBgfservice\fR
 has a plug\-in system so that user can add new sub\-commands\&. See "PLUG\-IN SYSTEM" section of this man page for more details\&.
 .SH "OPTIONS"
@@ -221,7 +216,7 @@ creates a shared secret key files using
 \fBgfkey\fR
 command\&.
 .RE
-.SH "SUB-COMMANDS FOR GFMD"
+.SH "SUB\-COMMANDS FOR GFMD"
 .PP
 The followings are sub\-commands which operate
 \fBgfmd\fR\&. The given host\-id argument must be "gfmd\fIn\fR" (gfmd1, gfmd2, \&.\&.\&.)\&. Otherwise
@@ -540,7 +535,7 @@ file on the master gfmd host and distribute the updated
 gfarm2\&.conf
 file to all hosts defined in the configuration file\&. It also updates
 gfsd\&.conf
-file and distributes it to all gfmd and gfsd hosts, if "gfmd\fIn\fR_PRIVATE_MODE" variable is set to "true"\&. If the value of the variable "gfmd\fIn\fR_AUTH_TYPE" is "sharedsecret", it also copies a shared key file from the maste gfmd to the slave gfmd host\&.
+file and distributes it to all gfmd and gfsd hosts, if "gfmd\fIn\fR_PRIVATE_MODE" variable is set to "true"\&. If "sharedsecret" or "tls_sharedsecret" is included in the variable "gfmd\fIn\fR_AUTH_TYPES", it also copies a shared key file from the master gfmd to the slave gfmd host\&.
 .RE
 .PP
 \fBunconfig\-gfarm\fR \fIhost\-id\fR
@@ -567,7 +562,7 @@ file on all hosts defined in the configuration file\&. It also updates
 gfsd\&.conf
 file and distributes it to all gfmd and gfsd hosts, if "gfmd\fIn\fR_PRIVATE_MODE" variable is set to "true"\&.
 .RE
-.SH "SUB-COMMANDS FOR GFSD"
+.SH "SUB\-COMMANDS FOR GFSD"
 .PP
 The followings are sub\-commands which operate
 \fBgfsd\fR\&. The given host\-id argument must be "gfsd\fIn\fR" (gfsd1, gfsd2, \&.\&.\&.)\&. Otherwise
@@ -651,14 +646,14 @@ command as options\&.
 \fBgfservice\fR
 also registers the configured remote host as a filesystem node using
 \fBgfhost\fR
-command\&. If the value of the variable "gfsd\fIn\fR_AUTH_TYPE" is "sharedsecret", it also copies a shared key file from gfmd1 to the gfsd host\&.
+command\&. If "sharedsecret" or "tls_sharedsecret" is included in the variable "gfsd\fIn\fR_AUTH_TYPES", it also copies a shared key file from gfmd1 to the gfsd host\&.
 .RE
 .PP
 \fBunconfig\-gfsd\fR \fIhost\-id\fR
 .RS 4
 Execute "\fBstop\-gfsd\fR" sub\-command and then delete all files and directories created by gfsd\&.
 .RE
-.SH "SUB-COMMANDS FOR CLIENT"
+.SH "SUB\-COMMANDS FOR CLIENT"
 .PP
 The followings are sub\-commands which operate a client\&. The given host\-id argument must be "gfmd\fIn\fR" (gfmd1, gfmd2, \&.\&.\&.), "gfsd\fIn\fR" (gfsd1, gfsd2, \&.\&.\&.) or "client\fIn\fR" (client1, client2, \&.\&.\&.)\&. Otherwise
 \fBgfservice\fR
@@ -759,7 +754,7 @@ reads a backup of the shared secret key from standard in\&.
 .RS 4
 Copy
 gfarm2\&.conf
-file from gfmd1 to the client host\&. If the value of the variable "client\fIn\fR_AUTH_TYPE" is "sharedsecret", it also copies a shared key file from gfmd1 to the client host\&.
+file from gfmd1 to the client host\&. If "sharedsecret" or "tls_sharedsecret" is included in the variable "client\fIn\fR_AUTH_TYPES", it also copies a shared key file from gfmd1 to the client host\&.
 .RE
 .PP
 \fBunconfig\-client\fR \fIhost\-id\fR
@@ -785,7 +780,7 @@ Execute
 \fBgrid\-proxy\-init\fR
 command on the remote host\&.
 .RE
-.SH "SUB-COMMANDS FOR MULTIPLE HOSTS"
+.SH "SUB\-COMMANDS FOR MULTIPLE HOSTS"
 .PP
 The followings are sub\-commands which operate on multiple hosts\&. The host\-id argument must not be specified\&.
 .PP
@@ -830,9 +825,8 @@ and "\fBconfig\-gfarm\-slave\fR" for all other gfmd nodes\&. Then, perform "\fBc
 .RS 4
 Perform "\fBunconfig\-client\fR" for all client nodes\&. Then, perform "\fBunconfig\-gfsd\fR" for all gfds nodes\&. Finally, perform "\fBunconfig\-gfarm\fR" for all gfmd nodes\&.
 .RE
-.SH "PLUG-IN SYSTEM"
+.SH "PLUG\-IN SYSTEM"
 .PP
-
 \fBgfservice\fR
 has a plug\-in system so that user can add new sub\-commands\&. If given sub\-command is not provided by
 \fBgfservice\fR,

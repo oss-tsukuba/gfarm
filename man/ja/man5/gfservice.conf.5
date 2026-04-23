@@ -2,12 +2,12 @@
 .\"     Title: gfservice.conf
 .\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 25 Feb 2026
+.\"      Date: 17 Apr 2026
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFSERVICE\&.CONF" "5" "25 Feb 2026" "Gfarm" "Gfarm"
+.TH "GFSERVICE\&.CONF" "5" "17 Apr 2026" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -168,7 +168,7 @@ gfmd サーバー上で
 \fBgfservice\fR
 は
 \fBconfig\-gfarm\fR
-サブコマンド およびその他多くのサブコマンドを実行する際に、この変数を参照します。
+サブコマンド およびその他多くのサブコマンドを実行する際に、この変数を参照します。 認証タイプとして "sasl" のみが指定されている場合、全てのホストのgfarm2\&.confファイルに "tls_client_certificate" も認証タイプとして追加されます。
 \fBconfig\-gfarm\fR
 が完了した後であっても、この変数の宣言を 削除したり、編集したりはしないで下さい。
 .RE
@@ -178,9 +178,9 @@ gfmd サーバー上で
 リモートホスト上の gfmd をプライベートモードで動作させる場合は、この 変数に「true」をセットします。
 .RE
 .PP
-\fIgfmd\fR\fI\fIn\fR\fR\fI_AUTH_TYPE\fR
+\fIgfmd\fR\fI\fIn\fR\fR\fI_AUTH_TYPES\fR
 .RS 4
-認証タイプ ("sharedsecret", "gsi", "gsi_auth" のいずれか) を指定します。 この変数が定義されていない場合は、gfmd1 上で
+認証タイプ ("sharedsecret", "sasl_auth", "sasl", "tls_sharedsecret", "tls_client_certificate", "kerberos_auth", "kerberos", "gsi_auth", または "gsi") を空白区切りの文字列で指定します。 この変数が定義されていない場合は、gfmd1 上で
 \fBconfig\-gfarm \-T\fR
 を実行したときの
 \fIAUTH_TYPES\fR
@@ -263,9 +263,9 @@ gfsd サーバー上で
 リモートホスト上の gfsd をプライベートモードで動作させる場合は、この 変数に「true」をセットします。
 .RE
 .PP
-\fIgfsd\fR\fI\fIn\fR\fR\fI_AUTH_TYPE\fR
+\fIgfsd\fR\fI\fIn\fR\fR\fI_AUTH_TYPES\fR
 .RS 4
-認証タイプ ("sharedsecret", "gsi", "gsi_auth" のいずれか) を指定します。 この変数が定義されていない場合は、gfmd1 上で
+認証タイプ ("sharedsecret", "sasl_auth", "sasl", "tls_sharedsecret", "tls_client_certificate", "kerberos_auth", "kerberos", "gsi_auth", または "gsi") を空白区切りの文字列で指定します。 この変数が定義されていない場合は、gfmd1 上で
 \fBconfig\-gfarm \-T\fR
 を実行したときの
 \fIAUTH_TYPES\fR
@@ -357,9 +357,9 @@ gfarm2\&.confファイルのパスを絶対パスで指定します。 この値
 を実行する際、クライアント ホスト側の処理は root 権限を持たずに行います。
 .RE
 .PP
-\fIclient\fR\fI\fIn\fR\fR\fI_AUTH_TYPE\fR
+\fIclient\fR\fI\fIn\fR\fR\fI_AUTH_TYPES\fR
 .RS 4
-認証タイプ ("sharedsecret", "gsi", "gsi_auth" のいずれか) を指定します。 この変数が定義されていない場合は、gfmd1 上で
+認証タイプ ("sharedsecret", "sasl_auth", "sasl", "tls_sharedsecret", "tls_client_certificate", "kerberos_auth", "kerberos", "gsi_auth", または "gsi") を空白区切りの文字列で指定します。 この変数が定義されていない場合は、gfmd1 上で
 \fBconfig\-gfarm \-T\fR
 を実行したときの
 \fIAUTH_TYPES\fR

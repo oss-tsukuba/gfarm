@@ -125,6 +125,8 @@ Specify options of <span class="command"><strong>config-gfarm</strong></span> co
 The default value is empty (no option).
 <span class="command"><strong>gfservice</strong></span> refers this variable to perform
 <span class="command"><strong>config-gfarm</strong></span> and many other sub-commands.
+If only "sasl" is specified as the authentication type,
+"tls_client_certificate" will also be added as an authentication type to a gfarm2.conf file on all hosts.
 Do not delete or edit the declaration even after
 <span class="command"><strong>config-gfarm</strong></span> has been complete.
 </p></dd>
@@ -133,9 +135,11 @@ Do not delete or edit the declaration even after
 Set this variable to "true" if gfmd on the remote host is configured
 in private mode.
 </p></dd>
-<dt><span class="term"><code class="varname">gfmd<em class="replaceable"><code>n</code></em>_AUTH_TYPE</code></span></dt>
+<dt><span class="term"><code class="varname">gfmd<em class="replaceable"><code>n</code></em>_AUTH_TYPES</code></span></dt>
 <dd><p>
-Specify authentication type ("sharedsecret", "gsi" or "gsi_auth").
+Specify authentication types ("sharedsecret", "sasl_auth", "sasl", "tls_sharedsecret",
+ "tls_client_certificate", "kerberos_auth", "kerberos", "gsi_auth", or "gsi")
+ as a space-separated string (e.g., "sharedsecret gsi").
 If the variable is not declared, its value is chosen from
 <code class="varname">AUTH_TYPES</code> value output by
 <span class="command"><strong>config-gfarm -T</strong></span> command executed on gfmd1.
@@ -214,9 +218,11 @@ Do not delete or edit the declaration even after
 Set this variable to "true" if gfsd on the remote host is configured
 in private mode.
 </p></dd>
-<dt><span class="term"><code class="varname">gfsd<em class="replaceable"><code>n</code></em>_AUTH_TYPE</code></span></dt>
+<dt><span class="term"><code class="varname">gfsd<em class="replaceable"><code>n</code></em>_AUTH_TYPES</code></span></dt>
 <dd><p>
-Specify authentication type ("sharedsecret", "gsi" or "gsi_auth").
+Specify authentication types ("sharedsecret", "sasl_auth", "sasl", "tls_sharedsecret",
+ "tls_client_certificate", "kerberos_auth", "kerberos", "gsi_auth", or "gsi")
+ as a space-separated string (e.g., "sharedsecret gsi").
 If the variable is not declared, its value is chosen from
 <code class="varname">AUTH_TYPES</code> value output by
 <span class="command"><strong>config-gfarm -T</strong></span> command executed on gfmd1.
@@ -308,9 +314,11 @@ shell variable).
 If this variable is set to "true", <span class="command"><strong>gfservice</strong></span> processes
 the sub-command <span class="command"><strong>config-client</strong></span> without root privilege.
 </p></dd>
-<dt><span class="term"><code class="varname">client<em class="replaceable"><code>n</code></em>_AUTH_TYPE</code></span></dt>
+<dt><span class="term"><code class="varname">client<em class="replaceable"><code>n</code></em>_AUTH_TYPES</code></span></dt>
 <dd><p>
-Specify authentication type ("sharedsecret", "gsi" or "gsi_auth").
+Specify authentication types ("sharedsecret", "sasl_auth", "sasl", "tls_sharedsecret",
+ "tls_client_certificate", "kerberos_auth", "kerberos", "gsi_auth", or "gsi")
+ as a space-separated string (e.g., "sharedsecret gsi").
 If the variable is not declared, its value is chosen from
 <code class="varname">AUTH_TYPES</code> value output by
 <span class="command"><strong>config-gfarm -T</strong></span> command executed on gfmd1.

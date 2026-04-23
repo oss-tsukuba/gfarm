@@ -2,19 +2,19 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfservice</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 </head>
-<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfservice">
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
 <a name="gfservice.1"></a><div class="titlepage"></div>
 <div class="refnamediv">
 <a name="name"></a><h2>Name</h2>
 <p>gfservice — control Gfarm servers from a remote host</p>
 </div>
-<div class="refsynopsisdiv" title="Synopsis">
+<div class="refsynopsisdiv">
 <a name="synopsis"></a><h2>Synopsis</h2>
 <div class="cmdsynopsis"><p><code class="command">gfservice</code>  [<em class="replaceable"><code>options</code></em>]  sub-command  [host-id] [<em class="replaceable"><code>argument ...</code></em>]</p></div>
 </div>
-<div class="refsect1" title="DESCRIPTION">
+<div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p>
 <span class="command"><strong>gfservice</strong></span> is an utility for Gfarm administrators
@@ -109,9 +109,9 @@ new sub-commands. See "PLUG-IN SYSTEM" section of this man page for
 more details.
 </p>
 </div>
-<div class="refsect1" title="OPTIONS">
+<div class="refsect1">
 <a name="options"></a><h2>OPTIONS</h2>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="option">-d</code></span></dt>
 <dd><p>
 Print debug information.
@@ -142,7 +142,7 @@ command.
 </p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="SUB-COMMANDS FOR GFMD">
+<div class="refsect1">
 <a name="gfmd-sub-commands"></a><h2>SUB-COMMANDS FOR GFMD</h2>
 <p>
 The followings are sub-commands which operate <span class="command"><strong>gfmd</strong></span>.
@@ -151,7 +151,7 @@ The given host-id argument must be "gfmd<em class="replaceable"><code>n</code></
 Otherwise <span class="command"><strong>gfservice</strong></span> reports an error and exits
 immediately.
 </p>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term">
 <span class="command"><strong>backend-db-status</strong></span>
 <em class="parameter"><code>host-id</code></em>
@@ -497,8 +497,8 @@ defined in the configuration file.
 It also updates <code class="filename">gfsd.conf</code> file and distributes it to
 all gfmd and gfsd hosts, if "gfmd<em class="replaceable"><code>n</code></em>_PRIVATE_MODE"
 variable is set to "true".
-If the value of the variable "gfmd<em class="replaceable"><code>n</code></em>_AUTH_TYPE"
-is "sharedsecret", it also copies a shared key file from the maste gfmd
+If "sharedsecret" or "tls_sharedsecret" is included in the variable "gfmd<em class="replaceable"><code>n</code></em>_AUTH_TYPES",
+it also copies a shared key file from the master gfmd
 to the slave gfmd host.
 </p></dd>
 <dt><span class="term">
@@ -537,7 +537,7 @@ variable is set to "true".
 </p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="SUB-COMMANDS FOR GFSD">
+<div class="refsect1">
 <a name="gfsd-sub-commands"></a><h2>SUB-COMMANDS FOR GFSD</h2>
 <p>
 The followings are sub-commands which operate <span class="command"><strong>gfsd</strong></span>.
@@ -546,7 +546,7 @@ The given host-id argument must be "gfsd<em class="replaceable"><code>n</code></
 Otherwise <span class="command"><strong>gfservice</strong></span> reports an error and exits
 immediately.
 </p>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term">
 <span class="command"><strong>gfsd-status</strong></span>
 <em class="parameter"><code>host-id</code></em>
@@ -632,8 +632,8 @@ its value is passed to <span class="command"><strong>config-gfsd</strong></span>
 options.
 <span class="command"><strong>gfservice</strong></span> also registers the configured remote host
 as a filesystem node using <span class="command"><strong>gfhost</strong></span> command.
-If the value of the variable "gfsd<em class="replaceable"><code>n</code></em>_AUTH_TYPE"
-is "sharedsecret", it also copies a shared key file from gfmd1 to the
+If "sharedsecret" or "tls_sharedsecret" is included in the variable "gfsd<em class="replaceable"><code>n</code></em>_AUTH_TYPES",
+it also copies a shared key file from gfmd1 to the
 gfsd host.
 </p></dd>
 <dt><span class="term">
@@ -646,7 +646,7 @@ files and directories created by gfsd.
 </p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="SUB-COMMANDS FOR CLIENT">
+<div class="refsect1">
 <a name="client-sub-commands"></a><h2>SUB-COMMANDS FOR CLIENT</h2>
 <p>
 The followings are sub-commands which operate a client.
@@ -656,7 +656,7 @@ or "client<em class="replaceable"><code>n</code></em>" (client1, client2, ...).
 Otherwise <span class="command"><strong>gfservice</strong></span> reports an error and exits
 immediately.
 </p>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term">
 <span class="command"><strong>mount</strong></span>
 <em class="parameter"><code>host-id</code></em>
@@ -757,8 +757,8 @@ standard in.
 <dd><p>
 Copy <code class="filename">gfarm2.conf</code> file from gfmd1 to the client
 host.
-If the value of the variable "client<em class="replaceable"><code>n</code></em>_AUTH_TYPE"
-is "sharedsecret", it also copies a shared key file from gfmd1 to the
+If "sharedsecret" or "tls_sharedsecret" is included in the variable "client<em class="replaceable"><code>n</code></em>_AUTH_TYPES",
+it also copies a shared key file from gfmd1 to the
 client host.
 </p></dd>
 <dt><span class="term">
@@ -798,13 +798,13 @@ the remote host.
 </p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="SUB-COMMANDS FOR MULTIPLE HOSTS">
+<div class="refsect1">
 <a name="multi-host-sub-commands"></a><h2>SUB-COMMANDS FOR MULTIPLE HOSTS</h2>
 <p>
 The followings are sub-commands which operate on multiple hosts.
 The host-id argument must not be specified.
 </p>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term">
 <span class="command"><strong>start-all</strong></span>
 </span></dt>
@@ -852,7 +852,7 @@ Finally, perform "<span class="command"><strong>unconfig-gfarm</strong></span>" 
 </p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="PLUG-IN SYSTEM">
+<div class="refsect1">
 <a name="plugin"></a><h2>PLUG-IN SYSTEM</h2>
 <p>
 <span class="command"><strong>gfservice</strong></span> has a plug-in system so that user can add

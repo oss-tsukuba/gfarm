@@ -2,19 +2,19 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfservice</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 </head>
-<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfservice">
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
 <a name="gfservice.1"></a><div class="titlepage"></div>
 <div class="refnamediv">
 <a name="name"></a><h2>Name</h2>
 <p>gfservice — リモートホストから Gfarm のサーバーを制御する。</p>
 </div>
-<div class="refsynopsisdiv" title="Synopsis">
+<div class="refsynopsisdiv">
 <a name="synopsis"></a><h2>Synopsis</h2>
 <div class="cmdsynopsis"><p><code class="command">gfservice</code>  [<em class="replaceable"><code>オプション</code></em>]  サブコマンド  [ホストID] [<em class="replaceable"><code>引数 ...</code></em>]</p></div>
 </div>
-<div class="refsect1" title="DESCRIPTION">
+<div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p>
 <span class="command"><strong>gfservice</strong></span> は、Gfarm の管理者がリモートホスト上の
@@ -114,9 +114,9 @@ gfservice は SSH と Sudo を用いて、リモートホスト上にある
 詳しい説明は "PLUG-IN SYSTEM" の節を参照して下さい。
 </p>
 </div>
-<div class="refsect1" title="OPTIONS">
+<div class="refsect1">
 <a name="options"></a><h2>OPTIONS</h2>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="option">-d</code></span></dt>
 <dd><p>
 デバッグ情報を出力します。
@@ -148,7 +148,7 @@ gfservice は SSH と Sudo を用いて、リモートホスト上にある
 </p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="SUB-COMMANDS FOR GFMD">
+<div class="refsect1">
 <a name="gfmd-sub-commands"></a><h2>SUB-COMMANDS FOR GFMD</h2>
 <p>
 以下に挙げているのは、<span class="command"><strong>gfmd</strong></span> を操作するサブコマンドです。
@@ -157,7 +157,7 @@ gfservice は SSH と Sudo を用いて、リモートホスト上にある
 それ以外の場合、<span class="command"><strong>gfservice</strong></span> はエラーを通知してただちに
 終了します。
 </p>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term">
 <span class="command"><strong>backend-db-status</strong></span>
 <em class="parameter"><code>ホストID</code></em>
@@ -494,8 +494,8 @@ gfmd のレプリケーションが自動的に有効になります。
 変数「gfmd<em class="replaceable"><code>n</code></em>_PRIVATE_MODE」の値が「true」に
 セットされている場合は、同様に <code class="filename">gfsd.conf</code> ファイル
 を更新し、すべての gfmd ホストと gfsd ホストに配布します。
-変数「gfmd<em class="replaceable"><code>n</code></em>_AUTH_TYPE」の値が「sharedsecret」
-の場合、共有秘密鍵ファイルをマスター gfmd ホストからこのスレーブ gfmd
+変数「gfmd<em class="replaceable"><code>n</code></em>_AUTH_TYPES」に「sharedsecret」ないし「tls_sharedsecret」が含まれている場合、
+共有秘密鍵ファイルをマスター gfmd ホストからこのスレーブ gfmd
 ホストへコピーします。
 </p></dd>
 <dt><span class="term">
@@ -535,7 +535,7 @@ gfmd のレプリケーションが自動的に有効になります。
 </p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="SUB-COMMANDS FOR GFSD">
+<div class="refsect1">
 <a name="gfsd-sub-commands"></a><h2>SUB-COMMANDS FOR GFSD</h2>
 <p>
 以下に挙げているのは、<span class="command"><strong>gfsd</strong></span> を操作するサブコマンドです。
@@ -544,7 +544,7 @@ gfmd のレプリケーションが自動的に有効になります。
 それ以外の場合、<span class="command"><strong>gfservice</strong></span> はエラーを通知してただちに
 終了します。
 </p>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term">
 <span class="command"><strong>gfsd-status</strong></span>
 <em class="parameter"><code>ホストID</code></em>
@@ -630,8 +630,8 @@ gfmd 用の <span class="command"><strong>restore-usermap</strong></span> サブ
 その値が <span class="command"><strong>config-gfsd</strong></span> にオプションとして付与されます。
 また、<span class="command"><strong>gfservice</strong></span> は <span class="command"><strong>gfhost</strong></span> コマンド
 を用いて、リモートホストをファイルシステムノードとして登録します。
-変数「gfsd<em class="replaceable"><code>n</code></em>_AUTH_TYPE」の値が「sharedsecret」
-の場合、共有秘密鍵ファイルを gfmd1 から gfsd ホストへコピーします。
+変数「gfsd<em class="replaceable"><code>n</code></em>_AUTH_TYPES」に「sharedsecret」ないし「tls_sharedsecret」が含まれている場合、
+共有秘密鍵ファイルを gfmd1 から gfsd ホストへコピーします。
 </p></dd>
 <dt><span class="term">
 <span class="command"><strong>unconfig-gfsd</strong></span>
@@ -643,7 +643,7 @@ gfmd 用の <span class="command"><strong>restore-usermap</strong></span> サブ
 </p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="SUB-COMMANDS FOR CLIENT">
+<div class="refsect1">
 <a name="client-sub-commands"></a><h2>SUB-COMMANDS FOR CLIENT</h2>
 <p>
 以下に挙げているのは、クライアントを操作するサブコマンドです。
@@ -654,7 +654,7 @@ gfmd 用の <span class="command"><strong>restore-usermap</strong></span> サブ
 それ以外の場合、<span class="command"><strong>gfservice</strong></span> はエラーを通知してただちに
 終了します。
 </p>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term">
 <span class="command"><strong>mount</strong></span>
 <em class="parameter"><code>ホストID</code></em>
@@ -752,8 +752,8 @@ Gfarm2 ファイルシステムをアンマウントします。
 <em class="parameter"><code>ホストID</code></em>
 </span></dt>
 <dd><p>
-変数「client<em class="replaceable"><code>n</code></em>_AUTH_TYPE」の値が「sharedsecret」
-の場合、共有秘密鍵ファイルを gfmd1 からクライアントホストへコピーします。
+変数「client<em class="replaceable"><code>n</code></em>_AUTH_TYPES」に「sharedsecret」ないし「tls_sharedsecret」が含まれている場合、
+共有秘密鍵ファイルを gfmd1 からクライアントホストへコピーします。
 </p></dd>
 <dt><span class="term">
 <span class="command"><strong>unconfig-client</strong></span>
@@ -792,13 +792,13 @@ Gfarm2 ファイルシステムをアンマウントします。
 </p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="SUB-COMMANDS FOR MULTIPLE HOSTS">
+<div class="refsect1">
 <a name="multi-host-sub-commands"></a><h2>SUB-COMMANDS FOR MULTIPLE HOSTS</h2>
 <p>
 以下に挙げているのは、複数のホストを操作するサブコマンドです。
 コマンド行で、ホストID を指定することはできません。
 </p>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term">
 <span class="command"><strong>start-all</strong></span>
 </span></dt>
@@ -847,7 +847,7 @@ Gfarm2 ファイルシステムをアンマウントします。
 </p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="PLUG-IN SYSTEM">
+<div class="refsect1">
 <a name="plugin"></a><h2>PLUG-IN SYSTEM</h2>
 <p>
 <span class="command"><strong>gfservice</strong></span>はユーザが新しくサブコマンドが追加できるよ

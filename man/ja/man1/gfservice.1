@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: gfservice
-.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 15 Feb 2013
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 23 Apr 2026
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFSERVICE" "1" "15 Feb 2013" "Gfarm" "Gfarm"
+.TH "GFSERVICE" "1" "23 Apr 2026" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -34,14 +34,12 @@ gfservice \- リモートホストから Gfarm のサーバーを制御する。
 \fBgfservice\fR [\fIオプション\fR] サブコマンド [ホストID] [\fI引数\ \&.\&.\&.\fR]
 .SH "DESCRIPTION"
 .PP
-
 \fBgfservice\fR
 は、Gfarm の管理者がリモートホスト上の サーバー (\fBgfmd\fR、\fBgfsd\fR、PostgreSQL) を操作するためのツールです。 今のところ、OpenLDAP には対応していません。 サーバーの実行開始、停止、セットアップ (\fBconfig\-gfarm\fR
 や
 \fBconfig\-gfsd\fR
 の実行)、 サーバー廃止の後始末といったことができます。
 .PP
-
 \fBgfservice\fR
 のコマンド行は、たとえば次のようになります。
 .sp
@@ -78,7 +76,6 @@ gfservice \- リモートホストから Gfarm のサーバーを制御する。
 .RE
 .\}
 .PP
-
 \fBgfservice\fR
 は、読み込むべき設定ファイルのパスを次の要領 で決定します。
 .sp
@@ -119,12 +116,10 @@ gfservice \- リモートホストから Gfarm のサーバーを制御する。
 を読み込みます。
 .RE
 .PP
-
 \fBgfservice\fR
 は設定ファイルの読み込みに失敗すると、 エラーメッセージを出力して、ただちに終了します。 設定ファイルそれ自体は Bourne シェルスクリプトで、\fBgfservice\fR
 はそのファイルを自身の一部として取り込みます (正確に言えば、スクリプト として評価します)。 設定ファイルについての詳しい説明は、gfservice\&.conf(5) を参照して下さい。
 .PP
-
 \fBgfservice\fR
 は、リモートホストと接続するために、SSH (Secure Shell) を使用します。 サブコマンド 1 個の処理を遂行する間、何度も
 \fBssh\fR
@@ -161,7 +156,6 @@ gfservice は SSH と Sudo を用いて、リモートホスト上にある
 \fBgfservice\-agent\fR
 をインストールしておく必要があります。
 .PP
-
 \fBgfservice\fRはユーザが新しくサブコマンドを追加できるよ うに、プラグインシステムを採用しています。 詳しい説明は "PLUG\-IN SYSTEM" の節を参照して下さい。
 .SH "OPTIONS"
 .PP
@@ -201,7 +195,7 @@ gfservice は SSH と Sudo を用いて、リモートホスト上にある
 \fBgfkey\fR
 コマンドを用いて 共有秘密鍵ファイルを作成します。
 .RE
-.SH "SUB-COMMANDS FOR GFMD"
+.SH "SUB\-COMMANDS FOR GFMD"
 .PP
 以下に挙げているのは、\fBgfmd\fR
 を操作するサブコマンドです。 コマンド行に与えるホストID は、「gfmd\fIn\fR」 (gfmd1, gfmd2, \&.\&.\&.) でなくてはなりません。 それ以外の場合、\fBgfservice\fR
@@ -224,7 +218,6 @@ gfmd が実行中であれば、終了コード 0 で終了します。 それ�
 .PP
 \fBstart\-gfmd\fR \fIホストID\fR
 .RS 4
-
 \fBgfmd\fR
 が実行中でなければ、実行を開始します。
 .RE
@@ -275,7 +268,6 @@ gfmd が実行中であれば、終了コード 0 で終了します。 それ�
 .PP
 \fBstop\-gfmd\fR \fIホストID\fR
 .RS 4
-
 \fBgfmd\fR
 が実行中なら、実行を停止します。
 .RE
@@ -289,7 +281,6 @@ gfmd が実行中であれば、終了コード 0 で終了します。 それ�
 .PP
 \fBkill\-gfmd\fR \fIホストID\fR
 .RS 4
-
 \fBgfmd\fR
 が実行中なら、強制停止 (SIGKILL を送付) します。
 .RE
@@ -353,7 +344,6 @@ gfmd が実行中であれば、終了コード 0 で終了します。 それ�
 .PP
 \fBpromote\fR \fIホストID\fR
 .RS 4
-
 \fBgfmd\fR
 をスレーブからマスターへ昇格させます。
 .RE
@@ -527,7 +517,7 @@ gfarm2\&.conf
 ファイル を更新して、\fImetadb_server_list\fR
 にこのスレーブホストを 加え、設定ファイルで定義されているすべてのホストに配布します。 変数「gfmd\fIn\fR_PRIVATE_MODE」の値が「true」に セットされている場合は、同様に
 gfsd\&.conf
-ファイル を更新し、すべての gfmd ホストと gfsd ホストに配布します。 変数「gfmd\fIn\fR_AUTH_TYPE」の値が「sharedsecret」 の場合、共有秘密鍵ファイルをマスター gfmd ホストからこのスレーブ gfmd ホストへコピーします。
+ファイル を更新し、すべての gfmd ホストと gfsd ホストに配布します。 変数「gfmd\fIn\fR_AUTH_TYPES」に「sharedsecret」ないし「tls_sharedsecret」が含まれている場合、 共有秘密鍵ファイルをマスター gfmd ホストからこのスレーブ gfmd ホストへコピーします。
 .RE
 .PP
 \fBunconfig\-gfarm\fR \fIホストID\fR
@@ -560,7 +550,7 @@ gfarm2\&.conf
 gfsd\&.conf
 ファイル を更新し、すべての gfmd ホストと gfsd ホストに配布します。
 .RE
-.SH "SUB-COMMANDS FOR GFSD"
+.SH "SUB\-COMMANDS FOR GFSD"
 .PP
 以下に挙げているのは、\fBgfsd\fR
 を操作するサブコマンドです。 コマンド行に与えるホストID は、「gfsd\fIn\fR」 (gfsd1, gfsd2, \&.\&.\&.) でなくてはなりません。 それ以外の場合、\fBgfservice\fR
@@ -573,14 +563,12 @@ gfsd が実行中であれば、終了コード 0 で終了します。 それ�
 .PP
 \fBstart\-gfsd\fR \fIホストID\fR
 .RS 4
-
 \fBgfsd\fR
 が実行中でなければ、実行を開始します。
 .RE
 .PP
 \fBstop\-gfsd\fR \fIホストID\fR
 .RS 4
-
 \fBgfsd\fR
 が実行中なら、実行を停止します。
 .RE
@@ -644,7 +632,7 @@ gfmd 用の
 にオプションとして付与されます。 また、\fBgfservice\fR
 は
 \fBgfhost\fR
-コマンド を用いて、リモートホストをファイルシステムノードとして登録します。 変数「gfsd\fIn\fR_AUTH_TYPE」の値が「sharedsecret」 の場合、共有秘密鍵ファイルを gfmd1 から gfsd ホストへコピーします。
+コマンド を用いて、リモートホストをファイルシステムノードとして登録します。 変数「gfsd\fIn\fR_AUTH_TYPES」に「sharedsecret」ないし「tls_sharedsecret」が含まれている場合、 共有秘密鍵ファイルを gfmd1 から gfsd ホストへコピーします。
 .RE
 .PP
 \fBunconfig\-gfsd\fR \fIホストID\fR
@@ -653,7 +641,7 @@ gfmd 用の
 \fBstop\-gfsd\fR
 を実行して、その後 gfsd が 作成したファイルやディレクトリをすべて削除します。
 .RE
-.SH "SUB-COMMANDS FOR CLIENT"
+.SH "SUB\-COMMANDS FOR CLIENT"
 .PP
 以下に挙げているのは、クライアントを操作するサブコマンドです。 コマンド行に与えるホストID は、「gfmd\fIn\fR」 (gfmd1, gfmd2, \&.\&.\&.)、「gfsd\fIn\fR」(gfsd1, gfsd2, \&.\&.\&.)、 「client\fIn\fR」(client1, client2, \&.\&.\&.) のいずれか でなくてはなりません。 それ以外の場合、\fBgfservice\fR
 はエラーを通知してただちに 終了します。
@@ -740,7 +728,7 @@ gfarm2\&.conf
 .PP
 \fBconfig\-client\fR \fIホストID\fR
 .RS 4
-変数「client\fIn\fR_AUTH_TYPE」の値が「sharedsecret」 の場合、共有秘密鍵ファイルを gfmd1 からクライアントホストへコピーします。
+変数「client\fIn\fR_AUTH_TYPES」に「sharedsecret」ないし「tls_sharedsecret」が含まれている場合、 共有秘密鍵ファイルを gfmd1 からクライアントホストへコピーします。
 .RE
 .PP
 \fBunconfig\-client\fR \fIホストID\fR
@@ -766,7 +754,7 @@ gfarm2\&.conf
 \fBgrid\-proxy\-init\fR
 コマンドを実行します。
 .RE
-.SH "SUB-COMMANDS FOR MULTIPLE HOSTS"
+.SH "SUB\-COMMANDS FOR MULTIPLE HOSTS"
 .PP
 以下に挙げているのは、複数のホストを操作するサブコマンドです。 コマンド行で、ホストID を指定することはできません。
 .PP
@@ -796,7 +784,6 @@ gfarm2\&.conf
 .PP
 \fBconfig\-all\fR
 .RS 4
-
 \fIgfmd1\fR
 に対して "\fBconfig\-gfarm\-master\fR" を実行し、それ以外のすべての gfmd に対して "\fBconfig\-gfarm\-slave\fR" を実行します。 次にすべての gfsd に対して "\fBconfig\-gfsd\fR" を実行します。 最後にすべてのクライアントに対して、"\fBconfig\-client\fR" を 実行します。
 .RE
@@ -805,9 +792,8 @@ gfarm2\&.conf
 .RS 4
 すべてのクライアントに対して、"\fBunconfig\-client\fR" を実行 します。 次にすべての gfsd に対して "\fBunconfig\-gfsd\fR" を実行します。 最後にすべての gfmd に対して "\fBunconfig\-gfarm\fR" を 実行します。
 .RE
-.SH "PLUG-IN SYSTEM"
+.SH "PLUG\-IN SYSTEM"
 .PP
-
 \fBgfservice\fRはユーザが新しくサブコマンドが追加できるよ うに、プラグインシステムを採用しています。指定されたサブコマンドを
 \fBgfservice\fRが提供していない場合、
 \fBgfservice\fRコマンドは %%DATADIR%%/gfarm/gfservice 以 下のサブコマンド名のファイルを参照します。
