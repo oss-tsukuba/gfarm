@@ -8,6 +8,7 @@ PROGNAME=`basename $0`
 awk=awk
 if [ -f /usr/bin/nawk ]; then awk=/usr/bin/nawk; fi
 
+: ${QUIET:=false}
 : ${FORCE:=false}
 : ${DRYRUN:=false}
 
@@ -37,7 +38,7 @@ fi
 
 usage()
 {
-        echo >&2 "usage: $PROGNAME [--help] [-f] [-t]"
+        echo >&2 "usage: $PROGNAME [--help] [--quiet] [-f] [-t]"
         exit 1
 }
 
@@ -51,6 +52,9 @@ parse_arguments()
 		# control options
 		  --help)
 			usage
+			;;
+		  --quiet)
+			QUIET=true
 			;;
 		  -t)
 			DRYRUN=true
@@ -95,20 +99,24 @@ service_unconfig()
 			$prefix/bin/gfhost -d "$GFSD_HOSTNAME"
 		fi
 	else
-		echo Please execute the following command on your host:
-		echo
-		echo "$prefix/bin/gfhost -d $GFSD_HOSTNAME"
-		echo
+		if ! $QUIET; then
+			echo Please execute the following command on your host:
+			echo
+			echo "$prefix/bin/gfhost -d $GFSD_HOSTNAME"
+			echo
+		fi
 	fi
 
 	if [ -f "$GFMD_CONF" ]; then
 		if [ X"$TEST_OPT" = "X-n" ]; then
-			echo
-			echo "The following files will not be deleted, because also gfmd has been configured:"
-			echo "  $GFARM_CONF"
-			echo "  $USERMAP_FILE"
-			if $PRIVATE_MODE; then
-				echo "  $GFARM_CLIENT_CONF"
+			if ! $QUIET; then
+				echo
+				echo "The following files will not be deleted, because also gfmd has been configured:"
+				echo "  $GFARM_CONF"
+				echo "  $USERMAP_FILE"
+				if $PRIVATE_MODE; then
+					echo "  $GFARM_CLIENT_CONF"
+				fi
 			fi
 		fi
 	else

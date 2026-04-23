@@ -1742,7 +1742,7 @@ subcmd_config_all()
 			|| log_warn "failed to config-client for $HOSTID"
 	done
 
-        log_debug "end subcmd_config_all"
+    log_debug "end subcmd_config_all"
 }
 
 #
@@ -1876,7 +1876,7 @@ subcmd_unconfig_all()
 			|| log_warn "failed to unconfig-gfarm for $HOSTID"
 	done
 
-        log_debug "end subcmd_unconfig_all"
+	log_debug "end subcmd_unconfig_all"
 }
 
 #
