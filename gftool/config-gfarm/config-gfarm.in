@@ -244,7 +244,7 @@ display_script_params()
     display_script_params_backend_port_$BACKEND_TYPE
 
     echo     "GFMD_PORT=$GFMD_PORT"
-    echo     "AUTH_TYPES=$AUTH_TYPES"
+    echo     "AUTH_TYPES='$AUTH_TYPES'"
 
     display_script_params_backend_optional_$BACKEND_TYPE
 
@@ -488,7 +488,7 @@ if [ -z "$AUTH_TYPES" ]; then
 		[ "$a" = sasl ] && AUTH="${AUTH:+$AUTH }sasl sasl_auth"
 	done
 
-	AUTH_TYPES="$AUTH sharedsecret"
+	AUTH_TYPES="${AUTH:+$AUTH }sharedsecret"
 fi
 
 if $PRIVATE_MODE; then

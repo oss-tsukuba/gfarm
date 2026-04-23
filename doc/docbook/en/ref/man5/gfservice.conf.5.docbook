@@ -5,7 +5,7 @@
 
 <refentry id="gfservice.conf.5">
 
-<refentryinfo><date>25 Feb 2026</date></refentryinfo>
+<refentryinfo><date>17 Apr 2026</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfservice.conf</refentrytitle>
@@ -160,6 +160,8 @@ Specify options of <command moreinfo="none">config-gfarm</command> command.
 The default value is empty (no option).
 <command moreinfo="none">gfservice</command> refers this variable to perform
 <command moreinfo="none">config-gfarm</command> and many other sub-commands.
+If only "sasl" is specified as the authentication type,
+"tls_client_certificate" will also be added as an authentication type to a gfarm2.conf file on all hosts.
 Do not delete or edit the declaration even after
 <command moreinfo="none">config-gfarm</command> has been complete.
 </para>
@@ -177,10 +179,12 @@ in private mode.
 </varlistentry>
 
 <varlistentry>
-<term><varname>gfmd<replaceable>n</replaceable>_AUTH_TYPE</varname></term>
+<term><varname>gfmd<replaceable>n</replaceable>_AUTH_TYPES</varname></term>
 <listitem>
 <para>
-Specify authentication type ("sharedsecret", "gsi" or "gsi_auth").
+Specify authentication types ("sharedsecret", "sasl_auth", "sasl", "tls_sharedsecret",
+ "tls_client_certificate", "kerberos_auth", "kerberos", "gsi_auth", or "gsi")
+ as a space-separated string (e.g., "sharedsecret gsi").
 If the variable is not declared, its value is chosen from
 <varname>AUTH_TYPES</varname> value output by
 <command moreinfo="none">config-gfarm -T</command> command executed on gfmd1.
@@ -300,10 +304,12 @@ in private mode.
 </varlistentry>
 
 <varlistentry>
-<term><varname>gfsd<replaceable>n</replaceable>_AUTH_TYPE</varname></term>
+<term><varname>gfsd<replaceable>n</replaceable>_AUTH_TYPES</varname></term>
 <listitem>
 <para>
-Specify authentication type ("sharedsecret", "gsi" or "gsi_auth").
+Specify authentication types ("sharedsecret", "sasl_auth", "sasl", "tls_sharedsecret",
+ "tls_client_certificate", "kerberos_auth", "kerberos", "gsi_auth", or "gsi")
+ as a space-separated string (e.g., "sharedsecret gsi").
 If the variable is not declared, its value is chosen from
 <varname>AUTH_TYPES</varname> value output by
 <command moreinfo="none">config-gfarm -T</command> command executed on gfmd1.
@@ -453,10 +459,12 @@ the sub-command <command moreinfo="none">config-client</command> without root pr
 </varlistentry>
 
 <varlistentry>
-<term><varname>client<replaceable>n</replaceable>_AUTH_TYPE</varname></term>
+<term><varname>client<replaceable>n</replaceable>_AUTH_TYPES</varname></term>
 <listitem>
 <para>
-Specify authentication type ("sharedsecret", "gsi" or "gsi_auth").
+Specify authentication types ("sharedsecret", "sasl_auth", "sasl", "tls_sharedsecret",
+ "tls_client_certificate", "kerberos_auth", "kerberos", "gsi_auth", or "gsi")
+ as a space-separated string (e.g., "sharedsecret gsi").
 If the variable is not declared, its value is chosen from
 <varname>AUTH_TYPES</varname> value output by
 <command moreinfo="none">config-gfarm -T</command> command executed on gfmd1.

@@ -5,7 +5,7 @@
 
 <refentry id="gfservice.1">
 
-<refentryinfo><date>6 Jun 2013</date></refentryinfo>
+<refentryinfo><date>23 Apr 2026</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfservice</refentrytitle>
@@ -743,8 +743,8 @@ defined in the configuration file.
 It also updates <filename moreinfo="none">gfsd.conf</filename> file and distributes it to
 all gfmd and gfsd hosts, if "gfmd<replaceable>n</replaceable>_PRIVATE_MODE"
 variable is set to "true".
-If the value of the variable "gfmd<replaceable>n</replaceable>_AUTH_TYPE"
-is "sharedsecret", it also copies a shared key file from the maste gfmd
+If "sharedsecret" or "tls_sharedsecret" is included in the variable "gfmd<replaceable>n</replaceable>_AUTH_TYPES",
+it also copies a shared key file from the master gfmd
 to the slave gfmd host.
 </para>
 </listitem>
@@ -952,8 +952,8 @@ its value is passed to <command moreinfo="none">config-gfsd</command> command as
 options.
 <command moreinfo="none">gfservice</command> also registers the configured remote host
 as a filesystem node using <command moreinfo="none">gfhost</command> command.
-If the value of the variable "gfsd<replaceable>n</replaceable>_AUTH_TYPE"
-is "sharedsecret", it also copies a shared key file from gfmd1 to the
+If "sharedsecret" or "tls_sharedsecret" is included in the variable "gfsd<replaceable>n</replaceable>_AUTH_TYPES",
+it also copies a shared key file from gfmd1 to the
 gfsd host.
 </para>
 </listitem>
@@ -1136,8 +1136,8 @@ standard in.
 <para>
 Copy <filename moreinfo="none">gfarm2.conf</filename> file from gfmd1 to the client
 host.
-If the value of the variable "client<replaceable>n</replaceable>_AUTH_TYPE"
-is "sharedsecret", it also copies a shared key file from gfmd1 to the
+If "sharedsecret" or "tls_sharedsecret" is included in the variable "client<replaceable>n</replaceable>_AUTH_TYPES",
+it also copies a shared key file from gfmd1 to the
 client host.
 </para>
 </listitem>
