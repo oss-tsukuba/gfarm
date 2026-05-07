@@ -514,20 +514,6 @@ create_user()
       --password "${PASSWORD}" || ignore
 }
 
-update_user()
-{
-    local USER="$1"
-    local GFARM_USER="$2"
-    shift
-    shift
-
-    local USER_ID
-
-    USER_ID=$(get_user_id "${USER}" || ignore)
-    ARG='attributes."hpci.id"='"${GFARM_USER}"
-    ${KCADM} update users/${USER_ID} -r ${REALM} \
-                 -s "${ARG}"
-}
 
 i=0
 for t in $(seq 1 "$GFDOCKER_NUM_TENANTS"); do
@@ -551,8 +537,9 @@ i=0
 for t in $(seq 1 "$GFDOCKER_NUM_TENANTS"); do
  for u in $(seq 1 "$GFDOCKER_NUM_USERS"); do
   i=$((i + 1))
-  guser="$(gfuser_from_index $t $u)"
-  tenant_user_suffix="$(gftenant_user_suffix_from_index $t)"
-  update_user "${GFDOCKER_USERNAME_PREFIX}${i}" "${guser}${tenant_user_suffix}"
+  user="${GFDOCKER_USERNAME_PREFIX}${i}"
+  user_id=$(get_user_id "${user}" || ignore)
+  arg='attributes."hpci.id"='"${user}"
+  ${KCADM} update users/${user_id} -r ${REALM} -s "${arg}"
  done
 done

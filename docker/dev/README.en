@@ -141,7 +141,7 @@ To explicitly test xoauth2_group_user authentication, set a dummy
   as local user user1:
     jwt-agent -s https://jwt-server/ -l user1
   as local user user5:
-    jwt-agent -s https://jwt-server/ -l user1+tenant2
+    jwt-agent -s https://jwt-server/ -l user5
 
 In this setup, authentication relies on xoauth2_group_user
 instead of xoauth2_user_claim.
