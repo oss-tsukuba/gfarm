@@ -1,4 +1,7 @@
-FROM ubuntu
+FROM ubuntu:24.04
+# XXX FIXME:
+# revert "ubuntu:24.04" to "ubuntu",
+# when the gftool/gfptar/gfptar.sh regression test is fixed on Ubuntu 26.04
 
 ARG DEBIAN_FRONTEND=noninteractive
 ARG TZ=Asia/Tokyo
