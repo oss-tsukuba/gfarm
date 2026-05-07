@@ -384,7 +384,7 @@ for t in $(seq 1 "$GFDOCKER_NUM_TENANTS"); do
   # add auth_user_id for SASL w/ mechanism=XOAUTH2
   gfuser -A \
     "${guser}${tenant_user_suffix}" SASL \
-    "${guser}${tenant_user_suffix}"
+    "${unix_username}"
 
   gfsudo gfmkdir -p "${tenant_path_prefix}${ghome_dir}"
   gfsudo gfchown "${guser}${tenant_user_suffix}" \
@@ -406,7 +406,7 @@ for t in $(seq 1 "$GFDOCKER_NUM_TENANTS"); do
       "${sasl_home}" ""
     gfuser -A \
       "${sasl_user}${tenant_user_suffix}" SASL \
-      "${sasl_user}${tenant_user_suffix}"
+      "${unix_username}@${SASL_DOMAIN}"
     gfsudo gfmkdir "${tenant_path_prefix}${sasl_home}"
     gfsudo gfchown "${sasl_user}${tenant_user_suffix}" \
       "${tenant_path_prefix}${sasl_home}"
@@ -424,7 +424,7 @@ for t in $(seq 1 "$GFDOCKER_NUM_TENANTS"); do
  done
 
  # add gfarm user for SASL w/ mechanism=ANONYMOUS
- if $sasl_available &&
+ if $sasl_available && [ "$t" -eq 2 ] &&
    expr "${GFDOCKER_SASL_MECH_LIST}" : '.*ANONYMOUS.*' >/dev/null
  then
   sasl_user="anonymous"
@@ -433,7 +433,7 @@ for t in $(seq 1 "$GFDOCKER_NUM_TENANTS"); do
     "${sasl_home}" ""
   gfuser -A \
     "${sasl_user}${tenant_user_suffix}" SASL \
-    "${sasl_user}${tenant_user_suffix}"
+    "${sasl_user}"
   gfgroup -a -m "gfarmadm${tenant_user_suffix}" \
     "${sasl_user}${tenant_user_suffix}"
   gfsudo gfmkdir \

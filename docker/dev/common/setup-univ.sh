@@ -254,7 +254,6 @@ for t in $(seq 1 "$GFDOCKER_NUM_TENANTS"); do
   i=$((i + 1))
   unix_username="${GFDOCKER_USERNAME_PREFIX}${i}"
   guser="$(gfuser_from_index $t $u)"
-  tenant_user_suffix="$(gftenant_user_suffix_from_index $t)"
   gfservicerc="/home/${unix_username}/.gfservice"
   cp "$base_gfservicerc" "$gfservicerc"
   chmod 0644 "$gfservicerc"
@@ -272,12 +271,12 @@ for t in $(seq 1 "$GFDOCKER_NUM_TENANTS"); do
   chmod 0600 "$gfarm2rc_passwd"
   chown "${unix_username}:${unix_username}" "$gfarm2rc_passwd"
   echo >>"$gfarm2rc_passwd" \
-	"sasl_user \"${guser}@${SASL_DOMAIN}${tenant_user_suffix}\""
+	"sasl_user \"${unix_username}@${SASL_DOMAIN}\""
   echo >>"$gfarm2rc_passwd" \
 	"sasl_password \"${SASL_PASSWORD_BASE}${unix_username}\""
   if type saslpasswd2 2>/dev/null; then
     echo "${SASL_PASSWORD_BASE}${unix_username}" |
-      saslpasswd2 -c -u "${SASL_DOMAIN}${tenant_user_suffix}" "${guser}"
+      saslpasswd2 -c -u "${SASL_DOMAIN}" "${unix_username}"
     if [ "${sasl_db:-NOT_SET}" = "NOT_SET" ]; then
       sasl_db=/etc/sasl2/sasldb2
       if [ ! -f ${sasl_db} ]; then
@@ -287,7 +286,7 @@ for t in $(seq 1 "$GFDOCKER_NUM_TENANTS"); do
     chown _gfarmfs "${sasl_db}"
   fi
   gfarm2rc_sasl_xoauth2="${gfarm2rc}.sasl.xoauth2"
-  echo "sasl_user \"${guser}${tenant_user_suffix}\"" >>"$gfarm2rc_sasl_xoauth2"
+  echo "sasl_user \"${unix_username}\"" >>"$gfarm2rc_sasl_xoauth2"
   chown "${unix_username}:${unix_username}" "$gfarm2rc_sasl_xoauth2"
  done
 done
