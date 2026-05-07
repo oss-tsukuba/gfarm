@@ -58,9 +58,7 @@ exclusive(void)
 }
 
 int
-main(argc, argv)
-	int argc;
-	char **argv;
+main(int argc, char **argv)
 {
 	int ch, do_list = 0, do_expire_report = 0;
 	gfarm_error_t e;

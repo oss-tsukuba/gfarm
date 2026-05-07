@@ -135,17 +135,17 @@ remove_extended_acl(gfarm_acl_t acl)
 
 	/* mask GFARM_ACL_GROUP_OBJ */
 	if (ent_group != NULL && ent_mask != NULL) {
-		int bool;
+		int has_perm;
 		gfs_acl_get_permset(ent_group, &pset_group);
 		gfs_acl_get_permset(ent_mask, &pset_mask);
-		gfs_acl_get_perm(pset_mask, GFARM_ACL_READ, &bool);
-		if (!bool)
+		gfs_acl_get_perm(pset_mask, GFARM_ACL_READ, &has_perm);
+		if (!has_perm)
 			gfs_acl_delete_perm(pset_group, GFARM_ACL_READ);
-		gfs_acl_get_perm(pset_mask, GFARM_ACL_WRITE, &bool);
-		if (!bool)
+		gfs_acl_get_perm(pset_mask, GFARM_ACL_WRITE, &has_perm);
+		if (!has_perm)
 			gfs_acl_delete_perm(pset_group, GFARM_ACL_WRITE);
-		gfs_acl_get_perm(pset_mask, GFARM_ACL_EXECUTE, &bool);
-		if (!bool)
+		gfs_acl_get_perm(pset_mask, GFARM_ACL_EXECUTE, &has_perm);
+		if (!has_perm)
 			gfs_acl_delete_perm(pset_group, GFARM_ACL_EXECUTE);
 	}
 

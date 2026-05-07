@@ -189,7 +189,7 @@ user_is_valid(struct user *u)
 struct user *
 user_tenant_lookup_including_invalid(const char *username)
 {
-	char *delim = strchr(username, GFARM_TENANT_DELIMITER);
+	const char *delim = strchr(username, GFARM_TENANT_DELIMITER);
 	const char *uname;
 	char *tmp = NULL;
 	struct gfarm_hash_entry *entry;

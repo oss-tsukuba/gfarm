@@ -616,7 +616,8 @@ map_local_to_global(const char *from, const char *global_user,
 char *
 gfarm_alloc_name_in_tenant(const char *name)
 {
-	char *s, *p = strchr(name, GFARM_TENANT_DELIMITER);
+	char *s;
+	const char *p = strchr(name, GFARM_TENANT_DELIMITER);
 	size_t len;
 
 	if (p == NULL)

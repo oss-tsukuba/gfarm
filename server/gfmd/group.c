@@ -114,7 +114,7 @@ group_is_valid(struct group *g)
 struct group *
 group_tenant_lookup_including_invalid(const char *groupname)
 {
-	char *delim = strchr(groupname, GFARM_TENANT_DELIMITER);
+	const char *delim = strchr(groupname, GFARM_TENANT_DELIMITER);
 	const char *gname;
 	char *tmp = NULL;
 	struct gfarm_hash_entry *entry;

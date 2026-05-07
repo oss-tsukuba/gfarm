@@ -480,7 +480,7 @@ alloc_name_with_tenant(const char *name, const char *tenant_name,
 char *
 alloc_name_without_tenant(const char *name, const char *diag)
 {
-	char *delim = strchr(name, GFARM_TENANT_DELIMITER);
+	const char *delim = strchr(name, GFARM_TENANT_DELIMITER);
 	size_t len;
 	char *name_without_tenant;
 

@@ -380,8 +380,8 @@ gfarm_error_t
 gfarm_kerberos_principal_get_service_hostname(
 	const char *service_tag, const char *principal, char **hostnamep)
 {
-	const char *serv_service;
-	char *hostname, *at;
+	const char *serv_service, *at;
+	char *hostname;
 	size_t serv_service_len, hlen;
 
 	serv_service =

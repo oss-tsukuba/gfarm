@@ -22,17 +22,17 @@ acl_get_mode(gfarm_acl_entry_t ent)
 {
 	gfarm_mode_t mode = 0;
 	gfarm_acl_permset_t pset;
-	int bool;
+	int has_perm;
 
 	gfs_acl_get_permset(ent, &pset);
-	gfs_acl_get_perm(pset, GFARM_ACL_READ, &bool);
-	if (bool)
+	gfs_acl_get_perm(pset, GFARM_ACL_READ, &has_perm);
+	if (has_perm)
 		mode |= 0004;
-	gfs_acl_get_perm(pset, GFARM_ACL_WRITE, &bool);
-	if (bool)
+	gfs_acl_get_perm(pset, GFARM_ACL_WRITE, &has_perm);
+	if (has_perm)
 		mode |= 0002;
-	gfs_acl_get_perm(pset, GFARM_ACL_EXECUTE, &bool);
-	if (bool)
+	gfs_acl_get_perm(pset, GFARM_ACL_EXECUTE, &has_perm);
+	if (has_perm)
 		mode |= 0001;
 	return (mode);
 }
