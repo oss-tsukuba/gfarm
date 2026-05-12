@@ -5,7 +5,7 @@
 
 <refentry id="gfservice.conf.5">
 
-<refentryinfo><date>17 Apr 2026</date></refentryinfo>
+<refentryinfo><date>12 May 2026</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfservice.conf</refentrytitle>
@@ -182,14 +182,11 @@ in private mode.
 <term><varname>gfmd<replaceable>n</replaceable>_AUTH_TYPES</varname></term>
 <listitem>
 <para>
-Specify authentication types ("sharedsecret", "sasl_auth", "sasl", "tls_sharedsecret",
- "tls_client_certificate", "kerberos_auth", "kerberos", "gsi_auth", or "gsi")
- as a space-separated string (e.g., "sharedsecret gsi").
-If the variable is not declared, its value is chosen from
-<varname>AUTH_TYPES</varname> value output by
-<command moreinfo="none">config-gfarm -T</command> command executed on gfmd1.
-(Note that the value <varname>AUTH_TYPES</varname> above is affected by
-the variable <varname>gfmd1_CONFIG_GFARM_OPTIONS</varname>.)
+This is used to control whether a shared key file is copied to client hosts.
+If <varname>gfmd1_CONFIG_GFARM_OPTIONS</varname> contains either "sharedsecret" or "tls_sharedsecret",
+the shared key file will be copied without any additional configuration.
+If neither is specified, the behavior is determined by the value of <varname>AUTH_TYPES</varname>
+output by the <command moreinfo="none">config-gfarm -T</command> command executed on gfmd1.
 </para>
 </listitem>
 </varlistentry>
@@ -307,14 +304,11 @@ in private mode.
 <term><varname>gfsd<replaceable>n</replaceable>_AUTH_TYPES</varname></term>
 <listitem>
 <para>
-Specify authentication types ("sharedsecret", "sasl_auth", "sasl", "tls_sharedsecret",
- "tls_client_certificate", "kerberos_auth", "kerberos", "gsi_auth", or "gsi")
- as a space-separated string (e.g., "sharedsecret gsi").
-If the variable is not declared, its value is chosen from
-<varname>AUTH_TYPES</varname> value output by
-<command moreinfo="none">config-gfarm -T</command> command executed on gfmd1.
-(Note that the value <varname>AUTH_TYPES</varname> above is affected by
-the variable <varname>gfmd1_CONFIG_GFARM_OPTIONS</varname>.)
+This is used to control whether a shared key file is copied to client hosts.
+If <varname>gfmd1_CONFIG_GFARM_OPTIONS</varname> contains either "sharedsecret" or "tls_sharedsecret",
+the shared key file will be copied without any additional configuration.
+If neither is specified, the behavior is determined by the value of <varname>AUTH_TYPES</varname>
+output by the <command moreinfo="none">config-gfarm -T</command> command executed on gfmd1.
 </para>
 </listitem>
 </varlistentry>
@@ -462,14 +456,11 @@ the sub-command <command moreinfo="none">config-client</command> without root pr
 <term><varname>client<replaceable>n</replaceable>_AUTH_TYPES</varname></term>
 <listitem>
 <para>
-Specify authentication types ("sharedsecret", "sasl_auth", "sasl", "tls_sharedsecret",
- "tls_client_certificate", "kerberos_auth", "kerberos", "gsi_auth", or "gsi")
- as a space-separated string (e.g., "sharedsecret gsi").
-If the variable is not declared, its value is chosen from
-<varname>AUTH_TYPES</varname> value output by
-<command moreinfo="none">config-gfarm -T</command> command executed on gfmd1.
-(Note that the value <varname>AUTH_TYPES</varname> above is affected by
-the variable <varname>gfmd1_CONFIG_GFARM_OPTIONS</varname>.)
+This is used to control whether a shared key file is copied to client hosts.
+If <varname>gfmd1_CONFIG_GFARM_OPTIONS</varname> contains either "sharedsecret" or "tls_sharedsecret",
+the shared key file will be copied without any additional configuration.
+If neither is specified, the behavior is determined by the value of <varname>AUTH_TYPES</varname>
+output by the <command moreinfo="none">config-gfarm -T</command> command executed on gfmd1.
 </para>
 </listitem>
 </varlistentry>
