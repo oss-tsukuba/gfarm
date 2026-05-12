@@ -182,7 +182,7 @@ gfmd サーバー上で <command moreinfo="none">gfservice-agent</command> コ�
 <term><varname>gfmd<replaceable>n</replaceable>_AUTH_TYPES</varname></term>
 <listitem>
 <para>
-クライアントホストに共有鍵秘密ファイルをコピーするかどうかを制御するために使用します。
+この gfmd ホストに共有鍵秘密ファイルをコピーするかどうかを制御するために使用します。
 <varname> gfmd1_CONFIG_GFARM_OPTIONS </varname> に "sharedsecret"ないし "tls_sharedsecret" があれば
 特に設定しなくても共有鍵秘密ファイルがコピーされます。
 どちらの設定もなければ、gfmd1 上で <command moreinfo="none"> config-gfarm -T </command> を実行したときの
@@ -304,7 +304,7 @@ gfsd サーバー上で <command moreinfo="none">gfservice-agent</command> コ�
 <term><varname>gfsd<replaceable>n</replaceable>_AUTH_TYPES</varname></term>
 <listitem>
 <para>
-クライアントホストに共有鍵秘密ファイルをコピーするかどうかを制御するために使用します。
+この gfsd ホストに共有鍵秘密ファイルをコピーするかどうかを制御するために使用します。
 <varname> gfmd1_CONFIG_GFARM_OPTIONS </varname> に "sharedsecret"ないし "tls_sharedsecret" があれば
 特に設定しなくても共有鍵秘密ファイルがコピーされます。
 どちらの設定もなければ、gfmd1 上で <command moreinfo="none"> config-gfarm -T </command> を実行したときの
@@ -458,7 +458,7 @@ gfarm2.confファイルのパスと同じパスを使用します(gfarm2.confフ
 <term><varname>client<replaceable>n</replaceable>_AUTH_TYPES</varname></term>
 <listitem>
 <para>
-クライアントホストに共有鍵秘密ファイルをコピーするかどうかを制御するために使用します。
+このクライアントホストに共有鍵秘密ファイルをコピーするかどうかを制御するために使用します。
 <varname> gfmd1_CONFIG_GFARM_OPTIONS </varname> に "sharedsecret"ないし "tls_sharedsecret" があれば
 特に設定しなくても共有鍵秘密ファイルがコピーされます。
 どちらの設定もなければ、gfmd1 上で <command moreinfo="none"> config-gfarm -T </command> を実行したときの

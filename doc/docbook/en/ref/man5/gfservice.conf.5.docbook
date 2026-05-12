@@ -182,7 +182,7 @@ in private mode.
 <term><varname>gfmd<replaceable>n</replaceable>_AUTH_TYPES</varname></term>
 <listitem>
 <para>
-This is used to control whether a shared key file is copied to client hosts.
+This is used to control whether a shared key file is copied to this gfmd host.
 If <varname>gfmd1_CONFIG_GFARM_OPTIONS</varname> contains either "sharedsecret" or "tls_sharedsecret",
 the shared key file will be copied without any additional configuration.
 If neither is specified, the behavior is determined by the value of <varname>AUTH_TYPES</varname>
@@ -304,7 +304,7 @@ in private mode.
 <term><varname>gfsd<replaceable>n</replaceable>_AUTH_TYPES</varname></term>
 <listitem>
 <para>
-This is used to control whether a shared key file is copied to client hosts.
+This is used to control whether a shared key file is copied to this gfsd host.
 If <varname>gfmd1_CONFIG_GFARM_OPTIONS</varname> contains either "sharedsecret" or "tls_sharedsecret",
 the shared key file will be copied without any additional configuration.
 If neither is specified, the behavior is determined by the value of <varname>AUTH_TYPES</varname>
@@ -456,7 +456,7 @@ the sub-command <command moreinfo="none">config-client</command> without root pr
 <term><varname>client<replaceable>n</replaceable>_AUTH_TYPES</varname></term>
 <listitem>
 <para>
-This is used to control whether a shared key file is copied to client hosts.
+This is used to control whether a shared key file is copied to this client host.
 If <varname>gfmd1_CONFIG_GFARM_OPTIONS</varname> contains either "sharedsecret" or "tls_sharedsecret",
 the shared key file will be copied without any additional configuration.
 If neither is specified, the behavior is determined by the value of <varname>AUTH_TYPES</varname>
