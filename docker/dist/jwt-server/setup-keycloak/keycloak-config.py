@@ -64,12 +64,18 @@ except KeycloakError as e:
     E(e.error_message)
     sys.exit(1)
 
+first_wait = True
+
 while True:
     try:
         realms = kapi.get_realms()
         break
     except Exception as e:
-        print("waiting for keycloak startup: ", str(e))
+        if first_wait:
+            print("Waiting for keycloak startup:", str(e), end="", flush=True)
+            first_wait = False
+        else:
+            print(".", end="", flush=True)
         time.sleep(1)
 
 # REALM
