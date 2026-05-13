@@ -22,11 +22,9 @@ RUN yum -y update \
     jq wget curl git \
  && yum -y install openssl11-devel
 
-RUN mkdir -p /etc/grid-security/certificates \
- && cd /etc/grid-security/certificates \
- && wget https://www.hpci-office.jp/info/download/attachments/425328655/21d9c8b3.0 \
- && mkdir -p /etc/pki/tls/certs \
- && ln -s /etc/grid-security/certificates /etc/pki/tls/certs/gfarm
+RUN mkdir -p /etc/pki/tls/certs/gfarm \
+ && cd /etc/pki/tls/certs/gfarm \
+ && wget https://www.hpci-office.jp/info/download/attachments/425328655/21d9c8b3.0
 
 ARG OSSURL=https://github.com/oss-tsukuba
 ARG PKG=jwt-logon
@@ -39,7 +37,7 @@ RUN cd \
  && make PREFIX=/usr/local install
 
 ARG PKG=jwt-agent
-ARG VER=1.1.0
+ARG VER=1.1.1
 
 RUN cd \
  && wget --content-disposition $OSSURL/$PKG/archive/$VER.tar.gz \
@@ -49,7 +47,7 @@ RUN cd \
  && make PREFIX=/usr/local install
 
 ARG PKG=cyrus-sasl-xoauth2-idp
-ARG VER=1.0.2
+ARG VER=1.1.0
 
 RUN cd \
  && wget --content-disposition $OSSURL/$PKG/archive/$VER.tar.gz \
@@ -62,7 +60,7 @@ RUN cd \
  && echo xoauth2_user_claim: hpci.id > $(pkg-config --variable=libdir libsasl2)/sasl2/gfarm-client.conf
 
 ARG PKG=gfarm
-ARG VER=2.8.7
+ARG VER=2.8.9
 
 RUN cd \
  && wget --content-disposition $OSSURL/$PKG/archive/$VER.tar.gz \

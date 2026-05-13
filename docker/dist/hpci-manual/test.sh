@@ -23,9 +23,9 @@ set -x
 gfstatus
 gfhost -lvu
 OUTD=test-$HPCIID-$$
+trap 'gfrm -rf gfarm:/tmp/$OUTD-gz gfarm:/tmp/$OUTD-bz2 gfarm:/tmp/$OUTD-xz' 0 1 2 15
 gfptar -c gfarm:/tmp/$OUTD-gz -C / hpci-manual
 gfptar -c gfarm:/tmp/$OUTD-bz2 -T bz2 -C / hpci-manual
 gfptar -c gfarm:/tmp/$OUTD-xz -T xz -C / hpci-manual
-gfrm -rf gfarm:/tmp/$OUTD-gz gfarm:/tmp/$OUTD-bz2 gfarm:/tmp/$OUTD-xz
 mount.hpci
 umount.hpci

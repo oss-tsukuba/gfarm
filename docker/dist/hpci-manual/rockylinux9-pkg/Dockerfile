@@ -6,9 +6,9 @@ RUN dnf -y upgrade \
  && dnf -y groupinstall 'Development Tools' \
  && dnf -y install epel-release \
  && dnf -y install \
-    libtool openssl-devel \
+    libtool openssl-devel libpq-devel \
     cyrus-sasl-devel scitokens-cpp-devel \
-    golang python3 \
+    golang python3 ruby \
     python3-docopt python3-schema \
  && dnf config-manager --set-enabled crb \
  && dnf -y install \
@@ -24,44 +24,34 @@ ARG PKG=jwt-logon
 ARG VER=1.1.0
 
 RUN cd \
- && wget --content-disposition $OSSURL/$PKG/archive/$VER.tar.gz \
- && tar pxf $PKG-$VER.tar.gz \
- && cd $PKG-$VER \
- && make PREFIX=/usr/local install
+ && wget $OSSURL/$PKG/releases/download/$VER/$PKG-$VER-1.src.rpm \
+ && rpmbuild --rebuild $PKG-$VER-1.src.rpm \
+ && rpm -Uvh rpmbuild/RPMS/*/$PKG-*
 
 ARG PKG=jwt-agent
 ARG VER=1.1.1
 
 RUN cd \
- && wget --content-disposition $OSSURL/$PKG/archive/$VER.tar.gz \
- && tar pxf $PKG-$VER.tar.gz \
- && cd $PKG-$VER \
- && make \
- && make PREFIX=/usr/local install
+ && wget $OSSURL/$PKG/releases/download/$VER/$PKG-$VER-1.src.rpm \
+ && rpmbuild --rebuild $PKG-$VER-1.src.rpm \
+ && rpm -Uvh rpmbuild/RPMS/*/$PKG-*
 
 ARG PKG=cyrus-sasl-xoauth2-idp
 ARG VER=1.1.0
 
 RUN cd \
- && wget --content-disposition $OSSURL/$PKG/archive/$VER.tar.gz \
- && tar pxf $PKG-$VER.tar.gz \
- && cd $PKG-$VER \
- && ./autogen.sh \
- && ./configure --libdir=$(pkg-config --variable=libdir libsasl2) \
- && make \
- && make install \
+ && wget $OSSURL/$PKG/releases/download/$VER/$PKG-$VER-1.src.rpm \
+ && rpmbuild --rebuild $PKG-$VER-1.src.rpm \
+ && rpm -Uvh rpmbuild/RPMS/*/$PKG-* \
  && echo xoauth2_user_claim: hpci.id > $(pkg-config --variable=libdir libsasl2)/sasl2/gfarm-client.conf
 
 ARG PKG=gfarm
 ARG VER=2.8.9
 
 RUN cd \
- && wget --content-disposition $OSSURL/$PKG/archive/$VER.tar.gz \
- && tar pxf $PKG-$VER.tar.gz \
- && cd $PKG-$VER \
- && ./configure --sysconfdir=/etc --enable-xmlattr --enable-tls13 --enable-cyrus-sasl \
- && make \
- && make install
+ && wget $OSSURL/$PKG/releases/download/$VER/$PKG-$VER-1.src.rpm \
+ && GFARM_CONFIGURE_OPTION="-enable-xmlattr --enable-tls13 --enable-cyrus-sasl" rpmbuild --rebuild $PKG-$VER-1.src.rpm \
+ && rpm -Uvh rpmbuild/RPMS/*/$PKG-*
 
 RUN cd \
  && wget https://www.hpci-office.jp/info/download/attachments/69471402/get_gfarm2conf.sh \
@@ -73,11 +63,8 @@ ARG PKG=gfarm2fs
 ARG VER=1.2.22
 
 RUN cd \
- && wget --content-disposition $OSSURL/$PKG/archive/$VER.tar.gz \
- && tar pxf $PKG-$VER.tar.gz \
- && cd $PKG-$VER \
- && ./configure --with-gfarm=/usr/local \
- && make \
- && make install
+ && wget $OSSURL/$PKG/releases/download/$VER/$PKG-$VER-1.src.rpm \
+ && rpmbuild --rebuild $PKG-$VER-1.src.rpm \
+ && rpm -Uvh rpmbuild/RPMS/*/$PKG-*
 
 RUN useradd $USERNAME

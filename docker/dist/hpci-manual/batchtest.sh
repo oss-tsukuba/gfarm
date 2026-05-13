@@ -22,7 +22,8 @@ else
 	read PASS
 fi
 
-for d in centos7 rockylinux9 ubuntu20 ubuntu22 ubuntu24
+for d in rockylinux9 rockylinux9-pkg \
+	ubuntu20 ubuntu22 ubuntu24 ubuntu26
 do
 	[ -d $d ] || continue
 	echo $d

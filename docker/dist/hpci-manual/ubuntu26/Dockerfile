@@ -1,19 +1,21 @@
-FROM rockylinux/rockylinux:9
+FROM ubuntu:26.04
 
+ARG DEBIAN_FRONTEND=noninteractive
 ARG USERNAME=foo
 
-RUN dnf -y upgrade \
- && dnf -y groupinstall 'Development Tools' \
- && dnf -y install epel-release \
- && dnf -y install \
-    libtool openssl-devel \
-    cyrus-sasl-devel scitokens-cpp-devel \
+RUN apt-get update \
+ && apt-get -y upgrade \
+ && apt-get -y install \
+    gcc make libtool pkgconf \
+    libssl-dev \
+    libsasl2-dev sasl2-bin \
+    libscitokens-dev \
     golang python3 \
     python3-docopt python3-schema \
- && dnf config-manager --set-enabled crb \
- && dnf -y install \
-    fuse fuse-devel libacl-devel \
-    wget jq git
+    python3-venv bzip2 xz-utils \
+    fuse libfuse-dev libacl1-dev \
+    jq \
+    wget curl git
 
 RUN mkdir -p /etc/pki/tls/certs/gfarm \
  && cd /etc/pki/tls/certs/gfarm \
@@ -52,13 +54,22 @@ RUN cd \
  && make install \
  && echo xoauth2_user_claim: hpci.id > $(pkg-config --variable=libdir libsasl2)/sasl2/gfarm-client.conf
 
+#ARG PKG=gfarm
+#ARG VER=2.8.9
+#
+#RUN cd \
+# && wget --content-disposition $OSSURL/$PKG/archive/$VER.tar.gz \
+# && tar pxf $PKG-$VER.tar.gz \
+# && cd $PKG-$VER \
+# && ./configure --sysconfdir=/etc --enable-xmlattr --enable-tls13 --enable-cyrus-sasl \
+# && make \
+# && make install
+
 ARG PKG=gfarm
-ARG VER=2.8.9
 
 RUN cd \
- && wget --content-disposition $OSSURL/$PKG/archive/$VER.tar.gz \
- && tar pxf $PKG-$VER.tar.gz \
- && cd $PKG-$VER \
+ && git clone $OSSURL/$PKG \
+ && cd $PKG \
  && ./configure --sysconfdir=/etc --enable-xmlattr --enable-tls13 --enable-cyrus-sasl \
  && make \
  && make install
@@ -69,15 +80,24 @@ RUN cd \
  && chmod 644 /etc/gfarm2.conf \
  && if ! grep sasl /etc/gfarm2.conf 2>&1 /dev/null; then echo 'auth enable sasl *' >>/etc/gfarm2.conf; fi
 
+#ARG PKG=gfarm2fs
+#ARG VER=1.2.22
+#
+#RUN cd \
+# && wget --content-disposition $OSSURL/$PKG/archive/$VER.tar.gz \
+# && tar pxf $PKG-$VER.tar.gz \
+# && cd $PKG-$VER \
+# && ./configure --with-gfarm=/usr/local \
+# && make \
+# && make install
+
 ARG PKG=gfarm2fs
-ARG VER=1.2.22
 
 RUN cd \
- && wget --content-disposition $OSSURL/$PKG/archive/$VER.tar.gz \
- && tar pxf $PKG-$VER.tar.gz \
- && cd $PKG-$VER \
+ && git clone $OSSURL/$PKG \
+ && cd $PKG \
  && ./configure --with-gfarm=/usr/local \
  && make \
  && make install
 
-RUN useradd $USERNAME
+RUN useradd -m -s /bin/bash $USERNAME
