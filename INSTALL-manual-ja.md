@@ -92,18 +92,29 @@ nscdをOS起動時に実行されるようにして、起動します。
 以下からcyrus-sasl-xoauth2-idpのソースコードをダウンロードします。  
 <https://github.com/oss-tsukuba/cyrus-sasl-xoauth2-idp/releases>
 
-本書ではバージョン1.0.2で記載していますが、より新しいバージョンがリリースされていた場合、最新のバージョンを利用します。
+本書ではバージョン1.1.0で記載していますが、より新しいバージョンがリリースされていた場合、最新のバージョンを利用します。
 
 任意のユーザ（rootである必要はない）でコンパイルした後、root権限でインストールします。
 
 ```console
-$ wget --content-disposition https://github.com/oss-tsukuba/cyrus-sasl-xoauth2-idp/archive/1.0.2.tar.gz
-$ tar pxf cyrus-sasl-xoauth2-idp-1.0.2.tar.gz
-$ cd cyrus-sasl-xoauth2-idp-1.0.2
+$ OSSURL=https://github.com/oss-tsukuba
+$ PKG=cyrus-sasl-xoauth2-idp
+$ VER=1.1.0
+$ wget --content-disposition $OSSURL/$PKG/archive/$VER.tar.gz
+$ tar pxf $PKG-$VER.tar.gz
+$ cd $PKG-$VER
 $ ./autogen.sh
 $ ./configure --libdir=$(pkg-config --variable=libdir libsasl2)
 $ make
 $ sudo make install
+```
+
+RPMパッケージでインストールする場合は以下のようになります。
+
+```console
+$ wget $OSSURL/$PKG/releases/download/$VER/$PKG-$VER-1.src.rpm
+$ rpmbuild --rebuild $PKG-$VER-1.src.rpm
+$ sudo rpm -Uvh rpmbuild/RPMS/*/$PKG-*
 ```
 
 メタデータサーバ、ファイルシステムノードの場合は設定ファイル`gfarm.conf`を設置します。
@@ -137,17 +148,28 @@ xoauth2_user_claim: xxxx
 以下からgfarmのソースコードをダウンロードします。  
 <https://github.com/oss-tsukuba/gfarm/releases>
 
-本書ではバージョン2.8.7で記載していますが、より新しいバージョンがリリースされていた場合、最新のバージョンを利用します。
+本書ではバージョン2.8.9で記載していますが、より新しいバージョンがリリースされていた場合、最新のバージョンを利用します。
 
 任意のユーザ（rootである必要はない）でコンパイルした後、root権限でインストールします。
 
 ```console
-$ wget --content-disposition https://github.com/oss-tsukuba/gfarm/archive/2.8.7.tar.gz
-$ tar pxf gfarm-2.8.7.tar.gz
-$ cd gfarm-2.8.7
+$ OSSURL=https://github.com/oss-tsukuba
+$ PKG=gfarm
+$ VER=2.8.9
+$ wget --content-disposition $OSSURL/$PKG/archive/$VER.tar.gz
+$ tar pxf $PKG-$VER.tar.gz
+$ cd $PKG-$VER
 $ ./configure --sysconfdir=/etc --enable-xmlattr --enable-tls13 --enable-cyrus-sasl
 $ make
 $ sudo make install
+```
+
+RPMパッケージの場合は以下のようになります。
+
+```console
+$ wget $OSSURL/$PKG/releases/download/$VER/$PKG-$VER-1.src.rpm
+$ GFARM_CONFIGURE_OPTION="-enable-xmlattr --enable-tls13 --enable-cyrus-sasl" rpmbuild --rebuild $PKG-$VER-1.src.rpm
+$ sudo rpm -Uvh rpmbuild/RPMS/*/$PKG-*
 ```
 
 #### gfarm2fsのインストール
@@ -160,12 +182,23 @@ gfarm2fsはクライアントで必要となります。以下からgfarm2fsの�
 任意のユーザ（rootである必要はない）でコンパイルした後、root権限でインストールします。
 
 ```console
-$ wget --content-disposition https://github.com/oss-tsukuba/gfarm2fs/archive/1.2.22.tar.gz
-$ tar pxf gfarm2fs-1.2.22.tar.gz
-$ cd gfarm2fs-1.2.22
+$ OSSURL=https://github.com/oss-tsukuba
+$ PKG=gfarm2fs
+$ VER=1.2.22
+$ wget --content-disposition $OSSURL/$PKG/archive/$VER.tar.gz
+$ tar pxf $PKG-$VER.tar.gz
+$ cd $PKG-$VER
 $ ./configure --with-gfarm=/usr/local
 $ make
 $ sudo make install
+```
+
+RPMパッケージの場合は以下のようになります。
+
+```console
+$ wget $OSSURL/$PKG/releases/download/$VER/$PKG-$VER-1.src.rpm
+$ rpmbuild --rebuild $PKG-$VER-1.src.rpm
+$ sudo rpm -Uvh rpmbuild/RPMS/*/$PKG-*
 ```
 
 #### jwt-agentのインストール
@@ -173,16 +206,27 @@ $ sudo make install
 jwt-agentはクライアントで必要となります。以下からjwt-agentのソースコードをダウンロードします。  
 <https://github.com/oss-tsukuba/jwt-agent/releases>
 
-本書ではバージョン1.1.0で記載していますが、より新しいバージョンがリリースされていた場合、最新のバージョンを利用します。
+本書ではバージョン1.1.1で記載していますが、より新しいバージョンがリリースされていた場合、最新のバージョンを利用します。
 
 任意のユーザ（rootである必要はない）でコンパイルした後、root権限でインストールします。
 
 ```console
-$ wget --content-disposition https://github.com/oss-tsukuba/jwt-agent/archive/1.1.0.tar.gz
-$ tar pxf jwt-agent-1.1.0.tar.gz
-$ cd jwt-agent-1.1.0
+$ OSSURL=https://github.com/oss-tsukuba
+$ PKG=jwt-agent
+$ VER=1.1.1
+$ wget --content-disposition $OSSURL/$PKG/archive/$VER.tar.gz
+$ tar pxf $PKG-$VER.tar.gz
+$ cd $PKG-$VER
 $ make
 $ sudo make PREFIX=/usr/local install
+```
+
+RPMパッケージの場合は以下のようになります。
+
+```console
+$ wget $OSSURL/$PKG/releases/download/$VER/$PKG-$VER-1.src.rpm
+$ rpmbuild --rebuild $PKG-$VER-1.src.rpm
+$ sudo rpm -Uvh rpmbuild/RPMS/*/$PKG-*
 ```
 
 #### コアダンプファイルを出力する設定

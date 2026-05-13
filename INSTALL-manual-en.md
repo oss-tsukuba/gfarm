@@ -92,19 +92,29 @@ Install CA certificates `$CAHASH.0` in `/etc/pki/tls/certs/gfarm`.
 Download the cyrus-sasl-xoauth2-idp source code from the following URL:  
 <https://github.com/oss-tsukuba/cyrus-sasl-xoauth2-idp/releases>
 
-This document describes version 1.0.2, but if a newer version is available, use the latest version.
+This document describes version 1.1.0, but if a newer version is available, use the latest version.
 
 Compile as any user (does not need to be root), then install with the root privilege.
 
 ```console
-$ wget --content-disposition \
-  https://github.com/oss-tsukuba/cyrus-sasl-xoauth2-idp/archive/1.0.2.tar.gz
-$ tar pxf cyrus-sasl-xoauth2-idp-1.0.2.tar.gz
-$ cd cyrus-sasl-xoauth2-idp-1.0.2
+$ OSSURL=https://github.com/oss-tsukuba
+$ PKG=cyrus-sasl-xoauth2-idp
+$ VER=1.1.0
+$ wget --content-disposition $OSSURL/$PKG/archive/$VER.tar.gz
+$ tar pxf $PKG-$VER.tar.gz
+$ cd $PKG-$VER
 $ ./autogen.sh
 $ ./configure --libdir=$(pkg-config --variable=libdir libsasl2)
 $ make
 $ sudo make install
+```
+
+For RPM packages, follow the steps below.
+
+```console
+$ wget $OSSURL/$PKG/releases/download/$VER/$PKG-$VER-1.src.rpm
+$ rpmbuild --rebuild $PKG-$VER-1.src.rpm
+$ sudo rpm -Uvh rpmbuild/RPMS/*/$PKG-*
 ```
 
 For metadata servers and filesystem nodes, set up the configuration file `gfarm.conf`.
@@ -138,18 +148,28 @@ Set an appropriate value for `xxxx`.
 Download the Gfarm source code from the following URL:  
 <https://github.com/oss-tsukuba/gfarm/releases>
 
-This document describes version 2.8.7, but if a newer version is available, use the latest version.
+This document describes version 2.8.9, but if a newer version is available, use the latest version.
 
 Compile as any user (does not need to be root), then install with the root privilege.
 
 ```console
-$ wget --content-disposition \
-  https://github.com/oss-tsukuba/gfarm/archive/2.8.7.tar.gz
-$ tar pxf gfarm-2.8.7.tar.gz
-$ cd gfarm-2.8.7
+$ OSSURL=https://github.com/oss-tsukuba
+$ PKG=gfarm
+$ VER=2.8.9
+$ wget --content-disposition $OSSURL/$PKG/archive/$VER.tar.gz
+$ tar pxf $PKG-$VER.tar.gz
+$ cd $PKG-$VER
 $ ./configure --sysconfdir=/etc --enable-xmlattr --enable-tls13 --enable-cyrus-sasl
 $ make
 $ sudo make install
+```
+
+For RPM packages, follow the steps below.
+
+```console
+$ wget $OSSURL/$PKG/releases/download/$VER/$PKG-$VER-1.src.rpm
+$ GFARM_CONFIGURE_OPTION="-enable-xmlattr --enable-tls13 --enable-cyrus-sasl" rpmbuild --rebuild $PKG-$VER-1.src.rpm
+$ sudo rpm -Uvh rpmbuild/RPMS/*/$PKG-*
 ```
 
 #### Installing gfarm2fs
@@ -162,13 +182,23 @@ This document describes version 1.2.22, but if a newer version is available, use
 Compile as any user (does not need to be root), then install with the root privilege.
 
 ```console
-$ wget --content-disposition \
-  https://github.com/oss-tsukuba/gfarm2fs/archive/1.2.22.tar.gz
-$ tar pxf gfarm2fs-1.2.22.tar.gz
-$ cd gfarm2fs-1.2.22
+$ OSSURL=https://github.com/oss-tsukuba
+$ PKG=gfarm2fs
+$ VER=1.2.22
+$ wget --content-disposition $OSSURL/$PKG/archive/$VER.tar.gz
+$ tar pxf $PKG-$VER.tar.gz
+$ cd $PKG-$VER
 $ ./configure --with-gfarm=/usr/local
 $ make
 $ sudo make install
+```
+
+For RPM packages, follow the steps below.
+
+```console
+$ wget $OSSURL/$PKG/releases/download/$VER/$PKG-$VER-1.src.rpm
+$ rpmbuild --rebuild $PKG-$VER-1.src.rpm
+$ sudo rpm -Uvh rpmbuild/RPMS/*/$PKG-*
 ```
 
 #### Installing jwt-agent
@@ -176,17 +206,27 @@ $ sudo make install
 jwt-agent is required on the client.  Download the jwt-agent source code from the following URL:  
 <https://github.com/oss-tsukuba/jwt-agent/releases>
 
-This document describes version 1.1.0, but if a newer version is available, use the latest version.
+This document describes version 1.1.1, but if a newer version is available, use the latest version.
 
 Compile as any user (does not need to be root), then install with the root privilege.
 
 ```console
-$ wget --content-disposition \
-  https://github.com/oss-tsukuba/jwt-agent/archive/1.1.0.tar.gz
-$ tar pxf jwt-agent-1.1.0.tar.gz
-$ cd jwt-agent-1.1.0
+$ OSSURL=https://github.com/oss-tsukuba
+$ PKG=jwt-agent
+$ VER=1.1.1
+$ wget --content-disposition $OSSURL/$PKG/archive/$VER.tar.gz
+$ tar pxf $PKG-$VER.tar.gz
+$ cd $PKG-$VER
 $ make
 $ sudo make PREFIX=/usr/local install
+```
+
+For RPM packages, follow the steps below.
+
+```console
+$ wget $OSSURL/$PKG/releases/download/$VER/$PKG-$VER-1.src.rpm
+$ rpmbuild --rebuild $PKG-$VER-1.src.rpm
+$ sudo rpm -Uvh rpmbuild/RPMS/*/$PKG-*
 ```
 
 #### Configuring core dump file output
