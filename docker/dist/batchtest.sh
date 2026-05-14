@@ -20,7 +20,7 @@ done
 
 $DIST_SPECIFIED || {
 	DEBIAN=ubuntu
-	RHEL="rockylinux9 almalinux8 centos7"
+	RHEL="rockylinux9 almalinux8"
 }
 [ X"$DEBIAN" = X ] && DEBIAN=NONE
 [ X"$RHEL" = X ] && RHEL=NONE
