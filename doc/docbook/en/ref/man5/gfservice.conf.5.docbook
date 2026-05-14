@@ -5,7 +5,7 @@
 
 <refentry id="gfservice.conf.5">
 
-<refentryinfo><date>12 May 2026</date></refentryinfo>
+<refentryinfo><date>14 May 2026</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfservice.conf</refentrytitle>
@@ -182,6 +182,9 @@ in private mode.
 <term><varname>gfmd<replaceable>n</replaceable>_AUTH_TYPES</varname></term>
 <listitem>
 <para>
+Specify authentication types ("sharedsecret", "sasl_auth", "sasl", "tls_sharedsecret",
+"tls_client_certificate", "kerberos_auth", "kerberos", "gsi_auth", or "gsi")
+as a space-separated string (e.g., "sharedsecret gsi").
 This is used to control whether a shared key file is copied to this gfmd host.
 If <varname>gfmd1_CONFIG_GFARM_OPTIONS</varname> contains either "sharedsecret" or "tls_sharedsecret",
 the shared key file will be copied without any additional configuration.
@@ -304,6 +307,9 @@ in private mode.
 <term><varname>gfsd<replaceable>n</replaceable>_AUTH_TYPES</varname></term>
 <listitem>
 <para>
+Specify authentication types ("sharedsecret", "sasl_auth", "sasl", "tls_sharedsecret",
+"tls_client_certificate", "kerberos_auth", "kerberos", "gsi_auth", or "gsi")
+as a space-separated string (e.g., "sharedsecret gsi").
 This is used to control whether a shared key file is copied to this gfsd host.
 If <varname>gfmd1_CONFIG_GFARM_OPTIONS</varname> contains either "sharedsecret" or "tls_sharedsecret",
 the shared key file will be copied without any additional configuration.
@@ -456,6 +462,9 @@ the sub-command <command moreinfo="none">config-client</command> without root pr
 <term><varname>client<replaceable>n</replaceable>_AUTH_TYPES</varname></term>
 <listitem>
 <para>
+Specify authentication types ("sharedsecret", "sasl_auth", "sasl", "tls_sharedsecret",
+"tls_client_certificate", "kerberos_auth", "kerberos", "gsi_auth", or "gsi")
+as a space-separated string (e.g., "sharedsecret gsi").
 This is used to control whether a shared key file is copied to this client host.
 If <varname>gfmd1_CONFIG_GFARM_OPTIONS</varname> contains either "sharedsecret" or "tls_sharedsecret",
 the shared key file will be copied without any additional configuration.

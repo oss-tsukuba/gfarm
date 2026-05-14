@@ -5,7 +5,7 @@
 
 <refentry id="gfservice.conf.5">
 
-<refentryinfo><date>12 May 2026</date></refentryinfo>
+<refentryinfo><date>14 May 2026</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfservice.conf</refentrytitle>
@@ -182,6 +182,9 @@ gfmd サーバー上で <command moreinfo="none">gfservice-agent</command> コ�
 <term><varname>gfmd<replaceable>n</replaceable>_AUTH_TYPES</varname></term>
 <listitem>
 <para>
+認証タイプ ("sharedsecret", "sasl_auth", "sasl", "tls_sharedsecret",
+"tls_client_certificate", "kerberos_auth", "kerberos", "gsi_auth",
+または "gsi") を空白区切りの文字列で指定します。
 この gfmd ホストに共有鍵秘密ファイルをコピーするかどうかを制御するために使用します。
 <varname> gfmd1_CONFIG_GFARM_OPTIONS </varname> に "sharedsecret"ないし "tls_sharedsecret" があれば
 特に設定しなくても共有鍵秘密ファイルがコピーされます。
@@ -304,6 +307,9 @@ gfsd サーバー上で <command moreinfo="none">gfservice-agent</command> コ�
 <term><varname>gfsd<replaceable>n</replaceable>_AUTH_TYPES</varname></term>
 <listitem>
 <para>
+認証タイプ ("sharedsecret", "sasl_auth", "sasl", "tls_sharedsecret",
+"tls_client_certificate", "kerberos_auth", "kerberos", "gsi_auth",
+または "gsi") を空白区切りの文字列で指定します。
 この gfsd ホストに共有鍵秘密ファイルをコピーするかどうかを制御するために使用します。
 <varname> gfmd1_CONFIG_GFARM_OPTIONS </varname> に "sharedsecret"ないし "tls_sharedsecret" があれば
 特に設定しなくても共有鍵秘密ファイルがコピーされます。
@@ -458,6 +464,9 @@ gfarm2.confファイルのパスと同じパスを使用します(gfarm2.confフ
 <term><varname>client<replaceable>n</replaceable>_AUTH_TYPES</varname></term>
 <listitem>
 <para>
+認証タイプ ("sharedsecret", "sasl_auth", "sasl", "tls_sharedsecret",
+"tls_client_certificate", "kerberos_auth", "kerberos", "gsi_auth",
+または "gsi") を空白区切りの文字列で指定します。
 このクライアントホストに共有鍵秘密ファイルをコピーするかどうかを制御するために使用します。
 <varname> gfmd1_CONFIG_GFARM_OPTIONS </varname> に "sharedsecret"ないし "tls_sharedsecret" があれば
 特に設定しなくても共有鍵秘密ファイルがコピーされます。
