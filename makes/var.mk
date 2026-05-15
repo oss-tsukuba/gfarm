@@ -99,6 +99,8 @@ private_dir = ./private
 
 .SUFFIXES: .a .la .ln .o .lo .s .S .c .cc .f .y .l .msg .cat
 
+.DELETE_ON_ERROR:
+
 .c.lo:
 	$(LTCOMPILE) -c $(srcdir)/$*.c
 
