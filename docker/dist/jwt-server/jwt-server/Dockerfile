@@ -1,5 +1,7 @@
 FROM rockylinux/rockylinux:9
 
+ARG MAVEN_OPTS
+
 RUN dnf -y update \
  && dnf -y install \
     git java-21-openjdk-devel httpd mod_ssl maven mariadb-server wget
