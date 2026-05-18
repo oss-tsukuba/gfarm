@@ -2,12 +2,12 @@
 .\"     Title: gfservice.conf
 .\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 17 Apr 2026
+.\"      Date: 14 May 2026
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFSERVICE\&.CONF" "5" "17 Apr 2026" "Gfarm" "Gfarm"
+.TH "GFSERVICE\&.CONF" "5" "14 May 2026" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -180,15 +180,13 @@ gfmd サーバー上で
 .PP
 \fIgfmd\fR\fI\fIn\fR\fR\fI_AUTH_TYPES\fR
 .RS 4
-認証タイプ ("sharedsecret", "sasl_auth", "sasl", "tls_sharedsecret", "tls_client_certificate", "kerberos_auth", "kerberos", "gsi_auth", または "gsi") を空白区切りの文字列で指定します。 この変数が定義されていない場合は、gfmd1 上で
-\fBconfig\-gfarm \-T\fR
+認証タイプ ("sharedsecret", "sasl_auth", "sasl", "tls_sharedsecret", "tls_client_certificate", "kerberos_auth", "kerberos", "gsi_auth", または "gsi") を空白区切りの文字列で指定します。 この gfmd ホストに共有鍵秘密ファイルをコピーするかどうかを制御するために使用します。
+\fI gfmd1_CONFIG_GFARM_OPTIONS \fR
+に "sharedsecret"ないし "tls_sharedsecret" があれば 特に設定しなくても共有鍵秘密ファイルがコピーされます。 どちらの設定もなければ、gfmd1 上で
+\fB config\-gfarm \-T \fR
 を実行したときの
 \fIAUTH_TYPES\fR
-の値が採用されます。 (変数
-\fIgfmd1_CONFIG_GFARM_OPTIONS\fR
-の値によって、この ときの
-\fIAUTH_TYPES\fR
-の値は変わるので、注意して下さい。)
+の値が採用されます。
 .RE
 .PP
 \fIgfmd\fR\fI\fIn\fR\fR\fI_CLUSTER_NAME\fR
@@ -265,15 +263,13 @@ gfsd サーバー上で
 .PP
 \fIgfsd\fR\fI\fIn\fR\fR\fI_AUTH_TYPES\fR
 .RS 4
-認証タイプ ("sharedsecret", "sasl_auth", "sasl", "tls_sharedsecret", "tls_client_certificate", "kerberos_auth", "kerberos", "gsi_auth", または "gsi") を空白区切りの文字列で指定します。 この変数が定義されていない場合は、gfmd1 上で
-\fBconfig\-gfarm \-T\fR
+認証タイプ ("sharedsecret", "sasl_auth", "sasl", "tls_sharedsecret", "tls_client_certificate", "kerberos_auth", "kerberos", "gsi_auth", または "gsi") を空白区切りの文字列で指定します。 この gfsd ホストに共有鍵秘密ファイルをコピーするかどうかを制御するために使用します。
+\fI gfmd1_CONFIG_GFARM_OPTIONS \fR
+に "sharedsecret"ないし "tls_sharedsecret" があれば 特に設定しなくても共有鍵秘密ファイルがコピーされます。 どちらの設定もなければ、gfmd1 上で
+\fB config\-gfarm \-T \fR
 を実行したときの
 \fIAUTH_TYPES\fR
-の値が採用されます。 (変数
-\fIgfmd1_CONFIG_GFARM_OPTIONS\fR
-の値によって、この ときの
-\fIAUTH_TYPES\fR
-の値は変わるので、注意して下さい。)
+の値が採用されます。
 .RE
 .PP
 \fIgfsd\fR\fI\fIn\fR\fR\fI_SSH\fR
@@ -359,13 +355,11 @@ gfarm2\&.confファイルのパスを絶対パスで指定します。 この値
 .PP
 \fIclient\fR\fI\fIn\fR\fR\fI_AUTH_TYPES\fR
 .RS 4
-認証タイプ ("sharedsecret", "sasl_auth", "sasl", "tls_sharedsecret", "tls_client_certificate", "kerberos_auth", "kerberos", "gsi_auth", または "gsi") を空白区切りの文字列で指定します。 この変数が定義されていない場合は、gfmd1 上で
-\fBconfig\-gfarm \-T\fR
+認証タイプ ("sharedsecret", "sasl_auth", "sasl", "tls_sharedsecret", "tls_client_certificate", "kerberos_auth", "kerberos", "gsi_auth", または "gsi") を空白区切りの文字列で指定します。 このクライアントホストに共有鍵秘密ファイルをコピーするかどうかを制御するために使用します。
+\fI gfmd1_CONFIG_GFARM_OPTIONS \fR
+に "sharedsecret"ないし "tls_sharedsecret" があれば 特に設定しなくても共有鍵秘密ファイルがコピーされます。 どちらの設定もなければ、gfmd1 上で
+\fB config\-gfarm \-T \fR
 を実行したときの
 \fIAUTH_TYPES\fR
-の値が採用されます。 (変数
-\fIgfmd1_CONFIG_GFARM_OPTIONS\fR
-の値によって、この ときの
-\fIAUTH_TYPES\fR
-の値は変わるので、注意して下さい。)
+の値が採用されます。
 .RE

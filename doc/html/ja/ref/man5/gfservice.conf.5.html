@@ -138,13 +138,13 @@ gfmd サーバー上で <span class="command"><strong>gfservice-agent</strong></
 <dt><span class="term"><code class="varname">gfmd<em class="replaceable"><code>n</code></em>_AUTH_TYPES</code></span></dt>
 <dd><p>
 認証タイプ ("sharedsecret", "sasl_auth", "sasl", "tls_sharedsecret",
- "tls_client_certificate", "kerberos_auth", "kerberos", "gsi_auth",
- または "gsi") を空白区切りの文字列で指定します。
-この変数が定義されていない場合は、gfmd1 上で
-<span class="command"><strong>config-gfarm -T</strong></span> を実行したときの
+"tls_client_certificate", "kerberos_auth", "kerberos", "gsi_auth",
+または "gsi") を空白区切りの文字列で指定します。
+この gfmd ホストに共有鍵秘密ファイルをコピーするかどうかを制御するために使用します。
+<code class="varname"> gfmd1_CONFIG_GFARM_OPTIONS </code> に "sharedsecret"ないし "tls_sharedsecret" があれば
+特に設定しなくても共有鍵秘密ファイルがコピーされます。
+どちらの設定もなければ、gfmd1 上で <span class="command"><strong> config-gfarm -T </strong></span> を実行したときの
 <code class="varname">AUTH_TYPES</code> の値が採用されます。
-(変数 <code class="varname">gfmd1_CONFIG_GFARM_OPTIONS</code> の値によって、この
-ときの <code class="varname">AUTH_TYPES</code> の値は変わるので、注意して下さい。)
 </p></dd>
 <dt><span class="term"><code class="varname">gfmd<em class="replaceable"><code>n</code></em>_CLUSTER_NAME</code></span></dt>
 <dd><p>
@@ -221,13 +221,13 @@ gfsd サーバー上で <span class="command"><strong>gfservice-agent</strong></
 <dt><span class="term"><code class="varname">gfsd<em class="replaceable"><code>n</code></em>_AUTH_TYPES</code></span></dt>
 <dd><p>
 認証タイプ ("sharedsecret", "sasl_auth", "sasl", "tls_sharedsecret",
- "tls_client_certificate", "kerberos_auth", "kerberos", "gsi_auth",
- または "gsi") を空白区切りの文字列で指定します。
-この変数が定義されていない場合は、gfmd1 上で
-<span class="command"><strong>config-gfarm -T</strong></span> を実行したときの
+"tls_client_certificate", "kerberos_auth", "kerberos", "gsi_auth",
+または "gsi") を空白区切りの文字列で指定します。
+この gfsd ホストに共有鍵秘密ファイルをコピーするかどうかを制御するために使用します。
+<code class="varname"> gfmd1_CONFIG_GFARM_OPTIONS </code> に "sharedsecret"ないし "tls_sharedsecret" があれば
+特に設定しなくても共有鍵秘密ファイルがコピーされます。
+どちらの設定もなければ、gfmd1 上で <span class="command"><strong> config-gfarm -T </strong></span> を実行したときの
 <code class="varname">AUTH_TYPES</code> の値が採用されます。
-(変数 <code class="varname">gfmd1_CONFIG_GFARM_OPTIONS</code> の値によって、この
-ときの <code class="varname">AUTH_TYPES</code> の値は変わるので、注意して下さい。)
 </p></dd>
 <dt><span class="term"><code class="varname">gfsd<em class="replaceable"><code>n</code></em>_SSH</code></span></dt>
 <dd><p>
@@ -319,13 +319,13 @@ gfarm2.confファイルのパスと同じパスを使用します(gfarm2.confフ
 <dt><span class="term"><code class="varname">client<em class="replaceable"><code>n</code></em>_AUTH_TYPES</code></span></dt>
 <dd><p>
 認証タイプ ("sharedsecret", "sasl_auth", "sasl", "tls_sharedsecret",
- "tls_client_certificate", "kerberos_auth", "kerberos", "gsi_auth",
- または "gsi") を空白区切りの文字列で指定します。
-この変数が定義されていない場合は、gfmd1 上で
-<span class="command"><strong>config-gfarm -T</strong></span> を実行したときの
+"tls_client_certificate", "kerberos_auth", "kerberos", "gsi_auth",
+または "gsi") を空白区切りの文字列で指定します。
+このクライアントホストに共有鍵秘密ファイルをコピーするかどうかを制御するために使用します。
+<code class="varname"> gfmd1_CONFIG_GFARM_OPTIONS </code> に "sharedsecret"ないし "tls_sharedsecret" があれば
+特に設定しなくても共有鍵秘密ファイルがコピーされます。
+どちらの設定もなければ、gfmd1 上で <span class="command"><strong> config-gfarm -T </strong></span> を実行したときの
 <code class="varname">AUTH_TYPES</code> の値が採用されます。
-(変数 <code class="varname">gfmd1_CONFIG_GFARM_OPTIONS</code> の値によって、この
-ときの <code class="varname">AUTH_TYPES</code> の値は変わるので、注意して下さい。)
 </p></dd>
 </dl></div>
 </div>

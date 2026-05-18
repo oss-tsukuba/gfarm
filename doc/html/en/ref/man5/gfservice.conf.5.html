@@ -138,13 +138,13 @@ in private mode.
 <dt><span class="term"><code class="varname">gfmd<em class="replaceable"><code>n</code></em>_AUTH_TYPES</code></span></dt>
 <dd><p>
 Specify authentication types ("sharedsecret", "sasl_auth", "sasl", "tls_sharedsecret",
- "tls_client_certificate", "kerberos_auth", "kerberos", "gsi_auth", or "gsi")
- as a space-separated string (e.g., "sharedsecret gsi").
-If the variable is not declared, its value is chosen from
-<code class="varname">AUTH_TYPES</code> value output by
-<span class="command"><strong>config-gfarm -T</strong></span> command executed on gfmd1.
-(Note that the value <code class="varname">AUTH_TYPES</code> above is affected by
-the variable <code class="varname">gfmd1_CONFIG_GFARM_OPTIONS</code>.)
+"tls_client_certificate", "kerberos_auth", "kerberos", "gsi_auth", or "gsi")
+as a space-separated string (e.g., "sharedsecret gsi").
+This is used to control whether a shared key file is copied to this gfmd host.
+If <code class="varname">gfmd1_CONFIG_GFARM_OPTIONS</code> contains either "sharedsecret" or "tls_sharedsecret",
+the shared key file will be copied without any additional configuration.
+If neither is specified, the behavior is determined by the value of <code class="varname">AUTH_TYPES</code>
+output by the <span class="command"><strong>config-gfarm -T</strong></span> command executed on gfmd1.
 </p></dd>
 <dt><span class="term"><code class="varname">gfmd<em class="replaceable"><code>n</code></em>_CLUSTER_NAME</code></span></dt>
 <dd><p>
@@ -221,13 +221,13 @@ in private mode.
 <dt><span class="term"><code class="varname">gfsd<em class="replaceable"><code>n</code></em>_AUTH_TYPES</code></span></dt>
 <dd><p>
 Specify authentication types ("sharedsecret", "sasl_auth", "sasl", "tls_sharedsecret",
- "tls_client_certificate", "kerberos_auth", "kerberos", "gsi_auth", or "gsi")
- as a space-separated string (e.g., "sharedsecret gsi").
-If the variable is not declared, its value is chosen from
-<code class="varname">AUTH_TYPES</code> value output by
-<span class="command"><strong>config-gfarm -T</strong></span> command executed on gfmd1.
-(Note that the value <code class="varname">AUTH_TYPES</code> above is affected by
-the variable <code class="varname">gfmd1_CONFIG_GFARM_OPTIONS</code>.)
+"tls_client_certificate", "kerberos_auth", "kerberos", "gsi_auth", or "gsi")
+as a space-separated string (e.g., "sharedsecret gsi").
+This is used to control whether a shared key file is copied to this gfsd host.
+If <code class="varname">gfmd1_CONFIG_GFARM_OPTIONS</code> contains either "sharedsecret" or "tls_sharedsecret",
+the shared key file will be copied without any additional configuration.
+If neither is specified, the behavior is determined by the value of <code class="varname">AUTH_TYPES</code>
+output by the <span class="command"><strong>config-gfarm -T</strong></span> command executed on gfmd1.
 </p></dd>
 <dt><span class="term"><code class="varname">gfsd<em class="replaceable"><code>n</code></em>_SSH</code></span></dt>
 <dd><p>
@@ -317,13 +317,13 @@ the sub-command <span class="command"><strong>config-client</strong></span> with
 <dt><span class="term"><code class="varname">client<em class="replaceable"><code>n</code></em>_AUTH_TYPES</code></span></dt>
 <dd><p>
 Specify authentication types ("sharedsecret", "sasl_auth", "sasl", "tls_sharedsecret",
- "tls_client_certificate", "kerberos_auth", "kerberos", "gsi_auth", or "gsi")
- as a space-separated string (e.g., "sharedsecret gsi").
-If the variable is not declared, its value is chosen from
-<code class="varname">AUTH_TYPES</code> value output by
-<span class="command"><strong>config-gfarm -T</strong></span> command executed on gfmd1.
-(Note that the value <code class="varname">AUTH_TYPES</code> above is affected by
-the variable <code class="varname">gfmd1_CONFIG_GFARM_OPTIONS</code>.)
+"tls_client_certificate", "kerberos_auth", "kerberos", "gsi_auth", or "gsi")
+as a space-separated string (e.g., "sharedsecret gsi").
+This is used to control whether a shared key file is copied to this client host.
+If <code class="varname">gfmd1_CONFIG_GFARM_OPTIONS</code> contains either "sharedsecret" or "tls_sharedsecret",
+the shared key file will be copied without any additional configuration.
+If neither is specified, the behavior is determined by the value of <code class="varname">AUTH_TYPES</code>
+output by the <span class="command"><strong>config-gfarm -T</strong></span> command executed on gfmd1.
 </p></dd>
 </dl></div>
 </div>
