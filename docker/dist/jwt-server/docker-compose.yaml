@@ -43,7 +43,14 @@ services:
     networks:
       gfarm_net:
   jwt-server:
-    build: jwt-server
+    build:
+      context: jwt-server
+      args:
+        MAVEN_OPTS: >-
+          -Dhttp.proxyHost=${PROXY_HOST:-}
+          -Dhttp.proxyPort=${PROXY_PORT:-}
+          -Dhttps.proxyHost=${PROXY_HOST:-}
+          -Dhttps.proxyPort=${PROXY_PORT:-}
     hostname: jwt-server
     container_name: gfarm-jwt-server
     volumes:
@@ -55,7 +62,14 @@ services:
       - gfarm_net
     privileged: true
   jwt-server2:
-    build: jwt-server
+    build:
+      context: jwt-server
+      args:
+        MAVEN_OPTS: >-
+          -Dhttp.proxyHost=${PROXY_HOST:-}
+          -Dhttp.proxyPort=${PROXY_PORT:-}
+          -Dhttps.proxyHost=${PROXY_HOST:-}
+          -Dhttps.proxyPort=${PROXY_PORT:-}
     hostname: jwt-server2
     container_name: gfarm-jwt-server2
     volumes:
