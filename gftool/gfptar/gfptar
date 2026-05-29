@@ -6095,5 +6095,11 @@ _schema = Schema({
 
 
 if __name__ == '__main__':
+    # Compatibility fix for Python 3.14+:
+    # Force the use of 'fork' to avoid 'TypeError: cannot pickle _thread.lock'
+    # which occurs when using 'spawn' or 'forkserver' with complex objects.
+    # Ref: https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods  # noqa: E501
+    multiprocessing.set_start_method('fork', force=True)
+
     gfptar = GfptarProgram(progname)
     gfptar.run()
