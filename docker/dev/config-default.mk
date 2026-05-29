@@ -64,7 +64,7 @@ GFDOCKER_PLATFORM =
 
 # syntax: sharedsecret, gsi, gsi_auth, tls_sharedsecret or
 #		tls_client_certificate
-GFDOCKER_AUTH_TYPE = gsi_auth
+GFDOCKER_AUTH_TYPE = tls_client_certificate
 
 # GFDOCKER_GFMD_JOURNAL_DIR = /var/gfarm-metadata/journal/
 GFDOCKER_GFMD_JOURNAL_DIR = /dev/shm/gfarm-metadata/journal/
