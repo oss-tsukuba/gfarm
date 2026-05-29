@@ -20,6 +20,7 @@ set -eux -o pipefail
 : $GFDOCKER_SASL_XOAUTH2_ISSUERS
 : $GFDOCKER_SASL_XOAUTH2_SCOPE
 : $GFDOCKER_SASL_XOAUTH2_GROUP_USER
+: $GFDOCKER_GFARM_TEST_CKSUM_MISMATCH
 
 # the followings are optional:
 #: $https_proxy
@@ -257,56 +258,6 @@ if gfstatus 2>/dev/null | grep '^client auth sasl ' | grep ': available'; then
   sasl_available=true
 fi
 
-for host in $gfmds; do
-  (gfservice set-gfmd-conf "$host" digest md5 &&
-   gfservice set-gfmd-conf "$host" metadb_server_heartbeat_interval 10 &&
-   gfservice set-gfmd-conf "$host" 'auth enable gsi' '*' &&
-   if $tls_available; then
-     gfservice set-gfmd-conf "$host" 'auth enable tls_sharedsecret' '*' &&
-     gfservice set-gfmd-conf "$host" 'auth enable tls_client_certificate' '*'
-   fi &&
-   if $sasl_available; then
-     gfservice set-gfmd-conf "$host" 'auth enable sasl_auth' '*' &&
-     gfservice set-gfmd-conf "$host" 'auth enable sasl' '*'
-   fi &&
-   gfservice set-gfmd-conf "$host" "local_user_map" \
-     "${conf_include_dir}/local_user_map" &&
-   gfservice set-gfmd-conf "$host" write_verify enable &&
-   gfservice set-gfmd-conf "$host" write_verify_interval 600 &&
-   gfservice restart-gfmd "$host"
-  ) &
-done
-#wait
-
-for host in $gfsds; do
-  (gfservice set-gfarm-conf "$host" client_digest_check enable &&
-   gfservice set-gfarm-conf "$host" spool_digest_error_check disable &&
-   gfservice set-gfarm-conf "$host" 'auth enable gsi' '*' &&
-   if $tls_available; then
-     gfservice set-gfarm-conf "$host" 'auth enable tls_sharedsecret' '*' &&
-     gfservice set-gfarm-conf "$host" 'auth enable tls_client_certificate' '*'
-   fi &&
-   if $sasl_available; then
-     gfservice set-gfarm-conf "$host" 'auth enable sasl_auth' '*' &&
-     gfservice set-gfarm-conf "$host" 'auth enable sasl' '*'
-   fi &&
-   gfservice set-gfarm-conf "$host" "local_user_map" \
-     "${conf_include_dir}/local_user_map" &&
-   gfservice restart-gfsd "$host" &&
-   ssh "$host" sudo systemctl enable "gfsd-${host}${GFDOCKER_HOSTNAME_SUFFIX}"
-  ) &
-done
-#wait
-
-for host in $clients; do
-  (gfservice set-gfarm-conf "$host" "local_user_map" \
-     "${conf_include_dir}/local_user_map" &&
-   gfservice set-gfarm-conf "$host" client_digest_check enable &&
-   gfservice set-gfarm-conf "$host" schedule_busy_load_thresh 20
-  ) &
-done
-wait
-
 # copy current configuration files for external containers
 COPY_DIR=${MNTDIR}/COPY_DIR
 COPY_HOMES="${COPY_DIR}/HOMES"
@@ -444,6 +395,82 @@ for t in $(seq 1 "$GFDOCKER_NUM_TENANTS"); do
  fi
 
 done
+
+# do this before enabling write_verify
+gfsdhost=${GFDOCKER_HOSTNAME_PREFIX_GFSD}1${GFDOCKER_HOSTNAME_SUFFIX}
+gfstatus -Mm 'digest md5'
+
+GFARM_TEST_CKSUM_MISMATCH=${GFDOCKER_GFARM_TEST_CKSUM_MISMATCH}
+printf '%4194308s' ' ' | gfreg -h $gfsdhost - $GFARM_TEST_CKSUM_MISMATCH
+SPOOL_PATH="/var/gfarm-spool-${gfsdhost}/\
+$(gfspoolpath $GFARM_TEST_CKSUM_MISMATCH)"
+ssh $gfsdhost \
+  "printf '%4194307sX' ' ' | sudo dd of=$SPOOL_PATH"
+gfchmod 1777 $GFARM_TEST_CKSUM_MISMATCH
+
+GFARM_TEST_CKSUM_MISMATCH_TENANT2="\
+$(gftenant_path_prefix_from_index 2)\
+${GFARM_TEST_CKSUM_MISMATCH}"
+printf '%4194308s' ' ' |
+  gfsudo gfreg -h $gfsdhost - $GFARM_TEST_CKSUM_MISMATCH_TENANT2
+SPOOL_PATH_TENANT2="/var/gfarm-spool-${gfsdhost}/\
+$(gfsudo gfspoolpath $GFARM_TEST_CKSUM_MISMATCH_TENANT2)"
+ssh $gfsdhost \
+  "printf '%4194307sX' ' ' | sudo dd of=$SPOOL_PATH_TENANT2"
+gfsudo gfchmod 1777 $GFARM_TEST_CKSUM_MISMATCH_TENANT2
+
+for host in $gfmds; do
+  (gfservice set-gfmd-conf "$host" digest md5 &&
+   gfservice set-gfmd-conf "$host" metadb_server_heartbeat_interval 10 &&
+   gfservice set-gfmd-conf "$host" 'auth enable gsi' '*' &&
+   if $tls_available; then
+     gfservice set-gfmd-conf "$host" 'auth enable tls_sharedsecret' '*' &&
+     gfservice set-gfmd-conf "$host" 'auth enable tls_client_certificate' '*'
+   fi &&
+   if $sasl_available; then
+     gfservice set-gfmd-conf "$host" 'auth enable sasl_auth' '*' &&
+     gfservice set-gfmd-conf "$host" 'auth enable sasl' '*'
+   fi &&
+   gfservice set-gfmd-conf "$host" "local_user_map" \
+     "${conf_include_dir}/local_user_map" &&
+   gfservice set-gfmd-conf "$host" write_verify enable &&
+   gfservice set-gfmd-conf "$host" write_verify_interval 600 &&
+   gfservice restart-gfmd "$host"
+  ) &
+done
+# gfsd startup requires digest and write_verify settings
+# to be already applied on gfmd
+wait
+
+
+for host in $gfsds; do
+  (gfservice set-gfarm-conf "$host" client_digest_check enable &&
+   gfservice set-gfarm-conf "$host" spool_digest_error_check disable &&
+   gfservice set-gfarm-conf "$host" 'auth enable gsi' '*' &&
+   if $tls_available; then
+     gfservice set-gfarm-conf "$host" 'auth enable tls_sharedsecret' '*' &&
+     gfservice set-gfarm-conf "$host" 'auth enable tls_client_certificate' '*'
+   fi &&
+   if $sasl_available; then
+     gfservice set-gfarm-conf "$host" 'auth enable sasl_auth' '*' &&
+     gfservice set-gfarm-conf "$host" 'auth enable sasl' '*'
+   fi &&
+   gfservice set-gfarm-conf "$host" "local_user_map" \
+     "${conf_include_dir}/local_user_map" &&
+   gfservice restart-gfsd "$host" &&
+   ssh "$host" sudo systemctl enable "gfsd-${host}${GFDOCKER_HOSTNAME_SUFFIX}"
+  ) &
+done
+#wait
+
+for host in $clients; do
+  (gfservice set-gfarm-conf "$host" "local_user_map" \
+     "${conf_include_dir}/local_user_map" &&
+   gfservice set-gfarm-conf "$host" client_digest_check enable &&
+   gfservice set-gfarm-conf "$host" schedule_busy_load_thresh 20
+  ) &
+done
+wait
 
 ### copy certificates
 CERTIFICATES_DIR=/etc/grid-security/certificates

@@ -38,17 +38,7 @@ LOG_LOCAL_ROOT_TENANT=log.w_root.local.${GFDOCKER_TENANT_ADMIN_USER}
 gfsdhost=${GFDOCKER_HOSTNAME_PREFIX_GFSD}1${GFDOCKER_HOSTNAME_SUFFIX}
 clienthost=${GFDOCKER_HOSTNAME_PREFIX_CLIENT}1${GFDOCKER_HOSTNAME_SUFFIX}
 
-GFARM_TEST_CKSUM_MISMATCH=/tmp/cksum_mismatch
-
-trap_sigs='1 2 15'
-restore() {
-    gfrm -f $GFARM_TEST_CKSUM_MISMATCH
-}
-trap 'restore' $trap_sigs
-
-printf '%4194308s' ' ' | gfreg -h $gfsdhost - $GFARM_TEST_CKSUM_MISMATCH
-SPOOL_PATH=/var/gfarm-spool-$gfsdhost/$(gfspoolpath $GFARM_TEST_CKSUM_MISMATCH)
-ssh $gfsdhost "printf '%4194307sX' ' ' | sudo dd of=$SPOOL_PATH"
+GFARM_TEST_CKSUM_MISMATCH=${GFDOCKER_GFARM_TEST_CKSUM_MISMATCH}
 
 eval $(config-gfarm -T | grep GFARM_CONF=)
 
@@ -80,8 +70,6 @@ sudo su - "${GFDOCKER_TENANT_ADMIN_USER}" \
 sudo su - "${GFDOCKER_TENANT_ADMIN_USER}" -c "ssh $gfsdhost \
     $RUN_REGRESS_TENANT $GFARM_SRCDIR_TENANT $LOG_LOCAL_ROOT_TENANT true \
 	$GFARM_TEST_CKSUM_MISMATCH $parallel" || true
-
-restore
 
 scp $gfsdhost:$GFARM_SRCDIR/regress/$LOG_LOCAL_ROOT .
 sudo su - "${GFDOCKER_TENANT_ADMIN_USER}" \
