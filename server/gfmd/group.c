@@ -263,26 +263,7 @@ group_tenant_enter(char *groupname, struct group **gpp)
 		    gfarm_hash_table_alloc(GROUP_HASHTAB_SIZE,
 			gfarm_hash_strptr, gfarm_hash_key_equal_strptr);
 	}
-	if (*group_hashtab_ref_in_tenant != NULL) {
-		tenant_entry = gfarm_hash_enter(*group_hashtab_ref_in_tenant,
-		    &name_in_tenant, sizeof(name_in_tenant),
-		    sizeof(struct group **), &created);
-		if (tenant_entry == NULL) {
-			gflog_error(GFARM_MSG_1005437,
-			    "no memory for group %s in tenant %s",
-			    name_in_tenant, tenant_name);
-			e = GFARM_ERR_NO_MEMORY;
-		} else if (!created) {
-			gflog_fatal(GFARM_MSG_1005438,
-			    "group %s already exists in tenant %s, "
-			    "possibly missing giant_lock",
-			    name_in_tenant, tenant_name);
-			/* never reaches here, but for defensive programming */
-			e = GFARM_ERR_ALREADY_EXISTS;
-		}
-	}
-	if (*group_hashtab_ref_in_tenant == NULL ||
-	    e != GFARM_ERR_NO_ERROR) {
+	if (*group_hashtab_ref_in_tenant == NULL) {
 		gflog_error(GFARM_MSG_1005439,
 		    "no meory for group_hashtab of group %s tenant %s",
 		    name_in_tenant, tenant_name);
@@ -290,6 +271,28 @@ group_tenant_enter(char *groupname, struct group **gpp)
 		free(name_in_tenant);
 		free(g);
 		return (GFARM_ERR_NO_MEMORY);
+	}
+	tenant_entry = gfarm_hash_enter(*group_hashtab_ref_in_tenant,
+	    &name_in_tenant, sizeof(name_in_tenant),
+	    sizeof(struct group **), &created);
+	if (tenant_entry == NULL) {
+		gflog_error(GFARM_MSG_1005437,
+		    "no memory for group %s in tenant %s",
+		    name_in_tenant, tenant_name);
+		e = GFARM_ERR_NO_MEMORY;
+	} else if (!created) {
+		gflog_fatal(GFARM_MSG_1005438,
+		    "group %s already exists in tenant %s, "
+		    "possibly missing giant_lock",
+		    name_in_tenant, tenant_name);
+		/* never reaches here, but for defensive programming */
+		e = GFARM_ERR_ALREADY_EXISTS;
+	}
+	if (e != GFARM_ERR_NO_ERROR) {
+		gfarm_hash_purge(group_hashtab, &groupname, sizeof(groupname));
+		free(name_in_tenant);
+		free(g);
+		return (e);
 	}
 
 	quota_data_init(&g->quota);

@@ -444,20 +444,20 @@ main(int argc, char **argv)
 		break;
 	}
 
-	if ((e2 = gfarm_initialize(&argc_save, &argv_save)) !=
+	if ((e = gfarm_initialize(&argc_save, &argv_save)) !=
 	    GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: failed to initialize: %s\n",
-		    program_name, gfarm_error_string(e2));
+		    program_name, gfarm_error_string(e));
 		exit(EXIT_FAILURE);
 	}
 	if (gfarm_realpath_by_gfarm2fs(opt_path, &realpath)
 	    == GFARM_ERR_NO_ERROR)
 		opt_path = realpath;
 	if (multi_conn_mode) {
-		if ((e2 = gfm_client_connection_and_process_acquire_by_path(
+		if ((e = gfm_client_connection_and_process_acquire_by_path(
 			    opt_path, &gfm_conn)) != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "%s: metadata server for \"%s\": %s\n",
-			    program_name, opt_path, gfarm_error_string(e2));
+			    program_name, opt_path, gfarm_error_string(e));
 			exit(EXIT_FAILURE);
 		}
 	} else {
@@ -473,11 +473,11 @@ main(int argc, char **argv)
 			    "for_connection_cache: %s", gfarm_error_string(e));
 			exit(1);
 		}
-		if ((e2 = gfm_client_connection_acquire_single(hostname,
+		if ((e = gfm_client_connection_acquire_single(hostname,
 			    port, user, &gfm_conn)) != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "%s: metadata server \"%s:%d\": %s\n",
 			    program_name, hostname, port,
-			    gfarm_error_string(e2));
+			    gfarm_error_string(e));
 			exit(EXIT_FAILURE);
 		}
 		free(user);

@@ -705,26 +705,7 @@ user_tenant_enter(struct gfarm_user_info *ui, struct user **upp)
 		    gfarm_hash_table_alloc(USER_HASHTAB_SIZE,
 			gfarm_hash_strptr, gfarm_hash_key_equal_strptr);
 	}
-	if (*user_hashtab_ref_in_tenant != NULL) {
-		tenant_entry = gfarm_hash_enter(*user_hashtab_ref_in_tenant,
-		    &name_in_tenant, sizeof(name_in_tenant),
-		    sizeof(struct user **), &created);
-		if (tenant_entry == NULL) {
-			gflog_error(GFARM_MSG_1005398,
-			    "no memory for user %s in tenant %s",
-			    name_in_tenant, tenant_name);
-			e = GFARM_ERR_NO_MEMORY;
-		} else if (!created) {
-			gflog_fatal(GFARM_MSG_1005399,
-			    "user %s already exists in tenant %s, "
-			    "possibly missing giant_lock",
-			    name_in_tenant, tenant_name);
-			/* never reaches here, but for defensive programming */
-			e = GFARM_ERR_ALREADY_EXISTS;
-		}
-	}
-	if (*user_hashtab_ref_in_tenant == NULL ||
-	    e != GFARM_ERR_NO_ERROR) {
+	if (*user_hashtab_ref_in_tenant == NULL) {
 		gflog_error(GFARM_MSG_1005400,
 		    "no meory for user_hashtab of user %s tenant %s",
 		    name_in_tenant, tenant_name);
@@ -737,6 +718,33 @@ user_tenant_enter(struct gfarm_user_info *ui, struct user **upp)
 		free(name_in_tenant);
 		free(u);
 		return (GFARM_ERR_NO_MEMORY);
+	}
+	tenant_entry = gfarm_hash_enter(*user_hashtab_ref_in_tenant,
+	    &name_in_tenant, sizeof(name_in_tenant),
+	    sizeof(struct user **), &created);
+	if (tenant_entry == NULL) {
+		gflog_error(GFARM_MSG_1005398,
+		    "no memory for user %s in tenant %s",
+		    name_in_tenant, tenant_name);
+		e = GFARM_ERR_NO_MEMORY;
+	} else if (!created) {
+		gflog_fatal(GFARM_MSG_1005399,
+		    "user %s already exists in tenant %s, "
+		    "possibly missing giant_lock",
+		    name_in_tenant, tenant_name);
+		/* never reaches here, but for defensive programming */
+		e = GFARM_ERR_ALREADY_EXISTS;
+	}
+	if (e != GFARM_ERR_NO_ERROR) {
+		if (!user_is_null_str(u->ui.gsi_dn)) {
+			gfarm_hash_purge(user_dn_hashtab,
+			    &u->ui.gsi_dn, sizeof(u->ui.gsi_dn));
+		}
+		gfarm_hash_purge(user_hashtab,
+		    &u->ui.username, sizeof(u->ui.username));
+		free(name_in_tenant);
+		free(u);
+		return (e);
 	}
 
 	quota_data_init(&u->quota);

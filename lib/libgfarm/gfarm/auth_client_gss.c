@@ -60,10 +60,9 @@ gfarm_gss_acquire_initiator_credential(struct gfarm_gss *gss,
 		 */
 		if (self_role == GFARM_AUTH_ID_ROLE_SPOOL_HOST) {
 			service_tag = GFS_SERVICE_TAG;
-		} else if (self_role == GFARM_AUTH_ID_ROLE_METADATA_HOST) {
-			service_tag = GFM_SERVICE_TAG;
 		} else {
-			assert(0);
+			assert(self_role == GFARM_AUTH_ID_ROLE_METADATA_HOST);
+			service_tag = GFM_SERVICE_TAG;
 		}
 		e = gfarm_gss_cred_name_for_server(gss, service_tag, hostname,
 		    &desired_name);

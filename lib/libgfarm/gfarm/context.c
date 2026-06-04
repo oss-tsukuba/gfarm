@@ -138,7 +138,7 @@ gfarm_error_t
 gfarm_context_init(void)
 {
 	struct gfarm_context *ctxp;
-	gfarm_error_t e;
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 #	define BUFSIZE_MAX 2048
 	int i;
 
