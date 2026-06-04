@@ -217,8 +217,7 @@ because gfpcopy and db_journal_test currently have known bugs:
 ### ASAN/LSAN/UBSAN test
 
     (in a container)
-    % rm -rf ~/gfarm/build-x86_64-* ~/gfarm/*/build-x86_64-*
-    % sh ./all.sh asan
+    % sh ./all.sh asan clean
     % sh ./regress.sh
     % sh ./restart.sh
     ... and check /var/tmp/gfarm.log.{a,l,ub}san.* on host c{1..8}
@@ -235,8 +234,7 @@ NOTE:
     % sudo sysctl -w kernel.randomize_va_space=0
 
     (in a container)
-    % rm -rf ~/gfarm/build-x86_64-* ~/gfarm/*/build-x86_64-*
-    % sh ./all.sh tsan
+    % sh ./all.sh tsan clean
     % sh ./regress.sh
     % sh ./restart.sh
     ... and check /var/tmp/gfarm.log.tsan.* on host c{1..8}

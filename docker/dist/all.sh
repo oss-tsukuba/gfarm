@@ -7,6 +7,8 @@ trap '[ $status = 0 ] && echo All set || echo NG: $PROG; exit $status' 0 1 2 15
 build_pkg=false
 gfarm_config=all
 install_option=
+san_option=
+clean_option=
 REGRESS=false
 REGRESS_FULL=false
 
@@ -32,11 +34,14 @@ do
 	     [ $1 = "regress_full" ] && REGRESS_FULL=true
 	     } ;;
 	asan|tsan)
-	     install_option="$install_option $1" ;;
+	     san_option="$1" ;;
+	clean)
+	     clean_option=clean ;;
 	*) exit 1 ;;
 	esac
 	shift
 done
+install_option="$install_option $san_option $clean_option"
 
 # sanity
 [ -f ./install.sh ]

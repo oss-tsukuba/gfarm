@@ -26,6 +26,7 @@ esac
 
 BUILD_ONLY=false
 install_option=all
+MAKE_CLEAN=false
 while [ $# -gt 0 ]
 do
 	case $1 in
@@ -33,6 +34,7 @@ do
 	tsan) OPTFLAGS='-g -Og -Wall -fsanitize=thread -fsanitize-recover=all -fno-omit-frame-pointer -fno-common';;
 	single) install_option=$1 ;;
 	build_only) BUILD_ONLY=true ;;
+	clean) MAKE_CLEAN=true ;;
 	*) exit 1 ;;
 	esac
 	shift
@@ -44,6 +46,7 @@ BUILDDIR=build-$($ARCH_GUESS)
 
 if [ -d $BUILDDIR ]; then
 	cd $BUILDDIR
+	if $MAKE_CLEAN; then make clean > /dev/null; fi
 else
 	mkdir $BUILDDIR
 	cd $BUILDDIR
