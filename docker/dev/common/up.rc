@@ -24,6 +24,7 @@ set -eux -o pipefail
 
 # the followings are optional:
 #: $https_proxy
+#: $no_proxy
 #: $GFDOCKER_ENABLE_PROXY
 
 gfarm_src_path="/work/gfarm"
@@ -198,6 +199,11 @@ _EOF_
 	cat <<_EOF_
 proxy: ${https_proxy}
 _EOF_
+        if [ -n "${no_proxy:-}" ]; then
+    cat <<_EOF_
+no_proxy: ${no_proxy}
+_EOF_
+        fi
       fi
     ) >/tmp/sasl_gfarm-client.conf
     (
@@ -214,6 +220,12 @@ _EOF_
 	cat <<_EOF_
 proxy: ${https_proxy}
 _EOF_
+
+        if [ -n "${no_proxy:-}" ]; then
+    cat <<_EOF_
+no_proxy: ${no_proxy}
+_EOF_
+        fi
       fi
     ) >/tmp/sasl_gfarm.conf
   fi

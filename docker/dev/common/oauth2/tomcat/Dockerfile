@@ -1,4 +1,12 @@
-FROM jelastic/maven:3.9.5-openjdk-21 as BUILD
+# NOTE:
+# In proxy environments, build failures have been observed depending on
+# the Maven and JDK versions used in the build image.
+
+# Observations:
+# - Maven 3.9.x may fail to build.
+# - OpenJDK 17 may fail even with Maven versions earlier than 3.9.
+# - Maven 3.8.7 with OpenJDK 21 has shown stable behavior.
+FROM jelastic/maven:3.8.7-openjdk-21.ea-b7 AS build
 WORKDIR /build
 COPY jwt-server/pom.xml /build
 COPY jwt-server/src /build/src

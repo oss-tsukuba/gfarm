@@ -37,6 +37,31 @@ Restriction
   $ sudo update-grub
   $ sudo reboot
 
+# Proxy configuration (optional)
+
+  If you are in a proxy environment, configure the proxy settings in
+  "docker/dev/config.mk".
+
+  In some environments, Docker daemon proxy configuration may also be
+  required. Create a systemd drop-in file such as:
+
+  /etc/systemd/system/docker.service.d/http-proxy.conf
+
+  Example:
+
+  [Service]
+  Environment="http_proxy=http://proxy.example.com:8080"
+  Environment="https_proxy=http://proxy.example.com:8080"
+  Environment="HTTP_PROXY=http://proxy.example.com:8080"
+  Environment="HTTPS_PROXY=http://proxy.example.com:8080"
+  Environment="no_proxy=localhost,127.0.0.1,jwt-server,keycloak"
+  Environment="NO_PROXY=localhost,127.0.0.1,jwt-server,keycloak"
+
+  After updating the configuration:
+
+  $ sudo systemctl daemon-reload
+  $ sudo systemctl restart docker
+
 Quick start
 ===========
 

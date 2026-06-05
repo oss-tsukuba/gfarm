@@ -83,7 +83,7 @@ DOCKER_BUILD_FLAGS += \
 		--build-arg GFDOCKER_PROXY_HOST='$(GFDOCKER_PROXY_HOST)' \
 		--build-arg GFDOCKER_PROXY_PORT='$(GFDOCKER_PROXY_PORT)' \
 		--build-arg GFDOCKER_ENABLE_PROXY='$(GFDOCKER_ENABLE_PROXY)' \
-                --build-arg MAVEN_OPTS='-Dhttp.proxyHost=$(GFDOCKER_PROXY_HOST) \
+		--build-arg MAVEN_OPTS='-Dhttp.proxyHost=$(GFDOCKER_PROXY_HOST) \
                         -Dhttp.proxyPort=$(GFDOCKER_PROXY_PORT) \
                         -Dhttps.proxyHost=$(GFDOCKER_PROXY_HOST) \
                         -Dhttps.proxyPort=$(GFDOCKER_PROXY_PORT)'
