@@ -1203,7 +1203,7 @@ usage(void)
 	    program_name,
 	    "[-lMH] [-P <path>] [-a <architecture>] [-D <domainname>] [-j <concurrency>] [-iruv]",
 	    program_name,
-	    "-c  -a <architecture>  [-P <path>] [-n <ncpu>] [-p <port>] [-f <flags>] <hostname> [<hostalias>...]",
+	    "-c -a <architecture> -p <port> [-P <path>] [-n <ncpu>] [-f <flags>] <hostname> [<hostalias>...]",
 	    program_name,
 	    "-m [-a <architecture>] [-P <path>] [-n <ncpu>] [-p <port>] [-f <flags>] [-A] <hostname> [<hostalias>...]",
 	    program_name, "-d [-P <path>] <hostname>...",
