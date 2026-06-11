@@ -32,6 +32,9 @@ static int is_parent = 1;
 static int n_handle_list = 0;
 static gfpara_t *handle_list[GFPARA_HANDLE_LIST_MAX];
 
+static pthread_mutex_t handle_list_mutex = PTHREAD_MUTEX_INITIALIZER;
+static const char HANDLE_LIST_MUTEX_DIAG[] = "handle_list_mutex";
+
 struct gfpara {
 	pthread_t thread;
 	int n_procs;
@@ -60,11 +63,28 @@ gfpara_fatal(const char *format, ...)
 	va_list ap;
 	int i;
 
-	if (is_parent)
-		for (i = 0; i < n_handle_list; i++)
-			if (handle_list[i] != NULL &&
-			    handle_list[i]->watch_stderr_end == 0)
-				gfpara_watch_stderr_stop(handle_list[i]);
+	if (is_parent) {
+		gfarm_mutex_lock(&handle_list_mutex, "gfpara_fatal",
+				 HANDLE_LIST_MUTEX_DIAG);
+		for (i = 0; i < n_handle_list; i++) {
+			if (handle_list[i] != NULL) {
+				int is_end;
+
+				gfarm_mutex_lock(
+					&handle_list[i]->watch_stderr_mutex,
+					"gfpara_fatal", "watch_stderr_mutex");
+				is_end = handle_list[i]->watch_stderr_end;
+				gfarm_mutex_unlock(
+					&handle_list[i]->watch_stderr_mutex,
+					"gfpara_fatal", "watch_stderr_mutex");
+				if (is_end == 0)
+					gfpara_watch_stderr_stop(
+						handle_list[i]);
+			}
+		}
+		gfarm_mutex_unlock(&handle_list_mutex, "gfpara_fatal",
+				   HANDLE_LIST_MUTEX_DIAG);
+	}
 	fprintf(stderr, "fatal error: ");
 	va_start(ap, format);
 	vfprintf(stderr, format, ap);
@@ -140,6 +160,7 @@ gfpara_watch_stderr(void *arg)
 			continue;
 		} else if (retv == 0) { /* timeout */
 			int is_end;
+
 			gfarm_mutex_lock(&handle->watch_stderr_mutex,
 					 "gfpara_watch_stderr",
 					 "watch_stderr_mutex");
@@ -173,9 +194,11 @@ gfpara_watch_stderr_start(gfpara_t *handle)
 {
 	int eno;
 
-	gfarm_mutex_init(&handle->watch_stderr_mutex,
+	gfarm_mutex_lock(&handle->watch_stderr_mutex,
 			 "gfpara_watch_stderr_start", "watch_stderr_mutex");
 	handle->watch_stderr_end = 0;
+	gfarm_mutex_unlock(&handle->watch_stderr_mutex,
+			 "gfpara_watch_stderr_start", "watch_stderr_mutex");
 	eno = pthread_create(&handle->watch_stderr, NULL,
 	    gfpara_watch_stderr, handle);
 	if (eno != 0)
@@ -210,8 +233,19 @@ gfpara_init(gfpara_t **handlep, int n_procs,
 	int i, j;
 	gfpara_proc_t *procs;
 	gfpara_t *handle;
+	int slot = -1;
 
-	if (n_handle_list >= GFPARA_HANDLE_LIST_MAX) {
+	gfarm_mutex_lock(&handle_list_mutex, "gfpara_init",
+			 HANDLE_LIST_MUTEX_DIAG);
+	for (i = 0; i < GFPARA_HANDLE_LIST_MAX; i++) {
+		if (handle_list[i] == NULL) {
+			slot = i;
+			break;
+		}
+	}
+	gfarm_mutex_unlock(&handle_list_mutex, "gfpara_init",
+			   HANDLE_LIST_MUTEX_DIAG);
+	if (slot == -1) {
 		fprintf(stderr, "too many called gfpara_init()\n");
 		return (GFARM_ERR_TOO_MANY_OPEN_FILES);
 	}
@@ -220,7 +254,9 @@ gfpara_init(gfpara_t **handlep, int n_procs,
 	GFARM_MALLOC_ARRAY(procs, n_procs);
 	if (handle == NULL || procs == NULL)
 		gfpara_fatal("no memory: n_procs=%d", n_procs);
-	handle->watch_stderr_end = 1;
+	gfarm_mutex_init(&handle->watch_stderr_mutex,
+			 "gfpara_init", "watch_stderr_mutex");
+	handle->watch_stderr_end = 1;  /* 1: stopped */
 
 	fflush(stdout); /* Don't send buffer to child */
 	fflush(stderr); /* Don't send buffer to child */
@@ -306,7 +342,13 @@ gfpara_init(gfpara_t **handlep, int n_procs,
 
 	*handlep = handle;
 
-	handle_list[n_handle_list++] = handle;
+	gfarm_mutex_lock(&handle_list_mutex, "gfpara_init",
+			 HANDLE_LIST_MUTEX_DIAG);
+	handle_list[slot] = handle;
+	if (slot >= n_handle_list)
+		n_handle_list = slot + 1;  /* next slot */
+	gfarm_mutex_unlock(&handle_list_mutex, "gfpara_init",
+			   HANDLE_LIST_MUTEX_DIAG);
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -608,6 +650,19 @@ gfpara_join(gfpara_t *handle)
 		fclose(procs[i].err);
 	}
 
+	gfarm_mutex_lock(&handle_list_mutex, "gfpara_join",
+			 HANDLE_LIST_MUTEX_DIAG);
+	for (i = 0; i < n_handle_list; i++) {
+		if (handle_list[i] == handle) {
+			handle_list[i] = NULL;
+			break;
+		}
+	}
+	gfarm_mutex_unlock(&handle_list_mutex, "gfpara_join",
+			   HANDLE_LIST_MUTEX_DIAG);
+
+	gfarm_mutex_destroy(&handle->watch_stderr_mutex,
+			    "gfpara_join", "watch_stderr_mutex");
 	free(handle->procs);
 	free(handle);
 	return (gfarm_errno_to_error(eno));
