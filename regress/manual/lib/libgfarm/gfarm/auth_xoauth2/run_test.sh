@@ -46,10 +46,18 @@ TMP_TABLE=$(mktemp)
 SASL_CONF=$(pkg-config --variable=libdir libsasl2)/sasl2/gfarm-client.conf
 INIT_CONF_TEMPLATE="init_gfarm_sasl.conf.in"
 INIT_CONF="init_gfarm_sasl.conf"
-if [[ $(gfhost -l 2>&1 | grep -c "SASL using mechanism XOAUTH2") -ge 1 ]] ; then
+if [[ $(gfhost -l 2>&1 | grep -c "SASL using mechanism XOAUTH2") -ge 1 ]]; then
     echo "[INFO] XOAUTH2 mechanism is already enabled"
-    VALID_AUD=$(jwt-parse | grep '"aud"' | sed -E 's/.*"aud": "([^"]+)".*/\1/')
-    VALID_ISSUER=$(jwt-parse | grep '"iss"' | sed -E 's/.*"iss": "([^"]+)".*/\1/')
+    VALID_AUD=$(
+        jwt-parse |
+        grep '"aud"' |
+        sed -E 's/.*"aud": "([^"]+)".*/\1/'
+    )
+    VALID_ISSUER=$(
+        jwt-parse |
+        grep '"iss"' |
+        sed -E 's/.*"iss": "([^"]+)".*/\1/'
+    )
     INVALID_ISSUER="${VALID_ISSUER}-$(date +%s)"
     INVALID_ISSUER2="http://invalid-issuer.example.com/"
     ISSUER_PARENT=$(printf '%s\n' "$VALID_ISSUER" | sed 's:/[^/]*$::')
@@ -59,8 +67,9 @@ if [[ $(gfhost -l 2>&1 | grep -c "SASL using mechanism XOAUTH2") -ge 1 ]] ; then
     INVALID_CLAIM="$(date +%s)-invalid-claim"
     INVALID_CLAIM2="$(date +%s)-2-invalid-claim"
     VALID_SASL_USER=$(
-    jwt-parse |
-    sed -n "s/^[[:space:]]*\"${VALID_CLAIM}\":[[:space:]]*\"\([^\"]*\)\".*/\1/p"
+        jwt-parse |
+        sed -n \
+        "s/^[[:space:]]*\"${VALID_CLAIM}\":[[:space:]]*\"\([^\"]*\)\".*/\1/p"
     )
     INVALID_SASL_USER="$(date +%s)-invalid-user"
     VALID_SCOPE=$(
