@@ -10,16 +10,7 @@ if [[ ! -f "$CONF" ]]; then
     exit 1
 fi
 
-# docker/dev default config.mk
-HOSTS=(
-  gfmd1
-  gfmd2
-  gfmd3
-  gfsd1
-  gfsd2
-  gfsd3
-  gfsd4
-)
+source ./host.sh
 
 for host in "${HOSTS[@]}"
 do

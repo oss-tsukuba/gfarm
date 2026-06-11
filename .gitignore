@@ -120,6 +120,9 @@
 /regress/lib/libgfarm/gfutil/utf8/utf8_test
 /regress/manual/lib/libgfarm/gfarm/gfs_pio_failover/gfs_pio_failover_test
 /regress/manual/lib/libgfarm/gfarm/auth_xoauth2/auth_xoauth2_test
+/regress/manual/lib/libgfarm/gfarm/auth_xoauth2/tests.table
+/regress/manual/lib/libgfarm/gfarm/auth_xoauth2/init_gfarm_sasl.conf
+/regress/manual/lib/libgfarm/gfarm/auth_xoauth2/gfarm_sasl.conf
 /regress/manual/server/gfsd/fo_notify_test/fo_notify_test
 /regress/server/gfmd/db_journal/db_journal_test
 /regress/spool_check_config.sh
