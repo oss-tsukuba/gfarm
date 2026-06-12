@@ -17,7 +17,7 @@ RUN dnf -y install epel-release \
     openssl-devel \
     krb5-libs krb5-devel krb5-server krb5-workstation \
     cyrus-sasl cyrus-sasl-lib cyrus-sasl-devel \
-    cyrus-sasl-plain cyrus-sasl-gssapi \
+    cyrus-sasl-plain cyrus-sasl-gssapi jq \
     golang \
     gcc-c++ cmake sqlite-devel libcurl-devel libuuid-devel \
     postgresql-devel \

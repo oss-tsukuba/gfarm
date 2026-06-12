@@ -1,7 +1,6 @@
 #!/bin/bash
 set -euo pipefail
 
-INIT_CONF="init_gfarm_sasl.conf"
 CONF="gfarm_sasl.conf"
 DEPLOY="./deploy_gfarm_sasl.sh"
 
@@ -12,13 +11,181 @@ if ! grep -qx 'log_auth_verbose enable' ~/.gfarm2rc 2>/dev/null; then
     echo '[INFO] add "log_auth_verbose enable" to ~/.gfarm2rc'
     echo 'log_auth_verbose enable' >> ~/.gfarm2rc
 fi
-echo "[INFO] executing authconfig sasl.xoauth2"
-authconfig sasl.xoauth2
+
+expand_wildcard()
+{
+    local issuer="$1"
+    local line="$2"
+    local token="$3"
+
+    while [[ "$line" =~ @${token}\(([0-9]+)\)@ ]]
+    do
+        local n="${BASH_REMATCH[1]}"
+        local replacement
+
+        if (( n >= ${#issuer} )); then
+            case "$token" in
+            VALID_*)
+                replacement="*"
+                ;;
+            *)
+                replacement="invalid-none*"
+                ;;
+            esac
+        else
+            replacement="${issuer::${#issuer}-n}*"
+        fi
+
+        line="${line/@${token}($n)@/$replacement}"
+    done
+
+    printf '%s\n' "$line"
+}
+
+TMP_TABLE=$(mktemp)
+SASL_CONF=$(pkg-config --variable=libdir libsasl2)/sasl2/gfarm-client.conf
+INIT_CONF_TEMPLATE="init_gfarm_sasl.conf.in"
+INIT_CONF="init_gfarm_sasl.conf"
+if [[ $(gfhost -l 2>&1 | grep -c "SASL using mechanism XOAUTH2") -ge 1 ]]; then
+    echo "[INFO] XOAUTH2 mechanism is already enabled"
+    VALID_AUD=$(
+        jwt-parse |
+        grep '"aud"' |
+        sed -E 's/.*"aud": "([^"]+)".*/\1/'
+    )
+    VALID_ISSUER=$(
+        jwt-parse |
+        grep '"iss"' |
+        sed -E 's/.*"iss": "([^"]+)".*/\1/'
+    )
+    INVALID_ISSUER="${VALID_ISSUER}-$(date +%s)"
+    INVALID_ISSUER2="http://invalid-issuer.example.com/"
+    ISSUER_PARENT=$(printf '%s\n' "$VALID_ISSUER" | sed 's:/[^/]*$::')
+    VALID_CLAIM=$(
+        sed -n 's/^xoauth2_user_claim:[[:space:]]*//p' "$SASL_CONF"
+    )
+    INVALID_CLAIM="$(date +%s)-invalid-claim"
+    INVALID_CLAIM2="$(date +%s)-2-invalid-claim"
+    VALID_SASL_USER=$(
+        jwt-parse |
+        sed -n \
+        "s/^[[:space:]]*\"${VALID_CLAIM}\":[[:space:]]*\"\([^\"]*\)\".*/\1/p"
+    )
+    INVALID_SASL_USER="$(date +%s)-invalid-user"
+    VALID_SCOPE=$(
+        jwt-parse |
+        sed -n 's/.*"scope": "\([^"]*\)".*/\1/p' |
+        awk '{print $1}'
+    )
+    INVALID_SCOPE="$(date +%s)-invalid-scope"
+    INVALID_SCOPE2="$(date +%s)-2-invalid-scope"
+
+    sed \
+    -e "s|@VALID_SASL_USER@|$VALID_SASL_USER|g" \
+    -e "s|@INVALID_SASL_USER@|$INVALID_SASL_USER|g" \
+    -e "s|@VALID_ISSUER@|$VALID_ISSUER|g" \
+    -e "s|@INVALID_ISSUER@|$INVALID_ISSUER|g" \
+    -e "s|@INVALID_ISSUER2@|$INVALID_ISSUER2|g" \
+    -e "s|@ISSUER_PARENT@|$ISSUER_PARENT|g" \
+    -e "s|@VALID_CLAIM@|$VALID_CLAIM|g" \
+    -e "s|@INVALID_CLAIM@|$INVALID_CLAIM|g" \
+    -e "s|@INVALID_CLAIM2@|$INVALID_CLAIM2|g" \
+    -e "s|@VALID_SCOPE@|$VALID_SCOPE|g" \
+    -e "s|@INVALID_SCOPE@|$INVALID_SCOPE|g" \
+    -e "s|@INVALID_SCOPE2@|$INVALID_SCOPE2|g" \
+    tests.table.in > "$TMP_TABLE"
+
+    while IFS= read -r line
+    do
+        for token in \
+            VALID_ISSUER \
+            INVALID_ISSUER \
+            INVALID_ISSUER2 \
+            INVALID_SASL_USER \
+            VALID_SCOPE \
+            INVALID_SCOPE \
+            INVALID_SCOPE2
+        do
+            line=$(expand_wildcard \
+                "${!token}" "$line" "${token}_WILDCARD")
+        done
+
+        printf '%s\n' "$line"
+    done < "$TMP_TABLE" > tests.table
+
+    sed \
+    -e "s|@VALID_SCOPE@|$VALID_SCOPE|g" \
+    -e "s|@VALID_AUD@|$VALID_AUD|g" \
+    -e "s|@VALID_CLAIM@|$VALID_CLAIM|g" \
+    -e "s|@VALID_ISSUER@|$VALID_ISSUER|g" \
+    -e "s|@INVALID_SASL_USER@|$INVALID_SASL_USER|g" \
+    -e "s|@INVALID_SCOPE@|$INVALID_SCOPE|g" \
+    -e "s|@INVALID_ISSUER@|$INVALID_ISSUER|g" \
+    init_gfarm_sasl.conf.in > init_gfarm_sasl.conf
+
+    rm -f "$TMP_TABLE"
+else
+    echo "[ERROR] XOAUTH2 mechanism is not enabled. \
+Please check the configuration and try again."
+    cleanup
+    exit 1
+fi
+
+source ./host.sh
+
+BACKUP_DIR=$(mktemp -d)
+
+cleanup() {
+    restore_gfarm_conf
+
+    if grep -qx 'log_auth_verbose enable' ~/.gfarm2rc 2>/dev/null; then
+        echo '[INFO] removing "log_auth_verbose enable" from ~/.gfarm2rc'
+        sed -i '\~^log_auth_verbose enable$~d' ~/.gfarm2rc
+    fi
+}
+trap cleanup EXIT
+
+backup_gfarm_conf()
+{
+    LIBDIR=$(pkg-config --variable=libdir libsasl2)
+
+    for host in "${HOSTS[@]}"
+    do
+        echo "[INFO] backup gfarm.conf from $host"
+
+        scp -q \
+            "$host:${LIBDIR}/sasl2/gfarm.conf" \
+            "$BACKUP_DIR/${host}.conf"
+    done
+}
+
+restore_gfarm_conf()
+{
+    LIBDIR=$(pkg-config --variable=libdir libsasl2)
+
+    for host in "${HOSTS[@]}"
+    do
+        echo "[INFO] restore gfarm.conf to $host"
+
+        scp -q \
+            "$BACKUP_DIR/${host}.conf" \
+            "$host:/tmp/gfarm.conf"
+
+        ssh -n "$host" \
+            "sudo cp /tmp/gfarm.conf ${LIBDIR}/sasl2/gfarm.conf"
+    done
+
+    gfservice restart-all
+
+    rm -rf "$BACKUP_DIR"
+}
 
 PASS_COUNT=0
 FAIL_COUNT=0
 TOTAL_COUNT=0
 FAIL_LIST=()
+
+backup_gfarm_conf
 
 run_test() {
 
@@ -153,13 +320,5 @@ if [[ $FAIL_COUNT -ne 0 ]]; then
     done
 fi
 
-cleanup() {
-    if grep -qx 'log_auth_verbose enable' ~/.gfarm2rc 2>/dev/null; then
-        echo '[INFO] removing "log_auth_verbose enable" from ~/.gfarm2rc'
-        sed -i '\~^log_auth_verbose enable$~d' ~/.gfarm2rc
-    fi
-}
-
 echo
 echo "logs are saved under: $LOG_ROOT/"
-trap cleanup EXIT
