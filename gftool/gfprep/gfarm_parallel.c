@@ -547,7 +547,8 @@ gfpara_thread(void *param)
 			int interrupt = gfpara_get_interrupt(handle);
 
 			if (interrupt == GFPARA_INTR_TERM) {
-				int timeout_msec = gfpara_get_timeout_msec(handle);
+				int timeout_msec = gfpara_get_timeout_msec(
+					handle);
 
 				tv.tv_sec = timeout_msec / 1000;
 				tv.tv_usec = (timeout_msec % 1000)
@@ -561,7 +562,8 @@ gfpara_thread(void *param)
 			if (retv > 0)
 				break;  /* readable */
 			else if (retv == 0) { /* timeout */
-				if (gfpara_get_interrupt(handle) == GFPARA_INTR_TERM)
+				if (gfpara_get_interrupt(handle)
+				    == GFPARA_INTR_TERM)
 					goto end;
 			} else
 				gfpara_fatal("select error: %s\n",
