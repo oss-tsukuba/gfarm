@@ -46,8 +46,9 @@ struct gfpara {
 	void *(*func_end)(void *);
 	void *param_end;
 	int started;
-	int interrupt;
-	int timeout_msec;
+	int interrupt; /* interrupt_mutex */
+	int timeout_msec; /* interrupt_mutex */
+	pthread_mutex_t interrupt_mutex;
 
 	pthread_t watch_stderr;
 	int watch_stderr_end; /* watch_stderr_mutex */
@@ -258,6 +259,8 @@ gfpara_init(gfpara_t **handlep, int n_procs,
 		gfpara_fatal("no memory: n_procs=%d", n_procs);
 	gfarm_mutex_init(&handle->watch_stderr_mutex,
 			 "gfpara_init", "watch_stderr_mutex");
+	gfarm_mutex_init(&handle->interrupt_mutex,
+			 "gfpara_init", "interrupt_mutex");
 	handle->watch_stderr_end = 1;  /* 1: stopped */
 
 	fflush(stdout); /* Don't send buffer to child */
@@ -483,6 +486,32 @@ gfpara_send_string(FILE *out, const char *format, ...)
 	free(str);
 }
 
+static int
+gfpara_get_interrupt(gfpara_t *handle)
+{
+	int interrupt;
+
+	gfarm_mutex_lock(&handle->interrupt_mutex, "gfpara_get_interrupt",
+			 "interrupt_mutex");
+	interrupt = handle->interrupt;
+	gfarm_mutex_unlock(&handle->interrupt_mutex, "gfpara_get_interrupt",
+			   "interrupt_mutex");
+	return (interrupt);
+}
+
+static int
+gfpara_get_timeout_msec(gfpara_t *handle)
+{
+	int timeout_msec;
+
+	gfarm_mutex_lock(&handle->interrupt_mutex, "gfpara_get_timeout_msec",
+			 "interrupt_mutex");
+	timeout_msec = handle->timeout_msec;
+	gfarm_mutex_unlock(&handle->interrupt_mutex, "gfpara_get_timeout_msec",
+			   "interrupt_mutex");
+	return (timeout_msec);
+}
+
 static void *
 gfpara_thread(void *param)
 {
@@ -507,18 +536,22 @@ gfpara_thread(void *param)
 			gfpara_fatal("no child process: pid=%ld\n",
 				(long int) proc->pid);
 		retv = func_send(proc->in, proc, param_send,
-		    handle->interrupt != GFPARA_INTR_RUN ? 1 : 0);
+		    gfpara_get_interrupt(handle) != GFPARA_INTR_RUN ? 1 : 0);
 		if (retv == GFPARA_END)
 			goto end;
 		else if (retv == GFPARA_FATAL)
 			gfpara_fatal("gfpara error in func_send");
 		assert(retv == GFPARA_NEXT);
 		for (;;) {
-			if (handle->interrupt == GFPARA_INTR_TERM) {
-				tv.tv_sec = handle->timeout_msec / 1000;
-				tv.tv_usec = (handle->timeout_msec % 1000)
+			int interrupt = gfpara_get_interrupt(handle);
+
+			if (interrupt == GFPARA_INTR_TERM) {
+				int timeout_msec = gfpara_get_timeout_msec(handle);
+
+				tv.tv_sec = timeout_msec / 1000;
+				tv.tv_usec = (timeout_msec % 1000)
 					* 1000;
-			} else {
+			} else {  /* default interval */
 				tv.tv_sec = 2;
 				tv.tv_usec = 0;
 			}
@@ -527,7 +560,7 @@ gfpara_thread(void *param)
 			if (retv > 0)
 				break;  /* readable */
 			else if (retv == 0) { /* timeout */
-				if (handle->interrupt == GFPARA_INTR_TERM)
+				if (gfpara_get_interrupt(handle) == GFPARA_INTR_TERM)
 					goto end;
 			} else
 				gfpara_fatal("select error: %s\n",
@@ -665,6 +698,8 @@ gfpara_join(gfpara_t *handle)
 
 	gfarm_mutex_destroy(&handle->watch_stderr_mutex,
 			    "gfpara_join", "watch_stderr_mutex");
+	gfarm_mutex_destroy(&handle->interrupt_mutex,
+			    "gfpara_join", "interrupt_mutex");
 	free(handle->procs);
 	free(handle);
 	return (gfarm_errno_to_error(eno));
@@ -673,14 +708,22 @@ gfpara_join(gfpara_t *handle)
 gfarm_error_t
 gfpara_terminate(gfpara_t *handle, int timeout_msec)
 {
+	gfarm_mutex_lock(&handle->interrupt_mutex, "gfpara_terminate",
+			 "interrupt_mutex");
 	handle->timeout_msec = timeout_msec;
 	handle->interrupt = GFPARA_INTR_TERM;
+	gfarm_mutex_unlock(&handle->interrupt_mutex, "gfpara_terminate",
+			   "interrupt_mutex");
 	return (GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t
 gfpara_stop(gfpara_t *handle)
 {
+	gfarm_mutex_lock(&handle->interrupt_mutex, "gfpara_stop",
+			 "interrupt_mutex");
 	handle->interrupt = GFPARA_INTR_STOP;
+	gfarm_mutex_unlock(&handle->interrupt_mutex, "gfpara_stop",
+			   "interrupt_mutex");
 	return (GFARM_ERR_NO_ERROR);
 }
