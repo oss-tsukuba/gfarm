@@ -800,9 +800,9 @@ gfpara_signal_watcher_start(void)
 	static const char diag[] = "gfpara_signal_watcher_start";
 
 	gfpara_signal_sigs_set(&watch_sigs);
-	if (pthread_sigmask(SIG_BLOCK, &watch_sigs, NULL) == -1) {
-		gfmsg_fatal("%s: pthread_sigmask: %s", diag, strerror(errno));
-	}
+	eno = pthread_sigmask(SIG_BLOCK, &watch_sigs, NULL);
+	if (eno != 0)
+		gfmsg_fatal("%s: pthread_sigmask: %s", diag, strerror(eno));
 	eno = pthread_create(&signal_thread, NULL, gfpara_signal_handler,
 			     &watch_sigs);
 	if (eno != 0) {
