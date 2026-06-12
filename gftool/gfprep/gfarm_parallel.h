@@ -27,6 +27,7 @@ gfarm_error_t gfpara_start(gfpara_t *);
 gfarm_error_t gfpara_join(gfpara_t *);
 gfarm_error_t gfpara_terminate(gfpara_t *, int);
 gfarm_error_t gfpara_stop(gfpara_t *);
+int gfpara_is_terminated(void);
 
 void gfpara_recv_int(FILE *, gfarm_int32_t *);
 void gfpara_recv_int64(FILE *, gfarm_int64_t *);
@@ -40,3 +41,6 @@ pid_t gfpara_pid_get(gfpara_proc_t *);
 void *gfpara_data_get(gfpara_proc_t *);
 void gfpara_data_set(gfpara_proc_t *, void *);
 gfpara_proc_t *gfpara_procs_get(gfpara_t *);
+
+void gfpara_signal_watcher_start(void);
+void gfpara_signal_ignore(void);

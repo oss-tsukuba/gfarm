@@ -24,6 +24,7 @@
 #include "thrsubr.h"
 
 #include "gfurl.h"
+#include "gfmsg.h"
 
 #include "gfarm_parallel.h"
 
@@ -726,4 +727,94 @@ gfpara_stop(gfpara_t *handle)
 	gfarm_mutex_unlock(&handle->interrupt_mutex, "gfpara_stop",
 			   "interrupt_mutex");
 	return (GFARM_ERR_NO_ERROR);
+}
+
+static pthread_mutex_t gfpara_sig_mutex = PTHREAD_MUTEX_INITIALIZER;
+static const char GFPARA_SIG_MUTEX_DIAG[] = "sig_mutex";
+static int is_terminated = 0;  /* sig_mutex */
+
+int
+gfpara_is_terminated(void)
+{
+	int i;
+	static const char diag[] = "gfpara_is_terminated";
+
+	gfarm_mutex_lock(&gfpara_sig_mutex, diag, GFPARA_SIG_MUTEX_DIAG);
+	i = is_terminated;
+	gfarm_mutex_unlock(&gfpara_sig_mutex, diag, GFPARA_SIG_MUTEX_DIAG);
+
+	return (i);
+}
+
+static void
+gfpara_signal_add(sigset_t *sigs, int sigid, const char *name)
+{
+	if (sigaddset(sigs, sigid) == -1)
+		gfmsg_fatal("sigaddset(%s): %s", name, strerror(errno));
+}
+
+static void
+gfpara_signal_sigs_set(sigset_t *sigs)
+{
+	if (sigemptyset(sigs) == -1)
+		gfmsg_fatal("sigemptyset: %s", strerror(errno));
+
+	gfpara_signal_add(sigs, SIGHUP, "SIGHUP");
+	gfpara_signal_add(sigs, SIGTERM, "SIGTERM");
+	gfpara_signal_add(sigs, SIGINT, "SIGINT");
+}
+
+static void *
+gfpara_signal_handler(void *p)
+{
+	sigset_t *sigs = p;
+	int rv, sig;
+	static const char diag[] = "gfpara_signal_handler";
+
+	for (;;) {
+		if ((rv = sigwait(sigs, &sig)) != 0) {
+			gfmsg_warn("%s: sigwait: %s", diag, strerror(rv));
+			continue;
+		}
+		switch (sig) {
+		case SIGHUP:
+		case SIGINT:
+		case SIGTERM:
+			gfarm_mutex_lock(&gfpara_sig_mutex, diag,
+					 GFPARA_SIG_MUTEX_DIAG);
+			is_terminated = 1;
+			gfarm_mutex_unlock(&gfpara_sig_mutex, diag,
+					   GFPARA_SIG_MUTEX_DIAG);
+		}
+	}
+	return (NULL);
+}
+
+static sigset_t watch_sigs;
+
+void
+gfpara_signal_watcher_start(void)
+{
+	pthread_t signal_thread;
+	int eno;
+	static const char diag[] = "gfpara_signal_watcher_start";
+
+	gfpara_signal_sigs_set(&watch_sigs);
+	if (pthread_sigmask(SIG_BLOCK, &watch_sigs, NULL) == -1) {
+		gfmsg_fatal("%s: pthread_sigmask: %s", diag, strerror(errno));
+	}
+	eno = pthread_create(&signal_thread, NULL, gfpara_signal_handler,
+			     &watch_sigs);
+	if (eno != 0) {
+		gfmsg_fatal("%s: pthread_create: %s", diag, strerror(eno));
+	}
+	pthread_detach(signal_thread);
+}
+
+void
+gfpara_signal_ignore(void)
+{
+	signal(SIGINT, SIG_IGN);
+	signal(SIGTERM, SIG_IGN);
+	signal(SIGHUP, SIG_IGN);
 }
