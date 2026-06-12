@@ -50,42 +50,55 @@ struct gfpara {
 	int timeout_msec;
 
 	pthread_t watch_stderr;
-	int watch_stderr_end;
+	int watch_stderr_end; /* watch_stderr_mutex */
 	pthread_mutex_t watch_stderr_mutex;
 };
 
+struct gfpara_proc {
+	pthread_t thread;
+	gfpara_t *handle;
+	pid_t pid;
+	FILE *in;
+	FILE *out;
+	FILE *err;
+	void *data; /* any */
+	int working;
+};
 
 static void gfpara_watch_stderr_stop(gfpara_t *handle);
+
 static void gfpara_fatal(const char *, ...) GFLOG_PRINTF_ARG(1, 2);
+
 static void
 gfpara_fatal(const char *format, ...)
 {
 	va_list ap;
-	int i;
+	int i, j;
+	gfpara_t *handle;
+	static const char diag[] = "gfpara_fatal";
 
 	if (is_parent) {
-		gfarm_mutex_lock(&handle_list_mutex, "gfpara_fatal",
+		/*
+		 * cancel threads to avoid 'ThreadSanitizer:
+		 * CHECK failed: sanitizer_thread_registry.cpp:364
+		 * "((t)) != * (0)" (0x0, 0x0)'
+		 */
+		gfarm_mutex_lock(&handle_list_mutex, diag,
 				 HANDLE_LIST_MUTEX_DIAG);
 		for (i = 0; i < n_handle_list; i++) {
-			if (handle_list[i] != NULL) {
-				int is_end;
-
-				gfarm_mutex_lock(
-					&handle_list[i]->watch_stderr_mutex,
-					"gfpara_fatal", "watch_stderr_mutex");
-				is_end = handle_list[i]->watch_stderr_end;
-				gfarm_mutex_unlock(
-					&handle_list[i]->watch_stderr_mutex,
-					"gfpara_fatal", "watch_stderr_mutex");
-				if (is_end == 0)
-					gfpara_watch_stderr_stop(
-						handle_list[i]);
+			handle = handle_list[i];
+			if (handle == NULL) {
+				continue;
+			}
+			pthread_cancel(handle->watch_stderr);
+			for (j = 0; j < handle->n_procs; j++) {
+				pthread_cancel(handle->procs[j].thread);
 			}
 		}
-		gfarm_mutex_unlock(&handle_list_mutex, "gfpara_fatal",
+		gfarm_mutex_unlock(&handle_list_mutex, diag,
 				   HANDLE_LIST_MUTEX_DIAG);
 	}
-	fprintf(stderr, "fatal error: ");
+	fprintf(stderr, "FATAL: gfarm_parallel: ");
 	va_start(ap, format);
 	vfprintf(stderr, format, ap);
 	va_end(ap);
@@ -98,17 +111,6 @@ gfpara_procs_get(gfpara_t *handle)
 {
 	return (handle->procs);
 }
-
-struct gfpara_proc {
-	pthread_t thread;
-	gfpara_t *handle;
-	pid_t pid;
-	FILE *in;
-	FILE *out;
-	FILE *err;
-	void *data; /* any */
-	int working;
-};
 
 pid_t
 gfpara_pid_get(gfpara_proc_t *proc)
@@ -560,8 +562,8 @@ gfpara_communicate(void *param)
 		if (eno == 0)
 			procs[i].working = 1;
 		else
-			fprintf(stderr, "pthread_create failed: %s\n",
-				strerror(eno));
+			gfpara_fatal("pthread_create failed: %s\n",
+				     strerror(eno));
 	}
 	for (i = 0; i < n_procs; i++) {
 		if (procs[i].working)
