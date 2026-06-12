@@ -2434,7 +2434,7 @@ gfpcopy_prepare_dir_for_hpss(GFURL src, GFURL dst, GFURL *new_dstp,
 
 		e = gfurl_exist(new_dst);
 		if (e == GFARM_ERR_NO_ERROR) { /* exist */
-			gfmsg_error("already exist: %s", gfurl_url(new_dst));
+			gfmsg_error("already exists: %s", gfurl_url(new_dst));
 			exit(EXIT_FAILURE);
 		}
 
@@ -3232,7 +3232,7 @@ main(int argc, char *argv[])
 		/* count n_src_available only */
 		e = gfprep_hostinfohash_to_array(
 		    gfurl_url(src), &n_src_available, NULL, hash_src);
-		gfmsg_fatal_e(e, "gfprep_hostinfohash_to_array for soruce");
+		gfmsg_fatal_e(e, "gfprep_hostinfohash_to_array for source");
 		if (n_src_available == 0) {
 			gfmsg_error(
 			    "no available node for source "
