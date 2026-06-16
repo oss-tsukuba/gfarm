@@ -88,7 +88,7 @@ RUN yes | unminimize \
       && make install-nokeys \
     ; fi \
     && apt-get -y install sasl2-bin libsasl2-modules-db libsasl2-dev \
-    libsasl2-modules libsasl2-modules-gssapi-mit \
+    libsasl2-modules libsasl2-modules-gssapi-mit jq \
     && apt-get -y install g++ cmake libsqlite3-dev \
     libcurl4-openssl-dev uuid-dev \
     && GO_TAR=go1.20.linux-amd64.tar.gz \

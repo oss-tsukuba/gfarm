@@ -1,0 +1,7 @@
+mech_list: ANONYMOUS LOGIN PLAIN XOAUTH2
+log_level: 7
+xoauth2_scope: @VALID_SCOPE@
+xoauth2_aud: @VALID_AUD@
+xoauth2_user_claim: @VALID_CLAIM@
+xoauth2_issuers: @VALID_ISSUER@
+xoauth2_group_user: @INVALID_SASL_USER@|@INVALID_SCOPE@|@INVALID_ISSUER@
