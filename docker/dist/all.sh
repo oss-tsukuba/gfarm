@@ -117,11 +117,6 @@ else
 	 sh $DISTDIR/install.sh $install_option)
 fi
 
-proxy_conf() {
-    [ -n "${https_proxy:-}" ] && echo "proxy: ${https_proxy}"
-    [ -n "${no_proxy:-}" ] && echo "no_proxy: ${no_proxy}"
-}
-
 {
 cat <<EOF
 log_level: 7
@@ -130,14 +125,14 @@ xoauth2_scope: hpci
 xoauth2_aud: hpci
 xoauth2_user_claim: hpci.id
 EOF
-proxy_conf
+[ -n "${https_proxy:-}" ] && echo "proxy: ${https_proxy}"
+[ -n "${no_proxy:-}" ] && echo "no_proxy: ${no_proxy}"
 } | sudo tee "$sasl_libdir/sasl2/gfarm.conf" >/dev/null
 
 {
 cat <<EOF
 xoauth2_user_claim: hpci.id
 EOF
-proxy_conf
 } | sudo tee "$sasl_libdir/sasl2/gfarm-client.conf" >/dev/null
 
 cp $sasl_libdir/sasl2/gfarm*.conf ~/local
