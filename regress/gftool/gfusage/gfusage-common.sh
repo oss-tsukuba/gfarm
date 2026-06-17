@@ -10,7 +10,7 @@ DISABLE="disable"
 
 cleanup() {
     gfrm -rf $gftmp
-    if [ ${REPCHECK_STATUS} = ${ENABLE} ]; then
+    if [ "${REPCHECK_STATUS}" = ${ENABLE} ]; then
         gfrepcheck ${ENABLE}
     fi
 }
@@ -25,10 +25,10 @@ error() {
 
 setup() {
     # "gfrepcheck disable" is required
-    $regress/bin/am_I_gfarm_super_adm || exit $exit_unsupported
+    $regress/bin/am_I_gfarmadm || exit $exit_unsupported
 
     REPCHECK_STATUS=`gfrepcheck status | cut -d ' ' -f 1` || exit $exit_fail
-    if [ ${REPCHECK_STATUS} = ${ENABLE} ]; then
+    if [ "${REPCHECK_STATUS}" = ${ENABLE} ]; then
         gfrepcheck ${DISABLE}
     fi
     gfmkdir $gftmp || error "gfmkdir"

@@ -61,10 +61,17 @@ $RUN_REGRESS $GFARM_SRCDIR $LOG_REMOTE_NONROOT false \
 ssh $gfsdhost $RUN_REGRESS $GFARM_SRCDIR $LOG_LOCAL_ROOT true \
 	$GFARM_TEST_CKSUM_MISMATCH $parallel || true
 
-# Run the tests in tenant 2.
-# Skip when running as anonymous because anonymous already belongs to
-# tenant2 and would execute the same test cases twice.
-if [ "anonymous" != "$(gfwhoami)" ]; then
+scp $gfsdhost:$GFARM_SRCDIR/regress/$LOG_LOCAL_ROOT .
+
+if [ "anonymous" = "$(gfwhoami)" ]; then
+	./addup.sh -v $LOG_REMOTE_NONROOT $LOG_LOCAL_ROOT
+	./addup.sh $LOG_REMOTE_NONROOT $LOG_LOCAL_ROOT
+	res=$?
+else
+	# Do this only when running as non-anonymous
+	# because anonymous already belongs to tenant2
+	# and would execute the same test cases twice.
+
 	# remote access and non-gfarmroot in tenant 2
 	sudo su - "${GFDOCKER_TENANT_ADMIN_USER}" \
 		$RUN_REGRESS_TENANT $GFARM_SRCDIR_TENANT $LOG_REMOTE_NONROOT_TENANT false \
@@ -75,13 +82,12 @@ if [ "anonymous" != "$(gfwhoami)" ]; then
 		$RUN_REGRESS_TENANT $GFARM_SRCDIR_TENANT $LOG_LOCAL_ROOT_TENANT true \
 		$GFARM_TEST_CKSUM_MISMATCH $parallel" || true
 
-	scp $gfsdhost:$GFARM_SRCDIR/regress/$LOG_LOCAL_ROOT .
 	sudo su - "${GFDOCKER_TENANT_ADMIN_USER}" \
-	-c "cat $GFARM_SRCDIR_TENANT/regress/$LOG_REMOTE_NONROOT_TENANT" \
-	>$LOG_REMOTE_NONROOT_TENANT
+		-c "cat $GFARM_SRCDIR_TENANT/regress/$LOG_REMOTE_NONROOT_TENANT" \
+		>$LOG_REMOTE_NONROOT_TENANT
 	sudo su - "${GFDOCKER_TENANT_ADMIN_USER}" \
-	-c "ssh $gfsdhost cat $GFARM_SRCDIR_TENANT/regress/$LOG_LOCAL_ROOT_TENANT" \
-	>$LOG_LOCAL_ROOT_TENANT
+		-c "ssh $gfsdhost cat $GFARM_SRCDIR_TENANT/regress/$LOG_LOCAL_ROOT_TENANT" \
+		>$LOG_LOCAL_ROOT_TENANT
 
 	./addup.sh -v $LOG_REMOTE_NONROOT $LOG_LOCAL_ROOT \
 		$LOG_REMOTE_NONROOT_TENANT $LOG_LOCAL_ROOT_TENANT
@@ -90,21 +96,9 @@ if [ "anonymous" != "$(gfwhoami)" ]; then
 	res=$?
 
 	cp $LOG_REMOTE_NONROOT_TENANT \
-	${LOG_DIR}/${LOG_PREFIX}.${LOG_REMOTE_NONROOT_TENANT}
+		${LOG_DIR}/${LOG_PREFIX}.${LOG_REMOTE_NONROOT_TENANT}
 	cp $LOG_LOCAL_ROOT_TENANT \
 		${LOG_DIR}/${LOG_PREFIX}.${LOG_LOCAL_ROOT_TENANT}
-else
-	scp $gfsdhost:$GFARM_SRCDIR/regress/$LOG_LOCAL_ROOT .
-	sudo su - "${GFDOCKER_TENANT_ADMIN_USER}" \
-	-c "cat $GFARM_SRCDIR_TENANT/regress/$LOG_REMOTE_NONROOT_TENANT" \
-	>$LOG_REMOTE_NONROOT_TENANT
-	sudo su - "${GFDOCKER_TENANT_ADMIN_USER}" \
-	-c "ssh $gfsdhost cat $GFARM_SRCDIR_TENANT/regress/$LOG_LOCAL_ROOT_TENANT" \
-	>$LOG_LOCAL_ROOT_TENANT
-
-	./addup.sh -v $LOG_REMOTE_NONROOT $LOG_LOCAL_ROOT
-	./addup.sh $LOG_REMOTE_NONROOT $LOG_LOCAL_ROOT
-	res=$?
 fi
 
 cp $LOG_REMOTE_NONROOT ${LOG_DIR}/${LOG_PREFIX}.${LOG_REMOTE_NONROOT}
