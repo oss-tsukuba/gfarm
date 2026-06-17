@@ -9,6 +9,9 @@ Documentation
 Updated feature
 * support Ubuntu 26.04
 
+Bug fix
+* gfpcopy, gfprep - fix warnings of thread sanitizer [#1193]
+
 Release note for Gfarm 2.8.9
 ============================
 
