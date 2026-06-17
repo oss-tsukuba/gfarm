@@ -420,6 +420,8 @@ dirtree_child(void *param, FILE *from_parent, FILE *to_parent)
 	else
 		func_lstat = dirtree_local_lstat;
 
+	gfpara_signal_ignore();
+
 	e = gfarm_initialize(NULL, NULL);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "ERROR: gfarm_initialize: %s\n",

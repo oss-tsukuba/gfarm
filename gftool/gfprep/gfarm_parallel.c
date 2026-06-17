@@ -24,6 +24,7 @@
 #include "thrsubr.h"
 
 #include "gfurl.h"
+#include "gfmsg.h"
 
 #include "gfarm_parallel.h"
 
@@ -31,6 +32,11 @@
 static int is_parent = 1;
 static int n_handle_list = 0;
 static gfpara_t *handle_list[GFPARA_HANDLE_LIST_MAX];
+
+static pthread_mutex_t handle_list_mutex = PTHREAD_MUTEX_INITIALIZER;
+static const char HANDLE_LIST_MUTEX_DIAG[] = "handle_list_mutex";
+static const char WATCH_STDERR_MUTEX_DIAG[] = "watch_stderr_mutex";
+static const char INTERRUPT_MUTEX_DIAG[] = "interrupt_mutex";
 
 struct gfpara {
 	pthread_t thread;
@@ -43,29 +49,60 @@ struct gfpara {
 	void *(*func_end)(void *);
 	void *param_end;
 	int started;
-	int interrupt;
-	int timeout_msec;
+	int interrupt; /* interrupt_mutex */
+	int timeout_msec; /* interrupt_mutex */
+	pthread_mutex_t interrupt_mutex;
 
 	pthread_t watch_stderr;
-	int watch_stderr_end;
+	int watch_stderr_end; /* watch_stderr_mutex */
 	pthread_mutex_t watch_stderr_mutex;
 };
 
+struct gfpara_proc {
+	pthread_t thread;
+	gfpara_t *handle;
+	pid_t pid;
+	FILE *in;
+	FILE *out;
+	FILE *err;
+	void *data; /* any */
+	int working;
+};
 
 static void gfpara_watch_stderr_stop(gfpara_t *handle);
+
 static void gfpara_fatal(const char *, ...) GFLOG_PRINTF_ARG(1, 2);
+
 static void
 gfpara_fatal(const char *format, ...)
 {
 	va_list ap;
-	int i;
+	int i, j;
+	gfpara_t *handle;
+	static const char diag[] = "gfpara_fatal";
 
-	if (is_parent)
-		for (i = 0; i < n_handle_list; i++)
-			if (handle_list[i] != NULL &&
-			    handle_list[i]->watch_stderr_end == 0)
-				gfpara_watch_stderr_stop(handle_list[i]);
-	fprintf(stderr, "fatal error: ");
+	if (is_parent) {
+		/*
+		 * cancel threads to avoid 'ThreadSanitizer:
+		 * CHECK failed: sanitizer_thread_registry.cpp:364
+		 * "((t)) != * (0)" (0x0, 0x0)'
+		 */
+		gfarm_mutex_lock(&handle_list_mutex, diag,
+				 HANDLE_LIST_MUTEX_DIAG);
+		for (i = 0; i < n_handle_list; i++) {
+			handle = handle_list[i];
+			if (handle == NULL) {
+				continue;
+			}
+			pthread_cancel(handle->watch_stderr);
+			for (j = 0; j < handle->n_procs; j++) {
+				pthread_cancel(handle->procs[j].thread);
+			}
+		}
+		gfarm_mutex_unlock(&handle_list_mutex, diag,
+				   HANDLE_LIST_MUTEX_DIAG);
+	}
+	fprintf(stderr, "FATAL: gfarm_parallel: ");
 	va_start(ap, format);
 	vfprintf(stderr, format, ap);
 	va_end(ap);
@@ -78,17 +115,6 @@ gfpara_procs_get(gfpara_t *handle)
 {
 	return (handle->procs);
 }
-
-struct gfpara_proc {
-	pthread_t thread;
-	gfpara_t *handle;
-	pid_t pid;
-	FILE *in;
-	FILE *out;
-	FILE *err;
-	void *data; /* any */
-	int working;
-};
 
 pid_t
 gfpara_pid_get(gfpara_proc_t *proc)
@@ -118,6 +144,7 @@ gfpara_watch_stderr(void *arg)
 	int size = sizeof(line);
 	int maxfd = 0;
 	struct timeval tv;
+	static const char diag[] = "gfpara_watch_stderr";
 
 	FD_ZERO(&fdset_orig);
 	for (i = 0; i < handle->n_procs; i++) {
@@ -140,13 +167,12 @@ gfpara_watch_stderr(void *arg)
 			continue;
 		} else if (retv == 0) { /* timeout */
 			int is_end;
+
 			gfarm_mutex_lock(&handle->watch_stderr_mutex,
-					 "gfpara_watch_stderr",
-					 "watch_stderr_mutex");
+					 diag, WATCH_STDERR_MUTEX_DIAG);
 			is_end = handle->watch_stderr_end;
 			gfarm_mutex_unlock(&handle->watch_stderr_mutex,
-					   "gfpara_watch_stderr",
-					   "watch_stderr_mutex");
+					   diag, WATCH_STDERR_MUTEX_DIAG);
 			if (is_end)
 				break;
 			continue;
@@ -172,10 +198,13 @@ static void
 gfpara_watch_stderr_start(gfpara_t *handle)
 {
 	int eno;
+	static const char diag[] = "gfpara_watch_stderr_start";
 
-	gfarm_mutex_init(&handle->watch_stderr_mutex,
-			 "gfpara_watch_stderr_start", "watch_stderr_mutex");
+	gfarm_mutex_lock(&handle->watch_stderr_mutex,
+			 diag, WATCH_STDERR_MUTEX_DIAG);
 	handle->watch_stderr_end = 0;
+	gfarm_mutex_unlock(&handle->watch_stderr_mutex,
+			 diag, WATCH_STDERR_MUTEX_DIAG);
 	eno = pthread_create(&handle->watch_stderr, NULL,
 	    gfpara_watch_stderr, handle);
 	if (eno != 0)
@@ -185,11 +214,13 @@ gfpara_watch_stderr_start(gfpara_t *handle)
 static void
 gfpara_watch_stderr_stop(gfpara_t *handle)
 {
+	static const char diag[] = "gfpara_watch_stderr_stop";
+
 	gfarm_mutex_lock(&handle->watch_stderr_mutex,
-			 "gfpara_watch_stderr_stop", "watch_stderr_mutex");
+			 diag, WATCH_STDERR_MUTEX_DIAG);
 	handle->watch_stderr_end = 1;
 	gfarm_mutex_unlock(&handle->watch_stderr_mutex,
-			 "gfpara_watch_stderr_stop", "watch_stderr_mutex");
+			 diag, WATCH_STDERR_MUTEX_DIAG);
 	pthread_join(handle->watch_stderr, NULL);
 }
 
@@ -210,8 +241,18 @@ gfpara_init(gfpara_t **handlep, int n_procs,
 	int i, j;
 	gfpara_proc_t *procs;
 	gfpara_t *handle;
+	int slot = -1;
+	static const char diag[] = "gfpara_init";
 
-	if (n_handle_list >= GFPARA_HANDLE_LIST_MAX) {
+	gfarm_mutex_lock(&handle_list_mutex, diag, HANDLE_LIST_MUTEX_DIAG);
+	for (i = 0; i < GFPARA_HANDLE_LIST_MAX; i++) {
+		if (handle_list[i] == NULL) {
+			slot = i;
+			break;
+		}
+	}
+	gfarm_mutex_unlock(&handle_list_mutex, diag, HANDLE_LIST_MUTEX_DIAG);
+	if (slot == -1) {
 		fprintf(stderr, "too many called gfpara_init()\n");
 		return (GFARM_ERR_TOO_MANY_OPEN_FILES);
 	}
@@ -220,7 +261,11 @@ gfpara_init(gfpara_t **handlep, int n_procs,
 	GFARM_MALLOC_ARRAY(procs, n_procs);
 	if (handle == NULL || procs == NULL)
 		gfpara_fatal("no memory: n_procs=%d", n_procs);
-	handle->watch_stderr_end = 1;
+	gfarm_mutex_init(&handle->watch_stderr_mutex,
+			 diag, WATCH_STDERR_MUTEX_DIAG);
+	gfarm_mutex_init(&handle->interrupt_mutex,
+			 diag, INTERRUPT_MUTEX_DIAG);
+	handle->watch_stderr_end = 1;  /* 1: stopped */
 
 	fflush(stdout); /* Don't send buffer to child */
 	fflush(stderr); /* Don't send buffer to child */
@@ -306,7 +351,11 @@ gfpara_init(gfpara_t **handlep, int n_procs,
 
 	*handlep = handle;
 
-	handle_list[n_handle_list++] = handle;
+	gfarm_mutex_lock(&handle_list_mutex, diag, HANDLE_LIST_MUTEX_DIAG);
+	handle_list[slot] = handle;
+	if (slot >= n_handle_list)
+		n_handle_list = slot + 1;  /* next slot */
+	gfarm_mutex_unlock(&handle_list_mutex, diag, HANDLE_LIST_MUTEX_DIAG);
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -439,6 +488,33 @@ gfpara_send_string(FILE *out, const char *format, ...)
 	free(str);
 }
 
+static int
+gfpara_get_interrupt(gfpara_t *handle)
+{
+	int interrupt;
+	static const char diag[] = "gfpara_get_interrupt";
+
+	gfarm_mutex_lock(&handle->interrupt_mutex, diag,
+			 INTERRUPT_MUTEX_DIAG);
+	interrupt = handle->interrupt;
+	gfarm_mutex_unlock(&handle->interrupt_mutex, diag,
+			   INTERRUPT_MUTEX_DIAG);
+	return (interrupt);
+}
+
+static int
+gfpara_get_timeout_msec(gfpara_t *handle)
+{
+	int timeout_msec;
+	static const char diag[] = "gfpara_get_timeout_msec";
+
+	gfarm_mutex_lock(&handle->interrupt_mutex, diag, INTERRUPT_MUTEX_DIAG);
+	timeout_msec = handle->timeout_msec;
+	gfarm_mutex_unlock(&handle->interrupt_mutex, diag,
+			   INTERRUPT_MUTEX_DIAG);
+	return (timeout_msec);
+}
+
 static void *
 gfpara_thread(void *param)
 {
@@ -463,18 +539,23 @@ gfpara_thread(void *param)
 			gfpara_fatal("no child process: pid=%ld\n",
 				(long int) proc->pid);
 		retv = func_send(proc->in, proc, param_send,
-		    handle->interrupt != GFPARA_INTR_RUN ? 1 : 0);
+		    gfpara_get_interrupt(handle) != GFPARA_INTR_RUN ? 1 : 0);
 		if (retv == GFPARA_END)
 			goto end;
 		else if (retv == GFPARA_FATAL)
 			gfpara_fatal("gfpara error in func_send");
 		assert(retv == GFPARA_NEXT);
 		for (;;) {
-			if (handle->interrupt == GFPARA_INTR_TERM) {
-				tv.tv_sec = handle->timeout_msec / 1000;
-				tv.tv_usec = (handle->timeout_msec % 1000)
+			int interrupt = gfpara_get_interrupt(handle);
+
+			if (interrupt == GFPARA_INTR_TERM) {
+				int timeout_msec = gfpara_get_timeout_msec(
+					handle);
+
+				tv.tv_sec = timeout_msec / 1000;
+				tv.tv_usec = (timeout_msec % 1000)
 					* 1000;
-			} else {
+			} else {  /* default interval */
 				tv.tv_sec = 2;
 				tv.tv_usec = 0;
 			}
@@ -483,7 +564,8 @@ gfpara_thread(void *param)
 			if (retv > 0)
 				break;  /* readable */
 			else if (retv == 0) { /* timeout */
-				if (handle->interrupt == GFPARA_INTR_TERM)
+				if (gfpara_get_interrupt(handle)
+				    == GFPARA_INTR_TERM)
 					goto end;
 			} else
 				gfpara_fatal("select error: %s\n",
@@ -518,8 +600,8 @@ gfpara_communicate(void *param)
 		if (eno == 0)
 			procs[i].working = 1;
 		else
-			fprintf(stderr, "pthread_create failed: %s\n",
-				strerror(eno));
+			gfpara_fatal("pthread_create failed: %s\n",
+				     strerror(eno));
 	}
 	for (i = 0; i < n_procs; i++) {
 		if (procs[i].working)
@@ -570,6 +652,7 @@ gfpara_join(gfpara_t *handle)
 {
 	int eno, i, n_procs = handle->n_procs;
 	gfpara_proc_t *procs = handle->procs;
+	static const char diag[] = "gfpara_join";
 
 	if (handle->started)
 		eno = pthread_join(handle->thread, NULL);
@@ -608,6 +691,20 @@ gfpara_join(gfpara_t *handle)
 		fclose(procs[i].err);
 	}
 
+	gfarm_mutex_lock(&handle_list_mutex, diag,
+			 HANDLE_LIST_MUTEX_DIAG);
+	for (i = 0; i < n_handle_list; i++) {
+		if (handle_list[i] == handle) {
+			handle_list[i] = NULL;
+			break;
+		}
+	}
+	gfarm_mutex_unlock(&handle_list_mutex, diag, HANDLE_LIST_MUTEX_DIAG);
+
+	gfarm_mutex_destroy(&handle->watch_stderr_mutex,
+			    diag, WATCH_STDERR_MUTEX_DIAG);
+	gfarm_mutex_destroy(&handle->interrupt_mutex,
+			    diag, INTERRUPT_MUTEX_DIAG);
 	free(handle->procs);
 	free(handle);
 	return (gfarm_errno_to_error(eno));
@@ -616,14 +713,114 @@ gfpara_join(gfpara_t *handle)
 gfarm_error_t
 gfpara_terminate(gfpara_t *handle, int timeout_msec)
 {
+	static const char diag[] = "gfpara_terminate";
+
+	gfarm_mutex_lock(&handle->interrupt_mutex, diag, INTERRUPT_MUTEX_DIAG);
 	handle->timeout_msec = timeout_msec;
 	handle->interrupt = GFPARA_INTR_TERM;
+	gfarm_mutex_unlock(&handle->interrupt_mutex, diag,
+			   INTERRUPT_MUTEX_DIAG);
 	return (GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t
 gfpara_stop(gfpara_t *handle)
 {
+	static const char diag[] = "gfpara_stop";
+
+	gfarm_mutex_lock(&handle->interrupt_mutex, diag, INTERRUPT_MUTEX_DIAG);
 	handle->interrupt = GFPARA_INTR_STOP;
+	gfarm_mutex_unlock(&handle->interrupt_mutex, diag,
+			   INTERRUPT_MUTEX_DIAG);
 	return (GFARM_ERR_NO_ERROR);
+}
+
+static pthread_mutex_t gfpara_sig_mutex = PTHREAD_MUTEX_INITIALIZER;
+static const char GFPARA_SIG_MUTEX_DIAG[] = "sig_mutex";
+static int is_terminated = 0;  /* sig_mutex */
+
+int
+gfpara_is_terminated(void)
+{
+	int i;
+	static const char diag[] = "gfpara_is_terminated";
+
+	gfarm_mutex_lock(&gfpara_sig_mutex, diag, GFPARA_SIG_MUTEX_DIAG);
+	i = is_terminated;
+	gfarm_mutex_unlock(&gfpara_sig_mutex, diag, GFPARA_SIG_MUTEX_DIAG);
+
+	return (i);
+}
+
+static void
+gfpara_signal_add(sigset_t *sigs, int sigid, const char *name)
+{
+	if (sigaddset(sigs, sigid) == -1)
+		gfmsg_fatal("sigaddset(%s): %s", name, strerror(errno));
+}
+
+static void
+gfpara_signal_sigs_set(sigset_t *sigs)
+{
+	if (sigemptyset(sigs) == -1)
+		gfmsg_fatal("sigemptyset: %s", strerror(errno));
+
+	gfpara_signal_add(sigs, SIGHUP, "SIGHUP");
+	gfpara_signal_add(sigs, SIGTERM, "SIGTERM");
+	gfpara_signal_add(sigs, SIGINT, "SIGINT");
+}
+
+static void *
+gfpara_signal_handler(void *p)
+{
+	sigset_t *sigs = p;
+	int rv, sig;
+	static const char diag[] = "gfpara_signal_handler";
+
+	for (;;) {
+		if ((rv = sigwait(sigs, &sig)) != 0) {
+			gfmsg_warn("%s: sigwait: %s", diag, strerror(rv));
+			continue;
+		}
+		switch (sig) {
+		case SIGHUP:
+		case SIGINT:
+		case SIGTERM:
+			gfarm_mutex_lock(&gfpara_sig_mutex, diag,
+					 GFPARA_SIG_MUTEX_DIAG);
+			is_terminated = 1;
+			gfarm_mutex_unlock(&gfpara_sig_mutex, diag,
+					   GFPARA_SIG_MUTEX_DIAG);
+		}
+	}
+	return (NULL);
+}
+
+static sigset_t watch_sigs;
+
+void
+gfpara_signal_watcher_start(void)
+{
+	pthread_t signal_thread;
+	int eno;
+	static const char diag[] = "gfpara_signal_watcher_start";
+
+	gfpara_signal_sigs_set(&watch_sigs);
+	eno = pthread_sigmask(SIG_BLOCK, &watch_sigs, NULL);
+	if (eno != 0)
+		gfmsg_fatal("%s: pthread_sigmask: %s", diag, strerror(eno));
+	eno = pthread_create(&signal_thread, NULL, gfpara_signal_handler,
+			     &watch_sigs);
+	if (eno != 0) {
+		gfmsg_fatal("%s: pthread_create: %s", diag, strerror(eno));
+	}
+	pthread_detach(signal_thread);
+}
+
+void
+gfpara_signal_ignore(void)
+{
+	signal(SIGINT, SIG_IGN);
+	signal(SIGTERM, SIG_IGN);
+	signal(SIGHUP, SIG_IGN);
 }
