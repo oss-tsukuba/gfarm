@@ -36,7 +36,7 @@ test()
 	DIST=$1 docker compose up -d
 
 	# execute a script
-	$DOCKEREXEC sh $script $opt
+	$DOCKEREXEC sh $script $opt clean
 
 	# SASL XOAUTH2 test
 	$DOCKEREXEC sh ./check-oauth.sh $opt
