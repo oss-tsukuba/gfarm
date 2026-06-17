@@ -72,7 +72,7 @@ while True:
         break
     except Exception as e:
         if first_wait:
-            print("Waiting for keycloak startup:", str(e), end="", flush=True)
+            print("Waiting for keycloak startup", end="", flush=True)
             first_wait = False
         else:
             print(".", end="", flush=True)
