@@ -117,16 +117,23 @@ else
 	 sh $DISTDIR/install.sh $install_option)
 fi
 
-cat <<EOF | sudo tee $sasl_libdir/sasl2/gfarm.conf > /dev/null
+{
+cat <<EOF
 log_level: 7
 mech_list: XOAUTH2 ANONYMOUS PLAIN
 xoauth2_scope: hpci
 xoauth2_aud: hpci
 xoauth2_user_claim: hpci.id
 EOF
-cat <<EOF | sudo tee $sasl_libdir/sasl2/gfarm-client.conf > /dev/null
+[ -n "${https_proxy:-}" ] && echo "proxy: ${https_proxy}"
+[ -n "${no_proxy:-}" ] && echo "no_proxy: ${no_proxy}"
+} | sudo tee "$sasl_libdir/sasl2/gfarm.conf" >/dev/null
+
+{
+cat <<EOF
 xoauth2_user_claim: hpci.id
 EOF
+} | sudo tee "$sasl_libdir/sasl2/gfarm-client.conf" >/dev/null
 
 cp $sasl_libdir/sasl2/gfarm*.conf ~/local
 gfarm-prun -p sudo cp local/gfarm*.conf $sasl_libdir/sasl2
