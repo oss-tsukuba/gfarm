@@ -181,7 +181,14 @@ check_lost_found() {
         if [ $EXIST -eq 1 ]; then
             echo >&2 "TEST_${TEST_NUM} NG: file was not moved in lost+found"
             clean_all
-            exit_code=$exit_fail
+            if [ "anonymous" == "$(gfwhoami)" ] &&
+               ! $regress/bin/am_I_in_default_tenant
+            then
+                #for docker/dev
+                exit_code=$exit_xfail
+            else
+                exit_code=$exit_fail
+            fi
         else
             echo "TEST_${TEST_NUM} OK: file was moved in lost+found"
         fi
@@ -189,7 +196,14 @@ check_lost_found() {
         if [ $EXIST -eq 0 ]; then
             echo >&2 "TEST_${TEST_NUM} NG: file exists in lost+found"
             clean_all
-            exit_code=$exit_fail
+            if [ "anonymous" == "$(gfwhoami)" ] &&
+               ! $regress/bin/am_I_in_default_tenant
+            then
+                #for docker/dev
+                exit_code=$exit_xfail
+            else
+                exit_code=$exit_fail
+            fi
         else
             echo "TEST_${TEST_NUM} OK: file does not exist in lost+found"
         fi
