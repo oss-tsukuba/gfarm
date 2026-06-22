@@ -92,31 +92,7 @@ install_package_for_centos() {
 install_package_for_ubuntu() {
     ${SUDO} apt-get update
     ${SUDO} apt-get upgrade -y
-
-    case $GFDOCKER_PRJ_NAME in
-        ubuntu1804-*)
-            # for npm:
-            #   npm : Depends: node-gyp (>= 0.10.9) but it is not going
-            #   to be installed
-            ${SUDO} apt-get install -y \
-                    nodejs-dev node-gyp libssl1.0-dev
-            # install old npm to install new npm
-            ${SUDO} apt-get install -y npm
-            # old version
-            /usr/bin/npm --version || true  # may fail when re-installing
-            # install new npm (LTS version) with n
-            ${SUDO} npm install -g n
-            ${SUDO} n lts
-            # new version
-            /usr/local/bin/npm --version
-            # remove old version
-            ${SUDO} apt-get remove -y nodejs npm
-            ${SUDO} apt-get autoremove -y
-            ;;
-        *)
-            ${SUDO} apt-get install -y npm
-            ;;
-    esac
+    ${SUDO} apt-get install -y npm
 
     ${SUDO} apt-get install -y \
         uuid \

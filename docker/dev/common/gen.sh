@@ -24,20 +24,9 @@ set -eu
 ADMIN_DN="/O=Gfarm/OU=GfarmDev/OU=GfarmCA/CN=${GFDOCKER_PRIMARY_USER}"
 
 IS_CGROUP_V2_COMMAND="${TOP}/docker/dev/common/is_cgroup_v2.sh"
-IS_CGROUP_V2=true
-
-CGROUP_V2_UNSUPPORTED="
-centos7-src
-centos7-pkg
-"
 
 if ${IS_CGROUP_V2_COMMAND}; then
-  for name in $CGROUP_V2_UNSUPPORTED; do
-    if [ "$name" = "$GFDOCKER_PRJ_NAME" ]; then
-      echo 1>&2 "The container type ($name) is not supported, because systemd used in container on host OS enabled cgroup v2 requires version 247 or later."
-      exit 1
-    fi
-  done
+    IS_CGROUP_V2=true
 else
     IS_CGROUP_V2=false
 fi

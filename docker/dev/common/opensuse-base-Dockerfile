@@ -30,6 +30,8 @@ RUN zypper --non-interactive install -y \
     postgresql14-server-devel \
     fuse \
     fuse-devel \
+    fuse3 \
+    fuse3-devel \
     autofs \
     libacl-devel \
     ruby \
