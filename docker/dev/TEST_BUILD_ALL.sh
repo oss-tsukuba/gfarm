@@ -13,7 +13,9 @@ rockylinux8/src
 rockylinux8/pkg
 fedora33/src
 opensuse/src
+opensuse/pkg
 ubuntu2204/src
+ubuntu2404/src
 debian11/src
 "
 

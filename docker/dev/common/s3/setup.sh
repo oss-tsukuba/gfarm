@@ -122,7 +122,7 @@ install_package() {
         ${DISTRO_FAMILY_RHEL})
             install_package_for_centos
             ;;
-        ubuntu*-*)
+        ubuntu*-* | debian*-*)
             install_package_for_ubuntu
             ;;
         *)
@@ -166,7 +166,7 @@ create_certificate() {
             SERVER_CERT_DIR=/etc/pki/tls/certs
             SERVER_KEY_DIR=/etc/pki/tls/private
             ;;
-        ubuntu*-*)
+        ubuntu*-* | debian*-*)
             SYSTEM_CERT_DIR=/usr/local/share/ca-certificates
             GFARM_CA_CERT_DIR=$SYSTEM_CERT_DIR/gfarm
             SYSTEM_CERT_UPDATE=update-ca-certificates
@@ -368,7 +368,7 @@ deploy_nginx() {
         ${DISTRO_FAMILY_RHEL})
             deploy_nginx_for_centos
             ;;
-        ubuntu*-*)
+        ubuntu*-* | debian*-*)
             deploy_nginx_for_ubuntu
             ;;
         *)
@@ -559,7 +559,7 @@ install_s3cmd() {
         ${DISTRO_FAMILY_RHEL})
             ${SUDO} yum install -y s3cmd
             ;;
-        ubuntu*-*)
+        ubuntu*-* | debian*-*)
             ${SUDO} apt-get install -y s3cmd
             ;;
        *)
@@ -580,7 +580,7 @@ install_goofys() {
         ${DISTRO_FAMILY_RHEL})
             install_goofys_dep_package_for_centos
             ;;
-        ubuntu*-*)
+        ubuntu*-* | debian*-*)
             install_goofys_dep_package_for_ubuntu
             ;;
        *)
@@ -633,7 +633,7 @@ install_s3fs() {
         ${DISTRO_FAMILY_RHEL})
             install_s3fs_dep_package_for_centos
             ;;
-        ubuntu*-*)
+        ubuntu*-* | debian*-*)
             install_s3fs_dep_package_for_ubuntu
             ;;
        *)

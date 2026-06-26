@@ -52,7 +52,7 @@ RUN apt-get update \
     && locale-gen \
     && update-locale LANG=${LANG} \
     && apt-get -y install \
-    ncat ldnsutils iproute2 net-tools bind9utils telnet tcpdump \
+    ncat ldnsutils iproute2 net-tools bind9utils dnsutils telnet tcpdump \
     manpages manpages-ja man-db \
     gdb valgrind strace inotify-tools \
     vim nano emacs-nox less \
