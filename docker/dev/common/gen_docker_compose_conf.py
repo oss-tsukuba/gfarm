@@ -19,8 +19,6 @@ hostport_s3_http = environ['GFDOCKER_HOSTPORT_S3_HTTP']
 hostport_s3_https = environ['GFDOCKER_HOSTPORT_S3_HTTPS']
 hostport_s3_direct = environ['GFDOCKER_HOSTPORT_S3_DIRECT']
 
-is_cgroup_v2 = environ['IS_CGROUP_V2']
-
 def tobool(s):
     return s.lower() == 'true'
 
@@ -64,16 +62,9 @@ for i in range(0, num_gfsds):
         next(hi)
     ))
 
-if is_cgroup_v2 == 'true':
-    privileged = 'true'
-    disable_cgroupfs_mount = '#'
-    disable_security_opt = '#'
-    disable_capadd = '#'
-else:
-    privileged = 'true'
-    disable_cgroupfs_mount = '#'
-    disable_security_opt = '#'
-    disable_capadd = '#'
+privileged = 'true'
+disable_security_opt = '#'
+disable_capadd = '#'
 
 print('''\
 # This file was automatically generated.
@@ -87,12 +78,9 @@ x-common-gfarm:
 print('''\
   volumes:
     - ./mnt:/mnt:rw
-    {disable_cgroupfs_mount}- /sys/fs/cgroup:/sys/fs/cgroup:ro
   devices:
     - /dev/fuse:/dev/fuse
-
-'''.format(disable_cgroupfs_mount=disable_cgroupfs_mount),
-      end='')
+''')
 
 print('''\
 x-common:

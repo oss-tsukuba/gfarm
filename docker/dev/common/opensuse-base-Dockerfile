@@ -23,13 +23,15 @@ RUN zypper --non-interactive install -y \
     krb5-devel krb5-server krb5-client \
     cyrus-sasl cyrus-sasl-devel cyrus-sasl-plain cyrus-sasl-gssapi \
     go jq \
-    gcc-c++ cmake3 sqlite-devel libcurl-devel libuuid-devel lsb-release \
+    gcc-c++ cmake sqlite-devel libcurl-devel libuuid-devel lsb-release \
     postgresql14 \
     postgresql14-devel \
     postgresql14-server \
     postgresql14-server-devel \
     fuse \
     fuse-devel \
+    fuse3 \
+    fuse3-devel \
     autofs \
     libacl-devel \
     ruby \

@@ -19,24 +19,6 @@ Restriction
 
 - Rootless mode is available, but some restrictions exist.
 
-- cgroup v2 should be disabled to build centos7 container
-
-  In a docker container, systemctl does not work with cgroup v2.  You can
-  check by the following command
-
-  $ docker/dev/common/is_cgroup_v2.sh && echo cgroup2 enabled || echo cgroup2 disabled
-
-  To disable cgroup2, add "systemd.unified_cgroup_hierarchy=false
-  systemd.legacy_systemd_cgroup_controller=false" to GRUB_CMDLINE_LINUX_DEFAULT
-  in /etc/default/grub like
-
-  GRUB_CMDLINE_LINUX_DEFAULT="quiet systemd.unified_cgroup_hierarchy=false systemd.legacy_systemd_cgroup_controller=false"
-
-  update and reboot
-
-  $ sudo update-grub
-  $ sudo reboot
-
 # Proxy configuration (optional)
 
   If you are in a proxy environment, configure the proxy settings in
@@ -134,8 +116,6 @@ Quick start
               - centos9
               - fedora33
               - opensuse
-          - "do_mount_autofs_indirect: already mounted as other than autofs or failed to unlink entry in tree"
-              - centos7
 
   - to configure kerberos, run the following command.
     (this is currently tested only on centos8)
@@ -263,7 +243,7 @@ Keep keys
 
 1. to keep ssh host keys only for client1 container
 
-  $ cd dist/centos7/src  # when using source package on CentOS 7
+  $ cd dist/<distribution>/src
   $ make shell
   ### in container
   user1$ sudo ./SAVE_SSH_HOST_KEYS.sh
@@ -277,7 +257,7 @@ Keep keys
   ### (Example)
   $ cat ~/.ssh/id_rsa.pub >> mnt/ssh_authorized_keys
 
-  $ cd dist/centos7/src  # when using source package on CentOS 7
+  $ cd dist/<distribution>/src
   $ make reborn
 
   ### use "ssh" instead of "make shell"
@@ -382,7 +362,7 @@ Nextcloud using Gfarm as primary storage
   - nextcloud.env
     - NEXTCLOUD_TRUSTED_DOMAINS
 
-  $ cd docker/dev/dist/centos7/src
+  $ cd docker/dev/dist/<distribution>/src
   $ make reborn
   $ make nextcloud-reborn
 
@@ -466,10 +446,10 @@ Gfarm GridFTP DSI
 
 2. to install gfarm-gridftp-dsi into running container
 
-  $ cd docker/dev/dist/centos7/src
+  $ cd docker/dev/dist/<distribution>/src
   $ make gridftp-setup
 
 3. to run unit test
 
-  $ cd docker/dev/dist/centos7/src
+  $ cd docker/dev/dist/<distribution>/src
   $ make gridftp-test

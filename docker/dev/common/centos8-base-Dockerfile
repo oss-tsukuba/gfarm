@@ -30,6 +30,8 @@ RUN dnf -y update \
     postgresql-server \
     fuse \
     fuse-devel \
+    fuse3 \
+    fuse3-devel \
     autofs \
     libacl-devel \
     ruby \

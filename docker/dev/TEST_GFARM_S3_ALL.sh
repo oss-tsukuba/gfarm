@@ -1,14 +1,10 @@
 #!/bin/sh
 
 LIST="
-centos7/src
-centos7/pkg
 centos8/src
 centos8/pkg
 almalinux8/src
 almalinux8/pkg
-ubuntu1804/src
-ubuntu2004/src
 "
 
 BASEDIR=dist

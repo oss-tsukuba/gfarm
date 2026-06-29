@@ -47,7 +47,7 @@ RUN dnf -y install epel-release \
     python3-schema \
     python3-tqdm \
     python3-flake8 \
-    && dnf -y install --enablerepo=crb fuse-devel fuse-libs fuse \
+    && dnf -y install --enablerepo=crb fuse-devel fuse-libs fuse fuse3 fuse3-devel \
     && sed -i 's@^Defaults    secure_path = /sbin:/bin:/usr/sbin:/usr/bin$@Defaults    secure_path = /usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin@' /etc/sudoers
 
 # System independent (see setup-univ.sh)
