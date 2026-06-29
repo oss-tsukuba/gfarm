@@ -142,6 +142,13 @@
 	accepting_fatal_errno_full(msg_no, __FILE__, __LINE__, __func__,\
 				   __VA_ARGS__)
 
+/* worker count of child processes for replication */
+#define MAX_REPLICATOR 64
+static gfarm_uint32_t replicator_count = 0;
+
+/* sequence number for the replication */
+static gfarm_int64_t seq_num = 0;
+
 const char *program_name = "gfsd";
 
 int debug_mode = 0;
@@ -4636,10 +4643,21 @@ gfs_async_server_status(struct gfp_xdr *conn, gfp_xdr_xid_t xid, size_t size,
 
 static struct gfarm_hash_table *replication_queue_set = NULL;
 
+struct replicator {
+	int write_fd;
+	int read_fd;
+	int busy;
+	int alive;
+	pid_t pid;
+};
+
 /* per source-host queue */
 struct replication_queue_data {
 	struct replication_request *head;
 	struct replication_request **tail;
+
+	/* a child process for replication */
+	struct replicator *replicator;
 };
 
 gfarm_error_t
@@ -4664,10 +4682,16 @@ replication_queue_lookup(const char *hostname, int port,
 	if (created) {
 		qd->head = NULL;
 		qd->tail = &qd->head;
+		qd->replicator = NULL;
 	}
 	*qp = q;
 	return (GFARM_ERR_NO_ERROR);
 }
+
+enum replicator_command {
+	REPLICATION,
+	EXIT
+};
 
 struct replication_request {
 	/* only used when actual replication is ongoing */
@@ -4694,16 +4718,16 @@ struct replication_request {
 
 	/* only used in case of GFS_PROTO_REPLICATION_CKSUM_REQUEST */
 	gfarm_uint64_t filesize;
-	char *cksum_type;
+	char cksum_type[GFM_PROTO_CKSUM_MAXLEN];
 	size_t cksum_len;
 	char cksum[GFM_PROTO_CKSUM_MAXLEN];
 	gfarm_uint32_t cksum_request_flags;
 
 	/* the followings are only used when actual replication is ongoing */
-	struct gfs_connection *src_gfsd;
-	int file_fd, pipe_fd;
-	pid_t pid;
+	gfarm_int64_t seq_num;
 
+	/* replication request or exit request to a child process*/
+	gfarm_uint32_t command;
 };
 
 /* dummy header of doubly linked circular list */
@@ -4729,9 +4753,10 @@ union replication_results {
 
 /* error codes are returned by *res */
 static void
-replica_receive(struct gfarm_hash_entry *q, struct replication_request *rep,
+replica_receive(struct replication_request *rep,
 	struct gfs_connection *src_gfsd, int local_fd,
-	union replication_results *res,	const char *diag)
+	union replication_results *res,
+	const char *host, int port, const char *diag)
 {
 	gfarm_int32_t conn_err;
 	gfarm_int32_t src_err = GFARM_ERR_NO_ERROR;
@@ -4784,7 +4809,7 @@ replica_receive(struct gfarm_hash_entry *q, struct replication_request *rep,
 		gflog_notice(GFARM_MSG_1004234,
 		    "%s: %s %lld:%lld from %s:%d: %s", diag, issue_diag,
 		    (long long)rep->ino, (long long)rep->gen,
-		    gfp_conn_hash_hostname(q), gfp_conn_hash_port(q),
+		    host, port,
 		    gfarm_error_string(conn_err));
 	} else if (src_err != GFARM_ERR_NO_ERROR ||
 	    dst_err != GFARM_ERR_NO_ERROR) {
@@ -4792,7 +4817,7 @@ replica_receive(struct gfarm_hash_entry *q, struct replication_request *rep,
 		gflog_notice(GFARM_MSG_1004235,
 		    "%s: %s %lld:%lld from %s:%d: %s/%s", diag, issue_diag,
 		    (long long)rep->ino, (long long)rep->gen,
-		    gfp_conn_hash_hostname(q), gfp_conn_hash_port(q),
+		    host, port,
 		    gfarm_error_string(src_err),
 		    gfarm_error_string(dst_err));
 	} else if (md_ctx != NULL) { /* no error case */
@@ -4802,7 +4827,7 @@ replica_receive(struct gfarm_hash_entry *q, struct replication_request *rep,
 		    src_cksum_len, src_cksum,
 		    md_strlen, md_string,
 		    diag, issue_diag, rep->ino, rep->gen,
-		    gfp_conn_hash_hostname(q), gfp_conn_hash_port(q));
+		    host, port);
 	}
 
 	if (conn_err == GFARM_ERR_NO_ERROR &&
@@ -4841,7 +4866,7 @@ replica_receive(struct gfarm_hash_entry *q, struct replication_request *rep,
 		gflog_error(GFARM_MSG_1003514,
 		    "%s: %s %lld:%lld from %s:%d: close: %s", diag, issue_diag,
 		    (long long)rep->ino, (long long)rep->gen,
-		    gfp_conn_hash_hostname(q), gfp_conn_hash_port(q),
+		    host, port,
 		    strerror(save_errno));
 		if (dst_err == GFARM_ERR_NO_ERROR)
 			dst_err = gfarm_errno_to_error(save_errno);
@@ -4868,26 +4893,209 @@ replica_receive(struct gfarm_hash_entry *q, struct replication_request *rep,
 	}
 }
 
+void
+replicator_main(int req_fd, int res_fd,
+	const char *host, int port,
+	const char *user,
+	struct sockaddr *peer_addr,
+	const char *diag)
+{
+    gfarm_error_t e;
+    struct gfs_connection *gfs_server = NULL;
+
+	gflog_debug(GFARM_MSG_UNFIXED,
+		"%s: connecting to %s:%d as %s",
+		diag, host, port, user);
+
+    e = gfs_client_connect(host, port, user, peer_addr, &gfs_server);
+    if (e != GFARM_ERR_NO_ERROR) {
+		size_t sz;
+		ssize_t rv;
+
+		gflog_error(GFARM_MSG_UNFIXED,
+			"connect to %s:%d failed: %s",
+			host, port, gfarm_error_string(e));
+
+			union replication_results res;
+
+			res.recv.e.src_errcode = e;
+			res.recv.e.dst_errcode = GFARM_ERR_NO_ERROR;
+
+			sz = sizeof(res.recv);
+			rv = write(res_fd, &res, sz);
+
+			if (rv < 0) {
+				gflog_error(GFARM_MSG_UNFIXED,
+					"write error: %s", strerror(errno));
+			} else if (rv != sz) {
+				gflog_error(GFARM_MSG_UNFIXED,
+					"partial write: %zd < %zu", rv, sz);
+			}
+
+			_exit(1);
+    }
+
+    for (;;) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"%s: waiting for replication request from %s:%d",
+			diag, host, port);
+
+		gfarm_int32_t dst_err = GFARM_ERR_NO_ERROR;
+		struct replication_request req;
+		union replication_results res;
+		char *local_path = NULL;
+		int local_fd = -1, save_errno;
+		size_t sz;
+		ssize_t rv;
+
+		rv = read(req_fd, &req, sizeof(req));
+		if (rv == 0) {
+			break;
+		}
+
+		if (rv < 0) {
+			if (errno == EINTR)
+				continue;
+			gflog_error(GFARM_MSG_UNFIXED,
+				"read error: %s", strerror(errno));
+			break;
+		}
+
+		if (rv != sizeof(req)) {
+			gflog_error(GFARM_MSG_UNFIXED,
+				"partial read");
+			break;
+		}
+
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"%s: received replication request for"
+			" %lld:%lld from %s:%d",
+			diag, (long long)req.ino, (long long)req.gen,
+			host, port);
+
+		memset(&res, 0, sizeof(res));
+		res.recv.e.src_errcode = GFARM_ERR_NO_ERROR;
+		res.recv.e.dst_errcode = GFARM_ERR_NO_ERROR;
+
+		if (req.command == EXIT) {
+			break;
+		}
+
+		if (req.command != REPLICATION) {
+			gflog_warning(GFARM_MSG_UNFIXED,
+				"unknown command: %u", req.command);
+			continue;
+		}
+
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"%s: replication request for %lld:%lld from %s:%d",
+			diag, (long long)req.ino, (long long)req.gen,
+			host, port);
+
+		/* open local file for receiving replica */
+		gfsd_local_path(req.ino, req.gen, diag, &local_path);
+		local_fd = open_data(local_path, O_WRONLY|O_CREAT|O_TRUNC);
+
+		if (local_fd == -1) {
+			save_errno = errno;
+			dst_err = gfarm_errno_to_error(save_errno);
+			gflog_error(GFARM_MSG_1002182,
+				"%s: cannot open local file for %lld:%lld: %s",
+				diag, (long long)req.ino, (long long)req.gen,
+				strerror(save_errno));
+		} else if (!confirm_local_path(req.ino, req.gen, diag)) {
+			dst_err = GFARM_ERR_INTERNAL_ERROR;
+			gflog_error(GFARM_MSG_1004499,
+				"%s: %lld:%lld: race detected",
+				diag, (long long)req.ino, (long long)req.gen);
+			close(local_fd);
+		}
+
+		if (dst_err == GFARM_ERR_NO_ERROR) {
+			replica_receive(&req, gfs_server, local_fd,
+				&res, host, port, diag);
+			local_fd = -1;
+		} else {
+			res.recv.e.dst_errcode = dst_err;
+
+			if (local_fd >= 0)
+				close(local_fd);
+		}
+
+		if (local_path != NULL)
+			free(local_path);
+
+		sz = req.handling_cksum_protocol ?
+			sizeof(res.recv_cksum) : sizeof(res.recv);
+
+		rv = write(res_fd, &res, sz);
+		if (rv < 0) {
+			gflog_error(GFARM_MSG_UNFIXED,
+				"write error: %s", strerror(errno));
+			break;
+		} else if (rv != sz) {
+			gflog_error(GFARM_MSG_UNFIXED,
+				"%s: partial write: %zd < %zu", diag, rv, sz);
+			break;
+		}
+    }
+
+    if (gfs_server != NULL)
+		gfs_client_connection_free(gfs_server);
+
+    _exit(0);
+}
+
+static void
+replicator_destroy(struct replication_queue_data *qd)
+{
+	int status;
+	pid_t pid;
+
+	if (qd->replicator == NULL)
+		return;
+
+	qd->replicator->alive = 0;
+
+	pid = waitpid(qd->replicator->pid, &status, WNOHANG);
+	if (pid == -1) {
+		gflog_warning(GFARM_MSG_1002303,
+		    "replication: child %d: %s",
+		    (int)qd->replicator->pid, strerror(errno));
+	} else if (pid > 0) {
+		gfarm_iostat_clear_id(qd->replicator->pid, 0);
+	}
+
+	close(qd->replicator->read_fd);
+	close(qd->replicator->write_fd);
+
+	free(qd->replicator);
+	qd->replicator = NULL;
+
+	if (replicator_count > 0)
+		--replicator_count;
+}
+
 /* returns gfmd_err */
 gfarm_error_t
-try_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q,
-	gfarm_error_t *conn_errp, gfarm_error_t *dst_errp)
+try_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q)
 {
-	gfarm_int32_t conn_err = GFARM_ERR_NO_ERROR;
+	gfarm_int32_t e = GFARM_ERR_NO_ERROR;
 	gfarm_int32_t dst_err = GFARM_ERR_NO_ERROR;
+	gfarm_int32_t remove_head = 0;
 	struct replication_queue_data *qd = gfarm_hash_entry_data(q);
 	struct replication_request *rep = qd->head;
-	char *path;
-	struct gfs_connection *src_gfsd;
-	int fds[2];
+	int p2c[2], c2p[2];
 	pid_t pid = -1; /* == GFS_PROTO_REPLICATION_HANDLE_INVALID */
-	int local_fd, save_errno;
-	size_t sz;
-	ssize_t rv;
-	union replication_results res;
 	const char *diag = rep->handling_cksum_protocol ?
 	    "GFS_PROTO_REPLICATION_CKSUM_REQUEST" :
 	    "GFS_PROTO_REPLICATION_REQUEST";
+
+	gflog_debug(GFARM_MSG_UNFIXED,
+		"try replication for %s:%d: ino=%lld, gen=%lld, seq_num=%lld",
+		gfp_conn_hash_hostname(q), gfp_conn_hash_port(q),
+		(long long)rep->ino, (long long)rep->gen,
+		(long long)rep->seq_num);
 
 	/*
 	 * XXX FIXME:
@@ -4895,163 +5103,231 @@ try_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q,
 	 * the remote gfsd (or its kernel) can block this backchannel gfsd.
 	 * See http://sourceforge.net/apps/trac/gfarm/ticket/130
 	 */
-	gfsd_local_path(rep->ino, rep->gen, diag, &path);
-	local_fd = open_data(path, O_WRONLY|O_CREAT|O_TRUNC);
-	save_errno = errno;
-	free(path);
-	if (local_fd == -1) {
-		dst_err = gfarm_errno_to_error(save_errno);
-		gflog_error(GFARM_MSG_1002182,
-		    "%s: cannot open local file for %lld:%lld: %s", diag,
-		    (long long)rep->ino, (long long)rep->gen,
-		    strerror(save_errno));
-	} else if (!confirm_local_path(rep->ino, rep->gen, diag)) {
-		dst_err = GFARM_ERR_INTERNAL_ERROR;
-		gflog_error(GFARM_MSG_1004499, "%s: %lld:%lld: race detected",
-		    diag, (long long)rep->ino, (long long)rep->gen);
-		close(local_fd);
-	} else if ((conn_err = gfs_client_connection_acquire_by_host(
-	    gfm_server, gfp_conn_hash_hostname(q), gfp_conn_hash_port(q),
-	    &src_gfsd, listen_addrname)) != GFARM_ERR_NO_ERROR) {
-		gflog_notice(GFARM_MSG_1002184, "%s: connecting to %s:%d: %s",
-		    diag,
-		    gfp_conn_hash_hostname(q), gfp_conn_hash_port(q),
-		    gfarm_error_string(conn_err));
-		close(local_fd);
-	} else if (pipe(fds) == -1) {
-		dst_err = gfarm_errno_to_error(errno);
-		gflog_error(GFARM_MSG_1002185, "%s: cannot create pipe: %s",
-		    diag, strerror(errno));
-		gfs_client_connection_free(src_gfsd);
-		close(local_fd);
-#ifndef HAVE_POLL /* i.e. use select(2) */
-	} else if (fds[0] >= FD_SETSIZE) { /* for select(2) */
-		dst_err = GFARM_ERR_TOO_MANY_OPEN_FILES;
-		gflog_error(GFARM_MSG_1002186, "%s: cannot select %d: %s",
-		    diag, fds[0], gfarm_error_string(dst_err));
-		close(fds[0]);
-		close(fds[1]);
-		gfs_client_connection_free(src_gfsd);
-		close(local_fd);
-#endif
-	} else if ((pid = do_fork(type_replication)) == 0) { /* child */
-		close(fds[0]);
+	if (qd->replicator == NULL || !qd->replicator->alive) {
+		char *user = strdup(gfm_client_username(gfm_server));
+		struct sockaddr peer_addr;
 
-		(void)gfarm_proctitle_set(
-		    "replication %s", gfp_conn_hash_hostname(q));
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"create child process for replication for %s:%d: "
+			"ino=%lld, gen=%lld, seq_num=%lld",
+			gfp_conn_hash_hostname(q), gfp_conn_hash_port(q),
+			(long long)rep->ino, (long long)rep->gen,
+			(long long)rep->seq_num);
 
-		memset(&res, 0, sizeof(res)); /* to shut up valgrind */
-		replica_receive(q, rep, src_gfsd, local_fd, &res, diag);
-
-		sz = rep->handling_cksum_protocol ?
-		    sizeof(res.recv_cksum) : sizeof(res.recv);
-		if ((rv = write(fds[1], &res, sz)) == -1)
-			gflog_notice(GFARM_MSG_1002188, "%s: write pipe: %s",
-			    diag, strerror(errno));
-		else if (rv != sz) /* XXX "%zd" but not worth changing msgid */
-			gflog_error(GFARM_MSG_1002189, "%s: partial write: "
-			    "%d < %d", diag, (int)rv, (int)sz);
-		close(fds[1]);
-		exit(rv == sz &&
-		    res.recv.e.src_errcode == GFARM_ERR_NO_ERROR &&
-		    res.recv.e.dst_errcode == GFARM_ERR_NO_ERROR ? 0 : 1);
-	} else { /* parent */
-		if (pid == -1) {
+		if (pipe(c2p) == -1) {
 			dst_err = gfarm_errno_to_error(errno);
-			gflog_error(GFARM_MSG_1002190,
-			    "%s: cannot create child process: %s",
-			    diag, strerror(errno));
-			close(fds[0]);
-			gfs_client_connection_free(src_gfsd);
-			close(local_fd);
-		} else {
-			rep->src_gfsd = src_gfsd;
-			rep->file_fd = local_fd;
-			rep->pipe_fd = fds[0];
-			rep->pid = pid;
-			rep->ongoing_next = &ongoing_replications;
-			rep->ongoing_prev = ongoing_replications.ongoing_prev;
-			ongoing_replications.ongoing_prev->ongoing_next = rep;
-			ongoing_replications.ongoing_prev = rep;
+			gflog_error(GFARM_MSG_1002185,
+				"%s: cannot create pipe: %s",
+				diag, strerror(errno));
+#ifndef HAVE_POLL /* i.e. use select(2) */
+		} else if (c2p[0] >= FD_SETSIZE) { /* for select(2) */
+			dst_err = GFARM_ERR_TOO_MANY_OPEN_FILES;
+			gflog_error(GFARM_MSG_1002186,
+				"%s: cannot select %d: %s",
+				diag, c2p[0], gfarm_error_string(dst_err));
+			close(c2p[0]);
+			close(c2p[1]);
+			free(user);
+#endif
+		} else if (pipe(p2c) == -1) {
+			dst_err = gfarm_errno_to_error(errno);
+			gflog_error(GFARM_MSG_1002185,
+				"%s: cannot create pipe: %s",
+				diag, strerror(errno));
+			close(c2p[0]);
+			close(c2p[1]);
+			free(user);
+		} else if ((dst_err = gfm_host_address_get(gfm_server,
+			gfp_conn_hash_hostname(q),
+			gfp_conn_hash_port(q),
+			&peer_addr, NULL)) != GFARM_ERR_NO_ERROR) {
+			gflog_error(GFARM_MSG_UNFIXED,
+				"%s: cannot get host address: %s",
+				diag, gfp_conn_hash_hostname(q));
+			close(c2p[0]);
+			close(c2p[1]);
+			free(user);
+		} else if ((pid = do_fork(type_replication)) == 0) { /* child */
+
+			close(p2c[1]);
+			close(c2p[0]);
+
+			(void)gfarm_proctitle_set(
+				"replication %s", gfp_conn_hash_hostname(q));
+
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"child process for replication"
+				" started: %s:%d:%s",
+				gfp_conn_hash_hostname(q),
+				gfp_conn_hash_port(q),
+				user);
+
+			replicator_main(p2c[0], c2p[1],
+				gfp_conn_hash_hostname(q),
+				gfp_conn_hash_port(q),
+				user, &peer_addr, diag);
+
+			free(user);
+
+			exit(0);
+		} else { /* parent */
+			free(user);
+
+			if (pid == -1) {
+				dst_err = gfarm_errno_to_error(errno);
+				gflog_error(GFARM_MSG_1002190,
+					"%s: cannot create child process: %s",
+					diag, strerror(errno));
+				close(c2p[0]);
+				close(p2c[1]);
+			} else {
+
+				gflog_debug(GFARM_MSG_UNFIXED,
+					"child process for replication created:"
+					"%s:%d: pid=%d",
+					gfp_conn_hash_hostname(q),
+					gfp_conn_hash_port(q),
+					(int)pid);
+
+				qd->replicator =
+					malloc(sizeof(*qd->replicator));
+				if (qd->replicator == NULL) {
+					dst_err = GFARM_ERR_NO_MEMORY;
+					gflog_error(GFARM_MSG_UNFIXED,
+					"%s: cannot allocate memory for "
+					"replicator for %s:%d: %s", diag,
+					gfp_conn_hash_hostname(q),
+					gfp_conn_hash_port(q),
+					gfarm_error_string(dst_err));
+					close(p2c[1]);
+					close(c2p[0]);
+				} else {
+					qd->replicator->write_fd = p2c[1];
+					qd->replicator->read_fd  = c2p[0];
+					qd->replicator->busy = 0;
+					qd->replicator->alive = 1;
+					qd->replicator->pid = pid;
+
+					if (replicator_count != UINT32_MAX)
+						++replicator_count;
+				}
+			}
+			close(c2p[1]);
+			close(p2c[0]);
 		}
-		close(fds[1]);
 	}
 
-	*conn_errp = conn_err;
-	*dst_errp = dst_err;
+	gflog_debug(GFARM_MSG_UNFIXED,
+		"child process for replication: %s:%d: %s",
+		gfp_conn_hash_hostname(q), gfp_conn_hash_port(q),
+		qd->replicator != NULL && qd->replicator->alive ?
+		    "alive" : "not alive");
 
+
+	if (dst_err == GFARM_ERR_NO_ERROR &&
+		qd->replicator != NULL &&
+		!qd->replicator->busy) {
+		ssize_t w;
+		gfarm_int64_t current = seq_num;
+
+		if (seq_num == GFARM_INT64_MAX) {
+			seq_num = 0;
+		} else {
+			++seq_num;
+		}
+		rep->seq_num = current;
+
+		rep->ongoing_next = &ongoing_replications;
+		rep->ongoing_prev = ongoing_replications.ongoing_prev;
+		ongoing_replications.ongoing_prev->ongoing_next = rep;
+		ongoing_replications.ongoing_prev = rep;
+
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"send replication request to child process for %s:%d: "
+			"ino=%lld, gen=%lld, seq_num=%lld",
+			gfp_conn_hash_hostname(q), gfp_conn_hash_port(q),
+			(long long)rep->ino, (long long)rep->gen,
+			(long long)rep->seq_num);
+
+		qd->replicator->busy = 1;
+		w = write(qd->replicator->write_fd, rep, sizeof(*rep));
+		if (w < 0) {
+			gflog_error(GFARM_MSG_UNFIXED,
+				"write to worker failed: %s", strerror(errno));
+
+			rep->ongoing_prev->ongoing_next = rep->ongoing_next;
+			rep->ongoing_next->ongoing_prev = rep->ongoing_prev;
+			rep->ongoing_next = NULL;
+			rep->ongoing_prev = NULL;
+			qd->replicator->busy = 0;
+
+			replicator_destroy(qd);
+			dst_err = gfarm_errno_to_error(errno);
+			remove_head = 1;
+
+		} else if (w != sizeof(*rep)) {
+			gflog_error(GFARM_MSG_UNFIXED,
+				"partial write to worker: %zd < %zu",
+				w, sizeof(*rep));
+
+			rep->ongoing_prev->ongoing_next = rep->ongoing_next;
+			rep->ongoing_next->ongoing_prev = rep->ongoing_prev;
+			rep->ongoing_next = NULL;
+			rep->ongoing_prev = NULL;
+			qd->replicator->busy = 0;
+
+			replicator_destroy(qd);
+			dst_err = gfarm_errno_to_error(errno);
+			remove_head = 1;
+		}
+	}
+
+	/*
+	 *  connection errors no longer occur here
+	 *  use GFARM_ERR_NO_ERROR instead of conn_err
+	 */
 	if (rep->handling_cksum_protocol) {
-		return (gfs_async_server_put_reply(conn, rep->xid, diag,
-		    dst_err, "li", (gfarm_int64_t)pid, conn_err));
+		e = gfs_async_server_put_reply(conn, rep->xid, diag,
+		    dst_err, "li", (gfarm_int64_t)rep->seq_num,
+			GFARM_ERR_NO_ERROR);
 	} else {
 		/*
 		 * XXX FIXME,
 		 * src_err and dst_err should be passed separately
 		 */
-		return (gfs_async_server_put_reply(conn, rep->xid, diag,
-		    conn_err != GFARM_ERR_NO_ERROR ? conn_err : dst_err,
-		    "l", (gfarm_int64_t)pid));
+		e = gfs_async_server_put_reply(conn, rep->xid, diag,
+		    dst_err, "l", (gfarm_int64_t)rep->seq_num);
 	}
+
+	if (remove_head) {
+		qd->head = rep->q_next;
+
+		if (qd->head == NULL)
+			qd->tail = &qd->head;
+
+		free(rep);
+	}
+
+	return (e);
 }
 
 gfarm_error_t
 start_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q)
 {
-	gfarm_error_t gfmd_err, dst_err, conn_err;
-	gfarm_error_t src_net_err = GFARM_ERR_NO_ERROR;
-	int src_net_err_count = 0;
+	gfarm_error_t gfmd_err;
 	struct replication_queue_data *qd = gfarm_hash_entry_data(q);
 	struct replication_request *rep;
 	static const char diag[] = "GFS_PROTO_REPLICATION_REQUEST";
 
+	gflog_debug(GFARM_MSG_UNFIXED,
+	    "%s: start replication for %s:%d",
+	    diag, gfp_conn_hash_hostname(q), gfp_conn_hash_port(q));
+
 	do {
-		if (src_net_err_count > 1) {
-			rep = qd->head;
-			/*
-			 * avoid retries, because this may take long time,
-			 * if the host is down or network is unreachable.
-			 */
-			gflog_warning(GFARM_MSG_1002515,
-			    "skipping replication for %lld:%lld, "
-			    "because %s:%d is down: %s",
-			    (long long)rep->ino, (long long)rep->gen,
-			    gfp_conn_hash_hostname(q), gfp_conn_hash_port(q),
-			    gfarm_error_string(src_net_err));
-
-			if (rep->handling_cksum_protocol) {
-				gfmd_err = gfs_async_server_put_reply(conn,
-				    rep->xid, diag, GFARM_ERR_NO_ERROR, "li",
-				    GFS_PROTO_REPLICATION_HANDLE_INVALID,
-				    src_net_err);
-			} else {
-				/*
-				 * XXX FIXME
-				 * src_err and dst_err should be passed
-				 * separately
-				 */
-				gfmd_err = gfs_async_server_put_reply(conn,
-				    rep->xid, diag, src_net_err, "");
-
-			}
-			if (gfmd_err != GFARM_ERR_NO_ERROR) {
-				/* kill_pending_replications() frees rep */
-				return (gfmd_err);
-			}
-		} else {
-			gfmd_err = try_replication(conn, q,
-			    &conn_err, &dst_err);
-			if (gfmd_err != GFARM_ERR_NO_ERROR) {
-				/* kill_pending_replications() frees rep */
-				return (gfmd_err);
-			}
-
-			if (conn_err == GFARM_ERR_NO_ERROR &&
-			    dst_err == GFARM_ERR_NO_ERROR)
-				return (GFARM_ERR_NO_ERROR);
-			if (IS_CONNECTION_ERROR(conn_err)) {
-				src_net_err = conn_err;
-				++src_net_err_count;
-			}
+		gfmd_err = try_replication(conn, q);
+		if (gfmd_err != GFARM_ERR_NO_ERROR) {
+			/* kill_pending_replications() frees rep */
+			return (gfmd_err);
 		}
 
 		/*
@@ -5062,7 +5338,6 @@ start_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q)
 		 * started or finished.
 		 */
 		rep = qd->head->q_next;
-		free(qd->head->cksum_type);
 		free(qd->head);
 
 		qd->head = rep;
@@ -5093,6 +5368,10 @@ gfs_async_server_replication_request(struct gfp_xdr *conn,
 	const char *const diag = handling_cksum_protocol ?
 	    "GFS_PROTO_REPLICATION_CKSUM_REQUEST" :
 	    "GFS_PROTO_REPLICATION_REQUEST";
+
+	gflog_debug(GFARM_MSG_UNFIXED,
+	    "%s: request for %s, handling_cksum_protocol=%d",
+	    diag, user, handling_cksum_protocol);
 
 	if (handling_cksum_protocol) {
 		e = gfs_async_server_get_request(conn, size, diag, "silllsbi",
@@ -5132,6 +5411,8 @@ gfs_async_server_replication_request(struct gfp_xdr *conn,
 		} else {
 			free(host);
 
+			rep->command = REPLICATION;
+
 			rep->handling_cksum_protocol = handling_cksum_protocol;
 			if (!handling_cksum_protocol) {
 				rep->issue_cksum_protocol = 0;
@@ -5155,17 +5436,16 @@ gfs_async_server_replication_request(struct gfp_xdr *conn,
 			rep->gen = gen;
 
 			rep->filesize = filesize;
-			rep->cksum_type = cksum_type;
+			snprintf(rep->cksum_type, sizeof(rep->cksum_type),
+				"%s", cksum_type != NULL ? cksum_type : "");
+			free(cksum_type);
 			rep->cksum_len = cksum_len;
 			if (cksum_len > 0)
 				memcpy(rep->cksum, cksum, cksum_len);
 			rep->cksum_request_flags = cksum_request_flags;
 
 			/* not set yet, will be set in try_replication() */
-			rep->src_gfsd = NULL;
-			rep->file_fd = -1;
-			rep->pipe_fd = -1;
-			rep->pid = GFS_PROTO_REPLICATION_HANDLE_INVALID;
+			rep->seq_num = GFS_PROTO_REPLICATION_HANDLE_INVALID;
 			rep->ongoing_next = rep->ongoing_prev = rep;
 
 			rep->q = q;
@@ -5184,7 +5464,6 @@ gfs_async_server_replication_request(struct gfp_xdr *conn,
 	free(host);
 	free(cksum_type);
 
-	/* only used in an error case */
 	return (gfs_async_server_put_reply(conn, xid, diag, e, ""));
 }
 
@@ -6293,12 +6572,41 @@ replication_result_notify(struct gfp_xdr *bc_conn,
 	union replication_results res;
 	size_t sz = rep->handling_cksum_protocol ?
 	    sizeof(res.recv_cksum) : sizeof(res.recv);
-	ssize_t rv = read(rep->pipe_fd, &res, sz);
-	int status;
+	ssize_t rv = read(qd->replicator->read_fd, &res, sz);
 	struct stat st;
+	char *path = NULL;
 	static const char diag[] = "GFM_PROTO_REPLICATION_RESULT";
 
+	gfsd_local_path(rep->ino, rep->gen, diag, &path);
+
+	if (stat(path, &st) == -1) {
+		gflog_error(GFARM_MSG_UNFIXED,
+			"%s: stat failed for %lld:%lld: %s",
+			diag,
+			(long long)rep->ino,
+			(long long)rep->gen,
+			strerror(errno));
+		st.st_size = 0;
+	}
+	free(path);
+
+	gflog_debug(GFARM_MSG_UNFIXED,
+		"%s: read child result: ino=%lld gen=%lld seq_num=%lld "
+		"src_errcode=%d dst_errcode=%d size=%lld",
+		diag,
+		(long long)rep->ino,
+		(long long)rep->gen,
+		(long long)rep->seq_num,
+		rep->handling_cksum_protocol ?
+		    res.recv_cksum.e.src_errcode : res.recv.e.src_errcode,
+		rep->handling_cksum_protocol ?
+		    res.recv_cksum.e.dst_errcode : res.recv.e.dst_errcode,
+		(long long)st.st_size);
+
 	if (rv != sz) {
+
+		qd->replicator->alive = 0;
+
 		if (rv == -1) {
 			gflog_error(GFARM_MSG_1002191,
 			    "%s: cannot read child result: %s",
@@ -6308,23 +6616,67 @@ replication_result_notify(struct gfp_xdr *bc_conn,
 			    "%s: too short child result: %d bytes", diag,
 				    (int)rv);
 		}
+
+		replicator_destroy(qd);
+
 		res.recv.e.src_errcode = 0;
 		res.recv.e.dst_errcode = GFARM_ERR_UNKNOWN;
 		res.recv_cksum.cksum_len = 0;
 		res.recv_cksum.cksum_result_flags = 0;
-	} else if (fstat(rep->file_fd, &st) == -1) {
-		gflog_error(GFARM_MSG_1002193,
-		    "%s: cannot stat local fd: %s", diag, strerror(errno));
-		if (res.recv.e.dst_errcode == GFARM_ERR_NO_ERROR)
-			res.recv.e.dst_errcode = GFARM_ERR_UNKNOWN;
+	} else if (res.recv.e.src_errcode != GFARM_ERR_NO_ERROR ||
+		res.recv.e.dst_errcode != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"send EXIT command to child process ");
+
+			struct replication_request exit_req;
+			ssize_t w;
+			int status;
+
+			memset(&exit_req, 0, sizeof(exit_req));
+			exit_req.command = EXIT;
+
+			w = write(qd->replicator->write_fd,
+				&exit_req, sizeof(exit_req));
+
+			if (w < 0) {
+				gflog_error(GFARM_MSG_UNFIXED,
+					"write EXIT command failed: %s",
+					strerror(errno));
+			} else if (w != sizeof(exit_req)) {
+				gflog_error(GFARM_MSG_UNFIXED,
+					"partial write EXIT command: %zd < %zu",
+					w, sizeof(exit_req));
+			}
+
+			if ((rv = waitpid(qd->replicator->pid,
+					&status, 0)) == -1)
+				gflog_warning(GFARM_MSG_1002303,
+					"replication: child %d: %s",
+					(int)qd->replicator->pid,
+					strerror(errno));
+			else
+				gfarm_iostat_clear_id(qd->replicator->pid, 0);
+
+		gflog_notice(GFARM_MSG_UNFIXED,
+			"%s: replication failed: ino=%lld gen=%lld "
+			"src_err=%d dst_err=%d, destroy worker",
+			diag,
+			(long long)rep->ino,
+			(long long)rep->gen,
+			res.recv.e.src_errcode,
+			res.recv.e.dst_errcode);
+
+		replicator_destroy(qd);
 	}
+
+
 	if (rep->handling_cksum_protocol) {
 		e = gfm_async_client_send_request(bc_conn, async, diag,
 		    gfm_async_client_replication_result,
 		    gfm_async_client_replication_free,
 		    /* rep */ NULL,
 		    GFM_PROTO_REPLICATION_CKSUM_RESULT, "llliilsbi",
-		    rep->ino, rep->gen, (gfarm_int64_t)rep->pid,
+		    rep->ino, rep->gen, (gfarm_int64_t)rep->seq_num,
 		    res.recv_cksum.e.src_errcode, res.recv_cksum.e.dst_errcode,
 		    (gfarm_int64_t)st.st_size, rep->cksum_type,
 		    res.recv_cksum.cksum_len, res.recv_cksum.cksum,
@@ -6335,43 +6687,71 @@ replication_result_notify(struct gfp_xdr *bc_conn,
 		    gfm_async_client_replication_free,
 		    /* rep */ NULL,
 		    GFM_PROTO_REPLICATION_RESULT, "llliil",
-		    rep->ino, rep->gen, (gfarm_int64_t)rep->pid,
+		    rep->ino, rep->gen, (gfarm_int64_t)rep->seq_num,
 		    res.recv.e.src_errcode, res.recv.e.dst_errcode,
 		    (gfarm_int64_t)st.st_size);
 	}
-	close(rep->pipe_fd);
-	close(rep->file_fd);
-	if ((rv = waitpid(rep->pid, &status, 0)) == -1)
-		gflog_warning(GFARM_MSG_1002303,
-		    "replication(%lld, %lld): child %d: %s",
-		    (long long)rep->ino, (long long)rep->gen, (int)rep->pid,
-		    strerror(errno));
-	else
-		gfarm_iostat_clear_id(rep->pid, 0);
 
-	if (gfs_client_is_connection_error(res.recv.e.src_errcode))
-		gfs_client_purge_from_cache(rep->src_gfsd);
-	if (!gfs_client_is_connection_sharable(rep->src_gfsd)) {
-		/*
-		 * throw away this conneciton everytime,
-		 * because the encryption state of the connection cannot be
-		 * shared between the client and the paret process
-		 */
-		(void)shutdown(gfs_client_connection_fd(rep->src_gfsd),
-		    SHUT_RDWR);
-	}
-	gfs_client_connection_free(rep->src_gfsd);
+
+	if (qd->replicator != NULL)
+		qd->replicator->busy = 0;
 
 	rep->ongoing_prev->ongoing_next = rep->ongoing_next;
 	rep->ongoing_next->ongoing_prev = rep->ongoing_prev;
 
 	rep = rep->q_next;
-	free(qd->head->cksum_type);
 	free(qd->head);
 
 	qd->head = rep;
 	if (rep == NULL) {
 		qd->tail = &qd->head;
+
+		if (replicator_count >= MAX_REPLICATOR &&
+			qd->replicator != NULL &&
+			qd->replicator->alive) {
+
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"send EXIT command to child process ");
+
+			struct replication_request exit_req;
+			ssize_t w;
+			int status;
+
+			memset(&exit_req, 0, sizeof(exit_req));
+			exit_req.command = EXIT;
+
+			w = write(qd->replicator->write_fd,
+				&exit_req, sizeof(exit_req));
+
+			if (w < 0) {
+				gflog_error(GFARM_MSG_UNFIXED,
+					"write EXIT command failed: %s",
+					strerror(errno));
+			} else if (w != sizeof(exit_req)) {
+				gflog_error(GFARM_MSG_UNFIXED,
+					"partial write EXIT command: %zd < %zu",
+					w, sizeof(exit_req));
+			}
+
+			if ((rv = waitpid(qd->replicator->pid,
+					&status, 0)) == -1)
+				gflog_warning(GFARM_MSG_1002303,
+					"replication: child %d: %s",
+					(int)qd->replicator->pid,
+					strerror(errno));
+			else
+				gfarm_iostat_clear_id(qd->replicator->pid, 0);
+
+			close(qd->replicator->write_fd);
+			close(qd->replicator->read_fd);
+
+			qd->replicator->alive = 0;
+			free(qd->replicator);
+			qd->replicator = NULL;
+
+			if (replicator_count > 0)
+				--replicator_count;
+		}
 	} else {
 		e2 = start_replication(bc_conn, q);
 	}
@@ -6427,7 +6807,14 @@ watch_fds(struct gfp_xdr *conn, gfp_xdr_async_peer_t async)
 		n = REP_FD_START;
 		for (rep = ongoing_replications.ongoing_next;
 		    rep != &ongoing_replications; rep = rep->ongoing_next) {
-			fds[n].fd = rep->pipe_fd;
+
+			struct replication_queue_data *qd =
+			    gfarm_hash_entry_data(rep->q);
+
+			if (qd->replicator == NULL || !qd->replicator->busy)
+				continue;
+
+			fds[n].fd = qd->replicator->read_fd;
 			fds[n].events = POLLIN;
 			fd_rep_map[n] = rep;
 			++n;
@@ -6475,6 +6862,9 @@ watch_fds(struct gfp_xdr *conn, gfp_xdr_async_peer_t async)
 	struct timeval timeout;
 	struct replication_request *next;
 
+	gflog_debug(GFARM_MSG_UNFIXED,
+		"watch_fds: select");
+
 	for (;;) {
 		FD_ZERO(&fds);
 		max_fd = gfp_xdr_fd(conn);
@@ -6482,9 +6872,17 @@ watch_fds(struct gfp_xdr *conn, gfp_xdr_async_peer_t async)
 		FD_SET(failover_notify_recv_fd, &fds);
 		for (rep = ongoing_replications.ongoing_next;
 		    rep != &ongoing_replications; rep = rep->ongoing_next) {
-			FD_SET(rep->pipe_fd, &fds);
-			if (max_fd < rep->pipe_fd)
-				max_fd = rep->pipe_fd;
+			struct replication_queue_data *qd =
+				gfarm_hash_entry_data(rep->q);
+
+			if (qd->replicator != NULL &&
+				qd->replicator->busy) {
+
+				FD_SET(qd->replicator->read_fd, &fds);
+
+				if (max_fd < qd->replicator->read_fd)
+					max_fd = qd->replicator->read_fd;
+			}
 		}
 
 		timeout.tv_sec = gfarm_metadb_heartbeat_interval * 2;
@@ -6504,7 +6902,13 @@ watch_fds(struct gfp_xdr *conn, gfp_xdr_async_peer_t async)
 
 		for (rep = ongoing_replications.ongoing_next;
 		    rep != &ongoing_replications; rep = next) {
-			if (FD_ISSET(rep->pipe_fd, &fds)) {
+
+			struct replication_queue_data *qd =
+				gfarm_hash_entry_data(rep->q);
+
+			if (qd->replicator != NULL &&
+				qd->replicator->busy &&
+				FD_ISSET(qd->replicator->read_fd, &fds)) {
 				/*
 				 * replication_result_notify() may add an entry
 				 * at the tail of the ongoing_replications.
@@ -6516,10 +6920,11 @@ watch_fds(struct gfp_xdr *conn, gfp_xdr_async_peer_t async)
 				/*
 				 * the following is necessary to make it
 				 * possible to access a new entry in this loop.
-				 * note that the new entry may use same pipe_fd
-				 * with this rep->pipe_fd.
+				 * note that the new entry may use same
+				 * qd->replicator->read_fd
+				 * with this qd->replicator->read_fd.
 				 */
-				FD_CLR(rep->pipe_fd, &fds);
+				FD_CLR(qd->replicator->read_fd, &fds);
 
 				e = replication_result_notify(conn, async,
 				    rep->q);
@@ -6701,6 +7106,7 @@ back_channel_server(void)
 				}
 				break;
 			}
+
 			switch (request) {
 			case GFS_PROTO_FHSTAT:
 				e = gfs_async_server_fhstat(
