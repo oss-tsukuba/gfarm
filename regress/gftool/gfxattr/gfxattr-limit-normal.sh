@@ -17,7 +17,13 @@
 
 # normal xattr limit test - 2
 {
-	attrfileBig="/etc/services"
+	attrfileBig="$xattrtmp/limit-normal-big"
+	# 64KiB ... GFARM_XATTR_SIZE_MAX_DEFAULT
+	awk 'BEGIN {
+		for (i = 0; i < 1024; i++) {
+			printf "%s", "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+-"
+		}
+	}' > $attrfileBig
 	gfxattr -s -f $attrfileBig / $attrname
 	if [ $? != 0 ]; then
 		exit $exit_fail
@@ -90,4 +96,3 @@ longname257="user.12345678901234567890123456789012345678901234567890123456789012
 		exit $exit_fail
 	fi
 }
-

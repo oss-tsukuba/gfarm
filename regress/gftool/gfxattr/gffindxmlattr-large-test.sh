@@ -1,7 +1,19 @@
 #!/bin/bash
+set -xeu
 
 mountp="./fusetest"
 xmltest="./xmltest"
+
+cleanup()
+{
+	set +e
+	gfrm [abcd]
+	gfrm -rf [ABCD]
+	fusermount -u "$mountp"
+	rmdir "$mountp"
+}
+
+trap cleanup EXIT
 
 gfmkdir A
 gfmkdir B
@@ -205,8 +217,5 @@ gffindxmlattr //name /A/B
 gffindxmlattr //name /A
 gffindxmlattr //name /
 
-# clean up
-gfrm [abcd]
-gfrm -rf [ABCD]
-fusermount -u $mountp
-rmdir $mountp
+trap - EXIT
+cleanup
