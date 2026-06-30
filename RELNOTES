@@ -1,9 +1,23 @@
+Release note for Gfarm 2.8.10
+=============================
+
+[2026.6.17]
+
+Documentation
+* Automount
+
+Updated feature
+* support Ubuntu 26.04
+
+Bug fix
+* gfpcopy, gfprep - fix warnings of thread sanitizer [#1193]
+
 Release note for Gfarm 2.8.9
 ============================
 
 [2026.4.1]
 
-Update feature
+Updated feature
 * improve the replica scheduling to create replicas from the nearest
   possible server and avoid long-distance transfers
 * config-gfarm - -a option can be specified multiple times.  If not
@@ -17,7 +31,7 @@ Release note for Gfarm 2.8.8
 Documentation
 * update INSTALL and SETUP manuals
 
-Update feature
+Updated feature
 * gfptar - support Gfarm URL
 * improve the comparison of SASL mechanisms
 

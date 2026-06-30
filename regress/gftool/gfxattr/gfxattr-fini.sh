@@ -1,3 +1,4 @@
+set -x
 . ./gftool/gfxattr/gfxattr-init.sh
 
 gfxattr -r / $attrname

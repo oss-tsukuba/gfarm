@@ -44,9 +44,9 @@ ARCH_GUESS=gftool/config-gfarm/gfarm.arch.guess
 [ -f $ARCH_GUESS ] || ARCH_GUESS=gfarm.arch.guess
 BUILDDIR=build-$($ARCH_GUESS)
 
+if $MAKE_CLEAN; then rm -rf $BUILDDIR; fi
 if [ -d $BUILDDIR ]; then
 	cd $BUILDDIR
-	if $MAKE_CLEAN; then make clean > /dev/null; fi
 else
 	mkdir $BUILDDIR
 	cd $BUILDDIR

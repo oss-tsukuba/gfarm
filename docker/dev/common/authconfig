@@ -157,6 +157,50 @@ gen_auth_config()
 	) >>"${auth_config_dir}/${config_name}.conf"
 }
 
+gen_auth_trial_order_config()
+{
+	config_name=$1
+	shift
+	(
+		order=""
+		while [ $# -gt 0 ]
+		do
+			a=$1
+			shift
+			[ -z "$a" ] && continue
+			case "$a" in
+			all)
+				order=" sharedsecret sasl_auth sasl tls_sharedsecret \
+tls_client_certificate kerberos_auth kerberos gsi_auth gsi"
+				break
+				;;
+			sasl.*)
+				a=sasl
+				;;
+			sasl_auth.*)
+				a=sasl_auth
+				;;
+			esac
+			case " $order " in
+			*" $a "*)
+				;;
+			*)
+				order="$order $a"
+				;;
+			esac
+		done
+		echo "auth_trial_order${order}"
+	) >> "${auth_config_dir}/${config_name}.conf"
+}
+
+gen_auth_finish()
+{
+	config_name=$1
+	(
+		echo "auth disable * *"
+	) >> "${auth_config_dir}/${config_name}.conf"
+}
+
 gen_auth_sasl_config()
 {
 	auth_method=$1
@@ -409,7 +453,10 @@ fi
 clear_auth_config auth-gfmd
 if [ "${gfmd_gfmd}" != "${gfsd_gfmd}" ]; then
 	gen_auth_config auth-gfmd gfmd "${gfmd_gfmd}"
+	gen_auth_config auth-gfmd gfmd "${client_gfmd}"
 	gen_auth_config auth-gfmd gfsd "${gfsd_gfmd}"
+	gen_auth_config auth-gfmd gfsd "${client_gfmd}"
+	gen_auth_trial_order_config auth-gfmd "${gfmd_gfmd}"
 	gen_auth_config auth-gfmd client "all"
 elif [ "${gfmd_gfmd}" = "all" \
     -o "${gfmd_gfmd}" = "sharedsecret" ]; then
@@ -418,7 +465,10 @@ elif [ "${gfmd_gfmd}" = "${client_gfmd}" ]; then
 	gen_auth_config auth-gfmd "all" "${gfmd_gfmd}"
 else
 	gen_auth_config auth-gfmd gfmd "${gfmd_gfmd}"
+	gen_auth_config auth-gfmd gfmd "${client_gfmd}"
 	gen_auth_config auth-gfmd gfsd "${gfsd_gfmd}"
+	gen_auth_config auth-gfmd gfsd "${client_gfmd}"
+	gen_auth_trial_order_config auth-gfmd "${gfmd_gfmd}"
 	# use "all" instead of "${client_gfmd}", make it client-controllable
 	gen_auth_config auth-gfmd client "all"
 fi
@@ -429,7 +479,10 @@ fi
 clear_auth_config auth-gfsd
 if [ "${gfsd_gfsd}" != "${gfsd_gfmd}" ]; then
 	gen_auth_config auth-gfsd gfmd "${gfsd_gfmd}"
+	gen_auth_config auth-gfsd gfmd "${client_gfsd}"
 	gen_auth_config auth-gfsd gfsd "${gfsd_gfsd}"
+	gen_auth_config auth-gfsd gfsd "${client_gfsd}"
+	gen_auth_trial_order_config auth-gfsd "${gfsd_gfmd}" "${gfsd_gfsd}"
 	gen_auth_config auth-gfsd client "all"
 elif [ "${gfsd_gfsd}" = "all" \
     -o "${gfsd_gfsd}" = "sharedsecret" ]; then
@@ -438,7 +491,10 @@ elif [ "${gfsd_gfsd}" = "${client_gfmd}" ]; then
 	gen_auth_config auth-gfsd "all" "${gfsd_gfsd}"
 else
 	gen_auth_config auth-gfsd gfmd "${gfsd_gfmd}"
+	gen_auth_config auth-gfsd gfmd "${client_gfsd}"
 	gen_auth_config auth-gfsd gfsd "${gfsd_gfsd}"
+	gen_auth_config auth-gfsd gfsd "${client_gfsd}"
+	gen_auth_trial_order_config auth-gfsd "${gfsd_gfsd}"
 	# use "all" instead of "${client_gfsd}", make it client-controllable
 	gen_auth_config auth-gfsd client "all"
 fi
@@ -450,12 +506,14 @@ clear_auth_config auth-client
 clear_auth_config auth-client.sasl
 if [ "${client_gfsd}" = "${client_gfmd}" ]; then
 	gen_auth_config auth-client "all" "${client_gfsd}"
+	gen_auth_trial_order_config auth-client "${client_gfsd}"
 	case ${client_gfsd} in
 	sasl*)	gen_auth_sasl_config "${client_gfsd}";;
 	esac
 else
 	gen_auth_config auth-client gfmd "${client_gfmd}"
 	gen_auth_config auth-client gfsd "${client_gfsd}"
+	gen_auth_trial_order_config auth-client "${client_gfmd}" "${client_gfsd}"
 	case "${client_gfmd}/${client_gfsd}" in
 	sasl*/sasl*)
 		gfmd_sasl_mech=$(echo "client_gfmd" | sed 's/sasl[_a-z]*//')
@@ -480,6 +538,10 @@ if ! ${gfsd_needs_host_cred}; then
 	# both gfsd and clients, but that's OK in this case.
 	gen_cred_config auth-client
 fi
+
+gen_auth_finish auth-gfmd
+gen_auth_finish auth-gfsd
+gen_auth_finish auth-client
 
 if "${no_restart}"; then
 	:

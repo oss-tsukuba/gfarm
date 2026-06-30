@@ -2050,7 +2050,6 @@ skip:
 	return (GFARM_ERR_NO_ERROR);
 }
 
-static int gfprep_is_term();
 
 static gfarm_error_t
 gfprep_connections_exec(gfarm_pfunc_t *pfunc_handle, int is_gfpcopy,
@@ -2080,7 +2079,7 @@ gfprep_connections_exec(gfarm_pfunc_t *pfunc_handle, int is_gfpcopy,
 	n_end = 0;
 next:
 	for (i = 0; i < n_conns; i++) {
-		if (gfprep_is_term()) {
+		if (gfpara_is_terminated()) {
 			e = GFARM_ERR_NO_ERROR;
 			goto end;
 		}
@@ -2377,83 +2376,7 @@ gfprep_unlink_to_overwrite(gfarm_dirtree_entry_t *entry, GFURL dst)
 	return (e);
 }
 
-static pthread_mutex_t sig_mutex = PTHREAD_MUTEX_INITIALIZER;
-static const char SIG_MUTEX_DIAG[] = "sig_mutex";
 
-static int is_term = 0; /* sig_mutex */
-
-static int
-gfprep_is_term()
-{
-	int i;
-	static const char diag[] = "gfprep_is_term";
-
-	gfarm_mutex_lock(&sig_mutex, diag, SIG_MUTEX_DIAG);
-	i = is_term;
-	gfarm_mutex_unlock(&sig_mutex, diag, SIG_MUTEX_DIAG);
-
-	return (i);
-}
-
-static void
-gfprep_sig_add(sigset_t *sigs, int sigid, const char *name)
-{
-	if (sigaddset(sigs, sigid) == -1)
-		gfmsg_fatal("sigaddset(%s): %s", name, strerror(errno));
-}
-
-static void
-gfprep_sigs_set(sigset_t *sigs)
-{
-	if (sigemptyset(sigs) == -1)
-		gfmsg_fatal("sigemptyset: %s", strerror(errno));
-
-	gfprep_sig_add(sigs, SIGHUP, "SIGHUP");
-	gfprep_sig_add(sigs, SIGTERM, "SIGTERM");
-	gfprep_sig_add(sigs, SIGINT, "SIGINT");
-}
-
-static void *
-gfprep_sigs_handler(void *p)
-{
-	sigset_t *sigs = p;
-	int rv, sig;
-	static const char diag[] = "gfprep_sigs_handler";
-
-	for (;;) {
-		if ((rv = sigwait(sigs, &sig)) != 0) {
-			gfmsg_warn("sigs_handler: %s", strerror(rv));
-			continue;
-		}
-		switch (sig) {
-		case SIGHUP:
-		case SIGINT:
-		case SIGTERM:
-			gfarm_mutex_lock(&sig_mutex, diag, SIG_MUTEX_DIAG);
-			is_term = 1;
-			gfarm_mutex_unlock(&sig_mutex, diag, SIG_MUTEX_DIAG);
-		}
-	}
-	return (NULL);
-}
-
-static void
-gfprep_signal_init()
-{
-	static sigset_t sigs;
-	int err;
-	pthread_t signal_thread;
-
-	gfprep_sigs_set(&sigs);
-
-	if (pthread_sigmask(SIG_BLOCK, &sigs, NULL) == -1) /* for sigwait() */
-		gfmsg_fatal("pthread_sigmask(SIG_BLOCK): %s",
-		    strerror(errno));
-
-	err = pthread_create(&signal_thread, NULL, gfprep_sigs_handler, &sigs);
-	if (err != 0)
-		gfmsg_fatal("pthread_create: %s", strerror(err));
-}
 
 static int
 can_skip_copy(int dst_is_gfarm, int force, gfarm_dirtree_entry_t *entry)
@@ -2511,7 +2434,7 @@ gfpcopy_prepare_dir_for_hpss(GFURL src, GFURL dst, GFURL *new_dstp,
 
 		e = gfurl_exist(new_dst);
 		if (e == GFARM_ERR_NO_ERROR) { /* exist */
-			gfmsg_error("already exist: %s", gfurl_url(new_dst));
+			gfmsg_error("already exists: %s", gfurl_url(new_dst));
 			exit(EXIT_FAILURE);
 		}
 
@@ -3213,14 +3136,13 @@ main(int argc, char *argv[])
 	gfmsg_fatal_e(e, "gfarm_terminate");
 	gfmsg_debug("validate options...done");
 
-	gfprep_signal_init();
-
 	if (opt.performance)
 		gettimeofday(&time_start, NULL);
 
 	/* after gfarm_terminate() --------------------------------- */
 
 	/* fork() before gfarm_initialize() and pthread_create() */
+	/* use fork() */
 	e = gfarm_pfunc_init_fork(
 	    &pfunc_handle,
 	    opt.quiet, opt.verbose, opt.debug,
@@ -3230,6 +3152,7 @@ main(int argc, char *argv[])
 	    pfunc_cb_start, pfunc_cb_end, pfunc_cb_free);
 	gfmsg_fatal_e(e, "gfarm_pfunc_init_fork");
 
+	/* use fork() */
 	e = gfarm_dirtree_init_fork(&dirtree_handle, src,
 	    is_gfpcopy ? dst : NULL,
 	    opt_dirtree_n_para, opt_dirtree_n_fifo, src_base_name ? 0 : 1,
@@ -3237,6 +3160,12 @@ main(int argc, char *argv[])
 	gfmsg_fatal_e(e, "gfarm_dirtree_init_fork: %s", gfurl_url(src));
 
 	pfunc_cb_func_init();
+
+	/* Do not call fork() below this line */
+
+	/* create threads ------------------------------------------ */
+	/* create a thread */
+	gfpara_signal_watcher_start();
 
 	/* create threads */
 	e = gfarm_pfunc_start(pfunc_handle);
@@ -3247,14 +3176,13 @@ main(int argc, char *argv[])
 	}
 	gfmsg_debug("pfunc_start...done");
 
+	/* create threads */
 	e = gfarm_dirtree_open(dirtree_handle);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfarm_dirtree_close(dirtree_handle);
 		gfmsg_fatal_e(e, "gfarm_dirtree_open");
 	}
 	gfmsg_debug("dirtree_open...done");
-
-	/* Do not fork below here */
 
 	/* before gfarm_initialize() -------------------------------- */
 
@@ -3304,7 +3232,7 @@ main(int argc, char *argv[])
 		/* count n_src_available only */
 		e = gfprep_hostinfohash_to_array(
 		    gfurl_url(src), &n_src_available, NULL, hash_src);
-		gfmsg_fatal_e(e, "gfprep_hostinfohash_to_array for soruce");
+		gfmsg_fatal_e(e, "gfprep_hostinfohash_to_array for source");
 		if (n_src_available == 0) {
 			gfmsg_error(
 			    "no available node for source "
@@ -3400,7 +3328,7 @@ retry_hash_dst:
 	n_entry = n_file = 0;
 	n_target = 0;
 	while ((e = gfarm_dirtree_checknext(dirtree_handle, &entry))
-	       == GFARM_ERR_NO_ERROR && !gfprep_is_term()) {
+	       == GFARM_ERR_NO_ERROR && !gfpara_is_terminated()) {
 		struct gfprep_host_info *src_hi, *dst_hi;
 		struct gfprep_host_info **src_select_array = NULL;
 		struct gfprep_host_info **dst_select_array = NULL;
@@ -4080,7 +4008,7 @@ next_entry:
 		gfarm_dirtree_array_free(n_ents, ents);
 	}
 
-	if (gfprep_is_term()) {
+	if (gfpara_is_terminated()) {
 		gfmsg_warn("interrupted");
 		gfarm_pfunc_terminate(pfunc_handle);
 	}

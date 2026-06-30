@@ -5,7 +5,13 @@ PROG=$(basename $0)
 trap '[ $status = 0 ] && echo Done || echo NG: $PROG; exit $status' 0 1 2 15
 
 cd ~/gfarm/regress
-sh gftool/gfxattr/gfxattr-xml-enabled.sh || sh gftool/gfxattr/gfxattr-fini.sh
+if sh gftool/gfxattr/gfxattr-xml-enabled.sh; then
+	:
+else
+	rc=$?
+	sh gftool/gfxattr/gfxattr-fini.sh || :
+	exit $rc
+fi
 
 cd gftool/gfxattr
 sh ./gffindxmlattr-large-test.sh

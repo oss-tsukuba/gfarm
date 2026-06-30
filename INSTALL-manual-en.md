@@ -18,7 +18,7 @@ By default, connections to the metadata server (gfmd) use TCP port 601, and conn
 
 If there are restrictions on outbound ports, open them to allow connections on the ports listed above.
 
-### Gfarm Installation
+### Gfarm installation
 
 #### Required packages
 
@@ -83,7 +83,7 @@ Enable nscd to run at OS startup, and start it.
 
 Since Gfarm cannot be accessed if the time is out of sync, the time is synchronized using NTP (Network Time Protocol) or similar.
 
-#### CA Certificates
+#### CA certificates
 
 Install CA certificates `$CAHASH.0` in `/etc/pki/tls/certs/gfarm`.
 
@@ -148,14 +148,14 @@ Set an appropriate value for `xxxx`.
 Download the Gfarm source code from the following URL:  
 <https://github.com/oss-tsukuba/gfarm/releases>
 
-This document describes version 2.8.9, but if a newer version is available, use the latest version.
+This document describes version 2.8.10, but if a newer version is available, use the latest version.
 
 Compile as any user (does not need to be root), then install with the root privilege.
 
 ```console
 $ OSSURL=https://github.com/oss-tsukuba
 $ PKG=gfarm
-$ VER=2.8.9
+$ VER=2.8.10
 $ wget --content-disposition $OSSURL/$PKG/archive/$VER.tar.gz
 $ tar pxf $PKG-$VER.tar.gz
 $ cd $PKG-$VER

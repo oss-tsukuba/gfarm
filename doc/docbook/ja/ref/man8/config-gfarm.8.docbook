@@ -130,8 +130,8 @@ postgresql version           [-V]: 9.2
 postgresql XML supported     [-X]: no
 metadata replication         [-r]: no
 metaserver hostname          [-h]: host1.example.org
-matadata admin user          [-A]: miles
-matadata admin dn            [-D]:
+metadata admin user          [-A]: miles
+metadata admin dn            [-D]:
 portmaster port              [-p]: 10602
 gfmd port                    [-m]: 601
 auth type                    [-a]: sharedsecret

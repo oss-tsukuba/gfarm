@@ -17,7 +17,7 @@ RUN dnf -y install epel-release \
     openssl-devel \
     krb5-libs krb5-devel krb5-server krb5-workstation \
     cyrus-sasl cyrus-sasl-lib cyrus-sasl-devel \
-    cyrus-sasl-plain cyrus-sasl-gssapi \
+    cyrus-sasl-plain cyrus-sasl-gssapi jq \
     golang \
     gcc-c++ cmake sqlite-devel libcurl-devel libuuid-devel \
     postgresql-devel \
@@ -47,7 +47,7 @@ RUN dnf -y install epel-release \
     python3-schema \
     python3-tqdm \
     python3-flake8 \
-    && dnf -y install --enablerepo=crb fuse-devel \
+    && dnf -y install --enablerepo=crb fuse fuse-devel fuse3 fuse3-devel \
     && sed -i 's@^Defaults    secure_path = /sbin:/bin:/usr/sbin:/usr/bin$@Defaults    secure_path = /usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin@' /etc/sudoers
 
 ### from source package

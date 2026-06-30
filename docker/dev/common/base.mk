@@ -82,11 +82,7 @@ DOCKER_BUILD_FLAGS += \
 		--build-arg NO_PROXY='$(GFDOCKER_NO_PROXY)' \
 		--build-arg GFDOCKER_PROXY_HOST='$(GFDOCKER_PROXY_HOST)' \
 		--build-arg GFDOCKER_PROXY_PORT='$(GFDOCKER_PROXY_PORT)' \
-		--build-arg GFDOCKER_ENABLE_PROXY='$(GFDOCKER_ENABLE_PROXY)' \
-		--build-arg MAVEN_OPTS='-Dhttp.proxyHost=$(GFDOCKER_PROXY_HOST) \
-                        -Dhttp.proxyPort=$(GFDOCKER_PROXY_PORT) \
-                        -Dhttps.proxyHost=$(GFDOCKER_PROXY_HOST) \
-                        -Dhttps.proxyPort=$(GFDOCKER_PROXY_PORT)'
+		--build-arg GFDOCKER_ENABLE_PROXY='$(GFDOCKER_ENABLE_PROXY)'
 endif
 
 IMAGE_BASENAME = gfarm-dev
@@ -186,7 +182,6 @@ help:
 	@echo '  ARGS="docker-compose args..." make docker-compose'
 	@echo '  make test-all'
 	@echo '  make valgrind-gfmd'
-	@echo '  make centos7'
 	@echo '  make opensuse'
 
 define check_config
@@ -719,9 +714,6 @@ valgrind-gfmd:
 	@echo 'This target is unimplemented.' 1>&2
 	@false
 
-centos7:
-	$(DOCKER_RUN) -it --rm 'centos:7' bash
-
 centos8:
 	$(DOCKER_RUN) -it --rm 'centos:8' bash
 
@@ -746,20 +738,11 @@ fedora33:
 opensuse:
 	$(DOCKER_RUN) -it --rm 'opensuse/leap' bash
 
-ubuntu1804:
-	$(DOCKER_RUN) -it --rm 'ubuntu:18.04' bash
-
-ubuntu2004:
-	$(DOCKER_RUN) -it --rm 'ubuntu:20.04' bash
-
 ubuntu2204:
 	$(DOCKER_RUN) -it --rm 'ubuntu:22.04' bash
 
 ubuntu2404:
 	$(DOCKER_RUN) -it --rm 'ubuntu:24.04' bash
-
-debian10:
-	$(DOCKER_RUN) -it --rm 'debian:buster' bash
 
 debian11:
 	$(DOCKER_RUN) -it --rm 'debian:bullseye' bash

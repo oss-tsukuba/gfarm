@@ -21,6 +21,8 @@ RUN dnf -y update \
     postgresql-server \
     fuse \
     fuse-devel \
+    fuse3 \
+    fuse3-devel \
     autofs \
     libacl-devel \
     ruby \
@@ -42,7 +44,7 @@ RUN dnf -y update \
     python3-flake8 \
     && dnf -y install krb5-libs krb5-devel krb5-server krb5-workstation \
     && dnf -y install cyrus-sasl cyrus-sasl-lib cyrus-sasl-devel \
-                      cyrus-sasl-plain cyrus-sasl-gssapi \
+                      cyrus-sasl-plain cyrus-sasl-gssapi jq \
     && dnf -y install golang \
     && dnf -y install gcc-c++ cmake sqlite-devel libcurl-devel libuuid-devel \
     && dnf -y install \

@@ -40,7 +40,7 @@ RUN apt-get update \
     python3-tqdm \
     flake8 \
     && apt-get -y install sasl2-bin libsasl2-modules-db libsasl2-dev \
-    libsasl2-modules libsasl2-modules-gssapi-mit \
+    libsasl2-modules libsasl2-modules-gssapi-mit jq \
     && apt-get -y install g++ cmake libsqlite3-dev \
     libcurl4-openssl-dev uuid-dev \
     && apt-get -y install curl \
@@ -52,7 +52,7 @@ RUN apt-get update \
     && locale-gen \
     && update-locale LANG=${LANG} \
     && apt-get -y install \
-    ncat ldnsutils iproute2 net-tools bind9utils telnet tcpdump \
+    ncat ldnsutils iproute2 net-tools bind9utils dnsutils telnet tcpdump \
     manpages manpages-ja man-db \
     gdb valgrind strace inotify-tools \
     vim nano emacs-nox less \

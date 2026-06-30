@@ -1033,6 +1033,8 @@ pfunc_child(void *param, FILE *from_parent, FILE *to_parent)
 	gfarm_pfunc_t *handle = param;
 	enum pfunc_result result = PFUNC_RESULT_FATAL;
 
+	gfpara_signal_ignore();
+
 	e = gfarm_initialize(NULL, NULL);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "ERROR: gfarm_initialize: %s\n",

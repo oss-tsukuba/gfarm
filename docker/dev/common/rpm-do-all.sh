@@ -4,7 +4,7 @@ set -eux
 
 # NOTE:
 # rpm-build-gfarm.sh and rpm-install-gfarm.sh are using OPENSSL_PACKAGE_NAME
-# which may be set by *-base-Dockerfile (e.g. centos7-base-Dockerfile)
+# which may be set by <distribution>-base-Dockerfile
 # : $OPENSSL_PACKAGE_NAME
 
 # this and rpm-install*.sh scripts are using GFDOCKER_PRIMARY_USER

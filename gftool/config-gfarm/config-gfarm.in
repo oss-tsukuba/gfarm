@@ -199,8 +199,8 @@ display_plain_params()
     fi
     echo "digest                       [-d]: $DIGEST_TYPE"
     echo "metaserver hostname          [-h]: $BACKEND_HOSTNAME"
-    echo "matadata admin user          [-A]: $METADATA_ADMIN_USER"
-    echo "matadata admin dn            [-D]: $METADATA_ADMIN_USER_GSI_DN"
+    echo "metadata admin user          [-A]: $METADATA_ADMIN_USER"
+    echo "metadata admin dn            [-D]: $METADATA_ADMIN_USER_GSI_DN"
 
     display_plain_params_backend_port_$BACKEND_TYPE
 

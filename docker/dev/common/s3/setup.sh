@@ -92,31 +92,7 @@ install_package_for_centos() {
 install_package_for_ubuntu() {
     ${SUDO} apt-get update
     ${SUDO} apt-get upgrade -y
-
-    case $GFDOCKER_PRJ_NAME in
-        ubuntu1804-*)
-            # for npm:
-            #   npm : Depends: node-gyp (>= 0.10.9) but it is not going
-            #   to be installed
-            ${SUDO} apt-get install -y \
-                    nodejs-dev node-gyp libssl1.0-dev
-            # install old npm to install new npm
-            ${SUDO} apt-get install -y npm
-            # old version
-            /usr/bin/npm --version || true  # may fail when re-installing
-            # install new npm (LTS version) with n
-            ${SUDO} npm install -g n
-            ${SUDO} n lts
-            # new version
-            /usr/local/bin/npm --version
-            # remove old version
-            ${SUDO} apt-get remove -y nodejs npm
-            ${SUDO} apt-get autoremove -y
-            ;;
-        *)
-            ${SUDO} apt-get install -y npm
-            ;;
-    esac
+    ${SUDO} apt-get install -y npm
 
     ${SUDO} apt-get install -y \
         uuid \
@@ -146,7 +122,7 @@ install_package() {
         ${DISTRO_FAMILY_RHEL})
             install_package_for_centos
             ;;
-        ubuntu*-*)
+        ubuntu*-* | debian*-*)
             install_package_for_ubuntu
             ;;
         *)
@@ -190,7 +166,7 @@ create_certificate() {
             SERVER_CERT_DIR=/etc/pki/tls/certs
             SERVER_KEY_DIR=/etc/pki/tls/private
             ;;
-        ubuntu*-*)
+        ubuntu*-* | debian*-*)
             SYSTEM_CERT_DIR=/usr/local/share/ca-certificates
             GFARM_CA_CERT_DIR=$SYSTEM_CERT_DIR/gfarm
             SYSTEM_CERT_UPDATE=update-ca-certificates
@@ -392,7 +368,7 @@ deploy_nginx() {
         ${DISTRO_FAMILY_RHEL})
             deploy_nginx_for_centos
             ;;
-        ubuntu*-*)
+        ubuntu*-* | debian*-*)
             deploy_nginx_for_ubuntu
             ;;
         *)
@@ -583,7 +559,7 @@ install_s3cmd() {
         ${DISTRO_FAMILY_RHEL})
             ${SUDO} yum install -y s3cmd
             ;;
-        ubuntu*-*)
+        ubuntu*-* | debian*-*)
             ${SUDO} apt-get install -y s3cmd
             ;;
        *)
@@ -604,7 +580,7 @@ install_goofys() {
         ${DISTRO_FAMILY_RHEL})
             install_goofys_dep_package_for_centos
             ;;
-        ubuntu*-*)
+        ubuntu*-* | debian*-*)
             install_goofys_dep_package_for_ubuntu
             ;;
        *)
@@ -657,7 +633,7 @@ install_s3fs() {
         ${DISTRO_FAMILY_RHEL})
             install_s3fs_dep_package_for_centos
             ;;
-        ubuntu*-*)
+        ubuntu*-* | debian*-*)
             install_s3fs_dep_package_for_ubuntu
             ;;
        *)

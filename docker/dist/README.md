@@ -207,10 +207,8 @@ When regress or regress\_full option is specified this test includes regression 
 ## Sanitizer test
 
 please remove the following tests temporarily from regress/schedule,
-because gfpcopy and db_journal_test currently have known bugs:
+because db_journal_test currently have known bugs:
 
-- gftool/gfprep/gfpcopy_dir_by_gfcp.sh
-- gftool/gfprep/gfpcopy_file_by_gfcp.sh
 - server/gfmd/db_journal/db_journal_write.sh
 - server/gfmd/db_journal/db_journal_apply.sh
 
