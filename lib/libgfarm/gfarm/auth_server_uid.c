@@ -164,9 +164,16 @@ gfarm_x509_cn_get_service_hostname(
 	    gfarm_auth_server_cred_service_get_or_default(service_tag);
 	serv_service_len = strlen(serv_service);
 	if (strncmp(cn, serv_service, serv_service_len) == 0 &&
-	    cn[serv_service_len] == '/') {
+	     /* older OpenSSL returns gfsd/gfsd1.example.org as CN */
+	    ( cn[serv_service_len] == '/' ||
+	     /* newer OpenSSL returns gfsd\/gfsd1.example.org per RFC4514 */
+	     (cn[serv_service_len] == '\\' &&
+	      cn[serv_service_len + 1] == '/'))) {
 		/* has service in CN. e.g. "CN=gfsd/gfsd1.example.org" */
-		hostname = strdup(cn + serv_service_len + 1);
+		if (cn[serv_service_len] == '/')
+			hostname = strdup(cn + serv_service_len + 1);
+		else
+			hostname = strdup(cn + serv_service_len + 2);
 	} else if (strcmp(serv_service, DEFAULT_HOSTBASED_SERVICE) == 0 &&
 	    strchr(cn, '/') == NULL) {
 		/* "host/" prefix in CN can be omitted */
