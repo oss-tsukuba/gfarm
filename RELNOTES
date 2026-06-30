@@ -1,3 +1,12 @@
+Release note for Gfarm 2.8.11
+=============================
+
+[NOT-RELEASED-YET]
+
+Bug fix
+* GSI server authentication does not work with newer OpenSSL
+  (e.g. OpenSSL on Ubuntu 22.04) [#1156]
+
 Release note for Gfarm 2.8.10
 =============================
 
