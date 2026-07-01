@@ -5315,36 +5315,14 @@ gfarm_error_t
 start_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q)
 {
 	gfarm_error_t gfmd_err;
-	struct replication_queue_data *qd = gfarm_hash_entry_data(q);
-	struct replication_request *rep;
 	static const char diag[] = "GFS_PROTO_REPLICATION_REQUEST";
 
 	gflog_debug(GFARM_MSG_UNFIXED,
 	    "%s: start replication for %s:%d",
 	    diag, gfp_conn_hash_hostname(q), gfp_conn_hash_port(q));
 
-	do {
-		gfmd_err = try_replication(conn, q);
-		if (gfmd_err != GFARM_ERR_NO_ERROR) {
-			/* kill_pending_replications() frees rep */
-			return (gfmd_err);
-		}
-
-		/*
-		 * failed to start a replication, try next entry.
-		 *
-		 * we don't have to touch rep->ongoing_{next,prev} here,
-		 * since they are updated only after a replication actually
-		 * started or finished.
-		 */
-		rep = qd->head->q_next;
-		free(qd->head);
-
-		qd->head = rep;
-	} while (rep != NULL);
-
-	qd->tail = &qd->head;
-	return (GFARM_ERR_NO_ERROR); /* no gfmd_err */
+	gfmd_err = try_replication(conn, q);
+	return (gfmd_err);
 }
 
 gfarm_error_t
@@ -6775,6 +6753,9 @@ watch_fds(struct gfp_xdr *conn, gfp_xdr_async_peer_t async)
 	static struct pollfd *fds = NULL;
 	static struct replication_request **fd_rep_map = NULL;
 
+	gflog_debug(GFARM_MSG_UNFIXED,
+		"watch_fds: poll");
+
 	for (;;) {
 		gfmd_fd = gfp_xdr_fd(conn);
 		n = REP_FD_START;
@@ -6810,6 +6791,13 @@ watch_fds(struct gfp_xdr *conn, gfp_xdr_async_peer_t async)
 
 			struct replication_queue_data *qd =
 			    gfarm_hash_entry_data(rep->q);
+
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"watch: ino=%lld seq=%lld busy=%d fd=%d",
+				(long long)rep->ino,
+				(long long)rep->seq_num,
+				qd->replicator ? qd->replicator->busy : -1,
+				qd->replicator ? qd->replicator->read_fd : -1);
 
 			if (qd->replicator == NULL || !qd->replicator->busy)
 				continue;
