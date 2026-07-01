@@ -948,6 +948,7 @@ gfarm_set_local_user_for_this_uid(uid_t uid)
 #define GFARM_WRITE_VERIFY_INTERVAL_DEFAULT 21600 /* seconds (6 hours) */
 #define GFARM_WRITE_VERIFY_RETRY_INTERVAL_DEFAULT 600 /* 600 seconds (10min) */
 #define GFARM_WRITE_VERIFY_LOG_INTERVAL_DEFAULT 3600 /* 3600 seconds (1hour) */
+#define GFARM_SPOOL_SERVER_REPLICATOR_MAX_DEFAULT	512
 
 int gfarm_spool_server_listen_backlog = GFARM_CONFIG_MISC_DEFAULT;
 char *gfarm_spool_server_listen_address = NULL;
@@ -977,6 +978,7 @@ int gfarm_write_verify = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_write_verify_interval = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_write_verify_retry_interval = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_write_verify_log_interval = GFARM_CONFIG_MISC_DEFAULT;
+int gfarm_spool_server_replicator_max = GFARM_CONFIG_MISC_DEFAULT;
 
 /* GFM dependent */
 
@@ -3453,6 +3455,8 @@ parse_one_line(const char *s, char *p,
 		e = parse_set_misc_int(p, &gfarm_write_verify_retry_interval);
 	} else if (strcmp(s, o = "write_verify_log_interval") == 0) {
 		e = parse_set_misc_int(p, &gfarm_write_verify_log_interval);
+	} else if (strcmp(s, o = "spool_server_replicator_max") == 0) {
+		e = parse_set_misc_int(p, &gfarm_spool_server_replicator_max);
 	} else if (strcmp(s, o = "metadb_server_host") == 0) {
 		e = parse_set_var(p, &gfarm_ctxp->metadb_server_name);
 	} else if (strcmp(s, o = "metadb_server_port") == 0) {
@@ -4040,6 +4044,9 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_write_verify_log_interval == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_write_verify_log_interval =
 		    GFARM_WRITE_VERIFY_LOG_INTERVAL_DEFAULT;
+	if (gfarm_spool_server_replicator_max == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_spool_server_replicator_max =
+		    GFARM_SPOOL_SERVER_REPLICATOR_MAX_DEFAULT;
 	if (gfarm_metadb_backend_sync_commit_at_initialization
 	    == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_metadb_backend_sync_commit_at_initialization =

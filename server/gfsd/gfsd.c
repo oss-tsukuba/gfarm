@@ -142,8 +142,6 @@
 	accepting_fatal_errno_full(msg_no, __FILE__, __LINE__, __func__,\
 				   __VA_ARGS__)
 
-/* worker count of child processes for replication */
-#define MAX_REPLICATOR 64
 static gfarm_uint32_t replicator_count = 0;
 
 /* sequence number for the replication */
@@ -6684,7 +6682,13 @@ replication_result_notify(struct gfp_xdr *bc_conn,
 	if (rep == NULL) {
 		qd->tail = &qd->head;
 
-		if (replicator_count >= MAX_REPLICATOR &&
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"replicator=%d, gfarm_spool_server_replicator_max=%d",
+			replicator_count, gfarm_spool_server_replicator_max);
+
+		if (gfarm_spool_server_replicator_max !=
+				GFARM_SPOOL_SERVER_REPLICATOR_MAX_UNLIMITED &&
+			replicator_count >= gfarm_spool_server_replicator_max &&
 			qd->replicator != NULL &&
 			qd->replicator->alive) {
 
