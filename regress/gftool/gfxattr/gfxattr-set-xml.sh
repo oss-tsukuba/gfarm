@@ -5,14 +5,9 @@
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
-	gfxattr -gx -f $getfile / $attrname 
-	if [ $? != 0 ]; then
+	wait_for_command_output $getfile $attrfile -- gfxattr -gx -f $getfile / $attrname || {
 		exit $exit_fail
-	fi
-	cmp $attrfile $getfile
-	if [ $? != 0 ]; then
-		exit $exit_fail
-	fi
+	}
 }
 
 # xml xattr set test - 2
@@ -23,14 +18,9 @@
 		# must fail if already exists 
 		exit $exit_fail
 	fi
-	gfxattr -gx -f $getfile / $attrname 
-	if [ $? != 0 ]; then
+	wait_for_command_output $getfile $attrfile -- gfxattr -gx -f $getfile / $attrname || {
 		exit $exit_fail
-	fi
-	cmp $attrfile $getfile
-	if [ $? != 0 ]; then
-		exit $exit_fail
-	fi
+	}
 }
 
 # xml xattr set test - 3
@@ -40,14 +30,9 @@
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
-	gfxattr -gx -f $getfile / $attrname 
-	if [ $? != 0 ]; then
+	wait_for_command_output $getfile $attrfile -- gfxattr -gx -f $getfile / $attrname || {
 		exit $exit_fail
-	fi
-	cmp $attrfile $getfile
-	if [ $? != 0 ]; then
-		exit $exit_fail
-	fi
+	}
 }
 
 # xml xattr set test - 4
@@ -67,14 +52,9 @@
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
-	gfxattr -gx -f $getfile $subdir $attrname 
-	if [ $? != 0 ]; then
+	wait_for_command_output $getfile $attrfile -- gfxattr -gx -f $getfile $subdir $attrname || {
 		exit $exit_fail
-	fi
-	cmp $attrfile $getfile
-	if [ $? != 0 ]; then
-		exit $exit_fail
-	fi
+	}
 }
 
 # xml xattr set test - 6
@@ -84,14 +64,9 @@
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
-	gfxattr -gx -f $getfile $subsubdir $attrname 
-	if [ $? != 0 ]; then
+	wait_for_command_output $getfile $attrfile -- gfxattr -gx -f $getfile $subsubdir $attrname || {
 		exit $exit_fail
-	fi
-	cmp $attrfile $getfile
-	if [ $? != 0 ]; then
-		exit $exit_fail
-	fi
+	}
 }
 
 # xml xattr set test - 7
@@ -101,14 +76,9 @@
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
-	gfxattr -gx -f $getfile $fileX $attrname 
-	if [ $? != 0 ]; then
+	wait_for_command_output $getfile $attrfile -- gfxattr -gx -f $getfile $fileX $attrname || {
 		exit $exit_fail
-	fi
-	cmp $attrfile $getfile
-	if [ $? != 0 ]; then
-		exit $exit_fail
-	fi
+	}
 }
 
 # xml xattr set test - 8
@@ -118,14 +88,9 @@
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
-	gfxattr -gx -f $getfile $subdir/$fileX $attrname 
-	if [ $? != 0 ]; then
+	wait_for_command_output $getfile $attrfile -- gfxattr -gx -f $getfile $subdir/$fileX $attrname || {
 		exit $exit_fail
-	fi
-	cmp $attrfile $getfile
-	if [ $? != 0 ]; then
-		exit $exit_fail
-	fi
+	}
 }
 
 # xml xattr set test - 8
@@ -135,12 +100,7 @@
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
-	gfxattr -gx -f $getfile $subsubdir/$fileX $attrname 
-	if [ $? != 0 ]; then
+	wait_for_command_output $getfile $attrfile -- gfxattr -gx -f $getfile $subsubdir/$fileX $attrname || {
 		exit $exit_fail
-	fi
-	cmp $attrfile $getfile
-	if [ $? != 0 ]; then
-		exit $exit_fail
-	fi
+	}
 }

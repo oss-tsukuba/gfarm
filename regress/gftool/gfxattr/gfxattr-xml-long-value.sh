@@ -1,5 +1,6 @@
 #!/bin/sh
 
+. gftool/gfxattr/gfxattr.conf
 . ./regress.conf
 
 large_num=4100
@@ -43,11 +44,11 @@ if test $? -ne 0; then
     exit $exit_fail
 fi
 # wait to flush the xml extended attribute to the backend database
-TIMEOUT=60
+TIMEOUT=$WAIT_TIMEOUT
 while [ $TIMEOUT -gt 0 ];
 do
 	gfxattr -g -x -f ${attr_got} ${dir} ${attrname} && break
-	sleep 1
+	sleep $WAIT_INTERVAL
 	TIMEOUT=$((TIMEOUT - 1))
 done
 [ $TIMEOUT -eq 0 ] && echo timeout || :
