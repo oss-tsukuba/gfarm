@@ -282,13 +282,14 @@ unconfig()
 	-e "s|@config_gfarm_prefix@|$prefix|g" \
 	-e "s|@config_gfarm_datadir@|$datadir|g" \
 	-e "s|@config_gfarm_spool_directory@|$SPOOL_DIRECTORY|g" \
+	-e "s|@config_gfarm_gfsd_rc_name@|$GFSD_SERVICE_NAME|g" \
 	-e "s|@config_gfarm_rc_gfsd@|$RC_GFSD|g" \
 	-e "s|@config_gfarm_gfsd_pid_file@|$GFSD_PID_FILE|g" \
 	-e "s|@config_gfarm_gfarm_config@|$GFARM_CONF|g" \
 	-e "s|@config_gfarm_gfarm_client_config@|$GFARM_CLIENT_CONF|g" \
 	-e "s|@config_gfarm_gfarm_conf_dir@|$GFARM_CONF_DIR|g" \
 	-e "s|@config_gfarm_config_prefix@|$CONFIG_PREFIX|g" \
-        -e "s|@config_gfarm_private_mode@|$PRIVATE_MODE|g" \
+	-e "s|@config_gfarm_private_mode@|$PRIVATE_MODE|g" \
 	-e "s|@config_gfarm_usermap_file@|$USERMAP_FILE|g" \
 	-e "s|@config_gfarm_gfsd_hostname@|$GFSD_HOSTNAME|g" \
 	${1+"$@"}
