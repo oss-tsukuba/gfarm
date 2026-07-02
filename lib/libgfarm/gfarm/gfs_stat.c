@@ -205,7 +205,6 @@ gfm_stat_cksum_result(struct gfm_connection *gfm_server, void *closure)
 	size_t size;
 	gfarm_error_t e;
 
-	st->type = NULL;
 	st->cksum = malloc(GFM_PROTO_CKSUM_MAXLEN);
 	if (st->cksum == NULL)
 		size = 0;
@@ -219,7 +218,6 @@ gfm_stat_cksum_result(struct gfm_connection *gfm_server, void *closure)
 		    "cksum_get result; %s", gfarm_error_string(e));
 #endif
 		free(st->cksum);
-		free(st->type);
 		return (e);
 	}
 	if (size > st->len)
