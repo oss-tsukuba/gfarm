@@ -7,7 +7,13 @@ struct gfs_dir_ops {
 
 struct gfs_dir {
 	struct gfs_dir_ops *ops;
+	pthread_mutex_t mutex;
 };
+
+void gfs_dir_mutex_init(GFS_Dir, const char *);
+void gfs_dir_mutex_lock(GFS_Dir, const char *);
+void gfs_dir_mutex_unlock(GFS_Dir, const char *);
+void gfs_dir_mutex_destroy(GFS_Dir, const char *);
 
 struct gfm_seekdir_closure {
 	gfarm_off_t offset;

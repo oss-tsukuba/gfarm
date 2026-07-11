@@ -899,6 +899,7 @@ gfs_closedir_caching_internal(GFS_Dir super)
 	stat_cache_unlock(__func__);
 
 	free(dir->path);
+	gfs_dir_mutex_destroy(&dir->super, __func__);
 	free(dir);
 	return (e);
 }
@@ -917,14 +918,11 @@ gfs_opendir_caching_internal(const char *path, GFS_Dir *dirp)
 		gfs_telldir_caching_internal
 	};
 
-	stat_cache_lock(__func__);
-
 	if ((e = gfs_opendirplusxattr(path, &dp)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001290,
 			"gfs_opendirplusxattr(%s) failed: %s",
 			path,
 			gfarm_error_string(e));
-		stat_cache_unlock(__func__);
 		return (e);
 	}
 
@@ -948,15 +946,21 @@ gfs_opendir_caching_internal(const char *path, GFS_Dir *dirp)
 		gflog_debug(GFARM_MSG_1001291,
 			"allocation of dir or path failed: %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
-		stat_cache_unlock(__func__);
 		return (GFARM_ERR_NO_MEMORY);
 	}
 
+	gfs_dir_mutex_init(&dir->super, __func__);
+	/*
+	 * Synchronize publication of the initialized GFS_Dir object
+	 * with another worker thread. This also makes the
+	 * synchronization visible to Helgrind.
+	 */
+	gfs_dir_mutex_lock(&dir->super, __func__);
 	dir->super.ops = &ops;
 	dir->dp = dp;
 	dir->path = p;
+	gfs_dir_mutex_unlock(&dir->super, __func__);
 
-	stat_cache_unlock(__func__);
 	*dirp = &dir->super;
 	return (GFARM_ERR_NO_ERROR);
 }

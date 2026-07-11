@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include <sys/stat.h>
+#include <pthread.h>
 #include <openssl/evp.h>
 
 #if !defined(__GNUC__) && \
@@ -21,6 +22,7 @@
 
 #include "timer.h"
 #include "gfutil.h"
+#include "thrsubr.h"
 
 #include "gfs_profile.h"
 #include "gfm_client.h"
@@ -29,6 +31,32 @@
 #include "gfs_io.h"
 #include "gfs_dir.h"
 #include "gfs_failover.h"
+
+static const char gfs_dir_mutex_what[] = "GFS_Dir";
+
+void
+gfs_dir_mutex_init(GFS_Dir dir, const char *where)
+{
+	gfarm_mutex_init(&dir->mutex, where, gfs_dir_mutex_what);
+}
+
+void
+gfs_dir_mutex_lock(GFS_Dir dir, const char *where)
+{
+	gfarm_mutex_lock(&dir->mutex, where, gfs_dir_mutex_what);
+}
+
+void
+gfs_dir_mutex_unlock(GFS_Dir dir, const char *where)
+{
+	gfarm_mutex_unlock(&dir->mutex, where, gfs_dir_mutex_what);
+}
+
+void
+gfs_dir_mutex_destroy(GFS_Dir dir, const char *where)
+{
+	gfarm_mutex_destroy(&dir->mutex, where, gfs_dir_mutex_what);
+}
 
 #if 0 /* not yet in gfarm v2 */
 
@@ -310,6 +338,7 @@ gfs_closedir_internal(GFS_Dir super)
 		    gfarm_error_string(e));
 	gfm_client_connection_free(dir->gfm_server);
 	free(dir->url);
+	gfs_dir_mutex_destroy(&dir->super, __func__);
 	free(dir);
 	/* ignore result */
 	return (GFARM_ERR_NO_ERROR);
@@ -398,6 +427,13 @@ gfs_dir_alloc(struct gfm_connection *gfm_server, gfarm_int32_t fd,
 		return (GFARM_ERR_NO_MEMORY);
 	}
 
+	gfs_dir_mutex_init(&dir->super, __func__);
+	/*
+	 * Synchronize publication of the initialized GFS_Dir object
+	 * with another worker thread. This also makes the
+	 * synchronization visible to Helgrind.
+	 */
+	gfs_dir_mutex_lock(&dir->super, __func__);
 	dir->super.ops = &ops;
 	dir->gfm_server = gfm_server;
 	dir->fd = fd;
@@ -406,6 +442,7 @@ gfs_dir_alloc(struct gfm_connection *gfm_server, gfarm_int32_t fd,
 
 	dir->url = url;
 	dir->ino = ino;
+	gfs_dir_mutex_unlock(&dir->super, __func__);
 
 	*dirp = &dir->super;
 	return (GFARM_ERR_NO_ERROR);
@@ -487,19 +524,34 @@ gfs_closedir(GFS_Dir dir)
 gfarm_error_t
 gfs_readdir(GFS_Dir dir, struct gfs_dirent **entry)
 {
-	return ((*dir->ops->readdir)(dir, entry));
+	gfarm_error_t e;
+
+	gfs_dir_mutex_lock(dir, __func__);
+	e = (*dir->ops->readdir)(dir, entry);
+	gfs_dir_mutex_unlock(dir, __func__);
+	return (e);
 }
 
 gfarm_error_t
 gfs_seekdir(GFS_Dir dir, gfarm_off_t off)
 {
-	return ((*dir->ops->seekdir)(dir, off));
+	gfarm_error_t e;
+
+	gfs_dir_mutex_lock(dir, __func__);
+	e = (*dir->ops->seekdir)(dir, off);
+	gfs_dir_mutex_unlock(dir, __func__);
+	return (e);
 }
 
 gfarm_error_t
 gfs_telldir(GFS_Dir dir, gfarm_off_t *offp)
 {
-	return ((*dir->ops->telldir)(dir, offp));
+	gfarm_error_t e;
+
+	gfs_dir_mutex_lock(dir, __func__);
+	e = (*dir->ops->telldir)(dir, offp);
+	gfs_dir_mutex_unlock(dir, __func__);
+	return (e);
 }
 
 static gfarm_error_t

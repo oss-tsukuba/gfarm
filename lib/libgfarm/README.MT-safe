@@ -5,8 +5,6 @@ README.MT-safe
   - gfs_pio_open
   - gfs_pio_fhopen
   - gfs_pio_create
-  - gfs_pio_close
-  - gfs_pio_close_getgen
   - gfs_pio_eof
   - gfs_pio_error
   - gfs_pio_clearerr
@@ -35,28 +33,30 @@ README.MT-safe
   - gfs_pio_recvfile
   - gfs_opendir
   - gfs_openfhdir
+  - gfs_readdir
+    The returned entry is part of an internal buffer and may be overwritten
+    or purged by a subsequent directory operation. The caller must copy the
+    entry if it needs to retain it. A reentrant API, for example one named
+    gfs_readdir_r, should be implemented for callers that need returned data
+    to remain valid independently of the directory handle.
+  - gfs_seekdir
+  - gfs_telldir
 
-- not yet MT-safe APIs
+- MT-safe APIs with exclusive-close requirement
 
-  - directory control APIs
-    - gfs_seekdir
-    - gfs_telldir
-    - gfs_readdir
-    - gfs_closedir
+  The per-object locks serialize operations on the same GFS_File or GFS_Dir.
+  The following APIs are MT-safe when the caller ensures that no other
+  operation is using the same object. They destroy the object, so they must
+  be called only after all other operations have completed:
 
-    Helgrind warns data race at APIs above. However we cannot find out what's
-    wrong. ThreadSantizer (libtsan) never warned it.
+  - gfs_pio_close
+  - gfs_pio_close_getgen
+  - gfs_closedir
 
 - MT not supported APIs
 
   - gfarm_initialize
   - gfarm_finalize
-
-  - gfs_pio_readdir
-    Currently returned data is a part of buffer stored in gfs_dir_internal
-    and can be purged. Reentrant API gfs_pio_readdir_r should be implemented
-    instead.
-    Another note: Clients should call gfs_seekdir and gfs_readdir atomically.
 
 - locks and locking order
 
@@ -82,10 +82,6 @@ README.MT-safe
 
 - note
 
-  - lock depends on each GFS_Dir
-    File control APIs like gfs_pio_pread are locked depends on specified
-    GFS_File, but directory control APIs like gfs_readdir are not.
-
   - staticp
     Files below have a macro 'staticp' and static data is stored in them.
     We may need protect them with lock.
@@ -97,5 +93,3 @@ README.MT-safe
     - filesystem.c
     - gfm_client.c
     - gfs_rdma.c
-
-

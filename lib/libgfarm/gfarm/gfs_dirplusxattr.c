@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <pthread.h>
 
 #include <gfarm/gfarm.h>
 
