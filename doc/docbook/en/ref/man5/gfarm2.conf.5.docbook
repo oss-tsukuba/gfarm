@@ -443,6 +443,21 @@ gfsd(8).  The level "disable" disables the consistency check.
 </varlistentry>
 
 <varlistentry>
+<term><token>spool_server_replicator_max</token> <parameter moreinfo="none">num-of-child-processes</parameter></term>
+<listitem>
+<para>
+This statement sets the maximum number of child processes that gfsd creates when replicating files.
+Setting this to 0 allows an unlimited number.
+The default value is 512.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+  spool_server_replicator_max 0
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>spool_check_parallel</token> <parameter moreinfo="none">num-of-parallel</parameter></term>
 <listitem>
 <para>
