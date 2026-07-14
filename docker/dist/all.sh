@@ -4,6 +4,19 @@ status=1
 PROG=$(basename $0)
 trap '[ $status = 0 ] && echo All set || echo NG: $PROG; exit $status' 0 1 2 15
 
+: ${CHECK_RETRY_MAX:=30}
+
+check_retry()
+{
+	tries=0
+	while ! "$@"; do
+		tries=$((tries + 1))
+		echo "check_retry: $* failed ($tries/$CHECK_RETRY_MAX)"
+		[ $tries -ge "$CHECK_RETRY_MAX" ] && return 1
+		sleep 1
+	done
+}
+
 build_pkg=false
 gfarm_config=all
 install_option=
@@ -183,11 +196,11 @@ for a in $AUTH
 do
 	echo "*** $a ***"
 	sh ./edconf.sh $a > /dev/null
-	sh ./check.sh
+	check_retry sh ./check.sh
 	if [ $gfarm_config = all ]; then
 		for h in c6 c7 c8; do
 			ssh $h sh $PWD/edconf.sh $a > /dev/null
-			ssh $h sh $PWD/check.sh
+			check_retry ssh $h sh $PWD/check.sh
 		done
 	fi
 	case $a in
