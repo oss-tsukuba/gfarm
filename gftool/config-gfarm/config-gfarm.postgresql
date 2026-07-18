@@ -20,8 +20,8 @@ sanity_postgresql()
 		fi
 		;;
 	esac
-	if [ ! -x "$BACKEND_PREFIX/bin/pg_config" ]; then
-		echo "WARNING: command not found: pg_config" >&2
+	if [ ! -x "$PGSQL_BINDIR/initdb" ]; then
+		echo "WARNING: command not found: initdb" >&2
 		rv=1
 	fi
 	if [ ! -x "$PGSQL_BINDIR/pg_ctl" ]; then
@@ -121,6 +121,23 @@ set_default_backend_prefix_postgresql()
 				: ${PGSQL_BINDIR:=`$d/pg_config --bindir`}
 				break
 			fi
+
+			if [ -x "$d/psql" ]; then
+				_ver=`$d/psql --version 2>/dev/null | awk '{print $3}'`
+				_ver=${_ver%%.*}
+				_p="/usr/lib/postgresql/$_ver/bin"
+				if [ -n "$_ver" ] && [ -x "$_p/initdb" ]; then
+					BACKEND_PREFIX=`dirname "$d"`
+					: ${PGSQL_BINDIR:="$_p"}
+					break
+				fi
+			fi
+
+			if [ -x "$d/initdb" ]; then
+				BACKEND_PREFIX=`dirname "$d"`
+				: ${PGSQL_BINDIR:="$d"}
+				break
+			fi
 		done
 	fi
 }
@@ -173,8 +190,8 @@ set_last_defaults_postgresql()
 	: ${BACKEND_PID_FILE:="$RUN_DIR/postmaster.pid"}
 
 	if [ -z "${BACKEND_VERSION-}" ]; then
-		if [ -x "$BACKEND_PREFIX/bin/pg_config" ]; then
-			BACKEND_VERSION=`$BACKEND_PREFIX/bin/pg_config --version 2>&1 |
+		if [ -x "$PGSQL_BINDIR/initdb" ]; then
+			BACKEND_VERSION=`$PGSQL_BINDIR/initdb --version 2>&1 |
 			  sed -n 's/.*PostgreSQL.* \([0-9][0-9]*\.[0-9][0-9]*\).*/\1/p'`
 			if [ -z "$BACKEND_VERSION" ]
 			then

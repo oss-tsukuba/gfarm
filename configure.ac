@@ -961,6 +961,11 @@ case ${with_postgresql} in
 /*)
   if test -f "${with_postgresql}"/bin/pg_config; then
 	postgresql_specified=explicit
+  # RHEL 10 derivatives may not install pg_config.  In that case,
+  # accept a PostgreSQL installation identified by libpq.pc below.
+  elif test -f "${with_postgresql}"/lib/pkgconfig/libpq.pc ||
+       test -f "${with_postgresql}"/lib64/pkgconfig/libpq.pc; then
+	postgresql_specified=pkgconfig
   else
 	AC_MSG_ERROR([not found in "${with_postgresql}", aborted])
   fi;;
@@ -979,12 +984,27 @@ no)
   postgresql_specified=explicit;;
 esac
 
+# Check pkg-config (libpq.pc).  This is also used when an explicit root
+# was supplied but that root has no pg_config (as on RHEL 10 derivatives).
+if test x"${postgresql_specified}" = x"pkgconfig" ||
+   test x"${postgresql_specified}" = x"" && test x"${with_postgresql}" != x"no"; then
+  PKG_CHECK_MODULES([POSTGRESQL], [libpq], [
+	postgresql_specified=pkgconfig
+	postgresql_includes="${POSTGRESQL_CFLAGS}"
+	postgresql_libs="${POSTGRESQL_LIBS}"
+  ], [
+	:
+  ])
+fi
+
 postgresql_usable=
 
 if test x"${postgresql_specified}" = x""; then
   AC_MSG_RESULT([no])
 else
-  if test -x ${with_postgresql}/bin/pg_config; then
+  if test x"${postgresql_specified}" = x"pkgconfig"; then
+	:
+  elif test -x ${with_postgresql}/bin/pg_config; then
     if ${with_postgresql}/bin/pg_config --version > /dev/null 2>&1; then
 	:
     else
@@ -1020,13 +1040,19 @@ else
 	PGresult *res = PQexecParams(conn, "", 0, NULL, NULL, NULL, NULL, 0);
   ]])],[
 	postgresql_usable=yes
-	AC_MSG_RESULT([using "${with_postgresql}"])
+	if test x"${postgresql_specified}" = x"pkgconfig"; then
+	  AC_MSG_RESULT([using pkg-config (libpq)])
+	else
+	  AC_MSG_RESULT([using "${with_postgresql}"])
+	fi
   ],[
 	case $postgresql_specified in
 	explicit)
 		AC_MSG_ERROR(["${with_postgresql}" is specified, but cannot be linked, aborted]);;
 	yes)
 		AC_MSG_RESULT([found in "${with_postgresql}", but cannot be linked, ignored]);;
+	pkgconfig)
+		AC_MSG_RESULT([libpq found with pkg-config, but cannot be linked, ignored]);;
 	esac
   ])
 
