@@ -6,8 +6,10 @@ RUN dnf -y update \
  && dnf -y install \
     git java-21-openjdk-devel httpd mod_ssl maven mariadb-server wget
 
-RUN alternatives --set java java-21-openjdk.x86_64
-RUN alternatives --set javac java-21-openjdk.x86_64
+# ARCH ... x86_64 or aarch64
+RUN ARCH=$(uname -m) \
+ && alternatives --set java java-21-openjdk.$ARCH \
+ && alternatives --set javac java-21-openjdk.$ARCH
 
 ARG TOMCAT_VER=10.1.33
 
