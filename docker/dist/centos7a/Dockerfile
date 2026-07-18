@@ -19,8 +19,8 @@ RUN yum -y update \
     libxslt docbook-style-xsl \
     epel-release \
  && yum -y install \
-    python36-docopt python36-schema python36-tqdm \
- && pip3 install flake8 \
+    python36-docopt python36-tqdm \
+ && pip3 install flake8 schema \
  && yum -y install \
     fuse fuse-devel libacl-devel \
     procps valgrind \
