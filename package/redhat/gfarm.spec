@@ -274,6 +274,9 @@ make -j $(nproc)
 make DESTDIR=${RPM_BUILD_ROOT} \
 	default_docdir=%{doc_prefix} \
 	default_mandir=%{man_prefix} install
+# libtool archives are not needed at runtime or for development and are
+# removed by redhat-rpm-config on newer RHEL derivatives.
+find %{buildroot} -name '*.la' -delete
 %if %{gfarm_v2_not_yet}
 mkdir -p ${RPM_BUILD_ROOT}%{profile_prefix}
 cp -p package/redhat/gfarm.{csh,sh} ${RPM_BUILD_ROOT}%{profile_prefix}
@@ -1106,7 +1109,6 @@ fi
 %{html_prefix}/ja/user/export-gfarm.html
 %{html_prefix}/ja/user/nfs-gfarmfs.html
 %endif
-%{html_prefix}/ja/user/smboverssh.html
 %{html_prefix}/pic/Gfarm_logo_tate_color.svg
 %{doc_prefix}/INSTALL.en
 %{doc_prefix}/INSTALL.ja
@@ -1399,19 +1401,14 @@ fi
 # XXX - this should not be here
 %{prefix}/include/gfarm/gfarm_msg_enums.h
 %{lib_prefix}/libgfutil.a
-%{lib_prefix}/libgfutil.la
 %{lib_prefix}/libgfutil.so
 %{lib_prefix}/libgfarm.a
-%{lib_prefix}/libgfarm.la
 %{lib_prefix}/libgfarm.so
 %if %{globus}
 %{lib_prefix}/libgfsl_gsi.a
-%{lib_prefix}/libgfsl_gsi.la
 %endif
 %if %{kerberos}
 %{lib_prefix}/libgfsl_kerberos.a
-%{lib_prefix}/libgfsl_kerberos.la
 %endif
 %{lib_prefix}/libgfperf.a
-%{lib_prefix}/libgfperf.la
 %{lib_prefix}/libgfperf.so
