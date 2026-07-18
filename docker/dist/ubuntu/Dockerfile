@@ -18,7 +18,7 @@ RUN apt-get update \
     postgresql postgresql-client \
     python3 ruby \
     xsltproc docbook-xsl \
-    python3-docopt python3-schema python3-tqdm flake8 \
+    python3-docopt python3-schema flake8 \
     fuse libfuse-dev libacl1-dev \
     gdb valgrind rsyslog \
     myproxy globus-simple-ca \

@@ -16,7 +16,7 @@ RUN dnf -y update \
  && dnf config-manager --set-enabled crb \
  && dnf -y install \
     globus-gssapi-gsi-devel \
-    python3-docopt python3-schema python3-tqdm python3-flake8 \
+    python3-docopt python3-schema python3-flake8 \
     fuse fuse-devel libacl-devel \
     procps gdb valgrind \
     myproxy globus-simple-ca \
