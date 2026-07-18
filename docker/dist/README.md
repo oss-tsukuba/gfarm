@@ -104,7 +104,7 @@ This section is an option only for VS Code users.
     % sh ./minica.sh
     % DIST=<distribution> docker compose build --build-arg UID=$(id -u) c1
     % DIST=<distribution> docker compose up -d
-    ubuntu, rockylinux9, almalinux8, and centos7 are available as $DIST.  Default is ubuntu
+    ubuntu, rockylinux10, rockylinux9, almalinux8, and centos7 are available as $DIST.  Default is ubuntu
     % make          # login to a container
 
     (in a container)
@@ -202,7 +202,7 @@ When regress or regress\_full option is specified this test includes regression 
 
 `batchtest.sh` accepts the following options.
 
-- ubuntu, rockylinux9, almalinux8, centos7 - specifies a distrubution to test.  mutiple distributions can be specified
+- ubuntu, rockylinux10, rockylinux9, almalinux8, centos7 - specifies a distrubution to test.  mutiple distributions can be specified
 
 ## Sanitizer test
 
