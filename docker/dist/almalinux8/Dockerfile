@@ -18,7 +18,7 @@ RUN dnf -y upgrade almalinux-release \
     globus-gssapi-gsi-devel \
     python3-docopt python3-schema python3-flake8 \
     fuse fuse-devel libacl-devel \
-    procps gdb valgrind \
+    procps gdb valgrind libtsan libasan libubsan \
     myproxy globus-simple-ca \
     cyrus-sasl-devel cyrus-sasl-plain scitokens-cpp-devel \
     golang jq curl attr \
