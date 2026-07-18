@@ -17,7 +17,9 @@ RUN dnf -y upgrade almalinux-release \
  && dnf -y install \
     globus-gssapi-gsi-devel \
     python3-docopt python3-schema python3-flake8 \
-    fuse fuse-devel libacl-devel \
+    fuse fuse-devel \
+    fuse3 fuse3-devel \
+    libacl-devel \
     procps gdb valgrind libtsan libasan libubsan \
     myproxy globus-simple-ca \
     cyrus-sasl-devel cyrus-sasl-plain scitokens-cpp-devel \

@@ -19,7 +19,9 @@ RUN apt-get update \
     python3 ruby \
     xsltproc docbook-xsl \
     python3-docopt python3-schema flake8 \
-    fuse libfuse-dev libacl1-dev \
+    fuse libfuse-dev \
+    fuse3 libfuse3-dev \
+    libacl1-dev \
     gdb valgrind rsyslog \
     myproxy globus-simple-ca \
     libkrb5-dev \
