@@ -672,6 +672,8 @@ postgresql_objs
 postgresql_srcs
 postgresql_libs
 postgresql_includes
+POSTGRESQL_LIBS
+POSTGRESQL_CFLAGS
 ldap_targets
 ldap_cflags
 ldap_objs
@@ -858,7 +860,9 @@ PKG_CONFIG
 PKG_CONFIG_PATH
 PKG_CONFIG_LIBDIR
 openssl_CFLAGS
-openssl_LIBS'
+openssl_LIBS
+POSTGRESQL_CFLAGS
+POSTGRESQL_LIBS'
 
 
 # Initialize some variables set by options.
@@ -1567,6 +1571,10 @@ Some influential environment variables:
               C compiler flags for openssl, overriding pkg-config
   openssl_LIBS
               linker flags for openssl, overriding pkg-config
+  POSTGRESQL_CFLAGS
+              C compiler flags for POSTGRESQL, overriding pkg-config
+  POSTGRESQL_LIBS
+              linker flags for POSTGRESQL, overriding pkg-config
 
 Use these variables to override the choices made by 'configure' or to help
 it to find libraries and programs with nonstandard names/locations.
@@ -14312,6 +14320,11 @@ case ${with_postgresql} in
 /*)
   if test -f "${with_postgresql}"/bin/pg_config; then
 	postgresql_specified=explicit
+  # RHEL 10 derivatives may not install pg_config.  In that case,
+  # accept a PostgreSQL installation identified by libpq.pc below.
+  elif test -f "${with_postgresql}"/lib/pkgconfig/libpq.pc ||
+       test -f "${with_postgresql}"/lib64/pkgconfig/libpq.pc; then
+	postgresql_specified=pkgconfig
   else
 	as_fn_error $? "not found in \"${with_postgresql}\", aborted" "$LINENO" 5
   fi;;
@@ -14330,13 +14343,100 @@ no)
   postgresql_specified=explicit;;
 esac
 
+# Check pkg-config (libpq.pc).  This is also used when an explicit root
+# was supplied but that root has no pg_config (as on RHEL 10 derivatives).
+if test x"${postgresql_specified}" = x"pkgconfig" ||
+   test x"${postgresql_specified}" = x"" && test x"${with_postgresql}" != x"no"; then
+
+pkg_failed=no
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for libpq" >&5
+printf %s "checking for libpq... " >&6; }
+
+if test -n "$POSTGRESQL_CFLAGS"; then
+    pkg_cv_POSTGRESQL_CFLAGS="$POSTGRESQL_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libpq\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libpq") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_POSTGRESQL_CFLAGS=`$PKG_CONFIG --cflags "libpq" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$POSTGRESQL_LIBS"; then
+    pkg_cv_POSTGRESQL_LIBS="$POSTGRESQL_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libpq\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libpq") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_POSTGRESQL_LIBS=`$PKG_CONFIG --libs "libpq" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+                POSTGRESQL_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "libpq" 2>&1`
+        else
+                POSTGRESQL_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "libpq" 2>&1`
+        fi
+        # Put the nasty error message in config.log where it belongs
+        echo "$POSTGRESQL_PKG_ERRORS" >&5
+
+
+	:
+
+elif test $pkg_failed = untried; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+	:
+
+else
+        POSTGRESQL_CFLAGS=$pkg_cv_POSTGRESQL_CFLAGS
+        POSTGRESQL_LIBS=$pkg_cv_POSTGRESQL_LIBS
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+	postgresql_specified=pkgconfig
+	postgresql_includes="${POSTGRESQL_CFLAGS}"
+	postgresql_libs="${POSTGRESQL_LIBS}"
+
+fi
+fi
+
 postgresql_usable=
 
 if test x"${postgresql_specified}" = x""; then
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 else
-  if test -x ${with_postgresql}/bin/pg_config; then
+  if test x"${postgresql_specified}" = x"pkgconfig"; then
+	:
+  elif test -x ${with_postgresql}/bin/pg_config; then
     if ${with_postgresql}/bin/pg_config --version > /dev/null 2>&1; then
 	:
     else
@@ -14386,8 +14486,13 @@ if ac_fn_c_try_link "$LINENO"
 then :
 
 	postgresql_usable=yes
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: using \"${with_postgresql}\"" >&5
+	if test x"${postgresql_specified}" = x"pkgconfig"; then
+	  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: using pkg-config (libpq)" >&5
+printf "%s\n" "using pkg-config (libpq)" >&6; }
+	else
+	  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: using \"${with_postgresql}\"" >&5
 printf "%s\n" "using \"${with_postgresql}\"" >&6; }
+	fi
 
 else case e in #(
   e)
@@ -14397,6 +14502,9 @@ else case e in #(
 	yes)
 		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: found in \"${with_postgresql}\", but cannot be linked, ignored" >&5
 printf "%s\n" "found in \"${with_postgresql}\", but cannot be linked, ignored" >&6; };;
+	pkgconfig)
+		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: libpq found with pkg-config, but cannot be linked, ignored" >&5
+printf "%s\n" "libpq found with pkg-config, but cannot be linked, ignored" >&6; };;
 	esac
    ;;
 esac
