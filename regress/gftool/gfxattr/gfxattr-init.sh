@@ -27,14 +27,30 @@ wait_for_command_output() {
 	count=0
 	while [ $count -lt $timeout ]; do
 		"$@" > "$path"
-		if cmp -s "$expect" "$path"; then
-			return 0
+		rv=$?
+		if [ $rv = 0 ]; then
+			cmp -s "$expect" "$path"
+			return $?
 		fi
 		sleep "$interval"
 		count=$((count + 1))
 	done
 	"$@" > "$path"
 	cmp -s "$expect" "$path"
+}
+
+wait_for_command_success() {
+	[ "${1:-}" = "--" ] || return 2
+	shift
+	timeout=$WAIT_TIMEOUT
+	interval=$WAIT_INTERVAL
+	count=0
+	while [ $count -lt $timeout ]; do
+		"$@" > /dev/null && return 0
+		sleep "$interval"
+		count=$((count + 1))
+	done
+	"$@" > /dev/null
 }
 
 wait_for_gfstat_change() {

@@ -5,14 +5,9 @@
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
-	gfxattr -g -f $getfile / $attrname
-	if [ $? != 0 ]; then
+	wait_for_command_output $getfile $attrfile -- gfxattr -g -f $getfile / $attrname || {
 		exit $exit_fail
-	fi
-	cmp $attrfile $getfile
-	if [ $? != 0 ]; then
-		exit $exit_fail
-	fi
+	}
 }
 
 # normal xattr limit test - 2
@@ -28,14 +23,9 @@
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
-	gfxattr -g -f $getfile / $attrname
-	if [ $? != 0 ]; then
+	wait_for_command_output $getfile $attrfileBig -- gfxattr -g -f $getfile / $attrname || {
 		exit $exit_fail
-	fi
-	cmp $attrfileBig $getfile
-	if [ $? != 0 ]; then
-		exit $exit_fail
-	fi
+	}
 }
 
 # normal xattr limit test - 3

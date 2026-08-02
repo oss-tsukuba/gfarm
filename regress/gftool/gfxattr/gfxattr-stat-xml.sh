@@ -21,10 +21,9 @@
 {
 	gfstat / > $statfile
 	echo 'Hello2' > $attrfile
-	gfxattr -gx -f $getfile / $attrname 
-	if [ $? != 0 ]; then
+	wait_for_command_success -- gfxattr -gx -f $getfile / $attrname || {
 		exit $exit_fail
-	fi
+	}
 	wait_for_gfstat_same $getstat $statfile || {
 		# nothing must be changed 
 		exit $exit_fail
