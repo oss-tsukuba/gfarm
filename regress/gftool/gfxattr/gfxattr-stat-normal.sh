@@ -33,7 +33,7 @@
 # normal xattr stat test - 3
 {
 	gfstat / > $statfile
-	gfxattr -l / 
+	wait_for_command_success -- gfxattr -l /
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi

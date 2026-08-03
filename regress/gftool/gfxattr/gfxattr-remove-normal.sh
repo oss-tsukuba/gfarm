@@ -52,7 +52,7 @@ echo -n ""> $nameslist
 
 # normal xattr list test - 5
 {
-	gfxattr -l / > $getnames 
+	wait_for_command_output $getnames $nameslist -- gfxattr -l /
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
@@ -64,7 +64,7 @@ echo -n ""> $nameslist
 
 # normal xattr list test - 6
 {
-	gfxattr -l $fileX > $getnames 
+	wait_for_command_output $getnames $nameslist -- gfxattr -l $fileX
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi

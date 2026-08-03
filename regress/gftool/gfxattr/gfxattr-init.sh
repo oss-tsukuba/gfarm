@@ -1,3 +1,5 @@
+[ ${GFXATTR_INIT_INITIALIZED:-0} -eq 1 ] && return 0
+
 . gftool/gfxattr/gfxattr.conf
 xattrtmp=$data/xattrtest
 attrfile=$xattrtmp/xattr
@@ -29,8 +31,9 @@ wait_for_command_output() {
 		"$@" > "$path"
 		rv=$?
 		if [ $rv = 0 ]; then
-			cmp -s "$expect" "$path"
-			return $?
+			if cmp -s "$expect" "$path"; then
+				return 0
+			fi
 		fi
 		sleep "$interval"
 		count=$((count + 1))
@@ -88,3 +91,5 @@ wait_for_gfstat_same() {
 	gfstat / > "$path"
 	cmp -s "$expect" "$path"
 }
+
+GFXATTR_INIT_INITIALIZED=1

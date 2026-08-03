@@ -1,6 +1,7 @@
 #!/bin/sh
 
 . ./regress.conf
+. ./gftool/gfxattr/gfxattr-init.sh
 
 dir=${gftmp}
 
@@ -44,7 +45,7 @@ else
     exit $exit_fail
 fi
 
-gfxattr -l -x ${dir}
+wait_for_command_success -- gfxattr -l -x ${dir}
 if test $? -ne 0; then
     cleanup
     exit $exit_fail

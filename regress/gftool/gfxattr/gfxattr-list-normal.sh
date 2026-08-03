@@ -1,7 +1,7 @@
 # normal xattr list test - 1
 {
 	echo $attrname > $nameslist
-	gfxattr -l / > $getnames 
+	wait_for_command_output $getnames $nameslist -- gfxattr -l /
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
@@ -24,7 +24,7 @@
 # normal xattr list test - 3
 {
 	echo $attrname > $nameslist
-	gfxattr -l $fileX > $getnames 
+	wait_for_command_output $getnames $nameslist -- gfxattr -l $fileX
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi

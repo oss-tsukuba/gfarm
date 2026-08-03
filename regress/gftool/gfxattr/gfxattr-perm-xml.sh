@@ -24,7 +24,7 @@ fi
 
 # xml xattr perm test - 2
 {
-	gfxattr -gx $target $attrname 
+	wait_for_command_success -- gfxattr -gx $target $attrname
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
@@ -32,7 +32,7 @@ fi
 
 # xml xattr perm test - 3
 {
-	gfxattr -lx $target 
+	wait_for_command_success -- gfxattr -lx $target
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi

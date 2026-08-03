@@ -5,6 +5,8 @@ trap 'exit $exit_trap' $trap_sigs
 
 echo "*** start gfxattr test. some tests issue error messages. ***"
 
+. ./gftool/gfxattr/gfxattr-fini.sh
+
 mkdir -p $fusemnt
 if [ $? != 0 ]; then
 	exit $exit_fail

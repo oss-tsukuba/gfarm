@@ -47,7 +47,10 @@ fi
 TIMEOUT=$WAIT_TIMEOUT
 while [ $TIMEOUT -gt 0 ];
 do
-	gfxattr -g -x -f ${attr_got} ${dir} ${attrname} && break
+	if gfxattr -g -x -f ${attr_got} ${dir} ${attrname} && \
+	   diff -q ${attr_src} ${attr_got} >/dev/null 2>&1; then
+		break
+	fi
 	sleep $WAIT_INTERVAL
 	TIMEOUT=$((TIMEOUT - 1))
 done

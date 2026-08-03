@@ -5,7 +5,8 @@
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
-	attr -q -g $attrname $fusemnt > $getfile
+	wait_for_command_output $getfile $attrfile -- \
+		attr -q -g $attrname $fusemnt
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
@@ -18,7 +19,8 @@
 # fuse test - 2
 {
 	echo $attrname > $nameslist
-	attr -q -l $fusemnt > $getnames
+	wait_for_command_output $getnames $nameslist -- \
+		attr -q -l $fusemnt
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
@@ -44,7 +46,8 @@
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
-	attr -q -g $attrname $fusemnt/$fileX > $getfile
+	wait_for_command_output $getfile $attrfile -- \
+		attr -q -g $attrname $fusemnt/$fileX
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
@@ -57,7 +60,8 @@
 # fuse test - 5
 {
 	echo $attrname > $nameslist
-	attr -q -l $fusemnt/$fileX > $getnames
+	wait_for_command_output $getnames $nameslist -- \
+		attr -q -l $fusemnt/$fileX
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi

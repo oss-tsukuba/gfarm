@@ -1,6 +1,7 @@
 set -x
 . ./gftool/gfxattr/gfxattr-init.sh
 
+echo "*** clean files ***"
 gfxattr -r / $attrname
 gfxattr -r / $attrname2
 gfxattr -rx / $attrname
