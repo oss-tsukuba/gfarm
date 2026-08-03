@@ -1,5 +1,5 @@
 #!/bin/sh
 set -eux
 
-gfmkdir /.tenants
+gfmkdir -p /.tenants
 gfchmod 000 /.tenants

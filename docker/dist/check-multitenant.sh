@@ -23,8 +23,9 @@ done
 
 echo "*** multitenant ***"
 : ${USER:=$(id -un)}
-gfuser -A $USER SASL ""
 sh ./edconf.sh sharedsecret > /dev/null
+gfuser -A $USER SASL ""
+
 sh ./init-tenant.sh
 sh ./create-tenant.sh A user1
 sh ./edconf.sh oauth2 > /dev/null
@@ -32,8 +33,10 @@ gfwhoami
 sh ./check.sh
 if $REGRESS; then
 	for h in c6 c7 c8; do
-		ssh $h gfuser -A $USER SASL \"\"
 		ssh $h sh $PWD/edconf.sh sharedsecret > /dev/null
+		ssh $h gfuser -A $USER SASL \"\" || :
+		ssh $h gfuser -A gfarmadm SASL \"\" || :
+		ssh $h gfuser -A gfarmadm+A SASL \"\" || :
 		ssh $h sh $PWD/init-tenant.sh
 		ssh $h sh $PWD/create-tenant.sh A user1
 		ssh $h sh $PWD/edconf.sh oauth2 > /dev/null
@@ -43,6 +46,8 @@ if $REGRESS; then
 	sh ./regress.sh
 fi
 
+# clean and restore
+gfuser -A $USER SASL ""
 gfuser -A gfarmadm SASL ""
 sh ./edconf.sh sharedsecret > /dev/null
 if $REGRESS; then
@@ -51,3 +56,5 @@ if $REGRESS; then
 		ssh $h sh $PWD/edconf.sh sharedsecret > /dev/null
 	done
 fi
+
+echo "$0: Done"

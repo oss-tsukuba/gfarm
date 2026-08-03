@@ -42,7 +42,9 @@ jwt-parse > /dev/null || {
 	[ X$PASS = X ] && PASS=$(cat $PASSF) || echo $PASS > $PASSF
 	[ X$PASS = X ] || run_jwt_agent $PASS
 }
+sh ./edconf.sh sharedsecret > /dev/null
 gfuser -A $USER SASL $SASL_USER
+
 sh ./edconf.sh oauth2 > /dev/null
 sh ./check.sh
 if $REGRESS; then
@@ -50,9 +52,13 @@ if $REGRESS; then
 	[ X$PASS = X ] || run_jwt_agent $PASS c2
 	for h in c6 c7 c8; do
 		[ X$PASS = X ] || run_jwt_agent $PASS $h
+		ssh $h gfuser -A gfarmadm SASL \"\"
+		ssh $h gfuser -A gfarmadm+A SASL \"\" || :
 		ssh $h gfuser -A $USER SASL $SASL_USER
 		ssh $h sh $PWD/edconf.sh oauth2 > /dev/null
 		ssh $h sh $PWD/check.sh
 	done
 	sh ./regress.sh
 fi
+
+echo "$0: Done"

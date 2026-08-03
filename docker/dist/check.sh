@@ -18,6 +18,7 @@ cmd() {
 cmd gfdf
 cmd gfhost -lv
 cmd gfmdhost -l
+cmd gfuser -L
 
 NOTHEALTHY=0
 for h in $(gfmdhost -l | awk '$1 !~ /^\+/ {print $6}')
