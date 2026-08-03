@@ -22,6 +22,7 @@ gfarm_config=all
 install_option=
 san_option=
 clean_option=
+use_gsi=true
 REGRESS=false
 REGRESS_FULL=false
 
@@ -48,6 +49,8 @@ do
 	     } ;;
 	asan|tsan)
 	     san_option="$1" ;;
+	skip_gsi)
+	     use_gsi=false ;;
 	clean)
 	     clean_option=clean ;;
 	*) exit 1 ;;
@@ -187,7 +190,7 @@ fi
 AUTH=
 for a in $(gfstatus -S | grep 'client auth' | grep -v not | awk '{ print $3 }')
 do
-	[ $a = gsi ] && AUTH="$AUTH gsi gsi_auth"
+	[ $a = gsi ] && use_gsi && AUTH="$AUTH gsi gsi_auth"
 	[ $a = tls ] && AUTH="$AUTH tls_sharedsecret tls_client_certificate"
 	[ $a = sasl ] && AUTH="$AUTH sasl sasl_auth anonymous anonymous_auth"
 done
