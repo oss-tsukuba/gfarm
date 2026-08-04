@@ -61,6 +61,11 @@ log_error()
 	exit 1
 }
 
+use_systemd()
+{
+	[ -x /bin/systemctl -a -z "$CONFIG_PREFIX" ]
+}
+
 #
 # Get an particular option in command line arguments.
 #
@@ -314,7 +319,7 @@ get_pgsql_status()
 {
 	log_debug "get_pgsql_status"
 
-	if [ -x /bin/systemctl ]; then
+	if use_systemd; then
 		systemctl status `basename $BACKEND_RC` > /dev/null 2>&1
 		RESULT=$?
 	else
@@ -339,7 +344,7 @@ get_gfmd_status()
 {
 	log_debug "get_gfmd_status"
 
-	if [ -x /bin/systemctl ]; then
+	if use_systemd; then
 		systemctl status `basename $GFMD_RC` > /dev/null 2>&1
 		RESULT=$?
 	else
@@ -364,7 +369,7 @@ get_gfsd_status()
 {
 	log_debug "get_gfsd_status"
 
-	if [ -x /bin/systemctl ]; then
+	if use_systemd; then
 		systemctl status `basename $GFSD_RC` > /dev/null 2>&1
 		RESULT=$?
 	else
@@ -388,7 +393,7 @@ start_backend_db()
 {
 	log_debug "start_backend_db"
 
-	if [ -x /bin/systemctl ]; then
+	if use_systemd; then
 		log_debug "start_backend_db: execute gfservice-timeout $1" \
 			"systemctl start `basename $BACKEND_RC`"
 		gfservice-timeout $1 systemctl start \
@@ -410,7 +415,7 @@ stop_backend_db()
 
 	TIMEOUT=`get_param timeout || echo 'no'`
 
-	if [ -x /bin/systemctl ]; then
+	if use_systemd; then
 		log_debug "stop_backend_db: execute gfservice-timeout $1" \
 			"systemctl stop `basename $BACKEND_RC`"
 		gfservice-timeout $1 systemctl stop \
@@ -432,7 +437,7 @@ start_gfmd()
 
 	TIMEOUT=`get_param timeout || echo 'no'`
 
-	if [ -x /bin/systemctl ]; then
+	if use_systemd; then
 		log_debug "start_gfmd: execute gfservice-timeout $1" \
 			"systemctl start `basename $GFMD_RC`"
 		gfservice-timeout $1 systemctl start \
@@ -456,7 +461,7 @@ slavestart_gfmd()
 
 	TIMEOUT=`get_param timeout || echo 'no'`
 
-	if [ -x /bin/systemctl ]; then
+	if use_systemd; then
 		log_debug "slavestart_gfmd: execute gfservice-timeout $1" \
 			"systemctl start `basename $GFMD_RC`"
 		# NOTE: "systemctl slavestart" is not defined.
@@ -482,7 +487,7 @@ stop_gfmd()
 
 	TIMEOUT=`get_param timeout || echo 'no'`
 
-	if [ -x /bin/systemctl ]; then
+	if use_systemd; then
 		log_debug "stop_gfmd: execute gfservice-timeout $1" \
 			"systemctl stop `basename $GFMD_RC`"
 		gfservice-timeout $1 systemctl stop \
@@ -506,7 +511,7 @@ kill_gfmd()
 
 	TIMEOUT=`get_param timeout || echo 'no'`
 
-	if [ -x /bin/systemctl ]; then
+	if use_systemd; then
 		log_debug "start_gfmd: execute gfservice-timeout $1" \
 			"systemctl kill `basename $GFMD_RC`"
 		gfservice-timeout $1 systemctl kill \
@@ -530,7 +535,7 @@ start_gfsd()
 
 	TIMEOUT=`get_param timeout || echo 'no'`
 
-	if [ -x /bin/systemctl ]; then
+	if use_systemd; then
 		log_debug "start_gfsd: execute gfservice-timeout $1" \
 			"systemctl start `basename $GFSD_RC`"
 		gfservice-timeout $1 systemctl start \
@@ -554,7 +559,7 @@ stop_gfsd()
 
 	TIMEOUT=`get_param timeout || echo 'no'`
 
-	if [ -x /bin/systemctl ]; then
+	if use_systemd; then
 		log_debug "stop_gfsd: execute gfservice-timeout $1" \
 			"systemctl stop `basename $GFSD_RC`"
 		gfservice-timeout $1 systemctl stop \

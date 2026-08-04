@@ -1663,7 +1663,7 @@ subcmd_config_gfsd()
 	[ $? -ne 0 ] && log_error "gfservice-agent config-gfsd failed"
 
 	#
-	# Execute 'gfhost -c' on the .
+	# Execute 'gfhost -c' on the master gfmd host.
 	#
 	if is_private_mode $HOSTID; then
 		true
@@ -1775,12 +1775,6 @@ subcmd_unconfig_gfarm_slave()
 	execute_config_gfarm_t $HOSTID
 
 	#
-	# Execute 'gfmdhost -d' on the slave host.
-	#
-	exec_remote_host_gfcmd $HOSTID - gfmdhost -d "$BACKEND_HOSTNAME"
-	[ $? -ne 0 ] && log_warn "gfmdhost -d failed"
-
-	#
 	# Execute 'gfservice-agent unconfig-gfarm' on the slave host.
 	#
 	exec_remote_host_agent $HOSTID root unconfig-gfarm
@@ -1812,7 +1806,9 @@ subcmd_unconfig_gfsd()
 {
 	log_debug "subcmd_unconfig_gfsd"
 	check_argc $# 0
+	MASTER_HOSTID=gfmd1
 	check_hostid gfsd $HOSTID
+	check_hostid gfmd $MASTER_HOSTID
 
 	GFSD_HOSTNAME=`exec_remote_host_agent $HOSTID root \
 		get-config-gfsd-param param=GFSD_HOSTNAME`
@@ -1820,16 +1816,16 @@ subcmd_unconfig_gfsd()
 		&& log_error "failed to get GFSD_HOSTNAME of $HOSTID"
 
 	#
-	# Execute 'gfhost -d'.
-	#
-	exec_remote_host_gfcmd $HOSTID - gfhost -d $GFSD_HOSTNAME
-	[ $? -ne 0 ] && log_warn "gfhost -d failed"
-
-	#
 	# Execute 'gfservice-agent unconfig-gfsd'.
 	#
 	exec_remote_host_agent $HOSTID root unconfig-gfsd
 	[ $? -ne 0 ] && log_error "gfservice-agent unconfig-gfsd failed"
+
+	#
+	# Execute 'gfhost -d'on the master gfmd host.
+	#
+	exec_remote_host_gfcmd $MASTER_HOSTID - gfhost -d $GFSD_HOSTNAME
+	[ $? -ne 0 ] && log_warn "gfhost -d failed"
 
 	log_debug "end subcmd_unconfig_gfsd"
 }
