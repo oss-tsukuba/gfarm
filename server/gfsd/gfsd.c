@@ -4909,28 +4909,27 @@ replicator_main(int req_fd, int res_fd,
     if (e != GFARM_ERR_NO_ERROR) {
 		size_t sz;
 		ssize_t rv;
+		union replication_results res;
 
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_UNFIXED,
 			"connect to %s:%d failed: %s",
 			host, port, gfarm_error_string(e));
 
-			union replication_results res;
+		res.recv.e.src_errcode = e;
+		res.recv.e.dst_errcode = GFARM_ERR_NO_ERROR;
 
-			res.recv.e.src_errcode = e;
-			res.recv.e.dst_errcode = GFARM_ERR_NO_ERROR;
+		sz = sizeof(res.recv);
+		rv = write(res_fd, &res, sz);
 
-			sz = sizeof(res.recv);
-			rv = write(res_fd, &res, sz);
+		if (rv < 0) {
+			gflog_error(GFARM_MSG_UNFIXED,
+				"write error: %s", strerror(errno));
+		} else if (rv != sz) {
+			gflog_error(GFARM_MSG_UNFIXED,
+				"partial write: %zd < %zu", rv, sz);
+		}
 
-			if (rv < 0) {
-				gflog_error(GFARM_MSG_UNFIXED,
-					"write error: %s", strerror(errno));
-			} else if (rv != sz) {
-				gflog_error(GFARM_MSG_UNFIXED,
-					"partial write: %zd < %zu", rv, sz);
-			}
-
-			_exit(1);
+		_exit(1);
     }
 
     for (;;) {
@@ -5006,7 +5005,6 @@ replicator_main(int req_fd, int res_fd,
 			gflog_error(GFARM_MSG_1004499,
 				"%s: %lld:%lld: race detected",
 				diag, (long long)req.ino, (long long)req.gen);
-			close(local_fd);
 		}
 
 		if (dst_err == GFARM_ERR_NO_ERROR) {
@@ -5016,12 +5014,11 @@ replicator_main(int req_fd, int res_fd,
 		} else {
 			res.recv.e.dst_errcode = dst_err;
 
-			if (local_fd >= 0)
+			if (local_fd >= 0) {
 				close(local_fd);
+				local_fd = -1;
+			}
 		}
-
-		if (local_path != NULL)
-			free(local_path);
 
 		sz = req.handling_cksum_protocol ?
 			sizeof(res.recv_cksum) : sizeof(res.recv);
@@ -5192,11 +5189,11 @@ try_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q)
 				if (qd->replicator == NULL) {
 					dst_err = GFARM_ERR_NO_MEMORY;
 					gflog_error(GFARM_MSG_UNFIXED,
-					"%s: cannot allocate memory for "
-					"replicator for %s:%d: %s", diag,
-					gfp_conn_hash_hostname(q),
-					gfp_conn_hash_port(q),
-					gfarm_error_string(dst_err));
+						"%s: cannot allocate memory "
+						"for replicator for %s:%d: %s",
+						diag, gfp_conn_hash_hostname(q),
+						gfp_conn_hash_port(q),
+						gfarm_error_string(dst_err));
 					close(p2c[1]);
 					close(c2p[0]);
 				} else {
@@ -5205,9 +5202,7 @@ try_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q)
 					qd->replicator->busy = 0;
 					qd->replicator->alive = 1;
 					qd->replicator->pid = pid;
-
-					if (replicator_count != UINT32_MAX)
-						++replicator_count;
+					++replicator_count;
 				}
 			}
 			close(c2p[1]);
@@ -6538,6 +6533,44 @@ gfm_async_client_replication_free(void *peer, void *arg)
 #endif
 }
 
+static void
+replicator_stop(struct replication_queue_data *qd)
+{
+	struct replication_request exit_req;
+	ssize_t w;
+	int status;
+
+	if (qd->replicator == NULL)
+		return;
+
+	gflog_debug(GFARM_MSG_UNFIXED,
+	    "send EXIT command to child process");
+
+	memset(&exit_req, 0, sizeof(exit_req));
+	exit_req.command = EXIT;
+
+	w = write(qd->replicator->write_fd, &exit_req, sizeof(exit_req));
+
+	if (w < 0) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "write EXIT command failed: %s",
+		    strerror(errno));
+	} else if (w != sizeof(exit_req)) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "partial write EXIT command: %zd < %zu",
+		    w, sizeof(exit_req));
+	}
+
+	if (waitpid(qd->replicator->pid, &status, 0) == -1) {
+		gflog_warning(GFARM_MSG_1002303,
+		    "replication: child %d: %s",
+		    (int)qd->replicator->pid,
+		    strerror(errno));
+	} else {
+		gfarm_iostat_clear_id(qd->replicator->pid, 0);
+	}
+}
+
 gfarm_error_t
 replication_result_notify(struct gfp_xdr *bc_conn,
 	gfp_xdr_async_peer_t async, struct gfarm_hash_entry *q)
@@ -6601,37 +6634,8 @@ replication_result_notify(struct gfp_xdr *bc_conn,
 		res.recv_cksum.cksum_result_flags = 0;
 	} else if (res.recv.e.src_errcode != GFARM_ERR_NO_ERROR ||
 		res.recv.e.dst_errcode != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
-				"send EXIT command to child process ");
 
-			struct replication_request exit_req;
-			ssize_t w;
-			int status;
-
-			memset(&exit_req, 0, sizeof(exit_req));
-			exit_req.command = EXIT;
-
-			w = write(qd->replicator->write_fd,
-				&exit_req, sizeof(exit_req));
-
-			if (w < 0) {
-				gflog_error(GFARM_MSG_UNFIXED,
-					"write EXIT command failed: %s",
-					strerror(errno));
-			} else if (w != sizeof(exit_req)) {
-				gflog_error(GFARM_MSG_UNFIXED,
-					"partial write EXIT command: %zd < %zu",
-					w, sizeof(exit_req));
-			}
-
-			if ((rv = waitpid(qd->replicator->pid,
-					&status, 0)) == -1)
-				gflog_warning(GFARM_MSG_1002303,
-					"replication: child %d: %s",
-					(int)qd->replicator->pid,
-					strerror(errno));
-			else
-				gfarm_iostat_clear_id(qd->replicator->pid, 0);
+		replicator_stop(qd);
 
 		gflog_notice(GFARM_MSG_UNFIXED,
 			"%s: replication failed: ino=%lld gen=%lld "
@@ -6686,43 +6690,15 @@ replication_result_notify(struct gfp_xdr *bc_conn,
 			"replicator=%d, gfarm_spool_server_replicator_max=%d",
 			replicator_count, gfarm_spool_server_replicator_max);
 
-		if (gfarm_spool_server_replicator_max !=
+		if ((replicator_count == UINT32_MAX ||
+			(gfarm_spool_server_replicator_max !=
 				GFARM_SPOOL_SERVER_REPLICATOR_MAX_UNLIMITED &&
-			replicator_count >= gfarm_spool_server_replicator_max &&
+			replicator_count >=
+				gfarm_spool_server_replicator_max)) &&
 			qd->replicator != NULL &&
 			qd->replicator->alive) {
 
-			gflog_debug(GFARM_MSG_UNFIXED,
-				"send EXIT command to child process ");
-
-			struct replication_request exit_req;
-			ssize_t w;
-			int status;
-
-			memset(&exit_req, 0, sizeof(exit_req));
-			exit_req.command = EXIT;
-
-			w = write(qd->replicator->write_fd,
-				&exit_req, sizeof(exit_req));
-
-			if (w < 0) {
-				gflog_error(GFARM_MSG_UNFIXED,
-					"write EXIT command failed: %s",
-					strerror(errno));
-			} else if (w != sizeof(exit_req)) {
-				gflog_error(GFARM_MSG_UNFIXED,
-					"partial write EXIT command: %zd < %zu",
-					w, sizeof(exit_req));
-			}
-
-			if ((rv = waitpid(qd->replicator->pid,
-					&status, 0)) == -1)
-				gflog_warning(GFARM_MSG_1002303,
-					"replication: child %d: %s",
-					(int)qd->replicator->pid,
-					strerror(errno));
-			else
-				gfarm_iostat_clear_id(qd->replicator->pid, 0);
+			replicator_stop(qd);
 
 			close(qd->replicator->write_fd);
 			close(qd->replicator->read_fd);
