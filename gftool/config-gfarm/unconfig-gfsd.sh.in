@@ -16,6 +16,7 @@ prefix="@config_gfarm_prefix@"
 datadir="@config_gfarm_datadir@"
 config_dir="${datadir}/gfarm/config"
 SPOOL_DIRECTORY="@config_gfarm_spool_directory@"
+GFSD_SERVICE_NAME="@config_gfarm_gfsd_rc_name@"
 RC_GFSD="@config_gfarm_rc_gfsd@"
 GFSD_PID_FILE="@config_gfarm_gfsd_pid_file@"
 GFARM_CONF="@config_gfarm_gfarm_config@"
@@ -80,9 +81,9 @@ service_unconfig()
 		TEST_OPT="-n"
 	fi
 
-	service_ctl $TEST_OPT gfsd stop
+	service_ctl $TEST_OPT "$GFSD_SERVICE_NAME" stop
 
-	service_remove $TEST_OPT gfsd
+	service_remove $TEST_OPT "$GFSD_SERVICE_NAME"
 
 	delete_file_or_directory -f $TEST_OPT "$RC_GFSD"
 
