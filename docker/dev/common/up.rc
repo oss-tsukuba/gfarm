@@ -571,22 +571,47 @@ CA_DIR=/root/simple_ca
 ### update CA for OAuth-related web servers
 
 case $GFDOCKER_PRJ_NAME in
-    centos*-* | almalinux*-* | rockylinux*-*)
-	for host in $gfmds $gfsds $clients; do
-	   ssh "$host" sudo cp ${CA_DIR}/cacert.pem /usr/share/pki/ca-trust-source/anchors
-	   ssh "$host" sudo update-ca-trust
-        done
-        ;;
-    ubuntu*-* | debian*-*)
-	for host in $gfmds $gfsds $clients; do
-	   ssh "$host" sudo mkdir -p /usr/share/ca-certificates/gfarm
-	   ssh "$host" sudo cp ${CA_DIR}/cacert.pem /usr/share/ca-certificates/gfarm
-	   ssh "$host" "echo 'gfarm/cacert.pem' | sudo tee -a /etc/ca-certificates.conf"
-	   ssh "$host" sudo update-ca-certificates
-        done
-        ;;
-    *)
-	;;
+  centos*-* | almalinux*-* | rockylinux*-*)
+    for host in $gfmds $gfsds $clients; do
+      ssh "$host" "sudo cp ${CA_DIR}/cacert.pem /usr/share/pki/ca-trust-source/anchors"
+      ssh "$host" "sudo update-ca-trust"
+    done
+    ;;
+  ubuntu*-* | debian*-*)
+    for host in $gfmds $gfsds $clients; do
+      ssh "$host" "sudo mkdir -p /usr/share/ca-certificates/gfarm"
+      ssh "$host" "sudo cp ${CA_DIR}/cacert.pem /usr/share/ca-certificates/gfarm"
+      ssh "$host" "echo 'gfarm/cacert.pem' | sudo tee -a /etc/ca-certificates.conf"
+      ssh "$host" "sudo update-ca-certificates"
+    done
+    ;;
+  opensuse*-*)
+    for host in $gfmds $gfsds $clients; do
+      # openSUSE uses systemd path unit to auto-update CA trust store.
+      # No explicit update-ca-certificates call is needed.
+
+      ssh "$host" "sudo cp ${CA_DIR}/cacert.pem /etc/pki/trust/anchors"
+
+      # VS Code consumes many inotify watches, so this may be necessary
+      # when running under WSL.
+
+      # ssh "$host" "
+      #   if systemctl is-failed ca-certificates.path > /dev/null 2>&1; then
+      #     echo 'ca-certificates.path failed -> increase inotify watches'
+      #
+      #     current=$(cat /proc/sys/fs/inotify/max_user_watches)
+      #     if [ "$current" -lt 524288 ]; then
+      #       # Note: this also affects the host system.
+      #       sudo sysctl fs.inotify.max_user_watches=524288
+      #     fi
+      #
+      #     sudo systemctl restart ca-certificates.path || true
+      #   fi
+      # "
+    done
+    ;;
+  *)
+    ;;
 esac
 
 stty sane

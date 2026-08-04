@@ -68,11 +68,7 @@ if [ -d "/home/${GFDOCKER_PRIMARY_USER}/jwt-logon" ]; then
   make PREFIX=/usr/local install || exit 1
 fi
 
-# if proxy is set, the following fails for some unknown reason,
-# the error is:
-#	go: golang.org/x/crypto@v0.0.0-20220722155217-630584e8d5aa: Get "https://proxy.golang.org/golang.org/x/crypto/@v/v0.0.0-20220722155217-630584e8d5aa.info": dial tcp: lookup proxy.golang.org on 8.8.4.4:53: read udp 172.17.0.2:40024->8.8.4.4:53: i/o timeout
-if  [ -d "/home/${GFDOCKER_PRIMARY_USER}/jwt-agent" ] && type go 2>/dev/null &&
-    ! "${GFDOCKER_ENABLE_PROXY}"
+if  [ -d "/home/${GFDOCKER_PRIMARY_USER}/jwt-agent" ] && type go 2>/dev/null
 then
   su - "$GFDOCKER_PRIMARY_USER" -c "cd ~/jwt-agent && make" &&
     cd "/home/${GFDOCKER_PRIMARY_USER}/jwt-agent" &&
