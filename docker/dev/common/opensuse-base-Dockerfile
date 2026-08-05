@@ -1,17 +1,19 @@
-FROM opensuse/leap:15.4
+FROM opensuse/leap:16.0
 
 # System dependent
 
 ARG TZ
 ENV TZ=${TZ}
 
-ARG GCT_REPO=https://download.opensuse.org/repositories/home:/frank_scheiner:/gct/15.4/home:frank_scheiner:gct.repo
+ARG GCT_REPO=https://download.opensuse.org/repositories/home:/frank_scheiner:/gct/16.0/home:frank_scheiner:gct.repo
 
+# MyProxy is not available in the openSUSE 16.0 GCT repository.
+# Build and install MyProxy from source instead.
 RUN zypper --non-interactive install -y \
     sudo \
     openssh \
     rsyslog \
-    systemd-sysvinit \
+    systemd \
     patch \
     rpm-build \
     wget \
@@ -24,10 +26,10 @@ RUN zypper --non-interactive install -y \
     cyrus-sasl cyrus-sasl-devel cyrus-sasl-plain cyrus-sasl-gssapi \
     go jq \
     gcc-c++ cmake sqlite-devel libcurl-devel libuuid-devel lsb-release \
-    postgresql14 \
-    postgresql14-devel \
-    postgresql14-server \
-    postgresql14-server-devel \
+    postgresql \
+    postgresql-devel \
+    postgresql-server \
+    postgresql-server-devel \
     fuse \
     fuse-devel \
     fuse3 \
@@ -37,13 +39,30 @@ RUN zypper --non-interactive install -y \
     ruby \
     libtool \
     && zypper --non-interactive addrepo ${GCT_REPO} \
-    && zypper --non-interactive --no-gpg-checks refresh \
+    && zypper --gpg-auto-import-keys --non-interactive refresh \
     && zypper --non-interactive install -y \
     globus-gssapi-gsi-devel \
-    globus-simple-ca \
+    globus-gss-assist-devel \
+    globus-gsi-sysconfig-devel \
+    globus-gsi-cert-utils-devel \
     globus-gsi-cert-utils-progs \
+    globus-gsi-proxy-core-devel \
+    globus-gsi-credential-devel \
+    globus-gsi-callback-devel \
+    globus-common-devel \
+    globus-simple-ca \
     globus-proxy-utils \
-    myproxy \
+    && git clone https://github.com/gridcf/gct.git \
+    && cd gct/myproxy/source \
+    && autoreconf -fi \
+    && ./configure \
+    && make -j"$(nproc)" \
+    && make install \
+    && echo /usr/local/lib > /etc/ld.so.conf.d/myproxy.conf \
+    && ldconfig \
+    && myproxy-logon --help >/dev/null \
+    && cd / \
+    && rm -rf gct \
     && globus-version \
     && zypper --non-interactive install -y \
     python3 \
@@ -51,14 +70,15 @@ RUN zypper --non-interactive install -y \
     python3-schema \
     python3-tqdm \
     python3-flake8 \
-    && zypper --non-interactive mr -e repo-debug \
+    && zypper --non-interactive mr -e openSUSE:repo-oss-debug \
+    && zypper --non-interactive refresh \
     && zypper --non-interactive install -y \
-    telnet ncat ldns iproute2 net-tools bind-utils tcpdump \
+    telnet netcat-openbsd ldns iproute2 net-tools bind-utils tcpdump \
     gdb valgrind strace inotify-tools \
     man man-pages man-pages-ja \
     nano emacs-nox vim less which \
     libfuse2-debuginfo \
-    && sed -i 's@^Defaults secure_path="/usr/sbin:@Defaults secure_path="/usr/local/bin:/usr/sbin:@' /etc/sudoers
+    && sed -i 's@^Defaults secure_path="/usr/sbin:@Defaults secure_path="/usr/local/bin:/usr/sbin:@' /usr/etc/sudoers
 
 # System independent (see setup-univ.sh)
 

@@ -87,6 +87,8 @@ RUN yes | unminimize \
       && make -j 4 \
       && make install-nokeys \
     ; fi \
+    && apt-get -y install krb5-kdc krb5-admin-server \
+    krb5-user libkrb5-3 libkrb5-dev \
     && apt-get -y install sasl2-bin libsasl2-modules-db libsasl2-dev \
     libsasl2-modules libsasl2-modules-gssapi-mit jq \
     && apt-get -y install g++ cmake libsqlite3-dev \

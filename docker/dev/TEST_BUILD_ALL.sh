@@ -11,12 +11,17 @@ almalinux9/src
 almalinux9/pkg
 rockylinux8/src
 rockylinux8/pkg
-fedora33/src
-opensuse/src
-opensuse/pkg
+rockylinux9/src
+rockylinux9/pkg
+rockylinux10/src
+rockylinux10/pkg
+fedora44/src
+fedora44/pkg
+debian13/src
 ubuntu2204/src
 ubuntu2404/src
-debian11/src
+ubuntu2604/src
+opensuse/src
 "
 
 BASEDIR=dist

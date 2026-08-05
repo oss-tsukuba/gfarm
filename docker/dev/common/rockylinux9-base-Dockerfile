@@ -1,0 +1,92 @@
+FROM rockylinux:9
+
+# System dependent
+
+ARG TZ
+ENV TZ=${TZ}
+
+RUN dnf -y update \
+    && dnf -y install \
+    sudo \
+    openssh-server \
+    rsyslog \
+    rsync \
+    langpacks-ja \
+    dnf-plugins-core \
+    && dnf -y groupinstall "Development Tools" \
+    && dnf config-manager --enable crb \
+    && dnf -y install \
+    epel-release \
+    openssl-devel \
+    postgresql-devel \
+    postgresql \
+    postgresql-server \
+    fuse \
+    fuse-devel \
+    fuse3 \
+    fuse3-devel \
+    autofs \
+    libacl-devel \
+    ruby \
+    hostname \
+    perl-bignum \
+    && dnf -y install \
+    globus-gssapi-gsi-devel \
+    globus-simple-ca \
+    globus-gsi-cert-utils-progs \
+    globus-proxy-utils \
+    myproxy \
+    gsi-openssh-clients \
+    && globus-version \
+    && dnf -y install \
+    python3 \
+    python3-docopt \
+    python3-schema \
+    python3-tqdm \
+    python3-flake8 \
+    && dnf -y install krb5-libs krb5-devel krb5-server krb5-workstation \
+    && dnf -y install cyrus-sasl cyrus-sasl-lib cyrus-sasl-devel \
+                      cyrus-sasl-plain cyrus-sasl-gssapi jq \
+    && dnf -y install golang \
+    && dnf -y install gcc-c++ cmake sqlite-devel libcurl-devel libuuid-devel \
+    && dnf -y install \
+    nc ldns iproute net-tools bind-utils telnet tcpdump \
+    gdb strace valgrind inotify-tools libtsan procps-ng \
+    man man-pages man-db which \
+    nano emacs-nox less \
+    && dnf install 'dnf-command(debuginfo-install)' \
+    && dnf debuginfo-install -y \
+    fuse-libs \
+    && sed -i 's@^Defaults    secure_path = /sbin:/bin:/usr/sbin:/usr/bin$@Defaults    secure_path = /usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin@' /etc/sudoers
+
+
+# System independent (see setup-univ.sh)
+
+ARG GFDOCKER_USERNAME_PREFIX
+ARG GFDOCKER_TENANTNAME_PREFIX
+ARG GFDOCKER_PRIMARY_USER
+ARG GFDOCKER_PRIMARY_UID
+ARG GFDOCKER_TENANT_ADMIN_USER
+ARG GFDOCKER_TENANT_ADMIN_UID
+ARG GFDOCKER_NUM_GFMDS
+ARG GFDOCKER_NUM_GFSDS
+ARG GFDOCKER_NUM_USERS
+ARG GFDOCKER_NUM_TENANTS
+ARG GFDOCKER_HOSTNAME_PREFIX_GFMD
+ARG GFDOCKER_HOSTNAME_PREFIX_GFSD
+ARG GFDOCKER_HOSTNAME_SUFFIX
+ARG GFDOCKER_USE_SAN_FOR_GFSD
+ARG GFDOCKER_NUM_GFMDS
+ARG GFDOCKER_NUM_GFSDS
+ARG GFDOCKER_NUM_USERS
+ARG GFDOCKER_NUM_TENANTS
+ARG GFDOCKER_HOSTNAME_PREFIX_GFMD
+ARG GFDOCKER_HOSTNAME_PREFIX_GFSD
+ARG GFDOCKER_HOSTNAME_SUFFIX
+ARG GFDOCKER_USE_SAN_FOR_GFSD
+COPY --chown=${GFDOCKER_PRIMARY_UID}:${GFDOCKER_PRIMARY_UID} . /work/gfarm
+COPY --chown=${GFDOCKER_TENANT_ADMIN_UID}:${GFDOCKER_TENANT_ADMIN_UID} \
+	. /work/gfarm2
+RUN "/work/gfarm/docker/dev/common/setup-univ.sh"
+
+CMD ["/sbin/init"]

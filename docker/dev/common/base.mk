@@ -720,6 +720,12 @@ centos8:
 rockylinux8:
 	$(DOCKER_RUN) -it --rm 'rockylinux/rockylinux:8' bash
 
+rockylinux9:
+	$(DOCKER_RUN) -it --rm 'rockylinux:9' bash
+
+rockylinux10:
+	$(DOCKER_RUN) -it --rm 'rockylinux/rockylinux:10' bash
+
 almalinux8:
 	$(DOCKER_RUN) -it --rm 'almalinux:8' bash
 
@@ -735,6 +741,9 @@ centos9stream:
 fedora33:
 	$(DOCKER_RUN) -it --rm 'fedora:33' bash
 
+fedora44:
+	$(DOCKER_RUN) -it --rm 'fedora:44' bash
+
 opensuse:
 	$(DOCKER_RUN) -it --rm 'opensuse/leap' bash
 
@@ -744,5 +753,11 @@ ubuntu2204:
 ubuntu2404:
 	$(DOCKER_RUN) -it --rm 'ubuntu:24.04' bash
 
+ubuntu2604:
+	$(DOCKER_RUN) -it --rm 'ubuntu:26.04' bash
+
 debian11:
 	$(DOCKER_RUN) -it --rm 'debian:bullseye' bash
+
+debian13:
+	$(DOCKER_RUN) -it --rm 'debian:trixie' bash

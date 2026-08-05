@@ -1,4 +1,4 @@
-FROM ubuntu:24.04
+FROM ubuntu:26.04
 ARG DEBIAN_FRONTEND=noninteractive
 
 # System dependent
@@ -6,11 +6,21 @@ ARG DEBIAN_FRONTEND=noninteractive
 ARG TZ
 ENV TZ=${TZ}
 
-## speedup in Japan
-#RUN sed -i 's@archive.ubuntu.com@ftp.riken.go.jp/Linux@g' /etc/apt/sources.list
-
 ARG USE_GCT_SRC=0
 
+# Ubuntu 26.04/OpenSSL 3.x workaround
+#
+# GSI-OpenSSH 10.0p1c still references openssl/fips.h.
+# Ubuntu 26.04 ships OpenSSL 3.5 where this header no longer exists.
+#
+# Apply compatibility patch:
+#   - remove openssl/fips.h includes
+#   - include fips_mode_replacement.h where FIPS_mode() is used
+#
+# Verified on:
+#   Ubuntu 26.04
+#   GCT 6.2.20260123
+#   GSI-OpenSSH 10.0p1c
 RUN apt-get update \
     && apt-get -y install \
     unminimize \
@@ -47,7 +57,7 @@ RUN apt-get update \
     && if [ ${USE_GCT_SRC} -eq 1 ]; then \
       apt-get -y install zlib1g-dev libedit-dev libpam0g-dev file \
       && cd /root \
-      && GCT=gct-6.2.1629922860 \
+      && GCT=gct-6.2.1767880040 \
       && GCT_PKG=${GCT}.tar.gz \
       && GCT_URL=https://repo.gridcf.org/gct6/sources/${GCT_PKG} \
       && curl -fO ${GCT_URL} \
@@ -57,6 +67,11 @@ RUN apt-get update \
       && cd ${GCT} \
       && sed -i 's;#SHELL = @SH@;SHELL = /bin/bash;' \
          gsi_openssh/source/Makefile.in \
+      && cd gsi_openssh/source \
+      && find . -type f \( -name '*.c' -o -name '*.h' \) -exec sed -i '/openssl\/fips.h/d' {} + \
+      && sed -i '/#include <openssl\/evp.h>/a #include "fips_mode_replacement.h"' kex-names.c \
+      && sed -i '/#include <openssl\/evp.h>/a #include "fips_mode_replacement.h"' sshd-auth.c \
+      && cd ../.. \
       && ./configure \
         --sysconfdir=/etc \
         --prefix=/usr/local \
@@ -78,7 +93,7 @@ RUN apt-get update \
       globus-proxy-utils \
       myproxy \
       && apt-get -y install zlib1g-dev libedit-dev libpam0g-dev file \
-      && GSISSH=gsi-openssh-7.5p1c \
+      && GSISSH=gsi-openssh-10.0p1c \
       && GSISSH_PKG=${GSISSH}.tar.gz \
       && GSISSH_URL=https://repo.gridcf.org/gct6/sources/${GSISSH_PKG} \
       && curl -fLO ${GSISSH_URL} \
@@ -86,8 +101,11 @@ RUN apt-get update \
       && sha512sum -c ${GSISSH_PKG}.sha512 \
       && tar xf ${GSISSH_PKG} \
       && cd ${GSISSH} \
+      && find . -type f \( -name '*.c' -o -name '*.h' \) -exec sed -i '/openssl\/fips.h/d' {} + \
+      && sed -i '/#include <openssl\/evp.h>/a #include "fips_mode_replacement.h"' kex-names.c \
+      && sed -i '/#include <openssl\/evp.h>/a #include "fips_mode_replacement.h"' sshd-auth.c \
       && ./configure --prefix=/usr/local --with-gsi --without-zlib-version-check \
-      && make -j 4 \
+      && make KEYCATLIBS="-lpam" -j 4 \
       && make install-nokeys \
     ; fi \
     && apt-get -y install krb5-kdc krb5-admin-server \
@@ -95,11 +113,7 @@ RUN apt-get update \
     && apt-get -y install sasl2-bin libsasl2-modules-db libsasl2-dev \
     libsasl2-modules libsasl2-modules-gssapi-mit jq \
     && apt-get -y install g++ cmake libsqlite3-dev \
-    libcurl4-openssl-dev uuid-dev \
-    && GO_TAR=go1.20.linux-amd64.tar.gz \
-    && curl -fLO https://go.dev/dl/${GO_TAR} \
-    && tar -C /usr/local -xzf ${GO_TAR} \
-    && ln -s /usr/local/go/bin/go /usr/local/bin \
+    libcurl4-openssl-dev uuid-dev golang-go \
     && apt-get -y install \
     docbook-utils docbook-xsl xsltproc \
     ncat ldnsutils iproute2 net-tools bind9-dnsutils telnet tcpdump \
@@ -115,11 +129,6 @@ RUN apt-get update \
     && echo "${DEB_URL} ${CODENAME}-proposed ${REPO}" >> ${DDEBS} \
     && apt-get -y install \
     ubuntu-dbgsym-keyring software-properties-common \
-    && LSB_REL=$(lsb_release -cs) \
-    && /usr/bin/echo -e 'deb http://ddebs.ubuntu.com '${LSB_REL}' main restricted universe multiverse\n\
-       deb http://ddebs.ubuntu.com '${LSB_REL}'-updates main restricted universe multiverse\n\
-       deb http://ddebs.ubuntu.com '${LSB_REL}'-proposed main restricted universe multiverse' | \
-       tee -a /etc/apt/sources.list.d/ddebs.list \
     && apt-get update \
     && apt-get -y install \
     libfuse2t64-dbgsym \
