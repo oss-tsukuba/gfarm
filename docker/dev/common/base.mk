@@ -182,7 +182,7 @@ help:
 	@echo '  ARGS="docker-compose args..." make docker-compose'
 	@echo '  make test-all'
 	@echo '  make valgrind-gfmd'
-	@echo '  make opensuse'
+	@echo '  make <distribution> (e.g. make opensuse)'
 
 define check_config
 if [ ! -d $(TOP)/gfarm2fs ]; then \
@@ -738,9 +738,6 @@ centos8stream:
 centos9stream:
 	$(DOCKER_RUN) -it --rm 'quay.io/centos/centos:stream9' bash
 
-fedora33:
-	$(DOCKER_RUN) -it --rm 'fedora:33' bash
-
 fedora44:
 	$(DOCKER_RUN) -it --rm 'fedora:44' bash
 
@@ -755,9 +752,6 @@ ubuntu2404:
 
 ubuntu2604:
 	$(DOCKER_RUN) -it --rm 'ubuntu:26.04' bash
-
-debian11:
-	$(DOCKER_RUN) -it --rm 'debian:bullseye' bash
 
 debian13:
 	$(DOCKER_RUN) -it --rm 'debian:trixie' bash

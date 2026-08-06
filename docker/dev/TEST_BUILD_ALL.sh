@@ -22,6 +22,7 @@ ubuntu2204/src
 ubuntu2404/src
 ubuntu2604/src
 opensuse/src
+opensuse/pkg
 "
 
 BASEDIR=dist
