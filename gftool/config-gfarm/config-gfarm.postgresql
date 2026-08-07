@@ -192,8 +192,7 @@ set_last_defaults_postgresql()
 	if [ -z "${BACKEND_VERSION-}" ]; then
 		if [ -x "$PGSQL_BINDIR/initdb" ]; then
 			# Fedora 44 sometimes reports prerelease versions such as "18beta1".
-			BACKEND_VERSION=`$PGSQL_BINDIR/initdb --version 2>&1 |
-			  awk '{print $3}'`
+			BACKEND_VERSION=`$PGSQL_BINDIR/initdb --version | awk '{print $3}'`
 			if [ -z "$BACKEND_VERSION" ]
 			then
 				BACKEND_VERSION="unknown"
