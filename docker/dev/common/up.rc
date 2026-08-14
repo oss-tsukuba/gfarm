@@ -32,7 +32,6 @@ BASEDIR="${gfarm_src_path}/docker/dev/common"
 FUNCTIONS=${BASEDIR}/functions.sh
 . ${FUNCTIONS}
 
-SUDO_USER2="sudo sudo -i -u user2"
 SASL_DOMAIN=$(echo "$GFDOCKER_HOSTNAME_SUFFIX" | sed 's/^\.//')
 
 # to change these values, change scripts in ./oauth2/ as well
@@ -571,7 +570,7 @@ CA_DIR=/root/simple_ca
 ### update CA for OAuth-related web servers
 
 case $GFDOCKER_PRJ_NAME in
-  centos*-* | almalinux*-* | rockylinux*-*)
+  centos*-* | almalinux*-* | rockylinux*-* | fedora*-*)
     for host in $gfmds $gfsds $clients; do
       ssh "$host" "sudo cp ${CA_DIR}/cacert.pem /usr/share/pki/ca-trust-source/anchors"
       ssh "$host" "sudo update-ca-trust"

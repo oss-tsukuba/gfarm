@@ -1335,7 +1335,7 @@ subcmd_grid_proxy_init()
 	if [ "X$GLOBUS_LOCATION" = X ]; then
 		GRID_PROXY_INIT=grid-proxy-init
 	else
-		GRID_PROXY_INIT="$GLOBUS_LOCATION/grid-proxy-init"
+		GRID_PROXY_INIT="$GLOBUS_LOCATION/bin/grid-proxy-init"
 	fi
 
 	ARGS=`get_param args`

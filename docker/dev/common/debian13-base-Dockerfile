@@ -1,11 +1,14 @@
-FROM debian:bullseye
+FROM debian:trixie
 ARG DEBIAN_FRONTEND=noninteractive
 
 # System dependent
 
+
 ARG TZ
 ENV TZ=${TZ}
 ARG LANG
+
+ENV DEBUGINFOD_URLS=https://debuginfod.debian.net
 
 RUN apt-get update \
     && apt-get -y upgrade \
@@ -34,35 +37,34 @@ RUN apt-get update \
     globus-proxy-utils \
     && globus-version \
     && apt-get -y install \
+    # already installed
     python3 \
     python3-docopt \
     python3-schema \
     python3-tqdm \
     flake8 \
+    && apt-get -y install krb5-kdc krb5-admin-server \
+    krb5-user libkrb5-3 libkrb5-dev \
     && apt-get -y install sasl2-bin libsasl2-modules-db libsasl2-dev \
     libsasl2-modules libsasl2-modules-gssapi-mit jq \
+    curl golang-go \
     && apt-get -y install g++ cmake libsqlite3-dev \
     libcurl4-openssl-dev uuid-dev \
-    && apt-get -y install curl \
-    && GO_TAR=go1.20.linux-amd64.tar.gz \
-    && curl -fLO https://go.dev/dl/${GO_TAR} \
-    && tar -C /usr/local -xzf ${GO_TAR} \
-    && ln -s /usr/local/go/bin/go /usr/local/bin \
     && sed -i -E "s/# (${LANG})/\1/" /etc/locale.gen \
     && locale-gen \
     && update-locale LANG=${LANG} \
+    # Debian 13 no longer provides libfuse2t64-dbgsym.
+    # Use debuginfod to retrieve libfuse debug symbols on demand.
     && apt-get -y install \
     ncat ldnsutils iproute2 net-tools bind9utils dnsutils telnet tcpdump \
     manpages manpages-ja man-db \
     gdb valgrind strace inotify-tools \
     vim nano emacs-nox less \
-    && apt-get -y install software-properties-common \
-    && add-apt-repository 'deb http://debug.mirrors.debian.org/debian-debug/ bullseye-debug main'\
-    && apt-get update \
-    && apt-get -y install \
-    libfuse2-dbgsym \
-    && systemctl disable unattended-upgrades
-
+    # FIXME: Add the debug package once the migration to fuse3 is complete
+    # libfuse2-dbgsym \
+    # Disable automatic package updates.
+    && systemctl disable apt-daily.timer \
+    && systemctl disable apt-daily-upgrade.timer
 
 # System independent (see setup-univ.sh)
 

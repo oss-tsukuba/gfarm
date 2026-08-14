@@ -36,8 +36,8 @@ Restriction
   Environment="https_proxy=http://proxy.example.com:8080"
   Environment="HTTP_PROXY=http://proxy.example.com:8080"
   Environment="HTTPS_PROXY=http://proxy.example.com:8080"
-  Environment="no_proxy=localhost,127.0.0.1,jwt-server,keycloak"
-  Environment="NO_PROXY=localhost,127.0.0.1,jwt-server,keycloak"
+  Environment="no_proxy=localhost,127.0.0.1,jwt-server,jwt-keycloak"
+  Environment="NO_PROXY=localhost,127.0.0.1,jwt-server,jwt-keycloak"
 
   After updating the configuration:
 
@@ -114,7 +114,7 @@ Quick start
           - "automount fusermount: mounting over filesystem type 0x00000187 is forbidden"
 	    (not work on fuse version 2.8 to 3.2.6 without autofs patch)
               - centos9
-              - fedora33
+              - fedora44
               - opensuse
 
   - to configure kerberos, run the following command.

@@ -18,7 +18,7 @@ DOCKER_COMPOSE_CMD = docker compose
 #GFDOCKER_PROXY_PORT = 8080
 GFDOCKER_PROXY_HOST =
 GFDOCKER_PROXY_PORT =
-GFDOCKER_NO_PROXY = localhost,127.0.0.1,jwt-server,keycloak
+GFDOCKER_NO_PROXY = localhost,127.0.0.1,jwt-server,jwt-keycloak
 GFDOCKER_NUM_JOBS = 8
 
 # number of containers

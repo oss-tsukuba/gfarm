@@ -191,15 +191,10 @@ set_last_defaults_postgresql()
 
 	if [ -z "${BACKEND_VERSION-}" ]; then
 		if [ -x "$PGSQL_BINDIR/initdb" ]; then
-			BACKEND_VERSION=`$PGSQL_BINDIR/initdb --version 2>&1 |
-			  sed -n 's/.*PostgreSQL.* \([0-9][0-9]*\.[0-9][0-9]*\).*/\1/p'`
+			# Fedora 44 sometimes reports prerelease versions such as "18beta1".
+			BACKEND_VERSION=`$PGSQL_BINDIR/initdb --version | awk '{print $3}'`
 			if [ -z "$BACKEND_VERSION" ]
 			then
-				BACKEND_VERSION="unknown"
-			elif expr "$BACKEND_VERSION" : '[0-9][0-9]*\.[0-9][0-9]*' \
-					>/dev/null; then
-				:
-			else
 				BACKEND_VERSION="unknown"
 			fi
 		else

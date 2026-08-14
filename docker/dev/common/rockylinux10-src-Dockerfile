@@ -1,4 +1,4 @@
-FROM gfarm-dev:debian11-base
+FROM gfarm-dev:rockylinux10-base
 
 # System independent
 ARG GFDOCKER_NUM_JOBS

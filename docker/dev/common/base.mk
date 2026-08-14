@@ -182,7 +182,7 @@ help:
 	@echo '  ARGS="docker-compose args..." make docker-compose'
 	@echo '  make test-all'
 	@echo '  make valgrind-gfmd'
-	@echo '  make opensuse'
+	@echo '  make <distribution> (e.g. make opensuse)'
 
 define check_config
 if [ ! -d $(TOP)/gfarm2fs ]; then \
@@ -720,6 +720,12 @@ centos8:
 rockylinux8:
 	$(DOCKER_RUN) -it --rm 'rockylinux/rockylinux:8' bash
 
+rockylinux9:
+	$(DOCKER_RUN) -it --rm 'rockylinux:9' bash
+
+rockylinux10:
+	$(DOCKER_RUN) -it --rm 'rockylinux/rockylinux:10' bash
+
 almalinux8:
 	$(DOCKER_RUN) -it --rm 'almalinux:8' bash
 
@@ -732,8 +738,8 @@ centos8stream:
 centos9stream:
 	$(DOCKER_RUN) -it --rm 'quay.io/centos/centos:stream9' bash
 
-fedora33:
-	$(DOCKER_RUN) -it --rm 'fedora:33' bash
+fedora44:
+	$(DOCKER_RUN) -it --rm 'fedora:44' bash
 
 opensuse:
 	$(DOCKER_RUN) -it --rm 'opensuse/leap' bash
@@ -744,5 +750,8 @@ ubuntu2204:
 ubuntu2404:
 	$(DOCKER_RUN) -it --rm 'ubuntu:24.04' bash
 
-debian11:
-	$(DOCKER_RUN) -it --rm 'debian:bullseye' bash
+ubuntu2604:
+	$(DOCKER_RUN) -it --rm 'ubuntu:26.04' bash
+
+debian13:
+	$(DOCKER_RUN) -it --rm 'debian:trixie' bash

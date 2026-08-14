@@ -58,11 +58,11 @@ Name: %{package_name}
 Version: %pkgver
 Release: %{rel}%{?dist}
 Source: %{pkg}-%{ver}.tar.gz
-#Patch: %{pkg}.patch
-#%Patch0: gfarm-1.2-patch1.diff
-#%Patch1: gfarm-1.2-patch2.diff
-#%Patch2: gfarm-1.2-patch3.diff
-#%Patch3: gfarm-1.2-patch4.diff
+#Patch: %%{pkg}.patch
+#%%Patch0: gfarm-1.2-patch1.diff
+#%%Patch1: gfarm-1.2-patch2.diff
+#%%Patch2: gfarm-1.2-patch3.diff
+#%%Patch3: gfarm-1.2-patch4.diff
 Group: Applications/File
 License: BSD
 Vendor: National Institute of Advanced Industrial Science and Technology (AIST) and Osamu Tatebe
@@ -85,7 +85,11 @@ Group: System Environment/Libraries
 %if "%{pkg_suffix}" != ""
 Provides: %{pkg}-libs = %{pkgver}-%{rel}
 %endif
+%if 0%{?fedora} >= 40
+BuildRequires: openssl-devel, postgresql-private-devel, postgresql-server-devel
+%else
 BuildRequires: openssl-devel, postgresql-devel
+%endif
 
 %package client
 Summary: Clients for Gfarm file system
@@ -249,11 +253,11 @@ rm -rf ${RPM_BUILD_ROOT}
 mkdir -p $RPM_BUILD_ROOT
 
 %setup -n %{pkg}-%{ver}
-#%patch -p1
-#%patch0 -p1
-#%patch1 -p1
-#%patch2 -p1
-#%patch3 -p1
+#%%patch -p1
+#%%patch0 -p1
+#%%patch1 -p1
+#%%patch2 -p1
+#%%patch3 -p1
 
 %build
 ./configure --prefix=%{prefix} \
@@ -1174,7 +1178,6 @@ fi
 %endif
 %{lib_prefix}/libgfperf.so.1
 %{lib_prefix}/libgfperf.so.1.0.0
-%dir %{lib_prefix}/pkgconfig
 %{lib_prefix}/pkgconfig/gfarm.pc
 %dir %{share_prefix}
 %dir %{share_prefix}/config

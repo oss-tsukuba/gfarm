@@ -1,4 +1,4 @@
-FROM fedora:33
+FROM fedora:44
 
 # System dependent
 
@@ -14,11 +14,20 @@ RUN dnf -y update \
     rsyslog \
     rsync \
     langpacks-ja \
-    && dnf -y groupinstall "Development Tools" \
+    # dnf5 syntax
+    && dnf -y install @development-tools \
+    && dnf -y install \
+    libtool libtool-ltdl libtool-ltdl-devel rpm-build \
     && dnf -y install \
     openssl-devel \
-    postgresql-devel \
+    # Fedora pg_config may report a beta PostgreSQL version that
+    # config-gfarm cannot parse.
+    # Fedora 40-44 split pg_config support across
+    # postgresql-private-devel and postgresql-server-devel.
+    && dnf -y install \
     postgresql \
+    postgresql-private-devel \
+    postgresql-server-devel \
     postgresql-server \
     fuse \
     fuse-devel \
@@ -29,8 +38,16 @@ RUN dnf -y update \
     ruby \
     hostname \
     perl-bignum \
-    && dnf -y --enablerepo=updates-testing update \
-    && dnf -y --enablerepo=updates-testing install \
+    && dnf -y install \
+    wget curl-minimal jq \
+    krb5-libs krb5-devel krb5-server krb5-workstation \
+    cyrus-sasl cyrus-sasl-lib cyrus-sasl-devel \
+    cyrus-sasl-plain cyrus-sasl-gssapi \
+    golang \
+    gcc-c++ cmake \
+    sqlite-devel libcurl-devel libuuid-devel \
+    zlib-devel libedit-devel pam-devel \
+    && dnf -y install \
     globus-gssapi-gsi-devel \
     globus-simple-ca \
     globus-gsi-cert-utils-progs \
@@ -52,8 +69,15 @@ RUN dnf -y update \
     && dnf install 'dnf-command(debuginfo-install)' \
     && dnf debuginfo-install -y \
     fuse-libs \
-    && sed -i 's@^Defaults    secure_path = /sbin:/bin:/usr/sbin:/usr/bin$@Defaults    secure_path = /usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin@' /etc/sudoers
-
+    && sed -i 's@^Defaults    secure_path = /sbin:/bin:/usr/sbin:/usr/bin$@Defaults    secure_path = /usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin@' /etc/sudoers \
+    # systemd-resolved and nss-dns behave differently for single-label
+    # hostnames. Even with ResolveUnicastSingleLabel=yes, systemd-resolved
+    # may only resolve the search-domain-qualified name (for example,
+    # jwt-server.hoge.huga.jp) and not the original hostname.
+    #
+    # Remove [!UNAVAIL=return] to allow fallback to nss-dns (/etc/resolv.conf,
+    # Docker DNS 127.0.0.11) when systemd-resolved cannot resolve a hostname.
+    && sed -i 's/\[!UNAVAIL=return\] //' /etc/nsswitch.conf
 
 # System independent (see setup-univ.sh)
 

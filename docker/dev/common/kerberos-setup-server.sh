@@ -9,7 +9,10 @@ FUNCTIONS=${BASEDIR}/functions.sh
 
 replace_kadm_acl() {
     ${SUDO} sh -c "
-        [ -f '${kadm_acl}.bak' ] || cp -p '${kadm_acl}' '${kadm_acl}.bak'"
+    if [ -f '${kadm_acl}' -a ! -f '${kadm_acl}.bak' ]; then
+        cp -p '${kadm_acl}' '${kadm_acl}.bak'
+    fi
+    "
 
     # replace the following
     #	*/admin@EXAMPLE.COM	*
@@ -47,10 +50,10 @@ rewrite_kdc_conf
 rewrite_krb_conf
 
 ${SUDO} kdb5_util -P "${krb_master_password}" create -r "${krb_realm}" -s
-${SUDO} systemctl enable krb5kdc
-${SUDO} systemctl enable kadmin
-${SUDO} systemctl restart krb5kdc
-${SUDO} systemctl restart kadmin
+${SUDO} systemctl enable "${krb5kdc_service}"
+${SUDO} systemctl enable "${kadmin_service}"
+${SUDO} systemctl restart "${krb5kdc_service}"
+${SUDO} systemctl restart "${kadmin_service}"
 
 ${SUDO} kadmin.local add_principal -pw "${krb_admin_password}" \
     "${krb_admin_user}/admin"
