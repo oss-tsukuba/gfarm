@@ -29,6 +29,7 @@ const char *gfarm_spool_check_level_get_by_name(void);
 gfarm_error_t gfarm_spool_check_level_set(enum gfarm_spool_check_level);
 gfarm_error_t gfarm_spool_check_level_set_by_name(const char *);
 #define GFARM_SPOOL_CHECK_PARALLEL_AUTOMATIC	0
+#define GFARM_SPOOL_SERVER_REPLICATOR_MAX_UNLIMITED	0
 extern int gfarm_spool_check_parallel;
 extern int gfarm_spool_check_parallel_max;
 extern int gfarm_spool_check_parallel_step;
@@ -39,6 +40,7 @@ extern int gfarm_write_verify;
 extern int gfarm_write_verify_interval;
 extern int gfarm_write_verify_retry_interval;
 extern int gfarm_write_verify_log_interval;
+extern int gfarm_spool_server_replicator_max;
 
 /* GFM dependent */
 enum gfarm_atime_type {
