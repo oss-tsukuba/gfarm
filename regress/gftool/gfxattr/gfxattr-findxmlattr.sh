@@ -1,9 +1,7 @@
-gfrm $subsubdir/$fileX
-gfrmdir $subsubdir
-gfrm $subdir/$fileX
-gfrmdir $subdir
-gfrmdir $subdir2
-gfrm $fileX
+# Do not use gfrm here to prevent gfarm2fs cache inconsistency:
+rm -rf $fusemnt/$subdir
+rm -rf $fusemnt/$subdir2
+rm -f $fusemnt/$fileX
 gfxattr -rx / $attrname
 gfxattr -rx / $attrname2
 
