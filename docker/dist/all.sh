@@ -190,7 +190,7 @@ fi
 AUTH=
 for a in $(gfstatus -S | grep 'client auth' | grep -v not | awk '{ print $3 }')
 do
-	[ $a = gsi ] && use_gsi && AUTH="$AUTH gsi gsi_auth"
+	[ $a = gsi ] && $use_gsi && AUTH="$AUTH gsi gsi_auth"
 	[ $a = tls ] && AUTH="$AUTH tls_sharedsecret tls_client_certificate"
 	[ $a = sasl ] && AUTH="$AUTH sasl sasl_auth anonymous anonymous_auth"
 done
