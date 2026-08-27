@@ -4,7 +4,10 @@ status=1
 PROG=$(basename $0)
 trap '[ $status = 0 ] && echo Done || echo NG: $PROG; exit $status' 0 1 2 15
 
-[ -d /var/lib/globus/simple_ca/ ] && {
+# Some distributions (openSUSE) create /var/lib/globus/simple_ca/ when the
+# globus-simple-ca package is installed.  That does not mean that the
+# dist test CA below has been created yet.
+[ -f /var/lib/globus/simple_ca/.gfarm-test-ca ] && {
 	status=0
 	exit 0
 }
@@ -12,13 +15,26 @@ trap '[ $status = 0 ] && echo Done || echo NG: $PROG; exit $status' 0 1 2 15
 # install and create simple ca
 GSDIR=/etc/grid-security
 sudo grid-ca-create -noint -subject "cn=CA, ou=GfarmTest, o=Grid" -nobuild
+sudo touch /var/lib/globus/simple_ca/.gfarm-test-ca
 rm -f openssl_req.log
+CA_HASH=
 for f in $GSDIR/certificates/*.0
 do
-	B=$(basename $f)
-	HASH=${B%.0}
-	[ -f $GSDIR/certificates/grid-security.conf.$HASH ] && break
+	SUBJECT=$(openssl x509 -in "$f" -noout -subject 2>/dev/null || :)
+	if echo "$SUBJECT" | grep -Eq 'CN[[:space:]]*=[[:space:]]*CA' &&
+	   echo "$SUBJECT" | \
+		    grep -Eq 'OU[[:space:]]*=[[:space:]]*GfarmTest'; then
+		B=$(basename "$f")
+		CA_HASH=${B%.0}
+		[ -f "$GSDIR/certificates/grid-security.conf.$CA_HASH" ] \
+		    && break
+	fi
 done
+[ -n "$CA_HASH" ] || {
+	echo "cannot find the GfarmTest CA certificate" >&2
+	exit 1
+}
+HASH=$CA_HASH
 sudo grid-default-ca -ca $HASH > /dev/null
 
 # copy CA cert

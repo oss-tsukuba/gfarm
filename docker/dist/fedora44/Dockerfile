@@ -1,0 +1,59 @@
+FROM fedora:44
+
+ARG USERNAME=foo
+ARG UID=1000
+
+RUN dnf -y update \
+ && dnf -y install \
+    git wget rpm-build sudo passwd \
+    gcc make libtool \
+    openssl-devel postgresql-private-devel postgresql-server-devel \
+    rdma-core-devel \
+    postgresql postgresql-server \
+    python3 ruby \
+    libxslt docbook-style-xsl \
+    hostname curl \
+ && dnf -y install \
+    globus-gssapi-gsi-devel \
+    python3-docopt python3-schema python3-flake8 \
+    fuse fuse-devel \
+    fuse3 fuse3-devel \
+    libacl-devel \
+    procps gdb valgrind libtsan libasan libubsan \
+    myproxy globus-simple-ca \
+    cyrus-sasl-devel cyrus-sasl-plain scitokens-cpp-devel \
+    golang jq \
+    pandoc attr
+
+RUN \
+ # sshd
+ dnf -y install openssh-server \
+ # sshd_config
+ && printf '%s\n' \
+   'PermitEmptyPasswords yes' \
+   'UsePAM no' \
+   > /etc/ssh/sshd_config.d/10-insecure.conf \
+ # ssh_config
+ && printf '%s\n' \
+    'Host *' \
+    '    StrictHostKeyChecking no' \
+    > /etc/ssh/ssh_config.d/ignore-host-key.conf \
+ && systemctl enable sshd \
+ # DNS
+ && sed -i '/^hosts:/c\hosts: files dns' /etc/nsswitch.conf
+
+RUN useradd -m -u $UID -s /bin/bash $USERNAME \
+ && echo "$USERNAME ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers.d/$USERNAME \
+ # delete passwd
+ && passwd -d $USERNAME \
+ # Workaround for "sudo: PAM account management error: Authentication service cannot retrieve authentication info"
+ && chmod u+r /etc/shadow
+
+RUN useradd -m _gfarmfs \
+ && useradd -m _gfarmmd
+
+RUN mv /etc/sudoers /etc/sudoers.orig \
+ && awk '/secure_path/ { print $0 ":/usr/local/bin"; next}; {print}' \
+	/etc/sudoers.orig > /etc/sudoers
+
+CMD ["/sbin/init"]

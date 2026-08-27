@@ -73,6 +73,17 @@ fi
 
 mkdir -p ~/rpmbuild/SOURCES
 mv $PKG-$VER.tar.gz ~/rpmbuild/SOURCES/
+
+# openSUSE has no cyrus-sasl-lib package.  Keep the generated RPM
+# installable there, as the dev RPM build helper does.
+if [ "$PKG" = cyrus-sasl-xoauth2-idp ] &&
+   type lsb_release >/dev/null 2>&1 &&
+   [ "$(lsb_release -i | awk '{print $NF}')" = openSUSE ]; then
+	ORIGINAL_SPEC=$SPEC
+	SPEC=/tmp/$PKG.spec
+	sed 's/, cyrus-sasl-lib//' "$ORIGINAL_SPEC" > "$SPEC"
+fi
+
 rpmbuild -bs --undefine dist $SPEC
 $COPY && sudo rm -rf $PKG-$VER > /dev/null 2>&1 || :
 

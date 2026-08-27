@@ -120,6 +120,15 @@ else
 		 > /dev/null)")
 fi
 
+# install scitokens-cpp before cyrus-sasl-xoauth2-idp
+# when building RPMs for openSUSE
+if $build_pkg && type lsb_release >/dev/null 2>&1 &&
+	[ "$(lsb_release -i | awk '{print $NF}')" = openSUSE ]; then
+	PKG=scitokens-cpp; export PKG
+	(cd ~/gfarm && sh $DISTDIR/mkrpm.sh)
+	sh ./install-rpm.sh
+fi
+
 # install cyrus-sasl-xoauth2-idp
 PKG=cyrus-sasl-xoauth2-idp; export PKG
 sasl_libdir=$(pkg-config --variable=libdir libsasl2)

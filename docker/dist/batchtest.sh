@@ -11,16 +11,21 @@ while [ $# -gt 0 ]
 do
 	case $1 in
 	regress|regress_full) option=$1 ;;
-	ubuntu) DEBIAN="$DEBIAN $1"; DIST_SPECIFIED=true ;;
-	rockylinux10|rockylinux9|almalinux8|centos7|centos7a) RHEL="$RHEL $1"; DIST_SPECIFIED=true ;;
+	ubuntu|ubuntu2404|debian13)
+	    DEBIAN="$DEBIAN $1"; DIST_SPECIFIED=true ;;
+	rockylinux10|rockylinux9|almalinux8|\
+	    fedora44|opensuse16|centos7|centos7a)
+	    RHEL="$RHEL $1"; DIST_SPECIFIED=true ;;
 	*) exit 1 ;;
 	esac
 	shift
 done
 
 $DIST_SPECIFIED || {
-	DEBIAN=ubuntu
-	RHEL="rockylinux10 rockylinux9 almalinux8"
+	DEBIAN="ubuntu ubuntu2404 debian13"
+	#DEBIAN="ubuntu"
+	RHEL="rockylinux10 rockylinux9 almalinux8 fedora44 opensuse16"
+	#RHEL="rockylinux10 rockylinux9 almalinux8"
 }
 [ X"$DEBIAN" = X ] && DEBIAN=NONE
 [ X"$RHEL" = X ] && RHEL=NONE

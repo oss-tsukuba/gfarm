@@ -17,9 +17,13 @@ hostfile=$1
 : ${USER:=$(id -un)}
 grid-proxy-init -q || :
 DN=$(grid-proxy-info -identity || :)
-CONFIG_OPTIONS="-A $USER -r -X -d sha1"
-[ X"$DN" = X ] || CONFIG_OPTIONS="$CONFIG_OPTIONS -D $DN"
-sudo config-gfarm $CONFIG_OPTIONS
+CONFIG_OPTIONS="-A $USER -r -d sha1 -X"
+if [ X"$DN" = X ]; then
+	sudo config-gfarm $CONFIG_OPTIONS
+else
+	# Keep the spaces in the GSI DN as part of a single argument.
+	sudo config-gfarm $CONFIG_OPTIONS -D "$DN"
+fi
 
 # find CONFDIR
 for d in /etc /usr/local/etc
@@ -72,6 +76,7 @@ fi
 # gfsd
 for h in $GL; do echo $h; done > $TMPF
 gfarm-prun -a -p -h $TMPF "
+	sudo mkdir -p $CONFDIR &&
 	sudo cp $TMPCONF $CONFDIR/gfarm2.conf &&
 	sudo config-gfsd"
 for h in $GL; do
