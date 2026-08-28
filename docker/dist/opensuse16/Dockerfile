@@ -10,7 +10,7 @@ RUN --mount=type=cache,target=/var/cache/zypp \
     libopenssl-devel sqlite3-devel postgresql postgresql-devel postgresql-server postgresql-server-devel \
     python3 python3-pip python3-docopt python3-schema python3-flake8 \
     ruby \
-    fuse fuse-devel fuse3 fuse3-devel autofs libacl-devel \
+    fuse fuse-devel fuse3 fuse3-devel autofs libacl-devel attr \
     cyrus-sasl cyrus-sasl-devel cyrus-sasl-plain cyrus-sasl-gssapi \
     krb5-devel krb5-server krb5-client go jq libcurl-devel libuuid-devel \
     rsyslog systemd patch rsync hostname \
