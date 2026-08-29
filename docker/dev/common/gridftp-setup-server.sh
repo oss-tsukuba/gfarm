@@ -14,19 +14,97 @@ WORKDIR=${MNTDIR}/work/${NAME}
 PACKAGES="globus-gridftp-server-devel globus-gridftp-server-progs"
 
 setup_for_centos() {
-    sudo yum -y update
-    sudo yum -y install $PACKAGES
+    sudo \
+        http_proxy=${http_proxy:-} \
+        https_proxy=${https_proxy:-} \
+        yum -y update
+    sudo \
+        http_proxy=${http_proxy:-} \
+        https_proxy=${https_proxy:-} \
+        yum -y install $PACKAGES
 }
 
+# Workaround for openSUSE:
+# globus-gridftp-server packages are not available in the openSUSE
+# repositories. Build globus_gridftp_server from the official GCT
+# source release instead.
+# See: https://download.opensuse.org/app/package/globus-gridftp-server-progs
 setup_for_opensuse() {
-    sudo zypper --non-interactive --no-gpg-checks refresh
-    sudo zypper --no-refresh install -y $PACKAGES
+    sudo \
+        http_proxy=${http_proxy:-} \
+        https_proxy=${https_proxy:-} \
+        zypper --non-interactive --no-gpg-checks refresh
+    sudo \
+        http_proxy=${http_proxy:-} \
+        https_proxy=${https_proxy:-} \
+        zypper --no-refresh install -y \
+            globus-gridftp-server-control-devel \
+            globus-xio-devel \
+            globus-xio-gsi-driver-devel \
+            globus-gfork-devel \
+            globus-ftp-control-devel \
+            globus-authz-devel \
+            globus-io-devel
+
+    GRIDFTP_SERVER_VER=13.28
+    cd /tmp
+    wget -nc \
+      https://repo.gridcf.org/gct6/sources/globus_gridftp_server-${GRIDFTP_SERVER_VER}.tar.gz
+    rm -rf globus_gridftp_server-${GRIDFTP_SERVER_VER}
+    tar xzf globus_gridftp_server-${GRIDFTP_SERVER_VER}.tar.gz
+    cd globus_gridftp_server-${GRIDFTP_SERVER_VER}
+
+    ./configure
+    make -j"$(nproc)"
+    sudo make install
+    export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}
+
+    echo /usr/local/lib | sudo tee \
+      /etc/ld.so.conf.d/gridftp.conf >/dev/null
+    sudo ldconfig
+
+    if [ ! -e /usr/sbin/globus-gridftp-server ]; then
+    sudo ln -s \
+        /usr/local/sbin/globus-gridftp-server \
+        /usr/sbin/globus-gridftp-server
+    fi
+
+    cd $WORKDIR
+
+    if [ ! -f /usr/lib/systemd/system/globus-gridftp-server.service ]; then
+        sudo tee /usr/lib/systemd/system/globus-gridftp-server.service > /dev/null <<'EOF'
+[Unit]
+Description=Globus GridFTP Server
+After=network.target remote_fs.target
+
+[Service]
+Type=forking
+PIDFile=/run/globus-gridftp-server.pid
+ExecStartPre=/bin/sh -c "[ -f /etc/gridftp.conf ] || touch /etc/gridftp.conf"
+ExecStartPre=/bin/sh -c "[ -d /etc/gridftp.d ] || mkdir -p /etc/gridftp.d"
+ExecStart=/usr/local/sbin/globus-gridftp-server -S \
+  -p 2811 \
+  -c /etc/gridftp.conf -C /etc/gridftp.d \
+  -pidfile /run/globus-gridftp-server.pid
+ExecReload=/bin/kill -HUP $MAINPID
+
+[Install]
+WantedBy=multi-user.target
+EOF
+        sudo systemctl daemon-reload
+    fi
 }
 
 setup_for_ubuntu() {
-    sudo apt-get update
+    sudo \
+        http_proxy=${http_proxy:-} \
+        https_proxy=${https_proxy:-} \
+        apt-get update
     PACKAGES="libglobus-gridftp-server-dev globus-gridftp-server-progs"
-    sudo apt-get -y install $PACKAGES
+    sudo \
+        http_proxy=${http_proxy:-} \
+        https_proxy=${https_proxy:-} \
+        apt-get -y install $PACKAGES
 }
 
 create_pkg() {
@@ -40,7 +118,7 @@ get_pkg_name() {
 
 install_from_source() {
     # for gfarm.pc
-    PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
+    PKG_CONFIG_PATH=/usr/local/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}
     export PKG_CONFIG_PATH
 
     create_pkg
@@ -70,7 +148,14 @@ install_from_rpm() {
     rpmbuild -bs "${spec}"
     rpmbuild --rebuild ${SRPM_FILE}
 
-    sudo rpm -ivh --force ${RPM_FILE}
+    case $GFDOCKER_PRJ_NAME in
+    opensuse-*)
+        sudo rpm -ivh --nodeps --force ${RPM_FILE}
+        ;;
+    *)
+        sudo rpm -ivh --force ${RPM_FILE}
+        ;;
+    esac
 
     save_package ${SRPM_FILE}
     save_package ${RPM_FILE}
@@ -78,8 +163,10 @@ install_from_rpm() {
 
 enable_for_systemd() {
     CONF=/etc/gridftp.conf
-    sudo sed -i -e '/load_dsi_module .*/d' $CONF
-    echo "load_dsi_module gfarm" | sudo tee -a $CONF > /dev/null
+    sudo touch "$CONF"
+    sudo mkdir -p /etc/gridftp.d
+    sudo sed -i -e '/load_dsi_module .*/d' "$CONF"
+    echo "load_dsi_module gfarm" | sudo tee -a "$CONF" > /dev/null
     if [ -f /sbin/chkconfig ]; then
         sudo /sbin/chkconfig --level=35 globus-gridftp-server on
     fi
@@ -95,12 +182,12 @@ enable_gridftp_server() {
 cd $WORKDIR
 
 case $GFDOCKER_PRJ_NAME in
-    centos*-src|rockylinux*-src|almalinux*-src)
+    centos*-src|rockylinux*-src|almalinux*-src|fedora*-src)
         setup_for_centos
         install_from_source
         enable_gridftp_server
         ;;
-    centos*-pkg|rockylinux*-pkg|almalinux*-pkg)
+    centos*-pkg|rockylinux*-pkg|almalinux*-pkg|fedora*-pkg)
         setup_for_centos
         install_from_rpm
         enable_gridftp_server
@@ -115,7 +202,7 @@ case $GFDOCKER_PRJ_NAME in
         install_from_rpm
         enable_gridftp_server
         ;;
-    ubuntu*-*)
+    ubuntu*-*|debian*-*)
         setup_for_ubuntu
         install_from_source
         enable_gridftp_server

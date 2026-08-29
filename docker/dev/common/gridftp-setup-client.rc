@@ -15,17 +15,76 @@ install_uberftp() {
 }
 
 install_globus_url_copy_for_centos() {
-    sudo yum -y update
-    sudo yum install -y $PACKAGES
+    sudo \
+        http_proxy=${http_proxy:-} \
+        https_proxy=${https_proxy:-} \
+        yum -y update
+    sudo \
+        http_proxy=${http_proxy:-} \
+        https_proxy=${https_proxy:-} \
+        yum install -y $PACKAGES
 }
 
+# Workaround for openSUSE:
+# The globus-gass-copy-progs package is not available in the openSUSE
+# repositories. Build globus_ftp_client and globus_gass_copy from source
+# instead.
+# See: https://download.opensuse.org/app/package/globus-gass-copy-progs
 install_globus_url_copy_for_opensuse() {
-    sudo zypper --non-interactive --no-gpg-checks refresh
-    sudo zypper --no-refresh install -y $PACKAGES
+    sudo \
+        http_proxy=${http_proxy:-} \
+        https_proxy=${https_proxy:-} \
+        zypper --non-interactive --no-gpg-checks refresh
+    sudo \
+        http_proxy=${http_proxy:-} \
+        https_proxy=${https_proxy:-} \
+        zypper --no-refresh install -y \
+            globus-ftp-control-devel \
+            globus-xio-devel \
+            globus-xio-popen-driver-devel \
+            globus-ftp-control \
+            globus-gass-transfer \
+            globus-io \
+            globus-gssapi-error \
+            globus-gass-transfer-devel
+
+    FTP_CLIENT_VER=9.9
+    cd /tmp
+    wget -nc \
+      https://repo.gridcf.org/gct6/sources/globus_ftp_client-${FTP_CLIENT_VER}.tar.gz
+    rm -rf globus_ftp_client-${FTP_CLIENT_VER}
+    tar xzf globus_ftp_client-${FTP_CLIENT_VER}.tar.gz
+    cd globus_ftp_client-${FTP_CLIENT_VER}
+
+    ./configure
+    make -j"$(nproc)"
+    sudo make install
+
+    GASS_COPY_VER=10.13
+    cd /tmp
+    wget -nc \
+      https://repo.gridcf.org/gct6/sources/globus_gass_copy-${GASS_COPY_VER}.tar.gz
+    rm -rf globus_gass_copy-${GASS_COPY_VER}
+    tar xzf globus_gass_copy-${GASS_COPY_VER}.tar.gz
+    cd globus_gass_copy-${GASS_COPY_VER}
+
+    PKG_CONFIG_PATH=/usr/local/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH} \
+        ./configure
+    make -j"$(nproc)"
+    sudo make install
+
+    echo /usr/local/lib | sudo tee \
+        /etc/ld.so.conf.d/gridftp.conf >/dev/null
+    sudo ldconfig
+
+    cd $WORKDIR
 }
 
 install_globus_url_copy_for_ubuntu() {
-    sudo apt-get install -y $PACKAGES
+    sudo \
+        http_proxy=${http_proxy:-} \
+        https_proxy=${https_proxy:-} \
+        apt-get install -y $PACKAGES
 }
 
 install_for_centos() {
@@ -39,21 +98,27 @@ install_for_opensuse() {
 }
 
 install_for_ubuntu() {
-    sudo apt-get update
-    sudo apt-get install -y autoconf
+    sudo \
+        http_proxy=${http_proxy:-} \
+        https_proxy=${https_proxy:-} \
+        apt-get update
+    sudo \
+        http_proxy=${http_proxy:-} \
+        https_proxy=${https_proxy:-} \
+        apt-get install -y autoconf
     install_uberftp
     install_globus_url_copy_for_ubuntu
 }
 
 cd $WORKDIR
 case $GFDOCKER_PRJ_NAME in
-    centos*-*|rockylinux*-*|almalinux*-*)
+    centos*-*|rockylinux*-*|almalinux*-*|fedora*-*)
         install_for_centos
         ;;
     opensuse-*)
         install_for_opensuse
         ;;
-    ubuntu*-*)
+    ubuntu*-*|debian*-*)
         install_for_ubuntu
         ;;
     *) exit 1;;

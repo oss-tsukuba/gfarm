@@ -32,7 +32,7 @@ cleanup() {
 }
 
 am_I_gfarmadm() {
-    gfgroup -l gfarmadm | egrep " `gfwhoami`"'( |$)' > /dev/null
+    gfgroup -l gfarmadm | grep -E " `gfwhoami`"'( |$)' > /dev/null
 }
 
 randstr() {
