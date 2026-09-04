@@ -25,6 +25,8 @@ clean_option=
 use_gsi=true
 REGRESS=false
 REGRESS_FULL=false
+REGRESS_GFARM2FS=false
+REGRESS_GFARM2FS_FULL=false
 
 : ${ASAN_OPTIONS=halt_on_error=false,log_exe_name=true,log_path=/var/tmp/gfarm.log.asan}
 : ${LSAN_OPTIONS=halt_on_error=false,log_exe_name=true,log_path=/var/tmp/gfarm.log.lsan}
@@ -46,6 +48,13 @@ do
 	     install_option=
 	     REGRESS=true
 	     [ $1 = "regress_full" ] && REGRESS_FULL=true
+	     } ;;
+	regress_gfarm2fs|regress_gfarm2fs_full)
+	     $build_pkg || {
+	     gfarm_config=all
+	     install_option=
+	     REGRESS_GFARM2FS=true
+	     [ $1 = "regress_gfarm2fs_full" ] && REGRESS_GFARM2FS_FULL=true
 	     } ;;
 	asan|tsan)
 	     san_option="$1" ;;
@@ -218,8 +227,10 @@ do
 	case $a in
 	gsi*|\
 	tls_sharedsecret|sasl_auth|anonymous_auth)
-		$REGRESS_FULL || continue ;;
+		$REGRESS_FULL || $REGRESS_GFARM2FS_FULL || continue ;;
 	esac
+	$REGRESS_GFARM2FS && ~/gfarm/gfarm2fs/regress/regress.sh
+
 	$build_pkg && continue
 	$REGRESS && sh ./regress.sh
 	$REGRESS && sh ./regress-xattr.sh

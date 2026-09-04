@@ -3,20 +3,21 @@ set -xeu
 
 gfstatus -S | egrep -v not | grep sasl > /dev/null || exit 0
 
-REGRESS=
+REGRESS=false
+REGRESS_GFARM2FS=false
 while [ $# -gt 0 ]
 do
 	case $1 in
 	pkg|min)
 	    REGRESS=false ;;
 	regress|regress_full)
-	    [ X$REGRESS = X ] && REGRESS=true ;;
+	    REGRESS=true ;;
+	regress_gfarm2fs|regress_gfarm2fs_full)
+	    REGRESS_GFARM2FS=true ;;
 	*) exit 1 ;;
 	esac
 	shift
 done
-[ X$REGRESS = X ] && REGRESS=false
-
 SASL_USER=user1
 SERVER=https://jwt-server
 
@@ -47,7 +48,7 @@ gfuser -A $USER SASL $SASL_USER
 
 sh ./edconf.sh oauth2 > /dev/null
 sh ./check.sh
-if $REGRESS; then
+if $REGRESS || $REGRESS_GFARM2FS; then
 	[ X$PASS = X ] && PASS=$(cat $PASSF)
 	[ X$PASS = X ] || run_jwt_agent $PASS c2
 	for h in c6 c7 c8; do
@@ -58,7 +59,8 @@ if $REGRESS; then
 		ssh $h sh $PWD/edconf.sh oauth2 > /dev/null
 		ssh $h sh $PWD/check.sh
 	done
-	sh ./regress.sh
+	$REGRESS && sh ./regress.sh
+	$REGRESS_GFARM2FS && ~/gfarm/gfarm2fs/regress/regress.sh
 fi
 
 echo "$0: Done"

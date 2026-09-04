@@ -3,14 +3,15 @@ set -xeu
 status=1
 trap '[ $status = 0 ] && echo Done || echo NG; exit $status' 0 1 2 15
 
-option=min
+option=
 DEBIAN=
 RHEL=
 DIST_SPECIFIED=false
 while [ $# -gt 0 ]
 do
 	case $1 in
-	regress|regress_full) option=$1 ;;
+	regress|regress_full|regress_gfarm2fs|regress_gfarm2fs_full)
+	    option="$option $1" ;;
 	ubuntu|ubuntu2404|debian13)
 	    DEBIAN="$DEBIAN $1"; DIST_SPECIFIED=true ;;
 	rockylinux10|rockylinux9|almalinux8|\
@@ -20,6 +21,8 @@ do
 	esac
 	shift
 done
+
+[ -n "$option" ] || option=min
 
 $DIST_SPECIFIED || {
 	DEBIAN="ubuntu ubuntu2404 debian13"
