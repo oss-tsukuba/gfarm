@@ -48,8 +48,9 @@ setup_for_opensuse() {
 
     GRIDFTP_SERVER_VER=13.28
     cd /tmp
+    URL=https://repo.gridcf.org/gct6/sources
     wget -nc \
-      https://repo.gridcf.org/gct6/sources/globus_gridftp_server-${GRIDFTP_SERVER_VER}.tar.gz
+        "${URL}/globus_gridftp_server-${GRIDFTP_SERVER_VER}.tar.gz"
     rm -rf globus_gridftp_server-${GRIDFTP_SERVER_VER}
     tar xzf globus_gridftp_server-${GRIDFTP_SERVER_VER}.tar.gz
     cd globus_gridftp_server-${GRIDFTP_SERVER_VER}
@@ -57,7 +58,12 @@ setup_for_opensuse() {
     ./configure
     make -j"$(nproc)"
     sudo make install
-    export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}
+
+    PKG_CONFIG_PATH_PREFIX=/usr/local/lib/pkgconfig
+
+    export \
+        PKG_CONFIG_PATH=${PKG_CONFIG_PATH_PREFIX}\
+${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}
 
     echo /usr/local/lib | sudo tee \
       /etc/ld.so.conf.d/gridftp.conf >/dev/null
@@ -72,7 +78,9 @@ setup_for_opensuse() {
     cd $WORKDIR
 
     if [ ! -f /usr/lib/systemd/system/globus-gridftp-server.service ]; then
-        sudo tee /usr/lib/systemd/system/globus-gridftp-server.service > /dev/null <<'EOF'
+        sudo tee \
+            /usr/lib/systemd/system/globus-gridftp-server.service \
+            >/dev/null <<'EOF'
 [Unit]
 Description=Globus GridFTP Server
 After=network.target remote_fs.target
@@ -118,8 +126,11 @@ get_pkg_name() {
 
 install_from_source() {
     # for gfarm.pc
-    PKG_CONFIG_PATH=/usr/local/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}
-    export PKG_CONFIG_PATH
+    PKG_CONFIG_PATH_PREFIX=/usr/local/lib/pkgconfig
+
+    export \
+        PKG_CONFIG_PATH=${PKG_CONFIG_PATH_PREFIX}\
+${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}
 
     create_pkg
     PKG=$(get_pkg_name)
