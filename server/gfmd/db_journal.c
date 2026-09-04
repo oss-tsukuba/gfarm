@@ -4448,7 +4448,10 @@ db_journal_fetch(struct journal_file_reader *reader,
 	gfarm_error_t e;
 	gfarm_uint64_t cur_seqnum, seqnum;
 	char *rec, *recs, *p;
-	int eof, num_fi = 0;
+	int eof;
+#ifdef DEBUG_JOURNAL
+	int num_fi = 0;
+#endif	/* DEBUG_JOURNAL */
 	gfarm_uint32_t rec_len, all_len = 0;
 	struct db_journal_fetch_info *fi = NULL, *fi0 = NULL, *fih = NULL;
 	gfarm_uint64_t from_sn = 0, to_sn;
@@ -4520,7 +4523,9 @@ db_journal_fetch(struct journal_file_reader *reader,
 				fi0->next = fi;
 			fi0 = fi;
 			all_len += rec_len;
+#ifdef DEBUG_JOURNAL
 			++num_fi;
+#endif	/* DEBUG_JOURNAL */
 			if (all_len >= FETCH_SIZE_THRESHOLD)
 				break;
 		}
@@ -4535,7 +4540,7 @@ db_journal_fetch(struct journal_file_reader *reader,
 	gflog_debug(GFARM_MSG_1003197,
 	    "%s : fetch %llu to %llu (n=%d)", diag,
 	    (unsigned long long)from_sn, (unsigned long long)to_sn, num_fi);
-#endif
+#endif	/* DEBUG_JOURNAL */
 	GFARM_MALLOC_ARRAY(recs, all_len);
 	if (recs == NULL) {
 		e = GFARM_ERR_NO_MEMORY;

@@ -498,7 +498,7 @@ gfpconcat_child_copy_parts(struct gfpconcat_option *opt, int child_id)
 	gfarm_error_t e, e2;
 	int i;
 	off_t assigned_offset, assigned_size, assigned_size_modulo;
-	off_t part_offset, current_offset, remain_size;
+	off_t part_offset, remain_size;
 	struct gfpconcat_file dst_fp;
 
 	/* child_id: 1, 2, 3, ... */
@@ -573,7 +573,6 @@ retry_set_view:
 	}
 
 	part_offset = 0;
-	current_offset = assigned_offset;
 	remain_size = assigned_size;
 	for (i = 0; i < opt->n_part; i++) {
 		struct gfpconcat_part *p = &(opt->part_list[i]);
@@ -617,7 +616,6 @@ retry_set_view:
 				goto close_dst_fp;
 			}
 
-			current_offset += range.size;
 			remain_size -= range.size;
 		}
 		if (remain_size == 0) {
