@@ -701,18 +701,16 @@ copy_shared_key()
 		return
 	fi
 
-	if is_gfsd_hostid $2; then
-		if [ X$1 != X- ]; then
-			rm -f $TMP_FILE
-			exec_remote_host_agent $1 _gfarmfs backup-shared-key > $TMP_FILE
-			[ $? -ne 0 ] && log_error \
-				"gfservice-agent backup-shared-key $1 failed"
-		fi
-
-		exec_remote_host_agent $2 _gfarmfs restore-shared-key < $TMP_FILE
+	if [ X$1 != X- ]; then
+		rm -f $TMP_FILE
+		exec_remote_host_agent $1 _gfarmfs backup-shared-key > $TMP_FILE
 		[ $? -ne 0 ] && log_error \
-			"gfservice-agent restore-shared-key $2 failed"
+			"gfservice-agent backup-shared-key $1 failed"
 	fi
+
+	exec_remote_host_agent $2 _gfarmfs restore-shared-key < $TMP_FILE
+	[ $? -ne 0 ] && log_error \
+		"gfservice-agent restore-shared-key $2 failed"
 
 	if is_gfmd_hostid $2; then
 		if [ X$1 != X- ]; then
