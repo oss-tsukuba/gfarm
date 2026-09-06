@@ -75,9 +75,10 @@ RUN dnf -y update \
     # may only resolve the search-domain-qualified name (for example,
     # jwt-server.hoge.huga.jp) and not the original hostname.
     #
-    # Remove [!UNAVAIL=return] to allow fallback to nss-dns (/etc/resolv.conf,
-    # Docker DNS 127.0.0.11) when systemd-resolved cannot resolve a hostname.
-    && sed -i 's/\[!UNAVAIL=return\] //' /etc/nsswitch.conf
+    # Temporary workaround for systemd-resolved single-label hostname issues:
+    # use nss-dns (/etc/resolv.conf, Docker DNS 127.0.0.11)
+    # to avoid delays resolving single-label hostnames.
+    && sed -i '/^hosts:/c\hosts: files dns' /etc/nsswitch.conf
 
 # System independent (see setup-univ.sh)
 

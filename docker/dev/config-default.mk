@@ -62,10 +62,6 @@ GFDOCKER_PLATFORM =
 #GFDOCKER_PLATFORM = linux/386
 #GFDOCKER_PLATFORM = linux/ppc64le
 
-# syntax: sharedsecret, gsi, gsi_auth, tls_sharedsecret or
-#		tls_client_certificate
-GFDOCKER_AUTH_TYPE = tls_client_certificate
-
 # GFDOCKER_GFMD_JOURNAL_DIR = /var/gfarm-metadata/journal/
 GFDOCKER_GFMD_JOURNAL_DIR = /dev/shm/gfarm-metadata/journal/
 
