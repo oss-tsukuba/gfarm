@@ -190,6 +190,7 @@ static char *listen_addrname = NULL;
 
 static int fd_usable_to_gfmd = 1;
 static int client_failover_count; /* may be use in the future implement */
+static gfarm_pid_t current_pid = 0;
 
 static int shutting_down; /* set 1 at shutting down */
 
@@ -1334,16 +1335,21 @@ gfs_server_process_set(struct gfp_xdr *client)
 	 */
 
 	if (gfm_client_process_is_set(gfm_server)) {
-		gflog_debug(GFARM_MSG_1003399,
-		    "process is already set");
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: process is already set: pid=%lld",
+		    diag, (long long)current_pid);
 		e = GFARM_ERR_INVALID_ARGUMENT;
 	} else if ((e = gfm_client_process_set(gfm_server,
 	    keytype, sharedkey, keylen, pid)) != GFARM_ERR_NO_ERROR)
 		gflog_debug(GFARM_MSG_1003400,
 		    "gfm_client_process_set: %s", gfarm_error_string(e));
-	else
+	else {
+		current_pid = pid;
 		(void)gfarm_proctitle_set("client/%lld %s",
 		    (long long)pid, gflog_get_auxiliary_info());
+		gflog_debug(GFARM_MSG_UNFIXED, "%s: pid=%lld",
+		    diag, (long long)current_pid);
+	}
 
 	gfs_server_put_reply(client, diag, e, "");
 }
@@ -1362,7 +1368,10 @@ gfs_server_process_reset(struct gfp_xdr *client)
 	gfs_server_get_request(client, diag,
 	    "ibli", &keytype, sizeof(sharedkey), &keylen, sharedkey, &pid,
 	    &failover_count);
-	client_failover_count = failover_count;
+	gflog_debug(GFARM_MSG_UNFIXED,
+	    "%s: pid=%lld->%lld, failover_count=%d->%d",
+	    diag, (long long)current_pid, (long long)pid,
+	    failover_count, client_failover_count);
 
 	/*
 	 * close all fd before client gets new fd from gfmd.
@@ -1375,12 +1384,19 @@ gfs_server_process_reset(struct gfp_xdr *client)
 		e = gfm_client_process_set(gfm_server, keytype, sharedkey,
 		    keylen, pid);
 		if (e == GFARM_ERR_NO_ERROR) {
+			client_failover_count = failover_count;
+			current_pid = pid;
 			fd_usable_to_gfmd = 1;
 			(void)gfarm_proctitle_set("client/%lld %s",
 			    (long long)pid, gflog_get_auxiliary_info());
 			break;
 		}
-		if (e == GFARM_ERR_ALREADY_EXISTS) {
+		if (e == GFARM_ERR_ALREADY_EXISTS) { /* already set */
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "%s: pid=%lld->%lld failover_count=%d->%d: %s",
+			    diag, (long long)current_pid, (long long)pid,
+			    failover_count, client_failover_count,
+			    gfarm_error_string(e));
 			if ((e = gfm_client_process_free(gfm_server))
 			    != GFARM_ERR_NO_ERROR) {
 				gflog_error(GFARM_MSG_1004113,
@@ -1389,8 +1405,11 @@ gfs_server_process_reset(struct gfp_xdr *client)
 			}
 			continue;
 		}
-		gflog_notice(GFARM_MSG_1003401,
-		    "gfm_client_process_set: %s", gfarm_error_string(e));
+		gflog_notice(GFARM_MSG_UNFIXED,
+		    "%s: pid=%lld->%lld failover_count=%d->%d: %s",
+		    diag, (long long)current_pid, (long long)pid,
+		    failover_count, client_failover_count,
+		    gfarm_error_string(e));
 		if (!IS_CONNECTION_ERROR(e))
 			break;
 		/* gfmd failed over after close_all_fd() */
@@ -2564,6 +2583,10 @@ gfs_server_open_common(struct gfp_xdr *client, const char *diag,
 		}
 	}
 
+	if (debug_mode)
+		gflog_debug(GFARM_MSG_UNFIXED, "%s: pid=%lld fd=%d: %s",
+		    diag, (long long)current_pid, net_fd,
+		    gfarm_error_string(e));
 	gfs_server_put_reply(client, diag, e, "");
 	return (e);
 }
@@ -3374,6 +3397,9 @@ gfs_server_close(struct gfp_xdr *client)
 
 	gfs_server_get_request(client, diag, "i", &fd);
 	e = close_fd_somehow(client, fd, 0, diag);
+	if (debug_mode && e != GFARM_ERR_NO_ERROR)
+		gflog_debug(GFARM_MSG_UNFIXED, "%s: pid=%lld fd=%d: %s",
+		    diag, (long long)current_pid, fd, gfarm_error_string(e));
 	gfs_server_put_reply(client, diag, e, "");
 }
 
@@ -3480,6 +3506,9 @@ gfs_server_pwrite(struct gfp_xdr *client)
 	    &fd, sizeof(buffer), &size, buffer, &offset);
 
 	if (!fd_usable_to_gfmd) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: pid=%lld fd=%d: gfmd failed over",
+		    diag, (long long)current_pid, fd);
 		gfs_server_put_reply(client, diag, GFARM_ERR_GFMD_FAILED_OVER,
 		    "");
 		return;
@@ -3534,6 +3563,9 @@ gfs_server_pwrite(struct gfp_xdr *client)
 		fe->write_size += rv;
 		fe->write_time += gfarm_timerval_sub(&t2, &t1));
 reply:
+	if (save_errno != 0 && debug_mode)
+		gflog_debug(GFARM_MSG_UNFIXED, "%s: pid=%lld fd=%d: %s",
+		    diag, (long long)current_pid, fd, strerror(save_errno));
 	gfs_server_put_reply_with_errno(client, diag, save_errno,
 	    "i", (gfarm_int32_t)rv);
 }
@@ -3558,6 +3590,9 @@ gfs_server_write(struct gfp_xdr *client)
 	    &fd, sizeof(buffer), &size, buffer);
 
 	if (!fd_usable_to_gfmd) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: pid=%lld fd=%d: gfmd failed over",
+		    diag, (long long)current_pid, fd);
 		gfs_server_put_reply(client, diag, GFARM_ERR_GFMD_FAILED_OVER,
 		    "");
 		return;
@@ -3611,6 +3646,9 @@ gfs_server_write(struct gfp_xdr *client)
 		fe->write_size += rv;
 		fe->write_time += gfarm_timerval_sub(&t2, &t1));
 
+	if (save_errno != 0 && debug_mode)
+		gflog_debug(GFARM_MSG_UNFIXED, "%s: pid=%lld fd=%d: %s",
+		    diag, (long long)current_pid, fd, strerror(save_errno));
 	gfs_server_put_reply_with_errno(client, diag, save_errno,
 	    "ill", (gfarm_int32_t)rv, written_offset, total_file_size);
 }
@@ -3713,6 +3751,9 @@ gfs_server_bulkwrite(struct gfp_xdr *client)
 	gfs_server_get_request(client, diag, "il", &fd, &offset);
 
 	if (!fd_usable_to_gfmd) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: pid=%lld fd=%d: gfmd failed over",
+		    diag, (long long)current_pid, fd);
 		gfs_server_put_reply(client, diag, GFARM_ERR_GFMD_FAILED_OVER,
 		    "");
 		return;
@@ -3724,6 +3765,9 @@ gfs_server_bulkwrite(struct gfp_xdr *client)
 		e = GFARM_ERR_INVALID_ARGUMENT;
 	else
 		e = GFARM_ERR_NO_ERROR;
+	if (e != GFARM_ERR_NO_ERROR && debug_mode)
+		gflog_debug(GFARM_MSG_UNFIXED, "%s: pid=%lld fd=%d: %s",
+		    diag, (long long)current_pid, fd, gfarm_error_string(e));
 	e2 = gfp_xdr_send(client, "i", (gfarm_int32_t)e);
 	if (e2 == GFARM_ERR_NO_ERROR)
 		e2 = gfp_xdr_flush(client);
@@ -3774,6 +3818,10 @@ gfs_server_bulkwrite(struct gfp_xdr *client)
 			fe->write_time += gfarm_timerval_sub(&t2, &t1);
 		);
 
+		if (e != GFARM_ERR_NO_ERROR && debug_mode)
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "%s: pid=%lld fd=%d: %s", diag,
+			    (long long)current_pid, fd, gfarm_error_string(e));
 		gfs_server_put_reply(client, diag,
 		    e != GFARM_ERR_NO_ERROR ? e : dst_err, "l",
 		    (gfarm_int64_t)written);
