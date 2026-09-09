@@ -481,21 +481,40 @@ retry:
 	 *   call above fails with GFARM_ERR_BAD_FILE_DESCRIPTOR.
 	 */
 	if (gfs_pio_should_failover_at_gfs_open(gf, e) && nretry-- > 0) {
+		int fs_fc = gfarm_filesystem_failover_count(
+		    gfarm_filesystem_get_by_connection(gf->gfm_server));
+		int gfm_fc =
+		    gfm_client_connection_failover_count(gf->gfm_server);
+		int gfs_fc = gfs_client_connection_failover_count(gfs_server);
+
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfs_pio_open_section: calling gfs_pio_failover: "
+		    "failover_count=%d/%d/%d", fs_fc, gfm_fc, gfs_fc);
 		if ((e = gfs_pio_failover(gf)) != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1003954,
 			    "gfs_pio_failover: %s", gfarm_error_string(e));
 			return (e);
 		}
-		if (gfarm_filesystem_failover_count(
-			gfarm_filesystem_get_by_connection(gf->gfm_server))
-		    != gfs_client_connection_failover_count(gfs_server)) {
+
+		fs_fc = gfarm_filesystem_failover_count(
+		    gfarm_filesystem_get_by_connection(gf->gfm_server));
+		gfm_fc = gfm_client_connection_failover_count(gf->gfm_server);
+		gfs_fc = gfs_client_connection_failover_count(gfs_server);
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfs_pio_open_section: done gfs_pio_failover: "
+		    "failover_count=%d/%d/%d", fs_fc, gfm_fc, gfs_fc);
+
+		if (gfs_fc != fs_fc) {
 			/*
 			 * gfs_server is not set to any opened file list
 			 * in gfarm_filesystem. so gfs_server did not fail
 			 * over.
 			 */
-			gflog_debug(GFARM_MSG_1003955,
-			    "reset_process");
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "reset_process failover_count=%d->%d",
+			    gfs_fc, fs_fc);
+			gfs_client_connection_set_failover_count(
+			    gfs_server, fs_fc);
 			if ((e = gfarm_client_process_reset(gfs_server,
 			    gf->gfm_server)) != GFARM_ERR_NO_ERROR) {
 				gflog_debug(GFARM_MSG_1003956,
