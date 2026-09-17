@@ -100,6 +100,18 @@
 
   - テスト種別を指定して個別に実行するには、
     test-all.sh のかわりに、"test-launch.sh [テスト種別]" を実行する。
+    またフェイルオーバを自動で行なうには "test-launch.sh [テスト種別] auto"
+    を実行する。
+    なお、test-launch.sh では環境セットアップを省いているので、
+    初回実行時には test-all.sh 冒頭部の環境セットアップ処理すなわち
+    以下を Bourne shell 系シェルで実行しておく必要がある。
+        $ . ./env.sh
+        $ . ./cleanup.sh
+        $ . ./setup.sh
+
+  - gfs_pio_failover_test.c を gdb のもとで実行するには、以下の環境設定後に
+    test-launch.sh を呼び出せばよい
+        $ PROG=./gdb-wrapper.sh; export PROG
 
   - テストを追加するときは、test-list に新しいテスト種別を追加する。
 
