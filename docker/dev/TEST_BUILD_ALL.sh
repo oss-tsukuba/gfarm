@@ -28,6 +28,7 @@ opensuse/pkg
 BASEDIR=dist
 
 REGRESS=${REGRESS:-0}
+GRIDFTP_TEST=${GRIDFTP_TEST:-0}
 SKIP_PKG=${SKIP_PKG:-0}
 
 cleanup() {
@@ -47,6 +48,9 @@ for name in ${LIST}; do
     fi
     if [ $REGRESS -eq 1 ]; then
         (cd ${BASEDIR}/${name} && make reborn && make regress)
+    elif [ $GRIDFTP_TEST -eq 1 ]; then
+        (cd ${BASEDIR}/${name} && make reborn \
+            && make gridftp-setup && make gridftp-test)
     else
         (cd ${BASEDIR}/${name} && make reborn)
     fi

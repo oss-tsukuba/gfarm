@@ -15,13 +15,13 @@ set -eu
 : $GFDOCKER_HOSTNAME_PREFIX_GFSD
 : $GFDOCKER_HOSTNAME_PREFIX_CLIENT
 : $GFDOCKER_HOSTNAME_SUFFIX
-: $GFDOCKER_AUTH_TYPE
 : $GFDOCKER_GFMD_JOURNAL_DIR
 : $GFDOCKER_PRJ_NAME
 
 ### SEE ALSO: setup-univ.env
 #ADMIN_DN="/O=Grid/OU=GlobusTest/OU=GlobusSimpleCA/CN=${GFDOCKER_PRIMARY_USER}"
 ADMIN_DN="/O=Gfarm/OU=GfarmDev/OU=GfarmCA/CN=${GFDOCKER_PRIMARY_USER}"
+INIT_AUTH_TYPE=sharedsecret
 
 gen_gfservicerc() {
   cat <<EOF
@@ -32,6 +32,11 @@ EOF
 
   for i in $(seq 1 "$GFDOCKER_NUM_GFMDS"); do
     gfmd="${GFDOCKER_HOSTNAME_PREFIX_GFMD}${i}"
+    gfmd_options="-r -j ${GFDOCKER_GFMD_JOURNAL_DIR}"
+    gfmd_options="${gfmd_options} -X -A \$LOGNAME"
+    gfmd_options="${gfmd_options} -h \$gfmd${i}"
+    gfmd_options="${gfmd_options} -a ${INIT_AUTH_TYPE}"
+    gfmd_options="${gfmd_options} -D ${ADMIN_DN}"
     cat <<EOF
 
 ## if *_AUTH_TYPES contain sharedsecret or tls_sharedsecret,
@@ -43,7 +48,7 @@ EOF
 ## gfmd ${i}
 ##
 gfmd${i}=${gfmd}${GFDOCKER_HOSTNAME_SUFFIX}
-${gfmd}_CONFIG_GFARM_OPTIONS="-r -j ${GFDOCKER_GFMD_JOURNAL_DIR} -X -A \$LOGNAME -h \$gfmd${i} -a ${GFDOCKER_AUTH_TYPE} -D ${ADMIN_DN}"
+${gfmd}_CONFIG_GFARM_OPTIONS="${gfmd_options}"
 gfmd${i}_AUTH_TYPES=sharedsecret
 EOF
   done

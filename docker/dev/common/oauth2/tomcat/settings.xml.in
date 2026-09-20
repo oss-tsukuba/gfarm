@@ -1,0 +1,21 @@
+<settings>
+  <proxies>
+    <proxy>
+      <id>http-proxy</id>
+      <active>true</active>
+      <protocol>http</protocol>
+      <host>@PROXY_HOST@</host>
+      <port>@PROXY_PORT@</port>
+      <nonProxyHosts>@NO_PROXY@</nonProxyHosts>
+    </proxy>
+
+    <proxy>
+      <id>https-proxy</id>
+      <active>true</active>
+      <protocol>https</protocol>
+      <host>@PROXY_HOST@</host>
+      <port>@PROXY_PORT@</port>
+      <nonProxyHosts>@NO_PROXY@</nonProxyHosts>
+    </proxy>
+  </proxies>
+</settings>

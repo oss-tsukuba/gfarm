@@ -118,7 +118,6 @@ Quick start
               - opensuse
 
   - to configure kerberos, run the following command.
-    (this is currently tested only on centos8)
 
 	$ make kerberos-setup
 
@@ -262,12 +261,6 @@ Keep keys
 
   ### use "ssh" instead of "make shell"
   $ ssh user2@192.168.224.11  # IP address of client1 container
-
-Build test on all distributions
-===============================
-
-  $ cd docker/dev
-  $ ./TEST_BUILD_ALL.sh
 
 Debug
 =====
@@ -453,3 +446,18 @@ Gfarm GridFTP DSI
 
   $ cd docker/dev/dist/<distribution>/src
   $ make gridftp-test
+
+Build test on all distributions
+===============================
+
+  $ cd docker/dev
+
+  $ ./TEST_BUILD_ALL.sh
+      Run "make reborn" on all src/pkg environments.
+
+  $ ./TEST_REGRESS.sh
+      Run "make reborn && make regress" on all src environments.
+
+  $ ./TEST_GRIDFTP.sh
+      Run "make reborn && make gridftp-setup && make gridftp-test"
+      on all src/pkg environments.
