@@ -8,7 +8,7 @@ RUN dnf -y upgrade almalinux-release \
     openssl-devel postgresql-devel \
     rdma-core-devel \
     postgresql postgresql-server \
-    python3 ruby \
+    python3 ruby golang \
  && dnf -y install epel-release \
  && dnf -y install \
     globus-gssapi-gsi-devel \
