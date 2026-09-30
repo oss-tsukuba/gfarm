@@ -148,11 +148,22 @@ gfs_pio_reopen(struct gfarm_filesystem *fs, GFS_File gf)
 	} else {
 		gf->fd = fd;
 		/* storage_context is null in scheduling */
-		if (get_storage_context(gf->view_context) != NULL)
+		if (get_storage_context(gf->view_context) != NULL) {
 			e = (*gf->ops->view_reopen)(gf);
+			if (e != GFARM_ERR_NO_ERROR)
+				gflog_debug(GFARM_MSG_UNFIXED,
+				    "gfs_pio_reopen(fd=%d): view_reopen: %s",
+				    gf->fd, gfarm_error_string(e));
+		}
 	}
 
 	if (e == GFARM_ERR_NO_ERROR) {
+		if (real_url != NULL) {
+			free(gf->url);
+			gf->url = real_url;
+		}
+	} else if (e == GFARM_ERR_GFMD_FAILED_OVER) {
+		/* i.e. (*gf->ops->view_reopen)(gf) returned this error */
 		if (real_url != NULL) {
 			free(gf->url);
 			gf->url = real_url;
@@ -257,6 +268,13 @@ reset_and_reopen(GFS_File gf, void *closure)
 	/* reopen file */
 	if (gfs_pio_error_unlocked(gf) != GFARM_ERR_STALE_FILE_HANDLE &&
 	    (e = gfs_pio_reopen(fs, gf)) != GFARM_ERR_NO_ERROR) {
+		if (e == GFARM_ERR_GFMD_FAILED_OVER) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "gfs_pio_reopen(url=%s): %s",
+			    gf->url, gfarm_error_string(e));
+			ri->must_retry = 1;
+			return (0);
+		}
 		gflog_debug(GFARM_MSG_1003387,
 		    "gfs_pio_reopen: %s", gfarm_error_string(e));
 	}

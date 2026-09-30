@@ -44,6 +44,7 @@ struct gfp_xdr *gfm_client_connection_conn(struct gfm_connection *);
 int gfm_client_connection_fd(struct gfm_connection *);
 enum gfarm_auth_method gfm_client_connection_auth_method(
 	struct gfm_connection *);
+gfarm_pid_t gfm_client_pid(struct gfm_connection *);
 
 int gfm_client_is_connection_valid(struct gfm_connection *);
 const char *gfm_client_hostname(struct gfm_connection *);

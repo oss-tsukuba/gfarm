@@ -196,6 +196,11 @@ gfs_pio_set_view_default(GFS_File gf)
 		if ((gf->mode & GFS_FILE_MODE_WRITE) != 0)
 			e_save = flush_internal(gf);
 		e = (*gf->ops->view_close)(gf);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "view_close(fd=%d): %s",
+			    gf->fd, gfarm_error_string(e_save));
+		}
 		if (e_save == GFARM_ERR_NO_ERROR)
 			e_save = e;
 	}
@@ -841,7 +846,12 @@ gfs_pio_close_getgen(GFS_File gf, gfarm_uint64_t *igenp)
 			 * regress/lib/libgfarm/gfarm/gfs_pio_open/
 			 */
 			e = gfs_pio_view_fstat(gf, &gst);
-			if (e == GFARM_ERR_NO_ERROR) {
+			if (e != GFARM_ERR_NO_ERROR) {
+				gflog_debug(GFARM_MSG_UNFIXED,
+				    "gfs_pio_close(): "
+				    "gfs_pio_view_fstat(fd=%d): %s",
+				    gf->fd, gfarm_error_string(e_save));
+			} else {
 				/*
 				 * should not call gfs_stat_free(),
 				 * because gfs_pio_view_fstat()
@@ -858,6 +868,11 @@ gfs_pio_close_getgen(GFS_File gf, gfarm_uint64_t *igenp)
 			    gfarm_error_string(e));
 			gfarm_filesystem_set_failover_detected(fs, 1);
 			e = GFARM_ERR_NO_ERROR;
+		} else if (e != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "gfs_pio_close(): "
+			    "view_close(fd=%d): %s",
+			    gf->fd, gfarm_error_string(e_save));
 		}
 		if (e_save == GFARM_ERR_NO_ERROR)
 			e_save = e;
@@ -870,6 +885,11 @@ gfs_pio_close_getgen(GFS_File gf, gfarm_uint64_t *igenp)
 	    (GFS_FILE_MODE_DIGEST_CALC|GFS_FILE_MODE_DIGEST_FINISH)) ==
 	    (GFS_FILE_MODE_DIGEST_CALC) && gf->md_offset == filesize) {
 		e = gfs_pio_md_finish(gf);
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "gfs_pio_close(): "
+			    "gfs_pio_md_finish(fd=%d): %s",
+			    gf->fd, gfarm_error_string(e_save));
 		if (e_save == GFARM_ERR_NO_ERROR)
 			e_save = e;
 
@@ -1049,13 +1069,17 @@ gfs_pio_fillbuf(GFS_File gf, size_t size)
 	do {
 		e = (*gf->ops->view_pread)(gf, gf->buffer, size, gf->io_offset,
 		    &len);
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "view_pread(fd=%d) nretries=%d failed: %s",
+			    gf->fd, nretries, gfarm_error_string(e));
 	} while (e != GFARM_ERR_NO_ERROR && --nretries >= 0 &&
 	    gfs_pio_failover_check_retry(gf, &e));
 	if (e != GFARM_ERR_NO_ERROR) {
 		gf->error = e;
-		gflog_debug(GFARM_MSG_1001302,
-			"view_pread() failed: %s",
-			gfarm_error_string(e));
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "view_pread(fd=%d) failed: %s",
+		    gf->fd, gfarm_error_string(e));
 		return (e);
 	}
 	gf->length = len;
@@ -1089,13 +1113,17 @@ do_write(GFS_File gf, const char *buffer, size_t length,
 			e = (*gf->ops->view_pwrite)(gf,
 			    buffer + written, length - written, gf->io_offset,
 			    &len);
+			if (e != GFARM_ERR_NO_ERROR)
+				gflog_debug(GFARM_MSG_UNFIXED,
+				    "view_pwrite(fd=%d) nretries=%d failed: %s",
+				    gf->fd, nretries, gfarm_error_string(e));
 		} while (e != GFARM_ERR_NO_ERROR && --nretries >= 0 &&
 		    gfs_pio_failover_check_retry(gf, &e));
 		if (e != GFARM_ERR_NO_ERROR) {
 			gf->error = e;
-			gflog_debug(GFARM_MSG_1001303,
-				"view_pwrite() failed: %s",
-				gfarm_error_string(e));
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "view_pwrite(fd=%d) failed: %s",
+			    gf->fd, gfarm_error_string(e));
 			break;
 		}
 		gf->io_offset += len;
@@ -1123,9 +1151,9 @@ flush_internal(GFS_File gf)
 		}
 		e = do_write(gf, gf->buffer, gf->length, &written);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_1001305,
-				"do_write() failed: %s",
-				gfarm_error_string(e));
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "do_write(fd=%d) failed: %s",
+			    gf->fd, gfarm_error_string(e));
 			return (e);
 		}
 		gf->mode &= ~GFS_FILE_MODE_BUFFER_DIRTY;
@@ -1288,10 +1316,18 @@ gfs_pio_truncate(GFS_File gf, gfarm_off_t length)
 
 	do {
 		e = (*gf->ops->view_ftruncate)(gf, length);
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "view_ftruncate(fd=%d) nretries=%d failed: %s",
+			    gf->fd, nretries, gfarm_error_string(e));
 	} while (e != GFARM_ERR_NO_ERROR && --nretries >= 0 &&
 	    gfs_pio_failover_check_retry(gf, &e));
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
 		gf->error = e;
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "view_ftruncate(fd=%d) failed: %s",
+		    gf->fd, gfarm_error_string(e));
+	}
 finish:
 	gfs_pio_mutex_unlock(&gf->mutex, __func__);
 	gfs_profile(gfarm_gettimerval(&t2));
@@ -1315,12 +1351,16 @@ gfs_pio_pread_unbuffer(GFS_File gf, void *buffer, int size,
 		do {
 			e = (*gf->ops->view_pread)(gf,
 			    p, size, offset, &length);
+			if (e != GFARM_ERR_NO_ERROR)
+				gflog_debug(GFARM_MSG_UNFIXED,
+				    "view_pread(fd=%d) nretries=%d failed: %s",
+				    gf->fd, nretries, gfarm_error_string(e));
 		} while (e != GFARM_ERR_NO_ERROR && --nretries >= 0 &&
 		    gfs_pio_failover_check_retry(gf, &e));
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_1003944,
-				"pread() failed: %s",
-				gfarm_error_string(e));
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "viewq_pread(fd=%d) failed: %s",
+			    gf->fd, gfarm_error_string(e));
 			if (n == 0)
 				goto finish;
 			else
@@ -1356,12 +1396,16 @@ gfs_pio_pwrite_unbuffer(GFS_File gf, const void *buffer, int size,
 		do {
 			e = (*gf->ops->view_pwrite)(gf,
 			    p, size, offset, &length);
+			if (e != GFARM_ERR_NO_ERROR)
+				gflog_debug(GFARM_MSG_UNFIXED,
+				    "view_pwrite(fd=%d) nretries=%d failed: %s",
+				    gf->fd, nretries, gfarm_error_string(e));
 		} while (e != GFARM_ERR_NO_ERROR && --nretries >= 0 &&
 		    gfs_pio_failover_check_retry(gf, &e));
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_1003945,
-				"pwrite() failed: %s",
-				gfarm_error_string(e));
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "pwrite(fd=%d) failed: %s",
+			    gf->fd, gfarm_error_string(e));
 			if (n == 0)
 				goto finish;
 			else
@@ -1715,12 +1759,16 @@ gfs_pio_append(GFS_File gf, void *buffer, int size, int *np,
 	do {
 		e = (*gf->ops->view_write)(gf,
 		    buffer, size, &length, offp, fsizep);
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "view_pwrite(fd=%d) nretries=%d failed: %s",
+			    gf->fd, nretries, gfarm_error_string(e));
 	} while (e != GFARM_ERR_NO_ERROR && --nretries >= 0 &&
 	    gfs_pio_failover_check_retry(gf, &e));
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1003949,
-			"view_write() failed: %s",
-			gfarm_error_string(e));
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "view_write(fd=%d) failed: %s",
+		    gf->fd, gfarm_error_string(e));
 		gfs_pio_mutex_unlock(&gf->mutex, __func__);
 		return (e);
 	}
@@ -1782,13 +1830,17 @@ sync_internal(GFS_File gf, int operation, double *time, unsigned long long *ct)
 
 	do {
 		e = (*gf->ops->view_fsync)(gf, operation);
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "view_fsync(fd=%d) nretries=%d failed: %s",
+			    gf->fd, nretries, gfarm_error_string(e));
 	} while (e != GFARM_ERR_NO_ERROR && --nretries >= 0 &&
 	    gfs_pio_failover_check_retry(gf, &e));
 	if (e != GFARM_ERR_NO_ERROR) {
 		gf->error = e;
-		gflog_debug(GFARM_MSG_1001319,
-			"view_fsync() failed: %s",
-			gfarm_error_string(e));
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "view_fsync(fd=%d) failed: %s",
+		    gf->fd, gfarm_error_string(e));
 	}
 finish:
 	gfs_profile(gfarm_gettimerval(&t2));
@@ -2447,8 +2499,16 @@ gfs_pio_view_fstat(GFS_File gf, struct gfs_stat *st)
 
 	do {
 		e = (*gf->ops->view_fstat)(gf, st);
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "view_fsync(fd=%d) nretries=%d failed: %s",
+			    gf->fd, nretries, gfarm_error_string(e));
 	} while (e != GFARM_ERR_NO_ERROR && --nretries >= 0 &&
 	    gfs_pio_failover_check_retry(gf, &e));
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "view_fstat(fd=%d) failed: %s",
+		    gf->fd, gfarm_error_string(e));
 	return (e);
 }
 
@@ -2531,8 +2591,16 @@ gfs_pio_cksum(GFS_File gf, const char *type, struct gfs_stat_cksum *cksum)
 	}
 	do {
 		e = (*gf->ops->view_cksum)(gf, type, cksum);
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "view_cksum(fd=%d) nretries=%d failed: %s",
+			    gf->fd, nretries, gfarm_error_string(e));
 	} while (e != GFARM_ERR_NO_ERROR && --nretries >= 0 &&
 	    gfs_pio_failover_check_retry(gf, &e));
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfs_pio_cksum(fd=%d) failed: %s",
+		    gf->fd, gfarm_error_string(e));
 
 	gfs_pio_mutex_unlock(&gf->mutex, __func__);
 
@@ -2572,8 +2640,17 @@ gfs_pio_recvfile(GFS_File r_gf, gfarm_off_t r_off,
 	do {
 		e = (*r_gf->ops->view_recvfile)(r_gf, r_off, w_fd, w_off, len,
 		    recvp);
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "view_recvfile(fd=%d) nretries=%d failed: %s",
+			    r_gf->fd, nretries, gfarm_error_string(e));
 	} while (e != GFARM_ERR_NO_ERROR && --nretries >= 0 &&
 	    gfs_pio_failover_check_retry(r_gf, &e));
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "view_recvfile(fd=%d) failed: %s",
+		    r_gf->fd, gfarm_error_string(e));
+	}
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(staticp->read_time += gfarm_timerval_sub(&t2, &t1));
@@ -2611,8 +2688,17 @@ gfs_pio_sendfile(GFS_File w_gf, gfarm_off_t w_off,
 	do {
 		e = (*w_gf->ops->view_sendfile)(w_gf, w_off, r_fd, r_off, len,
 		    sentp);
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "view_sendfile(fd=%d) nretries=%d failed: %s",
+			    w_gf->fd, nretries, gfarm_error_string(e));
 	} while (e != GFARM_ERR_NO_ERROR && --nretries >= 0 &&
 	    gfs_pio_failover_check_retry(w_gf, &e));
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "view_sendfile(fd=%d) failed: %s",
+		    w_gf->fd, gfarm_error_string(e));
+	}
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(staticp->write_time += gfarm_timerval_sub(&t2, &t1));

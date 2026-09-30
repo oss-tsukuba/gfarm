@@ -285,6 +285,12 @@ gfm_client_connection_failover_count(struct gfm_connection *gfm_server)
 	return (gfm_server->failover_count);
 }
 
+gfarm_pid_t
+gfm_client_pid(struct gfm_connection *gfm_server)
+{
+	return (gfm_server->pid);
+}
+
 gfarm_error_t
 gfm_client_process_get(struct gfm_connection *gfm_server,
 	gfarm_int32_t *keytypep, const char **sharedkeyp,
@@ -1234,9 +1240,11 @@ gfm_client_rpc_result(struct gfm_connection *gfm_server, int just,
 	check_connection_or_purge(gfm_server, e);
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001106,
-			"gfp_xdr_vrpc_result() failed: %s",
-			gfarm_error_string(e));
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "pid=%lld, failover_count=%d: "
+		    "gfp_xdr_vrpc_result() failed: %s",
+		    (long long)gfm_server->pid, gfm_server->failover_count,
+		    gfarm_error_string(e));
 		return (e);
 	}
 	if (errcode != 0) {
@@ -1269,7 +1277,10 @@ gfm_client_vrpc(struct gfm_connection *gfm_server, int just, int do_timeout,
 	check_connection_or_purge(gfm_server, e);
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001108, "gfp_xdr_vrpc(%d) failed: %s",
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "pid=%lld, failover_count=%d: "
+		    "gfp_xdr_vrpc(command=%d) failed: %s",
+		    (long long)gfm_server->pid, gfm_server->failover_count,
 		    command, gfarm_error_string(e));
 		return (e);
 	}
