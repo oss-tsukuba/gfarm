@@ -156,6 +156,7 @@ struct hostset *hostset_of_fsngroup_alloc(const char *, int *);
 int hostset_has_host(struct hostset *, struct host *);
 gfarm_error_t hostset_add_host(struct hostset *, struct host *);
 void hostset_intersect(struct hostset *, struct hostset *);
+/* XXX not used, do not use it.  this function will be removed. */
 gfarm_error_t hostset_schedule_n_except(struct hostset *,
 	struct hostset *, gfarm_time_t grace,
 	struct hostset *,

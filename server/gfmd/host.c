@@ -2927,6 +2927,44 @@ hostset_select_n(struct hostset *scope, int n_shortage,
 }
 
 /*
+ * count existing valid replicas within `scope' except `being_removed'.
+ * a host which is down is also counted, if it is within `grace'.
+ */
+static gfarm_error_t
+hostset_count_valid(struct hostset *scope,
+	struct hostset *existing, gfarm_time_t grace,
+	struct hostset *being_removed, int *n_validp)
+{
+	struct hostset *existing_within_scope;
+
+	existing_within_scope = hostset_dup(scope);
+	if (existing_within_scope == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	hostset_except(existing_within_scope, being_removed);
+	hostset_intersect(existing_within_scope, existing);
+	*n_validp = hostset_count_hosts_up(existing_within_scope, grace);
+	hostset_free(existing_within_scope);
+	return (GFARM_ERR_NO_ERROR);
+}
+
+/*
+ * this function breaks `scope', and it cannot be used later.
+ * this function does not modify `existing' and `being_removed',
+ * and they may be able to be used later.
+ */
+static gfarm_error_t
+hostset_select_n_except(struct hostset *scope,
+	struct hostset *existing, struct hostset *being_removed,
+	int (*filter)(struct host *, void *), void *closure,
+	int n_shortage, int *n_targetsp, struct host ***targetsp)
+{
+	hostset_except(scope, being_removed);
+	hostset_except(scope, existing);
+	hostset_filter(scope, filter, closure);
+	return (hostset_select_n(scope, n_shortage, n_targetsp, targetsp));
+}
+
+/*
  * this function breaks `scope', and it cannot be used later.
  * this function does not modify `existing' and `being_removed',
  * and they may be able to be used later.
@@ -2934,6 +2972,9 @@ hostset_select_n(struct hostset *scope, int n_shortage,
  * *n_validp > n_desired: already too enough
  * n_desired <= *n_validp + *n_taregetsp: will be enough
  * n_desired >  *n_validp + *n_taregetsp: shortage
+ *
+ * XXX this function is not used, do not use it.
+ * this function will be removed.
  */
 gfarm_error_t
 hostset_schedule_n_except(
@@ -2944,31 +2985,20 @@ hostset_schedule_n_except(
 	int n_desired,
 	int *n_targetsp, struct host ***targetsp, int *n_validp)
 {
-	int n_shortage, n_up = 0;
-	struct hostset *existing_within_scope;
+	gfarm_error_t e;
 
-	hostset_except(scope, being_removed);
+	e = hostset_count_valid(scope, existing, grace, being_removed,
+	    n_validp);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
 
-	existing_within_scope = hostset_dup(scope);
-	if (existing_within_scope == NULL)
-		return (GFARM_ERR_NO_MEMORY);
-	hostset_intersect(existing_within_scope, existing);
-	n_up = hostset_count_hosts_up(existing_within_scope, grace);
-	hostset_free(existing_within_scope);
-
-	*n_validp = n_up; /* existing valid replicas */
-
-	if (n_desired <= n_up) { /* sufficient */
+	if (n_desired <= *n_validp) { /* sufficient */
 		*n_targetsp = 0;
 		*targetsp = NULL;
 		return (GFARM_ERR_NO_ERROR);
 	}
-	n_shortage = n_desired - n_up;
-
-	hostset_except(scope, existing);
-
-	hostset_filter(scope, filter, closure);
-	return (hostset_select_n(scope, n_shortage, n_targetsp, targetsp));
+	return (hostset_select_n_except(scope, existing, being_removed,
+	    filter, closure, n_desired - *n_validp, n_targetsp, targetsp));
 }
 
 static int
@@ -3074,7 +3104,7 @@ hostset_schedule_n_except_by_network(
 	struct hostset *scope_near, *scope_far;
 	struct host *h;
 	gfarm_error_t e;
-	int i, j;
+	int i, j, n_short;
 	struct gfarm_hostspec *hnet, *snet;
 
 	/* initialize outputs */
@@ -3082,6 +3112,7 @@ hostset_schedule_n_except_by_network(
 	*n_targets_far = 0;
 	*targets_near = NULL;
 	*targets_far = NULL;
+	*n_validp = 0;
 
 	/* 1. allocate subnet groups */
 	scope_near = hostset_empty_alloc();
@@ -3113,31 +3144,40 @@ hostset_schedule_n_except_by_network(
 			hostset_add_host(scope_far, h);
 	}
 
-	/* 3. schedule within same-subnet scope first */
-	e = hostset_schedule_n_except(scope_near, existing,
-	    grace, being_removed,
-	    filter, closure,
-	    n_desired,
-	    n_targets_near, targets_near,
+	/*
+	 * 3. count existing valid replicas within the whole scope.
+	 * this should not be counted separately in scope_near and scope_far,
+	 * because hosts which are down are not included in srcs,
+	 * thus replicas on such hosts are classified in scope_far.
+	 */
+	e = hostset_count_valid(scope, existing, grace, being_removed,
 	    n_validp);
+	if (e != GFARM_ERR_NO_ERROR || n_desired <= *n_validp) {
+		/* error or sufficient */
+		hostset_free(scope_near);
+		hostset_free(scope_far);
+		return (e);
+	}
+	n_short = n_desired - *n_validp;
 
+	/* 4. schedule within same-subnet scope first */
+	e = hostset_select_n_except(scope_near, existing, being_removed,
+	    filter, closure, n_short, n_targets_near, targets_near);
 	if (e != GFARM_ERR_NO_ERROR) {
 		hostset_free(scope_near);
 		hostset_free(scope_far);
 		return (e);
 	}
+	n_short -= *n_targets_near;
 
-	/* 4. if shortage remains, schedule from other subnets */
-	if (*n_targets_near + *n_validp < n_desired) {
-		int n_short = n_desired - *n_validp - *n_targets_near;
-
-		e = hostset_schedule_n_except(scope_far, existing,
-		    grace, being_removed,
-		    filter, closure,
-		    n_short,
-		    n_targets_far, targets_far,
-		    n_validp);
+	/* 5. if shortage remains, schedule from other subnets */
+	if (n_short > 0) {
+		e = hostset_select_n_except(scope_far, existing, being_removed,
+		    filter, closure, n_short, n_targets_far, targets_far);
 		if (e != GFARM_ERR_NO_ERROR) {
+			free(*targets_near);
+			*targets_near = NULL;
+			*n_targets_near = 0;
 			hostset_free(scope_near);
 			hostset_free(scope_far);
 			return (e);
