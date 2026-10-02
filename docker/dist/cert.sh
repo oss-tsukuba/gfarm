@@ -7,7 +7,7 @@ trap '[ $status = 0 ] && echo Done || echo NG: $PROG; exit $status' 0 1 2 15
 # Some distributions (openSUSE) create /var/lib/globus/simple_ca/ when the
 # globus-simple-ca package is installed.  That does not mean that the
 # dist test CA below has been created yet.
-[ -f /var/lib/globus/simple_ca/.gfarm-test-ca ] && {
+sudo test -f /var/lib/globus/simple_ca/.gfarm-test-ca && {
 	status=0
 	exit 0
 }
