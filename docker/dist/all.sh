@@ -182,7 +182,7 @@ PASS=PASSWORD
 gfarm-prun -p -a \
   "echo $PASS | sudo ${LIBXSAN:+LD_PRELOAD=$LIBXSAN} saslpasswd2 -c $(id -un)"
 gfarm-prun -p -a \
-	"sudo chown _gfarmfs /etc/sasldb2 /etc/sasl2/sasldb2 > /dev/null 2>&1"
+	"sudo chown _gfarmfs /etc/sasldb2 /etc/sasl2/sasldb2 > /dev/null 2>&1 || :"
 
 # set up certificates
 sh ./key.sh
