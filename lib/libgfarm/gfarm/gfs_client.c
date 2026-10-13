@@ -1494,7 +1494,7 @@ gfs_client_vrpc_result(struct gfs_connection *gfs_server, int just,
 		gfs_client_purge_from_cache(gfs_server);
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005764,
 		    "gfs_client_pid=%lld: gfp_xdr_vrpc_result() failed: %s",
 		    (long long)gfs_client_pid(gfs_server),
 		    gfarm_error_string(e));
@@ -1558,7 +1558,7 @@ gfs_client_vrpc(struct gfs_connection *gfs_server, int just, int do_timeout,
 		gfs_client_purge_from_cache(gfs_server);
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005765,
 		    "gfs_client_pid=%lld: gfp_xdr_vrpc(command=%d) failed: %s",
 		    (long long)gfs_client_pid(gfs_server),
 		    command, gfarm_error_string(e));
@@ -1670,7 +1670,7 @@ gfs_client_open(struct gfs_connection *gfs_server, gfarm_int32_t fd)
 	if (e == GFARM_ERR_NO_ERROR)
 		++gfs_server->opened;
 	else
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005766,
 		    "gfs_client_open(fd=%d) failed: %s",
 		    fd, gfarm_error_string(e));
 	gfs_client_connection_unlock(gfs_server);
@@ -1698,7 +1698,7 @@ gfs_client_open_local(struct gfs_connection *gfs_server, gfarm_int32_t fd,
 	    gfs_server, 1, GFS_PROTO_OPEN_LOCAL, "i/", fd);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfs_client_connection_unlock(gfs_server);
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005767,
 			"gfs_client_open_local(fd=%d) failed: %s",
 			fd, gfarm_error_string(e));
 		return (e);
@@ -1718,7 +1718,7 @@ gfs_client_open_local(struct gfs_connection *gfs_server, gfarm_int32_t fd,
 		return (GFARM_ERR_UNEXPECTED_EOF);
 	}
 	if (rv != 0) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005768,
 		    "gfs_client_open_local(fd=%d) receiving message failed: %s",
 		    fd, gfarm_error_string(gfarm_errno_to_error(rv)));
 		return (gfarm_errno_to_error(rv));
@@ -1726,7 +1726,7 @@ gfs_client_open_local(struct gfs_connection *gfs_server, gfarm_int32_t fd,
 	/* both `dummy' and `local_fd` are passed by using host byte order. */
 #ifdef __KERNEL__
 	if ((rv = gfsk_localfd_set(local_fd, S_IFREG)) < 0) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005769,
 		    "gfs_client_open_local(fd=%d) gfsk_localfd_set failed: %s",
 		    fd, gfarm_error_string(gfarm_errno_to_error(-rv)));
 		return (gfarm_errno_to_error(-rv));
@@ -1748,7 +1748,7 @@ gfs_client_close(struct gfs_connection *gfs_server, gfarm_int32_t fd)
 	if (e == GFARM_ERR_NO_ERROR)
 		--gfs_server->opened;
 	else {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005770,
 		    "gfs_client_close(fd=%d) failed: %s",
 		    fd, gfarm_error_string(e));
 	}
@@ -1769,7 +1769,7 @@ gfs_client_close_write(struct gfs_connection *gfs_server,
 	if (e == GFARM_ERR_NO_ERROR)
 		--gfs_server->opened;
 	else
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005771,
 		    "gfs_client_close_write(fd=%d) failed: %s",
 		    fd, gfarm_error_string(e));
 	gfs_client_connection_unlock(gfs_server);
@@ -1786,13 +1786,13 @@ gfs_client_pread(struct gfs_connection *gfs_server,
 	if ((e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_PREAD, "iil/b",
 	    fd, (int)size, off,
 	    size, np, buffer)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005772,
 		    "gfs_client_pread(fd=%d) failed: %s",
 		    fd, gfarm_error_string(e));
 		return (e);
 	}
 	if (*np > size) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005773,
 		    "Protocol error in client pread(fd=%d) (%llu)>(%llu)",
 		    fd, (unsigned long long)*np, (unsigned long long)size);
 		return (GFARM_ERRMSG_GFS_PROTO_PREAD_PROTOCOL);
@@ -1811,14 +1811,14 @@ gfs_client_pwrite(struct gfs_connection *gfs_server,
 
 	if ((e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_PWRITE, "ibl/i",
 	    fd, size, buffer, off, &n)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005774,
 		    "gfs_client_pwrite(fd=%d) failed: %s",
 		    fd, gfarm_error_string(e));
 		return (e);
 	}
 	*np = n;
 	if (n > size) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005775,
 		    "Protocol error in client pwrite(fd=%d) (%llu)>(%llu)",
 		    fd, (unsigned long long)*np, (unsigned long long)size);
 		return (GFARM_ERRMSG_GFS_PROTO_PWRITE_PROTOCOL);
@@ -1836,7 +1836,7 @@ gfs_client_write(struct gfs_connection *gfs_server,
 
 	if ((e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_WRITE, "ib/ill",
 	    fd, size, buffer, &n, offp, total_sizep)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005776,
 		    "gfs_client_write(fd=%d) failed: %s",
 		    fd, gfarm_error_string(e));
 		return (e);
@@ -1855,7 +1855,7 @@ gfs_client_ftruncate(struct gfs_connection *gfs_server,
 	e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_FTRUNCATE, "il/",
 	    fd, size);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005777,
 		    "gfs_client_ftruncate(fd=%d) failed: %s",
 		    fd, gfarm_error_string(e));
 	return (e);
@@ -1870,7 +1870,7 @@ gfs_client_fsync(struct gfs_connection *gfs_server,
 	e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_FSYNC, "ii/",
 	    fd, op);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005778,
 		    "gfs_client_fsync(fd=%d) failed: %s",
 		    fd, gfarm_error_string(e));
 	return (e);
@@ -1887,7 +1887,7 @@ gfs_client_fstat(struct gfs_connection *gfs_server, gfarm_int32_t fd,
 	e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_FSTAT, "i/llili",
 	    fd, size, atime_sec, atime_nsec, mtime_sec, mtime_nsec);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005779,
 		    "gfs_client_fstat(fd=%d) failed: %s",
 		    fd, gfarm_error_string(e));
 	return (e);
@@ -1901,12 +1901,12 @@ gfs_client_cksum(struct gfs_connection *gfs_server, gfarm_int32_t fd,
 
 	if ((e = gfs_client_rpc_notimeout(gfs_server, 0, GFS_PROTO_CKSUM,
 	    "is/b", fd, type, size, np, cksum)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005780,
 		    "gfs_client_cksum(fd=%d): %s", fd, gfarm_error_string(e));
 		return (e);
 	}
 	if (*np > size) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005781,
 		    "gfs_client_cksum(fd=%d) "
 		    "Internal protocol error (%llu)>(%llu)",
 		    fd, (unsigned long long)*np, (unsigned long long)size);
@@ -1927,7 +1927,7 @@ gfs_client_lock(struct gfs_connection *gfs_server, gfarm_int32_t fd,
 	e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_LOCK, "illii/",
 	    fd, start, len, type, whence);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005782,
 		    "gfs_client_lock(fd=%d) failed: %s",
 		    fd, gfarm_error_string(e));
 	return (e);
@@ -1943,7 +1943,7 @@ gfs_client_trylock(struct gfs_connection *gfs_server, gfarm_int32_t fd,
 	e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_TRYLOCK, "illii/",
 	    fd, start, len, type, whence);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005783,
 		    "gfs_client_trylock(fd=%d) failed: %s",
 		    fd, gfarm_error_string(e));
 	return (e);
@@ -1959,7 +1959,7 @@ gfs_client_unlock(struct gfs_connection *gfs_server, gfarm_int32_t fd,
 	e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_UNLOCK, "illii/",
 	    fd, start, len, type, whence);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005784,
 		    "gfs_client_unlock(fd=%d) failed: %s",
 		    fd, gfarm_error_string(e));
 	return (e);
@@ -1979,7 +1979,7 @@ gfs_client_lock_info(struct gfs_connection *gfs_server, gfarm_int32_t fd,
 	    fd, start, len, type, whence,
 	    start_ret, len_ret, type_ret, host_ret, pid_ret);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005785,
 		    "gfs_client_lock_info(fd=%d) failed: %s",
 		    fd, gfarm_error_string(e));
 	return (e);
@@ -1994,7 +1994,7 @@ gfs_client_replica_add_from(struct gfs_connection *gfs_server,
 	e = gfs_client_rpc_notimeout(gfs_server, 0,
 	    GFS_PROTO_REPLICA_ADD_FROM, "sii/", host, port, fd);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005786,
 		    "gfs_client_replica_add_from(fd=%d) failed: %s",
 		    fd, gfarm_error_string(e));
 	return (e);
@@ -3327,7 +3327,7 @@ gfs_ib_rdma_pread(struct gfs_connection *gfs_server,
 
 	if ((e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_RDMA_PREAD, "iilil/i",
 		fd, (int)size, off, rkey, addr, &n)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005787,
 		    "gfs_ib_rdma_pread(fd=%d) failed: %s",
 		    fd, gfarm_error_string(e));
 		return (e);
@@ -3336,7 +3336,7 @@ gfs_ib_rdma_pread(struct gfs_connection *gfs_server,
 	*np = n;
 
 	if (*np > size) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005788,
 		    "Protocol error in client rdma_pread(fd=%d) (%llu)>(%llu)",
 		    fd, (unsigned long long)*np, (unsigned long long)size);
 		return (GFARM_ERRMSG_GFS_PROTO_PREAD_PROTOCOL);
@@ -3356,7 +3356,7 @@ gfs_ib_rdma_pwrite(struct gfs_connection *gfs_server,
 
 	if ((e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_RDMA_PWRITE, "iilil/i",
 		fd, (int)size, off, rkey, addr, &n)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005789,
 		    "gfs_ib_rdma_pwrite(fd=%d) failed: %s",
 		    fd, gfarm_error_string(e));
 		return (e);

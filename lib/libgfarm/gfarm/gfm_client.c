@@ -1240,7 +1240,7 @@ gfm_client_rpc_result(struct gfm_connection *gfm_server, int just,
 	check_connection_or_purge(gfm_server, e);
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005762,
 		    "pid=%lld, failover_count=%d: "
 		    "gfp_xdr_vrpc_result() failed: %s",
 		    (long long)gfm_server->pid, gfm_server->failover_count,
@@ -1277,7 +1277,7 @@ gfm_client_vrpc(struct gfm_connection *gfm_server, int just, int do_timeout,
 	check_connection_or_purge(gfm_server, e);
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005763,
 		    "pid=%lld, failover_count=%d: "
 		    "gfp_xdr_vrpc(command=%d) failed: %s",
 		    (long long)gfm_server->pid, gfm_server->failover_count,
