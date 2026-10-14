@@ -15,7 +15,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: set up docker buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: get user
         id: user
@@ -24,7 +24,7 @@ jobs:
           echo "uid=$(id -u)" >> "$GITHUB_OUTPUT"
 
       - name: build minica image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: docker/dist/minica
           tags: gfarm-minica
@@ -33,7 +33,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=gfarm-minica
 
       - name: build gfarm image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: docker/dist/ubuntu/Dockerfile
