@@ -552,8 +552,8 @@ retry:
 	if (gfm_server != gf->gfm_server) {
 		/*
 		 * gfm_server was replaced in
-		 * gfs_client_gfmd_failover_at_connect() without
-		 * reset_and_reopen() updating gf->gfm_server.
+		 * gfs_client_gfmd_failover_at_connect(), but
+		 * gf->gfm_server was not updated.
 		 * transfer the reference of the new connection to gf.
 		 */
 		gfm_client_connection_free(gf->gfm_server);
