@@ -194,12 +194,18 @@ sh ./tlscert.sh
 if [ $gfarm_config = all ]; then
 	# set up Gfarm-1 with 5 nodes
 	echo c1 c2 c3 c4 c5 | sh ./config.sh - &
+	pids=$!
 
 	# set up Gfarm-2 to Gfarm-4 with 1 node
 	for h in c6 c7 c8; do
 		echo $h | ssh $h sh $PWD/config.sh - &
+		pids="$pids $!"
 	done
-	wait
+	config_status=0
+	for pid in $pids; do
+		wait $pid || config_status=1
+	done
+	[ $config_status = 0 ]
 else
 	echo c1 | sh ./config.sh -
 fi
