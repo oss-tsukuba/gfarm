@@ -23,8 +23,7 @@ gfarm-prun -a -p sudo ln -s $GSDIR/gfsd/gfsdkey.pem $TLSDIR/private/gfsd.key
 gfarm-prun -a -p "
 if [ -x /usr/bin/update-ca-trust ]; then
 	: For_RHEL_derivatives;
-	sudo cp /minica/minica.crt \
-             /usr/share/pki/ca-trust-source/anchors/ 2>/dev/null &&
+	sudo cp /minica/minica.crt /usr/share/pki/ca-trust-source/anchors/ &&
 	sudo update-ca-trust;
 elif [ -d /etc/pki/trust/anchors ] &&
 	[ -x /usr/sbin/update-ca-certificates ]; then

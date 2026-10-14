@@ -85,6 +85,7 @@ rcp_by_rsh() {
     host="$1"
     shift
     files=
+    rcp_status=0
     while [ $# -gt 1 ]; do
 	files="$files $1"
 	shift
@@ -92,11 +93,9 @@ rcp_by_rsh() {
     dst=$1
     for f in $files; do
 	b=`basename $f`
-	case $PRUN_PARALLEL in
-	    no) cat $f | $PRUN_RSH $host "cat > $dst/$b" ;;
-	    yes) cat $f | $PRUN_RSH $host "cat > $dst/$b" & ;;
-	esac
+	cat $f | $PRUN_RSH $host "cat > $dst/$b" || rcp_status=$?
     done
+    return $rcp_status
 }
 
 case $program in
@@ -127,26 +126,38 @@ if [ "X$PRUN_PARALLEL" != Xyes -a "X$PRUN_VERBOSE" = Xyes ]; then
     MESSAGE=echo
 fi
 
+# wait for all background jobs, and keep the exit status of a failed one
+wait_jobs() {
+    for pid in $pids; do
+	wait $pid || status=$?
+    done
+    pids=
+}
+
+status=0
+pids=
 p=0
 for host in `sed -e 's/#.*//' -e '/^[ 	]*$/d' $hostfile | awk '{ print $1 }'`; do
     [ "X$PRUN_ALL_INCLUDE_MYSELF" != Xyes ] &&
 	echo $PRUN_HOSTNAME | grep $host > /dev/null && continue
     $MESSAGE $host
     case $PRUN_PARALLEL$PRUN_STDIN in
-	no) $CMD $host$HOSTSUF $ARG ;;
-	no*) cat $PRUN_STDIN | $CMD $host$HOSTSUF $ARG ;;
-	yes) $CMD $host$HOSTSUF $ARG & ;;
-	yes*) cat $PRUN_STDIN | $CMD $host$HOSTSUF $ARG & ;;
+	no) $CMD $host$HOSTSUF $ARG || status=$? ;;
+	no*) cat $PRUN_STDIN | $CMD $host$HOSTSUF $ARG || status=$? ;;
+	yes) $CMD $host$HOSTSUF $ARG &
+	    pids="$pids $!" ;;
+	yes*) cat $PRUN_STDIN | $CMD $host$HOSTSUF $ARG &
+	    pids="$pids $!" ;;
     esac
     p=$((p + 1))
     if [ $p -ge $PRUN_MAX_JOBS ]; then
 	p=0
-	wait
+	wait_jobs
     fi
 done
-wait
+wait_jobs
 
 [ X$REMOVE_HOSTFILE != X ] && rm -f $hostfile
 [ X$REMOVE_STDIN_FILE != X ] && rm -f $REMOVE_STDIN_FILE
 
-exit 0
+exit $status

@@ -151,7 +151,7 @@ gfs_pio_reopen(struct gfarm_filesystem *fs, GFS_File gf)
 		if (get_storage_context(gf->view_context) != NULL) {
 			e = (*gf->ops->view_reopen)(gf);
 			if (e != GFARM_ERR_NO_ERROR)
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1005820,
 				    "gfs_pio_reopen(fd=%d): view_reopen: %s",
 				    gf->fd, gfarm_error_string(e));
 		}
@@ -269,7 +269,7 @@ reset_and_reopen(GFS_File gf, void *closure)
 	if (gfs_pio_error_unlocked(gf) != GFARM_ERR_STALE_FILE_HANDLE &&
 	    (e = gfs_pio_reopen(fs, gf)) != GFARM_ERR_NO_ERROR) {
 		if (e == GFARM_ERR_GFMD_FAILED_OVER) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1005821,
 			    "gfs_pio_reopen(url=%s): %s",
 			    gf->url, gfarm_error_string(e));
 			ri->must_retry = 1;

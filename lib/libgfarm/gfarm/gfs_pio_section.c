@@ -487,7 +487,7 @@ retry:
 		    gfm_client_connection_failover_count(gf->gfm_server);
 		int gfs_fc = gfs_client_connection_failover_count(gfs_server);
 
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005817,
 		    "gfs_pio_open_section: calling gfs_pio_failover: "
 		    "failover_count=%d/%d/%d", fs_fc, gfm_fc, gfs_fc);
 		if ((e = gfs_pio_failover(gf)) != GFARM_ERR_NO_ERROR) {
@@ -500,7 +500,7 @@ retry:
 		    gfarm_filesystem_get_by_connection(gf->gfm_server));
 		gfm_fc = gfm_client_connection_failover_count(gf->gfm_server);
 		gfs_fc = gfs_client_connection_failover_count(gfs_server);
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005818,
 		    "gfs_pio_open_section: done gfs_pio_failover: "
 		    "failover_count=%d/%d/%d", fs_fc, gfm_fc, gfs_fc);
 
@@ -510,7 +510,7 @@ retry:
 			 * in gfarm_filesystem. so gfs_server did not fail
 			 * over.
 			 */
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1005819,
 			    "reset_process failover_count=%d->%d",
 			    gfs_fc, fs_fc);
 			gfs_client_connection_set_failover_count(

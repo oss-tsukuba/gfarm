@@ -1,11 +1,43 @@
 Release note for Gfarm 2.8.11
 =============================
 
-[NOT-RELEASED-YET]
+[2026.10.13]
+
+New configuration directive
+* spool_server_replicator_max - maximum number of child processes that
+  gfsd creates for file replication.  The default is 512.  0 means
+  unlimited.
+
+Updated feature
+* support RHEL 10 derivatives (e.g. Rocky Linux 10), openSUSE 16,
+  Fedora 44, and Debian 13
+* gfsd - improve the performance of file replication when the
+  connection between gfsd is encrypted by TLS [#1199]
+* libgfarm - directory operations (gfs_readdir(), gfs_seekdir(),
+  gfs_telldir()) are thread-safe
+* gfarm-prun, gfarm-pcp - return the exit status of a failed remote
+  process
+* config-gfarm - use pkg-config and initdb to detect PostgreSQL on
+  RHEL 10 derivatives
+* config-gfarm - support custom gfsd service names in unconfig
+* improve log messages to debug "bad file descriptor" errors [#1099]
 
 Bug fix
 * GSI server authentication does not work with newer OpenSSL
   (e.g. OpenSSL on Ubuntu 22.04) [#1156]
+* gfsd - "bad record mac" error may be logged in file replication when
+  the connection between gfsd is encrypted by TLS, although the replica
+  is created successfully [#1199]
+* replica check - a new replica may be created before
+  replica_check_host_down_thresh passes when source and replica hosts
+  are on different networks [#1203]
+* client may fail with "bad file descriptor" or GFARM_ERR_GFMD_FAILED_OVER
+  error at gfmd failover [#1099]
+* gfm_stat_cksum() - fix memory leak when reading the gfarm2fs.cksum
+  extended attribute of a directory via gfarm2fs
+* gfservice - fix unconfig handling and systemd/SysVinit detection
+* config-gfarm - fix typo "matadata" in the interactive prompt
+* fix compiler warnings with gcc 16
 
 Release note for Gfarm 2.8.10
 =============================
