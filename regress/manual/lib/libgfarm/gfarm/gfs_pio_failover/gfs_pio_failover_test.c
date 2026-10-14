@@ -2136,6 +2136,7 @@ test_write_long_loop(const char **argv)
 	int loop = 0, wstatus, r, i, len, rest_files;
 	char **path;
 	char buf[WRITE_LOOP_BUFSZ];
+	gfarm_off_t st_size;
 	struct gfs_stat st;
 	struct timeval tm;
 
@@ -2211,9 +2212,11 @@ test_write_long_loop(const char **argv)
 				    gfarm_error_string(e));
 				goto end;
 			}
-			if (st.st_size != fsz[i]) {
+			st_size = st.st_size;
+			gfs_stat_free(&st);
+			if (st_size != fsz[i]) {
 				msg("gf[%d]: size: expected %ld but %ld \n", i,
-				    (long)fsz[i], (long)st.st_size);
+				    (long)fsz[i], (long)st_size);
 				e = GFARM_ERR_UNKNOWN;
 				goto end;
 			}
@@ -2279,6 +2282,7 @@ test_sendfile_long_loop(const char **argv)
 	int loop = 0, wstatus, r, i, rest_files;
 	gfarm_off_t len;
 	char **path;
+	gfarm_off_t st_size;
 	struct gfs_stat st;
 	struct timeval tm;
 
@@ -2357,9 +2361,11 @@ test_sendfile_long_loop(const char **argv)
 				    gfarm_error_string(e));
 				goto end;
 			}
-			if (st.st_size != fsz[i]) {
+			st_size = st.st_size;
+			gfs_stat_free(&st);
+			if (st_size != fsz[i]) {
 				msg("gf[%d]: size: expected %ld but %ld \n", i,
-				    (long)fsz[i], (long)st.st_size);
+				    (long)fsz[i], st_size);
 				e = GFARM_ERR_UNKNOWN;
 				goto end;
 			}
