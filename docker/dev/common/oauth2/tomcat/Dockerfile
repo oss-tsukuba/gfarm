@@ -27,12 +27,19 @@ ENV no_proxy=${no_proxy}
 
 RUN mkdir -p /root/.m2
 
-COPY docker/dev/common/oauth2/tomcat/settings-proxy.xml \
-    /root/.m2/settings-proxy.xml
+COPY docker/dev/common/oauth2/tomcat/settings.xml.in \
+    /root/.m2/settings.xml.in
 
+# Environment variable references such as ${env.GFDOCKER_PROXY_PORT}
+# cannot be reliably used for proxy.port with Maven 3.9.16, therefore
+# actual values are substituted into a template during image build.
 RUN if [ "$GFDOCKER_ENABLE_PROXY" = "true" ]; then \
-        cp /root/.m2/settings-proxy.xml \
-           /root/.m2/settings.xml; \
+    sed \
+        -e "s|@PROXY_HOST@|$GFDOCKER_PROXY_HOST|g" \
+        -e "s|@PROXY_PORT@|$GFDOCKER_PROXY_PORT|g" \
+        -e "s|@NO_PROXY@|$no_proxy|g" \
+        /root/.m2/settings.xml.in \
+        > /root/.m2/settings.xml; \
     fi
 
 RUN mvn package
