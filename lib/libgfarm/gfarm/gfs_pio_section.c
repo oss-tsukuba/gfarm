@@ -532,6 +532,7 @@ static gfarm_error_t
 connect_and_open(GFS_File gf, const char *hostname, int port)
 {
 	gfarm_error_t e;
+	struct gfm_connection *gfm_server;
 	struct gfs_connection *gfs_server;
 	int nretry = 1;
 	gfarm_timerval_t t1, t2, t3;
@@ -544,10 +545,21 @@ connect_and_open(GFS_File gf, const char *hostname, int port)
 	gfs_profile(gfarm_gettimerval(&t1));
 
 retry:
-	gfm_client_connection_addref(gf->gfm_server);
-	e = gfs_client_connection_and_process_acquire(&gf->gfm_server,
+	gfm_server = gf->gfm_server;
+	gfm_client_connection_addref(gfm_server);
+	e = gfs_client_connection_and_process_acquire(&gfm_server,
 	    hostname, port, &gfs_server, NULL);
-	gfm_client_connection_delref(gf->gfm_server);
+	if (gfm_server != gf->gfm_server) {
+		/*
+		 * gfm_server was replaced in
+		 * gfs_client_gfmd_failover_at_connect() without
+		 * reset_and_reopen() updating gf->gfm_server.
+		 * transfer the reference of the new connection to gf.
+		 */
+		gfm_client_connection_free(gf->gfm_server);
+		gf->gfm_server = gfm_server;
+	} else
+		gfm_client_connection_delref(gfm_server);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001350,
 		    "acquirement of client connection failed: %s",
