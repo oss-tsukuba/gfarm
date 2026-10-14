@@ -272,6 +272,18 @@ reset_and_reopen(GFS_File gf, void *closure)
 			gflog_debug(GFARM_MSG_1005821,
 			    "gfs_pio_reopen(url=%s): %s",
 			    gf->url, gfarm_error_string(e));
+			/*
+			 * gfsd reconnected to gfmd after
+			 * gfarm_client_process_reset() above, and it
+			 * rejects any fd until the process is reset again.
+			 * make the failover_count of the gfs_connection
+			 * stale, to call gfarm_client_process_reset()
+			 * at the next retry.
+			 */
+			if (sc != NULL &&
+			    gfs_client_connection_failover_count(sc) >= fc)
+				gfs_client_connection_set_failover_count(
+				    sc, fc - 1);
 			ri->must_retry = 1;
 			return (0);
 		}
