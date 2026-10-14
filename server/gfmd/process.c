@@ -754,6 +754,9 @@ process_new_generation_by_fd_abort(struct process *process, struct peer *peer,
 	struct file_opening *fo;
 	gfarm_error_t e = process_get_file_opening(process, peer, fd,
 	    &fo, diag);
+	gfarm_ino_t inum;
+	gfarm_uint64_t igen;
+	gfarm_off_t isz;
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1005485,
@@ -765,6 +768,11 @@ process_new_generation_by_fd_abort(struct process *process, struct peer *peer,
 		return;
 	}
 
+	/* process_new_generation_done() frees `fo' */
+	inum = inode_get_number(fo->inode);
+	igen = inode_get_gen(fo->inode);
+	isz = inode_get_size(fo->inode);
+
 	e = process_new_generation_done(process, peer, fd,
 	    INODE_CLOSE_V2_4, reason, 0, NULL, NULL, diag);
 
@@ -773,9 +781,8 @@ process_new_generation_by_fd_abort(struct process *process, struct peer *peer,
 	    "during GFM_PROTO_CLOSE_WRITE: "
 	    "inode %lld:%lld may be lost. (size:%lld): %s",
 	    diag, peer_get_hostname(peer), gfarm_error_string(reason),
-	    (long long)inode_get_number(fo->inode),
-	    (long long)inode_get_gen(fo->inode),
-	    (long long)inode_get_size(fo->inode), gfarm_error_string(e));
+	    (long long)inum, (long long)igen, (long long)isz,
+	    gfarm_error_string(e));
 }
 
 gfarm_error_t
