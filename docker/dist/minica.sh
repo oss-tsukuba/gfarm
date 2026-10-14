@@ -22,7 +22,8 @@ fi
 
 [ -f minica.pem ] && exit 0
 
-docker build . -t gfarm-minica
+# MINICA_SKIP_BUILD is set when the gfarm-minica image is already built
+[ -n "${MINICA_SKIP_BUILD:-}" ] || docker build . -t gfarm-minica
 
 MINICA="docker run --rm -u $(id -u):$(id -g) -w /minica -v .:/minica gfarm-minica"
 

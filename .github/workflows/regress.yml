@@ -14,18 +14,48 @@ jobs:
       - name: checkout
         uses: actions/checkout@v4
 
-      - name: docker compose build
+      - name: set up docker buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: get user
+        id: user
+        run: |
+          echo "name=$(id -un)" >> "$GITHUB_OUTPUT"
+          echo "uid=$(id -u)" >> "$GITHUB_OUTPUT"
+
+      - name: build minica image
+        uses: docker/build-push-action@v6
+        with:
+          context: docker/dist/minica
+          tags: gfarm-minica
+          load: true
+          cache-from: type=gha,scope=gfarm-minica
+          cache-to: type=gha,mode=max,scope=gfarm-minica
+
+      - name: build gfarm image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/dist/ubuntu/Dockerfile
+          tags: gfarm-ubuntu
+          load: true
+          build-args: |
+            USERNAME=${{ steps.user.outputs.name }}
+            UID=${{ steps.user.outputs.uid }}
+          cache-from: type=gha,scope=gfarm-ubuntu
+          cache-to: type=gha,mode=max,scope=gfarm-ubuntu
+
+      - name: create certificates
         id: compose
         run: |
           cd docker/dist
-          sh ./minica.sh
-          docker compose build --build-arg UID=$(id -u) c1
+          MINICA_SKIP_BUILD=1 sh ./minica.sh
 
       - name: docker compose up
         id: up
         run: |
           cd docker/dist
-          docker compose up -d
+          docker compose up -d --no-build
 
       - name: build_all
         id: build_all
