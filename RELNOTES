@@ -1,7 +1,7 @@
 Release note for Gfarm 2.8.11
 =============================
 
-[2026.10.13]
+[2026.10.15]
 
 New configuration directive
 * spool_server_replicator_max - maximum number of child processes that
@@ -33,9 +33,17 @@ Bug fix
   are on different networks [#1203]
 * client may fail with "bad file descriptor" or GFARM_ERR_GFMD_FAILED_OVER
   error at gfmd failover [#1099]
+* gfsd - client may not be able to complete failover, and may keep
+  failing with GFARM_ERR_GFMD_FAILED_OVER error, when gfsd reconnects
+  to gfmd during gfmd failover
+* gfmd - may crash due to NULL pointer access in the journal store
+  thread when gfmd is shutting down
+* gfmd - may crash due to use-after-free when the connection to gfsd
+  is lost while gfsd is closing a file opened for writing
 * gfm_stat_cksum() - fix memory leak when reading the gfarm2fs.cksum
   extended attribute of a directory via gfarm2fs
 * gfservice - fix unconfig handling and systemd/SysVinit detection
+* gfservice - copy _gfarmfs shared keys to both gfmd and gfsd hosts
 * config-gfarm - fix typo "matadata" in the interactive prompt
 * fix compiler warnings with gcc 16
 
