@@ -667,7 +667,7 @@ failover_notify_drain(const char *diag)
 		t.tv_sec = t.tv_usec = 0;
 		rv = select(failover_notify_recv_fd + 1, &fds, NULL, NULL, &t);
 #endif /* !HAVE_POLL */
-		if (rv == -1 && errno == EINTR)
+		if (rv == -1 && (errno == EINTR || errno == EAGAIN))
 			continue;
 		if (rv <= 0)
 			break;
