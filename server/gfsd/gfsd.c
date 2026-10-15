@@ -630,6 +630,51 @@ failover_notified(int do_logging, const char *diag)
 	    do_logging, "failover", diag);
 }
 
+/*
+ * discard failover notifications which have already arrived,
+ * because reconnecting to gfmd handles them.
+ * otherwise, the pending notification causes another reconnection
+ * after GFS_PROTO_PROCESS_RESET, and invalidates the process reset.
+ */
+static void
+failover_notify_drain(const char *diag)
+{
+	int rv;
+#ifdef HAVE_POLL
+	struct pollfd fds;
+#else /* !HAVE_POLL */
+	fd_set fds;
+	struct timeval t;
+#endif /* !HAVE_POLL */
+
+	if (!USING_PIPE_FOR_FAILOVER_SIGNAL(my_type) ||
+	    failover_notify_recv_fd == -1)
+		return;
+#ifndef HAVE_POLL
+	if (failover_notify_recv_fd >= FD_SETSIZE)
+		fatal(GFARM_MSG_UNFIXED,
+		    "too big descriptor: failover_fd:%d exceeds %d",
+		    failover_notify_recv_fd, FD_SETSIZE);
+#endif /* !HAVE_POLL */
+	for (;;) {
+#ifdef HAVE_POLL
+		fds.fd = failover_notify_recv_fd;
+		fds.events = POLLIN;
+		rv = poll(&fds, 1, 0);
+#else /* !HAVE_POLL */
+		FD_ZERO(&fds);
+		FD_SET(failover_notify_recv_fd, &fds);
+		t.tv_sec = t.tv_usec = 0;
+		rv = select(failover_notify_recv_fd + 1, &fds, NULL, NULL, &t);
+#endif /* !HAVE_POLL */
+		if (rv == -1 && (errno == EINTR || errno == EAGAIN))
+			continue;
+		if (rv <= 0)
+			break;
+		failover_notified(debug_mode, diag);
+	}
+}
+
 static int
 sleep_or_wait_failover_recv_fd(int seconds)
 {
@@ -886,6 +931,7 @@ reconnect_gfm_server_for_failover(const char *diag)
 
 	gflog_notice(GFARM_MSG_1003348,
 	    "%s: gfmd may be failed over, try to reconnecting", diag);
+	failover_notify_drain(diag);
 	free_gfm_server();
 	if ((e = connect_gfm_server(diag))
 	    != GFARM_ERR_NO_ERROR) {
