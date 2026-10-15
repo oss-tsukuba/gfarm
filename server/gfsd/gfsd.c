@@ -652,7 +652,7 @@ failover_notify_drain(const char *diag)
 		return;
 #ifndef HAVE_POLL
 	if (failover_notify_recv_fd >= FD_SETSIZE)
-		fatal(GFARM_MSG_UNFIXED,
+		fatal(GFARM_MSG_1005870,
 		    "too big descriptor: failover_fd:%d exceeds %d",
 		    failover_notify_recv_fd, FD_SETSIZE);
 #endif /* !HAVE_POLL */
