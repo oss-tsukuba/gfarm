@@ -28,10 +28,10 @@ REGRESS_FULL=false
 REGRESS_GFARM2FS=false
 REGRESS_GFARM2FS_FULL=false
 
-: ${ASAN_OPTIONS=halt_on_error=false,log_exe_name=true,log_path=/var/tmp/gfarm.log.asan}
-: ${LSAN_OPTIONS=halt_on_error=false,log_exe_name=true,log_path=/var/tmp/gfarm.log.lsan}
-: ${UBSAN_OPTIONS=halt_on_error=false,log_exe_name=true,log_path=/var/tmp/gfarm.log.ubsan}
-: ${TSAN_OPTIONS=halt_on_error=false,log_exe_name=true,log_path=/var/tmp/gfarm.log.tsan}
+: ${ASAN_OPTIONS=halt_on_error=false:log_exe_name=true:log_path=/var/tmp/gfarm.log.asan}
+: ${LSAN_OPTIONS=halt_on_error=false:log_exe_name=true:log_path=/var/tmp/gfarm.log.lsan}
+: ${UBSAN_OPTIONS=halt_on_error=false:log_exe_name=true:log_path=/var/tmp/gfarm.log.ubsan}
+: ${TSAN_OPTIONS=halt_on_error=false:log_exe_name=true:log_path=/var/tmp/gfarm.log.tsan}
 export ASAN_OPTIONS LSAN_OPTIONS UBSAN_OPTIONS TSAN_OPTIONS
 
 while [ $# -gt 0 ]
