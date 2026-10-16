@@ -271,8 +271,13 @@ db_journal_set_sync_op(gfarm_error_t (*func)(gfarm_uint64_t))
 gfarm_error_t
 db_journal_terminate(void)
 {
-	store_ops->terminate();
+	/*
+	 * close the journal file before terminating store_ops, so that
+	 * db_journal_store_thread() does not use store_ops after this.
+	 * this is called with db_access_mutex locked by db_terminate().
+	 */
 	journal_file_close(self_jf);
+	store_ops->terminate();
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -4322,6 +4327,16 @@ db_journal_store_thread(void *arg)
 		/* lock to avoid race condition between db_thread. */
 		gfarm_mutex_lock(get_db_access_mutex(), diag,
 		    DB_ACCESS_MUTEX_DIAG);
+		/*
+		 * db_terminate() may have terminated store_ops while
+		 * waiting for db_access_mutex.  the records remain in
+		 * the journal file, and will be stored at next boot.
+		 */
+		if (journal_file_is_closed(self_jf)) {
+			gfarm_mutex_unlock(get_db_access_mutex(), diag,
+			    DB_ACCESS_MUTEX_DIAG);
+			goto end;
+		}
 retry:
 		GFARM_STAILQ_FOREACH(rec, &recs, next) {
 #ifdef DEBUG_JOURNAL
