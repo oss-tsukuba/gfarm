@@ -20,4 +20,5 @@ include $(top_srcdir)/makes/prog.mk
 ###
 
 $(OBJS): $(DEPGFARMINC) \
-	$(GFUTIL_SRCDIR)/queue.h $(GFARMLIB_SRCDIR)/gfs_pio.h # for "gfs_pio.h"
+	$(GFUTIL_SRCDIR)/queue.h $(GFARMLIB_SRCDIR)/gfs_pio.h \
+	$(GFUTIL_SRCDIR)/assert.h # for "gfs_pio.h"

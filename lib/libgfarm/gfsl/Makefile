@@ -57,25 +57,30 @@ test:
 
 ### for library
 
-$(OBJS): $(DEPGFSLINC) $(DEPGFARMINC)
+$(OBJS): $(DEPGFSLINC) $(INC_BUILDDIR)/gfarm_config.h $(INC_SRCDIR)/error.h \
+	$(INC_SRCDIR)/gflog.h $(INC_SRCDIR)/gfarm_msg_enums.h $(INC_SRCDIR)/gfarm_misc.h
 
 include $(top_srcdir)/makes/lib.mk
 include $(top_srcdir)/makes/gflog.mk
 
 # dependencies
-gss.lo: $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/gfutil.h
+gss.lo: $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/assert.h $(GFUTIL_SRCDIR)/thrsubr.h
 gss.lo: gfsl_config.h tcputil.h
-misc.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/thrsubr.h gfsl_config.h $(top_builddir)/makes/config.mk # $(GFARM_INSTALL_ETC_DIR) -> $(sysconfdir)
-session.lo: $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/gfutil.h
+misc.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/thrsubr.h gfsl_config.h $(top_builddir)/makes/config.mk misc.h # $(GFARM_INSTALL_ETC_DIR) -> $(sysconfdir)
+session.lo: $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/assert.h $(GFUTIL_SRCDIR)/thrsubr.h
 session.lo: tcputil.h misc.h
 tcputil.lo: $(GFUTIL_SRCDIR)/gfnetdb.h $(GFUTIL_SRCDIR)/gfutil.h tcputil.h
 
 server.o server2.o client.o client2.o: $(GFUTIL_SRCDIR)/gfutil.h \
+    $(INC_BUILDDIR)/gfarm_config.h $(INC_SRCDIR)/error.h \
+    $(INC_SRCDIR)/gflog.h $(INC_SRCDIR)/gfarm_msg_enums.h \
     $(INC_SRCDIR)/gfarm_misc.h tcputil.h \
     gfsl_config.h gfsl_gss.h gfsl_secure_session.h misc.h scarg.h
-server.o server2.o:
-scarg.o: $(INC_SRCDIR)/gfarm_misc.h gfsl_gss.h misc.h scarg.h
-scsub.o: gfsl_secure_session.h scarg.h \
+server.o: $(GFUTIL_SRCDIR)/gfnetdb.h
+scarg.o: $(INC_BUILDDIR)/gfarm_config.h $(INC_SRCDIR)/error.h \
+    $(INC_SRCDIR)/gfarm_misc.h gfsl_gss.h misc.h scarg.h
+scsub.o: gfsl_config.h gfsl_gss.h gfsl_secure_session.h scarg.h \
+    $(INC_BUILDDIR)/gfarm_config.h $(INC_SRCDIR)/error.h \
     $(INC_SRCDIR)/gfarm_misc.h tcputil.h
 
 ### for programs

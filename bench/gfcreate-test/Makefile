@@ -16,3 +16,7 @@ OBJS = $(PROGRAM).o
 all: $(PROGRAM)
 
 include $(top_srcdir)/makes/prog.mk
+
+###
+
+$(OBJS): $(DEPGFARMINC) $(GFARMLIB_SRCDIR)/gfarm_path.h $(GFARMLIB_SRCDIR)/gfs_pio.h

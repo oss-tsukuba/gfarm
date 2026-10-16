@@ -36,7 +36,7 @@ include $(GFMD_SRCDIR)/Makefile.inc
 
 ###
 
-$(OBJS): $(DEPGFARMINC)
+$(OBJS): $(DEPGFARMINC) $(GFARMLIB_SRCDIR)/crc32.h $(GFARMLIB_SRCDIR)/metadb_server.h $(GFARMLIB_SRCDIR)/quota_info.h $(GFARMLIB_SRCDIR)/xattr_info.h $(GFUTIL_SRCDIR)/assert.h $(GFUTIL_SRCDIR)/thrbarrier.h db_journal_test.h $(GFMD_SRCDIR)/db_common.h
 
 $(OBJS): $(DEPGFARMINC) $(DEPGFMDINC)
 

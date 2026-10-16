@@ -17,3 +17,7 @@ OBJS = gfperf-read-main.o
 all: $(PROGRAM)
 
 include $(top_srcdir)/makes/prog.mk
+
+###
+
+$(OBJS): $(DEPGFARMINC) $(srcdir)/../gfperf-lib/gfperf-lib.h

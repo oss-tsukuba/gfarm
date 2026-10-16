@@ -21,6 +21,8 @@
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
 
+#include "proctitle.h"
+
 /*
  * choose implmentation
  */

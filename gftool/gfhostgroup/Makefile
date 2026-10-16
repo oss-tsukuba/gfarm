@@ -24,4 +24,5 @@ $(OBJS): $(DEPGFARMINC) \
 	$(GFARMLIB_SRCDIR)/fsngroup_info.h \
 	$(GFARMLIB_SRCDIR)/gfarm_path.h \
 	$(GFARMLIB_SRCDIR)/gfm_client.h \
-	$(GFARMLIB_SRCDIR)/lookup.h
+	$(GFARMLIB_SRCDIR)/lookup.h \
+	$(GFUTIL_SRCDIR)/assert.h

@@ -23,5 +23,5 @@ include $(top_srcdir)/makes/gflog.mk
 
 ###
 
-$(OBJS): queue.h $(SRCS)
+$(OBJS): queue.h $(SRCS) $(top_srcdir)/linux/include/ug_idmap.h
 include $(optional_rule)

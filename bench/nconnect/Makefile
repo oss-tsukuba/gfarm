@@ -15,3 +15,7 @@ OBJS = nconnect.o
 all: $(PROGRAM)
 
 include $(top_srcdir)/makes/prog.mk
+
+###
+
+$(OBJS): $(INC_BUILDDIR)/gfarm_config.h

@@ -26,3 +26,6 @@ include $(top_srcdir)/makes/prog.mk
 include $(top_srcdir)/makes/gflog.mk
 
 ###
+###
+
+$(OBJS): $(DEPGFARMINC) $(GFARMLIB_SRCDIR)/config.h $(GFARMLIB_SRCDIR)/context.h $(GFARMLIB_SRCDIR)/gfm_client.h $(GFARMLIB_SRCDIR)/gfpath.h $(GFARMLIB_SRCDIR)/gfs_client.h $(GFARMLIB_SRCDIR)/gfs_rdma.h $(GFARMLIB_SRCDIR)/lookup.h $(GFARMLIB_SRCDIR)/metadb_server.h gfskd.h $(top_srcdir)/linux/include/gfsk_if.h

@@ -23,4 +23,8 @@ include $(top_srcdir)/makes/prog.mk
 $(OBJS): $(DEPGFARMINC) \
 	$(GFUTIL_SRCDIR)/hash.h \
 	$(GFARMLIB_SRCDIR)/config.h \
-	$(GFARMLIB_SRCDIR)/gfs_client.h
+	$(GFARMLIB_SRCDIR)/gfs_client.h \
+	$(GFARMLIB_SRCDIR)/gfarm_path.h \
+	$(GFARMLIB_SRCDIR)/gfm_client.h \
+	$(GFARMLIB_SRCDIR)/liberror.h \
+	$(GFARMLIB_SRCDIR)/lookup.h

@@ -29,3 +29,5 @@ include $(top_srcdir)/makes/lib.mk
 include $(top_srcdir)/makes/gflog.mk
 
 util.lo: gfperf-lib.h
+create_file.lo: gfperf-lib.h $(DEPGFARMINC) $(GFARMLIB_SRCDIR)/gfs_pio.h $(GFARMLIB_SRCDIR)/host.h
+gfperf-util.lo: gfperf-lib.h $(DEPGFARMINC)

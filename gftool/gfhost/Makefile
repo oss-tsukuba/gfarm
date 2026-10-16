@@ -28,4 +28,7 @@ $(OBJS): $(DEPGFARMINC) \
 	$(GFARMLIB_SRCDIR)/gfs_client.h \
 	$(GFARMLIB_SRCDIR)/lookup.h \
 	$(GFARMLIB_SRCDIR)/filesystem.h \
-	$(GFARMLIB_SRCDIR)/config.h
+	$(GFARMLIB_SRCDIR)/config.h \
+	$(GFARMLIB_SRCDIR)/context.h \
+	$(GFARMLIB_SRCDIR)/gfarm_path.h \
+	$(GFUTIL_SRCDIR)/assert.h

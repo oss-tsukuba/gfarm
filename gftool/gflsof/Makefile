@@ -21,4 +21,5 @@ $(OBJS): $(DEPGFARMINC) \
 	$(GFARMLIB_SRCDIR)/gfm_proto.h \
 	$(GFARMLIB_SRCDIR)/gfm_client.h \
 	$(GFARMLIB_SRCDIR)/lookup.h \
-	$(GFARMLIB_SRCDIR)/gfarm_path.h
+	$(GFARMLIB_SRCDIR)/gfarm_path.h \
+	$(GFUTIL_SRCDIR)/hash.h

@@ -43,7 +43,7 @@ include $(top_srcdir)/makes/prog.mk
 
 ###
 
-$(OBJS): $(DEPGFARMINC)
+$(OBJS): $(DEPGFARMINC) $(GFARMLIB_SRCDIR)/context.h $(GFARMLIB_SRCDIR)/gfm_proto.h $(GFARMLIB_SRCDIR)/metadb_common.h $(GFARMLIB_SRCDIR)/metadb_server.h $(GFARMLIB_SRCDIR)/quota_info.h $(GFARMLIB_SRCDIR)/xattr_info.h $(GFUTIL_SRCDIR)/assert.h $(GFUTIL_SRCDIR)/nanosec.h $(GFMD_SRCDIR)/db_common.h $(GFMD_SRCDIR)/db_ops.h $(GFMD_SRCDIR)/internal_host_info.h $(GFMD_SRCDIR)/quota.h
 
 $(OBJS): $(DEPGFARMINC) \
 	$(GFUTIL_SRCDIR)/gfutil.h \
