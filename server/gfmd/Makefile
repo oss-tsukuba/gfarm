@@ -60,6 +60,7 @@ $(OBJS): $(DEPGFARMINC) $(DEPGFMDINC) \
 	job.h \
 	replica_check.h \
 	gfmd.h \
+	$(GFARMLIB_SRCDIR)/metadb_common.h \
 	$(GFARMLIB_SRCDIR)/metadb_server.h \
 	$(GFARMLIB_SRCDIR)/quota_info.h \
 	$(GFARMLIB_SRCDIR)/xattr_info.h \

@@ -71,11 +71,15 @@ session.lo: tcputil.h misc.h
 tcputil.lo: $(GFUTIL_SRCDIR)/gfnetdb.h $(GFUTIL_SRCDIR)/gfutil.h tcputil.h
 
 server.o server2.o client.o client2.o: $(GFUTIL_SRCDIR)/gfutil.h \
+    $(INC_BUILDDIR)/gfarm_config.h $(INC_SRCDIR)/error.h \
+    $(INC_SRCDIR)/gflog.h $(INC_SRCDIR)/gfarm_msg_enums.h \
     $(INC_SRCDIR)/gfarm_misc.h tcputil.h \
     gfsl_config.h gfsl_gss.h gfsl_secure_session.h misc.h scarg.h
-server.o server2.o:
-scarg.o: $(INC_SRCDIR)/gfarm_misc.h gfsl_gss.h misc.h scarg.h
-scsub.o: gfsl_secure_session.h scarg.h \
+server.o: $(GFUTIL_SRCDIR)/gfnetdb.h
+scarg.o: $(INC_BUILDDIR)/gfarm_config.h $(INC_SRCDIR)/error.h \
+    $(INC_SRCDIR)/gfarm_misc.h gfsl_gss.h misc.h scarg.h
+scsub.o: gfsl_config.h gfsl_gss.h gfsl_secure_session.h scarg.h \
+    $(INC_BUILDDIR)/gfarm_config.h $(INC_SRCDIR)/error.h \
     $(INC_SRCDIR)/gfarm_misc.h tcputil.h
 
 ### for programs

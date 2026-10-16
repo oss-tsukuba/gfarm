@@ -254,8 +254,8 @@ auth_client_gsi.lo: $(GFSL_SRCDIR)/gfsl_secure_session.h gss.h \
 auth_client_gss.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/gfevent.h \
 	$(GFSL_SRCDIR)/gfsl_secure_session.h gss.h \
 	liberror.h gfp_xdr.h io_fd.h io_gfsl.h auth.h auth_gss.h gfarm_gss.h \
-	gfm_proto.h gfs_proto.h
-auth_client_sasl.lo: $(GFUTIL_SRCDIR)/gfutil.h context.h gfp_xdr.h io_tls.h auth.h $(GFUTIL_SRCDIR)/gfevent.h
+	gfm_proto.h gfs_proto.h $(GFUTIL_SRCDIR)/assert.h
+auth_client_sasl.lo: $(GFUTIL_SRCDIR)/gfutil.h context.h gfp_xdr.h io_tls.h auth.h $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/assert.h
 auth_client_tls.lo: context.h gfp_xdr.h io_tls.h auth.h $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/assert.h
 auth_common.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/thrsubr.h context.h liberror.h auth.h $(GFUTIL_SRCDIR)/msgdigest.h config.h
 auth_common_kerberos.lo: $(GFSL_SRCDIR)/gfsl_secure_session.h gss.h \
@@ -277,7 +277,7 @@ auth_server_gsi.lo: $(GFSL_SRCDIR)/gfsl_secure_session.h gss.h \
 auth_server_gss.lo: $(GFUTIL_SRCDIR)/gfutil.h \
 	$(GFSL_SRCDIR)/gfsl_secure_session.h gss.h\
 	 liberror.h gfp_xdr.h io_fd.h io_gfsl.h auth.h auth_gss.h gfarm_gss.h \
-	gfm_proto.h gfs_proto.h
+	gfm_proto.h gfs_proto.h $(GFUTIL_SRCDIR)/assert.h
 auth_server_uid.lo: $(GFUTIL_SRCDIR)/gfutil.h auth.h gfs_proto.h gfm_proto.h gfm_client.h gfm_client.h metadb_server.h $(GFUTIL_SRCDIR)/assert.h
 config.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/hash.h $(GFUTIL_SRCDIR)/lru_cache.h context.h liberror.h patmatch.h hostspec.h known_network.h param.h sockopt.h host.h auth.h gfpath.h config.h gfm_proto.h gfs_proto.h gfs_profile.h gfm_client.h lookup.h metadb_server.h filesystem.h conn_hash.h conn_cache.h humanize_number.h $(top_builddir)/makes/config.mk $(GFUTIL_SRCDIR)/msgdigest.h $(GFUTIL_SRCDIR)/thrsubr.h gfs_rdma.h $(GFUTIL_SRCDIR)/assert.h # $(GFARM_CONFIG) -> $(sysconfdir)
 auth_server_sasl.lo: $(GFUTIL_SRCDIR)/gfutil.h context.h gfp_xdr.h io_tls.h auth.h
