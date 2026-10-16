@@ -75,7 +75,7 @@ include $(top_srcdir)/makes/gflog.mk
 ###
 
 $(OBJS): $(DEPGFARMINC)
-backtrace.lo: gfutil.h
+backtrace.lo:
 daemon.lo: gfutil.h
 gfevent.lo: $(INC_SRCDIR)/gfarm_misc.h gfutil.h gfevent.h assert.h
 gfnetdb.lo: gfnetdb.h thrsubr.h
@@ -88,7 +88,7 @@ lru_cache.lo: lru_cache.h assert.h gfutil.h thrsubr.h
 msgdigest.lo: msgdigest.h thrsubr.h
 nanosec.lo: nanosec.h
 privlock.lo: nanosec.h thrsubr.h gfutil.h
-proctitle.lo: proctitle.h
+proctitle.lo:
 random.lo: thrsubr.h
 sleep.lo: nanosec.h gfutil.h
 strarray.lo:

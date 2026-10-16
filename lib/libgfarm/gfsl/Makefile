@@ -57,7 +57,8 @@ test:
 
 ### for library
 
-$(OBJS): $(DEPGFSLINC) $(DEPGFARMINC)
+$(OBJS): $(DEPGFSLINC) $(INC_BUILDDIR)/gfarm_config.h $(INC_SRCDIR)/error.h \
+	$(INC_SRCDIR)/gflog.h $(INC_SRCDIR)/gfarm_msg_enums.h $(INC_SRCDIR)/gfarm_misc.h
 
 include $(top_srcdir)/makes/lib.mk
 include $(top_srcdir)/makes/gflog.mk
