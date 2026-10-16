@@ -404,11 +404,11 @@ struct gfs_pio_ops gfs_pio_view_section_ops = {
 	gfs_pio_view_section_fsync,
 	gfs_pio_view_section_fstat,
 	gfs_pio_view_section_reopen,
-	gfs_pio_view_section_revoke,
 	gfs_pio_view_section_write,
 	gfs_pio_view_section_cksum,
 	gfs_pio_view_section_recvfile,
 	gfs_pio_view_section_sendfile,
+	gfs_pio_view_section_revoke,
 };
 
 

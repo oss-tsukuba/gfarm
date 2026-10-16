@@ -576,11 +576,11 @@ struct gfs_storage_ops gfs_pio_local_storage_ops = {
 	gfs_pio_local_storage_fsync,
 	gfs_pio_local_storage_fstat,
 	gfs_pio_local_storage_reopen,
-	gfs_pio_local_storage_revoke,
 	gfs_pio_local_storage_write,
 	gfs_pio_local_storage_cksum,
 	gfs_pio_local_storage_recvfile,
 	gfs_pio_local_storage_sendfile,
+	gfs_pio_local_storage_revoke,
 };
 
 gfarm_error_t
