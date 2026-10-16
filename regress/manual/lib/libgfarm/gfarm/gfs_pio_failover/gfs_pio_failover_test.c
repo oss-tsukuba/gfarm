@@ -2120,10 +2120,83 @@ test_recvfile_close_recvfile(const char **argv)
 	chkerrno(close(lfd0), "close#0");
 }
 
+#define WRITE_LOOP_BUFSZ 512
+
+/*
+ * fill a block with the pattern which identifies the file, the loop
+ * and the block, to detect data written to a wrong file.
+ */
+static void
+write_loop_fill_block(char *buf, int file, int loop, int block)
+{
+	char c = 'a' + file % 26;
+	int n;
+
+	memset(buf, c, WRITE_LOOP_BUFSZ);
+	n = snprintf(buf, WRITE_LOOP_BUFSZ, "file=%d loop=%d block=%d\n",
+	    file, loop, block);
+	if (n >= 0 && n < WRITE_LOOP_BUFSZ)
+		buf[n] = c; /* overwrite '\0' */
+}
+
+static gfarm_error_t
+write_loop_verify(const char *path, int file, int loop, int filesz)
+{
+	gfarm_error_t e, e2;
+	GFS_File gf;
+	char buf[WRITE_LOOP_BUFSZ], expected[WRITE_LOOP_BUFSZ], head[64];
+	int off, n, len, k;
+
+	e = gfs_pio_open(path, GFARM_FILE_RDONLY, &gf);
+	if (e != GFARM_ERR_NO_ERROR) {
+		msg("%s: open for verify: %s\n", path, gfarm_error_string(e));
+		return (e);
+	}
+	for (off = 0; off < filesz; off += WRITE_LOOP_BUFSZ) {
+		for (n = 0; n < WRITE_LOOP_BUFSZ; n += len) {
+			e = gfs_pio_read(gf, buf + n, WRITE_LOOP_BUFSZ - n,
+			    &len);
+			if (e != GFARM_ERR_NO_ERROR) {
+				msg("%s: read for verify: %s\n", path,
+				    gfarm_error_string(e));
+				goto close;
+			}
+			if (len == 0) {
+				msg("%s: unexpected EOF at %d\n",
+				    path, off + n);
+				e = GFARM_ERR_UNKNOWN;
+				goto close;
+			}
+		}
+		write_loop_fill_block(expected, file, loop,
+		    off / WRITE_LOOP_BUFSZ);
+		if (memcmp(buf, expected, WRITE_LOOP_BUFSZ) != 0) {
+			for (k = 0; k < sizeof(head) - 1; k++)
+				head[k] = buf[k] >= ' ' && buf[k] <= '~' ?
+				    buf[k] : '.';
+			head[k] = '\0';
+			msg("%s: wrong content at %d: "
+			    "expected file=%d loop=%d block=%d, but \"%s\"\n",
+			    path, off, file, loop, off / WRITE_LOOP_BUFSZ,
+			    head);
+			e = GFARM_ERR_UNKNOWN;
+			goto close;
+		}
+	}
+close:
+	e2 = gfs_pio_close(gf);
+	if (e2 != GFARM_ERR_NO_ERROR) {
+		msg("%s: close for verify: %s\n", path,
+		    gfarm_error_string(e2));
+		if (e == GFARM_ERR_NO_ERROR)
+			e = e2;
+	}
+	return (e);
+}
+
 static void
 test_write_long_loop(const char **argv)
 {
-#define WRITE_LOOP_BUFSZ 512
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	const char *path_base = argv[0];
 	int tmlimit = atoi(argv[1]);
@@ -2157,7 +2230,6 @@ test_write_long_loop(const char **argv)
 
 	gettimeofday(&tm, NULL);
 	tm.tv_sec += tmlimit;
-	memset(buf, 'a', WRITE_LOOP_BUFSZ);
 
 	for (i = 0; i < files; ++i) {
 		snprintf(path[i], PATH_MAX, "%s.%d", path_base, i);
@@ -2181,6 +2253,8 @@ test_write_long_loop(const char **argv)
 		memset(fsz, 0, files * sizeof(size_t));
 		while (rest_files > 0) {
 			for (i = 0; i < files; ++i) {
+				write_loop_fill_block(buf, i, loop,
+				    fsz[i] / WRITE_LOOP_BUFSZ);
 				e = gfs_pio_write(gf[i], buf,
 				    WRITE_LOOP_BUFSZ, &len);
 				if (e != GFARM_ERR_NO_ERROR) {
@@ -2221,6 +2295,13 @@ test_write_long_loop(const char **argv)
 				goto end;
 			}
 			msg("stat: %s ok\n", path[i]);
+		}
+		for (i = 0; i < files; ++i) {
+			msg("verify: %s\n", path[i]);
+			e = write_loop_verify(path[i], i, loop, filesz);
+			if (e != GFARM_ERR_NO_ERROR)
+				goto end;
+			msg("verify: %s ok\n", path[i]);
 		}
 		for (i = 0; i < files; ++i) {
 			msg("remove: %s\n", path[i]);
