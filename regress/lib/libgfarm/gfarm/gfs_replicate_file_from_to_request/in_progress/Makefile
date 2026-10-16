@@ -17,4 +17,4 @@ include $(top_srcdir)/makes/prog.mk
 
 ###
 
-$(OBJS): $(DEPGFARMINC) $(GFARMLIB_SRCDIR)/gfs_pio.h
+$(OBJS): $(DEPGFARMINC) $(GFARMLIB_SRCDIR)/gfs_pio.h $(GFUTIL_SRCDIR)/queue.h

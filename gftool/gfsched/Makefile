@@ -23,4 +23,8 @@ $(OBJS): $(DEPGFARMINC) \
 	$(GFARMLIB_SRCDIR)/gfm_client.h \
 	$(GFARMLIB_SRCDIR)/gfm_schedule.h \
 	$(GFARMLIB_SRCDIR)/schedule.h \
-	$(GFARMLIB_SRCDIR)/gfarm_path.h
+	$(GFARMLIB_SRCDIR)/gfarm_path.h \
+	$(GFARMLIB_SRCDIR)/gfs_client.h \
+	$(GFARMLIB_SRCDIR)/host.h \
+	$(GFARMLIB_SRCDIR)/liberror.h \
+	$(GFARMLIB_SRCDIR)/lookup.h

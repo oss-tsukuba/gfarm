@@ -16,3 +16,7 @@ OBJS = gfperf-metadata-main.o gfperf-metadata-libgfarm.o \
 all: $(PROGRAM)
 
 include $(top_srcdir)/makes/prog.mk
+
+###
+
+$(OBJS): $(DEPGFARMINC) $(srcdir)/../gfperf-lib/gfperf-lib.h gfperf-metadata.h

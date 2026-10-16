@@ -24,4 +24,5 @@ $(OBJS): $(GFARMLIB_SRCDIR)/context.h \
 	$(GFARMLIB_SRCDIR)/auth.h \
 	$(GFARMLIB_SRCDIR)/host.h $(GFARMLIB_SRCDIR)/gfpath.h \
 	$(GFARMLIB_SRCDIR)/metadb_server.h $(GFARMLIB_SRCDIR)/gfm_client.h \
-	$(GFARMLIB_SRCDIR)/lookup.h
+	$(GFARMLIB_SRCDIR)/lookup.h \
+	$(GFARMLIB_SRCDIR)/gfarm_path.h

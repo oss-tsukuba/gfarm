@@ -20,7 +20,7 @@ include $(top_srcdir)/makes/prog.mk
 
 ###
 
-$(OBJS): $(DEPGFARMINC)
+$(OBJS): $(DEPGFARMINC) $(GFARMLIB_SRCDIR)/auth.h $(GFARMLIB_SRCDIR)/config.h $(GFARMLIB_SRCDIR)/gfp_xdr.h $(GFARMLIB_SRCDIR)/io_tls.h $(GFARMLIB_SRCDIR)/iobuffer.h $(GFARMLIB_SRCDIR)/liberror.h $(GFARMLIB_SRCDIR)/tls_funcs.h $(GFARMLIB_SRCDIR)/tls_headers.h $(GFARMLIB_SRCDIR)/tls_instances.h $(GFUTIL_SRCDIR)/gfutil.h
 
 ###
 env: $(toolsdir)

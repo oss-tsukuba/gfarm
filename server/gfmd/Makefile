@@ -59,6 +59,16 @@ $(OBJS): $(DEPGFARMINC) $(DEPGFMDINC) \
 	fs.h \
 	job.h \
 	replica_check.h \
-	gfmd.h
+	gfmd.h \
+	$(GFARMLIB_SRCDIR)/metadb_server.h \
+	$(GFARMLIB_SRCDIR)/quota_info.h \
+	$(GFARMLIB_SRCDIR)/xattr_info.h \
+	$(GFUTIL_SRCDIR)/assert.h \
+	$(GFARMLIB_SRCDIR)/gfs_proto.h \
+	$(GFARMLIB_SRCDIR)/gfs_client.h \
+	$(GFARMLIB_SRCDIR)/hostspec.h \
+	$(GFUTIL_SRCDIR)/gfnetdb.h \
+	$(INC_SRCDIR)/gfarm_iostat.h \
+	$(GFARMLIB_SRCDIR)/iostat.h
 
 include $(optional_rule)

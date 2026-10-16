@@ -17,3 +17,7 @@ OBJS = gfperf-replica-main.o gfperf-replica-test.o
 all: $(PROGRAM)
 
 include $(top_srcdir)/makes/prog.mk
+
+###
+
+$(OBJS): $(DEPGFARMINC) $(srcdir)/../gfperf-lib/gfperf-lib.h gfperf-replica.h $(GFARMLIB_SRCDIR)/gfs_pio.h $(GFARMLIB_SRCDIR)/host.h $(GFARMLIB_SRCDIR)/lookup.h $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/queue.h

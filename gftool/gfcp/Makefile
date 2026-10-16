@@ -36,4 +36,6 @@ include $(top_srcdir)/makes/subdir.mk
 ###
 
 $(OBJS): $(DEPGFARMINC) \
-	$(GFPCONCAT_SRCDIR)/gfpconcat.h
+	$(GFPCONCAT_SRCDIR)/gfpconcat.h \
+	$(GFPREP_SRCDIR)/gfmsg.h \
+	$(GFPREP_SRCDIR)/gfurl.h

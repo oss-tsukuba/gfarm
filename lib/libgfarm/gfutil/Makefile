@@ -77,15 +77,15 @@ include $(top_srcdir)/makes/gflog.mk
 $(OBJS): $(DEPGFARMINC)
 backtrace.lo: gfutil.h
 daemon.lo: gfutil.h
-gfevent.lo: $(INC_SRCDIR)/gfarm_misc.h gfutil.h gfevent.h
-gfnetdb.lo: gfnetdb.h
+gfevent.lo: $(INC_SRCDIR)/gfarm_misc.h gfutil.h gfevent.h assert.h
+gfnetdb.lo: gfnetdb.h thrsubr.h
 id_table.lo: id_table.h
 hash.lo: gfutil.h hash.h
 hash_strptr.lo: hash.h
 limit.lo: gfutil.h
-logutil.lo: gfutil.h gflog_reduced.h
-lru_cache.lo: lru_cache.h
-msgdigest.lo: msgdigest.h
+logutil.lo: gfutil.h gflog_reduced.h gfnetdb.h thrsubr.h
+lru_cache.lo: lru_cache.h assert.h gfutil.h thrsubr.h
+msgdigest.lo: msgdigest.h thrsubr.h
 nanosec.lo: nanosec.h
 privlock.lo: nanosec.h thrsubr.h gfutil.h
 proctitle.lo: proctitle.h
@@ -94,3 +94,6 @@ sleep.lo: nanosec.h gfutil.h
 strarray.lo:
 timer.lo: timer.h
 timeval.lo: gfutil.h
+thrbarrier.lo: thrbarrier.h
+thrsubr.lo: assert.h gfutil.h thrsubr.h
+utf8.lo: gfutil.h

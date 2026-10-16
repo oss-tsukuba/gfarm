@@ -40,4 +40,6 @@ $(OBJS): $(DEPGFARMINC) \
 	$(GFARMLIB_SRCDIR)/lookup.h \
 	$(GFPREP_SRCDIR)/gfmsg.h \
 	$(GFPREP_SRCDIR)/gfurl.h \
-	gfpconcat.h
+	gfpconcat.h \
+	$(GFARMLIB_SRCDIR)/liberror.h \
+	$(GFUTIL_SRCDIR)/assert.h

@@ -59,4 +59,6 @@ $(OBJS): $(DEPGFARMINC) \
 	gfarm_parallel.h \
 	gfarm_dirtree.h \
 	gfarm_fifo.h \
-	gfarm_pfunc.h
+	gfarm_pfunc.h \
+	$(GFARMLIB_SRCDIR)/gfm_proto.h \
+	$(GFUTIL_SRCDIR)/assert.h

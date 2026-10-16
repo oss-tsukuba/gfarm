@@ -36,7 +36,7 @@ INC_BUILDDIR = $(top_builddir)/include/gfarm
 DEPGFARMLIB = \
 	$(top_builddir)/lib/libgfarm/gfarm/libgfarm.la \
 	$(top_builddir)/lib/libgfarm/gfutil/libgfutil.la
-DEPGFARMINC = $(INC_BUILDDIR)/gfarm_config.h $(INC_SRCDIR)/gfarm.h $(INC_SRCDIR)/gflog.h $(INC_SRCDIR)/error.h $(INC_SRCDIR)/gfarm_misc.h $(INC_SRCDIR)/gfarm_stringlist.h $(INC_SRCDIR)/gfs.h $(INC_SRCDIR)/gfs_glob.h
+DEPGFARMINC = $(INC_BUILDDIR)/gfarm_config.h $(INC_SRCDIR)/gfarm.h $(INC_SRCDIR)/gflog.h $(INC_SRCDIR)/gfarm_msg_enums.h $(INC_SRCDIR)/error.h $(INC_SRCDIR)/gfarm_misc.h $(INC_SRCDIR)/gfarm_stringlist.h $(INC_SRCDIR)/host_info.h $(INC_SRCDIR)/user_info.h $(INC_SRCDIR)/group_info.h $(INC_SRCDIR)/gfs.h $(INC_SRCDIR)/gfs_glob.h
 
 # ns
 
@@ -55,7 +55,7 @@ DEPNSEXECLIB = $(top_builddir)/ns/nslib/libnsexec.la
 # gfsl
 
 GFSL_SRCDIR = $(top_srcdir)/lib/libgfarm/gfsl
-DEPGFSLINC = $(GFSL_SRCDIR)/gfsl_gss.h $(GFSL_SRCDIR)/gfsl_secure_session.h
+DEPGFSLINC = $(GFSL_SRCDIR)/gfsl_config.h $(GFSL_SRCDIR)/gfsl_gss.h $(GFSL_SRCDIR)/gfsl_secure_session.h
 
 # libgfarm internal interface
 

@@ -28,4 +28,4 @@ failover:
 
 ###
 
-$(OBJS): $(DEPGFARMINC)
+$(OBJS): $(DEPGFARMINC) $(GFARMLIB_SRCDIR)/gfm_client.h $(GFARMLIB_SRCDIR)/gfs_attrplus.h $(GFARMLIB_SRCDIR)/gfs_dirplusxattr.h $(GFARMLIB_SRCDIR)/gfs_misc.h $(GFUTIL_SRCDIR)/assert.h $(GFUTIL_SRCDIR)/gfutil.h
