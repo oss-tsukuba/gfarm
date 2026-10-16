@@ -50,7 +50,8 @@ sendfile|sendfile-stat)
 	$PROG $autoopt $type $GF_TMPF $TMPF
 	;;
 
-write-long-loop)
+write-long-loop|\
+write-verify-long-loop)
 	$PROG $autoopt $type $GF_TMPF 120 10 1
 	;;
 

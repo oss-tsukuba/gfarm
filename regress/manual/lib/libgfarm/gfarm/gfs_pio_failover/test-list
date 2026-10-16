@@ -69,6 +69,7 @@ pio_cksum
 read-close-read
 recvfile-close-recvfile
 write-long-loop
+write-verify-long-loop
 sendfile-long-loop
 
 # xattr/xmlattr

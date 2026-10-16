@@ -2194,8 +2194,12 @@ close:
 	return (e);
 }
 
+/*
+ * if verify is set, write the pattern which identifies each block,
+ * and verify the content of each file after close.
+ */
 static void
-test_write_long_loop(const char **argv)
+write_long_loop(const char **argv, int verify)
 {
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	const char *path_base = argv[0];
@@ -2230,6 +2234,7 @@ test_write_long_loop(const char **argv)
 
 	gettimeofday(&tm, NULL);
 	tm.tv_sec += tmlimit;
+	memset(buf, 'a', WRITE_LOOP_BUFSZ);
 
 	for (i = 0; i < files; ++i) {
 		snprintf(path[i], PATH_MAX, "%s.%d", path_base, i);
@@ -2253,8 +2258,9 @@ test_write_long_loop(const char **argv)
 		memset(fsz, 0, files * sizeof(size_t));
 		while (rest_files > 0) {
 			for (i = 0; i < files; ++i) {
-				write_loop_fill_block(buf, i, loop,
-				    fsz[i] / WRITE_LOOP_BUFSZ);
+				if (verify)
+					write_loop_fill_block(buf, i, loop,
+					    fsz[i] / WRITE_LOOP_BUFSZ);
 				e = gfs_pio_write(gf[i], buf,
 				    WRITE_LOOP_BUFSZ, &len);
 				if (e != GFARM_ERR_NO_ERROR) {
@@ -2296,7 +2302,7 @@ test_write_long_loop(const char **argv)
 			}
 			msg("stat: %s ok\n", path[i]);
 		}
-		for (i = 0; i < files; ++i) {
+		for (i = 0; verify && i < files; ++i) {
 			msg("verify: %s\n", path[i]);
 			e = write_loop_verify(path[i], i, loop, filesz);
 			if (e != GFARM_ERR_NO_ERROR)
@@ -2343,6 +2349,18 @@ end:
 	for (i = 0; i < files; ++i)
 		free(path[i]);
 	free(path);
+}
+
+static void
+test_write_long_loop(const char **argv)
+{
+	write_long_loop(argv, 0);
+}
+
+static void
+test_write_verify_long_loop(const char **argv)
+{
+	write_long_loop(argv, 1);
 }
 
 static void
@@ -3227,6 +3245,7 @@ struct type_info {
 	{ "read-close-read",	1, test_read_close_read },
 	{ "recvfile-close-recvfile", 2, test_recvfile_close_recvfile },
 	{ "write-long-loop",	4, test_write_long_loop },
+	{ "write-verify-long-loop", 4, test_write_verify_long_loop },
 	{ "sendfile-long-loop",	5, test_sendfile_long_loop },
 
 	/* xattr/xmlattr */
