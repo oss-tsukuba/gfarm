@@ -207,13 +207,14 @@ reset_and_reopen(GFS_File gf, void *closure)
 	if ((e = gfm_client_connection_acquire(gfm_client_hostname(gfm_server),
 	    gfm_client_port(gfm_server), gfm_client_username(gfm_server),
 	    &gfm_server1)) != GFARM_ERR_NO_ERROR) {
-		gf->error = e;
 		gflog_debug(GFARM_MSG_1003383,
 		    "gfm_client_connection_acquire: %s",
 		    gfarm_error_string(e));
 		/*
 		 * gf is not reopened, and gf->gfm_server and gf->fd are
 		 * still stale.  do not regard this failover as succeeded.
+		 * do not set gf->error here, because it remains even if
+		 * gf is reopened by the retry, and makes reading gf fail.
 		 */
 		ri->must_retry = 1;
 		return (0);
@@ -364,12 +365,30 @@ static int
 invalidate_stale_fd(GFS_File gf, void *closure)
 {
 	struct stale_file_info *si = closure;
+	struct gfs_file_section_context *vc = gf->view_context;
 
-	if (gfs_file_is_stale(gf, si->failover_count) && gf->fd != -1) {
+	if (!gfs_file_is_stale(gf, si->failover_count))
+		return (1);
+	if (gf->fd != -1) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "%s: fd %d is invalidated, because it is not reopened",
 		    gf->url != NULL ? gf->url : "(fhopen)", gf->fd);
 		gf->fd = -1;
+	}
+	/*
+	 * I/O on a local storage uses vc->fd instead of gf->fd.
+	 * close it to make the I/O fail, which triggers the next failover
+	 * to reopen the file.  otherwise, data may be written to the file
+	 * which has already been closed in gfsd by the process reset.
+	 */
+	if (vc != NULL && vc->ops == &gfs_pio_local_storage_ops &&
+	    vc->fd != -1) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: local fd %d is invalidated, "
+		    "because it is not reopened",
+		    gf->url != NULL ? gf->url : "(fhopen)", vc->fd);
+		(void)close(vc->fd);
+		vc->fd = -1;
 	}
 	return (1);
 }

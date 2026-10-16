@@ -524,7 +524,8 @@ gfs_pio_local_storage_reopen(GFS_File gf)
 	struct gfs_file_section_context *vc = gf->view_context;
 	struct gfs_connection *gfs_server = vc->storage_context;
 
-	if (close(vc->fd) == -1) {
+	/* vc->fd may be invalidated by invalidate_stale_fd() */
+	if (vc->fd != -1 && close(vc->fd) == -1) {
 		/* this shouldn't happen */
 		gflog_error_errno(GFARM_MSG_1003961,
 		    "closing obsolete local fd during gfmd failover");
