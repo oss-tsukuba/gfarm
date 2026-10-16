@@ -553,9 +553,13 @@ journal_fread_uint32(FILE *file, gfarm_uint32_t *np, void *data, off_t *posp)
 }
 
 static gfarm_uint32_t
-journal_deserialize_uint32(unsigned char *d)
+journal_deserialize_uint32(const unsigned char *d)
 {
-	return (d[0] << 24 | d[1] << 16 | d[2] << 8 | d[3]);
+	return (
+	    (gfarm_uint32_t)d[0] << 24 |
+	    (gfarm_uint32_t)d[1] << 16 |
+	    (gfarm_uint32_t)d[2] << 8 |
+	    (gfarm_uint32_t)d[3]);
 }
 
 static gfarm_uint64_t
