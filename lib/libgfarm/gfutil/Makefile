@@ -88,7 +88,7 @@ lru_cache.lo: lru_cache.h assert.h gfutil.h thrsubr.h
 msgdigest.lo: msgdigest.h thrsubr.h
 nanosec.lo: nanosec.h
 privlock.lo: nanosec.h thrsubr.h gfutil.h
-proctitle.lo:
+proctitle.lo: proctitle.h
 random.lo: thrsubr.h
 sleep.lo: nanosec.h gfutil.h
 strarray.lo:
