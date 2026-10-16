@@ -18,4 +18,4 @@ include $(top_srcdir)/makes/prog.mk
 
 ###
 
-$(OBJS): $(DEPGFARMINC)
+$(OBJS): $(INC_BUILDDIR)/gfarm_config.h
