@@ -26,6 +26,7 @@ struct gfs_pio_ops {
 	gfarm_error_t (*view_fsync)(GFS_File, int);
 	gfarm_error_t (*view_fstat)(GFS_File, struct gfs_stat *);
 	gfarm_error_t (*view_reopen)(GFS_File);
+	void (*view_revoke)(GFS_File);
 	gfarm_error_t (*view_write)(GFS_File,
 		const char *, size_t, size_t *, gfarm_off_t *, gfarm_off_t *);
 	gfarm_error_t (*view_cksum)(GFS_File,
@@ -126,6 +127,7 @@ struct gfs_storage_ops {
 	gfarm_error_t (*storage_fsync)(GFS_File, int);
 	gfarm_error_t (*storage_fstat)(GFS_File, struct gfs_stat *);
 	gfarm_error_t (*storage_reopen)(GFS_File);
+	void (*storage_revoke)(GFS_File);
 	gfarm_error_t (*storage_write)(GFS_File,
 		const char *, size_t, size_t *, gfarm_off_t *, gfarm_off_t *);
 	gfarm_error_t (*storage_cksum)(GFS_File,

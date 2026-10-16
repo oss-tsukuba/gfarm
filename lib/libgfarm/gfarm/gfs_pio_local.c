@@ -524,7 +524,7 @@ gfs_pio_local_storage_reopen(GFS_File gf)
 	struct gfs_file_section_context *vc = gf->view_context;
 	struct gfs_connection *gfs_server = vc->storage_context;
 
-	/* vc->fd may be invalidated by invalidate_stale_fd() */
+	/* vc->fd may be invalidated by gfs_pio_local_storage_revoke() */
 	if (vc->fd != -1 && close(vc->fd) == -1) {
 		/* this shouldn't happen */
 		gflog_error_errno(GFARM_MSG_1003961,
@@ -536,6 +536,27 @@ gfs_pio_local_storage_reopen(GFS_File gf)
 		gflog_debug(GFARM_MSG_1003378,
 		    "gfs_client_open_local: %s", gfarm_error_string(e));
 	return (e);
+}
+
+/*
+ * invalidate the local fd of a file which is not reopened at failover.
+ * I/O on a local storage uses vc->fd instead of gf->fd, thus close it
+ * to make the I/O fail, which triggers the next failover to reopen
+ * the file.  otherwise, data may be written to the file which has
+ * already been closed in gfsd by the process reset.
+ */
+static void
+gfs_pio_local_storage_revoke(GFS_File gf)
+{
+	struct gfs_file_section_context *vc = gf->view_context;
+
+	if (vc->fd == -1)
+		return;
+	gflog_debug(GFARM_MSG_UNFIXED,
+	    "%s: local fd %d is invalidated, because it is not reopened",
+	    gf->url != NULL ? gf->url : "(fhopen)", vc->fd);
+	(void)close(vc->fd);
+	vc->fd = -1;
 }
 
 static int
@@ -555,6 +576,7 @@ struct gfs_storage_ops gfs_pio_local_storage_ops = {
 	gfs_pio_local_storage_fsync,
 	gfs_pio_local_storage_fstat,
 	gfs_pio_local_storage_reopen,
+	gfs_pio_local_storage_revoke,
 	gfs_pio_local_storage_write,
 	gfs_pio_local_storage_cksum,
 	gfs_pio_local_storage_recvfile,

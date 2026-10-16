@@ -473,6 +473,12 @@ gfs_pio_remote_storage_reopen(GFS_File gf)
 	return (e);
 }
 
+static void
+gfs_pio_remote_storage_revoke(GFS_File gf)
+{
+	/* nothing to do, I/O on a remote storage uses gf->fd */
+}
+
 static int
 gfs_pio_remote_storage_fd(GFS_File gf)
 {
@@ -492,6 +498,7 @@ struct gfs_storage_ops gfs_pio_remote_storage_ops = {
 	gfs_pio_remote_storage_fsync,
 	gfs_pio_remote_storage_fstat,
 	gfs_pio_remote_storage_reopen,
+	gfs_pio_remote_storage_revoke,
 	gfs_pio_remote_storage_write,
 	gfs_pio_remote_storage_cksum,
 	gfs_pio_remote_storage_recvfile,

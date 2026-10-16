@@ -365,7 +365,6 @@ static int
 invalidate_stale_fd(GFS_File gf, void *closure)
 {
 	struct stale_file_info *si = closure;
-	struct gfs_file_section_context *vc = gf->view_context;
 
 	if (!gfs_file_is_stale(gf, si->failover_count))
 		return (1);
@@ -376,20 +375,11 @@ invalidate_stale_fd(GFS_File gf, void *closure)
 		gf->fd = -1;
 	}
 	/*
-	 * I/O on a local storage uses vc->fd instead of gf->fd.
-	 * close it to make the I/O fail, which triggers the next failover
-	 * to reopen the file.  otherwise, data may be written to the file
-	 * which has already been closed in gfsd by the process reset.
+	 * the storage may have its own descriptor, e.g. local storage.
+	 * storage_context is null in scheduling, as gfs_pio_reopen().
 	 */
-	if (vc != NULL && vc->ops == &gfs_pio_local_storage_ops &&
-	    vc->fd != -1) {
-		gflog_debug(GFARM_MSG_UNFIXED,
-		    "%s: local fd %d is invalidated, "
-		    "because it is not reopened",
-		    gf->url != NULL ? gf->url : "(fhopen)", vc->fd);
-		(void)close(vc->fd);
-		vc->fd = -1;
-	}
+	if (get_storage_context(gf->view_context) != NULL)
+		(*gf->ops->view_revoke)(gf);
 	return (1);
 }
 
