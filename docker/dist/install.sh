@@ -51,14 +51,13 @@ else
 	mkdir $BUILDDIR
 	cd $BUILDDIR
 
-	if [ $PKG = gfarm ]; then
-		../configure $CONF_OPT
-	else # assume GNU automake
-		# pass the sanitizer options to configure as well,
-		# otherwise the link tests against the sanitized libgfarm
-		# fail, and the functions are regarded as not available.
-		../configure $CONF_OPT ${OPTFLAGS:+"CFLAGS=${OPTFLAGS}"}
-	fi
+	# pass the sanitizer options to configure as well.
+	# for gfarm, CFLAGS is recorded as the default of OPTFLAGS, thus
+	# the programs built later by "make" (e.g. regress) use them too.
+	# for GNU automake packages, otherwise the link tests against
+	# the sanitized libgfarm fail, and the functions are regarded as
+	# not available.
+	../configure $CONF_OPT ${OPTFLAGS:+"CFLAGS=${OPTFLAGS}"}
 fi
 
 if [ $PKG = gfarm ]; then
