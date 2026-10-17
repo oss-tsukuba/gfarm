@@ -71,7 +71,7 @@ get_inonum_request(struct gfm_connection *conn, struct file_info *f,
 	int stat_or_open, int open_parent)
 {
 	gfarm_error_t e;
-	const char *errf;
+	const char *errf = NULL; /* shut up gcc warning */
 	const char *name;
 
 	assert(strlen(f->name) > 0 || stat_or_open);
@@ -98,7 +98,7 @@ get_inonum_result(struct gfm_connection *conn, struct file_info *f,
 	int stat_or_open, int open_parent)
 {
 	gfarm_error_t e;
-	const char *errf;
+	const char *errf = NULL; /* shut up gcc warning */
 	gfarm_ino_t ino;
 	gfarm_mode_t mode;
 	gfarm_uint64_t gen;
