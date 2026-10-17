@@ -6,7 +6,8 @@ trap '[ $status = 0 ] && echo Done || echo NG: $PROG; \
 	gfrm -f $TFILE; exit $status' 0 1 2 15
 
 : ${ASAN_OPTIONS=halt_on_error=false:log_exe_name=true:log_path=/var/tmp/gfarm.log.asan}
-: ${LSAN_OPTIONS=halt_on_error=false:log_exe_name=true:log_path=/var/tmp/gfarm.log.lsan}
+LSAN_SUPP=$(cd $(dirname $0) && pwd)/lsan.supp
+: ${LSAN_OPTIONS=halt_on_error=false:log_exe_name=true:log_path=/var/tmp/gfarm.log.lsan:suppressions=$LSAN_SUPP}
 : ${UBSAN_OPTIONS=halt_on_error=false:log_exe_name=true:log_path=/var/tmp/gfarm.log.ubsan}
 : ${TSAN_OPTIONS=halt_on_error=false:log_exe_name=true:log_path=/var/tmp/gfarm.log.tsan}
 export ASAN_OPTIONS LSAN_OPTIONS UBSAN_OPTIONS TSAN_OPTIONS
