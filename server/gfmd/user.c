@@ -382,18 +382,18 @@ user_auth_id_modify_internal(struct user *u,
 	gfarm_error_t e;
 
 
-	new_auth_user_id = strdup_log(auth_user_id,
-				"user_auth_id_modify_internal");
-
-	if (new_auth_user_id == NULL)
-		return (GFARM_ERR_NO_MEMORY);
-
 	if (strlen(auth_user_id) > GFARM_AUTH_USER_ID_MAX) {
 		gflog_debug(GFARM_MSG_1005386,
 		  "user_auth_id_modify, auth_user_id too long, %s",
 		  auth_user_id);
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
+
+	new_auth_user_id = strdup_log(auth_user_id,
+				"user_auth_id_modify_internal");
+
+	if (new_auth_user_id == NULL)
+		return (GFARM_ERR_NO_MEMORY);
 
 	if ((e = gfarm_auth_user_id_type_from_name(
 		auth_id_type,
