@@ -7473,6 +7473,32 @@ usage(void)
 	exit(1);
 }
 
+#if defined(__SANITIZE_ADDRESS__)
+#define GFSD_LEAK_CHECK_AT_EXIT
+#elif defined(__has_feature)
+#if __has_feature(address_sanitizer) || __has_feature(leak_sanitizer)
+#define GFSD_LEAK_CHECK_AT_EXIT
+#endif
+#endif
+
+#ifdef GFSD_LEAK_CHECK_AT_EXIT
+/*
+ * LeakSanitizer checks leaks at exit by ptrace(2)ing this process,
+ * but ptrace(2) is not permitted while the effective uid differs from
+ * the real uid, since gfsd runs with seteuid(gfsd_uid).
+ * this restores the effective uid before the check.
+ * this is called before the check, because atexit handlers are called
+ * in the reverse order of their registration.
+ */
+static void
+restore_euid_for_leak_check(void)
+{
+	if (seteuid(getuid()) == -1)
+		gflog_debug_errno(GFARM_MSG_UNFIXED,
+		    "seteuid(%d) for leak check", (int)getuid());
+}
+#endif
+
 int
 main(int argc, char **argv)
 {
@@ -7634,6 +7660,11 @@ main(int argc, char **argv)
 	if (seteuid(gfsd_uid) == -1 && is_root)
 		gflog_error_errno(GFARM_MSG_1002393,
 		    "seteuid(%d)", (int)gfsd_uid);
+#ifdef GFSD_LEAK_CHECK_AT_EXIT
+	if (atexit(restore_euid_for_leak_check) != 0)
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "atexit(restore_euid_for_leak_check) failed");
+#endif
 
 	e = gfarm_set_local_user_for_this_local_account();
 	if (e != GFARM_ERR_NO_ERROR) {
