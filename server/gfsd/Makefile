@@ -56,4 +56,5 @@ $(OBJS): $(DEPGFARMINC) \
 	$(GFARMLIB_SRCDIR)/iostat.h \
 	$(GFARMLIB_SRCDIR)/timespec.h \
 	$(GFUTIL_SRCDIR)/assert.h \
-	$(GFARMLIB_SRCDIR)/crc32.h
+	$(GFARMLIB_SRCDIR)/crc32.h \
+	$(GFUTIL_SRCDIR)/lsan_suppressions.h
