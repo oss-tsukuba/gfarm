@@ -35,7 +35,7 @@ is_tsan_enabled()
 }
 
 if is_asan_enabled; then
-	OPTFLAGS='-g -Og -Wall -fsanitize=address:undefined -fsanitize-recover=all -fno-omit-frame-pointer -fno-common'
+	OPTFLAGS='-g -Og -Wall -fsanitize=address,undefined -fsanitize-recover=all -fno-omit-frame-pointer -fno-common'
 elif is_tsan_enabled; then
 	OPTFLAGS='-g -Og -Wall -fsanitize=thread -fsanitize-recover=all -fno-omit-frame-pointer -fno-common'
 fi
