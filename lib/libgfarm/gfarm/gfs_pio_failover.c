@@ -207,11 +207,17 @@ reset_and_reopen(GFS_File gf, void *closure)
 	if ((e = gfm_client_connection_acquire(gfm_client_hostname(gfm_server),
 	    gfm_client_port(gfm_server), gfm_client_username(gfm_server),
 	    &gfm_server1)) != GFARM_ERR_NO_ERROR) {
-		gf->error = e;
 		gflog_debug(GFARM_MSG_1003383,
 		    "gfm_client_connection_acquire: %s",
 		    gfarm_error_string(e));
-		return (1);
+		/*
+		 * gf is not reopened, and gf->gfm_server and gf->fd are
+		 * still stale.  do not regard this failover as succeeded.
+		 * do not set gf->error here, because it remains even if
+		 * gf is reopened by the retry, and makes reading gf fail.
+		 */
+		ri->must_retry = 1;
+		return (0);
 	}
 
 	if (gfm_server != gfm_server1) {
@@ -315,6 +321,83 @@ set_error(GFS_File gf, void *closure)
 	return (1);
 }
 
+/*
+ * a file is stale, if it has not been reopened by the latest failover.
+ * its gf->fd is a descriptor for the previous gfm_connection,
+ * thus it must not be used for the current gfmd and gfsd.
+ */
+static int
+gfs_file_is_stale(GFS_File gf, int failover_count)
+{
+	return (gfm_client_connection_failover_count(gf->gfm_server) <
+	    failover_count);
+}
+
+struct stale_file_info {
+	int failover_count;
+	int found;
+};
+
+static int
+find_stale_file(GFS_File gf, void *closure)
+{
+	struct stale_file_info *si = closure;
+
+	if (gfs_file_is_stale(gf, si->failover_count)) {
+		si->found = 1;
+		return (0);
+	}
+	return (1);
+}
+
+static int
+has_stale_file(struct gfs_file_list *gfl, int failover_count)
+{
+	struct stale_file_info si;
+
+	si.failover_count = failover_count;
+	si.found = 0;
+	gfs_pio_file_list_foreach(gfl, find_stale_file, &si);
+	return (si.found);
+}
+
+static int
+invalidate_stale_fd(GFS_File gf, void *closure)
+{
+	struct stale_file_info *si = closure;
+
+	if (!gfs_file_is_stale(gf, si->failover_count))
+		return (1);
+	if (gf->fd != -1) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: fd %d is invalidated, because it is not reopened",
+		    gf->url != NULL ? gf->url : "(fhopen)", gf->fd);
+		gf->fd = -1;
+	}
+	/*
+	 * the storage may have its own descriptor, e.g. local storage.
+	 * storage_context is null in scheduling, as gfs_pio_reopen().
+	 */
+	if (get_storage_context(gf->view_context) != NULL)
+		(*gf->ops->view_revoke)(gf);
+	return (1);
+}
+
+/*
+ * prevent the stale gf->fd from being used for the current gfmd and gfsd,
+ * since the same fd may be used by another file.
+ * such file will be reopened by the next failover.
+ */
+static void
+invalidate_stale_fds(struct gfs_file_list *gfl, int failover_count)
+{
+	struct stale_file_info si;
+
+	si.failover_count = failover_count;
+	si.found = 0;
+	gfs_pio_file_list_foreach(gfl, invalidate_stale_fd, &si);
+}
+
 #define NUM_FAILOVER_RETRY 3
 
 static gfarm_error_t
@@ -383,9 +466,21 @@ failover0(struct gfm_connection *gfm_server, const char *host0, int port,
 
 		if (fc > gfm_client_connection_failover_count(gfm_server)) {
 			/* already failover occurred */
-			e = acquire_valid_connection(gfm_server, host, port,
-			    user, fs);
-			goto end;
+			gfl = gfarm_filesystem_opened_file_list(fs);
+			if (!has_stale_file(gfl, fc)) {
+				e = acquire_valid_connection(gfm_server,
+				    host, port, user, fs);
+				goto end;
+			}
+			/*
+			 * some files have not been reopened by the previous
+			 * failover, e.g. because it failed halfway.
+			 * fail over again to reopen them.
+			 */
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "stale files remain after failover: "
+			    "failover_count=%d/%d", fc,
+			    gfm_client_connection_failover_count(gfm_server));
 		}
 	} else {
 		fs = gfarm_filesystem_get(host0, port);
@@ -468,6 +563,7 @@ failover0(struct gfm_connection *gfm_server, const char *host0, int port,
 		    "connection to metadb server was failed over successfully");
 	} else {
 		gfarm_filesystem_set_failover_detected(fs, 1);
+		invalidate_stale_fds(gfl, fc + 1);
 		if (e == GFARM_ERR_NO_ERROR)
 			e = GFARM_ERR_OPERATION_TIMED_OUT;
 		gflog_debug(GFARM_MSG_1003392,
