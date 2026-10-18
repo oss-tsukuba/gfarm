@@ -70,6 +70,7 @@ $(OBJS): $(DEPGFARMINC) $(DEPGFMDINC) \
 	$(GFARMLIB_SRCDIR)/hostspec.h \
 	$(GFUTIL_SRCDIR)/gfnetdb.h \
 	$(INC_SRCDIR)/gfarm_iostat.h \
-	$(GFARMLIB_SRCDIR)/iostat.h
+	$(GFARMLIB_SRCDIR)/iostat.h \
+	$(GFUTIL_SRCDIR)/lsan_suppressions.h
 
 include $(optional_rule)

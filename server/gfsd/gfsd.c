@@ -94,6 +94,7 @@
 #include "write_verify.h"
 
 #include "gfs_rdma.h"
+#include "lsan_suppressions.h"
 
 #define COMPAT_OLD_GFS_PROTOCOL
 
