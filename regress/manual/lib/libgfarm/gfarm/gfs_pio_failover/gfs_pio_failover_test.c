@@ -628,17 +628,17 @@ static void
 test_utimes0(const char **argv, int follow)
 {
 	const char *path = argv[0];
-	struct gfarm_timespec gfts;
+	struct gfarm_timespec gfts[2];
 	GFS_File gf;
 	const char *diag = follow ? "utimes" : "lutimes";
 	struct gfm_connection *con = cache_gfm_connection(&gf, path);
 
 	wait_for_failover();
 
-	gfts.tv_sec = 1000000;
-	gfts.tv_nsec = 0;
+	gfts[0].tv_sec = gfts[1].tv_sec = 1000000;
+	gfts[0].tv_nsec = gfts[1].tv_nsec = 0;
 	msg("%s\n", diag);
-	chkerr((follow ? gfs_utimes : gfs_lutimes)(path, &gfts), diag);
+	chkerr((follow ? gfs_utimes : gfs_lutimes)(path, gfts), diag);
 	msg("%s ok\n", diag);
 	assert(con != gfs_pio_metadb(gf));
 
@@ -649,13 +649,13 @@ test_utimes0(const char **argv, int follow)
 static void
 test_utimes(const char **argv)
 {
-	test_utimes0(argv, 0);
+	test_utimes0(argv, 1);
 }
 
 static void
 test_lutimes(const char **argv)
 {
-	test_utimes0(argv, 1);
+	test_utimes0(argv, 0);
 }
 
 static void
