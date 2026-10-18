@@ -136,6 +136,21 @@ unlink_test_file(const char *path)
 	TEST_ASSERT0(r == 0 || errno == ENOENT);
 }
 
+/*
+ * journal_file_close() never frees the storage of jf (see SF.net #737).
+ * keep it reachable, to suppress the false positive of LeakSanitizer.
+ */
+static struct journal_file *t_closed_jfs[16];
+static int t_closed_jfs_num;
+
+static void
+t_journal_file_close(struct journal_file *jf)
+{
+	journal_file_close(jf);
+	TEST_ASSERT0(t_closed_jfs_num < GFARM_ARRAY_LENGTH(t_closed_jfs));
+	t_closed_jfs[t_closed_jfs_num++] = jf;
+}
+
 static void
 setup_write()
 {
@@ -155,7 +170,7 @@ t_open_new(void)
 	    journal_file_open(filepath, TEST_FILE_MAX_SIZE, 0, &jf,
 	    GFARM_JOURNAL_RDWR));
 	TEST_ASSERT("jf", jf != NULL);
-	journal_file_close(jf);
+	t_journal_file_close(jf);
 }
 
 static void
@@ -168,7 +183,7 @@ t_open_old(void)
 	    journal_file_open(filepath, TEST_FILE_MAX_SIZE, 0, &jf,
 	    GFARM_JOURNAL_RDWR));
 	TEST_ASSERT("jf", jf != NULL);
-	journal_file_close(jf);
+	t_journal_file_close(jf);
 }
 
 void
@@ -218,8 +233,9 @@ t_write_sequential(void)
 		    names[i].username, names[i].realname);
 		TEST_ASSERT_NOERR("user_add",
 		    db_journal_ops.user_add(i + 1, ui));
+		free(ui);
 	}
-	journal_file_close(self_jf);
+	t_journal_file_close(self_jf);
 }
 
 static struct gfarm_user_info *t_user_infos[32];
@@ -280,7 +296,7 @@ t_write_cyclic(void)
 		    names[i].username, names[i].realname);
 		TEST_ASSERT_NOERR("user_add",
 		    db_journal_ops.user_add(i + 1, ui));
-		/* ui is freed */
+		free(ui);
 
 		ui = t_new_user_info(
 		    names[i].username, names[i].realname);
@@ -303,6 +319,7 @@ t_write_cyclic(void)
 	ui = t_new_user_info(names[3].username, names[3].realname);
 	TEST_ASSERT_NOERR("user_add",
 	    db_journal_ops.user_add(i + 1, ui));
+	free(ui);
 	ui = t_new_user_info(names[3].username, names[3].realname);
 	t_user_infos[k++] = ui;
 	TEST_ASSERT0(eof == 0);
@@ -328,7 +345,7 @@ t_write_cyclic(void)
 		    names[i].username, names[i].realname);
 		TEST_ASSERT_NOERR("user_add",
 		    db_journal_ops.user_add(i + 1, ui));
-		/* ui is freed */
+		free(ui);
 
 		ui = t_new_user_info(
 		    names[i].username, names[i].realname);
@@ -351,7 +368,7 @@ t_write_cyclic(void)
 	 *                   rw
 	 */
 
-	journal_file_close(self_jf);
+	t_journal_file_close(self_jf);
 
 	for (i = 0; i < GFARM_ARRAY_LENGTH(t_user_infos); ++i)
 		free(t_user_infos[i]);
@@ -399,7 +416,7 @@ t_write_transaction_around1(void)
 		    db_journal_ops.begin(n++, NULL));
 		TEST_ASSERT_NOERR("user_add",
 		    db_journal_ops.user_add(n++, ui));
-		/* ui is freed */
+		free(ui);
 		TEST_ASSERT_NOERR("end",
 		    db_journal_ops.end(n++, NULL));
 
@@ -440,6 +457,7 @@ t_write_transaction_around1(void)
 	ui = t_new_user_info(names[2].username, names[2].realname);
 	TEST_ASSERT_NOERR("user_add",
 	    db_journal_ops.user_add(n++, ui));
+	free(ui);
 	ui = t_new_user_info(names[2].username, names[2].realname);
 	t_user_infos[k++] = ui;
 	TEST_ASSERT0(eof == 0);
@@ -455,7 +473,7 @@ t_write_transaction_around1(void)
 	 *               w    r
 	 */
 
-	journal_file_close(self_jf);
+	t_journal_file_close(self_jf);
 
 	/* cur = xxxx[3] */
 	TEST_ASSERT_NOERR("journal_file_open#2",
@@ -476,7 +494,7 @@ t_write_transaction_around1(void)
 	 *               w                       r
 	 */
 
-	journal_file_close(self_jf);
+	t_journal_file_close(self_jf);
 
 	/* cur = end[6] */
 	TEST_ASSERT_NOERR("journal_file_open#3",
@@ -497,7 +515,7 @@ t_write_transaction_around1(void)
 	 *               w                       r
 	 */
 
-	journal_file_close(self_jf);
+	t_journal_file_close(self_jf);
 
 	for (i = 0; i < GFARM_ARRAY_LENGTH(t_user_infos); ++i)
 		free(t_user_infos[i]);
@@ -537,7 +555,7 @@ t_write_transaction_around2(void)
 		    db_journal_ops.begin(n++, NULL));
 		TEST_ASSERT_NOERR("user_add",
 		    db_journal_ops.user_add(n++, ui));
-		/* ui is freed */
+		free(ui);
 		TEST_ASSERT_NOERR("end",
 		    db_journal_ops.end(n++, NULL));
 
@@ -578,6 +596,7 @@ t_write_transaction_around2(void)
 	ui = t_new_user_info(names[2].username, names[2].realname);
 	TEST_ASSERT_NOERR("user_add",
 	    db_journal_ops.user_add(n++, ui));
+	free(ui);
 	ui = t_new_user_info(names[2].username, names[2].realname);
 	t_user_infos[k++] = ui;
 	TEST_ASSERT0(eof == 0);
@@ -596,7 +615,7 @@ t_write_transaction_around2(void)
 	 *      w             r
 	 */
 
-	journal_file_close(self_jf);
+	t_journal_file_close(self_jf);
 
 	/* cur = xxxx[3] */
 	TEST_ASSERT_NOERR("journal_file_open#2",
@@ -620,7 +639,7 @@ t_write_transaction_around2(void)
 	 *      w             r
 	 */
 
-	journal_file_close(self_jf);
+	t_journal_file_close(self_jf);
 
 	/* cur = end[6] */
 	TEST_ASSERT_NOERR("journal_file_open#3",
@@ -644,7 +663,7 @@ t_write_transaction_around2(void)
 	 *      w                                r
 	 */
 
-	journal_file_close(self_jf);
+	t_journal_file_close(self_jf);
 
 	for (i = 0; i < GFARM_ARRAY_LENGTH(t_user_infos); ++i)
 		free(t_user_infos[i]);
@@ -680,6 +699,7 @@ t_write_add_op(void *arg)
 		    names[i].username, names[i].realname);
 		TEST_ASSERT_NOERR("user_add",
 		    db_journal_ops.user_add(seqnum++, ui));
+		free(ui);
 		gfarm_mutex_lock(&mutex, thr_where, thr_what);
 		++t_write_blocked_num_rec_write;
 		gfarm_mutex_unlock(&mutex, thr_where, thr_what);
@@ -769,6 +789,7 @@ t_write_blocked(void)
 	gfarm_mutex_unlock(&mutex, thr_where, thr_what);
 
 	gfarm_barrier_destroy(&barrier, thr_where, thr_what);
+	t_journal_file_close(self_jf);
 }
 
 void
@@ -833,6 +854,7 @@ t_ops_host_add(gfarm_uint64_t seqnum)
 	db_journal_host_info_destroy(hi);
 	TEST_ASSERT_NOERR("db_journal_write_host_add",
 	    db_journal_write_host_add(5, dhi));
+	free(dhi);
 }
 
 static void
@@ -881,6 +903,7 @@ t_ops_host_modify(gfarm_uint64_t sn)
 	db_journal_string_array_free(1, d);
 	TEST_ASSERT_NOERR("db_journal_write_host_modify",
 	    db_journal_write_host_modify(sn, m));
+	free(m);
 }
 
 static gfarm_error_t
@@ -914,7 +937,10 @@ t_ops_host_modify_check(void *op_arg, gfarm_uint64_t seqnum,
 static void
 t_ops_host_remove(gfarm_uint64_t sn)
 {
-	db_journal_write_host_remove(sn, assert_strdup("name"));
+	void *arg = assert_strdup("name");
+
+	db_journal_write_host_remove(sn, arg);
+	free(arg);
 }
 
 static gfarm_error_t
@@ -952,6 +978,7 @@ t_ops_user_add(gfarm_uint64_t sn)
 	dui = db_user_dup(ui, sizeof(*ui));
 	db_journal_user_info_destroy(ui);
 	db_journal_write_user_add(sn, dui);
+	free(dui);
 }
 
 static void
@@ -987,6 +1014,7 @@ t_ops_user_modify(gfarm_uint64_t sn)
 	db_journal_user_info_destroy(ui);
 	TEST_ASSERT_NOERR("db_journal_write_user_modify",
 	    db_journal_write_user_modify(sn, m));
+	free(m);
 }
 
 static gfarm_error_t
@@ -1007,7 +1035,10 @@ t_ops_user_modify_check(void *op_arg, gfarm_uint64_t seqnum,
 static void
 t_ops_user_remove(gfarm_uint64_t sn)
 {
-	db_journal_write_user_remove(sn, assert_strdup("name"));
+	void *arg = assert_strdup("name");
+
+	db_journal_write_user_remove(sn, arg);
+	free(arg);
 }
 
 static gfarm_error_t
@@ -1046,6 +1077,7 @@ t_ops_group_add(gfarm_uint64_t sn)
 	db_journal_group_info_destroy(gi);
 	TEST_ASSERT_NOERR("db_journal_write_group_add",
 	    db_journal_write_group_add(sn, dgi));
+	free(dgi);
 }
 
 static void
@@ -1085,10 +1117,11 @@ t_ops_group_modify(gfarm_uint64_t sn)
 	    (const char **)(d = t_make_strary1("d1")) /* del_users */
 	    );
 	db_journal_group_info_destroy(gi);
-	free(a);
-	free(d);
+	db_journal_string_array_free(1, a);
+	db_journal_string_array_free(1, d);
 	TEST_ASSERT_NOERR("db_journal_write_group_modify",
 	    db_journal_write_group_modify(sn, m));
+	free(m);
 }
 
 static gfarm_error_t
@@ -1112,7 +1145,10 @@ t_ops_group_modify_check(void *op_arg, gfarm_uint64_t seqnum,
 static void
 t_ops_group_remove(gfarm_uint64_t sn)
 {
-	db_journal_write_group_remove(sn, assert_strdup("name"));
+	void *arg = assert_strdup("name");
+
+	db_journal_write_group_remove(sn, arg);
+	free(arg);
 }
 
 static gfarm_error_t
@@ -1160,6 +1196,7 @@ t_ops_inode_add(gfarm_uint64_t sn)
 	db_journal_stat_destroy(st);
 	TEST_ASSERT_NOERR("db_journal_write_inode_add",
 	    db_journal_write_inode_add(sn, dst));
+	free(dst);
 }
 
 static void
@@ -1203,6 +1240,7 @@ t_ops_inode_modify(gfarm_uint64_t sn)
 	db_journal_stat_destroy(st);
 	TEST_ASSERT_NOERR("db_journal_write_inode_modify",
 	    db_journal_write_inode_modify(sn, dst));
+	free(dst);
 }
 
 static gfarm_error_t
@@ -1293,9 +1331,11 @@ t_ops_inode_timespec_modify_check(struct db_inode_timespec_modify_arg *m)
 static void
 t_ops_inode_gen_modify(gfarm_uint64_t sn)
 {
+	void *arg = t_ops_inode_uint64_modify_new();
+
 	TEST_ASSERT_NOERR("db_journal_write_inode_gen_modify",
-	    db_journal_write_inode_gen_modify(sn,
-	    t_ops_inode_uint64_modify_new()));
+	    db_journal_write_inode_gen_modify(sn, arg));
+	free(arg);
 }
 
 static gfarm_error_t
@@ -1312,9 +1352,11 @@ t_ops_inode_gen_modify_check(void *op_arg, gfarm_uint64_t seqnum,
 static void
 t_ops_inode_nlink_modify(gfarm_uint64_t sn)
 {
+	void *arg = t_ops_inode_uint64_modify_new();
+
 	TEST_ASSERT_NOERR("db_journal_write_inode_nlink_modify",
-	    db_journal_write_inode_nlink_modify(sn,
-	    t_ops_inode_uint64_modify_new()));
+	    db_journal_write_inode_nlink_modify(sn, arg));
+	free(arg);
 }
 
 static gfarm_error_t
@@ -1331,9 +1373,11 @@ t_ops_inode_nlink_modify_check(void *op_arg, gfarm_uint64_t seqnum,
 static void
 t_ops_inode_size_modify(gfarm_uint64_t sn)
 {
+	void *arg = t_ops_inode_uint64_modify_new();
+
 	TEST_ASSERT_NOERR("db_journal_write_inode_size_modify",
-	    db_journal_write_inode_size_modify(sn,
-	    t_ops_inode_uint64_modify_new()));
+	    db_journal_write_inode_size_modify(sn, arg));
+	free(arg);
 }
 
 static gfarm_error_t
@@ -1350,9 +1394,11 @@ t_ops_inode_size_modify_check(void *op_arg, gfarm_uint64_t seqnum,
 static void
 t_ops_inode_mode_modify(gfarm_uint64_t sn)
 {
+	void *arg = t_ops_inode_uint32_modify_new();
+
 	TEST_ASSERT_NOERR("db_journal_write_inode_mode_modify",
-	    db_journal_write_inode_mode_modify(sn,
-	    t_ops_inode_uint32_modify_new()));
+	    db_journal_write_inode_mode_modify(sn, arg));
+	free(arg);
 }
 
 static gfarm_error_t
@@ -1369,9 +1415,11 @@ t_ops_inode_mode_modify_check(void *op_arg, gfarm_uint64_t seqnum,
 static void
 t_ops_inode_user_modify(gfarm_uint64_t sn)
 {
+	void *arg = t_ops_inode_string_modify_new();
+
 	TEST_ASSERT_NOERR("db_journal_write_inode_user_modify",
-	    db_journal_write_inode_user_modify(sn,
-	    t_ops_inode_string_modify_new()));
+	    db_journal_write_inode_user_modify(sn, arg));
+	free(arg);
 }
 
 static gfarm_error_t
@@ -1388,9 +1436,11 @@ t_ops_inode_user_modify_check(void *op_arg, gfarm_uint64_t seqnum,
 static void
 t_ops_inode_group_modify(gfarm_uint64_t sn)
 {
+	void *arg = t_ops_inode_string_modify_new();
+
 	TEST_ASSERT_NOERR("db_journal_write_inode_group_modify",
-	    db_journal_write_inode_group_modify(sn,
-	    t_ops_inode_string_modify_new()));
+	    db_journal_write_inode_group_modify(sn, arg));
+	free(arg);
 }
 
 static gfarm_error_t
@@ -1407,9 +1457,11 @@ t_ops_inode_group_modify_check(void *op_arg, gfarm_uint64_t seqnum,
 static void
 t_ops_inode_atime_modify(gfarm_uint64_t sn)
 {
+	void *arg = t_ops_inode_timespec_modify_new();
+
 	TEST_ASSERT_NOERR("db_journal_write_inode_atime_modify",
-	    db_journal_write_inode_atime_modify(sn,
-	    t_ops_inode_timespec_modify_new()));
+	    db_journal_write_inode_atime_modify(sn, arg));
+	free(arg);
 }
 
 static gfarm_error_t
@@ -1426,9 +1478,11 @@ t_ops_inode_atime_modify_check(void *op_arg, gfarm_uint64_t seqnum,
 static void
 t_ops_inode_mtime_modify(gfarm_uint64_t sn)
 {
+	void *arg = t_ops_inode_timespec_modify_new();
+
 	TEST_ASSERT_NOERR("db_journal_write_inode_mtime_modify",
-	    db_journal_write_inode_mtime_modify(sn,
-	    t_ops_inode_timespec_modify_new()));
+	    db_journal_write_inode_mtime_modify(sn, arg));
+	free(arg);
 }
 
 static gfarm_error_t
@@ -1445,9 +1499,11 @@ t_ops_inode_mtime_modify_check(void *op_arg, gfarm_uint64_t seqnum,
 static void
 t_ops_inode_ctime_modify(gfarm_uint64_t sn)
 {
+	void *arg = t_ops_inode_timespec_modify_new();
+
 	TEST_ASSERT_NOERR("db_journal_write_inode_ctime_modify",
-	    db_journal_write_inode_ctime_modify(sn,
-	    t_ops_inode_timespec_modify_new()));
+	    db_journal_write_inode_ctime_modify(sn, arg));
+	free(arg);
 }
 
 static gfarm_error_t
@@ -1500,8 +1556,11 @@ t_ops_inode_inum_check(struct db_inode_inum_arg *m)
 static void
 t_ops_inode_cksum_add(gfarm_uint64_t sn)
 {
+	void *arg = t_ops_inode_cksum_new();
+
 	TEST_ASSERT_NOERR("db_journal_write_inode_cksum_add",
-	    db_journal_write_inode_cksum_add(5, t_ops_inode_cksum_new()));
+	    db_journal_write_inode_cksum_add(5, arg));
+	free(arg);
 }
 
 static gfarm_error_t
@@ -1518,8 +1577,11 @@ t_ops_inode_cksum_add_check(void *op_arg, gfarm_uint64_t seqnum,
 static void
 t_ops_inode_cksum_modify(gfarm_uint64_t sn)
 {
+	void *arg = t_ops_inode_cksum_new();
+
 	TEST_ASSERT_NOERR("db_journal_write_inode_cksum_modify",
-	    db_journal_write_inode_cksum_modify(sn, t_ops_inode_cksum_new()));
+	    db_journal_write_inode_cksum_modify(sn, arg));
+	free(arg);
 }
 
 static gfarm_error_t
@@ -1536,8 +1598,11 @@ t_ops_inode_cksum_modify_check(void *op_arg, gfarm_uint64_t seqnum,
 static void
 t_ops_inode_cksum_remove(gfarm_uint64_t sn)
 {
+	void *arg = t_ops_inode_inum_new();
+
 	TEST_ASSERT_NOERR("db_journal_write_inode_cksum_remove",
-	    db_journal_write_inode_cksum_remove(sn, t_ops_inode_inum_new()));
+	    db_journal_write_inode_cksum_remove(sn, arg));
+	free(arg);
 }
 
 static gfarm_error_t
@@ -1570,8 +1635,11 @@ t_ops_filecopy_check(struct db_filecopy_arg *m)
 static void
 t_ops_filecopy_add(gfarm_uint64_t sn)
 {
+	void *arg = t_ops_filecopy_new();
+
 	TEST_ASSERT_NOERR("db_journal_write_filecopy_add",
-	    db_journal_write_filecopy_add(sn, t_ops_filecopy_new()));
+	    db_journal_write_filecopy_add(sn, arg));
+	free(arg);
 }
 
 static gfarm_error_t
@@ -1588,8 +1656,11 @@ t_ops_filecopy_add_check(void *op_arg, gfarm_uint64_t seqnum,
 static void
 t_ops_filecopy_remove(gfarm_uint64_t sn)
 {
+	void *arg = t_ops_filecopy_new();
+
 	TEST_ASSERT_NOERR("db_journal_write_filecopy_remove",
-	    db_journal_write_filecopy_remove(sn, t_ops_filecopy_new()));
+	    db_journal_write_filecopy_remove(sn, arg));
+	free(arg);
 }
 
 static gfarm_error_t
@@ -1624,8 +1695,11 @@ t_ops_deadfilecopy_check(struct db_deadfilecopy_arg *m)
 static void
 t_ops_deadfilecopy_add(gfarm_uint64_t sn)
 {
+	void *arg = t_ops_deadfilecopy_new();
+
 	TEST_ASSERT_NOERR("db_journal_write_deadfilecopy_add",
-	    db_journal_write_deadfilecopy_add(sn, t_ops_deadfilecopy_new()));
+	    db_journal_write_deadfilecopy_add(sn, arg));
+	free(arg);
 }
 
 static gfarm_error_t
@@ -1642,8 +1716,11 @@ t_ops_deadfilecopy_add_check(void *op_arg, gfarm_uint64_t seqnum,
 static void
 t_ops_deadfilecopy_remove(gfarm_uint64_t sn)
 {
+	void *arg = t_ops_deadfilecopy_new();
+
 	TEST_ASSERT_NOERR("db_journal_write_deadfilecopy_remove",
-	    db_journal_write_deadfilecopy_remove(sn, t_ops_deadfilecopy_new()));
+	    db_journal_write_deadfilecopy_remove(sn, arg));
+	free(arg);
 }
 
 static gfarm_error_t
@@ -1680,8 +1757,11 @@ t_ops_direntry_check(struct db_direntry_arg *m)
 static void
 t_ops_direntry_add(gfarm_uint64_t sn)
 {
+	void *arg = t_ops_direntry_new();
+
 	TEST_ASSERT_NOERR("db_journal_write_direntry_add",
-	    db_journal_write_direntry_add(sn, t_ops_direntry_new()));
+	    db_journal_write_direntry_add(sn, arg));
+	free(arg);
 }
 
 static gfarm_error_t
@@ -1698,8 +1778,11 @@ t_ops_direntry_add_check(void *op_arg, gfarm_uint64_t seqnum,
 static void
 t_ops_direntry_remove(gfarm_uint64_t sn)
 {
+	void *arg = t_ops_direntry_new();
+
 	TEST_ASSERT_NOERR("db_journal_write_direntry_remove",
-	    db_journal_write_direntry_remove(sn, t_ops_direntry_new()));
+	    db_journal_write_direntry_remove(sn, arg));
+	free(arg);
 }
 
 static gfarm_error_t
@@ -1716,10 +1799,13 @@ t_ops_direntry_remove_check(void *op_arg, gfarm_uint64_t seqnum,
 static void
 t_ops_symlink_add(gfarm_uint64_t sn)
 {
-	TEST_ASSERT_NOERR("db_journal_write_symlink_add",
-	    db_journal_write_symlink_add(sn, db_symlink_arg_alloc(
+	void *arg = db_symlink_arg_alloc(
 	    111, /* inum */
-	    "source_path")));
+	    "source_path");
+
+	TEST_ASSERT_NOERR("db_journal_write_symlink_add",
+	    db_journal_write_symlink_add(sn, arg));
+	free(arg);
 }
 
 static gfarm_error_t
@@ -1739,8 +1825,11 @@ t_ops_symlink_add_check(void *op_arg, gfarm_uint64_t seqnum,
 static void
 t_ops_symlink_remove(gfarm_uint64_t sn)
 {
+	void *arg = t_ops_inode_inum_new();
+
 	TEST_ASSERT_NOERR("db_journal_write_symlink_remove",
-	    db_journal_write_symlink_remove(sn, t_ops_inode_inum_new()));
+	    db_journal_write_symlink_remove(sn, arg));
+	free(arg);
 }
 
 static gfarm_error_t
@@ -1780,8 +1869,11 @@ t_ops_xattr_check(struct db_xattr_arg *m)
 static void
 t_ops_xattr_add(gfarm_uint64_t sn)
 {
+	void *arg = t_ops_xattr_new();
+
 	TEST_ASSERT_NOERR("db_journal_write_xattr_add",
-	    db_journal_write_xattr_add(sn, t_ops_xattr_new()));
+	    db_journal_write_xattr_add(sn, arg));
+	free(arg);
 }
 
 static gfarm_error_t
@@ -1798,8 +1890,11 @@ t_ops_xattr_add_check(void *op_arg, gfarm_uint64_t seqnum,
 static void
 t_ops_xattr_modify(gfarm_uint64_t sn)
 {
+	void *arg = t_ops_xattr_new();
+
 	TEST_ASSERT_NOERR("db_journal_write_xattr_modify",
-	    db_journal_write_xattr_modify(sn, t_ops_xattr_new()));
+	    db_journal_write_xattr_modify(sn, arg));
+	free(arg);
 }
 
 static gfarm_error_t
@@ -1816,8 +1911,11 @@ t_ops_xattr_modify_check(void *op_arg, gfarm_uint64_t seqnum,
 static void
 t_ops_xattr_remove(gfarm_uint64_t sn)
 {
+	void *arg = t_ops_xattr_new();
+
 	TEST_ASSERT_NOERR("db_journal_write_xattr_remove",
-	    db_journal_write_xattr_remove(sn, t_ops_xattr_new()));
+	    db_journal_write_xattr_remove(sn, arg));
+	free(arg);
 }
 
 static gfarm_error_t
@@ -1834,8 +1932,11 @@ t_ops_xattr_remove_check(void *op_arg, gfarm_uint64_t seqnum,
 static void
 t_ops_xattr_removeall(gfarm_uint64_t sn)
 {
+	void *arg = t_ops_xattr_new();
+
 	TEST_ASSERT_NOERR("db_journal_write_xattr_removeall",
-	    db_journal_write_xattr_removeall(sn, t_ops_xattr_new()));
+	    db_journal_write_xattr_removeall(sn, arg));
+	free(arg);
 }
 
 static gfarm_error_t
@@ -1913,8 +2014,11 @@ t_ops_quota_check(struct db_quota_arg *m)
 static void
 t_ops_quota_add(gfarm_uint64_t sn)
 {
+	void *arg = t_ops_quota_new();
+
 	TEST_ASSERT_NOERR("db_journal_write_quota_add",
-	    db_journal_write_quota_add(sn, t_ops_quota_new()));
+	    db_journal_write_quota_add(sn, arg));
+	free(arg);
 }
 
 static gfarm_error_t
@@ -1931,7 +2035,10 @@ t_ops_quota_add_check(void *op_arg, gfarm_uint64_t seqnum,
 static void
 t_ops_quota_modify(gfarm_uint64_t sn)
 {
-	db_journal_write_quota_modify(5, t_ops_quota_new());
+	void *arg = t_ops_quota_new();
+
+	db_journal_write_quota_modify(5, arg);
+	free(arg);
 }
 
 static gfarm_error_t
@@ -1948,11 +2055,14 @@ t_ops_quota_modify_check(void *op_arg, gfarm_uint64_t seqnum,
 static void
 t_ops_quota_remove(gfarm_uint64_t sn)
 {
-	TEST_ASSERT_NOERR("db_journal_write_quota_remove",
-	    db_journal_write_quota_remove(sn, db_quota_remove_arg_alloc(
+	void *arg = db_quota_remove_arg_alloc(
 	    "name", /* name */
 	    1 /* is_group */
-	    )));
+	    );
+
+	TEST_ASSERT_NOERR("db_journal_write_quota_remove",
+	    db_journal_write_quota_remove(sn, arg));
+	free(arg);
 }
 
 static gfarm_error_t
@@ -1992,6 +2102,7 @@ t_ops_mdhost_add(gfarm_uint64_t seqnum)
 	db_journal_metadb_server_destroy(ms);
 	TEST_ASSERT_NOERR("db_journal_write_mdhost_add",
 	    db_journal_write_mdhost_add(5, dms));
+	free(dms);
 }
 
 static void
@@ -2027,6 +2138,7 @@ t_ops_mdhost_modify(gfarm_uint64_t sn)
 	db_journal_metadb_server_destroy(ms);
 	TEST_ASSERT_NOERR("db_journal_write_mdhost_modify",
 	    db_journal_write_mdhost_modify(sn, dms));
+	free(dms);
 }
 
 static gfarm_error_t
@@ -2046,7 +2158,10 @@ t_ops_mdhost_modify_check(void *op_arg, gfarm_uint64_t seqnum,
 static void
 t_ops_mdhost_remove(gfarm_uint64_t sn)
 {
-	db_journal_write_mdhost_remove(sn, assert_strdup("name"));
+	void *arg = assert_strdup("name");
+
+	db_journal_write_mdhost_remove(sn, arg);
+	free(arg);
 }
 
 static gfarm_error_t
@@ -2178,7 +2293,7 @@ t_ops(void)
 		printf("ok\n");
 		journal_file_reader_commit_pos(reader);
 	}
-	journal_file_close(self_jf);
+	t_journal_file_close(self_jf);
 }
 
 /***********************************************/
@@ -2704,6 +2819,7 @@ t_apply_inode_user_modify(void)
 	    strcmp(m.string, user_tenant_name(inode_get_user(i))) != 0);
 	TEST_ASSERT_NOERR("inode_user_modify",
 	    db_journal_apply_ops.inode_user_modify(0, &m));
+	free(m.string);
 	TEST_ASSERT_B("st_user",
 	    u == inode_get_user(i));
 }
@@ -2725,6 +2841,7 @@ t_apply_inode_group_modify(void)
 	    strcmp(m.string, group_tenant_name(inode_get_group(i))) != 0);
 	TEST_ASSERT_NOERR("inode_group_modify",
 	    db_journal_apply_ops.inode_group_modify(0, &m));
+	free(m.string);
 	TEST_ASSERT_B("st_group",
 	    u == inode_get_group(i));
 }
@@ -2813,11 +2930,13 @@ t_apply_filecopy_add(void)
 	    (i = inode_lookup(m.inum)) != NULL);
 	TEST_ASSERT_NOERR("filecopy_add",
 	    db_journal_apply_ops.filecopy_add(0, &m));
+	free(m.hostname);
 
 	m.hostname = assert_strdup(host_name(h2));
 
 	TEST_ASSERT_NOERR("filecopy_add",
 	    db_journal_apply_ops.filecopy_add(0, &m));
+	free(m.hostname);
 
 	TEST_ASSERT_NOERR("inode_replica_list_by_name_with_dead_host",
 	    inode_replica_list_by_name_with_dead_host(
@@ -2849,6 +2968,7 @@ t_apply_filecopy_remove(void)
 	    (i = inode_lookup(m.inum)) != NULL);
 	TEST_ASSERT_NOERR("filecopy_remove",
 	    db_journal_apply_ops.filecopy_remove(0, &m));
+	free(m.hostname);
 	TEST_ASSERT_NOERR("inode_replica_list_by_name_with_dead_host",
 	    inode_replica_list_by_name_with_dead_host(
 		i, &nhosts, &hostnames));
@@ -2876,6 +2996,7 @@ t_apply_deadfilecopy_add(void)
 	/* no action */
 	TEST_ASSERT_NOERR("deadfilecopy_add",
 	    db_journal_apply_ops.deadfilecopy_add(0, &m));
+	free(m.hostname);
 }
 
 static void
@@ -2893,6 +3014,7 @@ t_apply_deadfilecopy_remove(void)
 	/* no action */
 	TEST_ASSERT_NOERR("deadfilecopy_remove",
 	    db_journal_apply_ops.deadfilecopy_remove(0, &m));
+	free(m.hostname);
 }
 
 #define T_APPLY_INODE_DIR_INUM 20
@@ -2918,6 +3040,7 @@ t_apply_direntry_add(void)
 
 	TEST_ASSERT_NOERR("direntry_add",
 	    db_journal_apply_ops.direntry_add(0, &m));
+	free(m.entry_name);
 	TEST_ASSERT_B("inode_get_dir",
 	    (dir = inode_get_dir(id)) != NULL);
 	TEST_ASSERT_B("dir_cursor_set_pos",
@@ -2955,6 +3078,7 @@ t_apply_direntry_remove(void)
 
 	TEST_ASSERT_NOERR("direntry_remove",
 	    db_journal_apply_ops.direntry_remove(0, &m));
+	free(m.entry_name);
 	TEST_ASSERT_B("inode_get_dir",
 	    (dir = inode_get_dir(id)) != NULL);
 	TEST_ASSERT_B("dir_cursor_set_pos",
@@ -2968,13 +3092,16 @@ t_apply_symlink_add(void)
 {
 	struct inode *i;
 	struct db_symlink_arg m;
+	char *source_path;
 
 	i = t_add_test_inode(T_APPLY_INODE_SYMLINK_INUM, GFARM_S_IFLNK);
 	m.inum = inode_get_number(i);
-	m.source_path = assert_strdup("notexist");
+	m.source_path = source_path = assert_strdup("notexist");
 
+	/* symlink_add() copies source_path, but m.source_path is cleared */
 	TEST_ASSERT_NOERR("symlink_add",
 	    db_journal_apply_ops.symlink_add(0, &m));
+	free(source_path);
 	TEST_ASSERT_S("inode_get_symlink",
 	    "notexist", inode_get_symlink(i));
 }
@@ -3013,6 +3140,8 @@ t_apply_xattr_add(void)
 
 	TEST_ASSERT_NOERR("xattr_add",
 	    db_journal_apply_ops.xattr_add(0, &m));
+	free(m.attrname);
+	free(m.value);
 
 	TEST_ASSERT_B("inode_xattr_has_attr",
 	    inode_xattr_has_attr(i, 0 /*xmlMode*/, attrname));
@@ -3038,6 +3167,8 @@ t_apply_xattr_add_cached(void)
 
 	TEST_ASSERT_NOERR("xattr_add",
 	    db_journal_apply_ops.xattr_add(0, &m));
+	free(m.attrname);
+	free(m.value);
 
 	TEST_ASSERT_NOERR("inode_xattr_get_cache",
 	    inode_xattr_get_cache(i, 0 /*xmlMode*/,
@@ -3047,6 +3178,7 @@ t_apply_xattr_add_cached(void)
 	    strlen(value), value_len);
 	TEST_ASSERT_B("value",
 	    strncmp(value, value1, value_len) == 0);
+	free(value1);
 }
 
 static void
@@ -3067,6 +3199,8 @@ t_apply_xattr_modify(void)
 
 	TEST_ASSERT_NOERR("xattr_modify",
 	    db_journal_apply_ops.xattr_modify(0, &m));
+	free(m.attrname);
+	free(m.value);
 
 	TEST_ASSERT_B("inode_xattr_has_attr",
 	    inode_xattr_has_attr(i, 0 /*xmlMode*/, attrname));
@@ -3092,6 +3226,8 @@ t_apply_xattr_modify_cached(void)
 
 	TEST_ASSERT_NOERR("xattr_modify",
 	    db_journal_apply_ops.xattr_modify(0, &m));
+	free(m.attrname);
+	free(m.value);
 
 	TEST_ASSERT_NOERR("inode_xattr_get_cache",
 	    inode_xattr_get_cache(i, 0 /*xmlMode*/,
@@ -3101,6 +3237,7 @@ t_apply_xattr_modify_cached(void)
 	    strlen(value), value_len);
 	TEST_ASSERT_B("value",
 	    strncmp(value, value1, value_len) == 0);
+	free(value1);
 }
 
 static void
@@ -3118,6 +3255,7 @@ t_apply_xattr_remove(void)
 
 	TEST_ASSERT_NOERR("xattr_remove",
 	    db_journal_apply_ops.xattr_remove(0, &m));
+	free(m.attrname);
 	TEST_ASSERT_B("inode_xattr_has_attr",
 	    inode_xattr_has_attr(i, 0 /*xmlMode*/, attrname) == 0);
 }
@@ -3139,6 +3277,7 @@ t_apply_xattr_remove_cached(void)
 
 	TEST_ASSERT_NOERR("xattr_remove",
 	    db_journal_apply_ops.xattr_remove(0, &m));
+	free(m.attrname);
 	TEST_ASSERT_E("inode_xattr_get_cache",
 	    GFARM_ERR_NO_SUCH_OBJECT,
 	    inode_xattr_get_cache(i, 0 /*xmlMode*/,
@@ -3168,6 +3307,8 @@ t_apply_xattr_removeall(void)
 	m.size = strlen(value1);
 	TEST_ASSERT_NOERR("xattr_add",
 	    db_journal_apply_ops.xattr_add(0, &m));
+	free(m.attrname);
+	free(m.value);
 	m.inum = inode_get_number(i);
 	m.xmlMode = 0;
 	m.attrname = assert_strdup(attrname2);
@@ -3175,6 +3316,8 @@ t_apply_xattr_removeall(void)
 	m.size = strlen(value2);
 	TEST_ASSERT_NOERR("xattr_removeall",
 	    db_journal_apply_ops.xattr_removeall(0, &m));
+	free(m.attrname);
+	free(m.value);
 
 	TEST_ASSERT_B("inode_xattr_has_attr attrname1",
 	    inode_xattr_has_attr(i, 0 /*xmlMode*/, attrname1) == 0);
@@ -3224,6 +3367,7 @@ t_apply_quota_add(void)
 
 	TEST_ASSERT_NOERR("quota_add",
 	    db_journal_apply_ops.quota_add(0, &m));
+	free(m.name);
 	TEST_ASSERT_B("user_quota",
 	    (qu = user_quota(u)) != NULL);
 	TEST_ASSERT_I("on_db",
@@ -3268,6 +3412,7 @@ t_apply_quota_add(void)
 
 	TEST_ASSERT_NOERR("quota_add",
 	    db_journal_apply_ops.quota_add(0, &m));
+	free(m.name);
 	TEST_ASSERT_B("group_quota",
 	    (qg = group_quota(g)) != NULL);
 	TEST_ASSERT_I("on_db",
@@ -3323,6 +3468,7 @@ t_apply_quota_modify(void)
 
 	TEST_ASSERT_NOERR("quota_modify",
 	    db_journal_apply_ops.quota_modify(0, &m));
+	free(m.name);
 	TEST_ASSERT_I("on_db",
 	    1, qu->on_db);
 	TEST_ASSERT_L("grace_period",
@@ -3365,6 +3511,7 @@ t_apply_quota_modify(void)
 
 	TEST_ASSERT_NOERR("quota_modify",
 	    db_journal_apply_ops.quota_modify(0, &m));
+	free(m.name);
 	TEST_ASSERT_B("group_quota",
 	    (qg = group_quota(g)) != NULL);
 	TEST_ASSERT_I("on_db",
@@ -3401,6 +3548,7 @@ t_apply_quota_remove(void)
 
 	TEST_ASSERT_NOERR("quota_remove",
 	    db_journal_apply_ops.quota_remove(0, &m));
+	free(m.name);
 	TEST_ASSERT_I("on_db",
 	    0, qu->on_db);
 
@@ -3409,6 +3557,7 @@ t_apply_quota_remove(void)
 
 	TEST_ASSERT_NOERR("quota_remove",
 	    db_journal_apply_ops.quota_remove(0, &m));
+	free(m.name);
 	TEST_ASSERT_I("on_db",
 	    0, qg->on_db);
 }
@@ -3608,7 +3757,7 @@ t_apply(void)
 		sprintf(msg, "%s:wpos", ai->name);
 		TEST_ASSERT_L(msg, wpos1, wpos2);
 	}
-	journal_file_close(self_jf);
+	t_journal_file_close(self_jf);
 }
 
 int
