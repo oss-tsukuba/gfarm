@@ -1693,6 +1693,7 @@ test_fhopen_file(const char **argv)
 	chkerr_n(gfs_pio_fhopen(st.st_ino, st.st_gen, GFARM_FILE_RDONLY,
 	    &gf1), "fhopen", 1);
 	msg("gf[%d]: fhopen ok\n", 1);
+	gfs_stat_free(&st);
 
 	/* schedule gf0 */
 	do_read(gf0, 0);
@@ -2557,7 +2558,7 @@ test_getattrplus0(const char **argv, int follow)
 	GFS_File gf;
 	char *patterns[] = { "*" };
 	char **names, **vals;
-	int nattrs;
+	int i, nattrs;
 	size_t *sizes;
 	struct gfs_stat gfst;
 	const char *diag = follow ? "getattrplus" : "lgetattrplus";
@@ -2570,6 +2571,10 @@ test_getattrplus0(const char **argv, int follow)
 	    (path, patterns, 1, 0, &gfst, &nattrs, &names,
 	    (void ***)(char *)&vals, &sizes), diag);
 	msg("%s ok\n", diag);
+	for (i = 0; i < nattrs; i++) {
+		free(names[i]);
+		free(vals[i]);
+	}
 	free(names);
 	free(vals);
 	free(sizes);
