@@ -645,9 +645,14 @@ compound_fd_op_post_failover(struct gfm_connection *gfm_server, void *closure)
 	if (type != ops->type || ino != ops->get_ino(file))
 		e = GFARM_ERR_STALE_FILE_HANDLE;
 	else {
+		struct gfm_connection *gfm_server0 =
+		    ops->get_connection(file);
+
 		/* set new fd and connection */
 		ops->set_fileno(file, fd);
 		ops->set_connection(file, gfm_server);
+		/* release the connection before failover */
+		gfm_client_connection_free(gfm_server0);
 	}
 
 	if (e != GFARM_ERR_NO_ERROR)
