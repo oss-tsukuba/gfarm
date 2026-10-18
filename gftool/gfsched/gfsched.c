@@ -234,22 +234,26 @@ main(int argc, char **argv)
 		}
 
 		/*
-		 * it's OK to modify available_hosts[],
-		 * because gfarm_host_sched_info_free() is not called here.
+		 * the hosts removed from available_hosts[] are freed here,
+		 * because gfarm_host_sched_info_free() is called with
+		 * the updated available_nhosts.
 		 */
 		j = 0;
 		for (i = 0; i < available_nhosts; i++) {
 			if (get_local(gfm_server, &available_hosts[i], &local)
 			    != GFARM_ERR_NO_ERROR)
-				continue;
+				goto remove;
 			if (local) {
 				if (opt_host_type == remote_host)
-					continue;
+					goto remove;
 			} else {
 				if (opt_host_type == local_host)
-					continue;
+					goto remove;
 			}
 			available_hosts[j++] = available_hosts[i];
+			continue;
+remove:
+			free(available_hosts[i].host);
 		}
 		available_nhosts = j;
 	}
@@ -305,6 +309,7 @@ main(int argc, char **argv)
 	}
 	free(hosts);
 	free(ports);
+	gfarm_host_sched_info_free(available_nhosts, available_hosts);
 
 	e = gfarm_terminate();
 	if (e != GFARM_ERR_NO_ERROR) {
