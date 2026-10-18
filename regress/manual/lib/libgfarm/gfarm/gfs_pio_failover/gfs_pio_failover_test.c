@@ -628,17 +628,17 @@ static void
 test_utimes0(const char **argv, int follow)
 {
 	const char *path = argv[0];
-	struct gfarm_timespec gfts;
+	struct gfarm_timespec gfts[2];
 	GFS_File gf;
 	const char *diag = follow ? "utimes" : "lutimes";
 	struct gfm_connection *con = cache_gfm_connection(&gf, path);
 
 	wait_for_failover();
 
-	gfts.tv_sec = 1000000;
-	gfts.tv_nsec = 0;
+	gfts[0].tv_sec = gfts[1].tv_sec = 1000000;
+	gfts[0].tv_nsec = gfts[1].tv_nsec = 0;
 	msg("%s\n", diag);
-	chkerr((follow ? gfs_utimes : gfs_lutimes)(path, &gfts), diag);
+	chkerr((follow ? gfs_utimes : gfs_lutimes)(path, gfts), diag);
 	msg("%s ok\n", diag);
 	assert(con != gfs_pio_metadb(gf));
 
@@ -649,13 +649,13 @@ test_utimes0(const char **argv, int follow)
 static void
 test_utimes(const char **argv)
 {
-	test_utimes0(argv, 0);
+	test_utimes0(argv, 1);
 }
 
 static void
 test_lutimes(const char **argv)
 {
-	test_utimes0(argv, 1);
+	test_utimes0(argv, 0);
 }
 
 static void
@@ -1693,6 +1693,7 @@ test_fhopen_file(const char **argv)
 	chkerr_n(gfs_pio_fhopen(st.st_ino, st.st_gen, GFARM_FILE_RDONLY,
 	    &gf1), "fhopen", 1);
 	msg("gf[%d]: fhopen ok\n", 1);
+	gfs_stat_free(&st);
 
 	/* schedule gf0 */
 	do_read(gf0, 0);
@@ -2557,7 +2558,7 @@ test_getattrplus0(const char **argv, int follow)
 	GFS_File gf;
 	char *patterns[] = { "*" };
 	char **names, **vals;
-	int nattrs;
+	int i, nattrs;
 	size_t *sizes;
 	struct gfs_stat gfst;
 	const char *diag = follow ? "getattrplus" : "lgetattrplus";
@@ -2570,6 +2571,10 @@ test_getattrplus0(const char **argv, int follow)
 	    (path, patterns, 1, 0, &gfst, &nattrs, &names,
 	    (void ***)(char *)&vals, &sizes), diag);
 	msg("%s ok\n", diag);
+	for (i = 0; i < nattrs; i++) {
+		free(names[i]);
+		free(vals[i]);
+	}
 	free(names);
 	free(vals);
 	free(sizes);
