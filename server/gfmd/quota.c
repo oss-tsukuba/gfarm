@@ -1658,11 +1658,11 @@ quota_get_common(struct peer *peer, int from_client, int skip, int is_group)
 	struct user *user = NULL, *peer_user = peer_get_user(peer);
 	struct group *group = NULL;
 	struct process *process;
-	struct tenant *tenant;
+	struct tenant *tenant = NULL; /* shut up warning by gcc */
 	char *name;
 	struct quota *q;
 	struct gfarm_quota_get_info qi;
-	int is_super_admin;
+	int is_super_admin = 0; /* shut up warning by gcc */
 
 	e = gfm_server_get_request(peer, diag, "s", &name);
 	if (e != GFARM_ERR_NO_ERROR) {

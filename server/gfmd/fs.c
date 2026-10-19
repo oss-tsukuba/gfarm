@@ -729,7 +729,7 @@ gfm_server_fhopen(struct peer *peer, int from_client, int skip)
 	gfarm_int32_t fd;
 	gfarm_int32_t mode = 0;
 	static const char diag[] = "GFM_PROTO_FHOPEN";
-	char *msg;
+	char *msg = NULL; /* shut up warning by gcc */
 
 	e = gfm_server_get_request(peer, diag, "lli", &inum, &gen, &flag);
 	if (e != GFARM_ERR_NO_ERROR) {
