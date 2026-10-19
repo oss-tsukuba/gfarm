@@ -23,6 +23,14 @@ Please use GNU make on operating systems other than Linux and NetBSD.
 	Password:
 	# make install
 
+"make install" executed by root runs ldconfig(8) to update the shared
+library cache.  If "make install" is not executed by root, or if the
+library directory (e.g. /usr/local/lib) is not listed in
+/etc/ld.so.conf or /etc/ld.so.conf.d/*.conf, add the directory there
+and run ldconfig as root, or set the LD_LIBRARY_PATH environment
+variable.  Otherwise, Gfarm commands and daemons fail to start with
+"error while loading shared libraries: libgfarm.so.1".
+
 Options for configure:
 
   --with-postgresql=directory
