@@ -3754,7 +3754,10 @@ t_apply(void)
 		struct t_apply_info *ai = &apply_tests[i];
 
 		wpos1 = journal_file_writer_pos(writer);
+		/* exclusive with file_copy_by_host_remover thread */
+		giant_lock();
 		ai->test();
+		giant_unlock();
 		wpos2 = journal_file_writer_pos(writer);
 		sprintf(msg, "%s:wpos", ai->name);
 		TEST_ASSERT_L(msg, wpos1, wpos2);
