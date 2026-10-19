@@ -621,7 +621,28 @@ gfarm_error_t
 gfs_pio_failover(GFS_File gf)
 {
 	gfarm_error_t e = failover(gf->gfm_server);
+	int fc;
 
+	if (e == GFARM_ERR_NO_ERROR) {
+		fc = gfarm_filesystem_failover_count(
+		    gfarm_filesystem_get_by_connection(gf->gfm_server));
+		if (gf->fd == -1 || gfs_file_is_stale(gf, fc)) {
+			/*
+			 * the failover itself succeeded, but this file has not
+			 * been reopened, e.g. because gfs_pio_reopen() failed.
+			 * the caller must not retry its operation with
+			 * the invalid descriptor.
+			 */
+			e = gfs_pio_error_unlocked(gf);
+			if (e == GFARM_ERR_NO_ERROR ||
+			    e == GFARM_ERR_GFMD_FAILED_OVER)
+				e = GFARM_ERR_STALE_FILE_HANDLE;
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "gfs_pio_failover: %s (fd=%d) is not reopened: %s",
+			    gf->url != NULL ? gf->url : "(fhopen)", gf->fd,
+			    gfarm_error_string(e));
+		}
+	}
 	if (e != GFARM_ERR_NO_ERROR)
 		gf->error = e;
 	return (e);
