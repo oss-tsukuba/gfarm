@@ -763,7 +763,9 @@ t_write_blocked(void)
 		TEST_ASSERT_NOERR("db_journal_read",
 		    db_journal_read(reader, NULL, t_write_blocked_post_read,
 		    NULL, &eof));
+		journal_file_mutex_lock(self_jf, thr_where);
 		journal_file_reader_commit_pos(reader);
+		journal_file_mutex_unlock(self_jf, thr_where);
 	}
 
 	/*

@@ -225,6 +225,8 @@ When regress or regress\_full option is specified this test includes regression 
     % sh ./restart.sh
     ... and check /var/tmp/gfarm.log.tsan.* on host c{1..8}
 
+If ASLR is not disabled on the host, `all.sh tsan clean` fails in configure with "cannot run C compiled programs", and config.log in the build directory shows "FATAL: ThreadSanitizer: unexpected memory mapping".  The sysctl setting is reset when the host (or WSL) restarts, so check it by `cat /proc/sys/kernel/randomize_va_space` (it should be 0) before the TSAN test.
+
 ## Create RPM packages
 
     % sh ./devrpm.sh
