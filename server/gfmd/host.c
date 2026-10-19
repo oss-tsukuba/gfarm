@@ -847,16 +847,26 @@ host_is_file_removable(struct host *h)
  * LOCKS: host::acstract_host::mutex
  * SLEEPS: no
  */
-int
-host_is_disk_available(struct host *h, gfarm_off_t size)
+static int
+host_is_disk_available_common(struct host *h, gfarm_off_t size,
+	int assume_available_if_unknown, const char *diag)
 {
 	gfarm_uint64_t avail;
 	gfarm_off_t minfree = gfarm_get_minimum_free_disk_space();
 	struct host_status status;
-	static const char diag[] = "host_is_disk_available";
 
 	abstract_host_mutex_lock(&h->ah, diag);
-	if (host_is_up_unlocked(h)) {
+	if (host_is_up_unlocked(h) && assume_available_if_unknown &&
+	    (h->report_flags & GFM_PROTO_SCHED_FLAG_LOADAVG_AVAIL) == 0 &&
+	    !h->is_readonly) {
+		/*
+		 * the back channel is connected, but the first status
+		 * has not been reported yet.
+		 * e.g. just after gfmd startup or failover.
+		 */
+		abstract_host_mutex_unlock(&h->ah, diag);
+		return (1);
+	} else if (host_is_up_unlocked(h)) {
 		host_status_get_unlocked(h, &status, 0);
 		/* disk_avail of readonly-host is 0 */
 		avail = AVAIL_SUB(status.disk_avail * 1024,
@@ -868,6 +878,36 @@ host_is_disk_available(struct host *h, gfarm_off_t size)
 
 	/* to reduce no space risk, keep minimum disk space */
 	return (avail >= minfree + size);
+}
+
+/*
+ * PREREQUISITE: giant_lock (for gfarm_get_minimum_free_disk_space())
+ * LOCKS: host::acstract_host::mutex
+ * SLEEPS: no
+ */
+int
+host_is_disk_available(struct host *h, gfarm_off_t size)
+{
+	return (host_is_disk_available_common(h, size, 0,
+	    "host_is_disk_available"));
+}
+
+/*
+ * same as host_is_disk_available(), but assumes that the disk is available
+ * if the host is up and its status has not been reported yet.
+ * this is used for a replica which already exists on the host,
+ * to prevent a reopen operation after gfmd failover from failing with
+ * GFARM_ERR_NO_SPACE before the first status report.
+ *
+ * PREREQUISITE: giant_lock (for gfarm_get_minimum_free_disk_space())
+ * LOCKS: host::acstract_host::mutex
+ * SLEEPS: no
+ */
+int
+host_is_disk_available_or_unknown(struct host *h, gfarm_off_t size)
+{
+	return (host_is_disk_available_common(h, size, 1,
+	    "host_is_disk_available_or_unknown"));
 }
 
 int

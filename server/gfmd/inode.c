@@ -5652,7 +5652,7 @@ inode_has_writable_replica(struct inode *inode)
 	for (copy = inode->u.c.s.f.copies; copy != NULL;
 	    copy = copy->host_next) {
 		if (FILE_COPY_IS_VALID(copy) &&
-		    host_is_disk_available(copy->host, 0))
+		    host_is_disk_available_or_unknown(copy->host, 0))
 			return (1);
 	}
 	return (0);
@@ -5876,7 +5876,7 @@ inode_schedule_confirm_for_write(struct file_opening *opening,
 		 * because it incurs a race.
 		 */
 		if (FILE_COPY_IS_VALID(copy) /* == inode_has_replica() */) {
-			if (host_is_disk_available(spool_host, 0))
+			if (host_is_disk_available_or_unknown(spool_host, 0))
 				return (GFARM_ERR_NO_ERROR);
 			else
 				return (GFARM_ERR_NO_SPACE);

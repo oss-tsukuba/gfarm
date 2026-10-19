@@ -45,6 +45,7 @@ int host_supports_async_protocols(struct host *);
 int host_supports_cksum_protocols(struct host *);
 int host_supports_status2_protocols(struct host *);
 int host_is_disk_available(struct host *, gfarm_off_t);
+int host_is_disk_available_or_unknown(struct host *, gfarm_off_t);
 int host_is_readonly(struct host *);
 int host_is_file_removable(struct host *);
 
