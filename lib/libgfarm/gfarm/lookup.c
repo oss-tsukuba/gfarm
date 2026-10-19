@@ -1231,6 +1231,15 @@ gfm_name2_op0(const char *src, const char *dst, int flags,
 					if (same_mds)
 						dconn_locked = 0;
 				}
+				if (dconn_locked && !same_mds) {
+					/*
+					 * to keep locking order, since
+					 * gfm_client_connection_free() may
+					 * lock sconn
+					 */
+					gfm_client_connection_unlock(dconn);
+					dconn_locked = 0;
+				}
 				gfm_client_connection_free(sconn);
 				sconn = NULL;
 			}
@@ -1251,6 +1260,15 @@ gfm_name2_op0(const char *src, const char *dst, int flags,
 					dconn_locked = 0;
 					if (same_mds)
 						sconn_locked = 0;
+				}
+				if (sconn_locked && !same_mds) {
+					/*
+					 * to keep locking order, since
+					 * gfm_client_connection_free() may
+					 * lock dconn
+					 */
+					gfm_client_connection_unlock(sconn);
+					sconn_locked = 0;
 				}
 				gfm_client_connection_free(dconn);
 				dconn = NULL;
