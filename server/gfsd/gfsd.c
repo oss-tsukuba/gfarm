@@ -7518,10 +7518,16 @@ main(int argc, char **argv)
 	int syslog_level = -1;
 	char *syslog_file = NULL;
 	struct in_addr *self_addresses, listen_address;
-	int table_size, self_addresses_count, ch, i, nfound, max_fd, p;
+	int table_size, self_addresses_count, ch, i, nfound, p;
 	int save_errno;
 	struct sigaction sa;
+#ifdef HAVE_POLL
+	struct pollfd *fds;
+	int nfds, local_fds_base, udp_fds_base;
+#else /* !HAVE_POLL */
+	int max_fd;
 	fd_set requests;
+#endif /* !HAVE_POLL */
 	struct stat sb;
 	int spool_check_level = 0;
 	int is_root = geteuid() == 0;
@@ -7867,6 +7873,28 @@ main(int argc, char **argv)
 	    self_addresses_count, self_addresses, self_info.port);
 	accepting.udp_socks_count = self_addresses_count;
 
+#ifdef HAVE_POLL
+	/*
+	 * poll(2) is used instead of select(2), because ThreadSanitizer
+	 * does not intercept select(2), and does not deliver signals
+	 * such as SIGTERM while this process is blocked in select(2).
+	 */
+	local_fds_base = 1;
+	udp_fds_base = local_fds_base + accepting.local_socks_count;
+	nfds = udp_fds_base + accepting.udp_socks_count;
+	GFARM_MALLOC_ARRAY(fds, nfds);
+	if (fds == NULL)
+		accepting_fatal(GFARM_MSG_UNFIXED,
+		    "cannot allocate pollfds for accepting sockets (%d)",
+		    nfds);
+	fds[0].fd = accepting.tcp_sock;
+	for (i = 0; i < accepting.local_socks_count; i++)
+		fds[local_fds_base + i].fd = accepting.local_socks[i].sock;
+	for (i = 0; i < accepting.udp_socks_count; i++)
+		fds[udp_fds_base + i].fd = accepting.udp_socks[i];
+	for (i = 0; i < nfds; i++)
+		fds[i].events = POLLIN;
+#else /* !HAVE_POLL */
 	max_fd = accepting.tcp_sock;
 	for (i = 0; i < accepting.local_socks_count; i++) {
 		if (max_fd < accepting.local_socks[i].sock)
@@ -7879,6 +7907,7 @@ main(int argc, char **argv)
 	if (max_fd >= FD_SETSIZE)
 		accepting_fatal(GFARM_MSG_1000597,
 		    "too big socket file descriptor: %d", max_fd);
+#endif /* !HAVE_POLL */
 
 	if (seteuid(gfsd_uid) == -1) {
 		save_errno = errno;
@@ -7944,6 +7973,9 @@ main(int argc, char **argv)
 		    "accepting TCP socket O_NONBLOCK");
 
 	for (;;) {
+#ifdef HAVE_POLL
+		nfound = poll(fds, nfds, -1);
+#else /* !HAVE_POLL */
 		FD_ZERO(&requests);
 		FD_SET(accepting.tcp_sock, &requests);
 		for (i = 0; i < accepting.local_socks_count; i++)
@@ -7951,6 +7983,7 @@ main(int argc, char **argv)
 		for (i = 0; i < accepting.udp_socks_count; i++)
 			FD_SET(accepting.udp_socks[i], &requests);
 		nfound = select(max_fd + 1, &requests, NULL, NULL, NULL);
+#endif /* !HAVE_POLL */
 		if (nfound <= 0) {
 			save_errno = errno;
 			if (got_sigchld)
@@ -7959,16 +7992,29 @@ main(int argc, char **argv)
 			    save_errno == EAGAIN)
 				continue;
 			errno = save_errno;
+#ifdef HAVE_POLL
+			fatal_errno(GFARM_MSG_UNFIXED, "poll");
+#else /* !HAVE_POLL */
 			fatal_errno(GFARM_MSG_1000600, "select");
+#endif /* !HAVE_POLL */
 		}
 
-		if (FD_ISSET(accepting.tcp_sock, &requests)) {
+#ifdef HAVE_POLL
+		if (fds[0].revents != 0)
+#else /* !HAVE_POLL */
+		if (FD_ISSET(accepting.tcp_sock, &requests))
+#endif /* !HAVE_POLL */
+		{
 			start_server(accepting.tcp_sock,
 			    (struct sockaddr*)&client_addr,sizeof(client_addr),
 			    (struct sockaddr*)&client_addr, NULL, &accepting);
 		}
 		for (i = 0; i < accepting.local_socks_count; i++) {
+#ifdef HAVE_POLL
+			if (fds[local_fds_base + i].revents != 0)
+#else /* !HAVE_POLL */
 			if (FD_ISSET(accepting.local_socks[i].sock, &requests))
+#endif /* !HAVE_POLL */
 				start_server(accepting.local_socks[i].sock,
 				    (struct sockaddr *)&client_local_addr,
 				    sizeof(client_local_addr),
@@ -7977,7 +8023,11 @@ main(int argc, char **argv)
 				    &accepting);
 		}
 		for (i = 0; i < accepting.udp_socks_count; i++) {
+#ifdef HAVE_POLL
+			if (fds[udp_fds_base + i].revents != 0)
+#else /* !HAVE_POLL */
 			if (FD_ISSET(accepting.udp_socks[i], &requests))
+#endif /* !HAVE_POLL */
 				datagram_server(accepting.udp_socks[i]);
 		}
 	}
