@@ -6497,8 +6497,12 @@ inode_replicated(struct file_replicating *fr,
 	    src_errcode != GFARM_ERR_INVALID_FILE_REPLICA &&
 	    src_errcode != GFARM_ERR_CHECKSUM_MISMATCH) {
 		/*
-		 * XXX - src_errcode check is a workaround to avoid
-		 * infinite loop of replica check until #836 is fixed
+		 * src_errcode check avoids infinite loop of replica
+		 * check, which repeats replication from the corrupted
+		 * source replica.  Since #836 was fixed, the source
+		 * gfsd moves the corrupted replica to lost+found and
+		 * reports replica_lost, so this check is only a
+		 * safeguard in case the report fails.
 		 *
 		 * #647 - workaround for #646 - retry replication when
 		 * a result of replication is failure
