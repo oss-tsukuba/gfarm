@@ -1,7 +1,7 @@
 #!/bin/sh
 
 . ./regress.conf
-. ./gftool/gfxattr/gfxattr-init.sh
+. ${testbase}/gfxattr-init.sh
 
 dir=${gftmp}
 

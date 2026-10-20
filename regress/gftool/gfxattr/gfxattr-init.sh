@@ -1,6 +1,6 @@
 [ ${GFXATTR_INIT_INITIALIZED:-0} -eq 1 ] && return 0
 
-. gftool/gfxattr/gfxattr.conf
+. ${testbase}/gfxattr.conf
 xattrtmp=$data/xattrtest
 attrfile=$xattrtmp/xattr
 attrfile2=$xattrtmp/xattr2

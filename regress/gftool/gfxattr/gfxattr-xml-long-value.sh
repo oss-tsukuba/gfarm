@@ -1,7 +1,7 @@
 #!/bin/sh
 
-. gftool/gfxattr/gfxattr.conf
 . ./regress.conf
+. ${testbase}/gfxattr.conf
 
 large_num=4100
 
