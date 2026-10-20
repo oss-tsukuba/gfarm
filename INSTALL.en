@@ -2,8 +2,8 @@
 Gfarm installation from the source code
 =======================================
 
-This distribution is fully tested on Linux.  The building tests were done
-on NetBSD, and Solaris.
+This distribution is fully tested on Linux.  Build tests were done
+on NetBSD and Solaris.
 
 This section describes how to build Gfarm binaries from the source
 distribution.  You can skip this document if you use a binary
@@ -11,8 +11,8 @@ distribution.
 
 To build the Gfarm system, at least the OpenSSL library and the
 PostgreSQL library are required.  For SASL XOAUTH2 and other
-authentications, other libraries are required.  For details, see
-"Required Package" section below.
+authentications, other libraries are required.  For details, see the
+"Required Packages" section below.
 
 The following is the installation procedure for the Gfarm system.
 Please use GNU make on operating systems other than Linux and NetBSD.
@@ -52,17 +52,19 @@ Options for configure:
 
   --with-infiniband=directory
 
-  Specifies to use RDMA through InfiniBand.  When an original package is
-  installed, appoint the directory.
+  Enables RDMA data transfer through InfiniBand between clients and
+  gfsd.  If the InfiniBand package is installed in a non-standard
+  location, specify the directory.
 
-  Memory resource limit must be enough to perform RDMA effectively.
-  Please edit /etc/security/limits.conf and enlarge the limit.
+  The memory resource limit (RLIMIT_MEMLOCK) must be large enough to
+  perform RDMA effectively.  Edit /etc/security/limits.conf to raise
+  the limit as follows.
 	"* hard memlock unlimited"
 
   --without-mtsafe-netdb
 
-  Specifies if either getaddrinfo(3) or getnameinfo(3) library function
-  is not multi-thread safe.
+  Specify this option if either the getaddrinfo(3) or getnameinfo(3)
+  library function is not multi-thread safe.
 
   --prefix=directory
 
@@ -78,7 +80,7 @@ Options for configure:
 
   --enable-voms
 
-  Enables to compile the gfvoms-sync command to synchronize Gfarm
+  Enables building the gfvoms-sync command to synchronize Gfarm
   group membership with VOMS (Virtual Organization Membership Service)
   servers.  This option requires Python and ZSI (Zolera SOAP
   Infrastructure).
@@ -88,24 +90,24 @@ Options for configure:
 
   Enables XML extended attribute feature that can be queried by the
   XML Path Language (XPath).  For details, see manual pages of gfxattr
-  and gffindxmlattr.  This option requires postgresql-8.3 or
-  later that configures with the --with-libxml option.  See
+  and gffindxmlattr.  This option requires PostgreSQL 8.3 or
+  later built with the --with-libxml option.  See
   http://www.postgresql.org/docs/8.3/static/install-procedure.html for
-  details.  The -X option is also required to config-gfarm when
+  details.  The -X option must also be specified to config-gfarm when
   setting up the Gfarm file system.
   This is optional.
 
   --enable-linuxkernel
 
-  Enables to compile the Gfarm kernel driver on linux kernel 2.6.
+  Enables building the Gfarm kernel driver for Linux kernel 2.6.
 
 When you need to specify a compiler program explicitly, use the
 environment variable, CC.  This is an example using gcc.
 
 	% env CC=gcc ./configure [options]
 
-Required Package
-----------------
+Required Packages
+-----------------
 
 * RPM Package
 
@@ -123,7 +125,7 @@ python3, python3-docopt(*), python3-schema(*)	(required to execute gfptar)
 ruby				(required to execute gfjournal{dump,admin})
 jq					(required for jwt-parse)
 
-(*) These packages are included in EPEL.  EPEL packages can be used by
+(*) These packages are included in EPEL.  EPEL can be enabled by
     # yum install epel-release
 (**) https://github.com/oss-tsukuba/cyrus-sasl-xoauth2-idp.git
 
@@ -151,7 +153,7 @@ Note
   are missing, it is still possible to build Gfarm without these
   authentication methods.
 
-* gfptar works better if orjson pip (Python Package Installer) package
-  is installed.
+* gfptar runs faster if the orjson Python package is installed by pip
+  (Python Package Installer).
 
 $Id$

@@ -11,8 +11,8 @@
 
 システムの構築のためには，少なくとも PostgreSQL と OpenSSL ライブラリ
 が必要です．SASL XOAUTH2認証等を有効にするためには他のライブラリも必要
-となります。構築に必要なライブラリとパッケージについては以下の「構築に
-必要なパッケージ」の章を参照下さい．
+となります．構築に必要なライブラリとパッケージについては以下の「構築に
+必要なパッケージ」の章を参照してください．
 
 システムを構築するには，下記のようにします．
 Linux と NetBSD 以外の OS では，GNU make を使ってください．
@@ -44,13 +44,13 @@ configure コマンドには，下記のオプションがあります．
 
   認証方式として GSI を可能とします．ディレクトリは Globus toolkit の
   インストールされているディレクトリを指定します．ディレクトリを指定し
-  ないと pkg-config、環境変数 GLOBUS_LOCATION の示すディレクトリが順に
+  ないと pkg-config，環境変数 GLOBUS_LOCATION の示すディレクトリが順に
   試されます．
   Globus toolkit のうち GSSAPI ライブラリが必要となります．
   このオプションは省略可能です．
   デフォールトでは，インストールされている flavor を自動的に検索します
   が，--with-globus-flavor="gcc32dbg" のようにして flavor 名を指定する
-  ともできます．
+  こともできます．
 
 ・--with-infiniband=ディレクトリ
 
@@ -85,8 +85,8 @@ configure コマンドには，下記のオプションがあります．
 
 ・--enable-voms
 
-  このオプションを指定すると，VOMS の VO，グループ，役割と連携して 
-  Gfarm のグループを管理するためのコマンド群をビルドします．詳しくは 
+  このオプションを指定すると，VOMS の VO，グループ，役割と連携して
+  Gfarm のグループを管理するためのコマンド群をビルドします．詳しくは
   doc/voms-{install,man,dev}.ja を参照してください．
   このオプションは省略可能です．
 
@@ -103,8 +103,8 @@ configure コマンドには，下記のオプションがあります．
 
 ・--enable-linuxkernel
 
-  linux kernel 2.6 上の Gfarmカーネルドライバーを作成することを指示します。
-  詳しくは linux/doc/manual.{pdf,doc} を参照してください。
+  linux kernel 2.6 上の Gfarmカーネルドライバーを作成することを指示します．
+  詳しくは linux/doc/manual.{pdf,doc} を参照してください．
 
 利用するコンパイラを明示したい場合には，環境変数 CC に，コンパイラのコ
 マンド名を指定して configure を実行してください．以下は gcc を指定する
@@ -139,7 +139,7 @@ jq					(jwt-parse の実行に必要)
 
 libssl-dev
 libpq-dev
-libsasl2-dev sasl2-bin			(SASL認証に必要)
+libsasl2-dev, sasl2-bin			(SASL認証に必要)
 libscitokens-dev, cyrus-sasl-xoauth2-idp(**)	(SASL XOAUTH2 認証に必要)
 libkrb5-dev				(Kerberos 認証に必要)
 libglobus-gssapi-gsi-dev, pkg-config	(--with-globus オプションに必要)
@@ -166,6 +166,6 @@ jq					(jwt-parse の実行に必要)
   構築されます。
 
 * gfptar はorjson pip (Python Package Installer) パッケージがインストー
-  ルされていれば実行が高速になります
+  ルされていれば実行が高速になります．
 
 $Id$

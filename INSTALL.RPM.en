@@ -26,17 +26,17 @@ details, see INSTALL.en document.
 	# yum install openssl-devel postgresql-devel
 	# rpmbuild --rebuild gfarm-X.X.X-X.src.rpm
 
-Binary packages are located at /usr/src/redhat/RPM/ARCH/.
+Binary packages are located at ~/rpmbuild/RPMS/ARCH/.
 
 To enable the GSI authentication, development packages of Globus
-GSSAPI is also required.  Moreover the environment variables
+GSSAPI are also required.  Moreover, the environment variable
 GFARM_CONFIGURE_OPTION should be defined.
 
 	# GFARM_CONFIGURE_OPTION=--with-globus rpmbuild \
 		--rebuild gfarm-X.X.X-X.src.rpm
 
 If it succeeds, gfarm-gsi packages (not gfarm packages) are built.  If
-not, make sure whether the Globus GSSAPI library is correctly
+not, make sure that the Globus GSSAPI library is correctly
 installed.
 
 Installation of a Gfarm metadata server
@@ -47,8 +47,8 @@ Install RPM packages for the Gfarm metadata server.
 	# rpm -Uvh gfarm-server-X.X.X-X.ARCH.rpm \
 		   gfarm-libs-X.X.X-X.ARCH.rpm
 
-Note: The binary package names may be gfarm-gsi-* not gfarm-* if the
-      Package does include GSI authentication.
+Note: The binary package names are gfarm-gsi-* instead of gfarm-* if
+      the package includes GSI authentication.
 
 Installation of a Gfarm filesystem node (and client node)
 =========================================================

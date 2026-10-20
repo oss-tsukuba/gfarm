@@ -81,7 +81,7 @@ Enable nscd to run at OS startup, and start it.
 
 #### Time synchronization
 
-Since Gfarm cannot be accessed if the time is out of sync, the time is synchronized using NTP (Network Time Protocol) or similar.
+Since Gfarm cannot be accessed if the time is out of sync, synchronize the time using NTP (Network Time Protocol) or similar.
 
 #### CA certificates
 
@@ -131,7 +131,7 @@ xoauth2_user_claim: xxxx
 xoauth2_issuers: xxxx
 ```
 
-For client, set up the configuration file `gfarm-client.conf`.
+For clients, set up the configuration file `gfarm-client.conf`.
 
 ```console
 # vi $(pkg-config --variable=libdir libsasl2)/sasl2/gfarm-client.conf
@@ -175,7 +175,7 @@ For RPM packages, follow the steps below.
 
 ```console
 $ wget $OSSURL/$PKG/releases/download/$VER/$PKG-$VER-1.src.rpm
-$ GFARM_CONFIGURE_OPTION="-enable-xmlattr --enable-tls13 --enable-cyrus-sasl" rpmbuild --rebuild $PKG-$VER-1.src.rpm
+$ GFARM_CONFIGURE_OPTION="--enable-xmlattr --enable-tls13 --enable-cyrus-sasl" rpmbuild --rebuild $PKG-$VER-1.src.rpm
 $ sudo rpm -Uvh rpmbuild/RPMS/*/$PKG-*
 ```
 
@@ -240,7 +240,7 @@ $ sudo rpm -Uvh rpmbuild/RPMS/*/$PKG-*
 
 Configure the system to save core dump files related to Gfarm and the executable files at the time of the problem for a sufficient period of time to investigate the problem.
 
-The following is an example of configuring systemd-coredump and abrtd services to stop and keep core dump files in `/var/tmp`.
+The following is an example of stopping services such as systemd-coredump and abrtd, and keeping core dump files in `/var/tmp`.
 
 ##### Stopping core dump acquisition services
 
@@ -257,7 +257,7 @@ The following is for Ubuntu 24.04.
 # systemctl disable apport
 ```
 
-##### Checking kernel parameters
+##### Setting kernel parameters
 
 Create the configuration file `/etc/sysctl.d/gfarm.conf` with the following contents.
 
@@ -284,7 +284,7 @@ This setting will take effect after restarting the OS.
 
 ##### Setting the maximum size of core files for daemon processes
 
-If you are internally calling Gfarm-related programs or using daemon processes that utilize the Gfarm library, you will also need to configure the settings for daemon processes. Change or add the following to the `DefaultLimitCORE` setting in `/etc/systemd/system.conf`.
+If you use daemon processes that internally call Gfarm-related programs or use the Gfarm library, you also need to configure the settings for daemon processes. Change or add the following to the `DefaultLimitCORE` setting in `/etc/systemd/system.conf`.
 
 ```text
 DefaultLimitCORE=infinity
@@ -300,7 +300,7 @@ If you want to apply the setting without restarting the OS, execute the followin
 
 ### Testing
 
-These instructions verify client operations for an existing Gfarm file system.  If you do not have one, please refer to the setup manual.
+These instructions verify client operations for an existing Gfarm file system.  If you do not have one, please refer to the [setup manual](SETUP-manual-en.md).
 
 Place the Gfarm configuration file in `/etc/gfarm2.conf`.
 
@@ -326,13 +326,13 @@ $ gfstatus
 
 #### Checking with the gfhost command
 
-You can check the connection to storage servers with the `gfhost` command. First, check UDP connectivity.
+You can check the connection to filesystem nodes with the `gfhost` command. First, check UDP connectivity.
 
 ```console
 $ gfhost -lvuU
 ```
 
-The number on the far left indicates the server's load average. If it displays `-.--/-.--/-.--`, it indicates that the storage server is not running, and if it displays `x.xx/x.xx/x.xx`, it indicates that you cannot connect to that node.
+The number on the far left indicates the server's load average. If it displays `-.--/-.--/-.--`, it indicates that gfsd on the filesystem node is not running, and if it displays `x.xx/x.xx/x.xx`, it indicates that you cannot connect to that node.
 
 Next, verify TCP connectivity and authentication.
 

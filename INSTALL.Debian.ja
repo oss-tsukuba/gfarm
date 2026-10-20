@@ -39,7 +39,7 @@ Gfarm では，ファイルシステムノードは通常クライアントに�
 ● クライアントノードのインストール
 ===================================
 
-ファイルシステムノード用の Debian パッケージをインストールします．
+クライアントノード用の Debian パッケージをインストールします．
 
 	# apt-get install gfarm-client gfarm-doc
 
@@ -50,4 +50,4 @@ gfarm2fs パッケージのインストールも必要です．
 
 	# apt-get install gfarm2fs
 
-$Id: INSTALL.RPM.ja 5010 2010-12-30 00:29:02Z n-soda $
+$Id$
