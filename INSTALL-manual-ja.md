@@ -164,6 +164,15 @@ $ make
 $ sudo make install
 ```
 
+`make install`では`ldconfig`により共有ライブラリのキャッシュが更新されます。
+RHEL系のデフォルトのように`/usr/local/lib`が`/etc/ld.so.conf`や`/etc/ld.so.conf.d/*.conf`に登録されていない場合は、登録して`ldconfig`を実行します。
+そうしないと、Gfarmのコマンドやデーモンが`error while loading shared libraries: libgfarm.so.1`で起動に失敗します。
+
+```console
+$ echo /usr/local/lib | sudo tee /etc/ld.so.conf.d/gfarm.conf
+$ sudo ldconfig
+```
+
 RPMパッケージの場合は以下のようになります。
 
 ```console
