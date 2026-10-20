@@ -35,7 +35,7 @@ The following is for Rocky Linux 9.
 # dnf -y install golang python3
 # dnf -y install python3-docopt python3-schema
 # dnf config-manager --set-enabled crb
-# dnf -y install fuse fuse-devel libacl-devel
+# dnf -y install fuse3 fuse3-devel libacl-devel
 # dnf -y install jq wget git
 # dnf -y install libpq-devel postgresql postgresql-server ruby
 ```
@@ -50,7 +50,7 @@ The following is for Ubuntu 24.04.
 # apt-get -y install libsasl2-dev sasl2-bin libscitokens-dev
 # apt-get -y install golang python3
 # apt-get -y install python3-docopt python3-schema
-# apt-get -y install fuse libfuse-dev libacl1-dev
+# apt-get -y install fuse3 libfuse3-dev libacl1-dev
 # apt-get -y install jq wget curl git
 # apt-get -y install python3-venv bzip2 xz-utils
 # apt-get -y install libpq-dev postgresql postgresql-client ruby
@@ -184,14 +184,14 @@ $ sudo rpm -Uvh rpmbuild/RPMS/*/$PKG-*
 gfarm2fs is required on the client.  Download the gfarm2fs source code from the following URL:  
 <https://github.com/oss-tsukuba/gfarm2fs/releases>
 
-This document describes version 1.2.22, but if a newer version is available, use the latest version.
+This document describes version 3.0.0, but if a newer version is available, use the latest version.
 
 Compile as any user (does not need to be root), then install with the root privilege.
 
 ```console
 $ OSSURL=https://github.com/oss-tsukuba
 $ PKG=gfarm2fs
-$ VER=1.2.22
+$ VER=3.0.0
 $ wget --content-disposition $OSSURL/$PKG/archive/$VER.tar.gz
 $ tar pxf $PKG-$VER.tar.gz
 $ cd $PKG-$VER
@@ -213,14 +213,14 @@ $ sudo rpm -Uvh rpmbuild/RPMS/*/$PKG-*
 jwt-agent is required on the client.  Download the jwt-agent source code from the following URL:  
 <https://github.com/oss-tsukuba/jwt-agent/releases>
 
-This document describes version 1.1.1, but if a newer version is available, use the latest version.
+This document describes version 1.1.2, but if a newer version is available, use the latest version.
 
 Compile as any user (does not need to be root), then install with the root privilege.
 
 ```console
 $ OSSURL=https://github.com/oss-tsukuba
 $ PKG=jwt-agent
-$ VER=1.1.1
+$ VER=1.1.2
 $ wget --content-disposition $OSSURL/$PKG/archive/$VER.tar.gz
 $ tar pxf $PKG-$VER.tar.gz
 $ cd $PKG-$VER
@@ -357,6 +357,6 @@ $ cat a
 a
 $ rm a
 $ cd
-$ fusermount -u /tmp/gfarm
+$ fusermount3 -u /tmp/gfarm
 $ rmdir /tmp/gfarm
 ```

@@ -23,7 +23,7 @@ and PostgreSQL are required.  For SASL XOAUTH2 and other
 authentications, other development packages are required.  For
 details, see INSTALL.en document.
 
-	# yum install openssl-devel postgresql-devel
+	# dnf install openssl-devel postgresql-devel
 	# rpmbuild --rebuild gfarm-X.X.X-X.src.rpm
 
 Binary packages are located at ~/rpmbuild/RPMS/ARCH/.

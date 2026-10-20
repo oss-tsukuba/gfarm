@@ -35,7 +35,7 @@ OSやパッケージを最新の状態にし、Gfarmの導入に必要なパッ�
 # dnf -y install golang python3
 # dnf -y install python3-docopt python3-schema
 # dnf config-manager --set-enabled crb
-# dnf -y install fuse fuse-devel libacl-devel
+# dnf -y install fuse3 fuse3-devel libacl-devel
 # dnf -y install jq wget git
 # dnf -y install libpq-devel postgresql postgresql-server ruby
 ```
@@ -50,7 +50,7 @@ OSやパッケージを最新の状態にし、Gfarmの導入に必要なパッ�
 # apt-get -y install libsasl2-dev sasl2-bin libscitokens-dev
 # apt-get -y install golang python3
 # apt-get -y install python3-docopt python3-schema
-# apt-get -y install fuse libfuse-dev libacl1-dev
+# apt-get -y install fuse3 libfuse3-dev libacl1-dev
 # apt-get -y install jq wget curl git
 # apt-get -y install python3-venv bzip2 xz-utils
 # apt-get -y install libpq-dev postgresql postgresql-client ruby
@@ -184,14 +184,14 @@ $ sudo rpm -Uvh rpmbuild/RPMS/*/$PKG-*
 gfarm2fsはクライアントで必要となります。以下からgfarm2fsのソースコードをダウンロードします。  
 <https://github.com/oss-tsukuba/gfarm2fs/releases>
 
-本書ではバージョン1.2.22で記載していますが、より新しいバージョンがリリースされていた場合、最新のバージョンを利用します。
+本書ではバージョン3.0.0で記載していますが、より新しいバージョンがリリースされていた場合、最新のバージョンを利用します。
 
 任意のユーザ（rootである必要はない）でコンパイルした後、root権限でインストールします。
 
 ```console
 $ OSSURL=https://github.com/oss-tsukuba
 $ PKG=gfarm2fs
-$ VER=1.2.22
+$ VER=3.0.0
 $ wget --content-disposition $OSSURL/$PKG/archive/$VER.tar.gz
 $ tar pxf $PKG-$VER.tar.gz
 $ cd $PKG-$VER
@@ -213,14 +213,14 @@ $ sudo rpm -Uvh rpmbuild/RPMS/*/$PKG-*
 jwt-agentはクライアントで必要となります。以下からjwt-agentのソースコードをダウンロードします。  
 <https://github.com/oss-tsukuba/jwt-agent/releases>
 
-本書ではバージョン1.1.1で記載していますが、より新しいバージョンがリリースされていた場合、最新のバージョンを利用します。
+本書ではバージョン1.1.2で記載していますが、より新しいバージョンがリリースされていた場合、最新のバージョンを利用します。
 
 任意のユーザ（rootである必要はない）でコンパイルした後、root権限でインストールします。
 
 ```console
 $ OSSURL=https://github.com/oss-tsukuba
 $ PKG=jwt-agent
-$ VER=1.1.1
+$ VER=1.1.2
 $ wget --content-disposition $OSSURL/$PKG/archive/$VER.tar.gz
 $ tar pxf $PKG-$VER.tar.gz
 $ cd $PKG-$VER
@@ -357,6 +357,6 @@ $ cat a
 a
 $ rm a
 $ cd
-$ fusermount -u /tmp/gfarm
+$ fusermount3 -u /tmp/gfarm
 $ rmdir /tmp/gfarm
 ```

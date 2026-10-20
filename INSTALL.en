@@ -2,8 +2,7 @@
 Gfarm installation from the source code
 =======================================
 
-This distribution is fully tested on Linux.  Build tests were done
-on NetBSD and Solaris.
+This distribution is fully tested on Linux.
 
 This section describes how to build Gfarm binaries from the source
 distribution.  You can skip this document if you use a binary
@@ -45,10 +44,7 @@ Options for configure:
   GSI authentication method.  When a directory is not specified,
   pkg-config is tried at first, and then the environment variable
   GLOBUS_LOCATION is tried.
-  This is optional.  The flavor of the Globus library is searched for
-  automatically.
-  If you need to specify a flavor, specify it with the
-  --with-globus-flavor=flavor option.
+  This is optional.
 
   --with-infiniband=directory
 
@@ -78,23 +74,13 @@ Options for configure:
   specified in the above --prefix option.  This document assumes
   that --sysconfdir=/etc is specified.  This is optional.
 
-  --enable-voms
-
-  Enables building the gfvoms-sync command to synchronize Gfarm
-  group membership with VOMS (Virtual Organization Membership Service)
-  servers.  This option requires Python and ZSI (Zolera SOAP
-  Infrastructure).
-  This is optional.
-
   --enable-xmlattr
 
   Enables XML extended attribute feature that can be queried by the
   XML Path Language (XPath).  For details, see manual pages of gfxattr
-  and gffindxmlattr.  This option requires PostgreSQL 8.3 or
-  later built with the --with-libxml option.  See
-  http://www.postgresql.org/docs/8.3/static/install-procedure.html for
-  details.  The -X option must also be specified to config-gfarm when
-  setting up the Gfarm file system.
+  and gffindxmlattr.  This option requires PostgreSQL built with the
+  --with-libxml option.  The -X option must also be specified to
+  config-gfarm when setting up the Gfarm file system.
   This is optional.
 
   --enable-linuxkernel
@@ -111,7 +97,7 @@ Required Packages
 
 * RPM Package
 
-openssl-devel		(openssl11-devel(*) required for TLS/SASL on CentOS 7)
+openssl-devel
 postgresql-devel or libpq-devel
 cyrus-sasl-devel			(required for SASL)
 scitokens-cpp-devel, cyrus-sasl-xoauth2-idp(**)	(required for SASL XOAUTH2)
@@ -119,14 +105,14 @@ krb5-devel				(required for Kerberos)
 globus-gssapi-gsi-devel(*), pkgconfig	(required for --with-globus option)
 rdma-core-devel				(required for --with-infiniband option)
 postgresql, postgresql-server		(required to execute config-gfarm)
-fuse, fuse-devel, libacl-devel		(required for gfarm2fs)
+fuse3, fuse3-devel, libacl-devel	(required for gfarm2fs)
 ganglia-gmond-python		(required to execute config-gf[ms]d-iostat)
 python3, python3-docopt(*), python3-schema(*)	(required to execute gfptar)
 ruby				(required to execute gfjournal{dump,admin})
 jq					(required for jwt-parse)
 
 (*) These packages are included in EPEL.  EPEL can be enabled by
-    # yum install epel-release
+    # dnf install epel-release
 (**) https://github.com/oss-tsukuba/cyrus-sasl-xoauth2-idp.git
 
 * Debian Package
@@ -139,7 +125,7 @@ libkrb5-dev				(required for Kerberos)
 libglobus-gssapi-gsi-dev, pkgconf	(required for --with-globus option)
 libibverbs-dev				(required for --with-infiniband option)
 postgresql, postgresql-client		(required to execute config-gfarm)
-fuse, libfuse-dev, libacl1-dev		(required for gfarm2fs)
+fuse3, libfuse3-dev, libacl1-dev	(required for gfarm2fs)
 python3, python3-docopt, python3-schema	(required to execute gfptar)
 ruby				(required to execute gfjournal{dump,admin})
 jq					(required for jwt-parse)
@@ -148,6 +134,10 @@ jq					(required for jwt-parse)
 
 Note
 ----
+
+* TLS and SASL authentication use the TLS 1.3 protocol, which requires
+  OpenSSL 1.1.1 or later.  If the version of OpenSSL is older than
+  1.1.1, Gfarm is built without TLS and SASL authentication.
 
 * Even if the required packages for TLS, SASL, SASL XOAUTH2, Kerberos
   are missing, it is still possible to build Gfarm without these

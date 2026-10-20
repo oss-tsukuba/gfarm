@@ -26,7 +26,7 @@ RPM バイナリパッケージは，RPM ソースパッケージ(SRPM)から作
 ブラリが必要となります．SASL XOAUTH2認証等を有効にするためには他の開発
 用ライブラリも必要となります．詳細は INSTALL.ja を参照してください．
 
-	# yum install openssl-devel postgresql-devel
+	# dnf install openssl-devel postgresql-devel
 	# rpmbuild --rebuild gfarm-X.X.X-X.src.rpm
 
 なお，バイナリパッケージは ~/rpmbuild/RPMS/ARCH/ に作成されます．
