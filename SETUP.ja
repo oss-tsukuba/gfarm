@@ -19,13 +19,14 @@
 　 ▽ gfhost - ファイルシステムノード情報の表示
 　 ▽ gfdf - ファイルシステムノードのファイル容量の表示
 ● 利用ユーザの登録
-● 管理者権限，gfarmroot 権限をもつユーザの登録
+● 管理者権限，gfarmroot 権限の追加
 ● Gfarm の基本的な利用
 　 ▽ ファイルのコピー
 　 ▽ ファイルの参照
 　 ▽ マウント
 ● Gfarm の進んだ利用
 　 ▽ ファイルの複製
+　 ▽ ファイルの自動複製
 
 ● 本ドキュメントについて
 =========================
@@ -61,7 +62,7 @@ Gfarm ファイルシステムの導入にあたり，まず，メタデータ�
 導入後，一般および管理者権限，gfarmroot 権限をもつ Gfarm グローバル
 ユーザの登録を行います．
 
-▽ ファイアウォール設定一覧
+▽ ファイアウォール設定
 
 次のようなネットワーク通信を許可する必要があります．
 
@@ -125,7 +126,7 @@ root 権限が必要です．以下の設定は root 権限で行います．
   オペレーティングシステムに一般ユーザ権限でログインし，su コマンドを
   用いて root 権限を得て config-gfarm コマンドを実行している場合，
   オペレーティングシステムへのログイン時の一般ユーザのアカウント名が，
-  Gfarm管理者のグローバルユーザ名のデフォルトとして用いられます
+  Gfarm管理者のグローバルユーザ名のデフォルトとして用いられます．
   デフォルト以外にしたい場合には，config-gfarm コマンドの -A オプション
   で指定してください．
 
@@ -185,7 +186,7 @@ config-gfarm は，順番に次の処理を行います．
 
        ここで <sysconfdir> は，Gfarm をコンパイルした際に，configure の
        --sysconfdir オプションとして指定した値 (詳しくは INSTALL.ja 参照)
-       を意味します．Gfarm を PRM バイナリパッケージからインストールした
+       を意味します．Gfarm を RPM バイナリパッケージからインストールした
        場合は /etc になります．
 
        同一サーバで複数の Gfarm ファイルシステムに対するメタデータサーバを
@@ -243,32 +244,17 @@ gfmd の CPU 負荷をいくぶん低減することができます．
 no_root_squash なしで NFS 共有している場合は，この設定をしてはいけません．
 
 GSI 認証あるいは TLS 認証を用いるためには，ホスト証明書やクライアント
-証明書を用意した上で Globus 用の各種の設定を行なう必要がありますが，こ
-こではその説明を省略しますので http://www.globus.org/ で「GSI C Admin
-Guide」を参照して下さい．
+証明書を用意する必要があります．詳細は doc/html/ja/user/index.html を
+参照してください．
 
 以上で，メタデータサーバー上での設定は完了です．
 下記を実行して，gfmd が動作していることを確認してください．
 
-  Red Hat Enterprise Linux 7 またはそれ以降:
+  systemd を採用している Linux:
 	# systemctl status gfmd.service
 
   その他:
 	# /etc/init.d/gfmd status
-
-ブート時における自動起動の設定を行うには，以下のコマンドを用います．
-
-  Red Hat Enterprise Linux 7 またはそれ以降:
-	# systemctl enable gfarm-pgsql.service
-	# systemctl enable gfmd.service
-
-  Red Hat Enterprise Linux 6 またはそれ以前:
-	# chkconfig --add gfmd
-	# chkconfig --add gfarm-pgsql
-
-  Debian:
-	# update-rc.d gfmd defaults
-	# update-rc.d gfarm-pgsql defaults
 
 上記作業によって作成されたファイルを消去したい場合には，消去用
 スクリプトが <sysconfdir>/unconfig-gfarm.sh として生成されています
@@ -301,7 +287,7 @@ unconfig-gfarm.sh が実行する内容は，unconfig-gfarm.sh に -t オプシ�
 
   メタデータサーバとファイルシステムノードが，NFS でホームディレ
   クトリを共有している場合は，既に存在するためコピーする必要はあ
-  りません
+  りません．
 
   「.gfarm_shared_key」のファイルのモードが「0600」，ファイル
   の所有者が「_gfarmfs」となっているかどうか確認してください．
@@ -320,7 +306,7 @@ GSI 認証と TLS 認証の場合は，gfsd 用のサービス証明書を取得
   証明書は /etc/grid-security/gfsd/gfsdcert.pem に置き，
   秘密鍵は /etc/grid-security/gfsd/gfsdkey.pem に置き，
   ディレクトリとファイルのオーナを _gfarmfs とします．
-  gfsdkey.pem のファイルモードは 0400 とします．
+  gfsdkey.pem のファイルモードは 0600 とします．
 
   複数の gfsd を異なる仮想IPアドレスを用い同一ホストで立ち上げたい場合は
   以下の config-gfsd に対し -l オプションでホスト名，あるいはIPアドレスを
@@ -334,7 +320,7 @@ GSI 認証と TLS 認証の場合は，gfsd 用のサービス証明書を取得
 
   ここで <sysconfdir> は，Gfarm をコンパイルした際に，configure の
   --sysconfdir オプションとして指定した値 (詳しくは INSTALL.ja 参照)
-  を意味します．Gfarm を PRM バイナリパッケージからインストールした場
+  を意味します．Gfarm を RPM バイナリパッケージからインストールした場
   合は /etc になります．
   ただし，config-gfsd コマンドに --prefix <directory> オプションを指定
   した場合には、指定したディレクトリの下の etc ディレクトリとなります．
@@ -360,6 +346,8 @@ GSI 認証と TLS 認証の場合は，gfsd 用のサービス証明書を取得
 
 エラーが起きなければ，起動スクリプト <sysconfdir>/init.d/gfsd の配置が
 行われます．(OS によっては <sysconfdir>/rc.d/gfsd に配置されます．)
+systemd を採用している Linux では，代わりにユニットファイル
+/etc/systemd/system/gfsd.service が配置されます．
 
 config-gfsd は，最後に「gfhost」コマンドの実行をうながす表示を行います．
 その表示を Gfarm ファイルシステムの管理者に伝え，実行してもらってくだ
@@ -371,7 +359,7 @@ config-gfsd は，最後に「gfhost」コマンドの実行をうながす表�
   般ユーザ権限で実行します．GSI 認証あるいは TLS 証明書認証の場合は，-D
   オプションで指定したユーザ証明書を利用して実行します．
 
-	$ /usr/bin/gfhost -c -a i386-fedora5-linux -p 600 -n 2 node1.example.org
+	$ /usr/bin/gfhost -c -a x86_64-rocky9.5-linux -p 600 -n 8 node1.example.org
 
   共有鍵認証を用いる場合で，Gfarm の利用者のオペレーティングシステム上での
   アカウント名が，Gfarm のグローバルユーザ名と異なる場合には，gfarm2.conf
@@ -379,7 +367,7 @@ config-gfsd は，最後に「gfhost」コマンドの実行をうながす表�
 
 root 権限になり，下記のコマンドで gfsd を起動します．
 
-  Red Hat Enterprise Linux 7 またはそれ以降:
+  systemd を採用している Linux:
 	# systemctl start gfsd.service
 
   その他:
@@ -389,22 +377,16 @@ root 権限になり，下記のコマンドで gfsd を起動します．
 
 下記を実行して，gfsd が動作していることを確認してください．
 
-  Red Hat Enterprise Linux 7 またはそれ以降:
+  systemd を採用している Linux:
 	# systemctl status gfsd.service
 
   その他:
 	# /etc/init.d/gfsd status
 
-ブート時における自動起動の設定を行うには，以下のコマンドを用います．
+systemd を採用している Linux で，ブート時における自動起動の設定を行う
+には，以下のコマンドを用います．
 
-  Red Hat Enterprise Linux 7 またはそれ以降:
 	# systemctl enable gfsd.service
-
-  Red Hat Enterprise Linux 6 またはそれ以前:
-	# chkconfig --add gfsd
-
-  Debian:
-	# update-rc.d gfsd defaults
 
 上記作業によって作成されたファイルを消去したい場合には，消去用
 スクリプトが <sysconfdir>/unconfig-gfsd.sh として生成されています
@@ -480,27 +462,28 @@ Gfarm ファイルシステムは，クライアントの設定をしている�
 確認します．
 
 	$ gfhost -M
-	i386-fedora3-linux 2 linux-1.example.com 600 0
-	i386-fedora3-linux 2 linux-2.example.com 600 0
-	i386-fedora3-linux 2 linux-3.example.com 600 0
-	i386-redhat8.0-linux 1 linux-4.example.com 600 0
-	sparc-sun-solaris8 1 solaris-1.example.com 600 0
-	sparc-sun-solaris8 1 solaris-2.example.com 600 0
+	x86_64-rocky9.5-linux 8 linux-1.example.com 600 0
+	x86_64-rocky9.5-linux 8 linux-2.example.com 600 0
+	x86_64-rocky9.5-linux 8 linux-3.example.com 600 0
+	x86_64-rocky9.5-linux 4 linux-4.example.com 600 0
+	x86_64-rocky9.5-linux 4 linux-5.example.com 600 0
+	x86_64-rocky9.5-linux 4 linux-6.example.com 600 0
 	...
 
 次に，利用可能かどうか確認します．
 
 	$ gfhost -lv
-	0.01/0.03/0.03 s i386-fedora3-linux 2 linux-1.example.com 600 0(10.0.0.1)
-	0.00/0.00/0.00 s i386-fedora3-linux 2 linux-2.example.com 600 0(10.0.0.2)
-	-.--/-.--/-.-- - i386-fedora3-linux 2 linux-3.example.com 600 0(10.0.0.3)
-	0.00/0.02/0.00 x i386-redhat8.0-linux 1 linux-4.example.com 600 0(10.0.0.4)
-	0.10/0.00/0.00 G sparc-sun-solaris8 1 solaris-1.example.com 600 0(10.0.1.1)
-	x.xx/x.xx/x.xx - sparc-sun-solaris8 1 solaris-2.example.com 600 0(10.0.1.2)
+	0.01/0.03/0.03 s x86_64-rocky9.5-linux 8 linux-1.example.com 600 0(10.0.0.1)
+	0.00/0.00/0.00 s x86_64-rocky9.5-linux 8 linux-2.example.com 600 0(10.0.0.2)
+	-.--/-.--/-.-- - x86_64-rocky9.5-linux 8 linux-3.example.com 600 0(10.0.0.3)
+	0.00/0.02/0.00 x x86_64-rocky9.5-linux 4 linux-4.example.com 600 0(10.0.0.4)
+	0.10/0.00/0.00 G x86_64-rocky9.5-linux 4 linux-5.example.com 600 0(10.0.1.1)
+	x.xx/x.xx/x.xx - x86_64-rocky9.5-linux 4 linux-6.example.com 600 0(10.0.1.2)
 	...
 
-左から二番目の文字が 's', 'g', 'G' であれば，そのファイルシステムノード
-が利用可能です．'x' の場合は認証に失敗しています．
+左から二番目の文字は認証方式を示しており，例えば 's' は共有鍵認証です．
+'x' の場合は認証に失敗しており，'-' の場合は認証を試みていません．
+詳細は gfhost の man ページを参照してください．
 
 また，一番左が '-.--/-.--/-.--' と表示される場合は，gfsd が正しく起動し
 ていないことを示しており，'x.xx/x.xx/x.xx' と表示される場合は，そのノー
@@ -511,12 +494,12 @@ Gfarm ファイルシステムは，クライアントの設定をしている�
 現在利用可能なファイルシステムの容量を表示します．
 
 	$ gfdf
-	   1K-blocks        Used       Avail Capacity Host
-	  1824815008      213068  1824601940     0%   linux-1.example.com
-	  6835798016    71836400  6763961616     1%   linux-2.example.com
-	  1669232308    44224088  1625008220     3%   solaris-1.example.com
-	---------------------------------------------
-	 10329845332   116273556 10213571776     1%
+	   1K-blocks        Used       Avail Use% Host
+	  1824815008      213068  1824601940   0% linux-1.example.com
+	  6835798016    71836400  6763961616   1% linux-2.example.com
+	  1669232308    44224088  1625008220   3% linux-5.example.com
+	-----------------------------------------
+	 10329845332   116273556 10213571776   1%
 
 なお，上記コマンドの詳細は，man ページを参照してください．
 
@@ -537,7 +520,7 @@ Gfarm ファイルシステムを利用するためには，グローバルユ�
 
   gfarmroot 権限とは，Gfarm ファイルシステムの全ディレクトリや全データに
   アクセスできる権限です．Gfarm のメタデータサーバに登録されている
-  gfarmroot グループに所属しているグローバルユーザは，gfaromroot 権限を
+  gfarmroot グループに所属しているグローバルユーザは，gfarmroot 権限を
   持ちます．
 
   config-gfarm の -A オプションで指定された管理者は、Gfarm の 管理者権限
@@ -554,7 +537,7 @@ realname は人間がユーザを識別できる名前，homedir は Gfarm 上�
 レクトリ，gsi_dn は GSI 認証あるいは TLS 証明書認証におけるユーザ証明
 書の Subject DN です．
 
-  ホームディレクトリは 2009年9月現在利用されていません．
+  ホームディレクトリは現在利用されていません．
 
 realname などに space を含む場合は，ダブルクオートなどで括ります．例え
 ば，以下のようにしてグローバルユーザ taro を登録します．
@@ -614,9 +597,9 @@ config-gfarm コマンドの -A オプションで指定した管理者は，
 ファイルを Gfarm ファイルシステムにコピーするためには，gfreg コマンドを
 利用します．
 
-	$ gfreg .gfarmrc foo
+	$ gfreg .gfarm2rc foo
 
-この例では，ファイル .gfarmrc を Gfarm ファイルシステムに foo（より正
+この例では，ファイル .gfarm2rc を Gfarm ファイルシステムに foo（より正
 確には /foo）としてコピーしています．
 
 ▽ ファイルの参照
@@ -637,9 +620,10 @@ gfarm2fs コマンドを導入すると，Gfarm ファイルシステムをマ�
 	$ gfarm2fs /tmp/foo
 
 マウント後は，通常のコマンドでファイル操作を行うことが可能です．アンマ
-ウントは，fusermount コマンドで行います．
+ウントは，fusermount3 コマンド（FUSE 2 の場合は fusermount コマンド）で
+行います．
 
-	$ fusermount -u /tmp/foo
+	$ fusermount3 -u /tmp/foo
 
 詳細は，gfarm2fs のパッケージに含まれるドキュメントを参照してください．
 
