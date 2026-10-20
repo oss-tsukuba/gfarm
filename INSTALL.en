@@ -23,6 +23,10 @@ Please use GNU make on operating systems other than Linux and NetBSD.
 	Password:
 	# make install
 
+If Gfarm commands fail with "error while loading shared libraries:
+libgfarm.so.1", register the library directory (e.g. /usr/local/lib)
+in /etc/ld.so.conf.d/ and run ldconfig(8) as root.
+
 Options for configure:
 
   --with-postgresql=directory

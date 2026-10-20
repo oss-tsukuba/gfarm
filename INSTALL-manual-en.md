@@ -164,6 +164,13 @@ $ make
 $ sudo make install
 ```
 
+On Rocky Linux, `/usr/local/lib` is not registered for the dynamic linker by default.  Register it as follows; otherwise, Gfarm fails with `error while loading shared libraries: libgfarm.so.1`.
+
+```console
+$ echo /usr/local/lib | sudo tee /etc/ld.so.conf.d/gfarm.conf
+$ sudo ldconfig
+```
+
 For RPM packages, follow the steps below.
 
 ```console

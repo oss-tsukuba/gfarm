@@ -23,6 +23,10 @@ Linux と NetBSD 以外の OS では，GNU make を使ってください．
 	Password:
 	# make install
 
+Gfarm のコマンドが "error while loading shared libraries: libgfarm.so.1"
+で失敗する場合は，ライブラリのディレクトリ（例えば /usr/local/lib）を
+/etc/ld.so.conf.d/ に登録し，root で ldconfig(8) を実行してください．
+
 configure コマンドには，下記のオプションがあります．
 
 ・--with-postgresql=ディレクトリ
