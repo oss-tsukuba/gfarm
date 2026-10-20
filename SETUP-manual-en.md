@@ -72,13 +72,6 @@ mds1% sudo systemctl start gfmd
 mds1% sudo systemctl enable gfmd
 ```
 < -->
-Configure the backend database and metadata server to start automatically at system startup.
-
-```console
-mds1% sudo systemctl enable gfarm-pgsql
-mds1% sudo systemctl enable gfmd
-```
-
 Next, update gfarm2.conf to add the list of metadata servers for the redundant configuration and the authentication method to enable.  The following is an example when the FQDNs of the metadata servers in the redundant configuration are set to mds1.example.com, mds2.example.com, and mds3.example.com.
 
 ```text

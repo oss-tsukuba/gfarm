@@ -72,13 +72,6 @@ mds1% sudo systemctl start gfmd
 mds1% sudo systemctl enable gfmd
 ```
 < -->
-システム起動時にバックエンドデータベースとメタデータサーバを自動的に起動するように設定します。
-
-```console
-mds1% sudo systemctl enable gfarm-pgsql
-mds1% sudo systemctl enable gfmd
-```
-
 次に、`gfarm2.conf`を更新して、冗長構成をとるメタデータサーバのリストと有効にする認証方式を追加します。以下は冗長構成のメタデータサーバのFQDNをmds1.example.com, mds2.example.com, mds3.example.comとしたときの例です。
 
 ```text
