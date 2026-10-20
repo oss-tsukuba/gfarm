@@ -24,6 +24,7 @@ Table of contents
   - mount
 * Further examples of advanced functionality
   - File replica creation
+  - Automatic file replica creation
 
 About this document
 ===================
@@ -93,7 +94,7 @@ you disallow packets of icmp type:3 (unreachable) code:4 (need fragment),
 the path MTU discovery feature stops working, and the communication
 performance may drop or the communication itself may stop working in
 some cases.
-For other types of icmp packets, disalllowing them may delay detection
+For other types of icmp packets, disallowing them may delay detection
 of a communication error, or may prevent Gfarm related programs from
 getting a reason of an error.
 
@@ -164,7 +165,7 @@ The -a option specifies the authentication method in Gfarm file
 system.  The default is shared secret authentication (sharedsecret).
 Available authentication methods are 'sharedsecret',
 'tls_sharedsecret', 'tls_client_certificate', 'gsi_auth', 'gsi',
-'kerberos_auth', and 'kerberos'.  For details, refer to
+'kerberos_auth', 'kerberos', 'sasl_auth', and 'sasl'.  For details, refer to
 html/en/user/index.html, a manual page of gfarm2.conf(5) and
 Gfarm-FAQ.en.  The -D option is only required for GSI and TLS client
 certificate authentications.
@@ -229,7 +230,7 @@ it is necessary to create a '_gfarmfs' user and a shared secret key.
 	# useradd -c "Gfarm gfsd" -m _gfarmfs
 
   Note that --force-badname option may be required for useradd on
-  Debian.  We recommend to create a home directory in NFS if
+  Debian.  We recommend creating a home directory in NFS if
   available.
 
 Create a shared secret key '~/.gfarm_shared_key' for the _gfarmfs user
@@ -302,14 +303,14 @@ Configuration of a Gfarm file system node
 
 To set up a Gfarm file system node, the root privilege is required.
 
-Create a '_gfarmfs' user if not exist.  This user is a system account
+Create a '_gfarmfs' user if it does not exist.  This user is a system account
 for a gfsd I/O daemon.
 
 	# useradd -c "Gfarm gfsd" -m _gfarmfs
 
 In case of the shared secret authentication, copy the shared secret
-key ".gfarm_shared_key" in the _gfarmfs's directory from the metadata
-server if the home directory is not shared by NFS.
+key ".gfarm_shared_key" to the home directory of _gfarmfs from the
+metadata server if the home directory is not shared by NFS.
 
   Note that the permission of ".gfarm_shared_key" file should be '0600'
   and the owner should be '_gfarmfs'.
@@ -366,7 +367,9 @@ user without the -t option.
 	# config-gfsd /var/gfarm
 
 'config-gfsd' creates the startup script in <sysconfdir>/init.d/gfsd
-(or <sysconfdir>/rc.d/gfsd, according to operating system).
+(or <sysconfdir>/rc.d/gfsd, according to operating system).  On Linux
+with systemd, it creates the unit configuration file
+/etc/systemd/system/gfsd.service instead.
 
 Finally, 'config-gfsd' displays a command line of 'gfhost' that would
 be executed by an administrator in Gfarm file system.
@@ -432,7 +435,7 @@ on this file system node will be removed.
 Finally, 'unconfig-gfsd.sh' displays a command line of 'gfhost'
 that would be executed by an administrator in Gfarm file system.
 Execute the displayed text by the user who executed the "gfhost -c"
-command above.  An example of the commmand is the following:
+command above.  An example of the command is the following:
 
 	$ /usr/bin/gfhost -d node1.example.org
 
@@ -444,7 +447,7 @@ Configuration of a Gfarm client node
 
 Copy /etc/gfarm2.conf from the metadata server to the client node.
 
-  This setting can be substituted for copying to ~/.gfarm2rc.
+  Instead, you can copy it to ~/.gfarm2rc.
 
 In case of the shared secret authentication:
 
@@ -453,9 +456,8 @@ In case of the shared secret authentication:
       there is nothing to do.
 
    If not:
-      run the "gfkey -f -p <expiration_time_by_second>" command by
-      the each user's privilege which correspond to Gfarm global
-      users.  The command creates ".gfarm_shared_key" file in
+      run the "gfkey -f -p <expiration_time_by_second>" command as
+      each user corresponding to a Gfarm global user.  The command creates ".gfarm_shared_key" file in
       each user's home directory.  Then copy the file to each user's
       home directory on all metadata servers, all file system nodes,
       and all client nodes.
@@ -512,9 +514,10 @@ with the metadata server.
 	x.xx/x.xx/x.xx - sparc-sun-solaris8 1 solaris-2.example.com 600 0(10.0.1.2)
 	...
 
-The second field shows the status of authentication with the file system
-node.  's', 'g', and 'G' show successful authentication, while 'x'
-shows an authentication failure.
+The second field shows the authentication method with the file system
+node, for example, 's' for the shared secret authentication.  'x'
+shows an authentication failure, and '-' shows that the authentication
+was not tried.  For details, refer to the man page of gfhost.
 
 '-.--/-.--/-.--' in the first field shows that gfsd has not executed
 correctly, and 'x.xx/x.xx/x.xx' shows the file system node is probably
@@ -557,7 +560,7 @@ a Gfarm global user.
   A Gfarm administrator specified by the -A option of the config-gfarm
   command is automatically registered as a Gfarm global user which has
   the Gfarm administrative privilege.
-  Thus, it not necessary to register the user by the gfuser command.
+  Thus, it is not necessary to register the user by the gfuser command.
 
 For user registration, execute gfuser command.
 This requires the Gfarm administrative privilege;
@@ -577,8 +580,8 @@ following example registers a global user 'foo';
 	$ gfuser -c foo "foo bar" /home/foo ""
 
 Next, it is necessary to create a home directory for the user.
-This should be done by a user which have the gfarmroot privilege.
-Because there is no user which has the gfarmroot privilege by default,
+This should be done by a user who has the gfarmroot privilege.
+Because there is no user who has the gfarmroot privilege by default,
 it's necessary to add the privilege by the gfgroup command
 described in the next section, before invoking the following commands.
 
@@ -618,7 +621,7 @@ To add the members, use 'gfgroup -ma' command.
 
 	$ gfgroup -ma gfarmadm user1 user2 ...
 
-The member of the "gfarmroot" group have the gfarmroot privilege.
+The members of the "gfarmroot" group have the gfarmroot privilege.
 
 	$ gfgroup -ma gfarmroot user1 user2 ...
 
@@ -631,9 +634,9 @@ o File copy
 
 Files can be copied into the Gfarm file system by the 'gfreg' command.
 
-	$ gfreg .gfarmrc foo
+	$ gfreg .gfarm2rc foo
 
-This example shows that a local file .gfarmrc is copied to foo, more
+This example shows that a local file .gfarm2rc is copied to foo, more
 exactly /foo, in the Gfarm file system.
 
 o File access
@@ -654,11 +657,11 @@ Gfarm file system.
 	$ mkdir /tmp/foo
 	$ gfarm2fs /tmp/foo
 
-After mounting the Gfarm file system, any file system access can be
-available by usual commands.  To unmount it, use the 'fusermount' with
-the -u option.
+After mounting the Gfarm file system, files can be accessed by usual
+commands.  To unmount it, use 'fusermount3' (or 'fusermount' for
+FUSE 2) with the -u option.
 
-	$ fusermonut -u /tmp/foo
+	$ fusermount3 -u /tmp/foo
 
 For details, refer to documents in the gfarm2fs package.
 
@@ -668,7 +671,7 @@ Further examples of advanced functionality
 o File replica creation
 
 Each file in the Gfarm file system can have several file copies that
-can be stored on two and more file system nodes.
+can be stored on two or more file system nodes.
 
 Multiple file copies of a file enable access to the file even when one
 of the file system nodes is down.  Moreover, it prevents access
@@ -698,6 +701,6 @@ the number at the root directory by the gfncopy command.
 
 File replicas will be created after the close operation when the file
 is created, or updated.  When a file system node is down, required
-number of file repilcas are automatically created after an interval
-specified by replica_check_host_down_tresh.  Default interval is 3
+number of file replicas are automatically created after an interval
+specified by replica_check_host_down_thresh.  Default interval is 3
 hours.
