@@ -23,13 +23,9 @@ Linux と NetBSD 以外の OS では，GNU make を使ってください．
 	Password:
 	# make install
 
-root で make install を実行すると，ldconfig(8) により共有ライブラリの
-キャッシュが更新されます．root 以外で make install を実行した場合や，
-ライブラリのディレクトリ（例えば /usr/local/lib）が /etc/ld.so.conf
-や /etc/ld.so.conf.d/*.conf に登録されていない場合は，そのディレクトリ
-を登録して root で ldconfig を実行するか，環境変数 LD_LIBRARY_PATH を
-設定してください．そうしないと，Gfarm のコマンドやデーモンが
-"error while loading shared libraries: libgfarm.so.1" で起動に失敗します．
+Gfarm のコマンドが "error while loading shared libraries: libgfarm.so.1"
+で失敗する場合は，ライブラリのディレクトリ（例えば /usr/local/lib）を
+/etc/ld.so.conf.d/ に登録し，root で ldconfig(8) を実行してください．
 
 configure コマンドには，下記のオプションがあります．
 

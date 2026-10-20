@@ -164,9 +164,7 @@ $ make
 $ sudo make install
 ```
 
-`make install` runs `ldconfig` to update the shared library cache.
-If `/usr/local/lib` is not listed in `/etc/ld.so.conf` or `/etc/ld.so.conf.d/*.conf`, as on RHEL and its derivatives by default, register it and run `ldconfig`.
-Otherwise, Gfarm commands and daemons fail to start with `error while loading shared libraries: libgfarm.so.1`.
+On Rocky Linux, `/usr/local/lib` is not registered for the dynamic linker by default.  Register it as follows; otherwise, Gfarm fails with `error while loading shared libraries: libgfarm.so.1`.
 
 ```console
 $ echo /usr/local/lib | sudo tee /etc/ld.so.conf.d/gfarm.conf
