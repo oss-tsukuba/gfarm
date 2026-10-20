@@ -8,7 +8,7 @@
 
 ## 動作要件
 
-Unix/Linux系の各種OSが利用可能ですが、本書ではRocky Linux 9、Ubuntu 24.04を前提に説明します。他のバージョンやOSの場合は適宜読替えてください。
+Unix/Linux系の各種OSが利用可能ですが、本書ではRocky Linux 9、Ubuntu 24.04を前提に説明します。他のバージョンやOSの場合は適宜読み替えてください。
 
 ## 導入・設定
 
@@ -35,7 +35,7 @@ OSやパッケージを最新の状態にし、Gfarmの導入に必要なパッ�
 # dnf -y install golang python3
 # dnf -y install python3-docopt python3-schema
 # dnf config-manager --set-enabled crb
-# dnf -y install fuse fuse-devel libacl-devel
+# dnf -y install fuse3 fuse3-devel libacl-devel
 # dnf -y install jq wget git
 # dnf -y install libpq-devel postgresql postgresql-server ruby
 ```
@@ -50,7 +50,7 @@ OSやパッケージを最新の状態にし、Gfarmの導入に必要なパッ�
 # apt-get -y install libsasl2-dev sasl2-bin libscitokens-dev
 # apt-get -y install golang python3
 # apt-get -y install python3-docopt python3-schema
-# apt-get -y install fuse libfuse-dev libacl1-dev
+# apt-get -y install fuse3 libfuse3-dev libacl1-dev
 # apt-get -y install jq wget curl git
 # apt-get -y install python3-venv bzip2 xz-utils
 # apt-get -y install libpq-dev postgresql postgresql-client ruby
@@ -175,7 +175,7 @@ RPMパッケージの場合は以下のようになります。
 
 ```console
 $ wget $OSSURL/$PKG/releases/download/$VER/$PKG-$VER-1.src.rpm
-$ GFARM_CONFIGURE_OPTION="-enable-xmlattr --enable-tls13 --enable-cyrus-sasl" rpmbuild --rebuild $PKG-$VER-1.src.rpm
+$ GFARM_CONFIGURE_OPTION="--enable-xmlattr --enable-tls13 --enable-cyrus-sasl" rpmbuild --rebuild $PKG-$VER-1.src.rpm
 $ sudo rpm -Uvh rpmbuild/RPMS/*/$PKG-*
 ```
 
@@ -184,14 +184,14 @@ $ sudo rpm -Uvh rpmbuild/RPMS/*/$PKG-*
 gfarm2fsはクライアントで必要となります。以下からgfarm2fsのソースコードをダウンロードします。  
 <https://github.com/oss-tsukuba/gfarm2fs/releases>
 
-本書ではバージョン1.2.22で記載していますが、より新しいバージョンがリリースされていた場合、最新のバージョンを利用します。
+本書ではバージョン3.0.0で記載していますが、より新しいバージョンがリリースされていた場合、最新のバージョンを利用します。
 
 任意のユーザ（rootである必要はない）でコンパイルした後、root権限でインストールします。
 
 ```console
 $ OSSURL=https://github.com/oss-tsukuba
 $ PKG=gfarm2fs
-$ VER=1.2.22
+$ VER=3.0.0
 $ wget --content-disposition $OSSURL/$PKG/archive/$VER.tar.gz
 $ tar pxf $PKG-$VER.tar.gz
 $ cd $PKG-$VER
@@ -213,14 +213,14 @@ $ sudo rpm -Uvh rpmbuild/RPMS/*/$PKG-*
 jwt-agentはクライアントで必要となります。以下からjwt-agentのソースコードをダウンロードします。  
 <https://github.com/oss-tsukuba/jwt-agent/releases>
 
-本書ではバージョン1.1.1で記載していますが、より新しいバージョンがリリースされていた場合、最新のバージョンを利用します。
+本書ではバージョン1.1.2で記載していますが、より新しいバージョンがリリースされていた場合、最新のバージョンを利用します。
 
 任意のユーザ（rootである必要はない）でコンパイルした後、root権限でインストールします。
 
 ```console
 $ OSSURL=https://github.com/oss-tsukuba
 $ PKG=jwt-agent
-$ VER=1.1.1
+$ VER=1.1.2
 $ wget --content-disposition $OSSURL/$PKG/archive/$VER.tar.gz
 $ tar pxf $PKG-$VER.tar.gz
 $ cd $PKG-$VER
@@ -238,7 +238,7 @@ $ sudo rpm -Uvh rpmbuild/RPMS/*/$PKG-*
 
 #### コアダンプファイルを出力する設定
 
-問題が発生した場合の調査のためGfarm関連のファイルのコアダンプファイルおよびその時の実行ファイルを問題解決に十分な期間にわたってするまで保存するように設定します。
+問題が発生した場合の調査のため、Gfarm関連のプログラムのコアダンプファイルおよびその時の実行ファイルを、問題解決に十分な期間保存するように設定します。
 
 以下は、systemd-coredumpやabrtdのようなサービスを停止してコアダンプファイルを`/var/tmp`に保持する設定例です。
 
@@ -257,7 +257,7 @@ $ sudo rpm -Uvh rpmbuild/RPMS/*/$PKG-*
 # systemctl disable apport
 ```
 
-##### カーネルパラメータの確認
+##### カーネルパラメータの設定
 
 設定ファイル`/etc/sysctl.d/gfarm.conf`を以下の内容で作成します。
 
@@ -282,9 +282,9 @@ kernel.core_pattern = /var/tmp/core.%e.%p
 
 この設定はOS再起動後に有効になります。
 
-##### コアファイルの最大サイズのデーモン・プロセス用の設定
+##### コアファイルの最大サイズのデーモンプロセス用の設定
 
-Gfarm関係のプログラムを内部的に呼出すか、あるいはGfarmライブラリを利用するデーモンプロセスを利用している場合は、デーモン・プロセス用の設定も必要です。`/etc/systemd/system.conf`の`DefaultLimitCORE`の設定を以下のように変更ないし追加します。
+Gfarm関連のプログラムを内部的に呼び出すか、あるいはGfarmライブラリを利用するデーモンプロセスを利用している場合は、デーモンプロセス用の設定も必要です。`/etc/systemd/system.conf`の`DefaultLimitCORE`の設定を以下のように変更ないし追加します。
 
 ```text
 DefaultLimitCORE=infinity
@@ -292,7 +292,7 @@ DefaultLimitCORE=infinity
 
 この設定はOS再起動後に有効になります。
 
-OSを再起動せず設定を適用したい場合は、以下を実行した後に`systemctl restart`でデーモン・プロセスを再起動します。
+OSを再起動せず設定を適用したい場合は、以下を実行した後に`systemctl restart`でデーモンプロセスを再起動します。
 
 ```console
 # systemctl daemon-reload
@@ -300,7 +300,7 @@ OSを再起動せず設定を適用したい場合は、以下を実行した後
 
 ### 動作確認
 
-Gfarmがすでに構築されている環境に対し、クライアントとして動作確認を行う手順です。構築がまだの場合は構築マニュアルをご覧ください。
+Gfarmがすでに構築されている環境に対し、クライアントとして動作確認を行う手順です。構築がまだの場合は[構築マニュアル](SETUP-manual-ja.md)をご覧ください。
 
 まず、Gfarmの設定ファイルを`/etc/gfarm2.conf`に設置します。
 
@@ -357,6 +357,6 @@ $ cat a
 a
 $ rm a
 $ cd
-$ fusermount -u /tmp/gfarm
+$ fusermount3 -u /tmp/gfarm
 $ rmdir /tmp/gfarm
 ```

@@ -11,8 +11,8 @@
 
 システムの構築のためには，少なくとも PostgreSQL と OpenSSL ライブラリ
 が必要です．SASL XOAUTH2認証等を有効にするためには他のライブラリも必要
-となります。構築に必要なライブラリとパッケージについては以下の「構築に
-必要なパッケージ」の章を参照下さい．
+となります．構築に必要なライブラリとパッケージについては以下の「構築に
+必要なパッケージ」の章を参照してください．
 
 システムを構築するには，下記のようにします．
 Linux と NetBSD 以外の OS では，GNU make を使ってください．
@@ -44,13 +44,10 @@ configure コマンドには，下記のオプションがあります．
 
   認証方式として GSI を可能とします．ディレクトリは Globus toolkit の
   インストールされているディレクトリを指定します．ディレクトリを指定し
-  ないと pkg-config、環境変数 GLOBUS_LOCATION の示すディレクトリが順に
+  ないと pkg-config，環境変数 GLOBUS_LOCATION の示すディレクトリが順に
   試されます．
   Globus toolkit のうち GSSAPI ライブラリが必要となります．
   このオプションは省略可能です．
-  デフォールトでは，インストールされている flavor を自動的に検索します
-  が，--with-globus-flavor="gcc32dbg" のようにして flavor 名を指定する
-  ともできます．
 
 ・--with-infiniband=ディレクトリ
 
@@ -83,28 +80,20 @@ configure コマンドには，下記のオプションがあります．
   ション --sysconfdir=/etc が指定されたものと仮定して記述してあります．
   このオプションは省略可能です．
 
-・--enable-voms
-
-  このオプションを指定すると，VOMS の VO，グループ，役割と連携して 
-  Gfarm のグループを管理するためのコマンド群をビルドします．詳しくは 
-  doc/voms-{install,man,dev}.ja を参照してください．
-  このオプションは省略可能です．
-
 ・--enable-xmlattr
 
   XPath による検索が可能な XML 拡張属性を利用するときに指定します．詳
   しくは doc/xattr-install.ja および gfxattr，gffindxmlattr のマニュア
   ルページを参照してください．
   本機能を利用するためには，configure に --with-libxml オプションをつ
-  けて構築された postgresql-8.3.x 以降が必要となります．
-  （http://www.postgresql.org/docs/8.3/static/install-procedure.html）
+  けて構築された PostgreSQL が必要となります．
   また，config-gfarm 時に -X オプションの指定が必要になります．
   このオプションは省略可能です．
 
 ・--enable-linuxkernel
 
-  linux kernel 2.6 上の Gfarmカーネルドライバーを作成することを指示します。
-  詳しくは linux/doc/manual.{pdf,doc} を参照してください。
+  linux kernel 2.6 上の Gfarmカーネルドライバーを作成することを指示します．
+  詳しくは linux/doc/manual.{pdf,doc} を参照してください．
 
 利用するコンパイラを明示したい場合には，環境変数 CC に，コンパイラのコ
 マンド名を指定して configure を実行してください．以下は gcc を指定する
@@ -117,7 +106,7 @@ configure コマンドには，下記のオプションがあります．
 
 * RPM パッケージ
 
-openssl-devel (CentOS 7 で TLS/SASL認証を用いるには openssl11-devel(*) が必要)
+openssl-devel
 postgresql-devel or libpq-devel
 cyrus-sasl-devel			(SASL認証に必要)
 scitokens-cpp-devel, cyrus-sasl-xoauth2-idp(**)	(SASL XOAUTH2 認証に必要)
@@ -125,27 +114,27 @@ krb5-devel				(Kerberos 認証に必要)
 globus-gssapi-gsi-devel(*), pkgconfig	(--with-globus オプションに必要)
 rdma-core-devel				(--with-infiniband オプションに必要)
 postgresql, postgresql-server		(config-gfarm の実行に必要)
-fuse, fuse-devel, libacl-devel		(gfarm2fs の構築・実行に必要)
+fuse3, fuse3-devel, libacl-devel	(gfarm2fs の構築・実行に必要)
 ganglia-gmond-python			(config-gf[ms]d-iostat の実行に必要)
 python3, python3-docopt(*), python3-schema(*)	(gfptar の実行に必要)
 ruby					(gfjournal{dump,admin} の実行に必要)
 jq					(jwt-parse の実行に必要)
 
 (*) EPEL RPM リポジトリに含まれます．EPELは以下で利用できます．
-    # yum install epel-release
+    # dnf install epel-release
 (**) https://github.com/oss-tsukuba/cyrus-sasl-xoauth2-idp.git
 
 * Debian パッケージ
 
 libssl-dev
 libpq-dev
-libsasl2-dev sasl2-bin			(SASL認証に必要)
+libsasl2-dev, sasl2-bin			(SASL認証に必要)
 libscitokens-dev, cyrus-sasl-xoauth2-idp(**)	(SASL XOAUTH2 認証に必要)
 libkrb5-dev				(Kerberos 認証に必要)
 libglobus-gssapi-gsi-dev, pkg-config	(--with-globus オプションに必要)
 libibverbs-dev				(--with-infiniband オプションに必要)
 postgresql, postgresql-client		(config-gfarm の実行に必要)
-fuse, libfuse-dev, libacl1-dev		(gfarm2fs の構築・実行に必要)
+fuse3, libfuse3-dev, libacl1-dev	(gfarm2fs の構築・実行に必要)
 python3, python3-docopt, python3-schema	(gfptar の実行に必要)
 ruby					(gfjournal{dump,admin} の実行に必要)
 jq					(jwt-parse の実行に必要)
@@ -155,8 +144,8 @@ jq					(jwt-parse の実行に必要)
 注:
 
 * TLS 認証および SASL 認証では TLS 1.3 プロトコルを用いますので、
-  OpenSSL version 1.1 以降が必要です。
-  OpenSSL のバージョンが 1.1 より古い場合には TLS 認証および SASL 認証が
+  OpenSSL version 1.1.1 以降が必要です。
+  OpenSSL のバージョンが 1.1.1 より古い場合には TLS 認証および SASL 認証が
   無効なバイナリが構築されます。
 
 * Cyrus SASL がインストールされていない場合、SASL 認証が無効なバイナリが
@@ -166,6 +155,6 @@ jq					(jwt-parse の実行に必要)
   構築されます。
 
 * gfptar はorjson pip (Python Package Installer) パッケージがインストー
-  ルされていれば実行が高速になります
+  ルされていれば実行が高速になります．
 
 $Id$

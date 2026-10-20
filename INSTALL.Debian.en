@@ -40,9 +40,9 @@ Install the Debian packages for a Gfarm client node.
 
 A document package is optional.
 
-If you want to use the gfarm2fs to mount the Gfarm file system,
+If you want to use gfarm2fs to mount the Gfarm file system,
 install the gfarm2fs package as well.
 
 	# apt-get install gfarm2fs
 
-$Id: INSTALL.RPM.ja 5010 2010-12-30 00:29:02Z n-soda $
+$Id$
