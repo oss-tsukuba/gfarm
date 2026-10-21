@@ -164,13 +164,6 @@ $ make
 $ sudo make install
 ```
 
-Rocky Linuxでは`/usr/local/lib`がデフォルトでは動的リンカに登録されていないため、以下のように登録します。登録しないと`error while loading shared libraries: libgfarm.so.1`で失敗します。
-
-```console
-$ echo /usr/local/lib | sudo tee /etc/ld.so.conf.d/gfarm.conf
-$ sudo ldconfig
-```
-
 RPMパッケージの場合は以下のようになります。
 
 ```console
