@@ -58,7 +58,8 @@ while
 
 	echo "--- stopping old master ($old_master -> $new_master) ---"
 
-	$ssh $priv@$old_master -n $SUDO systemctl stop gfmd
+	# gfmd may be running by gfmd-slave.service
+	$ssh $priv@$old_master -n $SUDO systemctl stop gfmd gfmd-slave
 
 	# there may be one sequence number difference here
 	old_seqnum=`get_seqnum $priv@$old_master`
