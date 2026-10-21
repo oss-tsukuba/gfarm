@@ -153,18 +153,26 @@ void inode_remove_file_copy_for_invalid_host(gfarm_ino_t);
 int inode_is_updated(struct inode *, struct gfarm_timespec *);
 gfarm_error_t dir_entry_add(gfarm_ino_t, char *, int, gfarm_ino_t);
 
+/* reasons why inode_schedule_replication*() could not fix replicas */
+#define INODE_REP_FAIL_UNSCHEDULABLE	0x01 /* cannot schedule hosts */
+#define INODE_REP_FAIL_REMOVING		0x02 /* replicas being removed */
+#define INODE_REP_FAIL_UNSATISFIED	0x04 /* not enough hosts */
+#define INODE_REP_FAIL_QUOTA_EXCEEDED	0x08
+#define INODE_REP_FAIL_REQUEST_FAILED	0x10
+#define INODE_REP_FAIL_FEWER		0x20 /* fewer replicas than desired */
+
 struct hostset;
 gfarm_error_t inode_schedule_replication_within_scope(
 	struct inode *, struct dirset *, int,
 	int, struct host **,
 	int *, struct hostset *,
 	int *, struct hostset *, gfarm_time_t,
-	int *, struct hostset *, const char *, int *);
+	int *, struct hostset *, const char *, int *, int *);
 gfarm_error_t inode_schedule_replication(
 	struct inode *, struct dirset *, int, int, const char *,
 	int, struct host **,
 	int *, struct hostset *, gfarm_time_t,
-	int *, struct hostset *, const char *, int *);
+	int *, struct hostset *, const char *, int *, int *);
 
 gfarm_error_t inode_open(struct file_opening *, struct dirset *);
 struct dirset *inode_get_tdirset(struct inode *);

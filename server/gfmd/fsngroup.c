@@ -146,7 +146,7 @@ fsngroup_schedule_replication(
 	int n_srcs, struct host **srcs,
 	int *n_existingp, struct hostset *existing, gfarm_time_t grace,
 	int *n_being_removedp, struct hostset *being_removed, const char *diag,
-	int *total_p, int *req_ok_nump)
+	int *total_p, int *req_ok_nump, int *rep_failp)
 {
 	gfarm_error_t e, save_e = GFARM_ERR_NO_ERROR;
 	int i, n_scope;
@@ -196,7 +196,7 @@ fsngroup_schedule_replication(
 				inode, tdirset, num, n_srcs, srcs,
 			    &n_scope, scope, n_existingp, existing, grace,
 			    n_being_removedp, being_removed, diag,
-			    req_ok_nump);
+			    req_ok_nump, rep_failp);
 			hostset_free(scope);
 			if (e == GFARM_ERR_NO_MEMORY) {
 				save_e = e;

@@ -179,6 +179,17 @@ static double total_yield_time;
 static gfarm_uint64_t req_ok_num_total, req_ok_size_total;
 static gfarm_uint64_t remove_num_total, remove_size_total;
 
+/* reasons why replica_check_fix() could not fix replicas, see also inode.h */
+#define REPLICA_CHECK_FAIL_LOST		0x100 /* lost all replicas */
+#define REPLICA_CHECK_FAIL_NO_SOURCE	0x200 /* no available replica */
+
+/* number of files that replica_check_main() could not fix, for each reason */
+static gfarm_uint64_t lost_num_total, no_source_num_total;
+static gfarm_uint64_t unschedulable_num_total, removing_num_total;
+static gfarm_uint64_t unsatisfied_num_total, quota_exceeded_num_total;
+static gfarm_uint64_t request_failed_num_total, fewer_num_total;
+static gfarm_uint64_t retry_num_total;
+
 /*
  * 0: The replica should not be removed.
  * 1: The replica may be removed. (try inode_remove_replica_protected)
@@ -364,8 +375,9 @@ replica_check_remove_replicas(struct inode *inode,
 	return (e); /* GFARM_ERR_FILE_BUSY: retry */
 }
 
+/* REPLICA_CHECK_FAIL_* and INODE_REP_FAIL_* are OR-ed into *failp */
 static gfarm_error_t
-replica_check_fix(struct replication_info *info)
+replica_check_fix(struct replication_info *info, int *failp)
 {
 	gfarm_error_t e;
 	struct inode *inode = inode_lookup(info->inum);
@@ -410,6 +422,7 @@ replica_check_fix(struct replication_info *info)
 		    "replica_check: %lld:%lld:%s: lost all replicas",
 		    (long long)info->inum, (long long)info->gen,
 		    user_tenant_name(inode_get_user(inode)));
+		*failp |= REPLICA_CHECK_FAIL_LOST;
 		return (GFARM_ERR_NO_ERROR); /* error, ignore */
 	}
 
@@ -435,6 +448,7 @@ replica_check_fix(struct replication_info *info)
 		    "replica_check: %lld:%lld:%s: no available replica",
 		    (long long)info->inum, (long long)info->gen,
 		    user_tenant_name(inode_get_user(inode)));
+		*failp |= REPLICA_CHECK_FAIL_NO_SOURCE;
 		return (GFARM_ERR_NO_ERROR); /* ignore */
 	}
 
@@ -459,7 +473,7 @@ replica_check_fix(struct replication_info *info)
 	    info->replica_spec.desired_number, info->replica_spec.repattr,
 	    n_srcs, srcs, &n_existing, existing,
 	    gfarm_replica_check_host_down_thresh, /* giant_lock()ed */
-	    &n_being_removed, being_removed, diag, &req_ok_num);
+	    &n_being_removed, being_removed, diag, &req_ok_num, failp);
 
 	if (e == GFARM_ERR_NO_ERROR && replica_check_remove_enabled())
 		/* remove excessive number of replicas */
@@ -770,6 +784,27 @@ replication_info_free(struct replication_info *rep_info)
 
 static void replica_check_priority_task(void);
 
+static void
+replica_check_count_failures(int fail)
+{
+	if (fail & REPLICA_CHECK_FAIL_LOST)
+		lost_num_total++;
+	if (fail & REPLICA_CHECK_FAIL_NO_SOURCE)
+		no_source_num_total++;
+	if (fail & INODE_REP_FAIL_UNSCHEDULABLE)
+		unschedulable_num_total++;
+	if (fail & INODE_REP_FAIL_REMOVING)
+		removing_num_total++;
+	if (fail & INODE_REP_FAIL_UNSATISFIED)
+		unsatisfied_num_total++;
+	if (fail & INODE_REP_FAIL_QUOTA_EXCEEDED)
+		quota_exceeded_num_total++;
+	if (fail & INODE_REP_FAIL_REQUEST_FAILED)
+		request_failed_num_total++;
+	if (fail & INODE_REP_FAIL_FEWER)
+		fewer_num_total++;
+}
+
 static gfarm_error_t
 replica_check_fix_retry(struct replication_info *info, int is_priority_task,
 	int *stopped)
@@ -779,10 +814,12 @@ replica_check_fix_retry(struct replication_info *info, int is_priority_task,
 #define TOO_LONG_WARNING_TIMEOUT 600  /* sec. */
 	double warn_next = TOO_LONG_WARNING_TIMEOUT;
 	gfarm_error_t e;
+	int fail;
 
 	for (;;) {
+		fail = 0; /* count the result of the last try only */
 		replica_check_giant_lock();
-		e = replica_check_fix(info);
+		e = replica_check_fix(info, &fail);
 		replica_check_giant_unlock();
 		if (e != GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE) {
 			break; /* success or error */
@@ -816,6 +853,8 @@ replica_check_fix_retry(struct replication_info *info, int is_priority_task,
 			warn_next += TOO_LONG_WARNING_TIMEOUT;
 		}
 	}
+	if (!is_priority_task) /* same as "file=" of replica_check_main() */
+		replica_check_count_failures(fail);
 	return (e);
 }
 
@@ -912,6 +951,7 @@ replica_check_main_dir(gfarm_ino_t inum, gfarm_ino_t *countp, int *stopped)
 			e = replica_check_fix_retry(&rep_info, 0, stopped);
 			if (IS_REPLICA_CHECK_REQUIRED(e)) {
 				need_to_retry = 1; /* try again later */
+				retry_num_total++;
 				RC_LOG_DEBUG(GFARM_MSG_1003631,
 				    "replica_check_fix(): %s",
 				    gfarm_error_string(e));
@@ -944,6 +984,11 @@ replica_check_main(void)
 	total_yield_time = 0;
 	req_ok_num_total = req_ok_size_total = 0;
 	remove_num_total = remove_size_total = 0;
+	lost_num_total = no_source_num_total = 0;
+	unschedulable_num_total = removing_num_total = 0;
+	unsatisfied_num_total = quota_exceeded_num_total = 0;
+	request_failed_num_total = fewer_num_total = 0;
+	retry_num_total = 0;
 	RC_LOG_INFO(GFARM_MSG_1003632, "replica_check: start");
 	RC_LOG_INFO(GFARM_MSG_1004277,
 	    "replica_check: remove=%s, reduced_log=%s",
@@ -999,6 +1044,20 @@ replica_check_main(void)
 	    (unsigned long long)remove_size_total,
 	    (long long)time_total, (float)time_total / 60 / 60,
 	    lock_sleep_time, retry_sleep_time);
+	RC_LOG_INFO(GFARM_MSG_UNFIXED,
+	    "replica_check: unfixed files, lost=%llu, no source=%llu, "
+	    "unschedulable=%llu, being removed=%llu, unsatisfied=%llu, "
+	    "quota exceeded=%llu, request failed=%llu, fewer=%llu, "
+	    "retry=%llu",
+	    (unsigned long long)lost_num_total,
+	    (unsigned long long)no_source_num_total,
+	    (unsigned long long)unschedulable_num_total,
+	    (unsigned long long)removing_num_total,
+	    (unsigned long long)unsatisfied_num_total,
+	    (unsigned long long)quota_exceeded_num_total,
+	    (unsigned long long)request_failed_num_total,
+	    (unsigned long long)fewer_num_total,
+	    (unsigned long long)retry_num_total);
 	if (total_yield_time != 0) { /* hide undocumented unless it's set */
 		RC_LOG_INFO(GFARM_MSG_1005049,
 		    "replica_check: yield sleep=%g",
