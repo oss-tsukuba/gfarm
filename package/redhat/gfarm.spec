@@ -63,16 +63,13 @@ Source: %{pkg}-%{ver}.tar.gz
 #%%Patch1: gfarm-1.2-patch2.diff
 #%%Patch2: gfarm-1.2-patch3.diff
 #%%Patch3: gfarm-1.2-patch4.diff
-Group: Applications/File
 License: BSD
 Vendor: National Institute of Advanced Industrial Science and Technology (AIST) and Osamu Tatebe
 URL: https://github.com/oss-tsukuba/gfarm
 Packager: Osamu Tatebe <tatebe@cs.tsukuba.ac.jp>
-BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
 
 %package doc
 Summary: Document for Gfarm file system
-Group: Documentation
 # always provide "gfarm-doc" as a virtual package.
 %if "%{pkg_suffix}" != ""
 Provides: %{pkg}-doc = %{pkgver}-%{rel}
@@ -80,7 +77,6 @@ Provides: %{pkg}-doc = %{pkgver}-%{rel}
 
 %package libs
 Summary: Runtime libraries for Gfarm file system
-Group: System Environment/Libraries
 # always provide "gfarm-libs" as a virtual package.
 %if "%{pkg_suffix}" != ""
 Provides: %{pkg}-libs = %{pkgver}-%{rel}
@@ -90,10 +86,11 @@ BuildRequires: openssl-devel, postgresql-private-devel, postgresql-server-devel
 %else
 BuildRequires: openssl-devel, postgresql-devel
 %endif
+# for SASL authentication, otherwise it is silently disabled
+BuildRequires: cyrus-sasl-devel
 
 %package client
 Summary: Clients for Gfarm file system
-Group: Applications/File
 # always provide "gfarm-client" as a virtual package.
 %if "%{pkg_suffix}" != ""
 Provides: %{pkg}-client = %{pkgver}-%{rel}
@@ -102,7 +99,6 @@ Requires: %{package_name}-libs = %{pkgver}
 
 %package fsnode
 Summary: File system daemon for Gfarm file system
-Group: System Environment/Daemons
 # always provide "gfarm-fsnode" as a virtual package.
 %if "%{pkg_suffix}" != ""
 Provides: %{pkg}-fsnode = %{pkgver}-%{rel}
@@ -111,7 +107,6 @@ Requires: %{package_name}-libs = %{pkgver}, %{package_name}-client = %{pkgver}
 
 %package server
 Summary: Metadata server for Gfarm file system
-Group: System Environment/Daemons
 # always provide "gfarm-server" as a virtual package.
 %if "%{pkg_suffix}" != ""
 Provides: %{pkg}-server = %{pkgver}-%{rel}
@@ -120,7 +115,6 @@ Requires: %{package_name}-libs = %{pkgver}
 
 %package ganglia
 Summary: Gfarm performance monitoring plugin for Ganglia
-Group: System Environment/Libraries
 # always provide "gfarm-ganglia" as a virtual package.
 %if "%{pkg_suffix}" != ""
 Provides: %{pkg}-ganglia = %{pkgver}-%{rel}
@@ -128,7 +122,6 @@ Provides: %{pkg}-ganglia = %{pkgver}-%{rel}
 
 %package devel
 Summary: Development header files and libraries for Gfarm file system
-Group: Development/Libraries
 %if "%{pkg_suffix}" != ""
 Provides: %{pkg}-devel = %{pkgver}-%{rel}
 %endif
@@ -249,9 +242,6 @@ Development header files and libraries for Gfarm file system
 
 # Part 2 script
 %prep
-rm -rf ${RPM_BUILD_ROOT}
-mkdir -p $RPM_BUILD_ROOT
-
 %setup -n %{pkg}-%{ver}
 #%%patch -p1
 #%%patch0 -p1
@@ -272,7 +262,7 @@ sed -i 's|^hardcode_libdir_flag_spec=.*|hardcode_libdir_flag_spec=""|g' libtool
 sed -i 's|^runpath_var=LD_RUN_PATH|runpath_var=DIE_RPATH_DIE|g' libtool
 fi
 
-make -j $(nproc)
+make %{?_smp_mflags}
 
 %install
 # libtool --no-warn: libtool warns that libgfarm.la etc. "has not been
@@ -291,21 +281,18 @@ cp -p package/redhat/gfarm.{csh,sh} ${RPM_BUILD_ROOT}%{profile_prefix}
 chmod +x ${RPM_BUILD_ROOT}%{profile_prefix}/*
 %endif
 
-%clean
-rm -rf ${RPM_BUILD_ROOT}
-
 %post libs -p /sbin/ldconfig
 
 %postun libs -p /sbin/ldconfig
 
 %post fsnode
-if [ ! -f /etc/gfarm2.conf ]; then
-	echo "copy /etc/gfarm2.conf from a metadata server and"
+if [ ! -f %{sysconfdir}/gfarm2.conf ]; then
+	echo "copy %{sysconfdir}/gfarm2.conf from a metadata server and"
 	echo run %{prefix}/bin/config-gfsd
 fi
 
 %post server
-if [ ! -f /etc/gfmd.conf ]; then
+if [ ! -f %{sysconfdir}/gfmd.conf ]; then
 	echo run %{prefix}/bin/config-gfarm to configure Gfarm file system
 fi
 
@@ -317,6 +304,14 @@ fi
 %preun fsnode
 if [ "$1" = 0 ]
 then
+	# gfsd.service, or gfsd-IP_ADDRESS.service created by config-gfsd -l
+	if [ -d /run/systemd/system ]; then
+		units=`systemctl list-unit-files --no-legend 'gfsd*.service' 2>/dev/null | awk '{ print $1 }'`
+		if [ -n "$units" ]; then
+			systemctl stop $units > /dev/null 2>&1 || :
+			systemctl --no-reload disable $units > /dev/null 2>&1 || :
+		fi
+	fi
 	# XXX This doesn't deal with /etc/init.d/gfsd-IP_ADDRESS.
 	if [ -f /etc/init.d/gfsd ]; then
 		/sbin/service gfsd stop > /dev/null 2>&1 || :
@@ -328,11 +323,20 @@ fi
 useradd -c "Gfarm gfsd" _gfarmfs >/dev/null 2>&1 || :
 
 %pre server
+useradd -c "Gfarm gfmd" _gfarmmd >/dev/null 2>&1 || :
 useradd -c "Gfarm gfsd" _gfarmfs >/dev/null 2>&1 || :
 
 %preun server
 if [ "$1" = 0 ]
 then
+	if [ -d /run/systemd/system ]; then
+		# one by one, since systemctl fails if any unit does not exist
+		for unit in gfmd gfmd-slave gfarm-slapd gfarm-pgsql; do
+			systemctl stop $unit.service > /dev/null 2>&1 || :
+			systemctl --no-reload disable $unit.service \
+				> /dev/null 2>&1 || :
+		done
+	fi
 	if [ -f /etc/init.d/gfmd ]; then
 		/sbin/service gfmd stop > /dev/null 2>&1 || :
 		/sbin/chkconfig --del gfmd > /dev/null 2>&1 || :
@@ -350,6 +354,11 @@ fi
 %postun fsnode
 if [ "$1" -ge 1 ]
 then
+	if [ -d /run/systemd/system ]; then
+		units=`systemctl list-unit-files --no-legend 'gfsd*.service' 2>/dev/null | awk '{ print $1 }'`
+		[ -z "$units" ] ||
+			systemctl try-restart $units > /dev/null 2>&1 || :
+	fi
 	# XXX This doesn't deal with /etc/init.d/gfsd-IP_ADDRESS.
 	if [ -f /etc/init.d/gfsd ] && /sbin/service gfsd status > /dev/null 2>&1
 	then
@@ -360,6 +369,10 @@ fi
 %postun server
 if [ "$1" -ge 1 ]
 then
+	if [ -d /run/systemd/system ]; then
+		systemctl try-restart gfmd.service gfmd-slave.service \
+			> /dev/null 2>&1 || :
+	fi
 	if [ -f /etc/init.d/gfmd ] && /sbin/service gfmd status > /dev/null 2>&1
 	then
 		/sbin/service gfmd restart > /dev/null 2>&1 || :
@@ -370,7 +383,6 @@ fi
 
 # Part 3  file list
 %files doc
-%defattr(-,root,root)
 %if %{gfarm_v2_not_yet}
 %{man_prefix}/man1/gfarm_agent.1*
 %{man_prefix}/man1/gfcd.1*
@@ -1165,7 +1177,6 @@ fi
 %{doc_prefix}/gfperf/USING-gfperf.ja
 
 %files libs
-%defattr(-,root,root)
 %{lib_prefix}/libgfarm.so.1
 %{lib_prefix}/libgfarm.so.1.0.0
 %{lib_prefix}/libgfutil.so.1
@@ -1189,7 +1200,6 @@ fi
 %{share_prefix}/config/config-gfarm.common
 
 %files client
-%defattr(-,root,root)
 %{prefix}/bin/gfarm-pcp
 %{prefix}/bin/gfarm-prun
 %{prefix}/bin/gfarm-ptool
@@ -1313,7 +1323,6 @@ fi
 %{share_prefix}/gfperf-web/view_result.php
 
 %files fsnode
-%defattr(-,root,root)
 %{prefix}/bin/config-gfsd
 %{prefix}/bin/gfarm.arch.guess
 %{prefix}/bin/gfspooldigest
@@ -1335,7 +1344,6 @@ fi
 %{share_prefix}/config/unconfig-gfsd.sh.in
 
 %files ganglia
-%defattr(-,root,root)
 %{prefix}/bin/config-gfmd-iostat
 %{prefix}/bin/config-gfsd-iostat
 %dir %{share_prefix}
@@ -1344,7 +1352,6 @@ fi
 %{share_prefix}/ganglia
 
 %files server
-%defattr(-,root,root)
 %{prefix}/sbin/gfmd
 %{prefix}/bin/config-gfarm
 %{prefix}/bin/config-gfarm-update
@@ -1393,7 +1400,6 @@ fi
 %{share_prefix}/ruby/gfjournalfile.rb
 
 %files devel
-%defattr(-,root,root)
 %{prefix}/include/gfarm/gfarm.h
 %{prefix}/include/gfarm/gfarm_config.h
 %{prefix}/include/gfarm/error.h
