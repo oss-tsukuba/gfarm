@@ -100,6 +100,22 @@ gfs_pio_should_failover_at_gfs_open(GFS_File gf, gfarm_error_t e)
 }
 
 /*
+ * the error to be reported for a file which has not been reopened by
+ * a failover.  gf->error is set to the reason by gfs_pio_reopen(), if
+ * it failed.
+ */
+gfarm_error_t
+gfs_pio_not_reopened_error(GFS_File gf)
+{
+	gfarm_error_t e = gfs_pio_error_unlocked(gf);
+
+	if (e == GFARM_ERR_NO_ERROR || e == GFARM_ERR_GFMD_FAILED_OVER ||
+	    e == GFARM_ERR_BAD_FILE_DESCRIPTOR)
+		e = GFARM_ERR_STALE_FILE_HANDLE;
+	return (e);
+}
+
+/*
  * callers should retry their operation, if this function returns true.
  */
 int
@@ -116,7 +132,18 @@ gfs_pio_failover_check_retry(GFS_File gf, gfarm_error_t *ep)
 		}
 		return (1); /* caller should retry */
 	}
-	return (0); /* DO NOT touch *ep */
+	if (gf->fd == -1 && *ep == GFARM_ERR_BAD_FILE_DESCRIPTOR) {
+		/*
+		 * this file has not been reopened by the previous failover.
+		 * report the reason instead of the bad file descriptor.
+		 */
+		*ep = gfs_pio_not_reopened_error(gf);
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s is not reopened: %s",
+		    gf->url != NULL ? gf->url : "(fhopen)",
+		    gfarm_error_string(*ep));
+	}
+	return (0); /* DO NOT touch *ep, unless the file is not reopened */
 }
 
 static gfarm_error_t
@@ -633,10 +660,7 @@ gfs_pio_failover(GFS_File gf)
 			 * the caller must not retry its operation with
 			 * the invalid descriptor.
 			 */
-			e = gfs_pio_error_unlocked(gf);
-			if (e == GFARM_ERR_NO_ERROR ||
-			    e == GFARM_ERR_GFMD_FAILED_OVER)
-				e = GFARM_ERR_STALE_FILE_HANDLE;
+			e = gfs_pio_not_reopened_error(gf);
 			gflog_debug(GFARM_MSG_UNFIXED,
 			    "gfs_pio_failover: %s (fd=%d) is not reopened: %s",
 			    gf->url != NULL ? gf->url : "(fhopen)", gf->fd,

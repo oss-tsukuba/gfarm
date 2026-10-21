@@ -23,6 +23,7 @@ int gfm_client_connection_should_failover(struct gfm_connection *,
 	gfarm_error_t);
 int gfs_pio_should_failover(GFS_File gf, gfarm_error_t);
 int gfs_pio_should_failover_at_gfs_open(GFS_File gf, gfarm_error_t);
+gfarm_error_t gfs_pio_not_reopened_error(GFS_File);
 int gfs_pio_failover_check_retry(GFS_File gf, gfarm_error_t *);
 gfarm_error_t gfm_client_connection_failover(struct gfm_connection *);
 gfarm_error_t gfm_client_connection_failover_pre_connect(

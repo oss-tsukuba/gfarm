@@ -869,6 +869,10 @@ gfs_pio_close_getgen(GFS_File gf, gfarm_uint64_t *igenp)
 			gfarm_filesystem_set_failover_detected(fs, 1);
 			e = GFARM_ERR_NO_ERROR;
 		} else if (e != GFARM_ERR_NO_ERROR) {
+			if (gf->fd == -1 &&
+			    e == GFARM_ERR_BAD_FILE_DESCRIPTOR)
+				/* not reopened by the previous failover */
+				e = gfs_pio_not_reopened_error(gf);
 			gflog_debug(GFARM_MSG_1005792,
 			    "gfs_pio_close(): "
 			    "view_close(fd=%d): %s",
