@@ -2,6 +2,7 @@
 Description=Gfarm filesystem slave metaserver
 Requires=gfarm-pgsql.service
 After=gfarm-pgsql.service
+Conflicts=gfmd.service
 
 [Service]
 Type=forking

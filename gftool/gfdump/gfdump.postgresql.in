@@ -207,6 +207,9 @@ postgresql)
 		[ "X$DUMPF" != X- -a ! -f "$DUMPF" ] &&
 			ABORT "$DUMPF: database dump file not exist"
 		$STOP_GFMD && service_ctl gfmd stop
+		# gfmd may be running by gfmd-slave.service on systemd
+		$STOP_GFMD && [ X"${RC_GFMD_SLAVE-}" != X ] &&
+			[ -f "$RC_GFMD_SLAVE" ] && service_ctl gfmd-slave stop
 		PGPASSWORD=$BACKEND_ADMIN_PASSWD
 		$dropdb -U $BACKEND_ADMIN_USER $DB_NAME ||
 			ABORT "dropdb fails"

@@ -79,6 +79,9 @@ service_unconfig()
 	fi
 
 	service_ctl $TEST_OPT gfmd stop
+	# gfmd may be running by gfmd-slave.service on systemd
+	[ X"$RC_GFMD_SLAVE" = X -o ! -f "$RC_GFMD_SLAVE" ] ||
+		service_ctl $TEST_OPT gfmd-slave stop
 	( service_stop_$BACKEND_TYPE $TEST_OPT $RC_BACKEND_BASENAME )
 
 	delete_file_or_directory -f $TEST_OPT "$GFMD_FAILOVER_AGENT_CONF"
@@ -87,6 +90,8 @@ service_unconfig()
 	delete_file_or_directory -f $TEST_OPT "$GFARM_CONF"
 
 	service_remove $TEST_OPT gfmd
+	[ X"$RC_GFMD_SLAVE" = X -o ! -f "$RC_GFMD_SLAVE" ] ||
+		service_remove $TEST_OPT gfmd-slave
 	service_remove_$BACKEND_TYPE $TEST_OPT "$RC_BACKEND_BASENAME"
 
 	delete_file_or_directory -f $TEST_OPT "$RC_GFMD"
