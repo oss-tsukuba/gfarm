@@ -55,4 +55,6 @@ RUN mv /etc/sudoers /etc/sudoers.orig \
  && awk '/secure_path/ { print $0 ":/usr/local/bin"; next}; {print}' \
 	/etc/sudoers.orig > /etc/sudoers
 
+# shut down systemd cleanly by "docker stop"
+STOPSIGNAL SIGRTMIN+3
 CMD ["/sbin/init"]

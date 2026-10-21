@@ -44,4 +44,6 @@ RUN useradd -m _gfarmfs \
 
 RUN sed -i 's@^Defaults secure_path="/usr/sbin:@Defaults secure_path="/usr/local/bin:/usr/sbin:@' /usr/etc/sudoers
 
+# shut down systemd cleanly by "docker stop"
+STOPSIGNAL SIGRTMIN+3
 CMD ["/sbin/init"]

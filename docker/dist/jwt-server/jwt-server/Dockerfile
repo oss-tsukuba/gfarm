@@ -43,4 +43,6 @@ RUN systemctl enable httpd \
  && systemctl enable tomcat \
  && systemctl enable mariadb
 
+# shut down systemd cleanly by "docker stop"
+STOPSIGNAL SIGRTMIN+3
 CMD ["/sbin/init"]
