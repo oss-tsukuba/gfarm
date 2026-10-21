@@ -275,7 +275,11 @@ fi
 make -j $(nproc)
 
 %install
+# libtool --no-warn: libtool warns that libgfarm.la etc. "has not been
+# installed" in the library directory for every program, because it
+# checks the directory without DESTDIR
 make DESTDIR=${RPM_BUILD_ROOT} \
+	LIBTOOL='$(SHELL) $(top_builddir)/libtool --no-warn' \
 	default_docdir=%{doc_prefix} \
 	default_mandir=%{man_prefix} install
 # libtool archives are not needed at runtime or for development and are
