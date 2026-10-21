@@ -19,7 +19,7 @@ mds1% sudo useradd -m _gfarmfs
 
 For TLS communication, place the metadata server's certificate and private key in `/etc/pki/tls/certs/gfmd.crt` and `/etc/pki/tls/private/gfmd.key`.  The private key must be owned by root with permissions set to 0600.  Place the CA certificate in the `/etc/pki/tls/certs/gfarm` directory with the filename `$HASH.0`. The `$HASH` can be calculated using `openssl x509 -hash -noout -in $CRT`, where `$CRT` is the CA certificate.
 
-If certificates are not installed, all communications will be in plaintext.  Authentication uses Gfarm's proprietary shared key method, requiring each user to generate a shared key.  Below, we generate a shared key valid for one year (=31,536,000 seconds).
+If certificates are not installed, TLS cannot be used, and all communications will be in plaintext.  Authentication uses Gfarm's proprietary shared key method, requiring each user to generate a shared key.  Below, we generate a shared key valid for one year (=31,536,000 seconds).
 
 ```console
 mds1% sudo -u _gfarmmd gfkey -f -p 31536000
@@ -34,7 +34,7 @@ Create the Gfarm file system.
 mds1% sudo config-gfarm -A $USER -r -X -d md5
 ```
 
-`config-gfarm` generates the necessary Gfarm configuration files (gfarm2.conf and gfmd.conf), configures the PostgreSQL backend database, and installs the startup scripts for the gfmd metadata server and the PostgreSQL server.  The configuration files are placed in the directory specified by the `--sysconfdir` option during Gfarm installation.  If not specified, they are placed in the directory specified by the `--prefix` option.  If we denote the `--prefix` directory as `$PREFIX`, the configuration files are placed in `$PREFIX/etc`.  The default for `$PREFIX` is /usr/local.
+`config-gfarm` generates the necessary Gfarm configuration files (gfarm2.conf and gfmd.conf), configures the PostgreSQL backend database, and installs the startup scripts for the gfmd metadata server and the PostgreSQL server.  The configuration files are placed in the directory specified by the `--sysconfdir` option during Gfarm installation.  If not specified, they are placed in the directory specified by the `--prefix` option.  If we denote the `--prefix` directory as `$PREFIX`, the configuration files are placed in `$PREFIX/etc`.  The default for `$PREFIX` is /usr/local.  If Gfarm is installed according to the installation manual, the configuration files are placed in /etc.
 
 <!-- >
 The -N option prevents server startup when executing config-gfarm.
@@ -77,9 +77,11 @@ Next, update gfarm2.conf to add the list of metadata servers for the redundant c
 ```text
 metadb_server_list mds1.example.com:601 mds2.example.com:601 mds3.example.com:601
 sasl_mechanisms XOAUTH2
+auth_trial_order tls_client_certificate tls_sharedsecret sasl_auth sasl sharedsecret
 ```
 
 In specifying the metadata server, `:601` indicates the TCP port number to use; it can be omitted when using the default port 601.
+`auth_trial_order` specifies the order of authentication methods to try.  By default, the shared key method without TLS is tried first, so specify it to use TLS communication.  Also add the same `auth_trial_order` line to gfmd.conf on all metadata servers, which is used for connections between slave and master metadata servers.
 <!-- >
 If you are using TLS communication and have chosen not to use the service certificate (one with a distinguished name (DN) starting with "gfsd/", such as "DN=gfsd/host.domain"), and are instead using the server certificate, delete the following two lines.
 
@@ -204,7 +206,7 @@ Copy the configuration file `gfarm2.conf` from the metadata server, then configu
 fs% sudo config-gfsd /var/spool/gfarm
 created /var/spool/gfarm
 created /etc/systemd/system/gfsd.service
-created /usr/local/etc/unconfig-gfsd.sh
+created /etc/unconfig-gfsd.sh
 config-gfsd success
 
 Please ask admin_user to register your host by the following command:
@@ -255,12 +257,12 @@ If all filesystem nodes are displayed, the setup is correct.  Note that filesyst
 
 After applying the above settings, the initial user on the master metadata server can now access the metadata server using the shared key.  Consequently, you can run `gfmdhost` and `gfdf`, but authentication to the filesystem nodes is still not possible.
 
-To register a user, you must first register the user with Gfarm and configure authentication settings.  The initial user is already registered, but other users must be registered using `gfuser`. Registration must be performed by a Gfarm administrative privilege user (currently the initial user).  The following example creates a user named Taro Yamada with the username `taro`, sets the home directory to `/home/taro`, and assigns the client certificate `/O=Gfarm/OU=Test/OU=CA/CN=taro`.
+To register a user, you must first register the user with Gfarm and configure authentication settings.  The initial user is already registered, but other users must be registered using `gfuser`. Registration must be performed by a Gfarm administrative privilege user (currently the initial user).  The following example creates a user named Taro Yamada with the username `taro`, sets the home directory to `/home/taro`, and assigns the client certificate `/O=Gfarm/OU=Test/OU=CA/CN=taro`.  Changing the owner requires the access privilege described below, so `gfchown` is executed by `gfsudo`.
 
 ```console
 mds1% gfuser -c taro "Taro Yamada" /home/taro /O=Gfarm/OU=Test/OU=CA/CN=taro
 mds1% gfmkdir -p /home/taro
-mds1% gfchown taro /home/taro
+mds1% gfsudo gfchown taro /home/taro
 ```
 
 If you are using a client certificate for authentication, you are done here.  The subject DN of the client certificate can be changed later, so you can specify "" for now.
@@ -287,7 +289,7 @@ There are also access privilege users for managing file data, not for changing s
 
 ## Setting up clients
 
-The required configuration for the client is to place `gfarm2.conf` in either `$PREFIX/etc/gfarm2.conf` or `$HOME/.gfarm2rc`. Additionally, a client certificate, an access token, or a shared key is required for authentication.
+The required configuration for the client is to copy `gfarm2.conf` from the metadata server to the same directory (/etc if Gfarm is installed according to the installation manual) or to `$HOME/.gfarm2rc`. Additionally, a client certificate, an access token, or a shared key is required for authentication.
 
 ## Testing
 
@@ -344,10 +346,10 @@ For details, refer to the documentation included with `gfarm2fs`.
 
 ### File replication
 
-You can set the number of file replicas using the `gfncopy` command. The following configuration maintains two replicas for all files under the `/` directory.
+You can set the number of file replicas using the `gfncopy` command. The following configuration maintains two replicas for all files under the `/` directory.  Since `/` is owned by `gfarmadm`, this is executed by `gfsudo` as an administrative privilege user.
 
 ```console
-% gfncopy -s 2 /
+% gfsudo gfncopy -s 2 /
 ```
 
 You can determine the file system nodes where files are stored using the `gfwhere` command.
@@ -397,12 +399,12 @@ mds2% gfmdhost -l
 + slave  async c west         mds3.example.com 601
 ```
 
-Update the old master metadata server.
+Update the old master metadata server.  Since it is no longer the master, start it as a slave by `gfmd-slave`.
 
 ```console
 # Overwrite installation of Gfarm
 mds1% sudo config-gfarm-update --update
-mds1% sudo systemctl start gfmd
+mds1% sudo systemctl start gfmd-slave
 mds1% gfmdhost -l
 + slave  sync  c east         mds1.example.com 601
 + master -     m east         mds2.example.com 601

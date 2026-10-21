@@ -164,6 +164,13 @@ $ make
 $ sudo make install
 ```
 
+Rocky Linuxではsudoの`secure_path`に`/usr/local/bin`が含まれていないため、`config-gfarm`などのGfarmのコマンドをsudoで実行できません。以下のように追加します。
+
+```console
+# echo 'Defaults secure_path = /sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin' > /etc/sudoers.d/secure_path
+# chmod 440 /etc/sudoers.d/secure_path
+```
+
 RPMパッケージの場合は以下のようになります。
 
 ```console
