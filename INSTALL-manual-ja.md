@@ -148,14 +148,14 @@ xoauth2_user_claim: xxxx
 以下からgfarmのソースコードをダウンロードします。  
 <https://github.com/oss-tsukuba/gfarm/releases>
 
-本書ではバージョン2.8.10で記載していますが、より新しいバージョンがリリースされていた場合、最新のバージョンを利用します。
+本書ではバージョン2.8.11で記載していますが、より新しいバージョンがリリースされていた場合、最新のバージョンを利用します。
 
 任意のユーザ（rootである必要はない）でコンパイルした後、root権限でインストールします。
 
 ```console
 $ OSSURL=https://github.com/oss-tsukuba
 $ PKG=gfarm
-$ VER=2.8.10
+$ VER=2.8.11
 $ wget --content-disposition $OSSURL/$PKG/archive/$VER.tar.gz
 $ tar pxf $PKG-$VER.tar.gz
 $ cd $PKG-$VER
