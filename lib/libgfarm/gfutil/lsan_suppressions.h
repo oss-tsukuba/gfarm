@@ -9,6 +9,9 @@
  * init scripts, and so on.
  *
  * keep this consistent with docker/dist/lsan.supp.
+ *
+ * __lsan_default_options() is also looked up in the executable, and
+ * LSAN_OPTIONS overrides it.
  */
 
 #if defined(__SANITIZE_ADDRESS__)
@@ -21,6 +24,7 @@
 
 #ifdef GFARM_LSAN_DEFAULT_SUPPRESSIONS
 const char *__lsan_default_suppressions(void);
+const char *__lsan_default_options(void);
 
 const char *
 __lsan_default_suppressions(void)
@@ -31,6 +35,23 @@ __lsan_default_suppressions(void)
 	     * and never frees it.
 	     */
 	    "leak:globus_i_thread_pre_activate\n"
+	    /*
+	     * libSciTokens, which the SASL XOAUTH2 plugin loads, calls
+	     * curl_global_init() at its initialization, and OpenSSL
+	     * initialized by it is never freed.
+	     */
+	    "leak:curl_global_init\n"
 	);
+}
+
+const char *
+__lsan_default_options(void)
+{
+	/*
+	 * the fast unwinder stops at a library built without frame
+	 * pointers (e.g. on RHEL 9 derivatives), and the suppressions
+	 * above do not match the truncated stack.
+	 */
+	return ("fast_unwind_on_malloc=0");
 }
 #endif

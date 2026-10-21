@@ -3,3 +3,8 @@
 
 # Globus allocates the path at its module activation, and never frees it.
 leak:globus_i_thread_pre_activate
+
+# libSciTokens, which the SASL XOAUTH2 plugin loads, calls
+# curl_global_init() at its initialization, and OpenSSL initialized by
+# it is never freed.
+leak:curl_global_init
