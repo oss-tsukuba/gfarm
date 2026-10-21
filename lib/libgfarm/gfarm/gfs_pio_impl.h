@@ -34,6 +34,7 @@ struct gfs_pio_ops {
 		int, gfarm_off_t, gfarm_off_t, gfarm_off_t *);
 	gfarm_error_t (*view_sendfile)(GFS_File, gfarm_off_t,
 		int, gfarm_off_t, gfarm_off_t, gfarm_off_t *);
+	void (*view_revoke)(GFS_File);
 };
 
 struct gfm_connection;
@@ -134,6 +135,7 @@ struct gfs_storage_ops {
 		int, gfarm_off_t, gfarm_off_t, EVP_MD_CTX *, gfarm_off_t *);
 	gfarm_error_t (*storage_sendfile)(GFS_File, gfarm_off_t,
 		int, gfarm_off_t, gfarm_off_t, EVP_MD_CTX *, gfarm_off_t *);
+	void (*storage_revoke)(GFS_File);
 };
 
 #define GFS_DEFAULT_DIGEST_NAME	"md5"

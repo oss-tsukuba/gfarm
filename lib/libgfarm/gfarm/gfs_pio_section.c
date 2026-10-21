@@ -379,6 +379,14 @@ gfs_pio_view_section_reopen(GFS_File gf)
 	return ((*vc->ops->storage_reopen)(gf));
 }
 
+static void
+gfs_pio_view_section_revoke(GFS_File gf)
+{
+	struct gfs_file_section_context *vc = gf->view_context;
+
+	(*vc->ops->storage_revoke)(gf);
+}
+
 static int
 gfs_pio_view_section_fd(GFS_File gf)
 {
@@ -400,6 +408,7 @@ struct gfs_pio_ops gfs_pio_view_section_ops = {
 	gfs_pio_view_section_cksum,
 	gfs_pio_view_section_recvfile,
 	gfs_pio_view_section_sendfile,
+	gfs_pio_view_section_revoke,
 };
 
 
