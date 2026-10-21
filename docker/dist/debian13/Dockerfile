@@ -10,7 +10,7 @@ ARG UID=1000
 RUN apt-get update \
  && apt-get -y upgrade \
  && apt-get -y install \
-    git wget sudo vim systemctl \
+    git wget sudo vim systemd systemd-sysv \
     gcc make \
     libssl-dev libpq-dev \
     libglobus-gssapi-gsi-dev pkgconf \
@@ -19,7 +19,6 @@ RUN apt-get update \
     python3 ruby \
     xsltproc docbook-xsl \
     python3-docopt python3-schema flake8 \
-    fuse libfuse-dev \
     fuse3 libfuse3-dev \
     libacl1-dev \
     gdb valgrind rsyslog \
@@ -42,7 +41,8 @@ RUN \
   && printf '%s\n' \
     'Host *' \
     '    StrictHostKeyChecking no' \
-    > /etc/ssh/ssh_config.d/ignore-host-key.conf
+    > /etc/ssh/ssh_config.d/ignore-host-key.conf \
+ && systemctl enable ssh rsyslog
 
 RUN id $UID && userdel $(id -un $UID) || : \
  && useradd -m -u $UID -s /bin/bash $USERNAME \
@@ -58,4 +58,6 @@ RUN mv /usr/bin/grid-cert-request /usr/bin/grid-cert-request.orig \
 RUN useradd -m _gfarmfs \
  && useradd -m _gfarmmd
 
-CMD service ssh start && systemctl start rsyslog && sleep infinity
+# shut down systemd cleanly by "docker stop"
+STOPSIGNAL SIGRTMIN+3
+CMD ["/sbin/init"]

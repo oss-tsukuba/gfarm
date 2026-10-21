@@ -19,4 +19,6 @@ RUN dnf -y upgrade almalinux-release \
 
 ADD . /root/gfarm
 
+# shut down systemd cleanly by "docker stop"
+STOPSIGNAL SIGRTMIN+3
 CMD ["/sbin/init"]
