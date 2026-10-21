@@ -1,1 +1,4 @@
 docker/dev/mnt
+# build directories of each distribution, and SRPMs in docker/dist
+build-*
+docker/dist/*.src.rpm

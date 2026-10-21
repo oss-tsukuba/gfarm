@@ -33,10 +33,16 @@ fi
 
 NEEDTAR=false
 COPY=false
+EXTRACTED=false
 if [ -f $PKG-$VER.tar.gz ]; then
-	[ -d $PKG-$VER ] && exit 1
+	if [ -d $PKG-$VER ]; then
+		echo >&2 "$PKG-$VER already exists." \
+			"Remove it to build from $PKG-$VER.tar.gz"
+		exit 1
+	fi
 
 	tar zxfp $PKG-$VER.tar.gz --wildcards *$PKG.spec
+	EXTRACTED=true
 	SPEC=$(find $PKG-$VER -type f -name $PKG.spec || :)
 	[ X"$SPEC" = X ] && exit 1
 
@@ -85,6 +91,8 @@ if [ "$PKG" = cyrus-sasl-xoauth2-idp ] &&
 fi
 
 rpmbuild -bs --undefine dist $SPEC
+# the directory only has the spec file extracted from the tarball
+$EXTRACTED && rm -rf $PKG-$VER
 $COPY && sudo rm -rf $PKG-$VER > /dev/null 2>&1 || :
 
 #export GFARM_CONFIGURE_OPTION="--with-globus --with-infiniband"
