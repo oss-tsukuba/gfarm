@@ -386,6 +386,23 @@ For example,
 .\}
 .RE
 .PP
+spool_server_replicator_max \fInum\-of\-child\-processes\fR
+.RS 4
+This statement sets the maximum number of child processes that gfsd creates when replicating files\&. Setting this to 0 allows an unlimited number\&. The default value is 512\&.
+.sp
+For example,
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+  spool_server_replicator_max 0
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 spool_check_parallel \fInum\-of\-parallel\fR
 .RS 4
 This directive specifies number of processes of gfsd spool_check\&.

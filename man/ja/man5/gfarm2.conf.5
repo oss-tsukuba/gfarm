@@ -353,6 +353,23 @@ gfsd起動時のスプールチェックを有効にします。スプールチ�
 .\}
 .RE
 .PP
+spool_server_replicator_max \fIプロセス数\fR
+.RS 4
+gfsdが複製を作成するさいに生成する子プロセスの上限を設定します。 0を設定すると上限はありません。 デフォルト値は512です。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	spool_server_replicator_max 0
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 spool_check_parallel \fI並列度\fR
 .RS 4
 gfsd起動時のスプールチェック並列度を数字で設定します。
