@@ -552,7 +552,7 @@ gfs_pio_local_storage_revoke(GFS_File gf)
 
 	if (vc->fd == -1)
 		return;
-	gflog_debug(GFARM_MSG_UNFIXED,
+	gflog_debug(GFARM_MSG_1005871,
 	    "%s: local fd %d is invalidated, because it is not reopened",
 	    gf->url != NULL ? gf->url : "(fhopen)", vc->fd);
 	(void)close(vc->fd);

@@ -369,7 +369,7 @@ invalidate_stale_fd(GFS_File gf, void *closure)
 	if (!gfs_file_is_stale(gf, si->failover_count))
 		return (1);
 	if (gf->fd != -1) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005872,
 		    "%s: fd %d is invalidated, because it is not reopened",
 		    gf->url != NULL ? gf->url : "(fhopen)", gf->fd);
 		gf->fd = -1;
@@ -477,7 +477,7 @@ failover0(struct gfm_connection *gfm_server, const char *host0, int port,
 			 * failover, e.g. because it failed halfway.
 			 * fail over again to reopen them.
 			 */
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1005873,
 			    "stale files remain after failover: "
 			    "failover_count=%d/%d", fc,
 			    gfm_client_connection_failover_count(gfm_server));

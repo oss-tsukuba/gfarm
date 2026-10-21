@@ -1044,7 +1044,7 @@ replica_check_main(void)
 	    (unsigned long long)remove_size_total,
 	    (long long)time_total, (float)time_total / 60 / 60,
 	    lock_sleep_time, retry_sleep_time);
-	RC_LOG_INFO(GFARM_MSG_UNFIXED,
+	RC_LOG_INFO(GFARM_MSG_1005874,
 	    "replica_check: unfixed files, lost=%llu, no source=%llu, "
 	    "unschedulable=%llu, being removed=%llu, unsatisfied=%llu, "
 	    "quota exceeded=%llu, request failed=%llu, fewer=%llu, "

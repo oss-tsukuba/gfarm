@@ -7495,7 +7495,7 @@ static void
 restore_euid_for_leak_check(void)
 {
 	if (seteuid(getuid()) == -1)
-		gflog_debug_errno(GFARM_MSG_UNFIXED,
+		gflog_debug_errno(GFARM_MSG_1005875,
 		    "seteuid(%d) for leak check", (int)getuid());
 }
 #endif
@@ -7669,7 +7669,7 @@ main(int argc, char **argv)
 		    "seteuid(%d)", (int)gfsd_uid);
 #ifdef GFSD_LEAK_CHECK_AT_EXIT
 	if (atexit(restore_euid_for_leak_check) != 0)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005876,
 		    "atexit(restore_euid_for_leak_check) failed");
 #endif
 
@@ -7884,7 +7884,7 @@ main(int argc, char **argv)
 	nfds = udp_fds_base + accepting.udp_socks_count;
 	GFARM_MALLOC_ARRAY(fds, nfds);
 	if (fds == NULL)
-		accepting_fatal(GFARM_MSG_UNFIXED,
+		accepting_fatal(GFARM_MSG_1005877,
 		    "cannot allocate pollfds for accepting sockets (%d)",
 		    nfds);
 	fds[0].fd = accepting.tcp_sock;
@@ -7993,7 +7993,7 @@ main(int argc, char **argv)
 				continue;
 			errno = save_errno;
 #ifdef HAVE_POLL
-			fatal_errno(GFARM_MSG_UNFIXED, "poll");
+			fatal_errno(GFARM_MSG_1005878, "poll");
 #else /* !HAVE_POLL */
 			fatal_errno(GFARM_MSG_1000600, "select");
 #endif /* !HAVE_POLL */
