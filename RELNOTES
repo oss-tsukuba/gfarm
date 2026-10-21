@@ -1,7 +1,11 @@
 Release note for Gfarm 2.8.11
 =============================
 
-[2026.10.15]
+[2026.10.21]
+
+Documentation
+* INSTALL-manual and SETUP-manual - fix the procedures, describe how
+  to use TLS communication, and use FUSE3
 
 New configuration directive
 * spool_server_replicator_max - maximum number of child processes that
@@ -21,6 +25,11 @@ Updated feature
   RHEL 10 derivatives
 * config-gfarm - support custom gfsd service names in unconfig
 * improve log messages to debug "bad file descriptor" errors [#1099]
+* replica check - log the number of files that cannot be fixed for each
+  reason at the end of each replica check [#1114]
+* gfarm.spec - restart gfmd and gfsd at upgrade, and stop and disable
+  them at removal of the RPM packages on systemd.  Also create the
+  _gfarmmd user in the gfarm-server package
 
 Bug fix
 * GSI server authentication does not work with newer OpenSSL
@@ -46,6 +55,21 @@ Bug fix
 * gfservice - copy _gfarmfs shared keys to both gfmd and gfsd hosts
 * config-gfarm - fix typo "matadata" in the interactive prompt
 * fix compiler warnings with gcc 16
+* client may read or write a wrong file after gfmd failover fails
+  halfway, since a stale file descriptor may be used
+* gfmd - writing to an existing replica may fail with "no space" error
+  just after gfmd failover, before gfsd reports its status
+* gfmd - may crash due to use-after-free of the database connection by
+  the journal store thread when gfmd is shutting down
+* "systemctl stop gfmd" does not stop gfmd started by gfmd-slave.service,
+  e.g. the old master metadata server after failover.  Now
+  gfmd.service and gfmd-slave.service conflict with each other, and
+  unconfig-gfarm.sh and gfdump.postgresql -r stop both
+* libgfarm - possible deadlock in rename and link when a symbolic link
+  points to another metadata server
+* fix memory leaks in gfmd (gfuser -A), libgfarm (at gfmd failover),
+  and gfsched (-S and -O options)
+* fix missing dependencies on header files in Makefiles
 
 Release note for Gfarm 2.8.10
 =============================
