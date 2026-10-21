@@ -967,7 +967,6 @@ inode_tdirset_check(struct inode *inode, struct dirset *tdirset,
 		gflog_notice(GFARM_MSG_1004666,
 		    "%s: inode %lld: unknown dirset, scheduling quota_check",
 		    diag, (long long)inode_get_number(inode));
-		gfarm_log_backtrace_symbols();
 		dirquota_check_schedule();
 	}
 }
