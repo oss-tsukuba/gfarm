@@ -179,9 +179,12 @@ LIBXSAN=$(ldd /usr/local/bin/gfstatus |
 	awk '$1 ~ /lib(hwa|a|l|ub|t)san\.so\./ && $2 == "=>" {
 		if (p) p = p ":" $3; else p = $3 } END {print p}')
 
+# setarch -R: libasan of GCC 11 (e.g. Rocky Linux 9) preloaded into a
+# program built without it crashes by SEGV at random with ASLR, when
+# vm.mmap_rnd_bits is 32
 PASS=PASSWORD
 gfarm-prun -p -a \
-  "echo $PASS | sudo ${LIBXSAN:+LD_PRELOAD=$LIBXSAN} saslpasswd2 -c $(id -un)"
+  "echo $PASS | sudo ${LIBXSAN:+setarch -R env LD_PRELOAD=$LIBXSAN} saslpasswd2 -c $(id -un)"
 gfarm-prun -p -a \
   "sudo chown _gfarmfs /etc/sasldb2 /etc/sasl2/sasldb2 > /dev/null 2>&1 || :"
 
