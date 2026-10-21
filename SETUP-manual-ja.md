@@ -19,7 +19,7 @@ mds1% sudo useradd -m _gfarmfs
 
 TLS通信を利用する場合メタデータサーバの証明書と秘密鍵を`/etc/pki/tls/certs/gfmd.crt`と`/etc/pki/tls/private/gfmd.key`に設置します。秘密鍵はrootの所有でパーミッションは0600とします。CAの証明書を`/etc/pki/tls/certs/gfarm`ディレクトリにファイル名を`$HASH.0`として設置します。`$HASH`は`openssl x509 -hash -noout -in $CRT`で計算できます。`$CRT`はCAの証明書です。
 
-証明書を設置しない場合、全ての通信は平文となります。認証はGfarm独自の共有鍵方式となり、それぞれのユーザにおいて共有鍵を作成する必要があります。以下では1年間（=31,536,000秒）有効な共有鍵を作成しています。
+証明書を設置しない場合、TLS通信は利用できず、全ての通信は平文となります。認証はGfarm独自の共有鍵方式となり、それぞれのユーザにおいて共有鍵を作成する必要があります。以下では1年間（=31,536,000秒）有効な共有鍵を作成しています。
 
 ```console
 mds1% sudo -u _gfarmmd gfkey -f -p 31536000
@@ -34,7 +34,7 @@ Gfarmファイルシステムを構築します。
 mds1% sudo config-gfarm -A $USER -r -X -d md5
 ```
 
-`config-gfarm`によりGfarmに必要な設定ファイル（gfarm2.confとgfmd.conf）およびバックエンドデータベースであるPostgreSQLの設定がなされ、メタデータサーバgfmdとPostgreSQLサーバの起動スクリプトが設置されます。設定ファイルはGfarmの構築時に`--sysconfdir`オプションにより指定したディレクトリ、指定していない場合は`--prefix`で指定したディレクトリを`$PREFIX`とすると`$PREFIX/etc`となります。`$PREFIX`のデフォルトは/usr/localです。
+`config-gfarm`によりGfarmに必要な設定ファイル（gfarm2.confとgfmd.conf）およびバックエンドデータベースであるPostgreSQLの設定がなされ、メタデータサーバgfmdとPostgreSQLサーバの起動スクリプトが設置されます。設定ファイルはGfarmの構築時に`--sysconfdir`オプションにより指定したディレクトリ、指定していない場合は`--prefix`で指定したディレクトリを`$PREFIX`とすると`$PREFIX/etc`となります。`$PREFIX`のデフォルトは/usr/localです。導入マニュアルに従ってGfarmを導入した場合は/etcとなります。
 
 <!-- >
 -Nオプションはconfig-gfarm実行時にサーバ起動を行わないオプションです。
@@ -77,9 +77,11 @@ mds1% sudo systemctl enable gfmd
 ```text
 metadb_server_list mds1.example.com:601 mds2.example.com:601 mds3.example.com:601
 sasl_mechanisms XOAUTH2
+auth_trial_order tls_client_certificate tls_sharedsecret sasl_auth sasl sharedsecret
 ```
 
 メタデータサーバの指定における`:601`は使用するTCPポート番号を表し、デフォルトの601番を用いる場合は省略可能です。
+`auth_trial_order`は認証方式を試す順番を指定します。デフォルトではTLSを用いない共有鍵方式が最初に試されるため、TLS通信を利用するために指定します。スレーブメタデータサーバとマスターメタデータサーバの間の接続のため、全てのメタデータサーバの`gfmd.conf`にも同じ`auth_trial_order`の行を追加します。
 <!-- >
 TLS通信を用いる場合で、gfsdのサービス証明書（DN=gfsd/host.domainのようにDNにgfsd/がついたもの）を用いないで、サーバ証明書を用いる場合は以下の2行を削除します。
 
@@ -204,7 +206,7 @@ TLS通信を利用する場合ファイルシステムノードのサービス�
 fs% sudo config-gfsd /var/spool/gfarm
 created /var/spool/gfarm
 created /etc/systemd/system/gfsd.service
-created /usr/local/etc/unconfig-gfsd.sh
+created /etc/unconfig-gfsd.sh
 config-gfsd success
 
 Please ask admin_user to register your host by the following command:
@@ -255,12 +257,12 @@ mds1% gfdf
 
 上記の設定をした後は、マスターメタデータサーバにおいて初期ユーザがメタデータサーバに共有鍵でアクセス可能な状態となっています。そのため、`gfmdhost`と`gfdf`を実行することができましたが、ファイルシステムノードへの認証はまだできません。
 
-ユーザを登録するためにはまずユーザをGfarmに登録し、認証の設定を行う必要があります。初期ユーザは既に登録されていますが、それ以外のユーザについては`gfuser`で登録します。登録はGfarmの管理特権ユーザ（いまは初期ユーザ）で行います。以下は山田太郎さんをtaroユーザで作成し、ホームディレクトリを/home/taroとし、クライアント証明書を/O=Gfarm/OU=Test/OU=CA/CN=taroとする例です。
+ユーザを登録するためにはまずユーザをGfarmに登録し、認証の設定を行う必要があります。初期ユーザは既に登録されていますが、それ以外のユーザについては`gfuser`で登録します。登録はGfarmの管理特権ユーザ（いまは初期ユーザ）で行います。以下は山田太郎さんをtaroユーザで作成し、ホームディレクトリを/home/taroとし、クライアント証明書を/O=Gfarm/OU=Test/OU=CA/CN=taroとする例です。所有者の変更には後述のアクセス特権が必要なため、`gfchown`は`gfsudo`で実行します。
 
 ```console
 mds1% gfuser -c taro "Taro Yamada" /home/taro /O=Gfarm/OU=Test/OU=CA/CN=taro
 mds1% gfmkdir -p /home/taro
-mds1% gfchown taro /home/taro
+mds1% gfsudo gfchown taro /home/taro
 ```
 
 クライアント証明書を用いて認証する場合はこれで終了です。クライアント証明書は後で変更できますのでまずは""として何も指定しないこともできます。
@@ -287,7 +289,7 @@ mds1% gfuser -A taro SASL $ID
 
 ## クライアント設定
 
-クライアントで必要な設定は`gfarm2.conf`を`$PREFIX/etc/gfarm2.conf`あるいは`$HOME/.gfarm2rc`に置くことです。他には、認証のためのクライアント証明書、アクセストークン、共有鍵のいずれかが必要となります。
+クライアントで必要な設定は、メタデータサーバの`gfarm2.conf`を同じディレクトリ（導入マニュアルに従ってGfarmを導入した場合は/etc）あるいは`$HOME/.gfarm2rc`にコピーすることです。他には、認証のためのクライアント証明書、アクセストークン、共有鍵のいずれかが必要となります。
 
 ## 動作確認
 
@@ -344,10 +346,10 @@ Gfarm ファイルシステムは`gfarm2fs`でマウントすることができ�
 
 ### ファイル複製の設定
 
-`gfncopy`コマンドでファイル複製の数を設定することができます。以下は`/`ディレクトリ以下の全ファイルについてファイル複製を2つ保持するための設定です。
+`gfncopy`コマンドでファイル複製の数を設定することができます。以下は`/`ディレクトリ以下の全ファイルについてファイル複製を2つ保持するための設定です。`/`の所有者は`gfarmadm`のため、管理特権ユーザが`gfsudo`で実行します。
 
 ```console
-% gfncopy -s 2 /
+% gfsudo gfncopy -s 2 /
 ```
 
 ファイルが格納されているファイルシステムノードは`gfwhere`コマンドで知ることができます。
@@ -397,12 +399,12 @@ mds2% gfmdhost -l
 + slave  async c west         mds3.example.com 601
 ```
 
-旧マスターメタデータサーバを更新します。
+旧マスターメタデータサーバを更新します。マスターではなくなったため、`gfmd-slave`によりスレーブとして起動します。
 
 ```console
 # Gfarmを上書きインストール
 mds1% sudo config-gfarm-update --update
-mds1% sudo systemctl start gfmd
+mds1% sudo systemctl start gfmd-slave
 mds1% gfmdhost -l
 + slave  sync  c east         mds1.example.com 601
 + master -     m east         mds2.example.com 601
