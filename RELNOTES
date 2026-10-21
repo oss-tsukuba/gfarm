@@ -39,7 +39,7 @@ Bug fix
   is created successfully [#1199]
 * replica check - a new replica may be created before
   replica_check_host_down_thresh passes when source and replica hosts
-  are on different networks [#1203]
+  are on different networks, introduced in the version 2.8.9 [#1203]
 * client may fail with "bad file descriptor" or GFARM_ERR_GFMD_FAILED_OVER
   error at gfmd failover [#1099]
 * gfsd - client may not be able to complete failover, and may keep

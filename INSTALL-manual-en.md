@@ -148,14 +148,14 @@ Set an appropriate value for `xxxx`.
 Download the Gfarm source code from the following URL:  
 <https://github.com/oss-tsukuba/gfarm/releases>
 
-This document describes version 2.8.10, but if a newer version is available, use the latest version.
+This document describes version 2.8.11, but if a newer version is available, use the latest version.
 
 Compile as any user (does not need to be root), then install with the root privilege.
 
 ```console
 $ OSSURL=https://github.com/oss-tsukuba
 $ PKG=gfarm
-$ VER=2.8.10
+$ VER=2.8.11
 $ wget --content-disposition $OSSURL/$PKG/archive/$VER.tar.gz
 $ tar pxf $PKG-$VER.tar.gz
 $ cd $PKG-$VER

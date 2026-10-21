@@ -339,6 +339,18 @@ gfsd起動時のスプールチェックを有効にします。スプールチ�
 	spool_check_level disable<br>
 </p></div>
 </dd>
+<dt><span class="term"><span class="token">spool_server_replicator_max</span> <em class="parameter"><code>プロセス数</code></em></span></dt>
+<dd>
+<p>
+gfsdが複製を作成するさいに生成する子プロセスの上限を設定します。
+0を設定すると上限はありません。
+デフォルト値は512です。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	spool_server_replicator_max 0<br>
+</p></div>
+</dd>
 <dt><span class="term"><span class="token">spool_check_parallel</span> <em class="parameter"><code>並列度</code></em></span></dt>
 <dd>
 <p>
