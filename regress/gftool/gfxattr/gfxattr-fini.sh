@@ -14,3 +14,4 @@ rm -rf $fusemnt/$subdir2
 rm -f $fusemnt/$fileX
 fusermount -u $fusemnt
 rmdir $fusemnt
+set +x

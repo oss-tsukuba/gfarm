@@ -1,5 +1,5 @@
 #!/bin/bash
-set -xeu
+set -eu
 
 mountp="./fusetest"
 xmltest="./xmltest"
