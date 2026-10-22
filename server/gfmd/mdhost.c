@@ -895,6 +895,7 @@ mdhost_has_async_replication_target(void)
 	struct gfarm_hash_iterator it;
 	struct mdhost *mh;
 	struct mdhost *mmh = mdhost_lookup_master();
+	struct mdcluster *mcluster;
 	static const char diag[] = "mdhost_has_async_replication_target";
 	int ret = 0;
 
@@ -905,21 +906,24 @@ mdhost_has_async_replication_target(void)
 		mdhost_table_rwlock_unlock(diag);
 		return (ret);
 	}
-	/* locking order violation happens when failover happens */
-	mdhost_mutex_lock(mmh, diag);
+	/*
+	 * do not lock other mdhosts while locking the master, since the
+	 * locking order is reversed when the master changes by failover.
+	 * only the pointer of the cluster is compared, as mdhost_eq_cluster()
+	 */
+	mcluster = mdhost_get_cluster(mmh);
 	FOREACH_MDHOST(it) {
 		mh = mdhost_iterator_access(&it);
 		if (mh == mmh)
 			continue;
 		mdhost_mutex_lock(mh, diag);
-		if (mdhost_is_valid(mh) && mh->cluster != mmh->cluster) {
+		if (mdhost_is_valid(mh) && mh->cluster != mcluster) {
 			mdhost_mutex_unlock(mh, diag);
 			ret = 1;
 			break;
 		}
 		mdhost_mutex_unlock(mh, diag);
 	}
-	mdhost_mutex_unlock(mmh, diag);
 	mdhost_table_rwlock_unlock(diag);
 	return (ret);
 }
