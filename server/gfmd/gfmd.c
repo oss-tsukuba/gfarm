@@ -75,6 +75,7 @@
 #include "protocol_state.h"
 #include "iostat.h"
 #include "lsan_suppressions.h"
+#include "tsan_suppressions.h"
 
 #ifndef GFMD_CONFIG
 #define GFMD_CONFIG		"/etc/gfmd.conf"
