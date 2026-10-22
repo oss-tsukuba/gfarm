@@ -1,7 +1,11 @@
 [Unit]
 Description=Gfarm filesystem metaserver
 Requires=gfarm-pgsql.service
-After=gfarm-pgsql.service
+# After=gfmd-slave.service: without ordering, stopping gfmd-slave.service
+# and starting gfmd.service (or vice versa) run in parallel, and the
+# unit being stopped takes the PID of the new gfmd from the shared PID
+# file, and kills it at the stop timeout
+After=gfarm-pgsql.service gfmd-slave.service
 Conflicts=gfmd-slave.service
 
 [Service]
