@@ -1217,9 +1217,14 @@ gfmdc_journal_asyncsend_thread(void *arg)
 			    &journal_sync_info.async_mutex,
 			    diag, ASYNC_WAIT_COND_DIAG);
 		}
-		mdhost_foreach(gfmdc_journal_asyncsend_each_mdhost, NULL);
+		/*
+		 * do not hold async_mutex while sending journal records,
+		 * so as not to block gfmdc_journal_asyncsend_thread_wakeup(),
+		 * which is called with giant_lock held.
+		 */
 		gfarm_mutex_unlock(&journal_sync_info.async_mutex, diag,
 		    ASYNC_MUTEX_DIAG);
+		mdhost_foreach(gfmdc_journal_asyncsend_each_mdhost, NULL);
 		db_journal_wait_until_readable();
 	}
 	return (NULL);
@@ -1230,9 +1235,19 @@ gfmdc_journal_asyncsend_thread_wakeup(void)
 {
 	static const char diag[] = "gfmdc_journal_asyncsend_thread_wakeup";
 
-	if (mdhost_has_async_replication_target())
-		gfarm_cond_signal(&journal_sync_info.async_wait_cond, diag,
-			ASYNC_WAIT_COND_DIAG);
+	if (!mdhost_has_async_replication_target())
+		return;
+	/*
+	 * signal with async_mutex held.  otherwise, the signal may be lost
+	 * if it is sent after gfmdc_journal_asyncsend_thread() checks
+	 * mdhost_has_async_replication_target() and before it waits.
+	 */
+	gfarm_mutex_lock(&journal_sync_info.async_mutex, diag,
+	    ASYNC_MUTEX_DIAG);
+	gfarm_cond_signal(&journal_sync_info.async_wait_cond, diag,
+	    ASYNC_WAIT_COND_DIAG);
+	gfarm_mutex_unlock(&journal_sync_info.async_mutex, diag,
+	    ASYNC_MUTEX_DIAG);
 }
 
 static gfarm_error_t
