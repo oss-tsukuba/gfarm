@@ -3,7 +3,9 @@ set -xeu
 
 : ${ASAN_OPTIONS=halt_on_error=false:log_exe_name=true:log_path=/var/tmp/gfarm.log.asan}
 LSAN_SUPP=$(cd $(dirname $0) && pwd)/lsan.supp
-: ${LSAN_OPTIONS=halt_on_error=false:log_exe_name=true:log_path=/var/tmp/gfarm.log.lsan:suppressions=$LSAN_SUPP}
+# fast_unwind_on_malloc=0: lsan.supp does not match a stack truncated by
+# the fast unwinder at a library built without frame pointers
+: ${LSAN_OPTIONS=halt_on_error=false:log_exe_name=true:log_path=/var/tmp/gfarm.log.lsan:suppressions=$LSAN_SUPP:fast_unwind_on_malloc=0}
 : ${UBSAN_OPTIONS=halt_on_error=false:log_exe_name=true:log_path=/var/tmp/gfarm.log.ubsan}
 : ${TSAN_OPTIONS=halt_on_error=false:log_exe_name=true:log_path=/var/tmp/gfarm.log.tsan}
 export ASAN_OPTIONS LSAN_OPTIONS UBSAN_OPTIONS TSAN_OPTIONS
