@@ -307,21 +307,56 @@ mdhost_iterator_access(struct gfarm_hash_iterator *it)
 	    gfarm_hash_iterator_access(it)));
 }
 
+static int mdhost_get_count_unlocked(void);
+
+/*
+ * func is called without locking table_rwlock, since it may lock
+ * the journal file, and the journal apply thread locks table_rwlock
+ * while locking the journal file.
+ * the mdhosts collected here are never freed.
+ */
 void
 mdhost_foreach(int (*func)(struct mdhost *, void *), void *closure)
 {
 	struct gfarm_hash_iterator it;
-	struct mdhost *m;
+	struct mdhost *m, **ms;
 	struct mdhost *self = mdhost_lookup_self();
+	int i, n;
 	static const char diag[] = "mdhost_foreach";
 
 	mdhost_table_rwlock_rdlock(diag);
+	n = mdhost_get_count_unlocked();
+	if (n == 0) {
+		mdhost_table_rwlock_unlock(diag);
+		return;
+	}
+	GFARM_MALLOC_ARRAY(ms, n);
+	if (ms == NULL) {
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "%s: no memory for %d mdhosts, call func with lock",
+		    diag, n);
+		FOREACH_MDHOST(it) {
+			m = mdhost_iterator_access(&it);
+			if (mdhost_is_valid(m) && m != self &&
+			    func(m, closure) == 0)
+				break;
+		}
+		mdhost_table_rwlock_unlock(diag);
+		return;
+	}
+	n = 0;
 	FOREACH_MDHOST(it) {
 		m = mdhost_iterator_access(&it);
-		if (mdhost_is_valid(m) && m != self && func(m, closure) == 0)
-			break;
+		if (mdhost_is_valid(m) && m != self)
+			ms[n++] = m;
 	}
 	mdhost_table_rwlock_unlock(diag);
+
+	for (i = 0; i < n; i++) {
+		if (mdhost_is_valid(ms[i]) && func(ms[i], closure) == 0)
+			break;
+	}
+	free(ms);
 }
 
 static int
