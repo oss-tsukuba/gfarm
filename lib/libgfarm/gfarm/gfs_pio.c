@@ -801,7 +801,7 @@ static gfarm_error_t gfs_pio_view_fstat(GFS_File, struct gfs_stat *);
 gfarm_error_t
 gfs_pio_close_getgen(GFS_File gf, gfarm_uint64_t *igenp)
 {
-	gfarm_error_t e, e_save;
+	gfarm_error_t e, e_save, e_not_reopened = GFARM_ERR_NO_ERROR;
 	gfarm_timerval_t t1, t2;
 	struct gfarm_filesystem *fs = gfarm_filesystem_get_by_connection(
 		gf->gfm_server);
@@ -861,6 +861,12 @@ gfs_pio_close_getgen(GFS_File gf, gfarm_uint64_t *igenp)
 			}
 		}
 
+		/*
+		 * get the reason before view_close, which clears gf->error
+		 * by gfs_pio_set_view_default().
+		 */
+		if (gf->fd == -1)
+			e_not_reopened = gfs_pio_not_reopened_error(gf);
 		e = (*gf->ops->view_close)(gf);
 		if (e == GFARM_ERR_GFMD_FAILED_OVER) {
 			gflog_info(GFARM_MSG_1003268,
@@ -872,7 +878,7 @@ gfs_pio_close_getgen(GFS_File gf, gfarm_uint64_t *igenp)
 			if (gf->fd == -1 &&
 			    e == GFARM_ERR_BAD_FILE_DESCRIPTOR)
 				/* not reopened by the previous failover */
-				e = gfs_pio_not_reopened_error(gf);
+				e = e_not_reopened;
 			gflog_debug(GFARM_MSG_1005792,
 			    "gfs_pio_close(): "
 			    "view_close(fd=%d): %s",

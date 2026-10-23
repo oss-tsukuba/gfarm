@@ -168,6 +168,14 @@ gfs_pio_reopen(struct gfarm_filesystem *fs, GFS_File gf)
 		    gfs_pio_url(gf),
 		    gfarm_error_string(e));
 		free(real_url);
+		/*
+		 * keep the reason to report it instead of the bad file
+		 * descriptor, see gfs_pio_not_reopened_error().
+		 * GFARM_ERR_GFMD_FAILED_OVER is not kept, since the file
+		 * will be reopened by the retry.
+		 */
+		if (e != GFARM_ERR_GFMD_FAILED_OVER)
+			gf->error = e;
 		return (e);
 	} else if (gfm_server != gf->gfm_server ||
 	    type != GFS_DT_REG || ino != gf->ino) {
