@@ -219,6 +219,18 @@ struct reset_and_reopen_info {
 	int must_retry;
 };
 
+/*
+ * invalidate the local fd of a file which is not reopened by this
+ * failover, although the failover itself may succeed.
+ * see gfs_pio_local_storage_revoke() for the reason.
+ */
+static void
+revoke_if_not_reopened(GFS_File gf)
+{
+	if (gf->fd == -1 && get_storage_context(gf->view_context) != NULL)
+		(*gf->ops->view_revoke)(gf);
+}
+
 static int
 reset_and_reopen(GFS_File gf, void *closure)
 {
@@ -272,6 +284,7 @@ reset_and_reopen(GFS_File gf, void *closure)
 			gf->error = GFARM_ERR_CONNECTION_ABORTED;
 			gflog_debug(GFARM_MSG_1003385,
 			    "%s", gfarm_error_string(gf->error));
+			revoke_if_not_reopened(gf);
 			return (1);
 		}
 
@@ -293,6 +306,7 @@ reset_and_reopen(GFS_File gf, void *closure)
 				gflog_debug(GFARM_MSG_1003386,
 				    "gfarm_client_process_reset: %s",
 				    gfarm_error_string(e));
+				revoke_if_not_reopened(gf);
 				return (1);
 			}
 		}
@@ -323,6 +337,7 @@ reset_and_reopen(GFS_File gf, void *closure)
 		gflog_debug(GFARM_MSG_1003387,
 		    "gfs_pio_reopen: %s", gfarm_error_string(e));
 	}
+	revoke_if_not_reopened(gf);
 
 	return (1);
 }
