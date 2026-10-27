@@ -1165,9 +1165,9 @@ dead_file_copy_mark_lost(
 	if (dfc == NULL) {
 		gflog_notice(GFARM_MSG_1004319, "%s(%lld, %lld, %s): "
 		    "not found", diag,
-		    (unsigned long long)dfc->inum,
-		    (unsigned long long)dfc->igen,
-		    host_name(dfc->host));
+		    (unsigned long long)inum,
+		    (unsigned long long)igen,
+		    host_name(host));
 		return (GFARM_ERR_NO_SUCH_OBJECT);
 	}
 
