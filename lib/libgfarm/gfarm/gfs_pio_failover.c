@@ -100,6 +100,22 @@ gfs_pio_should_failover_at_gfs_open(GFS_File gf, gfarm_error_t e)
 }
 
 /*
+ * the error to be reported for a file which has not been reopened by
+ * a failover.  gf->error is set to the reason by gfs_pio_reopen(), if
+ * it failed.
+ */
+gfarm_error_t
+gfs_pio_not_reopened_error(GFS_File gf)
+{
+	gfarm_error_t e = gfs_pio_error_unlocked(gf);
+
+	if (e == GFARM_ERR_NO_ERROR || e == GFARM_ERR_GFMD_FAILED_OVER ||
+	    e == GFARM_ERR_BAD_FILE_DESCRIPTOR)
+		e = GFARM_ERR_STALE_FILE_HANDLE;
+	return (e);
+}
+
+/*
  * callers should retry their operation, if this function returns true.
  */
 int
@@ -116,7 +132,18 @@ gfs_pio_failover_check_retry(GFS_File gf, gfarm_error_t *ep)
 		}
 		return (1); /* caller should retry */
 	}
-	return (0); /* DO NOT touch *ep */
+	if (gf->fd == -1 && *ep == GFARM_ERR_BAD_FILE_DESCRIPTOR) {
+		/*
+		 * this file has not been reopened by the previous failover.
+		 * report the reason instead of the bad file descriptor.
+		 */
+		*ep = gfs_pio_not_reopened_error(gf);
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s is not reopened: %s",
+		    gf->url != NULL ? gf->url : "(fhopen)",
+		    gfarm_error_string(*ep));
+	}
+	return (0); /* DO NOT touch *ep, unless the file is not reopened */
 }
 
 static gfarm_error_t
@@ -141,6 +168,14 @@ gfs_pio_reopen(struct gfarm_filesystem *fs, GFS_File gf)
 		    gfs_pio_url(gf),
 		    gfarm_error_string(e));
 		free(real_url);
+		/*
+		 * keep the reason to report it instead of the bad file
+		 * descriptor, see gfs_pio_not_reopened_error().
+		 * GFARM_ERR_GFMD_FAILED_OVER is not kept, since the file
+		 * will be reopened by the retry.
+		 */
+		if (e != GFARM_ERR_GFMD_FAILED_OVER)
+			gf->error = e;
 		return (e);
 	} else if (gfm_server != gf->gfm_server ||
 	    type != GFS_DT_REG || ino != gf->ino) {
@@ -191,6 +226,18 @@ struct reset_and_reopen_info {
 	struct gfm_connection *gfm_server;
 	int must_retry;
 };
+
+/*
+ * invalidate the local fd of a file which is not reopened by this
+ * failover, although the failover itself may succeed.
+ * see gfs_pio_local_storage_revoke() for the reason.
+ */
+static void
+revoke_if_not_reopened(GFS_File gf)
+{
+	if (gf->fd == -1 && get_storage_context(gf->view_context) != NULL)
+		(*gf->ops->view_revoke)(gf);
+}
 
 static int
 reset_and_reopen(GFS_File gf, void *closure)
@@ -245,6 +292,7 @@ reset_and_reopen(GFS_File gf, void *closure)
 			gf->error = GFARM_ERR_CONNECTION_ABORTED;
 			gflog_debug(GFARM_MSG_1003385,
 			    "%s", gfarm_error_string(gf->error));
+			revoke_if_not_reopened(gf);
 			return (1);
 		}
 
@@ -266,6 +314,7 @@ reset_and_reopen(GFS_File gf, void *closure)
 				gflog_debug(GFARM_MSG_1003386,
 				    "gfarm_client_process_reset: %s",
 				    gfarm_error_string(e));
+				revoke_if_not_reopened(gf);
 				return (1);
 			}
 		}
@@ -296,6 +345,7 @@ reset_and_reopen(GFS_File gf, void *closure)
 		gflog_debug(GFARM_MSG_1003387,
 		    "gfs_pio_reopen: %s", gfarm_error_string(e));
 	}
+	revoke_if_not_reopened(gf);
 
 	return (1);
 }
@@ -621,7 +671,25 @@ gfarm_error_t
 gfs_pio_failover(GFS_File gf)
 {
 	gfarm_error_t e = failover(gf->gfm_server);
+	int fc;
 
+	if (e == GFARM_ERR_NO_ERROR) {
+		fc = gfarm_filesystem_failover_count(
+		    gfarm_filesystem_get_by_connection(gf->gfm_server));
+		if (gf->fd == -1 || gfs_file_is_stale(gf, fc)) {
+			/*
+			 * the failover itself succeeded, but this file has not
+			 * been reopened, e.g. because gfs_pio_reopen() failed.
+			 * the caller must not retry its operation with
+			 * the invalid descriptor.
+			 */
+			e = gfs_pio_not_reopened_error(gf);
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "gfs_pio_failover: %s (fd=%d) is not reopened: %s",
+			    gf->url != NULL ? gf->url : "(fhopen)", gf->fd,
+			    gfarm_error_string(e));
+		}
+	}
 	if (e != GFARM_ERR_NO_ERROR)
 		gf->error = e;
 	return (e);
