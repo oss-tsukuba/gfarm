@@ -307,21 +307,56 @@ mdhost_iterator_access(struct gfarm_hash_iterator *it)
 	    gfarm_hash_iterator_access(it)));
 }
 
+static int mdhost_get_count_unlocked(void);
+
+/*
+ * func is called without locking table_rwlock, since it may lock
+ * the journal file, and the journal apply thread locks table_rwlock
+ * while locking the journal file.
+ * the mdhosts collected here are never freed.
+ */
 void
 mdhost_foreach(int (*func)(struct mdhost *, void *), void *closure)
 {
 	struct gfarm_hash_iterator it;
-	struct mdhost *m;
+	struct mdhost *m, **ms;
 	struct mdhost *self = mdhost_lookup_self();
+	int i, n;
 	static const char diag[] = "mdhost_foreach";
 
 	mdhost_table_rwlock_rdlock(diag);
+	n = mdhost_get_count_unlocked();
+	if (n == 0) {
+		mdhost_table_rwlock_unlock(diag);
+		return;
+	}
+	GFARM_MALLOC_ARRAY(ms, n);
+	if (ms == NULL) {
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "%s: no memory for %d mdhosts, call func with lock",
+		    diag, n);
+		FOREACH_MDHOST(it) {
+			m = mdhost_iterator_access(&it);
+			if (mdhost_is_valid(m) && m != self &&
+			    func(m, closure) == 0)
+				break;
+		}
+		mdhost_table_rwlock_unlock(diag);
+		return;
+	}
+	n = 0;
 	FOREACH_MDHOST(it) {
 		m = mdhost_iterator_access(&it);
-		if (mdhost_is_valid(m) && m != self && func(m, closure) == 0)
-			break;
+		if (mdhost_is_valid(m) && m != self)
+			ms[n++] = m;
 	}
 	mdhost_table_rwlock_unlock(diag);
+
+	for (i = 0; i < n; i++) {
+		if (mdhost_is_valid(ms[i]) && func(ms[i], closure) == 0)
+			break;
+	}
+	free(ms);
 }
 
 static int
@@ -1377,29 +1412,62 @@ metadb_server_verify(struct gfarm_metadb_server *ms, const char *diag)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+/* PREREQUISITE: giant_lock */
 static gfarm_error_t
 mdhost_fix_default_master(struct mdhost *new_mmh, const char *diag)
 {
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	struct gfarm_hash_iterator it;
-	struct mdhost *mh;
+	struct mdhost *mh, **mhs;
+	int i, n;
 
+	/*
+	 * do not call db_mdhost_modify() while locking table_rwlock,
+	 * since it locks the journal file, and the journal apply thread
+	 * locks table_rwlock while locking the journal file.
+	 * the mdhosts collected here are never freed, and giant_lock is held.
+	 */
 	mdhost_table_rwlock_rdlock(diag);
+	n = mdhost_get_count_unlocked();
+	if (n == 0) {
+		mdhost_table_rwlock_unlock(diag);
+		return (e);
+	}
+	GFARM_MALLOC_ARRAY(mhs, n);
+	if (mhs == NULL) {
+		mdhost_table_rwlock_unlock(diag);
+		e = GFARM_ERR_NO_MEMORY;
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: %s", diag, gfarm_error_string(e));
+		return (e);
+	}
+	n = 0;
 	FOREACH_MDHOST(it) {
 		mh = mdhost_iterator_access(&it);
 		if (!mdhost_is_valid(mh))
 			continue;
 		if (mh == new_mmh || !mdhost_is_default_master(mh))
 			continue;
-		mdhost_set_is_default_master(mh, 0);
-		if ((e = db_mdhost_modify(&mh->ms, 0)) != GFARM_ERR_NO_ERROR) {
+		mhs[n++] = mh;
+	}
+	mdhost_table_rwlock_unlock(diag);
+
+	for (i = 0; i < n; i++) {
+		/*
+		 * clear the flag just before writing it, to keep the flag
+		 * of the remaining mdhosts consistent with the database,
+		 * if db_mdhost_modify() fails.
+		 */
+		mdhost_set_is_default_master(mhs[i], 0);
+		if ((e = db_mdhost_modify(&mhs[i]->ms, 0))
+		    != GFARM_ERR_NO_ERROR) {
 			gflog_error(GFARM_MSG_1002944,
 			    "%s: db_mdhost_modify failed: %s", diag,
 			    gfarm_error_string(e));
 			break;
 		}
 	}
-	mdhost_table_rwlock_unlock(diag);
+	free(mhs);
 	return (e);
 }
 
