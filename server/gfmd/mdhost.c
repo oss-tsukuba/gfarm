@@ -1444,12 +1444,17 @@ mdhost_fix_default_master(struct mdhost *new_mmh, const char *diag)
 			continue;
 		if (mh == new_mmh || !mdhost_is_default_master(mh))
 			continue;
-		mdhost_set_is_default_master(mh, 0);
 		mhs[n++] = mh;
 	}
 	mdhost_table_rwlock_unlock(diag);
 
 	for (i = 0; i < n; i++) {
+		/*
+		 * clear the flag just before writing it, to keep the flag
+		 * of the remaining mdhosts consistent with the database,
+		 * if db_mdhost_modify() fails.
+		 */
+		mdhost_set_is_default_master(mhs[i], 0);
 		if ((e = db_mdhost_modify(&mhs[i]->ms, 0))
 		    != GFARM_ERR_NO_ERROR) {
 			gflog_error(GFARM_MSG_1002944,
