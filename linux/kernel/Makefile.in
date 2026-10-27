@@ -190,5 +190,9 @@ srcdir = .
 
 SRCS = *.c
 
+# kbuild reads this Makefile again in the kernel source tree, where
+# $(top_srcdir) is not valid.  these are not necessary for kbuild.
+ifeq ($(KERNELRELEASE),)
 include $(top_srcdir)/makes/var.mk
 include $(top_srcdir)/makes/gflog.mk
+endif
