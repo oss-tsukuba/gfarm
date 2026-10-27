@@ -71,6 +71,7 @@ $(OBJS): $(DEPGFARMINC) $(DEPGFMDINC) \
 	$(GFUTIL_SRCDIR)/gfnetdb.h \
 	$(INC_SRCDIR)/gfarm_iostat.h \
 	$(GFARMLIB_SRCDIR)/iostat.h \
-	$(GFUTIL_SRCDIR)/lsan_suppressions.h
+	$(GFUTIL_SRCDIR)/lsan_suppressions.h \
+	$(GFUTIL_SRCDIR)/tsan_suppressions.h
 
 include $(optional_rule)

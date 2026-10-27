@@ -95,6 +95,7 @@
 
 #include "gfs_rdma.h"
 #include "lsan_suppressions.h"
+#include "tsan_suppressions.h"
 
 #define COMPAT_OLD_GFS_PROTOCOL
 

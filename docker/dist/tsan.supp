@@ -1,0 +1,9 @@
+# ThreadSanitizer suppressions for the false positives in third-party
+# libraries.
+# see TSAN_OPTIONS in the scripts in this directory.
+
+# getnameinfo(3) in glibc reallocates its internal buffer by
+# __libc_dynarray_emplace_enlarge(), and ThreadSanitizer reports a data
+# race between realloc() in different threads, since it does not see the
+# free() inside glibc.
+race:__libc_dynarray_emplace_enlarge
