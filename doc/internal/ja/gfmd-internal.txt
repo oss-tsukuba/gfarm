@@ -924,6 +924,10 @@ finalizing	削除結果を処理中
 ○ キュー
 
 dfc_allq		全ての dead_file_copy
+dfc_inumq[]		inode 番号によるハッシュ表 (dfc_allq.mutex で保護)。
+			dead_file_copy_lookup(), dead_file_copy_count_by_inode(),
+			dead_file_copy_info_by_inode() および inode を指定した
+			走査は、dfc_allq ではなくこちらを辿る。
 removal_pendingq	削除要求の送信待ち
 removal_finishedq	削除結果の処理待ち
 host_busyq		back_channel の送信が busy だったため、再試行待ち
@@ -965,7 +969,10 @@ host_busyq		back_channel の送信が busy だったため、再試行待ち
 ・dead_file_copy_scanner() は、要求に応じて dead_file_copy_scan_deferred()
   を giant_lock を獲得して実行し、deferred ないし lost 状態の
   dead_file_copy を走査する。
+  inode を指定した走査は、dfc_inumq[] で、その inode の dead_file_copy
+  のみを走査する。全件の走査 (inum == 0) は dfc_allq を辿る。
   - lost ないしホストが削除されていれば、removal_finishedq に入れる。
+    (inode を指定した走査では、他の inode のものは処理しない)
   - 条件に合致し、ホストが busy でなく、dead_file_copy_is_removable()
     かつ host_is_file_removable() であれば、removal_pendingq に入れる。
   走査後は、走査時間に metadb_server_remove_scan_interval_factor を掛けた
@@ -974,8 +981,11 @@ host_busyq		back_channel の送信が busy だったため、再試行待ち
   - dead_file_copy_scan_deferred_all() (replica_check から)
   - dead_file_copy_host_becomes_up() (全件を走査)
   - dead_file_copy_replica_status_changed(inum, host)
-  - dead_file_copy_inode_status_changed(inum) (inode_remove() 等から)
-  複数の要求が溜まっていた場合はまとめて走査する。
+  - dead_file_copy_inode_status_changed(inum) (inode_remove() や、
+    lost にした dead_file_copy を処理するため dead_file_copy_mark_lost()
+    から)
+  複数の要求が溜まっていた場合はまとめて走査する。異なる inode に対する
+  要求が溜まっていた場合は、全件の走査となる。
 ・ホストが down になった場合 (dead_file_copy_host_becomes_down()) は、
   そのホストの dead_file_copy を removal_pendingq から deferred に戻す。
   host_busyq は操作しない (#420)。
