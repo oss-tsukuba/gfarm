@@ -60,8 +60,8 @@ static struct thread_pool *gfmdc_send_thread_pool;
 static struct thread_pool *journal_sync_thread_pool;
 static struct gfmdc_journal_sync_info journal_sync_info;
 
-static const char SYNC_MUTEX_DIAG[]	= "jorunal_sync_info.sync_mutex";
-static const char SYNC_END_COND_DIAG[]	= "jorunal_sync_info.sync_end_cond";
+static const char SYNC_MUTEX_DIAG[]	= "journal_sync_info.sync_mutex";
+static const char SYNC_END_COND_DIAG[]	= "journal_sync_info.sync_end_cond";
 static const char SEND_MUTEX_DIAG[]	= "send_closure.mutex";
 static const char SEND_END_COND_DIAG[]	= "send_closure.end_cond";
 static const char ASYNC_MUTEX_DIAG[]	= "journal_sync_info.async_mutex";

@@ -187,7 +187,7 @@ db_journal_init_status(void)
 	gfarm_cond_init(&journal_recvq_nonempty_cond, diag,
 	    RECVQ_NONEMPTY_COND_DIAG);
 	gfarm_cond_init(&journal_recvq_nonfull_cond, diag,
-	    RECVQ_NONEMPTY_COND_DIAG);
+	    RECVQ_NONFULL_COND_DIAG);
 	gfarm_cond_init(&journal_recvq_cancel_cond, diag,
 	    RECVQ_CANCEL_COND_DIAG);
 
@@ -4803,7 +4803,7 @@ db_journal_recvq_proc(int *canceledp)
 		gfarm_mutex_unlock(&journal_recvq_mutex, diag,
 		    RECVQ_MUTEX_DIAG);
 		gfarm_cond_signal(&journal_recvq_cancel_cond, diag,
-		    RECVQ_NONEMPTY_COND_DIAG);
+		    RECVQ_CANCEL_COND_DIAG);
 		*canceledp = 1;
 		return (GFARM_ERR_NO_ERROR);
 	}
