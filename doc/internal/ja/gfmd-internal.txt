@@ -1,25 +1,44 @@
 ■ 設計指針
 
-○ giant_lock 保持中は休眠してはいけない。XXX 要解説
+○ giant_lock 保持中は休眠してはいけない。
 当然、I/O も行なってはいけない。
-当初の実装で、唯一の例外は、dbq がフルの場合の空き待ちの休眠。これは仕方ない。
-gfmdの冗長構成が入った時に、同期スレーブgfmd間へのジャーナル転送も、
-giant_lock 保持中に行なわれるようになった。（これは、あまり望ましくない…）
+ただし、現在は以下の例外がある。
+
+・dbq がフルの場合の空き待ち (db_access.c:dbq_enter0())。これは仕方ない。
+  metadata-replication が有効な場合は dbq ではなく journal file を使うため、
+  この待ちは生じない。
+・metadata-replication が有効な場合、変更操作は db_journal_write()
+  (PREREQUISITE: giant_lock) で journal file に書き出されるが、
+  giant_lock 保持中に以下の休眠が生じうる。
+  - journal file への書き込み自体 (ファイル I/O)
+  - journal file が一杯の場合、reader が読み進むまでの待ち
+    ("journal write: wait until ... reads the journal file")
+  - synchronous_journaling が有効な場合の journal file の fdatasync
+  - 同期スレーブ gfmd へのジャーナル転送。
+    gfmdc_journal_sync_multiple() が journal_sync_thread_pool に送信を依頼し、
+    gfmdc_wait_journal_recv_threads() で同期スレーブからの返答を待つ。
+    待ち時間の上限は synchronous_replication_timeout で、タイムアウトの度に
+    倍にして、最大 120秒まで待つ。（これは、あまり望ましくない…）
 
 当初の実装では、db_access.h のインターフェースは決して失敗しないものと
-していた。現在は、ジャーナルファイルへの書き込み等で失敗する可能性が
-あるが、その対策が入ってないのは問題。
+していた。現在は gfarm_error_t を返すが、journal file への書き込みや
+同期スレーブへの転送に失敗した場合は、db_journal_store_failure() 等で
+gflog_fatal() し、gfmd を停止する。メモリ上のメタデータと DB/journal の
+不整合を抱えたまま動作を継続しないためである。
 
 手抜きで、ネットワーク送信を、giant_lock を保持したままやっている
-ところがある。出力は nonblocking モードで行なっている(筈?)なので、
-出力内容がバッファよりも小さければ、休眠しない筈。
-一応、/* XXX FIXME too long giant lock */ というコメントで、
-全ての箇所をマークしてある筈だが…
+ところがある。gfmd のソケットは nonblocking モードではない。
+送信内容が iobuffer とカーネルのソケットバッファに収まれば休眠しないが、
+収まらなければブロックする (タイムアウト付きの送信の場合は
+network_send_timeout まで)。
+/* XXX FIXME too long giant lock */ というコメントで、該当箇所をマーク
+してある (user.c, host.c, group.c, dirset.c, job.c, inode.c)。
 
 ○ 全メタデータを、メモリにキャッシュする。
 性能優先＋コーディングを簡単にするのが目的。
-データは gfmd起動時に全てメモリに読み込み、更新のたびに dbq 経由で DB に
-書き出す。初期化を除くと、起動中に DB から読み込みを行なうことはない。
+データは gfmd起動時に全てメモリに読み込み、更新のたびに dbq ないし
+journal file 経由で DB に書き出す。初期化を除くと、起動中に DB から
+読み込みを行なうことはない。
 
 ただし、xattr だけは例外。
 理由は、
@@ -27,25 +46,31 @@ giant_lock 保持中に行なわれるようになった。（これは、あま
 ・設計者が他の部分とは別
 であるため。
 逆に、たとえデータサイズが小さくても、xattr へのアクセスは全くキャッシュ
-されておらず、非常に遅いという制限事項があった。現在は、ユーザが指定した
-xattr はキャッシュできる。また、gfarm.ncopy は常にキャッシュする。
+されておらず、非常に遅いという制限事項があった。現在は、以下の xattr は
+キャッシュされる (inode.c:xattr_init())。
+・常にキャッシュするもの
+  ACL (GFARM_ACL_EA_ACCESS, GFARM_ACL_EA_DEFAULT)、
+  GFARM_ROOT_EA_USER, GFARM_ROOT_EA_GROUP、
+  gfarm.ncopy, gfarm.md5, gfarm.replicainfo
+・gfarm2.conf の xattr_cache で、ユーザが指定した xattr
+・backend_db_type が none の場合は、全ての xattr
 
 ■ 命名規則
 
-libgfarm とは異り、独立したプログラムなので、ではないので、グローバル
+libgfarm とは異なり、独立したプログラムなので、グローバル
 シンボルに gfarm_ や gfs_ をプリフィックスとしてつける必要はない。
 
 (原則として) 構造体ごとにモジュールを作り、構造体の定義は *.c に
 書いて、他のモジュールからは参照できなくする。
 継承の実装のために、他のモジュールから参照できる必要がある場合には、
-構造体の定義を *_impl.h に記載する。
+構造体の定義をヘッダファイルに記載する。
 その構造体にアクセスする関数は、関数名のプリフィックスに構造体の
 名前をつける。
 たとえば、struct host の定義は host.c にあり、モジュール内の関数名は
 host_*() となっている。
-たとえば、struct abstract_host は、struct host および struct mdhost から
-継承するため、構造体定義は abstract_host_impl.h にあり、モジュール内の
-関数名は abstract_host_*() となっている。
+たとえば、struct abstract_host は、struct host と struct mdhost の共通部分
+であり、両者が先頭メンバとして埋め込んで継承しているため、構造体定義は
+abstract_host.h にあり、モジュール内の関数名は abstract_host_*() となっている。
 
 ■ データ構造
 
@@ -58,19 +83,22 @@ gfmd が動作している間、常に有効であり、継続して利用でき
 ただし、削除されたホスト/ユーザー/グループも存在するので、
 場合によっては host_is_valid()/user_is_valid()/group_is_valid() で
 現在有効なグループか否かも検査する必要がある。
-host_lookup()/user_lookup()/group_lookup() は、valid なものしか返さない
-ので、*_lookup() で得たポインタを、giant_lock を保持した範囲内で利用して
+host_lookup() や、user_tenant_lookup()/user_lookup_in_tenant()/
+group_tenant_lookup()/group_lookup_in_tenant() 等は、valid なものしか
+返さないので、これらで得たポインタを、giant_lock を保持した範囲内で利用して
 いる限りは、valid か否かを検査する必要がない。
+削除されたものも含めて検索するには、*_including_invalid() を用いる。
 
 ホストに関しては、そのホストが動作中か否かという状態が別にあり、
 host_is_up() で検査できる。この host_is_up() については、
-giant_lock とは別のロックで保護されているため、giant_lock 保持中で
-あっても、host_is_up() を呼び出すたびに別の結果が返ってくることがあり、
-そのことを考慮してコーディングする必要がある。
+giant_lock とは別のロック (abstract_host::mutex) で保護されているため、
+giant_lock 保持中であっても、host_is_up() を呼び出すたびに別の結果が
+返ってくることがあり、そのことを考慮してコーディングする必要がある。
 
 struct tenant は gfmd の内部的なデータ構造であり、削除された状態は存在しない。
 
-※ struct inode も、現在の実装では gfmd が動作している間、常に有効だが、
+※ struct inode も、現在の実装では gfmd が動作している間、常に有効
+　 (inode_free() は free() せず、inode_free_list に戻して再利用する) だが、
 　 コーディング規約としては、それを仮定していない。
 　 giant_lock を手放している区間を経由して inode を利用する場合は、
    struct inode へのポインタではなく、i-node 番号を用いる必要がある。
@@ -81,26 +109,67 @@ mutex 間の依存関係にループがあってはいけない。デッドロ�
 
 同時に複数の mutex の獲得を行なう場合の獲得順序は、すべて文書化が必要。
 
-mutex 獲得順序は、server/gfmd/README 参照
-XXX 保守されてない。要更新
+server/gfmd/README にも mutex 獲得順序の記載があるが、gfarm v2 alpha の
+頃のままで、giant_mutex, peer_table_mutex, dbq.mutex しか記載されていない。
+また、ソースコード中の LOCKS: コメントの一部には、現存しない mutex 名
+(host::back_channel_mutex, host::channel_mutex 等。現在の
+abstract_host::mutex のこと) が残っている。
 
-・giant_lock -> struct host::replication_mutex -> dbq.mutex
-	cf. host_peer_set()
+・giant_lock -> journal file の mutex
+	journal file の mutex を保持している状態で giant_lock が必要な場合は、
+	デッドロック回避のため、一旦 journal file の mutex を解放してから
+	giant_lock を獲得し、journal file の mutex を再獲得する (db_journal.c)。
 
-・giant_lock -> dfc_allq.mutex
-・giant_lock -> busyq.mutex -> removeq.mutex -> host:back_channel_mutex
-	以下の条件の複合による。
-	giant_lock -> removeq.mutex
-	busyq.mutex -> removeq.mutex
-	busyq.mutex -> host:back_channel_mutex (for host_is_up())
+・giant_lock -> dbq.mutex
+	dead_file_copy_free() 等。dfc_allq.mutex を保持したまま dbq.mutex を
+	獲得することはない。
+
+・giant_lock -> peer_table_mutex -> dbq.mutex
+	peer_free() は peer_table_mutex を保持したまま db_begin()/db_end()
+	を呼ぶ。server/gfmd/README の旧記述 (dbq.mutex と peer_table_mutex を
+	同時に獲得しない) はこれに反している。
+
+・giant_lock -> abstract_host::mutex
+	abstract_host_set_peer() (旧 host_peer_set())。
+	abstract_host::mutex を解放した後に、ops->set_peer_unlocked として
+	dead_file_copy_host_becomes_up() 等を呼び出す。
+
+・dead_file_copy 関連
+	giant_lock -> dfc_allq.mutex -> dfc->mutex
+	giant_lock -> dfc_allq.mutex -> abstract_host::mutex
+		(dfc_allq.mutex 保持中に host_is_up()/host_is_valid() を呼ぶ)
+	giant_lock -> host_busyq.mutex -> abstract_host::mutex
+		(dead_file_copy_host_busyq_scan() が host_check_busy()/
+		host_is_up() を呼ぶ)
+	giant_lock -> host_busyq.mutex -> removal_pendingq.mutex -> dfc->mutex
+	dfc_workq::mutex -> dfc->mutex
+		(removal_pendingq, removal_finishedq, host_busyq 共通)
+	giant_lock -> dead_file_copy_scan.mutex
+
+	host_check_busy() は、ホストが長時間 busy の場合、abstract_host::mutex
+	を解放してから abstract_host_disconnect_request() を呼ぶ。この経路で、
+	host_busyq.mutex を保持したまま、replica_check の mutex や
+	removal_pendingq.mutex -> dfc->mutex
+	(dead_file_copy_host_becomes_down() 経由) も獲得される。
+	host.c の host_disabled() 前後の LOCKS: コメント参照。
+	なお、dead_file_copy_host_becomes_down() は host_busyq を操作しない。
+	操作すると host_busyq.mutex で自己デッドロックするため (#420)。
 
 ○ giant_lock を保持したまま、休眠して良いスレッド
 
-  以下のスレッドのみ、giant_lock を保持したまま休眠しては良い。
+  原則として、以下のスレッドのみ、giant_lock を保持したまま休眠しては良い。
   これ以外のスレッドが休眠するのは、依存関係のループを生じる危険があるため
   禁止。
 
-  ・sync_protocol_thread_pool に属するスレッド
+  ・sync_protocol_watcher のスレッドプールに属するスレッド
+    (protocol_main(), resuming_thread(), callout から起動される
+    host_busyq_scanner() を含む)
+
+  ただし、現状では以下のスレッドも giant_lock を保持したまま休眠しうる。
+  ・dead_file_copy_scanner(), removal_finalizer() (dbq.mutex 待ち、
+    dead_file_copy_is_removable() 等)
+  ・giant_lock を保持して DB を更新する全てのスレッド
+    (dbq がフルの場合や、上記の journal file 関連の待ち)
 
 ○ leaf routine のみで獲得している mutex
 
@@ -108,6 +177,11 @@ XXX 保守されてない。要更新
    してはいけない。
 
   ・callout_module.mutex
+  ・dfc->mutex (dfc->state の保護のみに使う)
+  ・watcher_event::mutex
+  ・peer_closing_queue.mutex
+  ・total_disk_mutex
+  ・dead_file_copy_scan.mutex
 
 ■ スレッド一覧
 
@@ -130,20 +204,27 @@ thrpool_add_job() するスレッドは休眠する。
 キューが一杯の時に上記の状況が発生するとまずい。
 
 スレッドプール間の依存関係にループがあるのも駄目。★重要★
-back_channel_send_thread_pool は、通信を解して暗に, 
-back_channel_recv_thread_pool に依存しているので要注意。★重要★
+back_channel_send_thread_pool は、通信を介して暗に、
+back_channel_recv_watcher のスレッドプールに依存しているので要注意。★重要★
 
 依存関係の図は
-doc/internal/png/gfmd-thread-dependency.png
-にあるが、この図で、
+doc/internal/chart/gfmd-thread-dependency.png
+(gfmd-thread-dependency.dot から生成) にあるが、この図で、
 ・矢印を丸(スレッド)を辿った時、スレッド間がループになっていてはいけない。
 ・矢印で箱(スレッドプール)を辿った時、プール間がループになっていてはいけない。
 ・同一の箱(同一のスレッドプール)の中にあるスレッド間に、
   thrpool_add_job()の矢印関係があってはいけない。
+XXX この図は 2011年から更新されておらず、peer_watcher や
+replication_finalizer 等、現存しないものが含まれ、
+proto_status_send_thread_pool 等が含まれていない。要更新。
 
-○ main スレッド: accepting_loop() 
+スレッドプールとスレッドの一覧は、server/gfmd/subr.c の
+NUM_THREAD_POOLS, NUM_THREADS のコメントにもある。
+
+○ main スレッド: accepting_loop()
 
    TCP 接続待ちを行なうのが役割。
+   try_auth() を authentication_thread_pool に thrpool_add_job() する。
 
 ○ create_detached_thread() で作成される、独立したスレッド。
 
@@ -154,11 +235,18 @@ doc/internal/png/gfmd-thread-dependency.png
     callout_main() が thrpool_add_job() するスレッドプールの数だけ
     callout_main() スレッドを用意した方が良い。さもないと、あるスレッド
     プールが満杯となったとき、関係ないスレッドの処理まで遅延してしまう。
-    現在は、back_channel_send_thread_pool のみであるため、CALLOUT_NTHREADS == 1
+    現在、callout から thrpool_add_job() されるのは、
+    proto_status_send_thread_pool (gfs_client_status_request()) と
+    sync_protocol_watcher のスレッドプール (host_busyq_scanner()) の
+    2つだが、CALLOUT_NTHREADS == 1 のままである。
+    (gfmd.c の CALLOUT_NTHREADS のコメントも古い)
+    host_busyq_scanner() の遅延は許容している (dead_file_copy.c の
+    host_busyq_scanner_schedule() のコメント参照)。
 
-    callout_reset() しているのは、back_channel_recv_thread_pool に属する
-    gfs_async_client_status_result() だが、callout_reset() は
-    cond_signal() しているだけなので、callout_reset() では依存は起きない。
+    callout_schedule()/callout_reset() は cond_signal() しているだけなので、
+    これらの呼び出しでは依存は起きない。
+    GFS_PROTO_STATUS の callout は、gfs_client_status_request() 自身が
+    送信前に callout_schedule() している。
 
   ・db_thread()
 
@@ -166,48 +254,74 @@ doc/internal/png/gfmd-thread-dependency.png
     metadata-replication が有効な場合、dbq に追加される要素は参照系の
     操作に限られる。
 
-　・ネットワーク受信監視用 peer_watcher() × 1
+　・ネットワーク受信監視用 watcher() × peer_watcher の数
 
-    peer_watcher() が thrpool_add_job() するスレッドプールの数だけ、
-    peer_watcher() スレッドを用意した方が良い。さもないと、あるスレッド
-    プールが満杯となったとき、関係ないスレッドの処理まで遅延してしまう。
-    現在、sync_protocol_thread_pool と back_channel_recv_thread_pool の 2つ
-    あるため peer_watcher() スレッドも 2つにしたいが、現行の peer_watcher() の
-    実装がそれを許してなさそうなため、1つのまま。
-	→ peer_watcher() を 2スレッドで動かせるように変更する予定。XXX
+    peer_watcher_alloc() ごとに、watcher() スレッドと、そのスレッドが
+    thrpool_add_job() する専用のスレッドプールが作られる。
+    peer_watcher は以下の 3つで、metadata-replication が無効な場合は
+    最初の 2つのみ。
+    - sync_protocol_watcher ("synchronous protocol handler")
+    - back_channel_recv_watcher ("receiving from filesystem nodes")
+    - gfmdc_recv_watcher ("receiving from gfmd")
+    watcher のイベントは one-shot であり、ハンドラ起動時に監視が外れる。
+    再監視は peer_watch_access() で行なう。
 
-    XXX DEADLOCK
-    現状、以下の理由で、deadlock の危険がある。
-
-    peer_watcher() が呼び出す 2つのスレッドプール、sync_protocol_thread_pool
-    および back_channel_recv_thread_pool は、back_channel_send_thread_pool の
-    ように、非同期に大量の送信を一度に行なって詰まる心配はない。しかし、
-    sync_protocol_thread_pool は back_channel_send_thread_pool に依存し
-    ているため、back_channel_send_thread_pool の側の問題で、peer_watcher() に
-    よる sync_protocol_thread_pool に対する thrpool_add_job() が詰まる
-    可能性は残る。
-    peer_watcher() が 1スレッドのみだと、peer_watcher() 自体が止まって
-    しまうため、back_channel_recv_thread_pool も巻き添えをくって、止まる。
-    その結果、back_channel_recv_thread_pool に依存している
-    back_channel_send_thread_pool も動かなくなり、依存関係のループとなって、
-    deadlock する。
+    (以前は peer_watcher() スレッドが 1つで、全てのスレッドプールを
+    扱っていたため、あるプールが満杯になると他のプールも巻き添えになる
+    デッドロックの危険があったが、上記の構成により解消された)
 
   ・peer_closer()
 
-  ・旧backend_protocolの場合、各filesystem nodeに対し remover() × 大量
+  ・resumer()
 
-    廃止して、back_channel_recv_thread_pool を使うようにする予定。
+    休眠中の要求 (event_waiter) のうち、再開可能になったものを
+    resuming_pendings から取り出し、resuming_thread() を
+    sync_protocol_watcher のスレッドプールに thrpool_add_job() する。
+    resuming_enqueue() で再開を依頼する。
+
+  ・remover() × 1 (back_channel.c)
+
+    removal_pendingq から dead_file_copy を取り出し、
+    gfs_client_fhremove_request() を back_channel_send_thread_pool に
+    thrpool_add_job_low_priority() する。
+    (以前は各 filesystem node ごとに remover() があった)
+
+  ・removal_finalizer() (dead_file_copy.c)
+
+    removal_finishedq から dead_file_copy を取り出し、削除結果を処理する。
+
+  ・dead_file_copy_scanner() (dead_file_copy.c)
+
+    要求に応じて deferred 状態の dead_file_copy を走査する。
+
+  ・file_copy_by_host_remover() (file_copy.c)
+
+    削除されたホストの file_copy を削除する。
+
+  − master gfmd (起動時ないし昇格時) のみ
+
+    ・quota_check_thread() × 2 (quota 用と dirquota 用)
+
+    ・replica_check_thread()
+
+    ・failover_notify_thread()
+
+      gfarm_metadb_failover_notify_delay だけ待ってから、接続していない
+      gfsd に UDP で通知する。一度だけ動作する。
 
   − metadata-replicationが有効な場合
 
     <master gfmd において>
 
     ・gfmdc_journal_asyncsend_thread()
-      (synchronous_replication=disable の場合のみ)
 
-      journal record を slave gfmd へ送信するスレッド。複数の slave gfmd が
-      存在する場合は、順番に送信する(並列に送信しない)。
-      synchronous_replication はデフォルトで enable である。
+      journal record を非同期レプリケーション対象の slave gfmd へ送信する
+      スレッド。複数の slave gfmd が存在する場合は、順番に送信する
+      (並列に送信しない)。
+      同期/非同期は mdhost ごとに決まる (mdhost_is_sync_replication())。
+      このスレッドは常に生成され、非同期レプリケーションの対象が存在しない
+      間は休眠している。なお、初回の同期が完了していない同期レプリケーション
+      対象にも送信する。
       このスレッドは slave gfmd が master gfmd に昇格するときにも生成される。
 
     ・db_journal_store_thread()
@@ -216,6 +330,7 @@ doc/internal/png/gfmd-thread-dependency.png
       metadata-replication が有効の場合、変更操作についての db_access の
       関数では dbq を使用せずに journal file へ更新情報を書き出す。
       このスレッドは slave gfmd が master gfmd に昇格するときにも生成される。
+      また、起動時の boot_apply_db_journal() でも生成される。
 
     <slave gfmd において>
 
@@ -233,23 +348,31 @@ doc/internal/png/gfmd-thread-dependency.png
       送信した順番に slave gfmd が受信するとは限らない。そのため、slave gfmd は
       受信した journal record を一度メモリ上のリストへ保留する。
       ところで、journal record をリストへ追加するスレッドは、
-      gfmdc_recv_thread_pool の gfmdc_server_journal_send() である。
+      gfmdc_recv_watcher のスレッドプールの gfmdc_server_journal_send() である。
       リストの要素数が一定値を超え、journal file reader が読み込み待ち状態でない
       (すなわち db_journal_apply_thread() が journal record を反映中) である場合
       は、gfmdc_server_journal_send() はリストの要素数が一定値以下になるまで待機
       する。このスレッドは、gfmdc_server_journal_send() のスレッドを再開する役割
       がある。
       このスレッドは master gfmd へ昇格するとき、journal file へ書き出すことが
-      可能な journal reocrd を全て書き出してから、停止する。
+      可能な journal record を全て書き出してから、停止する。
 
     ・db_journal_apply_thread()
 
       journal file から読み込んだ情報をメモリと DB へ反映するスレッド。
       master gfmd へ昇格するとき停止する。
+      backend_db_type が none の場合は、起動時にも生成される。
 
 ○ スレッドプール
 
 プール中の各スレッドの実体は、thrpool_worker()。
+スレッドは必要になった時点で、プールの大きさまで作成される。
+特に記載のない限り、プールの大きさは metadb_server_thread_pool_size
+(デフォルト 16)、キュー長は metadb_server_job_queue_length (デフォルト 16000)。
+
+thrpool_add_job_low_priority() で追加されるジョブは、キュー長が
+thrpool_set_jobq_low_priority_limit() で設定した値以上の場合に休眠する。
+通常のジョブは、キューが一杯の場合のみ休眠する。
 
 　− authentication_thread_pool
 
@@ -258,119 +381,143 @@ doc/internal/png/gfmd-thread-dependency.png
     ・try_auth()
       accepting_loop() が thrpool_add_job() する。
 
-　− sync_protocol_thread_pool
+　− sync_protocol_watcher のスレッドプール
+    (旧 sync_protocol_thread_pool, sync_protocol_get_thrpool() で参照)
 
     このプールを用いて起動されるのは、以下のスレッド。
 
     ・protocol_main()
       - try_auth() が、peer_authorized() 経由で、thrpool_add_job() する。
-      - peer_watcher() が、thrpool_add_job() する。
+      - watcher() が、thrpool_add_job() する。
+
+    ・resuming_thread()
+      - resumer() が、thrpool_add_job() する。
+
+    ・host_busyq_scanner()
+      - callout_main() が、thrpool_add_job() する。
 
 　− back_channel_send_thread_pool
-  
+
+    low priority のキュー長の上限は metadb_server_remover_queue_length
+    (デフォルト 160)。
+
     このプールを用いて起動されるのは、以下のスレッド。
 
-    ・gfs_async_client_status_request()
-      - protocol_main() が、gfm_server_switch_async_back_channel() 経由で、
+    ・gfs_client_fhremove_request()
+      - remover() が、thrpool_add_job_low_priority() する。
+
+    ・gfs_client_replication_request_request()
+      - async_back_channel_replication_request() ないし
+        async_back_channel_replication_cksum_request() が、
+        thrpool_add_job() する。
+
+　− proto_status_send_thread_pool
+
+    このプールを用いて起動されるのは、以下のスレッド。
+
+    ・gfs_client_status_request()
+      - protocol_main() が、gfm_server_switch_back_channel_common() 経由で、
         thrpool_add_job() する。
       - callout_main() が、thrpool_add_job() する。
-	callout に起床を依頼しているのは、back_channel_recv_thread_pool に属する
-	gfs_async_client_status_result() だが、callout_reset() を使っているので
-	依存は起きない。
 
-    ・gfs_async_client_replication_request_request()
-      - protocol_main() が、async_back_channel_replication_request() 経由で、
-        thrpool_add_job() する。
-
-　− back_channel_recv_thread_pool
+　− back_channel_recv_watcher のスレッドプール
+    (旧 back_channel_recv_thread_pool)
 
     このプールを用いて起動されるのは、以下のスレッド。
 
     ・back_channel_main()
-      - protocol_main() が、gfm_server_switch_async_back_channel() 経由で、
-        thrpool_add_job() する。
-      - peer_watcher() が、thrpool_add_job() する。
+      - watcher() が、thrpool_add_job() する。
 	これが発生するのは、gfsd からの async RPC request か、あるいは、
 	gfmd からの async RPC request に対して gfsd が reply した場合。
 	後者の gfmd→gfsd の async RPC request は、back_channel_send_thread_pool
-	を用いて行なわれる。このため、async_back_channel_main() の処理が
+	を用いて行なわれる。このため、back_channel_main() の処理が
 	詰まると、結果として、back_channel_send_thread_pool までも詰まる
 	可能性がある。
-	このため、back_channel_recv_thread_pool に属するスレッドは、
+	このため、このプールに属するスレッドは、
 	以下のプールに属する資源を待ってはいけない。★重要★
 	 * authentication_thread_pool
-	 * sync_protocol_thread_pool
+	 * sync_protocol_watcher のスレッドプール
 	 * back_channel_send_thread_pool
+	 * proto_status_send_thread_pool
 	もし行なうと、依存関係がループを構成し、deadlock の危険が生じる。
 	当然、上記のプールに thrpool_add_job() してもいけない。
 	また、上記のプールに属する資源待ちの mutex を待ってもいけない。
 	したがって、giant_lock() を行なっても駄目。
 	ただし、上記のプールと競合するが、それ自身では cond_wait() 等を
 	行なわない、リーフの mutex を待つだけなら問題ない。
-	また、gfm_async_server_replication_result() は、直接、以下を
-	行なってはいけない。
-		・結果の処理のための host_replicated()
-		・結果の送信 peer_sender_lock() を待つことがある。
-				→ 送信側を待つことがある。XXX DEADLOCK
+
+	XXX DEADLOCK
+	ただし、現状では以下がこの規則に違反している。
+	・gfm_async_server_replication_result() は、giant_lock() を獲得して
+	  peer_replicated() (→ inode_replicated()) を直接呼び出し、
+	  さらに gfm_async_server_put_reply() で返答を送信する。
+	  返答の送信は abstract_host_sender_lock() で送信側を待つことがある。
+	・gfs_client_replication_request_result() も giant_lock() を獲得する。
 
  − metadata-replicationが有効な場合
 
-   − gfmdc_recv_thread_pool
+   − gfmdc_recv_watcher のスレッドプール (旧 gfmdc_recv_thread_pool)
 
      このプールを用いて起動されるのは、以下のスレッド。
 
      ・gfmdc_main()
 
-       gfm_server_switch_gfmd_channel() で peer の protocl_handler として
+       gfm_server_switch_gfmd_channel() で peer の protocol_handler として
        設定する。db_journal_recvq_thread() でも述べているが、このスレッド
        は gfmdc_server_journal_send() 内で journal record をメモリ上の
        リストへ追加する際に、待機することがある。
 
    − gfmdc_send_thread_pool
 
-      r5204 時点においては未使用。
+      未使用。
       gfmd channel の送信側スレッドプールとして使用する予定であるが、
-      r5204 時点ではまだ使用していない。
+      まだ使用していない。
 
    − journal_sync_thread_pool
-      (master gfmd, synchronous_replication=enableの場合のみ)
+
+     metadata-replication が有効な場合に生成されるが、ジョブを追加するのは
+     master gfmd のみ。プールの大きさは、同期スレーブの最大数
+     (+ synchronous_journaling が有効なら 1)。
 
      このプールを用いて起動されるのは、以下のスレッド。
 
-     ・gfmdc_journal_send_thread()
+     ・gfmdc_journal_syncsend_thread()
 
-       journal record を slave gfmd へ同期的に送信するスレッド。
-       async protocol の返信が戻るまで待機する。
-       このスレッドは変更操作発生時に gfmd channel で接続中の slave gfmd の
+       journal record を同期レプリケーション対象の slave gfmd へ同期的に
+       送信するスレッド。async protocol の返信が戻るまで待機する。
+       このスレッドは変更操作発生時に gfmd channel で接続中の同期スレーブの
        数だけ並列に動作する。protocol_main() スレッドは
-       全ての gfmdc_journal_send_thread() と、gfmdc_journal_file_sync_thread()
-       が終了するまで、待機する。
+       全ての gfmdc_journal_syncsend_thread() と、
+       gfmdc_journal_file_sync_thread() が終了するまで、待機する。
        protocol_main() は giant_lock を取得した状態で待機することに注意が
-       必要である。gfmdc_recv_thread_pool のスレッドが async protocol の
+       必要である。gfmdc_recv_watcher のスレッドが async protocol の
        受信を行う際、giant lock を取得してはならない。
 
        [スレッドの依存関係についての補足]
 
          図 doc/internal/chart/gfmd-thread-dependency.png では、
          gfmdc_journal_send_thread -> gfmdc_main の依存によって、依存関係の
-         ループができているように見えるが、gfmdc_journal_send_thread は
-         master gfmd 上、gfmdc_main は slave gfmd 上で動作するため、
-	 実際はループになっていない。
+         ループができているように見えるが、gfmdc_journal_send_thread
+         (現 gfmdc_journal_syncsend_thread) は master gfmd 上、
+         gfmdc_main は slave gfmd 上で動作するため、実際はループになっていない。
 
      ・gfmdc_journal_file_sync_thread()
        (synchronous_journaling=enable の場合のみ)
 
        journal file へ fdatasync を実行するスレッドである。
-       synchronous_journaling=disable のとき、このスレッドは生成されない。
+       同期スレーブが存在しない場合は、このスレッドは使わず、
+       呼び出し元で直接 fdatasync する。
        デフォルトで synchronous_journaling=enable である。
 
      ・gfmdc_journal_first_sync_thread()
 
-       gfmd channel 接続直後に slave へ送信するべき journal record が存在
-       する場合、このスレッドが連続的に journal record を送信する。
+       gfmd channel 接続直後や、mdhost が同期レプリケーションに切り替わった
+       時に、slave へ送信するべき journal record が存在する場合、
+       このスレッドが連続的に journal record を送信する。
        このスレッドの動作中に、protocol_main() スレッドが db_access から
        変更操作を行った場合、このスレッドの通信先の slave gfmd を除いて、
-       gfmdc_journal_send_thread() による journal record の送信が実行される。
+       gfmdc_journal_syncsend_thread() による journal record の送信が
+       実行される。
 
 
 ■ ファイルの削除について
@@ -381,12 +528,21 @@ doc/internal/png/gfmd-thread-dependency.png
 (1) nlink が 0
 (2) ファイルがオープンされていない
 (3) gfmd 主導の replication が実行中でない
+(4) 世代番号の更新待ち等のイベント待ちがない
 
-すなわち
+(2)〜(4) は inode->u.c.activity で管理されており、
+inode_activity_free_try() が、(2)〜(4) が成り立っていれば activity を
+解放する。したがって、条件は inode_remove_try() における
 
-	if (inode->i_nlink == 0 && inode->u.c.state == NULL &&
-	    (!inode_is_file(inode) || inode->u.c.s.f.rstate == NULL))
+	if (inode->i_nlink == 0 && inode->u.c.activity == NULL)
 		inode_remove(inode);
+
+となる。呼び出し側は
+
+	if (inode_activity_free_try(inode))
+		inode_remove_try(inode);
+
+のようにする。
 
 
 ■ back_channel に関する設計
@@ -402,26 +558,54 @@ doc/internal/png/gfmd-thread-dependency.png
   また以下のように peer の方が、host よりも数が多く
 	(peer の数 == クライアントの数× 2 ＋ host の数)
   メモリ消費的には (2) の方が有利なので、host に帰属させることにした。
+  送受信の状態 (can_send, can_receive, peer, busy_time 等) は、
+  struct host と struct mdhost の共通部分である struct abstract_host にあり、
+  abstract_host::mutex で保護している。
   ただし async については、conn と同様な通信処理時に必要なデータであり、
   back_channel が新しいコネクションに切り替わっているが、
   古いコネクションもまだ残っている場合に使われる可能性を考慮して (1) とする。
 
-・host_receiver_lock() が必要な理由
-  受信は peer_watch() から呼び出され、同一 peer なら同一スレッドで動作
-  するため、peer 間の受信競合は発生しない。
-  host_receiver_lock() している理由は、peer_free_request() との競合回避
-  のため。
+  以下の関数は abstract_host.c にある (旧名は host_*())。
 
-・host_sender_lock()/_trylock() が必要な理由
-  - host_receiver_lock() と同様 peer_free_request() との競合回避
+・abstract_host_receiver_lock() が必要な理由
+  受信は watcher() から back_channel_recv_watcher のスレッドプール経由で
+  gfm_server_channel_main() として呼び出される。
+  gfm_server_channel_main() は、受信可能なデータがある間ループして受信し、
+  最後に peer_watch_access() で再監視してから
+  abstract_host_receiver_unlock() する。
+  このため、再監視から unlock までの間にデータが届くと、同一 peer に対する
+  別のスレッドが起動されうる。同一 peer に対する受信は、スレッドが同一である
+  ことではなく、abstract_host_receiver_lock() (can_receive) によって
+  直列化されている。
+  ("waiting for abstract_host_receiver_lock: maybe ... restarted?" という
+  ログは、gfsd の再起動に限らず、この場合にも出力される)
+  また、abstract_host_receiver_lock() は、以下の目的にも使っている。
+  - peer_free_request() との競合回避
+  - back_channel が別のコネクションに切り替わった後の、古い peer の排除
+
+・abstract_host_sender_lock()/_trylock() が必要な理由
+  - abstract_host_receiver_lock() と同様 peer_free_request() との競合回避
   - 送信の場合は同一 peer でも複数スレッドで競合するのでその回避
   - 送信側が詰まった場合に、同一 peer 宛のスレッドで、スレッドプールが
-    埋め尽くされるのを防ぐために host_sender_trylock() で事前検査する。
-    gfm_async_server_replication_result() のみは _trylock() ではなく
-    _lock() を使っているので、複数のスレッドプールを占有してしまう
-    可能性があるが、これは返答であるため、実質的な危険性はかなり低い。
+    埋め尽くされるのを防ぐために abstract_host_sender_trylock() で
+    事前検査する。
+    abstract_host_sender_trylock() はタイムアウト付きで送信権を待ち、
+    タイムアウトすると GFARM_ERR_DEVICE_BUSY を返す。
+    このタイムアウトは、起床の度に計算し直すため、待ち時間の合計ではなく、
+    各待ちの上限である。
+    タイムアウトの長さで優先度をつけている (#429)。
+	GFS_PROTO_STATUS		無期限
+	GFS_PROTO_REPLICATION_REQUEST	1秒
+	GFS_PROTO_FHREMOVE		0.1秒
+  - 返答の送信 (gfm_server_channel_vput_reply_notimeout()) のみは
+    _trylock() ではなく _lock() を使っている。back_channel では
+    gfm_async_server_replication_result() の返答、gfmd channel では
+    gfmdc_server_journal_send() 等の返答がこれに該当する。
+    複数のスレッドプールを占有してしまう可能性があるが、これは返答で
+    あるため、実質的な危険性はかなり低い。
 
 ・host_disconnect_request() の呼び出しについて
+  (実体は abstract_host_disconnect_request())
   複数の back_channel スレッドからや、フォアグラウンドの
   gfm_server_switch_back_channel_common() から同時に呼び出される
   可能性がある。
@@ -432,25 +616,33 @@ doc/internal/png/gfmd-thread-dependency.png
      フォアグランドから呼び出す時は peer として NULL を渡す。
      この場合には、有無をいわさず切断する。
    - 既に host->peer == NULL なら、なにもしない
-  また、host_sender_unlock() や host_receiver_unlock() 時には、既に
-  切断されている可能性があるため、引数で peer を渡し、これが異なってい
-  たら、なにもしない。
-  back_channel.c では、ロックをかけずに host_get_peer() しておき、あとで
-		if (peer != NULL) /* to make the race condition harmless */
-			host_disconnect_request(host, peer);
-  としている部分があるが、これは host_get_peer() 以降、フォアグランドで
-  host_peer_set() が行なわれた場合の対策。この場合、GFS_PROTO_STATUS へ
-  の返事がないにも関わらず、host_disconnect_request() がこの if 条件の
-  ために呼ばれない可能性もわずかにあるが、それは次回の GFS_PROTO_STATUS で
-  救済できる。
+  また、abstract_host_sender_unlock() や abstract_host_receiver_unlock() 時
+  には、既に切断されている可能性があるため、引数で peer を渡し、これが
+  異なっていたら、なにもしない。
+  back_channel.c の gfs_client_status_disconnect_or_message() では、
+  host_get_peer() で得た peer について
+		if (peer != NULL) { /* to make the race condition harmless */
+			gfm_server_channel_disconnect_request(...);
+  としているが、これは host_get_peer() 以降、フォアグランドで
+  abstract_host_set_peer() が行なわれた場合の対策。この場合、
+  GFS_PROTO_STATUS への返事がないにも関わらず、切断要求がこの if 条件の
+  ために行なわれない可能性もわずかにあるが、それは次回の GFS_PROTO_STATUS
+  で救済できる。
+  host_get_peer() は参照カウントを増やすので、host_put_peer() で減らす。
 
 ・ホスト down 対策
-  - ・gfs_client_status_request() で、前回からまだ答がなかった
+  - gfs_client_status_request() で、前回からまだ答がなかった
     場合、すなわち host_status_reply_is_waiting() が成り立っていた
     時には、コネクションを切断する。(down 状態となる)
-  - 送信処理の時に host_sender_try_lock() で送信可能かどうかを
-    確認し、送信が滞留していた場合には、host_peer_busy() で
-    コネクションを切断する
+    GFS_PROTO_STATUS は無期限で送信権を待つため、送信が詰まっている
+    場合も、次回の gfs_client_status_request() で切断される。
+  - abstract_host_sender_trylock() がタイムアウトした場合、
+    abstract_host_peer_busy() は busy になった時刻 (busy_time) を記録する。
+    busy の状態が metadb_server_heartbeat_interval を超えて続いた場合に、
+    コネクションを切断する ("disconnecting: busy at sending")。
+    busy_time は、送信権を獲得できる度にクリアされる。
+  - host_busyq の走査等で呼ばれる host_check_busy() も、同じ条件で
+    コネクションを切断する ("disconnecting: busy during queue scan")。
 
 ■ 世代番号に関する処理
 
@@ -483,18 +675,26 @@ inode-generation.txt 参照
 	GFARM_ERR_OPERATION_ALREADY_IN_PROGRESS を返す。
 	最新世代のレプリカを削除中 (FILE_COPY_IS_BEING_REMOVED()が真) に
 	再度そのレプリカの作成を要求すると、GFARM_ERR_DEVICE_BUSY を返す。
+	(inode_add_replica_internal(), inode_prepare_to_replicate())
 
 ○ 基本的には、削除要求が出る (dead_file_copy ができる) のは、旧世代のみ
 
 例外は以下の2種類
-
 - なんらかの理由でレプリケーションが失敗して、その削除を要求する場合
+	inode_replicated() → inode_remove_replica_incomplete()
 - 「gfrm -h ノード」や「gfrep -x」すなわち gfs_replica_remove_by_file() で
 　要求された場合
+	gfm_server_replica_remove_by_file() → inode_remove_replica_protected()
+	不完全な (複製中の) レプリカが存在する間は GFARM_ERR_FILE_BUSY を返す。
 
+いずれも inode_remove_replica_internal() で処理する。
 この2種類の例外については、dead_file_copy に加えて、
 FILE_COPY_IS_BEING_REMOVED(struct file_copy *) を真として、管理/監視する。
-dead_file_copy の load 時には、このための struct file_copy 設定も必要となる。
+この file_copy は、削除が完了して dead_file_copy_free() から
+inode_remove_replica_completed() が呼ばれるまで残す。
+dead_file_copy の load 時には、このための struct file_copy 設定も必要となる
+(dead_file_copy_add_one() → inode_dead_file_copy_added()。
+最新世代の場合のみ)。
 
 ■ ファイル複製処理の状態
 
@@ -507,82 +707,109 @@ dead_file_copy の load 時には、このための struct file_copy 設定も�
 ・ファイルの更新
   ファイルが更新された場合、それまで複製があったノードに、更新後の複製を配る。
 
-  具体的には、inode_remove_every_other_replicas() で、to_be_replicated に
-  配布先を集め、
+  具体的には、update_replicas() で、それまで複製があったノードを
+  to_be_excluded に集め、make_replicas_except() で新たな複製先の
+  候補から除外した上で、それらのノードに対して
 	remove_replica_entity(〜, &deferred_cleanup)
 	file_replicating_new()
-	async_back_channel_replication_request()
-  としているところが、それ。
+	inode_replication_request()
+		(→ async_back_channel_replication_request() ないし
+		    async_back_channel_replication_cksum_request())
+  としている。
   ここで、dead_file_copy は作成しているが、実際に削除要求RPCは行なっていない。
   作成した dead_file_copy は deferred_cleanup として受け取り、
-  struct file_replicating に保存し、複製処理完了後に、削除要求を行なう。
+  struct file_replicating の cleanup に保存し、複製処理完了後に、
+  削除要求を行なう。
   この間、この dead_file_copy は dead_file_copy_mark_kept() により
   保護されている。
+  file_replicating_new() が失敗した場合は、直ちに
+  removal_pendingq_enqueue(deferred_cleanup) する。
 
-  なお、ここで (すなわち schedule_replication() で)
-  FILE_COPY_IS_BEING_REMOVED(copy) なノードも更新結果の配布先から除外して
-  いるが、この検査はなくても良い。
+  なお、ここで FILE_COPY_IS_VALID() でないノード (複製中ないし削除中) は
+  更新結果の配布先から除外している。削除中のノードについては、
+  この検査はなくても良い。
   なぜなら、配ろうとしているのは新しい世代のレプリカであるため、旧世代の
   レプリカの配送が途中でも、並行して配送できるため。
   ただし、以下のような理由から、この検査を行なっている。
   - 直前に複製に失敗していれば、今回も失敗する可能性が高いだろうと思われる
   - 「gfrm -h ノード」で明示的に削除されたなら、配るべきではない。
+  (update_replicas() の XXX FIXME コメント参照)
+  また、make_replicas_except() は、削除中のノードを新たな複製先からも
+  除外する。削除中のノードが多すぎて複製先が足りない場合は、
+  GFARM_ERR_FILE_BUSY を返して、replica_check にリトライさせる (#674)。
 
 − データ構造
 
 複製処理実行中は、!FILE_COPY_IS_VALID() となっている。
+file_replicating_new() が inode_add_replica(inode, dst, 0) で
+valid でない file_copy を作成し、
 複製処理完了時に inode_replicated() から、inode_add_replica(inode, fr->dst, 1)
-を呼び出し、valid = 1 に変更している。
+を呼び出し、valid に変更している。
 
 複製処理が失敗に終った時には、inode_replicated() から、
-inode_remove_replica_gen_deferred(〜, &dfc) を呼び出し、
-返ってきた dfc を removal_pendingq_enqueue() に渡して削除要求を出す。
-removal_pendingq_enqueue() 側では、以下の処理を行なっている。
+inode_remove_replica_incomplete(inode, fr->dst, fr->igen) を呼び出す。
 失敗した複製処理が最新世代に対するものであれば、
-	remove_replica_entity() で dead_file_copy を作成する。(DBにも書く)
+	remove_replica_entity() で dead_file_copy を作成し (DBにも書く)、
+	removal_pendingq_enqueue() で削除要求を出す。
 	valid == 0 であり、まだ file_copy は DB に書かれてないので、
 	DB に対する file_copy の削除は行なわない。
-	file_copy は free() する。
-	XXX FIXME 削除が完了するまでは、file_copy の free() を行なっては
-	いけない。でないと、削除が完了する前に、同一世代番号で新しい複製が
-	作成されたり、あるいは truncate の場合には、書き込み用レプリカと
-	して選択されてしまう危険まである。その場合、後から届いた削除要求
-	によって、誤ってファイルが消されてしまう！
-	最新世代の削除は gfrm -h すなわち gfs_replica_remove_by_file()
-	すなわち GFM_PROTO_REPLICA_REMOVE_BY_FILE → inode_remove_replica()
-	でも行なっている。
-	この問題は、以下で認識され、
-	    https://sourceforge.net/apps/trac/gfarm/ticket/88
-		#88 - race condition between a replication failure
-		and another replication
-	replicationに関しては、r4657, r4659 で dead_file_copy_remove() を
-	導入することにより(効率は悪いが)、一応対策された。
-	しかし、r4955 で、上書き時には、それまでレプリカの存在しなかった
-	ノードにも同一世代のファイルを作成するケースが生まれたため、
-	再度問題になった。
-	また、関連して
-	    https://sourceforge.net/apps/trac/gfarm/ticket/78
-		#78 annoying pgsql error messages about deadfilecopy
-	    https://sourceforge.net/apps/trac/gfarm/ticket/144
-		#144 INode table in the PostgreSQL backend may not be
-		corectly updated
+	file_copy は free() せず、FILE_COPY_BEING_REMOVED として、
+	削除が完了するまで残す。
 失敗した複製処理が旧世代に対するものであれば、
-	単に remove_replica_entity() で dead_file_copy を作成する。(DBにも書く)
-	file_copy については存在しないので、何も行なわない。
+	単に remove_replica_entity() で dead_file_copy を作成し (DBにも書く)、
+	削除要求を出す。file_copy については存在しないので、何も行なわない。
+
+複製処理の成否によらず、fr->cleanup があれば、
+dead_file_copy_is_removable() なら removal_pendingq_enqueue() し、
+そうでなければ dead_file_copy_mark_deferred() で deferred 状態に戻す。
 
 もし、ファイルの更新があった時に、古い世代について複製処理が実行中で
-あれば、古い struct file_copy は削除し、dead_file_copy を作成し、
-削除要求も出す。これは inode_remove_every_other_replicas() の
-	remove_replica_entity(〜, NULL)
-で行なっている。remove_replica_entity() は最終引数が NULL であれば、
+あれば、update_replicas() は複製中の (valid でない) file_copy を
+単に削除する。この時点では dead_file_copy は作成しない。
+複製処理の結果が届いた時に、inode_replicated() が fr->igen と現在の世代
+の違いを検出し、inode_remove_replica_incomplete() の旧世代の場合の処理で
+dead_file_copy を作成して削除要求を出す。
+したがって、旧世代の複製要求よりも先に削除要求が gfsd で実行される
+という競合は起きない。
+一方、valid な旧世代の file_copy のうち、更新後の複製を配らないノードに
+ついては、remove_replica_entity(〜, NULL) で dead_file_copy を作成し、
+直ちに削除要求も出す。remove_replica_entity() は最終引数が NULL であれば、
 削除要求も発行する。
-XXX FIXME: race condition
-ここで、複製処理は gfsd 側でキューに溜るので古い複製の削除要求が、
-古い複製の複製要求よりも先に実行される可能性が、理論的にはありうる。
-ただし、この場合、スプールにゴミが残るだけなので、ファイルを失うと
-いった問題は起きない。
 
-○ 2.4.0 リリースの頃に、今後の予定として考えていたもの (古い。今はさらに改訂)
+○ 削除完了までの file_copy の保持について (#88 の経緯)
+
+当初は、削除要求を出した時点で file_copy を free() していた。
+この場合、削除が完了する前に、同一世代番号で新しい複製が作成されたり、
+あるいは truncate の場合には、書き込み用レプリカとして選択されてしまう
+危険があった。その場合、後から届いた削除要求によって、誤ってファイルが
+消されてしまう。
+この問題は、以下で認識された。
+    https://sourceforge.net/apps/trac/gfarm/ticket/88
+	#88 - race condition between a replication failure
+	and another replication
+    (関連: #78 annoying pgsql error messages about deadfilecopy,
+	   #144 INode table in the PostgreSQL backend may not be
+	   corectly updated)
+replication に関しては、当初 r4657, r4659 で dead_file_copy_remove() を
+導入して対策したが、r4955 で、上書き時には、それまでレプリカの存在しなかった
+ノードにも同一世代のファイルを作成するケースが生まれたため、再度問題になった。
+
+現在は、最新世代のレプリカを削除する場合、削除が完了するまで file_copy を
+FILE_COPY_BEING_REMOVED として残す (dead_file_copy_remove() は廃止)。
+削除中は、そのノードへの同一世代の複製作成要求に GFARM_ERR_DEVICE_BUSY を
+返し、書き込み用レプリカとしても選択しない。
+旧世代の dead_file_copy については file_copy は存在しないが、世代番号が
+異なるため、新しい世代のレプリカを誤って消すことはない。
+
+○ 2.4.0 リリースの頃に、今後の予定として考えていたもの (古い。未実装)
+
+以下の複製処理用のキューや状態は実装されていない。現在は、
+struct file_replicating (peer.h) を inode と複製先ホストの両方に
+リンクして管理し、自動複製の延期は inode の activity の
+replication_pending フラグ、リトライは replica_check で行なっている。
+状態遷移に関するアイディアの多くは、dead_file_copy の側
+(kept/in_flight/finished/finalizing/busy の状態や、削除完了まで
+file_copy を !valid のまま保持すること) で実現されている。
 
 replication_pendingq
 replication_confirmingq
@@ -615,14 +842,11 @@ busy		back_channel 送信がbusy状態のため、
 		可能になるのを待っている
 
 XXX
-○ キャンセルの実装 
+○ キャンセルの実装
 kill した場合、プロトコルの同期が失われるので、
 gfsd connection cache の purge が必要。
 
 XXX
-○ 失敗した場合、可能ならリトライしたい。
-
-XXX 
 ○ inode:rstate に on going replication が保持されている時、
   inode がリムーブされると、inode は DB から消えるが、メモリ上には残る。
   このとき、file_copy は DB からもメモリからも消えてない。
@@ -651,6 +875,7 @@ http://sourceforge.net/apps/trac/gfarm/ticket/88
 https://dev.chubu.sra.co.jp/trac/gfarm/nttcom/ticket/5
 https://xi.lab.sphere.ad.jp/trac/gfarm/ticket/62
 として問題となった。
+現在は、gfmd が消し、消去完了まで FILE_COPY_BEING_REMOVED を維持している。
 
 ○ 複製処理の失敗
 	(a1) gfmd が gfsd へ複製要求を出す
@@ -677,10 +902,103 @@ https://xi.lab.sphere.ad.jp/trac/gfarm/ticket/62
 		単に BUSY を返す
 という方法もある。
 
-☆ 注意事項:
-  async_back_channel_replication_request() を呼ぶ前には、
-  dead_file_copy_remove() == GFARM_ERR_NO_ERROR を確認しておく必要がある。
-  さもないと、上記 race condition が発生する。
+現在は、後者の方法を採っている。最新世代のレプリカの削除中は、
+複製先に FILE_COPY_BEING_REMOVED の file_copy が残っているため、
+file_replicating_new() (inode_add_replica_internal()) および
+inode_prepare_to_replicate() が GFARM_ERR_DEVICE_BUSY を返す。
+
+■ dead_file_copy の処理
+
+dead_file_copy.c で管理する。
+
+○ 状態 (enum dead_file_copy_state、許される遷移は dead_file_copy.c の
+  コメント参照)
+
+deferred	どのキューにも入っていない
+kept		複製処理完了まで削除を保留している (deferred_cleanup)
+lost		レプリカが失われたことが報告された
+pending		removal_pendingq に入っている
+in_flight	GFS_PROTO_FHREMOVE の送信中ないし返答待ち
+busy		host_busyq に入っている
+finished	removal_finishedq に入っている
+finalizing	削除結果を処理中
+
+○ キュー
+
+dfc_allq		全ての dead_file_copy
+removal_pendingq	削除要求の送信待ち
+removal_finishedq	削除結果の処理待ち
+host_busyq		back_channel の送信が busy だったため、再試行待ち
+
+○ 処理の流れ
+
+・dead_file_copy_new() で deferred 状態で作成し、DB にも書く。
+  起動時は dead_file_copy_init_load() で DB から読み込む (master のみ)。
+・removal_pendingq_enqueue() (deferred/kept/busy → pending)
+・remover() が removal_pendingq から取り出し (→ in_flight)、
+  host_is_file_removable() なら gfs_client_fhremove_request() を
+  back_channel_send_thread_pool に thrpool_add_job_low_priority() する。
+  そうでなければ、removal_finishedq に入れる。
+・gfs_client_fhremove_request() は GFS_PROTO_FHREMOVE を送信する。
+  - 成功すれば、返答受信時に gfs_client_fhremove_result() が
+    removal_finishedq に入れる。切断時は gfs_client_fhremove_free() が
+    GFARM_ERR_CONNECTION_ABORTED として removal_finishedq に入れる。
+  - 送信権を 0.1秒以内に獲得できず GFARM_ERR_DEVICE_BUSY となった場合は、
+    host_busyq に入れる (→ busy)。
+  - その他の送信エラーは、removal_finishedq に入れる。
+・removal_finalizer() が removal_finishedq から取り出し (→ finalizing)、
+  giant_lock を獲得して handle_removal_result() で処理する。
+  - read only モードの場合は、removal_finishedq に戻す。
+  - 成功 (ないし GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY) の場合は、
+    dead_file_copy_free() で解放する。
+    dead_file_copy_free() は DB からも削除し、
+    inode_remove_replica_completed() で FILE_COPY_BEING_REMOVED の
+    file_copy (最新世代の場合) を削除する。
+  - その他のエラーで、ホストがまだ削除可能な場合は、busy loop を避ける
+    ため host_busyq に入れる。
+  - ホストが削除されている場合は解放し、それ以外は deferred に戻す。
+・host_busyq は、host_busyq_scanner() が metadb_server_heartbeat_interval
+  (デフォルト 180秒) ごとに走査する。
+  ホストが down なら deferred に、busy でなければ removal_pendingq に
+  (削除可能でなければ deferred に) 戻す。
+  XXX 送信が一時的に 0.1秒以上詰まっただけでも、host_busyq に入った
+  dead_file_copy は次回の走査まで、最大 metadb_server_heartbeat_interval
+  の間、削除が遅れる。
+・dead_file_copy_scanner() は、要求に応じて dead_file_copy_scan_deferred()
+  を giant_lock を獲得して実行し、deferred ないし lost 状態の
+  dead_file_copy を走査する。
+  - lost ないしホストが削除されていれば、removal_finishedq に入れる。
+  - 条件に合致し、ホストが busy でなく、dead_file_copy_is_removable()
+    かつ host_is_file_removable() であれば、removal_pendingq に入れる。
+  走査後は、走査時間に metadb_server_remove_scan_interval_factor を掛けた
+  時間だけ休眠する。
+  走査を要求するのは、以下の関数。
+  - dead_file_copy_scan_deferred_all() (replica_check から)
+  - dead_file_copy_host_becomes_up() (全件を走査)
+  - dead_file_copy_replica_status_changed(inum, host)
+  - dead_file_copy_inode_status_changed(inum) (inode_remove() 等から)
+  複数の要求が溜まっていた場合はまとめて走査する。
+・ホストが down になった場合 (dead_file_copy_host_becomes_down()) は、
+  そのホストの dead_file_copy を removal_pendingq から deferred に戻す。
+  host_busyq は操作しない (#420)。
+・ホストが削除された場合 (dead_file_copy_host_removed()) は、
+  removal_finishedq からも取り除き、deferred のものを解放する。
+・削除してよいか否かは dead_file_copy_is_removable() で判定する。
+  デフォルトでは inode_desired_dead_file_copy(inum) == 0 の場合のみ
+  削除してよい。
+
+○ back_channel のソケットバッファの制限について
+
+gfsd は back_channel の要求を一つのプロセスで順に処理するため、
+大量の GFS_PROTO_FHREMOVE がソケットバッファに溜まると、その後ろの
+GFS_PROTO_STATUS の処理が遅れ、metadb_server_heartbeat_interval 内に
+返事がないと back_channel が切断される (#914)。
+このため、spool_server_back_channel_rcvbuf_limit (gfsd) と
+metadb_server_back_channel_sndbuf_limit (gfmd) で、ソケットバッファの
+大きさを制限し、gfmd から gfsd への未処理の要求数を抑えている。
+デフォルトは 4096 バイト (1つの環境での負荷試験に基づく)。
+ただし、この制限のため、gfsd の unlink() が一時的に止まるとすぐに
+送信が詰まり、上記の GFARM_ERR_DEVICE_BUSY となりやすい。
 
 ■ RPC プロトコル・ハンドラーについて
 
@@ -702,12 +1020,13 @@ gfmd.c:protocol_switch() から呼び出される、各RPC のプロトコル・
 	RPC要求の処理結果としてエラーが発生し、かつ通信エラーも生じた場合は、
 	通信エラーの方を優先して返す。
 
-	なお、gfm_server_put_reply() は、内部的に
+	なお、gfm_server_put_reply() (rpcsubr.c) は、内部的に
 	・通信エラーが起きたら、そのエラーコードを返す。
 	・通信エラーが起きてなければ、RPC要求の処理結果を返す。
 	という処理が組み込まれているため、
 	RPCプロトコル・ハンドラの最後の処理が gfm_server_put_reply()
 	である場合には、特に意識しなくても、この仕様が実現される。
+	(compound protocol のため、gfm_server_put_reply() は flush しない)
 
 プロトコル・ハンドラーの中で、通信エラー(ないしハンドラーからの戻り値)と
 RPC要求の処理エラーの２つを、別々の変数に保持したい場合、それぞれ、
@@ -718,9 +1037,10 @@ RPC要求の処理エラーの２つを、別々の変数に保持したい場�
 （ただし、e_ret と e_rpc を区別する必要があることは稀であるし、
 　またそれに加えて一時変数 e が必要となることは、さらに稀であるが…）
 
-■ XXX 未記載 TO-DO
+■ 補足
 
 ・protocol_main() で受けた処理は resuming_thread() での返答待ちになる
-  ものがあるが、resume が callback で実現されているため、スレッドプー
-  ル資源待ちのデッドロックにはならない。
-
+  ものがあるが、resume は event_waiter のコールバックで実現されており、
+  resumer() スレッド (スレッドプールに属さない) が resuming_thread() を
+  thrpool_add_job() するため、スレッドプール資源待ちのデッドロックには
+  ならない。
