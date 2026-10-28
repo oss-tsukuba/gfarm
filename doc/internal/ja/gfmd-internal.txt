@@ -924,10 +924,10 @@ finalizing	削除結果を処理中
 ○ キュー
 
 dfc_allq		全ての dead_file_copy
-dfc_inumq[]		inode 番号によるハッシュ表 (dfc_allq.mutex で保護)。
-			dead_file_copy_lookup(), dead_file_copy_count_by_inode(),
-			dead_file_copy_info_by_inode() および inode を指定した
-			走査は、dfc_allq ではなくこちらを辿る。
+dfc_inumq[]		inode 番号によるハッシュ表 (dfc_allq.mutex で保護)
+	dead_file_copy_lookup(), dead_file_copy_count_by_inode(),
+	dead_file_copy_info_by_inode() および inode を指定した走査は、
+	dfc_allq ではなく dfc_inumq[] を辿る。
 removal_pendingq	削除要求の送信待ち
 removal_finishedq	削除結果の処理待ち
 host_busyq		back_channel の送信が busy だったため、再試行待ち
