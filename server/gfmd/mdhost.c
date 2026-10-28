@@ -1619,8 +1619,6 @@ match_all(struct mdhost *mh, void *closure)
 }
 
 /*
- * mdhost_mutex_lock is assumed
- *
  * PREREQUISITE: mdhost::mutex
  * LOCKS: nothing
  * SLEEPS: no

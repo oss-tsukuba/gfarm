@@ -6,9 +6,6 @@ locking hierarchy:
 	This lists only the major mutexes.  See doc/internal/ja/gfmd-internal.txt
 	(the mutex section) for details, including the dead_file_copy mutexes,
 	and the "LOCKS:" comments in the source code.
-	Note that some "LOCKS:" comments still use obsolete names such as
-	host::back_channel_mutex or host::channel_mutex, which mean
-	abstract_host::mutex now.
 
 	level	mutex
 	  1	giant_mutex (giant_lock())

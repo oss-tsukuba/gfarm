@@ -109,11 +109,9 @@ mutex 間の依存関係にループがあってはいけない。デッドロ�
 
 同時に複数の mutex の獲得を行なう場合の獲得順序は、すべて文書化が必要。
 
-server/gfmd/README にも mutex 獲得順序の記載があるが、gfarm v2 alpha の
-頃のままで、giant_mutex, peer_table_mutex, dbq.mutex しか記載されていない。
-また、ソースコード中の LOCKS: コメントの一部には、現存しない mutex 名
-(host::back_channel_mutex, host::channel_mutex 等。現在の
-abstract_host::mutex のこと) が残っている。
+server/gfmd/README にも主要な mutex の獲得順序を記載している。
+各関数の獲得順序は、ソースコード中の PREREQUISITE:, LOCKS:, SLEEPS:
+コメントを参照。
 
 ・giant_lock -> journal file の mutex
 	journal file の mutex を保持している状態で giant_lock が必要な場合は、
@@ -126,8 +124,8 @@ abstract_host::mutex のこと) が残っている。
 
 ・giant_lock -> peer_table_mutex -> dbq.mutex
 	peer_free() は peer_table_mutex を保持したまま db_begin()/db_end()
-	を呼ぶ。server/gfmd/README の旧記述 (dbq.mutex と peer_table_mutex を
-	同時に獲得しない) はこれに反している。
+	を呼ぶ。以前の server/gfmd/README にあった記述 (dbq.mutex と
+	peer_table_mutex を同時に獲得しない) は、これに反していた。
 
 ・giant_lock -> abstract_host::mutex
 	abstract_host_set_peer() (旧 host_peer_set())。
