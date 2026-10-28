@@ -9,12 +9,18 @@ digraph threads {
 	compound = true];
 
   accepting_loop;
-  removal_finalizer;
   sigs_handler;
   callout_main;
-  peer_watcher;
-  replication_finalizer;
+  watcher_sync_protocol [label = "watcher\n(sync_protocol_watcher)"];
+  watcher_back_channel [label = "watcher\n(back_channel_recv_watcher)"];
+  watcher_gfmdc [label = "watcher\n(gfmdc_recv_watcher)"];
   remover;
+  removal_finalizer;
+  dead_file_copy_scanner;
+  file_copy_by_host_remover;
+  quota_check_thread;
+  replica_check_thread;
+  failover_notify_thread;
   resumer;
   peer_closer;
 
@@ -36,14 +42,26 @@ digraph threads {
 	[label = "dbq_enter", fontcolor = cyan, color = cyan ];
   resuming_thread -> db_journal_store_thread
 	[label = "db_journal_enter", fontcolor = cyan, color = cyan ];
-  replication_finalizer -> db_thread
-	[label = "dbq_enter", fontcolor = cyan, color = cyan ];
-  replication_finalizer -> db_journal_store_thread
-	[label = "db_journal_enter", fontcolor = cyan, color = cyan ];
   removal_finalizer -> db_journal_store_thread
 	[label = "db_journal_enter", fontcolor = cyan, color = cyan ];
   removal_finalizer -> db_thread
 	[label = "dbq_enter", fontcolor = cyan, color = cyan ];
+  dead_file_copy_scanner -> db_thread
+	[label = "dbq_enter", fontcolor = cyan, color = cyan ];
+  dead_file_copy_scanner -> db_journal_store_thread
+	[label = "db_journal_enter", fontcolor = cyan, color = cyan ];
+  file_copy_by_host_remover -> db_thread
+	[label = "dbq_enter", fontcolor = cyan, color = cyan ];
+  file_copy_by_host_remover -> db_journal_store_thread
+	[label = "db_journal_enter", fontcolor = cyan, color = cyan ];
+  quota_check_thread -> db_thread
+	[label = "dbq_enter", fontcolor = cyan, color = cyan ];
+  quota_check_thread -> db_journal_store_thread
+	[label = "db_journal_enter", fontcolor = cyan, color = cyan ];
+  replica_check_thread -> db_thread
+	[label = "dbq_enter", fontcolor = cyan, color = cyan ];
+  replica_check_thread -> db_journal_store_thread
+	[label = "db_journal_enter", fontcolor = cyan, color = cyan ];
   peer_closer -> db_thread
 	[label = "dbq_enter", fontcolor = cyan, color = cyan ];
   peer_closer -> db_journal_store_thread
@@ -66,7 +84,7 @@ digraph threads {
 
 
   subgraph cluster1 {
-    label = "sync_protocol_thread_pool";
+    label = "sync_protocol_watcher pool";
 
     host_busyq_scanner;
     protocol_main;
@@ -76,19 +94,24 @@ digraph threads {
   subgraph cluster2 {
     label = "back_channel_send_thread_pool";
 
-    gfs_client_status_request;
     gfs_client_fhremove_request;
     gfs_client_replication_request_request;
   }
 
+  subgraph cluster6 {
+    label = "proto_status_send_thread_pool";
+
+    gfs_client_status_request;
+  }
+
   subgraph cluster3 {
-    label = "back_channel_recv_thread_pool";
+    label = "back_channel_recv_watcher pool";
 
     back_channel_main;
   }
 
   subgraph cluster4 {
-    label = "gfmdc_recv_thread_pool";
+    label = "gfmdc_recv_watcher pool";
 
     gfmdc_main;
   }
@@ -96,14 +119,16 @@ digraph threads {
   subgraph cluster5 {
     label = "journal_sync_thread_pool";
 
-    gfmdc_journal_send_thread;
+    gfmdc_journal_syncsend_thread;
+    gfmdc_journal_file_sync_thread;
+    gfmdc_journal_first_sync_thread;
   }
 
   callout_main -> host_busyq_scanner
 	[label = "thrpool_add_job", fontcolor = blue, color = blue];
   try_auth -> protocol_main
 	[label = "thrpool_add_job", fontcolor = blue, color = blue];
-  peer_watcher -> protocol_main
+  watcher_sync_protocol -> protocol_main
 	[label = "thrpool_add_job", fontcolor = blue, color = blue];
   resumer -> resuming_thread
 	[label = "thrpool_add_job", fontcolor = blue, color = blue];
@@ -111,12 +136,24 @@ digraph threads {
   try_auth -> protocol_main
 	[label = "giant_lock", fontcolor = red, color = red,
 	lhead = cluster1, dir = none];
-  replication_finalizer -> protocol_main
-	[label = "giant_lock", fontcolor = red, color = red,
-	lhead = cluster1, dir = none];
   removal_finalizer -> protocol_main
 	[label = "giant_lock", fontcolor = red, color = red,
 	lhead=cluster1, dir = none];
+  dead_file_copy_scanner -> protocol_main
+	[label = "giant_lock", fontcolor = red, color = red,
+	lhead = cluster1, dir = none];
+  file_copy_by_host_remover -> protocol_main
+	[label = "giant_lock", fontcolor = red, color = red,
+	lhead = cluster1, dir = none];
+  quota_check_thread -> protocol_main
+	[label = "giant_lock", fontcolor = red, color = red,
+	lhead = cluster1, dir = none];
+  replica_check_thread -> protocol_main
+	[label = "giant_lock", fontcolor = red, color = red,
+	lhead = cluster1, dir = none];
+  failover_notify_thread -> protocol_main
+	[label = "giant_lock", fontcolor = red, color = red,
+	lhead = cluster1, dir = none];
   peer_closer -> protocol_main
 	[label = "giant_lock", fontcolor = red, color = red,
 	lhead = cluster1, dir = none];
@@ -126,26 +163,36 @@ digraph threads {
   db_journal_apply_thread -> protocol_main
 	[label = "giant_lock", fontcolor = red, color = red,
 	lhead = cluster1, dir = none];
+  back_channel_main -> protocol_main
+	[label = "giant_lock (XXX)", fontcolor = red, color = red,
+	lhead = cluster1, dir = none, style = dashed];
   gfmdc_main -> db_journal_recvq_thread
 	[label = "journal_recvq_mutex", fontcolor = red, color = red,
 	dir = none];
 
   protocol_main -> gfs_client_replication_request_request
 	[label = "thrpool_add_job", fontcolor = blue, color = blue];
+  replica_check_thread -> gfs_client_replication_request_request
+	[label = "thrpool_add_job", fontcolor = blue, color = blue];
   protocol_main -> gfs_client_status_request
 	[label = "thrpool_add_job", fontcolor = blue, color = blue];
   callout_main -> gfs_client_status_request
 	[label = "thrpool_add_job", fontcolor = blue, color = blue];
   remover -> gfs_client_fhremove_request
-	[label = "thrpool_add_job", fontcolor = blue, color = blue];
+	[label = "thrpool_add_job_low_priority",
+	 fontcolor = blue, color = blue];
 
-  protocol_main -> back_channel_main
+  protocol_main -> gfmdc_journal_syncsend_thread
 	[label = "thrpool_add_job", fontcolor = blue, color = blue];
-  protocol_main -> gfmdc_journal_send_thread
+  protocol_main -> gfmdc_journal_file_sync_thread
 	[label = "thrpool_add_job", fontcolor = blue, color = blue];
-  peer_watcher -> back_channel_main
+  protocol_main -> gfmdc_journal_first_sync_thread
 	[label = "thrpool_add_job", fontcolor = blue, color = blue];
-  peer_watcher -> gfmdc_main
+  gfmdc_main -> gfmdc_journal_first_sync_thread
+	[label = "thrpool_add_job", fontcolor = blue, color = blue];
+  watcher_back_channel -> back_channel_main
+	[label = "thrpool_add_job", fontcolor = blue, color = blue];
+  watcher_gfmdc -> gfmdc_main
 	[label = "thrpool_add_job", fontcolor = blue, color = blue];
   gfs_client_status_request -> back_channel_main
 	[label = "RPC request & reply", fontcolor = green, color = green];
@@ -153,7 +200,9 @@ digraph threads {
 	[label = "RPC request & reply", fontcolor = green, color = green];
   gfs_client_replication_request_request -> back_channel_main
 	[label = "RPC request & reply", fontcolor = green, color = green];
-  gfmdc_journal_send_thread -> gfmdc_main
+  gfmdc_journal_syncsend_thread -> gfmdc_main
+	[label = "RPC request & reply", fontcolor = green, color = green];
+  gfmdc_journal_first_sync_thread -> gfmdc_main
 	[label = "RPC request & reply", fontcolor = green, color = green];
   gfmdc_connect_thread -> gfmdc_main
 	[label = "RPC request & reply", fontcolor = green, color = green];

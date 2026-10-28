@@ -212,9 +212,7 @@ doc/internal/chart/gfmd-thread-dependency.png
 ・矢印で箱(スレッドプール)を辿った時、プール間がループになっていてはいけない。
 ・同一の箱(同一のスレッドプール)の中にあるスレッド間に、
   thrpool_add_job()の矢印関係があってはいけない。
-XXX この図は 2011年から更新されておらず、peer_watcher や
-replication_finalizer 等、現存しないものが含まれ、
-proto_status_send_thread_pool 等が含まれていない。要更新。
+back_channel_main から giant_lock への破線は、後述の既知の違反 (XXX) を表す。
 
 スレッドプールとスレッドの一覧は、server/gfmd/subr.c の
 NUM_THREAD_POOLS, NUM_THREADS のコメントにもある。
@@ -494,9 +492,9 @@ thrpool_set_jobq_low_priority_limit() で設定した値以上の場合に休眠
        [スレッドの依存関係についての補足]
 
          図 doc/internal/chart/gfmd-thread-dependency.png では、
-         gfmdc_journal_send_thread -> gfmdc_main の依存によって、依存関係の
-         ループができているように見えるが、gfmdc_journal_send_thread
-         (現 gfmdc_journal_syncsend_thread) は master gfmd 上、
+         gfmdc_journal_syncsend_thread -> gfmdc_main の依存によって、
+         依存関係のループができているように見えるが、
+         gfmdc_journal_syncsend_thread は master gfmd 上、
          gfmdc_main は slave gfmd 上で動作するため、実際はループになっていない。
 
      ・gfmdc_journal_file_sync_thread()
