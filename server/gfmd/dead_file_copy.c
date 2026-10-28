@@ -120,7 +120,11 @@ dfc_inumq_of(gfarm_ino_t inum)
 	return (&dfc_inumq[inum & (DFC_INUMQ_SIZE - 1)]);
 }
 
-/* PREREQUISITE: dfc_allq.mutex */
+/*
+ * PREREQUISITE: dfc_allq.mutex
+ * LOCKS: nothing
+ * SLEEPS: no
+ */
 static void
 dfc_inumq_insert_tail(struct dead_file_copy *dfc)
 {
@@ -134,7 +138,11 @@ dfc_inumq_insert_tail(struct dead_file_copy *dfc)
 	q->lastp = &dfc->inumq_next;
 }
 
-/* PREREQUISITE: dfc_allq.mutex */
+/*
+ * PREREQUISITE: dfc_allq.mutex
+ * LOCKS: nothing
+ * SLEEPS: no
+ */
 static void
 dfc_inumq_remove(struct dead_file_copy *dfc)
 {
@@ -149,7 +157,10 @@ dfc_inumq_remove(struct dead_file_copy *dfc)
 
 /*
  * iterate the entries of the inode `inum', or all entries if `inum' is 0.
+ *
  * PREREQUISITE: dfc_allq.mutex
+ * LOCKS: nothing
+ * SLEEPS: no
  */
 static struct dead_file_copy *
 dfc_scan_first(gfarm_ino_t inum)
@@ -162,6 +173,11 @@ dfc_scan_first(gfarm_ino_t inum)
 	return (dfc != &dfc_allq.q ? dfc : NULL);
 }
 
+/*
+ * PREREQUISITE: dfc_allq.mutex
+ * LOCKS: nothing
+ * SLEEPS: no
+ */
 static struct dead_file_copy *
 dfc_scan_next(struct dead_file_copy *dfc, gfarm_ino_t inum)
 {
@@ -1350,7 +1366,7 @@ dead_file_copy_mark_deferred(struct dead_file_copy *dfc)
  * used for kept/deferred -> lost: move dfc to removal_finishedq
  *
  * PREREQUISITE: giant_lock
- * LOCKS: dfc_allq.mutex, dfc->mutex
+ * LOCKS: dfc_allq.mutex, dfc->mutex, dead_file_copy_scan.mutex
  * SLEEPS: no
  */
 gfarm_error_t
