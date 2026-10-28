@@ -4,6 +4,63 @@
 
 This manual assumes that Gfarm has already been installed and is intended for setting up Gfarm.  First, set up the metadata servers that manage the filesystem metadata.  Then, set up the filesystem nodes and clients.
 
+### Regarding Notation
+
+This manual targets Linux distributions that use `systemd`.
+
+On Linux distributions that use SysVinit and
+on non-Linux operating systems such as FreeBSD and NetBSD
+that manage services using shell scripts,
+use the following commands instead of the `systemctl` commands shown later.
+
+For example, to start `gfmd` on a Linux system using `systemd`:
+
+```console
+$ sudo systemctl start gfmd
+```
+
+On NetBSD, run as root:
+
+```console
+# /etc/rc.d/gfmd start
+```
+
+More generally, replace commands of the form:
+
+```console
+sudo systemctl <OPERATION_NAME> <SERVICE_NAME>
+```
+
+with the corresponding commands, run as root:
+
+```console
+$RC_DIR/<SERVICE_NAME> <OPERATION_NAME>
+```
+
+Here, `$RC_DIR` is the directory containing the service start/stop scripts.
+Its value depends on the operating system:
+
+| Operating System        | Value of $RC_DIR             |
+| ----------------------- | ---------------------------- |
+| macOS                   | `$CONFIG_PREFIX/etc/rc.d`, or<br>`/usr/local/etc/rc.d` if `$CONFIG_PREFIX` is an empty string |
+| FreeBSD                 | `$CONFIG_PREFIX/etc/rc.d`    |
+| NetBSD                  | `$CONFIG_PREFIX/etc/rc.d`    |
+| AIX                     | `$CONFIG_PREFIX/sbin/init.d` |
+| HP-UX                   | `$CONFIG_PREFIX/sbin/init.d` |
+| OSF/1                   | `$CONFIG_PREFIX/sbin/init.d` |
+| Solaris                 | `$CONFIG_PREFIX/etc/init.d`  |
+| Linux using SysVinit    | `$CONFIG_PREFIX/etc/init.d`  |
+| Other systems (default) | `$CONFIG_PREFIX/etc/init.d`  |
+
+`$CONFIG_PREFIX` is the value specified by the `--prefix` option
+of the `config-gfarm` command, described later in this manual.
+If omitted, it defaults to an empty string.
+
+Even on Linux distributions that use `systemd`,
+if `$CONFIG_PREFIX` is non-empty, systemd unit files are not generated.
+Instead, service start/stop scripts are generated in `$RC_DIR`,
+as on Linux distributions that use SysVinit.
+
 ## Setting up Metadata Servers
 
 The metadata server can be configured in a master-slave redundant setup across multiple servers.  Commands requiring execution as a privileged user on the local server are executed using sudo.
@@ -411,7 +468,17 @@ mds1% gfmdhost -l
 + slave  async c west         mds3.example.com 601
 ```
 
+Note 1:  
 The master metadata server will remain on mds2, and continuing operations as is will not cause any issues. Alternatively, reverting the master to mds1 is also an option. Updating asynchronous slave metadata servers requires stopping the server and performing an overwriting installation.
+
+Note 2:  
+In systems that use the service start/stop scripts,
+instead of the above `systemctl start gfmd-slave`,
+run the following command as root:
+```console
+$RC_DIR/gfmd slavestart
+```
+
 
 ```console
 mds3% sudo systemctl stop gfmd

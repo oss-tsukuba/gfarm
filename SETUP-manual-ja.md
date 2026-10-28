@@ -4,6 +4,64 @@
 
 本マニュアルはGfarmが導入されていることを前提として、Gfarmの構築を行うためのものです。Gfarmを構築するために、まずファイルシステムメタデータを管理するメタデータサーバの構築を行います。その後、ファイルシステムノード、クライアントの構築を行います。
 
+### 表記について
+
+本マニュアルの記述は `systemd` を利用する Linux distribution 向けです。
+
+SysVinit を利用する Linux distribution や、
+Linux 以外の FreeBSD、NetBSD のような
+シェルスクリプトによるサービス管理を行なう OS については、
+後で説明する `systemctl` コマンドではなく、次の説明で読み替えてください。
+
+例えば、`systemd` を利用する Linux において  gfmd を起動するには
+以下のコマンドを用います。
+
+```console
+$ sudo systemctl start gfmd
+```
+
+NetBSD では root で以下を実行します:
+
+```console
+# /etc/rc.d/gfmd start
+```
+
+もっと一般的に、下記のような形式のコマンドについて:
+
+```console
+sudo systemctl 操作名 サービス名
+```
+
+サービス起動・停止スクリプトを用いるOSでは  root で以下を実行します:
+
+```console
+$RC_DIR/<SERVICE_NAME> <OPERATION_NAME>
+```
+
+ここで `$RC_DIR` は、サービス起動・停止スクリプト配置ディレクトリであり、
+OS別に以下の値となります。
+
+| Operating System        | $RC_DIR の値                 |
+| ----------------------- | ---------------------------- |
+| macOS                   | `$CONFIG_PREFIX/etc/rc.d` あるいは <br>`$CONFIG_PREFIX` が空文字列なら `/usr/local/etc/rc.d` |
+| FreeBSD                 | `$CONFIG_PREFIX/etc/rc.d`    |
+| NetBSD                  | `$CONFIG_PREFIX/etc/rc.d`    |
+| AIX                     | `$CONFIG_PREFIX/sbin/init.d` |
+| HP-UX                   | `$CONFIG_PREFIX/sbin/init.d` |
+| OSF/1                   | `$CONFIG_PREFIX/sbin/init.d` |
+| Solaris                 | `$CONFIG_PREFIX/etc/init.d`  |
+| Linux (SysVinit利用)    | `$CONFIG_PREFIX/etc/init.d`  |
+| その他 (default)        | `$CONFIG_PREFIX/etc/init.d`  |
+
+`$CONFIG_PREFIX` は後で示す config-gfarm コマンドの
+--prefix オプションで指定した値であり、オプション省略時は空文字列です。
+
+なお、 `systemd` を用いる Linux distribution においても
+`$CONFIG_PREFIX` を空文字列以外に指定した場合には、
+systemd unit file は生成されず、
+SysVinit を利用する Linux と同じく
+$RC_DIR にサービス起動・停止スクリプトが生成されます。
+
 ## メタデータサーバ設定
 
 メタデータサーバは複数のサーバでマスタースレーブ型の冗長構成をとることができます。以下、ローカルサーバの特権ユーザで実行する必要のあるコマンドはsudoで実行しています。
@@ -411,7 +469,17 @@ mds1% gfmdhost -l
 + slave  async c west         mds3.example.com 601
 ```
 
+注1:  
 マスターメタデータサーバがmds2に移ったままですがこのまま運用を続けても問題ありませんし、mds1にマスターを戻しても問題ありません。非同期スレーブメタデータサーバの更新はメタデータサーバを停止させ、上書きインストールでバージョンアップを行います。
+
+注2:  
+サービス起動・停止スクリプトを用いるシステムでは、
+上記 `systemctl start gfmd-slave` の代わりに、
+root で以下を実行します。
+```console
+$RC_DIR/gfmd slavestart
+```
+
 
 ```console
 mds3% sudo systemctl stop gfmd
