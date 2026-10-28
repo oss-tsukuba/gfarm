@@ -90,6 +90,11 @@ static int journal_begin_called = 0;
 static int journal_slave_transaction_nesting = 0;
 
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: journal_seqnum_mutex
+ * SLEEPS: no
+ */
 gfarm_uint64_t
 db_journal_next_seqnum(void)
 {
@@ -102,6 +107,11 @@ db_journal_next_seqnum(void)
 	return (n);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: journal_seqnum_mutex
+ * SLEEPS: no
+ */
 gfarm_uint64_t
 db_journal_get_current_seqnum(void)
 {
@@ -114,6 +124,11 @@ db_journal_get_current_seqnum(void)
 	return (n);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: journal_seqnum_mutex
+ * SLEEPS: no
+ */
 static void
 db_journal_set_current_seqnum(gfarm_uint64_t sn)
 {
@@ -124,6 +139,11 @@ db_journal_set_current_seqnum(gfarm_uint64_t sn)
 	gfarm_mutex_unlock(&journal_seqnum_mutex, diag, SEQNUM_MUTEX_DIAG);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: journal_seqnum_mutex
+ * SLEEPS: no
+ */
 static gfarm_uint64_t
 db_journal_subtract_current_seqnum(int n)
 {
@@ -268,6 +288,11 @@ db_journal_set_sync_op(gfarm_error_t (*func)(gfarm_uint64_t))
 	db_journal_sync_op = func;
 }
 
+/*
+ * PREREQUISITE: db_access_mutex (locked by db_terminate())
+ * LOCKS: journal_file_mutex, and the locks of store_ops->terminate()
+ * SLEEPS: yes (closing the journal file and terminating the backend DB)
+ */
 gfarm_error_t
 db_journal_terminate(void)
 {
@@ -627,6 +652,11 @@ db_journal_write(gfarm_uint64_t seqnum, enum journal_operation ope,
 	return (e);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: nothing
+ * SLEEPS: yes (fdatasync or fsync)
+ */
 gfarm_error_t
 db_journal_file_writer_sync(void)
 {
@@ -673,6 +703,12 @@ db_journal_write_string(gfarm_uint64_t seqnum, enum journal_operation ope,
 		db_journal_write_string_core));
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: journal_file_mutex
+ * SLEEPS: yes (cond_wait on nonempty_cond until some reader has
+ *	unread records)
+ */
 void
 db_journal_wait_until_readable(void)
 {
@@ -4130,6 +4166,11 @@ struct db_journal_rec {
 	GFARM_STAILQ_ENTRY(db_journal_rec) next;
 };
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: the locks of store_ops->seqnum_get()
+ * SLEEPS: yes (backend DB access)
+ */
 static int
 db_journal_is_rec_stored(struct db_journal_rec *rec)
 {
@@ -4171,8 +4212,8 @@ db_journal_apply_op(void *op_arg, gfarm_uint64_t seqnum,
 		return (GFARM_ERR_NO_ERROR);
 
 	/*
-	 * Since the giant lock must be taken preceeded by the journal
-	 * file mutex in order to avoid deadlock, we unlock the journal
+	 * Since the giant lock must be taken before the journal file
+	 * mutex in order to avoid deadlock, we unlock the journal
 	 * file mutex once, take the giant lock, and then lock the journal
 	 * file mutex again.
 	 */
@@ -4235,7 +4276,7 @@ end:
 	return (e);
 }
 
-/* PREREQUISITE: giant_lock */
+/* PREREQUISITE: nothing (must not hold giant_lock) */
 gfarm_error_t
 db_journal_read(struct journal_file_reader *reader, void *op_arg,
 	journal_post_read_op_t post_read_op, void *closure, int *eofp)
@@ -4245,6 +4286,11 @@ db_journal_read(struct journal_file_reader *reader, void *op_arg,
 	    db_journal_ops_free, closure, eofp));
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: journal_file_mutex
+ * SLEEPS: yes (cond_wait on drain_cond until the main reader is drained)
+ */
 void
 db_journal_wait_for_apply_thread(void)
 {
@@ -4252,6 +4298,11 @@ db_journal_wait_for_apply_thread(void)
 		journal_file_main_reader(self_jf));
 }
 
+/*
+ * PREREQUISITE: journal_file_mutex
+ * LOCKS: nothing
+ * SLEEPS: no
+ */
 static gfarm_error_t
 db_journal_add_rec(void *op_arg, gfarm_uint64_t seqnum,
 	enum journal_operation ope, void *obj, void *closure, size_t length,
@@ -4285,6 +4336,12 @@ db_journal_free_rec_list(struct db_journal_rec_list *recs)
 	}
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: journal_file_mutex -> journal_log_verbose_mutex,
+ *	db_access_mutex -> the locks of store_ops, journal_file_mutex
+ * SLEEPS: yes (cond_wait on nonempty_cond, file I/O, backend DB access)
+ */
 void *
 db_journal_store_thread(void *arg)
 {
@@ -4380,6 +4437,15 @@ end:
 	return (NULL);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: journal_file_mutex -> journal_log_verbose_mutex,
+ *	giant_lock -> journal_file_mutex -> journal_log_verbose_mutex,
+ *	giant_lock -> journal_file_mutex -> the locks of store_ops and
+ *	journal_apply_ops (in db_journal_apply_op())
+ * SLEEPS: yes (cond_wait on nonempty_cond, file I/O, giant_lock,
+ *	backend DB access)
+ */
 void *
 db_journal_apply_thread(void *arg)
 {
@@ -4405,6 +4471,12 @@ db_journal_apply_thread(void *arg)
 	return (NULL);
 }
 
+/*
+ * PREREQUISITE: nothing (must not hold giant_lock)
+ * LOCKS: journal_file_mutex, giant_lock -> the locks of db_end()
+ * SLEEPS: yes (cond_wait on nonfull_cond until the apply thread reads
+ *	all records, giant_lock)
+ */
 void
 db_journal_reset_slave_transaction_nesting(void)
 {
@@ -4423,6 +4495,11 @@ db_journal_reset_slave_transaction_nesting(void)
 	}
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: journal_file_mutex -> gfarm_privilege_lock()
+ * SLEEPS: yes (file I/O: open() and journal_find_rw_pos())
+ */
 gfarm_error_t
 db_journal_reader_reopen_if_needed(const char *label,
 	struct journal_file_reader **readerp,
@@ -4453,6 +4530,11 @@ db_journal_fetch_info_list_free(struct db_journal_fetch_info *fi_list)
 	}
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: journal_seqnum_mutex, journal_file_mutex
+ * SLEEPS: yes (file I/O)
+ */
 gfarm_error_t
 db_journal_fetch(struct journal_file_reader *reader,
 	gfarm_uint64_t min_seqnum, char **datap, int *lenp,
@@ -4580,6 +4662,12 @@ error:
 	return (e);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: journal_recvq_mutex
+ * SLEEPS: maybe (cond_wait on journal_recvq_nonfull_cond while the
+ *	recvq is full)
+ */
 gfarm_error_t
 db_journal_recvq_enter(gfarm_uint64_t from_sn, gfarm_uint64_t to_sn,
 	int recs_len, unsigned char *recs)
@@ -4612,6 +4700,15 @@ db_journal_recvq_enter(gfarm_uint64_t from_sn, gfarm_uint64_t to_sn,
 	return (GFARM_ERR_NO_ERROR);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: journal_seqnum_mutex, journal_recvq_mutex,
+ *	and the locks of master_disconnect_request()
+ *	(mdhost_master_disconnect_request()) after unlocking
+ *	journal_recvq_mutex
+ * SLEEPS: yes (cond_wait on journal_recvq_nonempty_cond until a record
+ *	is queued or canceled)
+ */
 static gfarm_error_t
 db_journal_recvq_delete(struct db_journal_recv_info **rip)
 {
@@ -4657,6 +4754,12 @@ retry_from_locking:
 	return (GFARM_ERR_NO_ERROR);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: journal_recvq_mutex
+ * SLEEPS: yes (cond_wait on journal_recvq_cancel_cond until the recvq
+ *	thread acknowledges the cancel)
+ */
 void
 db_journal_cancel_recvq()
 {
@@ -4672,6 +4775,14 @@ db_journal_cancel_recvq()
 	gfarm_mutex_unlock(&journal_recvq_mutex, diag, RECVQ_MUTEX_DIAG);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: see db_journal_recvq_delete(), journal_recvq_mutex,
+ *	journal_log_verbose_mutex, journal_seqnum_mutex, journal_file_mutex
+ * SLEEPS: yes (cond_wait on journal_recvq_nonempty_cond, file I/O,
+ *	cond_wait on nonfull_cond in journal_file_write_raw(), and fdatasync
+ *	if journal_sync_file)
+ */
 static gfarm_error_t
 db_journal_recvq_proc(int *canceledp)
 {
@@ -4714,6 +4825,11 @@ db_journal_recvq_proc(int *canceledp)
 	return (e);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: see db_journal_recvq_proc()
+ * SLEEPS: yes (see db_journal_recvq_proc())
+ */
 void *
 db_journal_recvq_thread(void *arg)
 {

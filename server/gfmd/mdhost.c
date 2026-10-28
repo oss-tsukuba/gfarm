@@ -167,6 +167,11 @@ mdhost_get_name_unlocked(struct mdhost *m)
 	return (gfarm_metadb_server_get_name(&m->ms));
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: mdhost::mutex
+ * SLEEPS: no
+ */
 const char *
 mdhost_get_name(struct mdhost *m)
 {
@@ -179,6 +184,11 @@ mdhost_get_name(struct mdhost *m)
 	return (name);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: mdhost::mutex
+ * SLEEPS: no
+ */
 int
 mdhost_is_master(struct mdhost *m)
 {
@@ -194,6 +204,11 @@ mdhost_is_master(struct mdhost *m)
 	return (is_master);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: mdhost::mutex, mdhost_master_mutex
+ * SLEEPS: no
+ */
 void
 mdhost_set_is_master(struct mdhost *m, int enable)
 {
@@ -250,6 +265,11 @@ mdhost_get_port_unlocked(struct mdhost *m)
 	return (gfarm_metadb_server_get_port(&m->ms));
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: mdhost::mutex
+ * SLEEPS: no
+ */
 int
 mdhost_get_port(struct mdhost *m)
 {
@@ -268,6 +288,11 @@ mdhost_port0(struct abstract_host *h)
 	return (mdhost_get_port_unlocked(abstract_host_to_mdhost(h)));
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: no
+ */
 int
 mdhost_is_up(struct mdhost *m)
 {
@@ -280,6 +305,10 @@ mdhost_is_up(struct mdhost *m)
  * 	if (m->ah.is_active) assert(m->ah.peer != NULL);
  * The "is_active" flag for remote nodes can be set
  * via abstract_host_set_peer() via mdhost_set_peer().
+ *
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: no
  */
 void
 mdhost_activate(struct mdhost *m)
@@ -287,6 +316,11 @@ mdhost_activate(struct mdhost *m)
 	abstract_host_activate(mdhost_to_abstract_host(m), MDHOST_MUTEX_DIAG);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: no
+ */
 static int
 mdhost_is_valid(struct mdhost *m)
 {
@@ -294,6 +328,13 @@ mdhost_is_valid(struct mdhost *m)
 	    MDHOST_MUTEX_DIAG));
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: abstract_host::mutex -> peer_closing_queue.mutex,
+ *	and after abstract_host::mutex is unlocked,
+ *	mdhost::mutex in mdhost_set_peer_unlocked()
+ * SLEEPS: no
+ */
 void
 mdhost_set_peer(struct mdhost *m, struct peer *peer, int version)
 {
@@ -314,6 +355,13 @@ static int mdhost_get_count_unlocked(void);
  * the journal file, and the journal apply thread locks table_rwlock
  * while locking the journal file.
  * the mdhosts collected here are never freed.
+ *
+ * PREREQUISITE: nothing
+ * LOCKS: mdhost_table_rwlock -> abstract_host::mutex,
+ *	and after mdhost_table_rwlock is unlocked,
+ *	abstract_host::mutex and locks taken by func
+ *	(func is called with mdhost_table_rwlock held, if out of memory)
+ * SLEEPS: maybe (if func sleeps)
  */
 void
 mdhost_foreach(int (*func)(struct mdhost *, void *), void *closure)
@@ -359,6 +407,11 @@ mdhost_foreach(int (*func)(struct mdhost *, void *), void *closure)
 	free(ms);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: mdhost::mutex
+ * SLEEPS: no
+ */
 static int
 mdhost_is_default_master(struct mdhost *m)
 {
@@ -371,6 +424,11 @@ mdhost_is_default_master(struct mdhost *m)
 	return (is_default_master);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: mdhost::mutex
+ * SLEEPS: no
+ */
 static void
 mdhost_set_is_default_master(struct mdhost *m, int enable)
 {
@@ -381,6 +439,11 @@ mdhost_set_is_default_master(struct mdhost *m, int enable)
 	mdhost_mutex_unlock(m, diag);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: mdhost::mutex
+ * SLEEPS: no
+ */
 static void
 mdhost_set_is_self(struct mdhost *m, int enable)
 {
@@ -392,12 +455,22 @@ mdhost_set_is_self(struct mdhost *m, int enable)
 	mdhost_mutex_unlock(m, diag);
 }
 
+/*
+ * PREREQUISITE: mdhost::mutex, unless the mdhost is not registered yet
+ * LOCKS: nothing
+ * SLEEPS: no
+ */
 struct mdcluster *
 mdhost_get_cluster_unlocked(struct mdhost *m)
 {
 	return (m->cluster);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: mdhost::mutex
+ * SLEEPS: no
+ */
 static struct mdcluster *
 mdhost_get_cluster(struct mdhost *m)
 {
@@ -410,12 +483,22 @@ mdhost_get_cluster(struct mdhost *m)
 	return (c);
 }
 
+/*
+ * PREREQUISITE: mdhost::mutex, unless the mdhost is not registered yet
+ * LOCKS: nothing
+ * SLEEPS: no
+ */
 void
 mdhost_set_cluster_unlocked(struct mdhost *m, struct mdcluster *c)
 {
 	m->cluster = c;
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: mdhost::mutex (m1), mdhost::mutex (m2)
+ * SLEEPS: no
+ */
 static int
 mdhost_eq_cluster(struct mdhost *m1, struct mdhost *m2)
 {
@@ -426,12 +509,22 @@ mdhost_eq_cluster(struct mdhost *m1, struct mdhost *m2)
 	return (c1 == c2);
 }
 
+/*
+ * PREREQUISITE: mdhost::mutex, unless the mdhost is not registered yet
+ * LOCKS: nothing
+ * SLEEPS: no
+ */
 const char *
 mdhost_get_cluster_name_unlocked(struct mdhost *m)
 {
 	return (m->ms.clustername);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: mdhost::mutex
+ * SLEEPS: no
+ */
 const char *
 mdhost_get_cluster_name(struct mdhost *m)
 {
@@ -444,6 +537,11 @@ mdhost_get_cluster_name(struct mdhost *m)
 	return (n);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: mdhost::mutex
+ * SLEEPS: no
+ */
 static enum mdhost_seqnum_state
 mdhost_get_seqnum_state(struct mdhost *m)
 {
@@ -459,6 +557,11 @@ mdhost_get_seqnum_state(struct mdhost *m)
 	return (s);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: mdhost::mutex
+ * SLEEPS: no
+ */
 static void
 mdhost_set_seqnum_state(struct mdhost *m, enum mdhost_seqnum_state s)
 {
@@ -469,36 +572,66 @@ mdhost_set_seqnum_state(struct mdhost *m, enum mdhost_seqnum_state s)
 	mdhost_mutex_unlock(m, diag);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: mdhost::mutex
+ * SLEEPS: no
+ */
 void
 mdhost_set_seqnum_unknown(struct mdhost *m)
 {
 	mdhost_set_seqnum_state(m, seqnum_state_unknown);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: mdhost::mutex
+ * SLEEPS: no
+ */
 void
 mdhost_set_seqnum_ok(struct mdhost *m)
 {
 	mdhost_set_seqnum_state(m, seqnum_state_ok);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: mdhost::mutex
+ * SLEEPS: no
+ */
 void
 mdhost_set_seqnum_out_of_sync(struct mdhost *m)
 {
 	mdhost_set_seqnum_state(m, seqnum_state_out_of_sync);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: mdhost::mutex
+ * SLEEPS: no
+ */
 void
 mdhost_set_seqnum_error(struct mdhost *m)
 {
 	mdhost_set_seqnum_state(m, seqnum_state_error);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: mdhost::mutex
+ * SLEEPS: no
+ */
 void
 mdhost_set_seqnum_behind(struct mdhost *m)
 {
 	mdhost_set_seqnum_state(m, seqnum_state_behind);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: mdhost::mutex
+ * SLEEPS: no
+ */
 void
 mdhost_set_seqnum_state_by_error(struct mdhost *m, gfarm_error_t e)
 {
@@ -512,6 +645,11 @@ mdhost_set_seqnum_state_by_error(struct mdhost *m, gfarm_error_t e)
 	}
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex, mdhost::mutex
+ * SLEEPS: no
+ */
 int
 mdhost_may_transfer_journal(struct mdhost *m)
 {
@@ -527,12 +665,22 @@ mdhost_may_transfer_journal(struct mdhost *m)
 	return (1);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: no
+ */
 static void
 mdhost_invalidate(struct mdhost *m)
 {
 	abstract_host_invalidate(mdhost_to_abstract_host(m));
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: mdhost::mutex
+ * SLEEPS: no
+ */
 int
 mdhost_self_is_master_candidate(void)
 {
@@ -546,6 +694,11 @@ mdhost_self_is_master_candidate(void)
 	return (c);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: no
+ */
 static void
 mdhost_validate(struct mdhost *m)
 {
@@ -557,7 +710,13 @@ mdhost_set_peer_locked(struct abstract_host *h, struct peer *peer)
 {
 }
 
-/* this function assumed to be called without abstract_host lock */
+/*
+ * this function assumed to be called without abstract_host lock
+ *
+ * PREREQUISITE: nothing (must not hold abstract_host::mutex)
+ * LOCKS: mdhost::mutex
+ * SLEEPS: no
+ */
 static void
 mdhost_set_peer_unlocked(struct abstract_host *h, struct peer *peer)
 {
@@ -572,6 +731,10 @@ mdhost_unset_peer(struct abstract_host *h, struct peer *peer)
 /*
  * if mdhost_get_peer() is called,
  * same number of mdhost_put_peer() calls should be made.
+ *
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex -> peer_closing_queue.mutex
+ * SLEEPS: no
  */
 struct peer *
 #ifdef PEER_REFCOUNT_DEBUG
@@ -594,6 +757,11 @@ mdhost_get_peer(struct mdhost *mh)
 #endif
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: peer_closing_queue.mutex
+ * SLEEPS: no
+ */
 void
 #ifdef PEER_REFCOUNT_DEBUG
 mdhost_put_peer_impl(struct mdhost *mh, struct peer *peer,
@@ -632,6 +800,11 @@ struct abstract_host_ops mdhost_ops = {
 	mdhost_disabled,
 };
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex, mdhost::mutex (of the new mdhost)
+ * SLEEPS: no
+ */
 static struct mdhost *
 mdhost_new(struct gfarm_metadb_server *ms)
 {
@@ -652,6 +825,11 @@ mdhost_new(struct gfarm_metadb_server *ms)
 	return (m);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: mdhost_table_rwlock
+ * SLEEPS: no
+ */
 static struct mdhost *
 mdhost_lookup_internal(const char *hostname)
 {
@@ -667,6 +845,11 @@ mdhost_lookup_internal(const char *hostname)
 	return (*(struct mdhost **)gfarm_hash_entry_data(entry));
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: mdhost_table_rwlock, abstract_host::mutex
+ * SLEEPS: no
+ */
 struct mdhost *
 mdhost_lookup(const char *hostname)
 {
@@ -675,6 +858,11 @@ mdhost_lookup(const char *hostname)
 	return (m && mdhost_is_valid(m) ? m : NULL);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: mdhost_table_rwlock -> mdhost::mutex -> abstract_host::mutex
+ * SLEEPS: no
+ */
 struct mdhost *
 mdhost_lookup_metadb_server(struct gfarm_metadb_server *ms)
 {
@@ -697,6 +885,11 @@ mdhost_lookup_metadb_server(struct gfarm_metadb_server *ms)
 	return (mm);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: mdhost_master_mutex
+ * SLEEPS: no
+ */
 struct mdhost *
 mdhost_lookup_master(void)
 {
@@ -718,6 +911,11 @@ mdhost_lookup_self(void)
 	return (mdhost_self);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: mdhost::mutex
+ * SLEEPS: no
+ */
 int
 mdhost_self_is_master(void)
 {
@@ -733,8 +931,14 @@ mdhost_self_is_master(void)
 /*
  * PREREQUISITE: nothing
  * LOCKS:
- *  - abstract_host_mutex
+ *  - abstract_host::mutex
  *    in abstract_host_disconnect_request()
+ *  - abstract_host::mutex -> peer::protocol_error_mutex
+ *    in peer_record_protocol_error()
+ *    which is called from abstract_host_disconnect_request()
+ *  - abstract_host::mutex -> peer_closing_queue.mutex
+ *    in peer_free_request()
+ *    which is called from abstract_host_disconnect_request()
  *  - nothing
  *    in mdhost_unset_peer()
  *    which is called from abstract_host_peer_unset()
@@ -781,7 +985,12 @@ mdhost_master_disconnect_request(struct peer *peer)
 	mdhost_disconnect_request(m, peer);
 }
 
-/* PREREQUISITE: giant_lock */
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: mdhost_master_mutex, see mdhost_disconnect_request(),
+ *	mdhost::mutex, mdhost_master_mutex
+ * SLEEPS: no
+ */
 void
 mdhost_set_self_as_master(void)
 {
@@ -801,6 +1010,13 @@ mdhost_set_self_as_master(void)
 	mdhost_set_is_master(s, 1);
 }
 
+/*
+ * PREREQUISITE: giant_lock, or called during initialization
+ * LOCKS: mdhost_table_rwlock, mdhost::mutex -> abstract_host::mutex,
+ *	abstract_host::mutex and mdhost::mutex in mdhost_new(),
+ *	mdcluster_hash_mutex, mdcluster::mutex
+ * SLEEPS: no
+ */
 gfarm_error_t
 mdhost_enter_internal(struct gfarm_metadb_server *ms, struct mdhost **mpp)
 {
@@ -873,7 +1089,11 @@ mdhost_enter_internal(struct gfarm_metadb_server *ms, struct mdhost **mpp)
 	return (GFARM_ERR_NO_ERROR);
 }
 
-/* PREREQUISITE: giant_lock */
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: see mdhost_enter_internal() and mdhost_updated()
+ * SLEEPS: no
+ */
 gfarm_error_t
 mdhost_enter(struct gfarm_metadb_server *ms, struct mdhost **mpp)
 {
@@ -888,6 +1108,11 @@ mdhost_enter(struct gfarm_metadb_server *ms, struct mdhost **mpp)
 	return (e);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: mdhost_master_mutex, mdhost::mutex
+ * SLEEPS: no
+ */
 int
 mdhost_is_sync_replication(struct mdhost *mh)
 {
@@ -899,6 +1124,11 @@ mdhost_is_sync_replication(struct mdhost *mh)
 	return (mdhost_eq_cluster(mh, mmh));
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: mdhost::mutex
+ * SLEEPS: no
+ */
 int
 mdhost_get_flags(struct mdhost *mh)
 {
@@ -911,6 +1141,11 @@ mdhost_get_flags(struct mdhost *mh)
 	return (flags);
 }
 
+/*
+ * PREREQUISITE: mdhost_table_rwlock
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: no
+ */
 static int
 mdhost_get_count_unlocked(void)
 {
@@ -924,6 +1159,13 @@ mdhost_get_count_unlocked(void)
 	return (n);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: mdhost_master_mutex,
+ *	mdhost_table_rwlock -> abstract_host::mutex,
+ *	mdhost_table_rwlock -> mdhost::mutex -> abstract_host::mutex
+ * SLEEPS: no
+ */
 int
 mdhost_has_async_replication_target(void)
 {
@@ -963,6 +1205,11 @@ mdhost_has_async_replication_target(void)
 	return (ret);
 }
 
+/*
+ * PREREQUISITE: nothing (called from mdhost_init() during initialization)
+ * LOCKS: see mdhost_enter_internal()
+ * SLEEPS: no
+ */
 static void
 mdhost_add_one(void *closure, struct gfarm_metadb_server *ms)
 {
@@ -975,6 +1222,19 @@ mdhost_add_one(void *closure, struct gfarm_metadb_server *ms)
 	/* mdhost_updated() will be called by mdhost_init() */
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: mdhost::mutex,
+ *	mdhost_table_rwlock -> abstract_host::mutex,
+ *	mdhost_table_rwlock -> mdhost::mutex -> abstract_host::mutex,
+ *	mdhost_master_mutex, mdhost::mutex -> abstract_host::mutex,
+ *	and locks in mdhost_switch_to_sync_hook() ==
+ *	gfmdc_peer_switch_to_sync() while holding mdhost::mutex:
+ *	mdhost::mutex -> abstract_host::mutex -> peer_closing_queue.mutex,
+ *	mdhost::mutex -> thread_pool::mutex, thread_jobq::mutex
+ * SLEEPS: maybe (thrpool_add_job() in mdhost_switch_to_sync_hook()
+ *	waits for thread_jobq::nonfull while holding mdhost::mutex)
+ */
 static gfarm_error_t
 mdhost_update_replication_type(struct mdhost *mh,
     const char *old_clustername, const char *new_clustername)
@@ -1096,6 +1356,15 @@ mdhost_update_replication_type(struct mdhost *mh,
 	return (e);
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: mdhost::mutex -> mdcluster::mutex,
+ *	mdhost::mutex -> mdcluster_hash_mutex,
+ *	and after mdhost::mutex is unlocked,
+ *	mdhost::mutex (self) in mdhost_self_is_master(),
+ *	see mdhost_update_replication_type()
+ * SLEEPS: maybe (see mdhost_update_replication_type())
+ */
 static gfarm_error_t
 mdhost_modify_in_cache_internal(
 	struct mdhost *mh, struct gfarm_metadb_server *ms)
@@ -1138,7 +1407,11 @@ end:
 	return (e);
 }
 
-/* PREREQUISITE: giant_lock */
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: see mdhost_modify_in_cache_internal() and mdhost_updated()
+ * SLEEPS: maybe (see mdhost_update_replication_type())
+ */
 gfarm_error_t
 mdhost_modify_in_cache(struct mdhost *mh, struct gfarm_metadb_server *ms)
 {
@@ -1153,7 +1426,17 @@ mdhost_modify_in_cache(struct mdhost *mh, struct gfarm_metadb_server *ms)
 	return (e);
 }
 
-/* PREREQUISITE: giant_lock */
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: mdhost_table_rwlock, abstract_host::mutex in mdhost_lookup(),
+ *	mdhost::mutex -> abstract_host::mutex -> peer_closing_queue.mutex,
+ *	mdhost::mutex -> (see mdhost_disconnect_request()),
+ *	mdhost::mutex -> peer_closing_queue.mutex,
+ *	mdhost::mutex -> mdcluster::mutex,
+ *	mdhost::mutex -> abstract_host::mutex,
+ *	and after mdhost::mutex is unlocked, see mdhost_updated()
+ * SLEEPS: no
+ */
 gfarm_error_t
 mdhost_remove_in_cache(const char *name)
 {
@@ -1184,6 +1467,11 @@ mdhost_remove_in_cache(const char *name)
 	return (e);
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: mdhost::mutex, mdhost_master_mutex, abstract_host::mutex
+ * SLEEPS: maybe (network I/O in gfp_xdr_send())
+ */
 static gfarm_error_t
 metadb_server_reply(struct peer *peer, struct mdhost *m)
 {
@@ -1230,7 +1518,14 @@ metadb_server_reply(struct peer *peer, struct mdhost *m)
 	return (e);
 }
 
-/* PREREQUISITE: giant_lock */
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: mdhost_table_rwlock -> mdhost::mutex -> abstract_host::mutex,
+ *	and after mdhost_table_rwlock is unlocked,
+ *	see metadb_server_reply()
+ * SLEEPS: yes (network I/O in gfm_server_put_reply() and
+ *	metadb_server_reply())
+ */
 static gfarm_error_t
 metadb_server_get0(struct peer *peer, int (*match_op)(
 	struct mdhost *, void *), void *closure, const char *diag)
@@ -1286,6 +1581,11 @@ metadb_server_get0(struct peer *peer, int (*match_op)(
 	return (e2);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: giant_lock -> see metadb_server_get0()
+ * SLEEPS: yes (giant_lock, network I/O)
+ */
 static gfarm_error_t
 metadb_server_get(struct peer *peer, int (*match_op)(
 	struct mdhost *, void *), void *closure, const char *diag)
@@ -1318,13 +1618,22 @@ match_all(struct mdhost *mh, void *closure)
 	return (1);
 }
 
-/* mdhost_mutex_lock is assumed */
+/*
+ * PREREQUISITE: mdhost::mutex
+ * LOCKS: nothing
+ * SLEEPS: no
+ */
 static int
 match_hostname(struct mdhost *mh, void *closure)
 {
 	return (strcmp(mdhost_get_name_unlocked(mh), (char *)closure) == 0);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: see metadb_server_get()
+ * SLEEPS: yes (giant_lock, network I/O)
+ */
 gfarm_error_t
 gfm_server_metadb_server_get(struct peer *peer, int from_client, int skip)
 {
@@ -1357,6 +1666,11 @@ mdcluster_dump(struct mdcluster *c, void *closure)
 }
 #endif
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: see metadb_server_get()
+ * SLEEPS: yes (giant_lock, network I/O)
+ */
 gfarm_error_t
 gfm_server_metadb_server_get_all(struct peer *peer, int from_client, int skip)
 {
@@ -1412,7 +1726,14 @@ metadb_server_verify(struct gfarm_metadb_server *ms, const char *diag)
 	return (GFARM_ERR_NO_ERROR);
 }
 
-/* PREREQUISITE: giant_lock */
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: mdhost_table_rwlock -> abstract_host::mutex,
+ *	mdhost_table_rwlock -> mdhost::mutex,
+ *	and after mdhost_table_rwlock is unlocked,
+ *	mdhost::mutex, dbq.mutex or journal_file::mutex in db_mdhost_modify()
+ * SLEEPS: yes (dbq.mutex or journal_file::mutex)
+ */
 static gfarm_error_t
 mdhost_fix_default_master(struct mdhost *new_mmh, const char *diag)
 {
@@ -1471,7 +1792,16 @@ mdhost_fix_default_master(struct mdhost *new_mmh, const char *diag)
 	return (e);
 }
 
-/* PREREQUISITE: giant_lock */
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: mdhost_table_rwlock -> mdhost::mutex -> abstract_host::mutex,
+ *	and after mdhost_table_rwlock is unlocked,
+ *	locks in mdhost_update_hook_for_journal_send() ==
+ *	gfmdc_journal_asyncsend_thread_wakeup():
+ *	see mdhost_has_async_replication_target(),
+ *	journal_sync_info.async_mutex
+ * SLEEPS: no
+ */
 static gfarm_error_t
 mdhost_updated(void)
 {
@@ -1515,6 +1845,13 @@ mdhost_updated(void)
 	return (e);
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: dbq.mutex or journal_file::mutex in db_begin(),
+ *	db_mdhost_modify() and db_end(),
+ *	see mdhost_fix_default_master()
+ * SLEEPS: yes (dbq.mutex or journal_file::mutex)
+ */
 static gfarm_error_t
 mdhost_db_modify_default_master(struct mdhost *mh,
 	struct gfarm_metadb_server *ms, const char *diag)
@@ -1541,7 +1878,12 @@ mdhost_db_modify_default_master(struct mdhost *mh,
 /* needs giant_lock */
 static int master_transformation_has_to_be_propagated = 0;
 
-/* PREREQUISITE: giant_lock */
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: mdhost::mutex, see mdhost_db_modify_default_master()
+ *	and mdhost_updated()
+ * SLEEPS: yes (dbq.mutex or journal_file::mutex)
+ */
 void
 mdhost_set_self_as_default_master(void)
 {
@@ -1567,7 +1909,11 @@ mdhost_set_self_as_default_master(void)
 		    diag, gfarm_error_string(e));
 }
 
-/* PREREQUISITE: giant_lock */
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: see mdhost_set_self_as_default_master()
+ * SLEEPS: yes (see mdhost_set_self_as_default_master())
+ */
 void
 mdhost_read_only_disabled(void)
 {
@@ -1579,6 +1925,11 @@ mdhost_read_only_disabled(void)
 	}
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: nothing
+ * SLEEPS: no
+ */
 static gfarm_error_t
 metadb_server_check_write_access(struct peer *peer, int from_client,
 	const char *diag)
@@ -1594,6 +1945,14 @@ metadb_server_check_write_access(struct peer *peer, int from_client,
 	return (e);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: giant_lock -> see mdhost_lookup(), mdhost_enter_internal(),
+ *	mdhost_fix_default_master(), mdhost_remove_in_cache() and
+ *	mdhost_updated(), and dbq.mutex or journal_file::mutex
+ * SLEEPS: yes (giant_lock, dbq.mutex or journal_file::mutex,
+ *	network I/O)
+ */
 gfarm_error_t
 gfm_server_metadb_server_set(struct peer *peer, int from_client, int skip)
 {
@@ -1683,6 +2042,15 @@ gfm_server_metadb_server_set(struct peer *peer, int from_client, int skip)
 	return (gfm_server_put_reply(peer, diag, e, ""));
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: giant_lock -> see mdhost_lookup(), mdhost_is_default_master(),
+ *	mdhost_modify_in_cache_internal(),
+ *	mdhost_db_modify_default_master() and mdhost_updated(),
+ *	and dbq.mutex or journal_file::mutex
+ * SLEEPS: yes (giant_lock, dbq.mutex or journal_file::mutex,
+ *	network I/O)
+ */
 gfarm_error_t
 gfm_server_metadb_server_modify(struct peer *peer, int from_client, int skip)
 {
@@ -1755,6 +2123,13 @@ gfm_server_metadb_server_modify(struct peer *peer, int from_client, int skip)
 	return (gfm_server_put_reply(peer, diag, e, ""));
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: giant_lock -> see mdhost_lookup() and mdhost_remove_in_cache(),
+ *	and dbq.mutex or journal_file::mutex
+ * SLEEPS: yes (giant_lock, dbq.mutex or journal_file::mutex,
+ *	network I/O)
+ */
 gfarm_error_t
 gfm_server_metadb_server_remove(struct peer *peer, int from_client, int skip)
 {

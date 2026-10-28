@@ -261,7 +261,14 @@ file_replicating_get_peer(struct file_replicating *fr)
 
 static const char replication_diag[] = "replication";
 
-/* only host_replicating_new() is allowed to call this routine */
+/*
+ * only host_replicating_new() is allowed to call this routine
+ *
+ * PREREQUISITE: nothing
+ * LOCKS: peer::replication_mutex,
+ *	peer_closing_queue.mutex in host_put_peer_for_replication()
+ * SLEEPS: no
+ */
 gfarm_error_t
 peer_replicating_new(struct peer *peer, struct host *dst,
 	struct file_replicating **frp)
@@ -309,7 +316,14 @@ peer_replicating_new(struct peer *peer, struct host *dst,
 	return (GFARM_ERR_NO_ERROR);
 }
 
-/* only file_replicating_free() is allowed to call this routine */
+/*
+ * only file_replicating_free() is allowed to call this routine
+ *
+ * PREREQUISITE: nothing
+ * LOCKS: peer::replication_mutex,
+ *	peer_closing_queue.mutex in host_put_peer_for_replication()
+ * SLEEPS: no
+ */
 void
 peer_replicating_free(struct file_replicating *fr)
 {
@@ -328,6 +342,14 @@ peer_replicating_free(struct file_replicating *fr)
 	free(fr);
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: peer::replication_mutex,
+ *	and after peer::replication_mutex is unlocked,
+ *	locks in inode_replicated() (dbq.mutex, peer::replication_mutex,
+ *	peer_closing_queue.mutex, etc.)
+ * SLEEPS: yes (dbq.mutex in inode_replicated())
+ */
 gfarm_error_t
 peer_replicated(struct peer *peer,
 	struct host *host, gfarm_ino_t ino, gfarm_int64_t gen,
@@ -402,6 +424,13 @@ peer_replicated(struct peer *peer,
  * NOTE:
  * - caller of this function should acquire giant_lock as well
  * - caller of this function should NOT call db_begin()/db_end() around this
+ *
+ * PREREQUISITE: giant_lock
+ * LOCKS: peer::replication_mutex,
+ *	and after peer::replication_mutex is unlocked,
+ *	locks in inode_replicated() (dbq.mutex, peer::replication_mutex,
+ *	peer_closing_queue.mutex, etc.)
+ * SLEEPS: yes (dbq.mutex in inode_replicated())
  */
 static void
 peer_replicating_free_all_waiting_result(struct peer *peer)
@@ -451,6 +480,13 @@ peer_replicating_free_all_waiting_result(struct peer *peer)
  * NOTE:
  * - caller of this function should acquire giant_lock as well
  * - caller of this function should NOT call db_begin()/db_end() around this
+ *
+ * PREREQUISITE: giant_lock
+ * LOCKS: peer::replication_mutex,
+ *	and while peer::replication_mutex is unlocked,
+ *	locks in inode_replicated() (dbq.mutex, peer::replication_mutex,
+ *	peer_closing_queue.mutex, etc.)
+ * SLEEPS: yes (dbq.mutex in inode_replicated())
  */
 static void
 peer_replicating_free_all(struct peer *peer)
@@ -476,6 +512,11 @@ peer_replicating_free_all(struct peer *peer)
 	gfarm_mutex_unlock(&peer->replication_mutex, diag, "loop");
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: peer_closing_queue.mutex
+ * SLEEPS: no
+ */
 void
 #ifdef PEER_REFCOUNT_DEBUG
 peer_add_ref_impl(struct peer *peer, const char *file, int line, const char *func)
@@ -496,6 +537,11 @@ peer_add_ref(struct peer *peer)
 	    diag, "peer_closing_queue");
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: peer_closing_queue.mutex
+ * SLEEPS: no
+ */
 int
 #ifdef PEER_REFCOUNT_DEBUG
 peer_del_ref_impl(struct peer *peer, const char *file, int line, const char *func)
@@ -527,6 +573,11 @@ peer_del_ref(struct peer *peer)
 	return (referenced);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: peer_closing_queue.mutex
+ * SLEEPS: no
+ */
 void
 peer_add_ref_for_replication(struct peer *peer)
 {
@@ -539,6 +590,11 @@ peer_add_ref_for_replication(struct peer *peer)
 	    diag, "peer_closing_queue");
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: peer_closing_queue.mutex
+ * SLEEPS: no
+ */
 int
 peer_del_ref_for_replication(struct peer *peer)
 {
@@ -562,6 +618,15 @@ peer_del_ref_for_replication(struct peer *peer)
 	return (referenced);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: peer_closing_queue.mutex -> watcher_event::mutex,
+ *	and after peer_closing_queue.mutex is unlocked,
+ *	giant_lock -> locks in (*peer_async_free)() and
+ *	peer_replicating_free_all_waiting_result(),
+ *	or giant_lock -> see peer_free()
+ * SLEEPS: yes (waits for peer_closing_queue.ready_to_close, giant_lock)
+ */
 void *
 peer_closer(void *arg)
 {
@@ -639,6 +704,11 @@ peer_closer(void *arg)
 	    diag, "peer_closing_queue");
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: peer_closing_queue.mutex
+ * SLEEPS: no
+ */
 void
 peer_free_request(struct peer *peer)
 {
@@ -744,6 +814,11 @@ peer_init(int max_peers)
 	gfarm_mutex_unlock(&peer_table_mutex, diag, peer_table_diag);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: peer_table_mutex
+ * SLEEPS: no
+ */
 static gfarm_error_t
 peer_alloc0(int fd, struct peer **peerp, struct gfp_xdr *conn)
 {
@@ -841,12 +916,22 @@ peer_alloc0(int fd, struct peer **peerp, struct gfp_xdr *conn)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: peer_table_mutex
+ * SLEEPS: no
+ */
 gfarm_error_t
 peer_alloc(int fd, struct peer **peerp)
 {
 	return (peer_alloc0(fd, peerp, NULL));
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: peer_table_mutex
+ * SLEEPS: no
+ */
 gfarm_error_t
 peer_alloc_with_connection(struct peer **peerp, struct gfp_xdr *conn,
 	struct abstract_host *host, int id_role)
@@ -870,7 +955,16 @@ peer_get_service_name(struct peer *peer)
 	    "gfmd" : "")));
 }
 
-/* caller should allocate the storage for username and hostname */
+/*
+ * caller should allocate the storage for username and hostname
+ *
+ * PREREQUISITE: giant_lock
+ * LOCKS: abstract_host::mutex in host_addr_lookup(),
+ *	mdhost_table_rwlock, abstract_host::mutex in mdhost_lookup(),
+ *	and thread_pool::mutex, thread_jobq::mutex in thrpool_add_job(),
+ *	or see peer_watch_access()
+ * SLEEPS: maybe (thrpool_add_job() waits for thread_jobq::nonfull)
+ */
 void
 peer_authorized(struct peer *peer,
 	enum gfarm_auth_id_role id_role, char *username, char *hostname,
@@ -967,6 +1061,15 @@ peer_get_numeric_name(struct peer *peer, char *hostbuf, size_t hostlen)
  * NOTE:
  * - caller of this function should acquire giant_lock as well
  * - caller of this function should NOT call db_begin()/db_end() around this
+ *
+ * PREREQUISITE: giant_lock
+ * LOCKS: peer_table_mutex -> journal_file::mutex
+ *	in gfmdc_peer_record_free(),
+ *	peer_table_mutex -> (see peer_replicating_free_all()),
+ *	peer_table_mutex -> dbq.mutex in db_begin() and db_end(),
+ *	peer_table_mutex -> (see peer_unset_pending_new_generation()
+ *	and process_detach_peer())
+ * SLEEPS: yes (dbq.mutex)
  */
 void
 peer_free(struct peer *peer)
@@ -1080,7 +1183,15 @@ peer_free(struct peer *peer)
 	gfarm_mutex_unlock(&peer_table_mutex, diag, peer_table_diag);
 }
 
-/* NOTE: caller of this function should acquire giant_lock as well */
+/*
+ * NOTE: caller of this function should acquire giant_lock as well
+ *
+ * PREREQUISITE: giant_lock
+ * LOCKS: peer_table_mutex (never unlocked) -> dbq.mutex,
+ *	peer_table_mutex -> (see peer_unset_pending_new_generation()
+ *	and process_detach_peer())
+ * SLEEPS: yes (dbq.mutex)
+ */
 void
 peer_shutdown_all(void)
 {
@@ -1135,7 +1246,13 @@ peer_shutdown_all(void)
 		db_end(diag);
 }
 
-/* XXX FIXME - rename this to peer_readable_invoked() */
+/*
+ * XXX FIXME - rename this to peer_readable_invoked()
+ *
+ * PREREQUISITE: nothing
+ * LOCKS: watcher_event::mutex, peer_closing_queue.mutex
+ * SLEEPS: no
+ */
 void
 peer_invoked(struct peer *peer)
 {
@@ -1146,7 +1263,14 @@ peer_invoked(struct peer *peer)
 	    "peer_invoked", "connection can be freed");
 }
 
-/* XXX FIXME - rename this to peer_readable_watch() */
+/*
+ * XXX FIXME - rename this to peer_readable_watch()
+ *
+ * PREREQUISITE: nothing
+ * LOCKS: peer_closing_queue.mutex,
+ *	watcher_request_queue::mutex -> watcher_event::mutex
+ * SLEEPS: no
+ */
 void
 peer_watch_access(struct peer *peer)
 {
@@ -1215,6 +1339,11 @@ peer_get_async(struct peer *peer)
 /*
  * This funciton is experimentally introduced to accept a host in
  * private networks.
+ *
+ * PREREQUISITE: giant_lock
+ * LOCKS: abstract_host::mutex in host_lookup(),
+ *	or mdhost_table_rwlock, abstract_host::mutex in mdhost_lookup()
+ * SLEEPS: no
  */
 gfarm_error_t
 peer_set_host(struct peer *peer, char *hostname)
@@ -1360,7 +1489,11 @@ peer_reset_pending_new_generation_by_fd(struct peer *peer)
 /*
  * NOTE:
  * - caller of this function should acquire giant_lock as well
- * - caller of this function should NOT call db_begin()/db_end() around this
+ * - caller of this function SHOULD call db_begin()/db_end() around this
+ *
+ * PREREQUISITE: giant_lock
+ * LOCKS: dbq.mutex etc. in process_new_generation_by_fd_abort()
+ * SLEEPS: maybe (dbq.mutex)
  */
 void
 peer_unset_pending_new_generation_by_fd(
@@ -1384,7 +1517,13 @@ peer_unset_pending_new_generation_by_fd(
 	    diag);
 }
 
-/* NOTE: caller of this function should acquire giant_lock as well */
+/*
+ * NOTE: caller of this function should acquire giant_lock as well
+ *
+ * PREREQUISITE: giant_lock
+ * LOCKS: peer_seqno_mutex
+ * SLEEPS: no
+ */
 gfarm_error_t
 peer_add_pending_new_generation_by_cookie(
 	struct peer *peer, struct inode *inode, gfarm_off_t old_size,
@@ -1458,6 +1597,11 @@ peer_remove_pending_new_generation_by_cookie(
 	return (found);
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: dbq.mutex etc. in inode_new_generation_by_cookie_finish()
+ * SLEEPS: maybe (dbq.mutex)
+ */
 static void
 peer_unset_pending_new_generation_by_cookie(
 	struct peer *peer, gfarm_error_t reason)
@@ -1498,6 +1642,11 @@ peer_unset_pending_new_generation_by_cookie(
  * NOTE:
  * - caller of this function should acquire giant_lock as well
  * - caller of this function SHOULD call db_begin()/db_end() around this
+ *
+ * PREREQUISITE: giant_lock
+ * LOCKS: see peer_unset_pending_new_generation_by_fd() and
+ *	peer_unset_pending_new_generation_by_cookie()
+ * SLEEPS: maybe (dbq.mutex)
  */
 void
 peer_unset_pending_new_generation(struct peer *peer, gfarm_error_t reason)
@@ -1530,6 +1679,11 @@ peer_set_process(struct peer *peer, struct process *process)
  * NOTE:
  * - caller of this function should acquire giant_lock as well
  * - caller of this function SHOULD call db_begin()/db_end() around this
+ *
+ * PREREQUISITE: giant_lock
+ * LOCKS: see peer_unset_pending_new_generation_by_fd(),
+ *	peer_fdpair_clear() and process_detach_peer() (dbq.mutex etc.)
+ * SLEEPS: maybe (dbq.mutex)
  */
 void
 peer_unset_process(struct peer *peer, const char *diag)
@@ -1548,6 +1702,11 @@ peer_unset_process(struct peer *peer, const char *diag)
 	peer->user = NULL;
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: peer::protocol_error_mutex
+ * SLEEPS: no
+ */
 void
 peer_record_protocol_error(struct peer *peer)
 {
@@ -1560,6 +1719,11 @@ peer_record_protocol_error(struct peer *peer)
 	    PROTOCOL_ERROR_MUTEX_DIAG);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: peer::protocol_error_mutex
+ * SLEEPS: no
+ */
 int
 peer_had_protocol_error(struct peer *peer)
 {
@@ -1596,6 +1760,10 @@ peer_get_jobs_ref(struct peer *peer)
 /*
  * NOTE: this shouldn't need db_begin()/db_end() calls at least for now,
  * because only externalized descriptor needs the calls.
+ *
+ * PREREQUISITE: giant_lock
+ * LOCKS: dbq.mutex etc. in process_close_file()
+ * SLEEPS: maybe (dbq.mutex)
  */
 void
 peer_fdpair_clear(struct peer *peer, const char *diag)
@@ -1657,6 +1825,10 @@ peer_fdpair_close_current(struct peer *peer)
 /*
  * NOTE: this shouldn't need db_begin()/db_end() calls at least for now,
  * because only externalized descriptor needs the calls.
+ *
+ * PREREQUISITE: giant_lock
+ * LOCKS: dbq.mutex etc. in process_close_file()
+ * SLEEPS: maybe (dbq.mutex)
  */
 void
 peer_fdpair_set_current(struct peer *peer, gfarm_int32_t fd, const char *diag)
@@ -1699,6 +1871,10 @@ peer_fdpair_get_saved(struct peer *peer, gfarm_int32_t *fdp)
 /*
  * NOTE: this shouldn't need db_begin()/db_end() calls at least for now,
  * because only externalized descriptor needs the calls.
+ *
+ * PREREQUISITE: giant_lock
+ * LOCKS: dbq.mutex etc. in process_close_file()
+ * SLEEPS: maybe (dbq.mutex)
  */
 gfarm_error_t
 peer_fdpair_save(struct peer *peer, const char *diag)
@@ -1726,6 +1902,10 @@ peer_fdpair_save(struct peer *peer, const char *diag)
 /*
  * NOTE: this shouldn't need db_begin()/db_end() calls at least for now,
  * because only externalized descriptor needs the calls.
+ *
+ * PREREQUISITE: giant_lock
+ * LOCKS: dbq.mutex etc. in process_close_file()
+ * SLEEPS: maybe (dbq.mutex)
  */
 gfarm_error_t
 peer_fdpair_restore(struct peer *peer, const char *diag)

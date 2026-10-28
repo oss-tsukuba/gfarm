@@ -51,6 +51,11 @@ struct watcher_event {
 
 static const char module_name[] = "watcher_module";
 
+/*
+ * PREREQUISITE: nothing (called from the watcher thread)
+ * LOCKS: watcher_event::mutex, thread_pool::mutex, thread_jobq::mutex
+ * SLEEPS: maybe (thrpool_add_job() waits while the job queue is full)
+ */
 static void
 watcher_event_callback(int events, int fd, void *closure,
 	const struct timeval *t)
@@ -152,6 +157,11 @@ watcher_event_is_readable(struct watcher_event *wev)
 	return ((wev->gfevent_happened & GFARM_EVENT_READ) != 0);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: watcher_event::mutex
+ * SLEEPS: no
+ */
 int
 watcher_event_is_active(struct watcher_event *wev)
 {
@@ -163,6 +173,11 @@ watcher_event_is_active(struct watcher_event *wev)
 	return (active);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: watcher_event::mutex
+ * SLEEPS: no
+ */
 void
 watcher_event_ack(struct watcher_event *wev)
 {
@@ -215,6 +230,11 @@ watcher_request_queue_get_fd(struct watcher_request_queue *wrq)
 	return (wrq->deq_fd);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: watcher_request_queue::mutex -> watcher_event::mutex
+ * SLEEPS: no
+ */
 static void
 watcher_request_enqueue(struct watcher_request_queue *wrq,
 	struct watcher_event *wev, const struct timeval *timeout,
@@ -258,6 +278,11 @@ watcher_request_enqueue(struct watcher_request_queue *wrq,
 	gfarm_mutex_unlock(&wrq->mutex, diag, "mutex");
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: watcher_request_queue::mutex
+ * SLEEPS: no
+ */
 static struct watcher_event *
 watcher_request_queue_dequeue(struct watcher_request_queue *wrq)
 {
@@ -301,6 +326,11 @@ struct watcher {
 	struct gfarm_event *control_gev;
 };
 
+/*
+ * PREREQUISITE: nothing (called from the watcher thread)
+ * LOCKS: watcher_request_queue::mutex
+ * SLEEPS: no
+ */
 static void
 watcher_control_callback(int events, int fd, void *closure,
 	const struct timeval *t)
@@ -421,6 +451,11 @@ watcher_alloc(int size, struct watcher **wp)
 	return (e);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: watcher_request_queue::mutex -> watcher_event::mutex
+ * SLEEPS: no
+ */
 void
 watcher_add_event(struct watcher *w, struct watcher_event *wev,
 	struct thread_pool *thrpool, void *(*handler)(void *), void *closure)
@@ -430,6 +465,11 @@ watcher_add_event(struct watcher *w, struct watcher_event *wev,
 	watcher_request_enqueue(&w->wrq, wev, NULL, thrpool, handler, closure);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: watcher_request_queue::mutex -> watcher_event::mutex
+ * SLEEPS: no
+ */
 void
 watcher_add_event_with_timeout(struct watcher *w, struct watcher_event *wev,
 	long timeout_millisec,

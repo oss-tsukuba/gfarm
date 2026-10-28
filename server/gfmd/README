@@ -3,14 +3,37 @@ locking hierarchy:
 	higher hierarchy should be locked later, unlocked earlier.
 	same hierarchy shouldn't be locked at once.
 
+	This lists only the major mutexes.  See doc/internal/ja/gfmd-internal.txt
+	(the mutex section) for details, including the dead_file_copy mutexes,
+	and the "LOCKS:" comments in the source code.
+
 	level	mutex
-	  1	giant_mutex
+	  1	giant_mutex (giant_lock())
 	  2	peer_table_mutex
-	  2 	dbq.mutex
+	  3	dfc_allq.mutex, host_busyq.mutex
+	  4	dbq.mutex, journal file mutex
+	  4	removal_pendingq.mutex, removal_finishedq.mutex
+	  4	abstract_host::mutex
+	  5	dfc->mutex, callout_module.mutex, and other leaf mutexes
 
 	i.e.
 	locking order must be:
-		giant -> (dbq OR peer_table)
-	unlocking order must be:
-		(dbq OR peer_table) -> giant
-	dbq.mutex and peer_table_mutex shouldn't be locked at once.
+		giant -> peer_table -> dbq
+			peer_free() calls db_begin()/db_end() while holding
+			peer_table_mutex.
+		giant -> journal file mutex
+			if giant_lock is needed while holding the journal file
+			mutex, unlock the journal file mutex first, then lock
+			giant and the journal file mutex in this order.
+		giant -> dfc_allq -> (dfc OR abstract_host)
+		giant -> host_busyq -> removal_pendingq -> dfc
+		giant -> host_busyq -> abstract_host
+		dfc_workq (removal_pendingq, removal_finishedq, host_busyq) -> dfc
+		giant -> abstract_host
+	unlocking order must be the reverse.
+	dfc_allq.mutex and dbq.mutex shouldn't be locked at once.
+
+	leaf mutexes, which must not be held while locking another mutex:
+		callout_module.mutex, dfc->mutex, watcher_event::mutex,
+		peer_closing_queue.mutex, total_disk_mutex,
+		dead_file_copy_scan.mutex

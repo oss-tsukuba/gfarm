@@ -64,6 +64,11 @@ static struct peer_watcher *back_channel_recv_watcher;
  * it's called by threads for back_channel_recv_watcher. XXX FIXME
  */
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: the locks of abstract_host_disconnect_request()
+ * SLEEPS: no
+ */
 static void
 gfs_client_status_disconnect_or_message(struct host *host,
 	struct peer *peer, const char *proto, const char *op,
@@ -80,7 +85,13 @@ gfs_client_status_disconnect_or_message(struct host *host,
 	}
 }
 
-/* host_receiver_lock() must be already called here by back_channel_main() */
+/*
+ * PREREQUISITE: abstract_host_receiver_lock()
+ * LOCKS: nothing
+ * SLEEPS: maybe (network I/O)
+ *
+ * host_receiver_lock() must be already called here by back_channel_main()
+ */
 static gfarm_error_t
 gfm_async_server_get_request(struct peer *peer, size_t size,
 	const char *diag, const char *format, ...)
@@ -95,6 +106,11 @@ gfm_async_server_get_request(struct peer *peer, size_t size,
 	return (e);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex -> peer_closing_queue.mutex
+ * SLEEPS: yes (abstract_host_sender_lock() and network I/O)
+ */
 static gfarm_error_t
 gfm_async_server_put_reply(struct host *host,
 	struct peer *peer, gfp_xdr_xid_t xid,
@@ -112,6 +128,11 @@ gfm_async_server_put_reply(struct host *host,
 	return (e);
 }
 
+/*
+ * PREREQUISITE: abstract_host_receiver_lock()
+ * LOCKS: nothing (async mode)
+ * SLEEPS: maybe (network I/O)
+ */
 static gfarm_error_t
 gfs_client_recv_result_and_error(struct peer *peer, struct host *host,
 	size_t size, gfarm_error_t *errcodep,
@@ -128,6 +149,11 @@ gfs_client_recv_result_and_error(struct peer *peer, struct host *host,
 	return (e);
 }
 
+/*
+ * PREREQUISITE: abstract_host_receiver_lock()
+ * LOCKS: nothing (async mode)
+ * SLEEPS: maybe (network I/O)
+ */
 static gfarm_error_t
 gfs_client_recv_result(struct peer *peer, struct host *host,
        size_t size, const char *diag, const char *format, ...)
@@ -150,6 +176,12 @@ gfs_client_recv_result(struct peer *peer, struct host *host,
 	return (errcode);
 }
 
+/*
+ * PREREQUISITE: abstract_host_receiver_lock()
+ * LOCKS: abstract_host::mutex, total_disk_mutex, replica_check_mutex,
+ *	or the locks of abstract_host_disconnect_request() on error
+ * SLEEPS: maybe (network I/O)
+ */
 static gfarm_int32_t
 gfs_client_status_result_common(void *p, void *arg, size_t size,
 	const char *proto_diag)
@@ -173,6 +205,11 @@ gfs_client_status_result_common(void *p, void *arg, size_t size,
 	return (e);
 }
 
+/*
+ * PREREQUISITE: abstract_host_receiver_lock()
+ * LOCKS: the locks of gfs_client_status_result_common()
+ * SLEEPS: maybe (network I/O)
+ */
 static gfarm_int32_t
 gfs_client_status_result(void *p, void *arg, size_t size)
 {
@@ -181,6 +218,11 @@ gfs_client_status_result(void *p, void *arg, size_t size)
 	return (gfs_client_status_result_common(p, arg, size, diag));
 }
 
+/*
+ * PREREQUISITE: abstract_host_receiver_lock()
+ * LOCKS: the locks of gfs_client_status_result_common()
+ * SLEEPS: maybe (network I/O)
+ */
 static gfarm_int32_t
 gfs_client_status2_result(void *p, void *arg, size_t size)
 {
@@ -189,7 +231,11 @@ gfs_client_status2_result(void *p, void *arg, size_t size)
 	return (gfs_client_status_result_common(p, arg, size, diag));
 }
 
-/* both giant_lock and peer_table_lock are held before calling this function */
+/*
+ * giant_lock is held before calling this function,
+ * via peer_closer() -> back_channel_async_peer_free()
+ * -> gfp_xdr_async_peer_free()
+ */
 static void
 gfs_client_status_free(void *p, void *arg)
 {
@@ -199,6 +245,11 @@ gfs_client_status_free(void *p, void *arg)
 #endif
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: the locks of gfm_client_channel_vsend_request_notimeout()
+ * SLEEPS: yes (abstract_host_sender_trylock() and network I/O)
+ */
 static gfarm_error_t
 gfs_client_send_request_notimeout(struct host *host,
 	struct peer *peer0, const char *diag,
@@ -222,7 +273,18 @@ gfs_client_send_request_notimeout(struct host *host,
 	return (e);
 }
 
-/* this function is called via callout */
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex -> peer_closing_queue.mutex,
+ *	abstract_host::mutex, callout_module.mutex, giant_lock,
+ *	peer_closing_queue.mutex,
+ *	and the locks of gfs_client_send_request_notimeout() and
+ *	abstract_host_disconnect_request()
+ * SLEEPS: yes (giant_lock, abstract_host_sender_trylock() without timeout,
+ *	and network I/O)
+ *
+ * this function is called via callout
+ */
 static void *
 gfs_client_status_request(void *arg)
 {
@@ -290,6 +352,11 @@ gfs_client_status_request(void *arg)
 	return (NULL);
 }
 
+/*
+ * PREREQUISITE: abstract_host_receiver_lock()
+ * LOCKS: dfc->mutex, removal_finishedq.mutex -> dfc->mutex
+ * SLEEPS: maybe (network I/O)
+ */
 static gfarm_int32_t
 gfs_client_fhremove_result(void *p, void *arg, size_t size)
 {
@@ -304,7 +371,15 @@ gfs_client_fhremove_result(void *p, void *arg, size_t size)
 	return (e);
 }
 
-/* both giant_lock and peer_table_lock are held before calling this function */
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: dfc->mutex, removal_finishedq.mutex -> dfc->mutex
+ * SLEEPS: no
+ *
+ * giant_lock is held before calling this function,
+ * via peer_closer() -> back_channel_async_peer_free()
+ * -> gfp_xdr_async_peer_free()
+ */
 static void
 gfs_client_fhremove_free(void *p, void *arg)
 {
@@ -327,6 +402,13 @@ struct gflog_reduced_state busy_state = GFLOG_REDUCED_STATE_INITIALIZER(
 	SAME_WARNING_DURATION,
 	SAME_WARNING_INTERVAL);
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: the locks of gfs_client_send_request_notimeout(),
+ *	dfc->mutex, host_busyq.mutex -> dfc->mutex,
+ *	removal_finishedq.mutex -> dfc->mutex
+ * SLEEPS: yes (abstract_host_sender_trylock() and network I/O)
+ */
 static void *
 gfs_client_fhremove_request(void *closure)
 {
@@ -358,6 +440,14 @@ gfs_client_fhremove_request(void *closure)
 	return (NULL);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: removal_pendingq.mutex -> dfc->mutex, abstract_host::mutex,
+ *	thread_pool::mutex, thread_jobq::mutex,
+ *	removal_finishedq.mutex -> dfc->mutex
+ * SLEEPS: yes (waits for removal_pendingq, and
+ *	thrpool_add_job_low_priority() waits while the job queue is full)
+ */
 static void *
 remover(void *closure)
 {
@@ -381,6 +471,12 @@ remover(void *closure)
 }
 
 /*
+ * PREREQUISITE: abstract_host_receiver_lock()
+ * LOCKS: giant_lock -> (peer::replication_mutex,
+ *	the locks of inode_replicated())
+ * SLEEPS: yes (network I/O, giant_lock, and db access
+ *	in inode_replicated())
+ *
  * GFS_PROTO_REPLICATION_REQUEST didn't exist before gfarm-2.4.0
  */
 static gfarm_int32_t
@@ -432,6 +528,12 @@ gfs_client_replication_request_result(void *p, void *arg, size_t size)
 }
 
 /*
+ * PREREQUISITE: abstract_host_receiver_lock()
+ * LOCKS: giant_lock -> (peer::replication_mutex,
+ *	the locks of inode_replicated())
+ * SLEEPS: yes (network I/O, giant_lock, and db access
+ *	in inode_replicated())
+ *
  * GFS_PROTO_REPLICATION_CKSUM_REQUEST didn't exist before gfarm-2.6.0
  */
 static gfarm_int32_t
@@ -479,7 +581,15 @@ gfs_client_replication_cksum_request_result(void *p, void *arg, size_t size)
 	return (e);
 }
 
-/* both giant_lock and peer_table_lock are held before calling this function */
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: peer::replication_mutex, the locks of inode_replicated()
+ * SLEEPS: maybe (db access in inode_replicated())
+ *
+ * giant_lock is held before calling this function,
+ * via peer_closer() -> back_channel_async_peer_free()
+ * -> gfp_xdr_async_peer_free()
+ */
 static void
 gfs_client_replication_request_free(void *p, void *arg)
 {
@@ -523,6 +633,14 @@ struct gfs_client_replication_request_arg {
 	gfarm_int32_t cksum_request_flags;
 };
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: the locks of gfs_client_send_request_notimeout(),
+ *	giant_lock -> (peer::replication_mutex,
+ *	the locks of inode_replicated())
+ * SLEEPS: yes (abstract_host_sender_trylock(), network I/O, giant_lock,
+ *	and db access in inode_replicated())
+ */
 static void *
 gfs_client_replication_request_request(void *closure)
 {
@@ -574,6 +692,11 @@ gfs_client_replication_request_request(void *closure)
 	return (NULL);
 }
 
+/*
+ * PREREQUISITE: nothing (but usually called with giant_lock held)
+ * LOCKS: thread_pool::mutex, thread_jobq::mutex
+ * SLEEPS: maybe (thrpool_add_job() waits while the job queue is full)
+ */
 gfarm_error_t
 async_back_channel_replication_cksum_request(char *srchost, int srcport,
 	struct host *dst, gfarm_ino_t ino, gfarm_int64_t gen,
@@ -614,6 +737,11 @@ async_back_channel_replication_cksum_request(char *srchost, int srcport,
 	return (GFARM_ERR_NO_ERROR);
 }
 
+/*
+ * PREREQUISITE: nothing (but usually called with giant_lock held)
+ * LOCKS: thread_pool::mutex, thread_jobq::mutex
+ * SLEEPS: maybe (thrpool_add_job() waits while the job queue is full)
+ */
 gfarm_error_t
 async_back_channel_replication_request(char *srchost, int srcport,
 	struct host *dst, gfarm_ino_t ino, gfarm_int64_t gen,
@@ -624,8 +752,12 @@ async_back_channel_replication_request(char *srchost, int srcport,
 }
 
 /*
- * SLEEPS: shoundn't
- *	but gfm_async_server_put_reply is calling peer_sender_lock() XXX FIXME
+ * PREREQUISITE: abstract_host_receiver_lock()
+ * LOCKS: giant_lock -> (peer::replication_mutex,
+ *	the locks of inode_replicated()),
+ *	abstract_host::mutex -> peer_closing_queue.mutex
+ * SLEEPS: yes (giant_lock, and abstract_host_sender_lock() and network I/O
+ *	in gfm_async_server_put_reply()), though it shouldn't.  XXX FIXME
  */
 static gfarm_error_t
 gfm_async_server_replication_result(struct host *host,
@@ -693,6 +825,11 @@ gfm_async_server_replication_result(struct host *host,
 	return (e2);
 }
 
+/*
+ * PREREQUISITE: abstract_host_receiver_lock()
+ * LOCKS: the locks of gfm_async_server_replication_result()
+ * SLEEPS: yes (see gfm_async_server_replication_result())
+ */
 static gfarm_error_t
 async_back_channel_protocol_switch(struct abstract_host *h,
 	struct peer *peer, int request, gfp_xdr_xid_t xid, size_t size,
@@ -757,6 +894,11 @@ sync_back_channel_free(struct abstract_host *h)
 }
 #endif
 
+/*
+ * PREREQUISITE: nothing (called from back_channel_recv_watcher)
+ * LOCKS: the locks of gfm_server_channel_main()
+ * SLEEPS: yes (see gfm_server_channel_main())
+ */
 static void *
 back_channel_main(void *arg)
 {
@@ -770,13 +912,31 @@ back_channel_main(void *arg)
 		));
 }
 
-/* giant_lock is held before calling this function */
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: the locks of the disconnect callbacks
+ *	(gfs_client_fhremove_free(), gfs_client_replication_request_free())
+ * SLEEPS: maybe (see gfs_client_replication_request_free())
+ *
+ * giant_lock is held before calling this function
+ */
 static void
 back_channel_async_peer_free(struct peer *peer, gfp_xdr_async_peer_t async)
 {
 	gfp_xdr_async_peer_free(async, peer);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: giant_lock, abstract_host::mutex,
+ *	the locks of host_disconnect_request(),
+ *	giant_lock -> (abstract_host::mutex -> peer_closing_queue.mutex,
+ *	dead_file_copy_scan.mutex, replica_check_mutex,
+ *	peer_closing_queue.mutex,
+ *	watcher_request_queue::mutex -> watcher_event::mutex),
+ *	callout_module.mutex, thread_pool::mutex, thread_jobq::mutex
+ * SLEEPS: yes (giant_lock, network I/O, and thrpool_add_job())
+ */
 static gfarm_error_t
 gfm_server_switch_back_channel_common(struct peer *peer, int from_client,
 	int is_async, int version, const char *diag)
@@ -889,6 +1049,11 @@ gfm_server_switch_back_channel_common(struct peer *peer, int from_client,
 
 #ifdef COMPAT_GFARM_2_3
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: the locks of gfm_server_switch_back_channel_common()
+ * SLEEPS: yes (see gfm_server_switch_back_channel_common())
+ */
 gfarm_error_t
 gfm_server_switch_back_channel(struct peer *peer, int from_client, int skip)
 {
@@ -906,6 +1071,12 @@ gfm_server_switch_back_channel(struct peer *peer, int from_client, int skip)
 
 #endif /* defined(COMPAT_GFARM_2_3) */
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: the locks of gfm_server_switch_back_channel_common()
+ * SLEEPS: yes (network I/O,
+ *	and see gfm_server_switch_back_channel_common())
+ */
 gfarm_error_t
 gfm_server_switch_async_back_channel(struct peer *peer, int from_client,
 	int skip)
