@@ -1360,7 +1360,11 @@ peer_reset_pending_new_generation_by_fd(struct peer *peer)
 /*
  * NOTE:
  * - caller of this function should acquire giant_lock as well
- * - caller of this function should NOT call db_begin()/db_end() around this
+ * - caller of this function SHOULD call db_begin()/db_end() around this
+ *
+ * PREREQUISITE: giant_lock
+ * LOCKS: dbq.mutex etc. in process_new_generation_by_fd_abort()
+ * SLEEPS: maybe (dbq.mutex)
  */
 void
 peer_unset_pending_new_generation_by_fd(

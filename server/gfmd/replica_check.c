@@ -766,9 +766,13 @@ replica_check_giant_lock_init()
 }
 
 /*
- * PREREQUISITE: nothing
- * LOCKS: giant_lock
- * SLEEPS: no
+ * PREREQUISITE: nothing (must not hold giant_lock)
+ * LOCKS: giant_lock -> config_var_mutex,
+ *	giant_lock -> dirquota_check_ctl.mutex, config_var_mutex
+ *	(only if tdirset is set)
+ * SLEEPS: yes (giant_lock, nanosleep in replica_check_giant_lock(),
+ *	cond_wait in gfarm_read_only_disabled_wait() during read_only mode)
+ *	(only if tdirset is set)
  */
 static void
 replication_info_free(struct replication_info *rep_info)

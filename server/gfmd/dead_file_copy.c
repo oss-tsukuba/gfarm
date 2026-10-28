@@ -203,7 +203,10 @@ dfc_workq_host_remove(struct dfc_workq *q, struct host *host, const char *diag)
 
 	gfarm_mutex_lock(&q->mutex, diag, "lock");
 
-	/* dfc_allq.mutex prevents dfc from being freed */
+	/*
+	 * a dfc on a workq is never freed, and q->mutex prevents it
+	 * from being dequeued
+	 */
 	for (dfc = q->q.workq_next; dfc != &q->q; dfc = next) {
 		next = dfc->workq_next;
 
@@ -294,9 +297,11 @@ void host_busyq_enqueue(struct dead_file_copy *);
 /*
  * PREREQUISITE: nothing
  * LOCKS: giant_lock
- *  -> (dbq.mutex, dfc_allq.mutex, host_busyq.mutex, host::back_channel_mutex)
+ *  -> (config_var_mutex, removal_finishedq.mutex -> dfc->mutex,
+ *	dfc_allq.mutex -> dfc->mutex, dbq.mutex, abstract_host::mutex,
+ *	host_busyq.mutex -> dfc->mutex, dfc->mutex)
  * SLEEPS: yes (giant_lock, dbq.mutex)
- *	but dfc_allq.mutex, host_busyq.mutex and host::back_channel_mutex
+ *	but dfc_allq.mutex, host_busyq.mutex and abstract_host::mutex
  *	won't be blocked while sleeping.
  */
 static void
@@ -362,9 +367,8 @@ removal_finalizer(void *arg)
  * check the policy whether it's ok to remove this obsolete replica or not.
  *
  * PREREQUISITE: giant_lock (at least for inode access)
- * LOCKS: maybe dfc_allq.mutex
- * SLEEPS: maybe, but no for now
- *	but dfc_allq.mutex won't be blocked while sleeping.
+ * LOCKS: nothing for now (may lock dfc_allq.mutex in future, see XXX below)
+ * SLEEPS: no for now
  *
  * the caller should check dfc->host is `valid' and `up' and `not busy'
  * before calling this function.
@@ -418,12 +422,16 @@ host_busyq_enqueue(struct dead_file_copy *dfc)
 
 /*
  * PREREQUISITE: nothing
- * LOCKS: giant_lock -> host_busyq.mutex -> removal_pendingq.mutex
- * SLEEPS: depends on whether dead_file_copy_is_removable() sleeps or not,
- *	but host_busyq.mutex and removal_pendingq.mutex
- *	won't be blocked while sleeping.
+ * LOCKS: giant_lock -> (config_var_mutex,
+ *	host_busyq.mutex -> (abstract_host::mutex, dfc->mutex,
+ *	removal_pendingq.mutex -> dfc->mutex,
+ *	and the locks of host_disconnect_request() via host_check_busy()))
+ * SLEEPS: yes (giant_lock), but no other lock is held while waiting for it.
+ *	dead_file_copy_is_removable() is called while holding
+ *	host_busyq.mutex, thus it must not sleep here.
  *
- * dead_file_copy_is_removable() needs giant_lock, and may sleep.
+ * dead_file_copy_is_removable() needs giant_lock.
+ * the default implementation doesn't sleep, but a private extension may.
  *
  * this function is called via callout.
  */
@@ -446,7 +454,10 @@ dead_file_copy_host_busyq_scan(void)
 
 	now = time(NULL);
 
-	/* dfc_allq.mutex prevents dfc from being freed */
+	/*
+	 * a dfc on host_busyq is never freed, and host_busyq.mutex
+	 * prevents it from being dequeued
+	 */
 	for (dfc = host_busyq.q.workq_next; dfc != &host_busyq.q; dfc = next) {
 		next = dfc->workq_next;
 
@@ -581,12 +592,16 @@ static unsigned long long remove_scan_total_calls = 0;
 
 /*
  * PREREQUISITE: giant_lock
- * LOCKS: dfc_allq.mutex, removal_pendingq.mutex
- * SLEEPS: maybe,
+ * LOCKS: dfc_allq.mutex -> (dfc->mutex, abstract_host::mutex),
+ *	removal_finishedq.mutex -> dfc->mutex,
+ *	removal_pendingq.mutex -> dfc->mutex, abstract_host::mutex,
+ *	and the locks of host_disconnect_request() via host_check_busy()
+ * SLEEPS: maybe (if dead_file_copy_is_removable() sleeps),
  *	but dfc_allq.mutex and removal_pendingq.mutex
  *	won't be blocked while sleeping.
  *
- * dead_file_copy_is_removable() needs giant_lock, and may sleep.
+ * dead_file_copy_is_removable() needs giant_lock.
+ * the default implementation doesn't sleep, but a private extension may.
  */
 static long long
 dead_file_copy_scan_deferred(gfarm_ino_t inum, struct host *host,
@@ -717,8 +732,11 @@ transparent_filter(struct dead_file_copy *dfc,
 
 /*
  * PREREQUISITE: giant_lock
- * LOCKS: dfc_allq.mutex, removal_pendingq.mutex
- * SLEEPS: maybe,
+ * LOCKS: dfc_allq.mutex -> (dfc->mutex, abstract_host::mutex),
+ *	removal_finishedq.mutex -> dfc->mutex,
+ *	removal_pendingq.mutex -> dfc->mutex, abstract_host::mutex,
+ *	and the locks of host_disconnect_request() via host_check_busy()
+ * SLEEPS: maybe (if dead_file_copy_is_removable() sleeps),
  *	but dfc_allq.mutex and removal_pendingq.mutex
  *	won't be blocked while sleeping.
  */
@@ -735,7 +753,7 @@ dead_file_copy_scan_deferred_all_run(void)
 
 /*
  * PREREQUISITE: nothing
- * LOCKS: removal_pendingq.mutex, host_busyq.mutex
+ * LOCKS: removal_pendingq.mutex -> dfc->mutex
  * SLEEPS: no
  */
 void
@@ -757,8 +775,11 @@ dead_file_copy_host_becomes_down(struct host *host)
 
 /*
  * PREREQUISITE: giant_lock
- * LOCKS: dfc_allq.mutex, removal_pendingq.mutex
- * SLEEPS: maybe,
+ * LOCKS: dfc_allq.mutex -> (dfc->mutex, abstract_host::mutex),
+ *	removal_finishedq.mutex -> dfc->mutex,
+ *	removal_pendingq.mutex -> dfc->mutex, abstract_host::mutex,
+ *	and the locks of host_disconnect_request() via host_check_busy()
+ * SLEEPS: maybe (if dead_file_copy_is_removable() sleeps),
  *	but dfc_allq.mutex and removal_pendingq.mutex
  *	won't be blocked while sleeping.
  */
@@ -787,11 +808,12 @@ dead_file_copy_host_becomes_up_run(struct host *host)
 
 /*
  * PREREQUISITE: giant_lock
- * LOCKS: dfc_allq.mutex, removal_pendingq.mutex, removal_finishedq.mutex,
- *	host_busyq.mutex, dbq.mutex
+ * LOCKS: removal_pendingq.mutex -> dfc->mutex,
+ *	removal_finishedq.mutex -> dfc->mutex,
+ *	dfc_allq.mutex -> dfc->mutex, dbq.mutex
  * SLEEPS: yes (dbq.mutex),
- *	but dfc_allq.mutex, removal_pendingq.mutex, removal_pendingq.mutex
- *	and host_busyq.mutex won't be blocked while sleeping.
+ *	but dfc_allq.mutex, removal_pendingq.mutex and removal_finishedq.mutex
+ *	won't be blocked while sleeping.
  */
 void
 dead_file_copy_host_removed(struct host *host)
@@ -853,8 +875,11 @@ inode_and_host_filter(struct dead_file_copy *dfc,
 
 /*
  * PREREQUISITE: giant_lock
- * LOCKS: dfc_allq.mutex, removal_pendingq.mutex
- * SLEEPS: maybe,
+ * LOCKS: dfc_allq.mutex -> (dfc->mutex, abstract_host::mutex),
+ *	removal_finishedq.mutex -> dfc->mutex,
+ *	removal_pendingq.mutex -> dfc->mutex, abstract_host::mutex,
+ *	and the locks of host_disconnect_request() via host_check_busy()
+ * SLEEPS: maybe (if dead_file_copy_is_removable() sleeps),
  *	but dfc_allq.mutex and removal_pendingq.mutex
  *	won't be blocked while sleeping.
  *
@@ -880,8 +905,11 @@ inode_filter(struct dead_file_copy *dfc,
 
 /*
  * PREREQUISITE: giant_lock
- * LOCKS: dfc_allq.mutex, removal_pendingq.mutex
- * SLEEPS: maybe,
+ * LOCKS: dfc_allq.mutex -> (dfc->mutex, abstract_host::mutex),
+ *	removal_finishedq.mutex -> dfc->mutex,
+ *	removal_pendingq.mutex -> dfc->mutex, abstract_host::mutex,
+ *	and the locks of host_disconnect_request() via host_check_busy()
+ * SLEEPS: maybe (if dead_file_copy_is_removable() sleeps),
  *	but dfc_allq.mutex and removal_pendingq.mutex
  *	won't be blocked while sleeping.
  *
@@ -1189,7 +1217,7 @@ dead_file_copy_mark_lost(
 
 /*
  * PREREQUISITE: nothing
- * LOCKS: dfc_allq.mutex, host::back_channel_mutex
+ * LOCKS: dfc_allq.mutex -> abstract_host::mutex
  * SLEEPS: no
  *
  * XXX
@@ -1223,7 +1251,7 @@ dead_file_copy_count_by_inode(gfarm_ino_t inum, gfarm_uint64_t igen,
 
 /*
  * PREREQUISITE: nothing
- * LOCKS: dfc_allq.mutex, host::back_channel_mutex
+ * LOCKS: dfc_allq.mutex -> abstract_host::mutex
  * SLEEPS: no
  *
  * XXX
@@ -1397,7 +1425,7 @@ dead_file_copy_new(gfarm_ino_t inum, gfarm_uint64_t igen, struct host *host)
 
 /*
  * PREREQUISITE: giant_lock
- * LOCKS: dfc_allq.mutex, dbq.mutex
+ * LOCKS: dfc_allq.mutex -> dfc->mutex, dbq.mutex
  * SLEEPS: yes (dbq.mutex)
  *	but dfc_allq.mutex won't be blocked while sleeping.
  *

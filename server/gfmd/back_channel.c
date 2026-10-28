@@ -189,7 +189,11 @@ gfs_client_status2_result(void *p, void *arg, size_t size)
 	return (gfs_client_status_result_common(p, arg, size, diag));
 }
 
-/* both giant_lock and peer_table_lock are held before calling this function */
+/*
+ * giant_lock is held before calling this function,
+ * via peer_closer() -> back_channel_async_peer_free()
+ * -> gfp_xdr_async_peer_free()
+ */
 static void
 gfs_client_status_free(void *p, void *arg)
 {
@@ -304,7 +308,15 @@ gfs_client_fhremove_result(void *p, void *arg, size_t size)
 	return (e);
 }
 
-/* both giant_lock and peer_table_lock are held before calling this function */
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: dfc->mutex, removal_finishedq.mutex -> dfc->mutex
+ * SLEEPS: no
+ *
+ * giant_lock is held before calling this function,
+ * via peer_closer() -> back_channel_async_peer_free()
+ * -> gfp_xdr_async_peer_free()
+ */
 static void
 gfs_client_fhremove_free(void *p, void *arg)
 {
@@ -479,7 +491,15 @@ gfs_client_replication_cksum_request_result(void *p, void *arg, size_t size)
 	return (e);
 }
 
-/* both giant_lock and peer_table_lock are held before calling this function */
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: peer::replication_mutex, the locks of inode_replicated()
+ * SLEEPS: maybe (db access in inode_replicated())
+ *
+ * giant_lock is held before calling this function,
+ * via peer_closer() -> back_channel_async_peer_free()
+ * -> gfp_xdr_async_peer_free()
+ */
 static void
 gfs_client_replication_request_free(void *p, void *arg)
 {
@@ -624,8 +644,12 @@ async_back_channel_replication_request(char *srchost, int srcport,
 }
 
 /*
- * SLEEPS: shoundn't
- *	but gfm_async_server_put_reply is calling peer_sender_lock() XXX FIXME
+ * PREREQUISITE: abstract_host_receiver_lock()
+ * LOCKS: giant_lock -> (peer::replication_mutex,
+ *	the locks of inode_replicated()),
+ *	abstract_host::mutex -> peer_closing_queue.mutex
+ * SLEEPS: yes (giant_lock, and abstract_host_sender_lock() and network I/O
+ *	in gfm_async_server_put_reply()), though it shouldn't.  XXX FIXME
  */
 static gfarm_error_t
 gfm_async_server_replication_result(struct host *host,

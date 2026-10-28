@@ -4171,8 +4171,8 @@ db_journal_apply_op(void *op_arg, gfarm_uint64_t seqnum,
 		return (GFARM_ERR_NO_ERROR);
 
 	/*
-	 * Since the giant lock must be taken preceeded by the journal
-	 * file mutex in order to avoid deadlock, we unlock the journal
+	 * Since the giant lock must be taken before the journal file
+	 * mutex in order to avoid deadlock, we unlock the journal
 	 * file mutex once, take the giant lock, and then lock the journal
 	 * file mutex again.
 	 */
@@ -4235,7 +4235,7 @@ end:
 	return (e);
 }
 
-/* PREREQUISITE: giant_lock */
+/* PREREQUISITE: nothing (must not hold giant_lock) */
 gfarm_error_t
 db_journal_read(struct journal_file_reader *reader, void *op_arg,
 	journal_post_read_op_t post_read_op, void *closure, int *eofp)

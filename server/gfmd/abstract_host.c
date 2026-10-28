@@ -195,7 +195,7 @@ abstract_host_is_up_unlocked(struct abstract_host *h)
 
 /*
  * PREREQUISITE: nothing
- * LOCKS: host::channel_mutex
+ * LOCKS: abstract_host::mutex
  * SLEEPS: no
  */
 int
@@ -211,7 +211,7 @@ abstract_host_is_up(struct abstract_host *h)
 }
 
 /*
- * PREREQUISITE: host::channel_mutex
+ * PREREQUISITE: abstract_host::mutex
  * LOCKS: nothing
  * SLEEPS: no
  */
@@ -429,10 +429,11 @@ abstract_host_receiver_unlock(struct abstract_host *host, struct peer *peer)
 
 /*
  * PREREQUISITE: giant_lock
- * LOCKS: host::channel_mutex, dfc_allq.mutex, removal_pendingq.mutex
- * SLEEPS: maybe (see the comment of dead_file_copy_host_becomes_up())
- *	but host::channel_mutex, dfc_allq.mutex and removal_pendingq.mutex
- *	won't be blocked while sleeping.
+ * LOCKS: abstract_host::mutex -> peer_closing_queue.mutex,
+ *	and after abstract_host::mutex is unlocked,
+ *	dead_file_copy_scan.mutex and replica_check_mutex (host),
+ *	or mdhost::mutex (mdhost)
+ * SLEEPS: no
  */
 void
 abstract_host_set_peer(struct abstract_host *h, struct peer *p, int version)
@@ -457,7 +458,7 @@ abstract_host_set_peer(struct abstract_host *h, struct peer *p, int version)
 }
 
 /*
- * PREREQUISITE: host::channel_mutex
+ * PREREQUISITE: abstract_host::mutex
  * LOCKS: nothing
  * SLEEPS: no
  *
@@ -473,8 +474,8 @@ abstract_host_break_locks(struct abstract_host *host)
 }
 
 /*
- * PREREQUISITE: host::channel_mutex
- * LOCKS: removal_pendingq.mutex, host_busyq.mutex
+ * PREREQUISITE: abstract_host::mutex
+ * LOCKS: callout_module.mutex (host)
  * SLEEPS: no
  */
 static void

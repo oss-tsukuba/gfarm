@@ -1602,7 +1602,11 @@ dirquota_invalidate(struct dirset *tdirset)
 	}
 }
 
-/* PREREQUISITE: giant_lock or config_var_lock*/
+/*
+ * PREREQUISITE: giant_lock or config_var_mutex
+ * LOCKS: dirquota_check_ctl.mutex
+ * SLEEPS: no
+ */
 void
 dirquota_fixup_schedule(void)
 {

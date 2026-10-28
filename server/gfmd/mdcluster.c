@@ -216,7 +216,11 @@ mdcluster_enter(const char *name, struct mdcluster **cpp)
 	return (GFARM_ERR_NO_ERROR);
 }
 
-/* PREREQUISITE: mdhost_mutex_lock */
+/*
+ * PREREQUISITE: mdhost::mutex, unless the mdhost is not registered yet
+ * LOCKS: mdcluster_hash_mutex, mdcluster::mutex
+ * SLEEPS: no
+ */
 gfarm_error_t
 mdcluster_get_or_create_by_mdhost(struct mdhost *h)
 {
@@ -252,7 +256,11 @@ mdcluster_get_or_create_by_mdhost(struct mdhost *h)
 	return (GFARM_ERR_NO_ERROR);
 }
 
-/* PREREQUISITE: mdhost_mutex_lock */
+/*
+ * PREREQUISITE: mdhost::mutex
+ * LOCKS: mdcluster::mutex
+ * SLEEPS: no
+ */
 void
 mdcluster_remove_mdhost(struct mdhost *h)
 {

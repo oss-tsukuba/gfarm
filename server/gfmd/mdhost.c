@@ -733,7 +733,7 @@ mdhost_self_is_master(void)
 /*
  * PREREQUISITE: nothing
  * LOCKS:
- *  - abstract_host_mutex
+ *  - abstract_host::mutex
  *    in abstract_host_disconnect_request()
  *  - nothing
  *    in mdhost_unset_peer()

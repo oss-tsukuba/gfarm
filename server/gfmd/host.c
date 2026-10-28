@@ -733,7 +733,7 @@ host_is_up_unlocked(struct host *h)
 
 /*
  * PREREQUISITE: nothing
- * LOCKS: host::acstract_host::mutex
+ * LOCKS: abstract_host::mutex
  * SLEEPS: no
  */
 int
@@ -793,7 +793,7 @@ host_is_busy(struct host *h)
 
 /*
  * PREREQUISITE: nothing
- * LOCKS: host::acstract_host::mutex
+ * LOCKS: abstract_host::mutex
  * SLEEPS: no
  */
 int
@@ -811,7 +811,7 @@ host_is_readonly(struct host *h)
 
 /*
  * PREREQUISITE: giant_lock (for h->hi)
- * LOCKS: host::acstract_host::mutex
+ * LOCKS: abstract_host::mutex
  * SLEEPS: no
  */
 static void
@@ -826,7 +826,7 @@ host_is_readonly_update(struct host *h)
 
 /*
  * PREREQUISITE: nothing
- * LOCKS: host::acstract_host::mutex
+ * LOCKS: abstract_host::mutex
  * SLEEPS: no
  */
 int
@@ -844,7 +844,7 @@ host_is_file_removable(struct host *h)
 
 /*
  * PREREQUISITE: giant_lock (for gfarm_get_minimum_free_disk_space())
- * LOCKS: host::acstract_host::mutex
+ * LOCKS: abstract_host::mutex
  * SLEEPS: no
  */
 static int
@@ -882,7 +882,7 @@ host_is_disk_available_common(struct host *h, gfarm_off_t size,
 
 /*
  * PREREQUISITE: giant_lock (for gfarm_get_minimum_free_disk_space())
- * LOCKS: host::acstract_host::mutex
+ * LOCKS: abstract_host::mutex
  * SLEEPS: no
  */
 int
@@ -900,7 +900,7 @@ host_is_disk_available(struct host *h, gfarm_off_t size)
  * GFARM_ERR_NO_SPACE before the first status report.
  *
  * PREREQUISITE: giant_lock (for gfarm_get_minimum_free_disk_space())
- * LOCKS: host::acstract_host::mutex
+ * LOCKS: abstract_host::mutex
  * SLEEPS: no
  */
 int
@@ -1019,7 +1019,7 @@ host_use_real_disk_space(int flags)
 }
 
 /*
- * PREREQUISITE: host::acstract_host::mutex
+ * PREREQUISITE: abstract_host::mutex
  * LOCKS: nothing
  * SLEEPS: no
  */
@@ -1031,7 +1031,7 @@ host_readonly_behaves_no_disk_space(struct host *h, int host_status_flags)
 }
 
 /*
- * PREREQUISITE: host::acstract_host::mutex
+ * PREREQUISITE: abstract_host::mutex
  * LOCKS: nothing
  * SLEEPS: no
  */
@@ -1049,7 +1049,7 @@ host_status_get_unlocked(struct host *host, struct host_status *status,
 #if 0
 /*
  * PREREQUISITE: nothing
- * LOCKS: host::acstract_host::mutex
+ * LOCKS: abstract_host::mutex
  * SLEEPS: no
  */
 void
@@ -1066,7 +1066,7 @@ host_status_get(struct host *host, struct host_status *status,
 
 /*
  * PREREQUISITE: nothing
- * LOCKS: host::acstract_host::mutex
+ * LOCKS: abstract_host::mutex, total_disk_mutex, replica_check_mutex
  * SLEEPS: no
  */
 void
@@ -1154,11 +1154,9 @@ host_status_update_disk_usage(struct host *host, gfarm_off_t filesize)
 }
 
 /*
- * PREREQUISITE: giant_lock
- * LOCKS: abstract_host::mutex, dfc_allq.mutex, removal_pendingq.mutex
- * SLEEPS: maybe (see the comment of dead_file_copy_host_becomes_up())
- *	but abstract_host::mutex, dfc_allq.mutex and removal_pendingq.mutex
- *	won't be blocked while sleeping.
+ * PREREQUISITE: abstract_host::mutex
+ * LOCKS: nothing
+ * SLEEPS: no
  */
 static void
 host_set_peer_locked(struct abstract_host *ah, struct peer *p)
@@ -1183,7 +1181,7 @@ host_set_peer_unlocked(struct abstract_host *ah, struct peer *p)
 
 /*
  * PREREQUISITE: abstract_host::mutex
- * LOCKS: removal_pendingq.mutex, host_busyq.mutex
+ * LOCKS: callout_module.mutex
  * SLEEPS: no
  */
 static void
@@ -1232,20 +1230,12 @@ host_disabled(struct abstract_host *ah, struct peer *peer)
  * LOCKS:
  *  - abstract_host::mutex
  *    in abstract_host_disconnect_request()
- *    in abstract_host::ops::disable() == host_disable()
- *    which is called from abstract_host::ops::disable() == host_disable()
- *  - callout_module::mutex
+ *  - abstract_host::mutex -> callout_module.mutex
  *    in host_unset_peer()
  *    which is called from abstract_host_peer_unset()
  *    which is called from abstract_host_disconnect_request()
- *  - total_disk_mutex
+ *  - abstract_host::mutex -> total_disk_mutex
  *    in abstract_host::ops::disable() == host_disable()
- *    which is called from abstract_host::ops::disable() == host_disable()
- *  - replica_check_mutex and config_var_mutex
- *    in replica_check_start_host_down()
- *    which is called from abstract_host::ops::disable() == host_disable()
- *  - removal_pendingq:mutex -> dead_file_copy::mutex
- *    in abstract_host::ops::disabled() == host_disabled()
  *    which is called from abstract_host_disconnect_request()
  *  - peer_closing_queue.mutex
  *    in peer_del_ref()
@@ -2343,7 +2333,9 @@ gfm_server_statfs(struct peer *peer, int from_client, int skip)
  * A generic function to select filesystem nodes.
  * NOTE: only valid hosts are returned.
  *
- * REQUISITE: giant_lock
+ * PREREQUISITE: giant_lock
+ * LOCKS: abstract_host::mutex, and the locks of (*do_record)()
+ * SLEEPS: no, unless (*do_record)() sleeps
  */
 gfarm_error_t
 host_iterate(
