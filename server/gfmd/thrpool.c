@@ -48,6 +48,12 @@ thrjobq_set_jobq_low_priority_limit(struct thread_jobq *q, int limit)
 	q->low_priority_limit = limit;
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: thread_jobq::mutex
+ * SLEEPS: maybe (waits for nonfull while the job queue is full,
+ *	but thread_jobq::mutex won't be blocked while sleeping)
+ */
 void
 thrjobq_add_job(struct thread_jobq *q, int low_priority,
 	void *(*thread_main)(void *), void *arg)
@@ -70,6 +76,12 @@ thrjobq_add_job(struct thread_jobq *q, int low_priority,
 	gfarm_mutex_unlock(&q->mutex, diag, "thrjobq");
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: thread_jobq::mutex
+ * SLEEPS: yes (waits for nonempty while the job queue is empty,
+ *	but thread_jobq::mutex won't be blocked while sleeping)
+ */
 void
 thrjobq_get_job(struct thread_jobq *q, struct thread_job *job)
 {
@@ -129,6 +141,12 @@ thrpool_new(int pool_size, int queue_length, const char *pool_name)
 	return (p);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: thread_pool::mutex, thread_jobq::mutex,
+ *	and the locks of the jobs
+ * SLEEPS: yes (waits for a job, and the jobs may sleep)
+ */
 void *
 thrpool_worker(void *arg)
 {
@@ -156,6 +174,11 @@ thrpool_worker(void *arg)
 }
 
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: thread_pool::mutex, thread_jobq::mutex
+ * SLEEPS: maybe (waits while the job queue is full)
+ */
 static void
 thrpool_add_job0(struct thread_pool *p, int low_priority,
 	void *(*thread_main)(void *), void *arg)
@@ -180,12 +203,22 @@ thrpool_add_job0(struct thread_pool *p, int low_priority,
 	thrjobq_add_job(&p->jobq, low_priority, thread_main, arg);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: thread_pool::mutex, thread_jobq::mutex
+ * SLEEPS: maybe (waits while the job queue is full)
+ */
 void
 thrpool_add_job(struct thread_pool *p, void *(*thread_main)(void *), void *arg)
 {
 	thrpool_add_job0(p, 0, thread_main, arg);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: thread_pool::mutex, thread_jobq::mutex
+ * SLEEPS: maybe (waits while the job queue reaches low_priority_limit)
+ */
 void
 thrpool_add_job_low_priority(struct thread_pool *p,
 	void *(*thread_main)(void *), void *arg)
@@ -199,6 +232,11 @@ thrpool_set_jobq_low_priority_limit(struct thread_pool *p, int n)
 	thrjobq_set_jobq_low_priority_limit(&p->jobq, n);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: all_thrpools_mutex, thread_pool::mutex
+ * SLEEPS: no
+ */
 void
 thrpool_info(void)
 {

@@ -87,6 +87,11 @@ mdcluster_hash_mutex_unlock(const char *diag)
 		   MDCLUSTER_HASH_MUTEX_DIAG);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: mdcluster::mutex
+ * SLEEPS: no
+ */
 const char *
 mdcluster_get_name(struct mdcluster *c)
 {
@@ -99,7 +104,14 @@ mdcluster_get_name(struct mdcluster *c)
 	return (name);
 }
 
-/* need to call mdcluster_mutex_unlock */
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: mdcluster_hash_mutex, mdcluster::mutex
+ *	(mdcluster::mutex is kept locked on return, if found)
+ * SLEEPS: no
+ *
+ * need to call mdcluster_mutex_unlock
+ */
 static struct mdcluster *
 mdcluster_lookup_internal(const char *name, const char *diag)
 {
@@ -119,7 +131,14 @@ mdcluster_lookup_internal(const char *name, const char *diag)
 	}
 }
 
-/* need to call mdcluster_mutex_unlock */
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: mdcluster_hash_mutex, mdcluster::mutex
+ *	(mdcluster::mutex is kept locked on return, if found)
+ * SLEEPS: no
+ *
+ * need to call mdcluster_mutex_unlock
+ */
 static struct mdcluster *
 mdcluster_lookup(const char *name, const char *diag)
 {
@@ -149,7 +168,14 @@ mdcluster_new(char *name)
 	return (c);
 }
 
-/* need to call mdcluster_mutex_unlock */
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: mdcluster_hash_mutex, mdcluster::mutex
+ *	(mdcluster::mutex is kept locked on return, if cpp != NULL)
+ * SLEEPS: no
+ *
+ * need to call mdcluster_mutex_unlock
+ */
 static gfarm_error_t
 mdcluster_enter(const char *name, struct mdcluster **cpp)
 {

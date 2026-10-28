@@ -193,6 +193,10 @@ static gfarm_uint64_t retry_num_total;
 /*
  * 0: The replica should not be removed.
  * 1: The replica may be removed. (try inode_remove_replica_protected)
+ *
+ * PREREQUISITE: giant_lock
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: no
  */
 static int
 replica_check_remove_grace_is_over(struct inode *inode,
@@ -253,6 +257,13 @@ replica_check_remove_grace_disabled(struct inode *inode,
 	return (1); /* remove all surplus replicas immediately */
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: abstract_host::mutex, replica_check_ctrl_mutex,
+ *	and the locks of inode_remove_replica_protected()
+ *	(config_var_mutex, dbq.mutex, dead_file_copy related mutexes, ...)
+ * SLEEPS: yes (dbq.mutex)
+ */
 static gfarm_error_t
 replica_check_remove_replicas(struct inode *inode,
 	int n_srcs, struct host **srcs, struct replication_info *info)
@@ -375,7 +386,17 @@ replica_check_remove_replicas(struct inode *inode,
 	return (e); /* GFARM_ERR_FILE_BUSY: retry */
 }
 
-/* REPLICA_CHECK_FAIL_* and INODE_REP_FAIL_* are OR-ed into *failp */
+/*
+ * REPLICA_CHECK_FAIL_* and INODE_REP_FAIL_* are OR-ed into *failp
+ *
+ * PREREQUISITE: giant_lock
+ * LOCKS: config_var_mutex, dbq.mutex, replica_check_ctrl_mutex,
+ *	and the locks of inode_schedule_replication()
+ *	(abstract_host::mutex, the mutexes of back_channel_send_thread_pool,
+ *	...) and replica_check_remove_replicas()
+ * SLEEPS: yes (dbq.mutex, and inode_replication_request() may wait for
+ *	the job queue of back_channel_send_thread_pool to become non-full)
+ */
 static gfarm_error_t
 replica_check_fix(struct replication_info *info, int *failp)
 {
@@ -490,6 +511,11 @@ replica_check_fix(struct replication_info *info, int *failp)
 	return (e);
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: nothing
+ * SLEEPS: no
+ */
 static void
 replica_check_desired_set(
 	struct inode *dir_ino, struct inode *file_ino,
@@ -526,6 +552,11 @@ replica_check_stack_init(void)
 	return (1);
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: nothing
+ * SLEEPS: no
+ */
 static void
 replica_check_stack_push(struct inode *dir_ino, struct inode *file_ino,
 	struct dirset *tdirset)
@@ -574,6 +605,11 @@ static struct rep_prioq rep_prioq = {
 
 int rep_prioq_count_max = 0;
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: rep_prioq.mutex
+ * SLEEPS: no
+ */
 static int
 replica_check_queue_count(const char *diag) {
 	int count;
@@ -594,6 +630,11 @@ replica_check_queue_is_full(const char *diag) {
 	return (replica_check_queue_count(diag) > REP_PRIOQ_MAX);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: rep_prioq.mutex
+ * SLEEPS: no
+ */
 static void
 replica_check_enqueue_internal(struct replication_info *info, const char *diag)
 {
@@ -694,6 +735,13 @@ sleep_time_update(int *varp, int nanosec)
 	*varp = nanosec;
 }
 
+/*
+ * PREREQUISITE: nothing (must not hold giant_lock)
+ * LOCKS: giant_lock -> config_var_mutex,
+ *	config_var_mutex (while giant_lock is temporarily released)
+ * SLEEPS: yes (giant_lock, nanosleep, and cond_wait in
+ *	gfarm_read_only_disabled_wait() during read_only mode)
+ */
 static void
 replica_check_giant_lock(void)
 {
@@ -809,6 +857,15 @@ replica_check_count_failures(int fail)
 		fewer_num_total++;
 }
 
+/*
+ * PREREQUISITE: nothing (must not hold giant_lock)
+ * LOCKS: giant_lock -> (the locks of replica_check_fix()),
+ *	replica_check_ctrl_mutex,
+ *	and the locks of replica_check_priority_task()
+ *	(only if !is_priority_task)
+ * SLEEPS: yes (giant_lock, nanosleep for retry,
+ *	and the sleeps of replica_check_giant_lock() and replica_check_fix())
+ */
 static gfarm_error_t
 replica_check_fix_retry(struct replication_info *info, int is_priority_task,
 	int *stopped)
@@ -862,6 +919,12 @@ replica_check_fix_retry(struct replication_info *info, int is_priority_task,
 	return (e);
 }
 
+/*
+ * PREREQUISITE: nothing (must not hold giant_lock)
+ * LOCKS: rep_prioq.mutex,
+ *	and the locks of replica_check_fix_retry() and replication_info_free()
+ * SLEEPS: yes (see replica_check_fix_retry() and replication_info_free())
+ */
 static void
 replica_check_priority_task()
 {
@@ -889,6 +952,13 @@ replica_check_priority_task()
 static gfarm_ino_t info_inum, info_table_size;
 static time_t info_time_start;
 
+/*
+ * PREREQUISITE: nothing (must not hold giant_lock)
+ * LOCKS: giant_lock -> (config_var_mutex, replica_check_ctrl_mutex),
+ *	and the locks of replica_check_priority_task(),
+ *	replica_check_fix_retry() and replication_info_free()
+ * SLEEPS: yes (see replica_check_giant_lock() and replica_check_fix_retry())
+ */
 static int
 replica_check_main_dir(gfarm_ino_t inum, gfarm_ino_t *countp, int *stopped)
 {
@@ -971,6 +1041,12 @@ replica_check_main_dir(gfarm_ino_t inum, gfarm_ino_t *countp, int *stopped)
 
 #define ENABLE_STR(b) ((b) ? "enable" : "disable")
 
+/*
+ * PREREQUISITE: nothing (must not hold giant_lock)
+ * LOCKS: giant_lock -> config_var_mutex, config_var_mutex,
+ *	replica_check_ctrl_mutex, and the locks of replica_check_main_dir()
+ * SLEEPS: yes (see replica_check_giant_lock() and replica_check_main_dir())
+ */
 static int
 replica_check_main(void)
 {
@@ -1076,7 +1152,13 @@ replica_check_main(void)
 	return (need_to_retry);
 }
 
-/* this function is called from sigs_handler() in gfmd.c */
+/*
+ * this function is called from sigs_handler() in gfmd.c
+ *
+ * PREREQUISITE: nothing (must not hold giant_lock)
+ * LOCKS: rep_prioq.mutex, giant_lock -> config_var_mutex
+ * SLEEPS: yes (see replica_check_giant_lock())
+ */
 void
 replica_check_info(void)
 {
@@ -1149,7 +1231,14 @@ replica_check_targets_init(void)
 	return (1);
 }
 
-/* do not call giant_lock() in this */
+/*
+ * do not call giant_lock() in this
+ *
+ * PREREQUISITE: replica_check_mutex
+ *	(or nothing in replica_check_init() before the thread starts)
+ * LOCKS: nothing
+ * SLEEPS: no
+ */
 static void
 replica_check_targets_add(time_t sec)
 {
@@ -1172,8 +1261,14 @@ replica_check_targets_add(time_t sec)
 #endif
 }
 
-/* do not call giant_lock() in this */
-/* next target is not deleted */
+/*
+ * do not call giant_lock() in this
+ * next target is not deleted
+ *
+ * PREREQUISITE: replica_check_mutex
+ * LOCKS: nothing
+ * SLEEPS: no
+ */
 static int
 replica_check_targets_next(struct timeval *next, const struct timeval *now,
 	int minimum_interval)
@@ -1229,6 +1324,11 @@ replica_check_targets_next(struct timeval *next, const struct timeval *now,
 	return (1);
 }
 
+/*
+ * PREREQUISITE: replica_check_mutex
+ * LOCKS: nothing
+ * SLEEPS: no
+ */
 static void
 replica_check_targets_del(void)
 {
@@ -1237,6 +1337,12 @@ replica_check_targets_del(void)
 	targets_num--;
 }
 
+/*
+ * PREREQUISITE: replica_check_mutex
+ * LOCKS: nothing
+ * SLEEPS: yes (cond_timedwait on replica_check_cond,
+ *	replica_check_mutex is released while waiting)
+ */
 static int
 replica_check_timedwait(
 	const struct timeval *tv, const struct timeval *now, const char *diag)
@@ -1253,6 +1359,13 @@ replica_check_timedwait(
 	    &ts, diag, REPLICA_CHECK_DIAG));
 }
 
+/*
+ * PREREQUISITE: nothing (must not hold giant_lock)
+ * LOCKS: config_var_mutex, replica_check_mutex
+ * SLEEPS: yes (cond_wait/cond_timedwait on replica_check_cond,
+ *	and sleep(3) for gfarm_replica_check_minimum_interval
+ *	without holding replica_check_mutex)
+ */
 static void
 replica_check_cond_wait(void)
 {
@@ -1319,6 +1432,11 @@ replica_check_cond_wait(void)
 	gfarm_mutex_unlock(&replica_check_mutex, diag, REPLICA_CHECK_DIAG);
 }
 
+/*
+ * PREREQUISITE: nothing (must not hold replica_check_mutex)
+ * LOCKS: replica_check_mutex
+ * SLEEPS: no
+ */
 static void
 replica_check_cond_signal(const char *diag, long sec)
 {
@@ -1341,6 +1459,11 @@ replica_check_cond_signal(const char *diag, long sec)
 	gfarm_mutex_unlock(&replica_check_mutex, diag, REPLICA_CHECK_DIAG);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: replica_check_mutex
+ * SLEEPS: no
+ */
 void
 replica_check_start_host_up(void)
 {
@@ -1349,6 +1472,11 @@ replica_check_start_host_up(void)
 	replica_check_cond_signal(diag, 0);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: config_var_mutex, replica_check_mutex
+ * SLEEPS: no
+ */
 void
 replica_check_start_host_down(void)
 {
@@ -1359,6 +1487,11 @@ replica_check_start_host_down(void)
 	/* NOTE: execute replica_check_main() twice after restarting gfsd */
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: replica_check_mutex
+ * SLEEPS: no
+ */
 void
 replica_check_start_xattr_update(void)
 {
@@ -1367,6 +1500,11 @@ replica_check_start_xattr_update(void)
 	replica_check_cond_signal(diag, 0);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: replica_check_mutex
+ * SLEEPS: no
+ */
 void
 replica_check_start_move(void)
 {
@@ -1375,6 +1513,11 @@ replica_check_start_move(void)
 	replica_check_cond_signal(diag, 0);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: replica_check_mutex
+ * SLEEPS: no
+ */
 void
 replica_check_start_rep_request_failed(void)
 {
@@ -1383,6 +1526,11 @@ replica_check_start_rep_request_failed(void)
 	replica_check_cond_signal(diag, 0);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: replica_check_mutex
+ * SLEEPS: no
+ */
 void
 replica_check_start_rep_result_failed(void)
 {
@@ -1391,6 +1539,11 @@ replica_check_start_rep_result_failed(void)
 	replica_check_cond_signal(diag, 0);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: replica_check_mutex
+ * SLEEPS: no
+ */
 void
 replica_check_start_fsngroup_modify(void)
 {
@@ -1399,6 +1552,11 @@ replica_check_start_fsngroup_modify(void)
 	replica_check_cond_signal(diag, 60);  /* 60 sec. */
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: replica_check_mutex
+ * SLEEPS: no
+ */
 void
 replica_check_start_host_is_not_busy(void)
 {
@@ -1419,6 +1577,11 @@ static int replica_check_remove = DISABLE;
 static int replica_check_reduced_log = DISABLE;
 static int is_running = 0;
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: replica_check_ctrl_mutex
+ * SLEEPS: no
+ */
 static int
 replica_check_is_running(void)
 {
@@ -1434,6 +1597,11 @@ replica_check_is_running(void)
 	return (is);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: replica_check_ctrl_mutex
+ * SLEEPS: no
+ */
 static void
 replica_check_is_running_update(int is)
 {
@@ -1446,7 +1614,13 @@ replica_check_is_running_update(int is)
 	    REPLICA_CHECK_CTRL_DIAG);
 }
 
-/* MAINCTRL */
+/*
+ * MAINCTRL
+ *
+ * PREREQUISITE: nothing (must not hold replica_check_mutex)
+ * LOCKS: replica_check_ctrl_mutex -> replica_check_mutex
+ * SLEEPS: no
+ */
 static void
 replica_check_ctrl_set(int ctrl)
 {
@@ -1469,6 +1643,11 @@ replica_check_ctrl_set(int ctrl)
 }
 
 /* MAINCTRL */
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: replica_check_ctrl_mutex
+ * SLEEPS: no
+ */
 static int
 replica_check_ctrl_enabled(void)
 {
@@ -1505,6 +1684,11 @@ replica_check_ctrl_wait(void)
 }
 #endif
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: replica_check_ctrl_mutex
+ * SLEEPS: no
+ */
 static void
 replica_check_remove_set(int ctrl)
 {
@@ -1517,6 +1701,11 @@ replica_check_remove_set(int ctrl)
 	    REPLICA_CHECK_CTRL_DIAG);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: replica_check_ctrl_mutex
+ * SLEEPS: no
+ */
 static int
 replica_check_remove_enabled(void)
 {
@@ -1532,6 +1721,11 @@ replica_check_remove_enabled(void)
 	return (ctrl == ENABLE);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: replica_check_ctrl_mutex
+ * SLEEPS: no
+ */
 static void
 replica_check_reduced_log_set(int ctrl)
 {
@@ -1544,6 +1738,11 @@ replica_check_reduced_log_set(int ctrl)
 	    REPLICA_CHECK_CTRL_DIAG);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: replica_check_ctrl_mutex
+ * SLEEPS: no
+ */
 static int
 replica_check_reduced_log_enabled(void)
 {
@@ -1580,6 +1779,11 @@ replica_check_ctrl_string(gfarm_int32_t ctrl)
 	}
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: giant_lock -> replica_check_ctrl_mutex -> replica_check_mutex
+ * SLEEPS: yes (giant_lock, network I/O)
+ */
 gfarm_error_t
 gfm_server_replica_check_ctrl(struct peer *peer, int from_client, int skip)
 {
@@ -1647,6 +1851,11 @@ replica_check_status_target_string(gfarm_int32_t status_target)
 	}
 }
 
+/*
+ * PREREQUISITE: giant_lock (for info_time_start)
+ * LOCKS: replica_check_ctrl_mutex
+ * SLEEPS: no
+ */
 static gfarm_int32_t
 replica_check_status_mainctrl(void) {
 	gfarm_int32_t rv;
@@ -1667,6 +1876,11 @@ replica_check_status_mainctrl(void) {
 	return (rv);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: giant_lock -> replica_check_ctrl_mutex
+ * SLEEPS: yes (giant_lock, network I/O)
+ */
 gfarm_error_t
 gfm_server_replica_check_status(struct peer *peer, int from_client, int skip)
 {
@@ -1723,6 +1937,14 @@ gfm_server_replica_check_status(struct peer *peer, int from_client, int skip)
 /* workaround for #406 - obsolete replicas remain existing */
 #define DFC_SCAN_INTERVAL 21600 /* 6 hours */
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: config_var_mutex, replica_check_ctrl_mutex,
+ *	giant_lock -> dead_file_copy_scan.mutex,
+ *	and the locks of replica_check_cond_wait(), replica_check_main(),
+ *	replica_check_priority_task() and replica_check_cond_signal()
+ * SLEEPS: yes (this is the replica_check thread main loop)
+ */
 static void *
 replica_check_thread(void *arg)
 {

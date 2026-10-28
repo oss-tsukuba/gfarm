@@ -127,6 +127,11 @@ quota_metadata_softlimit_exceed(struct quota_metadata *q, int *need_db_update)
 	    q->limit.soft.phy_num, need_db_update);
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: config_var_mutex, dbq.mutex (only if the DB needs to be updated)
+ * SLEEPS: yes (dbq.mutex)
+ */
 static void
 quota_softlimit_exceed_user(struct quota *q, struct user *u)
 {
@@ -143,6 +148,11 @@ quota_softlimit_exceed_user(struct quota *q, struct user *u)
 	}
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: config_var_mutex, dbq.mutex (only if the DB needs to be updated)
+ * SLEEPS: yes (dbq.mutex)
+ */
 static void
 quota_softlimit_exceed_group(struct quota *q, struct group *g)
 {
@@ -159,6 +169,11 @@ quota_softlimit_exceed_group(struct quota *q, struct group *g)
 	}
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: config_var_mutex, dbq.mutex (only if the DB needs to be updated)
+ * SLEEPS: yes (dbq.mutex)
+ */
 void
 dirquota_softlimit_exceed(struct quota_metadata *q, struct dirset *ds)
 {
@@ -207,6 +222,11 @@ usage_tmp_clear_group(void *closure, struct group *g)
 	quota_usage_clear(group_usage_tmp(g));
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: nothing
+ * SLEEPS: no
+ */
 static void
 usage_tmp_clear(void)
 {
@@ -280,6 +300,11 @@ quota_update_usage_group(void *closure, struct group *g)
 #endif
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: config_var_mutex, dbq.mutex
+ * SLEEPS: yes (dbq.mutex)
+ */
 static void
 quota_update_usage(void)
 {
@@ -578,6 +603,11 @@ dirquota_init(struct dirquota *dq)
 /* this is protected by giant_lock */
 static int dirquota_invalidate_all_requested = 0;
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: nothing
+ * SLEEPS: no
+ */
 int
 dirquota_is_checked(const struct dirquota *dq)
 {
@@ -585,6 +615,11 @@ dirquota_is_checked(const struct dirquota *dq)
 	    dq->qmm.usage_is_valid && !dq->invalidate_requested);
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: nothing
+ * SLEEPS: no
+ */
 void
 dirquota_check_retry_if_running(struct dirquota *dq)
 {
@@ -626,6 +661,11 @@ int64_add(gfarm_int64_t orig, gfarm_int64_t diff)
 	}
 
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: nothing
+ * SLEEPS: no
+ */
 static void
 usage_tmp_update(struct inode *inode)
 {
@@ -648,6 +688,11 @@ usage_tmp_update(struct inode *inode)
 		update_file_add(group_usage_tmp(g), size, ncopy);
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: nothing
+ * SLEEPS: no
+ */
 static void
 dirquota_usage_tmp_update(struct dirset *ds, struct inode *inode)
 {
@@ -668,6 +713,11 @@ dirquota_usage_tmp_update(struct dirset *ds, struct inode *inode)
 
 static void quota_check_retry_if_running(void);
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: config_var_mutex, dbq.mutex, quota_check_ctl.mutex
+ * SLEEPS: yes (dbq.mutex)
+ */
 void
 quota_update_file_add(struct inode *inode, struct dirset *tdirset)
 {
@@ -732,6 +782,11 @@ quota_update_file_add(struct inode *inode, struct dirset *tdirset)
 		(q)->phy_space = int64_add((q)->phy_space, diff * ncopy); \
 	}
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: config_var_mutex, dbq.mutex, quota_check_ctl.mutex
+ * SLEEPS: yes (dbq.mutex)
+ */
 void
 quota_update_file_resize(struct inode *inode, struct dirset *tdirset,
 	gfarm_off_t new_size)
@@ -775,6 +830,11 @@ quota_update_file_resize(struct inode *inode, struct dirset *tdirset,
 		(q)->phy_num = int64_add((q)->phy_num, n);		\
 	}
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: config_var_mutex, dbq.mutex, quota_check_ctl.mutex
+ * SLEEPS: yes (dbq.mutex)
+ */
 static void
 quota_update_replica_num(struct inode *inode, struct dirset *tdirset,
 	gfarm_int64_t n)
@@ -808,12 +868,22 @@ quota_update_replica_num(struct inode *inode, struct dirset *tdirset,
 	quota_check_retry_if_running();
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: config_var_mutex, dbq.mutex, quota_check_ctl.mutex
+ * SLEEPS: yes (dbq.mutex)
+ */
 void
 quota_update_replica_add(struct inode *inode, struct dirset *tdirset)
 {
 	quota_update_replica_num(inode, tdirset, 1);
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: config_var_mutex, dbq.mutex, quota_check_ctl.mutex
+ * SLEEPS: yes (dbq.mutex)
+ */
 void
 quota_update_replica_remove(struct inode *inode, struct dirset *tdirset)
 {
@@ -828,6 +898,11 @@ quota_update_replica_remove(struct inode *inode, struct dirset *tdirset)
 		(q)->phy_num = int64_add((q)->phy_num, -ncopy);		\
 	}
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: config_var_mutex, dbq.mutex, quota_check_ctl.mutex
+ * SLEEPS: yes (dbq.mutex)
+ */
 void
 quota_update_file_remove(struct inode *inode, struct dirset *tdirset)
 {
@@ -869,6 +944,11 @@ quota_update_file_remove(struct inode *inode, struct dirset *tdirset)
 	quota_check_retry_if_running();
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: config_var_mutex, dbq.mutex
+ * SLEEPS: yes (dbq.mutex)
+ */
 void
 dirquota_update_file_add(struct inode *inode, struct dirset *tdirset)
 {
@@ -894,6 +974,11 @@ dirquota_update_file_add(struct inode *inode, struct dirset *tdirset)
 	/* quota_check_retry_if_running() is unnecessary here */
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: config_var_mutex, dbq.mutex
+ * SLEEPS: yes (dbq.mutex)
+ */
 void
 dirquota_update_file_remove(struct inode *inode, struct dirset *tdirset)
 {
@@ -1065,6 +1150,10 @@ dirquota_is_exceeded(struct timeval *nowp, struct dirquota *dq,
  * num_file_creating == 0 && num_replica_adding >= 1 : check physical quota
  * num_file_creating == 0 && num_replica_adding == 0 : check both
  * num_file_creating >= 1 && num_replica_adding >= 1 : check both
+ *
+ * PREREQUISITE: giant_lock
+ * LOCKS: nothing
+ * SLEEPS: no
  */
 gfarm_error_t
 quota_limit_check(struct user *u, struct group *g, struct dirset *tdirset,
@@ -1098,6 +1187,11 @@ quota_limit_check(struct user *u, struct group *g, struct dirset *tdirset,
 	return (GFARM_ERR_NO_ERROR);
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: nothing
+ * SLEEPS: no
+ */
 gfarm_error_t
 dirquota_limit_check(struct dirset *tdirset,
 	int num_file_creating, int num_replica_adding, gfarm_off_t size)
@@ -1118,6 +1212,11 @@ dirquota_limit_check(struct dirset *tdirset,
 	return (GFARM_ERR_NO_ERROR);
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: config_var_mutex, dbq.mutex
+ * SLEEPS: yes (dbq.mutex)
+ */
 void
 quota_user_remove(struct user *u)
 {
@@ -1129,6 +1228,11 @@ quota_user_remove(struct user *u)
 	}
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: config_var_mutex, dbq.mutex
+ * SLEEPS: yes (dbq.mutex)
+ */
 void
 quota_group_remove(struct group *g)
 {
@@ -1159,6 +1263,11 @@ struct quota_check_control {
 	const char *end_diag;
 };
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: ctl->mutex (quota_check_ctl.mutex or dirquota_check_ctl.mutex)
+ * SLEEPS: no
+ */
 static void
 quota_check_schedule(struct quota_check_control *ctl, time_t target_time)
 {
@@ -1171,12 +1280,23 @@ quota_check_schedule(struct quota_check_control *ctl, time_t target_time)
 	gfarm_mutex_unlock(&ctl->mutex, diag, ctl->mutex_diag);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: ctl->mutex (quota_check_ctl.mutex or dirquota_check_ctl.mutex)
+ * SLEEPS: no
+ */
 static void
 quota_check_start(struct quota_check_control *ctl)
 {
 	quota_check_schedule(ctl, time(NULL));
 }
 
+/*
+ * PREREQUISITE: nothing (must not hold giant_lock,
+ *	because ctl->main_function acquires giant_lock)
+ * LOCKS: ctl->mutex (quota_check_ctl.mutex or dirquota_check_ctl.mutex)
+ * SLEEPS: yes (cond_wait on ctl->end until the check finishes)
+ */
 static void
 quota_check_wait_for_end(struct quota_check_control *ctl)
 {
@@ -1188,6 +1308,14 @@ quota_check_wait_for_end(struct quota_check_control *ctl)
 	gfarm_mutex_unlock(&ctl->mutex, diag, ctl->mutex_diag);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: ctl->mutex (quota_check_ctl.mutex or dirquota_check_ctl.mutex),
+ *	and the locks of ctl->main_function
+ *	(quota_check_main_loop() or dirquota_check_main())
+ * SLEEPS: yes (cond_wait on ctl->wakeup, sleep(3) until ctl->target_time
+ *	without holding ctl->mutex, and the sleeps of ctl->main_function)
+ */
 static void *
 quota_check_thread(void *arg)
 {
@@ -1246,6 +1374,11 @@ static struct quota_check_control quota_check_ctl = {
 	"quota_check_end",
 };
 
+/*
+ * PREREQUISITE: nothing (usually called with giant_lock held)
+ * LOCKS: quota_check_ctl.mutex
+ * SLEEPS: no
+ */
 static int
 quota_check_needed_locked(const char *diag)
 {
@@ -1259,6 +1392,11 @@ quota_check_needed_locked(const char *diag)
 	return (needed);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: quota_check_ctl.mutex
+ * SLEEPS: no
+ */
 static void
 quota_check_needed_clear(const char *diag)
 {
@@ -1269,6 +1407,11 @@ quota_check_needed_clear(const char *diag)
 	    diag, quota_check_ctl.mutex_diag);
 }
 
+/*
+ * PREREQUISITE: nothing (must not hold giant_lock)
+ * LOCKS: giant_lock -> (quota_check_ctl.mutex, config_var_mutex, dbq.mutex)
+ * SLEEPS: yes (giant_lock, dbq.mutex)
+ */
 static int
 quota_check_main(void)
 {
@@ -1328,6 +1471,13 @@ quota_check_main(void)
 	return (0); /* finished */
 }
 
+/*
+ * PREREQUISITE: nothing (must not hold giant_lock)
+ * LOCKS: the locks of quota_check_main(), quota_check_ctl.mutex,
+ *	config_var_mutex
+ * SLEEPS: yes (see quota_check_main(), and sleep(3) for
+ *	gfarm_quota_check_retry_interval without holding any lock)
+ */
 static void
 quota_check_main_loop(struct quota_check_control *ctl)
 {
@@ -1350,6 +1500,11 @@ quota_check_main_loop(struct quota_check_control *ctl)
 	}
 }
 
+/*
+ * PREREQUISITE: nothing (usually called with giant_lock held)
+ * LOCKS: quota_check_ctl.mutex
+ * SLEEPS: no
+ */
 static void
 quota_check_retry_if_running(void)
 {
@@ -1396,6 +1551,11 @@ dirquota_check_needed_per_dirset(void *closure, struct dirset *ds)
 	return (0);
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: nothing
+ * SLEEPS: no
+ */
 static int
 dirquota_check_needed(void)
 {
@@ -1467,6 +1627,13 @@ dirquota_check_per_quota_dir(void *closure, struct quota_dir *qd)
 	return (interrupted);
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: config_var_mutex, dbq.mutex,
+ *	giant_lock (giant_lock is temporarily released and reacquired
+ *	in inode_foreach_in_subtree_interruptible())
+ * SLEEPS: yes (giant_lock, dbq.mutex)
+ */
 static int
 dirquota_check_per_dirset(void *closure, struct dirset *ds)
 {
@@ -1516,6 +1683,11 @@ dirquota_check_per_dirset(void *closure, struct dirset *ds)
 	return (interrupted);
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: the locks of dirquota_check_per_dirset()
+ * SLEEPS: yes (see dirquota_check_per_dirset())
+ */
 static void
 dirquota_check_run(void)
 {
@@ -1527,6 +1699,13 @@ dirquota_check_run(void)
 	dirset_foreach_interruptible(NULL, dirquota_check_per_dirset);
 }
 
+/*
+ * PREREQUISITE: nothing (must not hold giant_lock)
+ * LOCKS: giant_lock -> (config_var_mutex,
+ *	and the locks of dirquota_check_run())
+ * SLEEPS: yes (giant_lock, see dirquota_check_run(), and sleep(3) for
+ *	gfarm_directory_quota_check_retry_interval WITH holding giant_lock)
+ */
 static void
 dirquota_check_main(struct quota_check_control *ctl)
 {
@@ -1591,7 +1770,11 @@ static struct quota_check_control dirquota_check_ctl = {
 	"dirquota_check_end",
 };
 
-/* PREREQUISITE: giant_lock */
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: nothing
+ * SLEEPS: no
+ */
 void
 dirquota_invalidate(struct dirset *tdirset)
 {
@@ -1614,7 +1797,11 @@ dirquota_fixup_schedule(void)
 	    time(NULL) +  gfarm_directory_quota_check_start_delay);
 }
 
-/* PREREQUISITE: giant_lock */
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: dirquota_check_ctl.mutex
+ * SLEEPS: no
+ */
 void
 dirquota_check_schedule(void)
 {
@@ -1653,6 +1840,11 @@ quota_check_init(void)
  * server operations
  */
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: giant_lock
+ * SLEEPS: yes (giant_lock, network I/O)
+ */
 static gfarm_error_t
 quota_get_common(struct peer *peer, int from_client, int skip, int is_group)
 {
@@ -1843,6 +2035,11 @@ quota_lookup_internal(const char *name, int is_group,
 	return (e);
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: nothing
+ * SLEEPS: no
+ */
 gfarm_error_t
 quota_lookup(const char *name, int is_group,
 	struct quota **qp,
@@ -1852,6 +2049,11 @@ quota_lookup(const char *name, int is_group,
 	    NULL, qp, diag));
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: giant_lock -> (config_var_mutex, dbq.mutex)
+ * SLEEPS: yes (giant_lock, dbq.mutex, network I/O)
+ */
 static gfarm_error_t
 quota_set_common(struct peer *peer, int from_client, int skip, int is_group)
 {
@@ -1977,6 +2179,12 @@ gfm_server_quota_group_set(struct peer *peer, int from_client, int skip)
 	return (quota_set_common(peer, from_client, skip, 1));
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: giant_lock, quota_check_ctl.mutex, dirquota_check_ctl.mutex
+ * SLEEPS: yes (giant_lock, network I/O, and cond_wait until
+ *	quota_check and dirquota_check finish)
+ */
 gfarm_error_t
 gfm_server_quota_check(struct peer *peer, int from_client, int skip)
 {

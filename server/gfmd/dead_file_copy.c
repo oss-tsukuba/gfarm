@@ -137,6 +137,11 @@ static struct dfc_workq host_busyq = {
 	{ NULL, NULL, &host_busyq.q, &host_busyq.q }
 };
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: dfc_workq::mutex -> dfc->mutex
+ * SLEEPS: no
+ */
 static void
 dfc_workq_enqueue(struct dfc_workq *q, struct dead_file_copy *dfc,
 	enum dead_file_copy_state new_state, const char *diag)
@@ -156,6 +161,11 @@ dfc_workq_enqueue(struct dfc_workq *q, struct dead_file_copy *dfc,
 	gfarm_mutex_unlock(&q->mutex, diag, "unlock");
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: dfc_workq::mutex -> dfc->mutex
+ * SLEEPS: yes (dfc_workq::not_empty, while the queue is empty)
+ */
 static struct dead_file_copy *
 dfc_workq_dequeue(struct dfc_workq *q, enum dead_file_copy_state new_state,
 	const char *diag)
@@ -184,6 +194,11 @@ dfc_workq_dequeue(struct dfc_workq *q, enum dead_file_copy_state new_state,
 	return (dfc);
 }
 
+/*
+ * PREREQUISITE: dfc_workq::mutex
+ * LOCKS: nothing
+ * SLEEPS: no
+ */
 static void
 dfc_workq_remove(struct dead_file_copy *dfc)
 {
@@ -193,7 +208,7 @@ dfc_workq_remove(struct dead_file_copy *dfc)
 
 /*
  * PREREQUISITE: nothing
- * LOCKS: dfc_workq::mutex
+ * LOCKS: dfc_workq::mutex -> dfc->mutex
  * SLEEPS: no
  */
 static void
@@ -225,6 +240,11 @@ dfc_workq_host_remove(struct dfc_workq *q, struct host *host, const char *diag)
 	gfarm_mutex_unlock(&q->mutex, diag, "unlock");
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: dfc->mutex, removal_pendingq.mutex -> dfc->mutex
+ * SLEEPS: no
+ */
 void
 removal_pendingq_enqueue(struct dead_file_copy *dfc)
 {
@@ -249,6 +269,11 @@ removal_pendingq_enqueue(struct dead_file_copy *dfc)
 	dfc_workq_enqueue(&removal_pendingq, dfc, dfcstate_pending, diag);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: removal_pendingq.mutex -> dfc->mutex
+ * SLEEPS: yes (removal_pendingq.not_empty, while the queue is empty)
+ */
 struct dead_file_copy *
 removal_pendingq_dequeue(void)
 {
@@ -258,6 +283,11 @@ removal_pendingq_dequeue(void)
 	    diag));
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: dfc->mutex, removal_finishedq.mutex -> dfc->mutex
+ * SLEEPS: no
+ */
 void
 removal_finishedq_enqueue(struct dead_file_copy *dfc, gfarm_int32_t result)
 {
@@ -282,6 +312,11 @@ removal_finishedq_enqueue(struct dead_file_copy *dfc, gfarm_int32_t result)
 	dfc_workq_enqueue(&removal_finishedq, dfc, dfcstate_finished, diag);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: removal_finishedq.mutex -> dfc->mutex
+ * SLEEPS: yes (removal_finishedq.not_empty, while the queue is empty)
+ */
 static struct dead_file_copy *
 removal_finishedq_dequeue(void)
 {
@@ -340,6 +375,13 @@ handle_removal_result(struct dead_file_copy *dfc)
 	giant_unlock();
 }
 
+/*
+ * PREREQUISITE: nothing (thread main)
+ * LOCKS: config_var_mutex, removal_finishedq.mutex -> dfc->mutex,
+ *	and the locks of handle_removal_result()
+ * SLEEPS: yes (gfarm_read_only_disabled_wait(),
+ *	removal_finishedq.not_empty, giant_lock, dbq.mutex)
+ */
 static void *
 removal_finalizer(void *arg)
 {
@@ -398,6 +440,11 @@ dead_file_copy_is_removable_default(struct dead_file_copy *dfc)
 int (*dead_file_copy_is_removable)(struct dead_file_copy *) =
 	dead_file_copy_is_removable_default;
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: dfc->mutex, host_busyq.mutex -> dfc->mutex
+ * SLEEPS: no
+ */
 void
 host_busyq_enqueue(struct dead_file_copy *dfc)
 {
@@ -502,7 +549,14 @@ dead_file_copy_host_busyq_scan(void)
 
 static void host_busyq_scanner_schedule(void);
 
-/* this function is called via callout */
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: the locks of dead_file_copy_host_busyq_scan(),
+ *	callout_module.mutex
+ * SLEEPS: yes (giant_lock), but no other lock is held while waiting for it.
+ *
+ * this function is called via callout
+ */
 static void *
 host_busyq_scanner(void *arg)
 {
@@ -520,6 +574,11 @@ host_busyq_scanner(void *arg)
 
 static struct callout *host_busyq_scanner_callout;
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: callout_module.mutex
+ * SLEEPS: no
+ */
 static void
 host_busyq_scanner_schedule(void)
 {
@@ -944,6 +1003,11 @@ static const char dead_file_copy_scan_diag[] = "dead_file_copy_scan";
 static const char dead_file_copy_scan_requested_diag[] =
 	"dead_file_copy_scan_requested";
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: dead_file_copy_scan.mutex
+ * SLEEPS: no
+ */
 void
 dead_file_copy_scan_deferred_all(void)
 {
@@ -965,6 +1029,11 @@ dead_file_copy_scan_deferred_all(void)
 	    diag, dead_file_copy_scan_diag);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: dead_file_copy_scan.mutex
+ * SLEEPS: no
+ */
 void
 dead_file_copy_host_becomes_up(struct host *host)
 {
@@ -992,6 +1061,11 @@ dead_file_copy_host_becomes_up(struct host *host)
 	    diag, dead_file_copy_scan_diag);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: dead_file_copy_scan.mutex
+ * SLEEPS: no
+ */
 void
 dead_file_copy_replica_status_changed(gfarm_ino_t inum, struct host *host)
 {
@@ -1023,6 +1097,11 @@ dead_file_copy_replica_status_changed(gfarm_ino_t inum, struct host *host)
 	    diag, dead_file_copy_scan_diag);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: dead_file_copy_scan.mutex
+ * SLEEPS: no
+ */
 void
 dead_file_copy_inode_status_changed(gfarm_ino_t inum)
 {
@@ -1050,6 +1129,16 @@ dead_file_copy_inode_status_changed(gfarm_ino_t inum)
 	    diag, dead_file_copy_scan_diag);
 }
 
+/*
+ * PREREQUISITE: nothing (thread main)
+ * LOCKS: dead_file_copy_scan.mutex,
+ *	giant_lock -> (config_var_mutex,
+ *	the locks of dead_file_copy_scan_deferred()),
+ *	config_var_mutex
+ * SLEEPS: yes (dead_file_copy_scan.requested, giant_lock,
+ *	gfarm_read_only_disabled_wait(), gfarm_nanosleep()),
+ *	but no lock is held while waiting for them.
+ */
 static void *
 dead_file_copy_scanner(void *arg)
 {
@@ -1139,7 +1228,13 @@ dead_file_copy_scanner(void *arg)
 }
 
 
-/* used for deferred -> kept: prevent dfc from moved to removal_pendingq */
+/*
+ * used for deferred -> kept: prevent dfc from moved to removal_pendingq
+ *
+ * PREREQUISITE: giant_lock (to prevent the deferred dfc from being freed)
+ * LOCKS: dfc->mutex
+ * SLEEPS: no
+ */
 void
 dead_file_copy_mark_kept(struct dead_file_copy *dfc)
 {
@@ -1160,7 +1255,13 @@ dead_file_copy_mark_kept(struct dead_file_copy *dfc)
 	gfarm_mutex_unlock(&dfc->mutex, diag, "dfc state");
 }
 
-/* used for kept -> deferred: make dfc movable to removal_pendingq */
+/*
+ * used for kept -> deferred: make dfc movable to removal_pendingq
+ *
+ * PREREQUISITE: nothing
+ * LOCKS: dfc->mutex
+ * SLEEPS: no
+ */
 void
 dead_file_copy_mark_deferred(struct dead_file_copy *dfc)
 {
@@ -1181,7 +1282,13 @@ dead_file_copy_mark_deferred(struct dead_file_copy *dfc)
 	gfarm_mutex_unlock(&dfc->mutex, diag, "dfc state");
 }
 
-/* used for kept/deferred -> lost: move dfc to removal_finishedq */
+/*
+ * used for kept/deferred -> lost: move dfc to removal_finishedq
+ *
+ * PREREQUISITE: giant_lock
+ * LOCKS: dfc_allq.mutex, dfc->mutex
+ * SLEEPS: no
+ */
 gfarm_error_t
 dead_file_copy_mark_lost(
 	gfarm_ino_t inum, gfarm_uint64_t igen, struct host *host)
@@ -1486,7 +1593,14 @@ dead_file_copy_free(struct dead_file_copy *dfc)
 	free(dfc);
 }
 
-/* The memory owner of `hostname' is changed to dead_file_copy.c */
+/*
+ * The memory owner of `hostname' is changed to dead_file_copy.c
+ *
+ * PREREQUISITE: giant_lock (or boot time), db_access_mutex
+ *	(called back from db_deadfilecopy_load())
+ * LOCKS: abstract_host::mutex, dfc_allq.mutex
+ * SLEEPS: no
+ */
 void
 dead_file_copy_add_one(void *closure,
 	gfarm_ino_t inum, gfarm_uint64_t igen, char *hostname)
@@ -1517,6 +1631,12 @@ dead_file_copy_add_one(void *closure,
 	inode_dead_file_copy_added(inum, igen, host);
 }
 
+/*
+ * PREREQUISITE: giant_lock (or boot time)
+ * LOCKS: db_access_mutex -> (abstract_host::mutex, dfc_allq.mutex),
+ *	callout_module.mutex
+ * SLEEPS: yes (db_access_mutex and backend DB access)
+ */
 void
 dead_file_copy_init_load(void)
 {

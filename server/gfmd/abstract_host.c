@@ -89,6 +89,11 @@ abstract_host_mutex_unlock(struct abstract_host *h, const char *diag)
 	gfarm_mutex_unlock(&h->mutex, diag, ABSTRACT_HOST_MUTEX_DIAG);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: no
+ */
 int
 abstract_host_get_protocol_version(struct abstract_host *h)
 {
@@ -101,6 +106,11 @@ abstract_host_get_protocol_version(struct abstract_host *h)
 	return (ver);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: no
+ */
 void
 abstract_host_invalidate(struct abstract_host *h)
 {
@@ -111,6 +121,11 @@ abstract_host_invalidate(struct abstract_host *h)
 	abstract_host_mutex_unlock(h, diag);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: no
+ */
 void
 abstract_host_validate(struct abstract_host *h)
 {
@@ -127,6 +142,11 @@ abstract_host_is_invalid_unlocked(struct abstract_host *h)
 	return (h->invalid != 0);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: no
+ */
 int
 abstract_host_is_invalid(struct abstract_host *h, const char *diag)
 {
@@ -144,6 +164,11 @@ abstract_host_is_valid_unlocked(struct abstract_host *h)
 	return (h->invalid == 0);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: no
+ */
 int
 abstract_host_is_valid(struct abstract_host *h, const char *diag)
 {
@@ -155,6 +180,11 @@ abstract_host_is_valid(struct abstract_host *h, const char *diag)
 	return (valid);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: no
+ */
 void
 abstract_host_activate(struct abstract_host *h, const char *diag)
 {
@@ -236,6 +266,11 @@ abstract_host_is_unresponsive(struct abstract_host *host, gfarm_int64_t now,
 	return (unresponsive);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: no
+ */
 static void
 abstract_host_peer_unbusy(struct abstract_host *host, const char *diag)
 {
@@ -245,6 +280,10 @@ abstract_host_peer_unbusy(struct abstract_host *host, const char *diag)
 }
 
 /*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex -> peer_closing_queue.mutex
+ * SLEEPS: no
+ *
  * if abstract_host_get_peer() is called,
  * same number of abstract_host_put_peer() calls should be made.
  */
@@ -262,6 +301,11 @@ abstract_host_get_peer(struct abstract_host *h, const char *diag)
 	return (peer);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: peer_closing_queue.mutex
+ * SLEEPS: no
+ */
 void
 abstract_host_put_peer(struct abstract_host *h, struct peer *peer)
 {
@@ -269,6 +313,13 @@ abstract_host_put_peer(struct abstract_host *h, struct peer *peer)
 		peer_del_ref(peer);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex -> peer_closing_queue.mutex
+ * SLEEPS: yes (waits for ready_to_send up to timeout_microsec per wait,
+ *	or indefinitely if GFM_CLIENT_CHANNEL_TIMEOUT_INFINITY),
+ *	but abstract_host::mutex won't be blocked while sleeping.
+ */
 static gfarm_error_t
 abstract_host_sender_trylock(struct abstract_host *host, struct peer **peerp,
 	const char *diag, long timeout_microsec)
@@ -319,6 +370,12 @@ abstract_host_sender_trylock(struct abstract_host *host, struct peer **peerp,
 	return (e);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex -> peer_closing_queue.mutex
+ * SLEEPS: yes (waits for ready_to_send indefinitely),
+ *	but abstract_host::mutex won't be blocked while sleeping.
+ */
 static gfarm_error_t
 abstract_host_sender_lock(struct abstract_host *host, struct peer **peerp,
 	const char *diag)
@@ -355,6 +412,11 @@ abstract_host_sender_lock(struct abstract_host *host, struct peer **peerp,
 	return (e);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex -> peer_closing_queue.mutex
+ * SLEEPS: no
+ */
 static void
 abstract_host_sender_unlock(struct abstract_host *host, struct peer *peer,
 	const char *diag)
@@ -371,6 +433,12 @@ abstract_host_sender_unlock(struct abstract_host *host, struct peer *peer,
 	abstract_host_mutex_unlock(host, diag);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex -> peer_closing_queue.mutex
+ * SLEEPS: yes (waits for ready_to_receive indefinitely),
+ *	but abstract_host::mutex won't be blocked while sleeping.
+ */
 static gfarm_error_t
 abstract_host_receiver_lock(struct abstract_host *host, struct peer **peerp,
 	const char *diag)
@@ -412,6 +480,11 @@ abstract_host_receiver_lock(struct abstract_host *host, struct peer **peerp,
 	return (e);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex -> peer_closing_queue.mutex
+ * SLEEPS: no
+ */
 static void
 abstract_host_receiver_unlock(struct abstract_host *host, struct peer *peer)
 {
@@ -504,7 +577,18 @@ abstract_host_peer_unset(struct abstract_host *h)
 	abstract_host_break_locks(h);
 }
 
-/* peer may be NULL */
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex -> (callout_module.mutex (host),
+ *	total_disk_mutex (host), peer::protocol_error_mutex,
+ *	peer_closing_queue.mutex),
+ *	and after abstract_host::mutex is unlocked,
+ *	(host: config_var_mutex, replica_check_mutex,
+ *	removal_pendingq.mutex -> dfc->mutex), peer_closing_queue.mutex
+ * SLEEPS: no
+ *
+ * peer may be NULL
+ */
 void
 abstract_host_disconnect_request(struct abstract_host *h, struct peer *peer,
 	const char *diag)
@@ -556,6 +640,12 @@ abstract_host_disconnect_request(struct abstract_host *h, struct peer *peer,
 	}
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex, and the locks of
+ *	abstract_host_disconnect_request()
+ * SLEEPS: no
+ */
 static void
 abstract_host_peer_busy(struct abstract_host *host, const char *diag)
 {
@@ -580,6 +670,12 @@ abstract_host_peer_busy(struct abstract_host *host, const char *diag)
 	}
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex, and the locks of
+ *	abstract_host_disconnect_request()
+ * SLEEPS: no
+ */
 int
 abstract_host_check_busy(struct abstract_host *host, gfarm_int64_t now,
 	const char *diag)
@@ -608,6 +704,13 @@ abstract_host_check_busy(struct abstract_host *host, gfarm_int64_t now,
 	return (busy || unresponsive_peer != NULL);
 }
 
+/*
+ * PREREQUISITE: abstract_host_receiver_lock()
+ * LOCKS: the locks of channel_protocol_switch()
+ *	(e.g. giant_lock in the request handlers)
+ * SLEEPS: yes (network I/O, and the request handlers may wait for
+ *	giant_lock and abstract_host_sender_lock())
+ */
 static gfarm_error_t
 async_channel_protocol_switch(struct abstract_host *host, struct peer *peer,
 	gfp_xdr_xid_t xid, size_t size,
@@ -637,6 +740,14 @@ async_channel_protocol_switch(struct abstract_host *host, struct peer *peer,
 	return (e);
 }
 
+/*
+ * PREREQUISITE: abstract_host_receiver_lock()
+ * LOCKS: gfp_xdr_async_peer::mutex, and the locks of
+ *	channel_protocol_switch() and the result callbacks
+ *	(e.g. giant_lock)
+ * SLEEPS: yes (poll(), network I/O, and the request handlers and
+ *	the result callbacks may wait for giant_lock)
+ */
 static gfarm_error_t
 async_channel_service(struct abstract_host *host,
 	struct peer *peer, gfp_xdr_async_peer_t async,
@@ -703,6 +814,17 @@ async_channel_service(struct abstract_host *host,
 	return (e);
 }
 
+/*
+ * PREREQUISITE: nothing (called from a thread pool via the watcher)
+ * LOCKS: abstract_host::mutex -> peer_closing_queue.mutex,
+ *	watcher_event::mutex, peer_closing_queue.mutex,
+ *	peer::protocol_error_mutex,
+ *	watcher_request_queue::mutex -> watcher_event::mutex,
+ *	and the locks of async_channel_service() and
+ *	abstract_host_disconnect_request()
+ * SLEEPS: yes (abstract_host_receiver_lock(),
+ *	and see async_channel_service())
+ */
 void *
 gfm_server_channel_main(void *arg,
 	channel_protocol_switch_t channel_protocol_switch
@@ -821,6 +943,11 @@ gfm_server_channel_already_disconnected_message(struct abstract_host *host,
 	    abstract_host_get_name(host), proto, op, condition);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: the locks of abstract_host_disconnect_request()
+ * SLEEPS: no
+ */
 void
 gfm_server_channel_disconnect_request(struct abstract_host *host,
 	struct peer *peer, const char *proto, const char *op,
@@ -836,6 +963,12 @@ gfm_server_channel_disconnect_request(struct abstract_host *host,
 }
 
 /*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex -> peer_closing_queue.mutex,
+ *	gfp_xdr_async_peer::mutex,
+ *	and the locks of abstract_host_disconnect_request()
+ * SLEEPS: yes (abstract_host_sender_trylock() and network I/O)
+ *
  * synchronous mode of back_channel is only used before gfarm-2.4.0
  */
 gfarm_error_t
@@ -921,8 +1054,14 @@ gfm_client_channel_vsend_request_notimeout(struct abstract_host *host,
 	return (GFARM_ERR_NO_ERROR);
 }
 
-/* abstract_host_receiver_lock() must be already called here by
- * channel_main() */
+/*
+ * PREREQUISITE: abstract_host_receiver_lock()
+ * LOCKS: nothing
+ * SLEEPS: maybe (network I/O)
+ *
+ * abstract_host_receiver_lock() must be already called here by
+ * channel_main()
+ */
 gfarm_error_t
 gfm_server_channel_vget_request(struct peer *peer, size_t size,
 	const char *diag, const char *format, va_list *app)
@@ -943,8 +1082,14 @@ gfm_server_channel_vget_request(struct peer *peer, size_t size,
 	return (e);
 }
 
-/* XXX FIXME: currently called by threads in back_channel_recv_thread_pool or
- *            gfmdc_recv_thread_pool */
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex -> peer_closing_queue.mutex
+ * SLEEPS: yes (abstract_host_sender_lock() and network I/O)
+ *
+ * XXX FIXME: currently called by threads in back_channel_recv_thread_pool or
+ *            gfmdc_recv_thread_pool
+ */
 gfarm_error_t
 gfm_server_channel_vput_reply_notimeout(struct abstract_host *host,
 	struct peer *peer0, gfp_xdr_xid_t xid,
@@ -985,8 +1130,15 @@ gfm_server_channel_vput_reply_notimeout(struct abstract_host *host,
 	return (e);
 }
 
-/* abstract_host_receiver_lock() must be already called here by
- * channel_main() */
+/*
+ * PREREQUISITE: abstract_host_receiver_lock()
+ * LOCKS: nothing (async mode),
+ *	abstract_host::mutex -> peer_closing_queue.mutex (sync mode)
+ * SLEEPS: maybe (network I/O)
+ *
+ * abstract_host_receiver_lock() must be already called here by
+ * channel_main()
+ */
 gfarm_error_t
 gfm_client_channel_vrecv_result(struct peer *peer,
 	struct abstract_host *host, size_t size, const char *diag,

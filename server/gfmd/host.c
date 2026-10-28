@@ -175,12 +175,22 @@ host_validate(struct host *h)
 	abstract_host_validate(&h->ah);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: no
+ */
 static int
 host_is_invalid(struct host *h)
 {
 	return (abstract_host_is_invalid(&h->ah, BACK_CHANNEL_DIAG));
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: no
+ */
 int
 host_is_valid(struct host *h)
 {
@@ -226,6 +236,10 @@ host_profile_add_received(struct host *h, gfarm_off_t size, double t,
 /*
  * Search the host table for a host entry for 'hostname'.
  * Return the found entry or NULL if missing.
+ *
+ * PREREQUISITE: giant_lock
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: no
  */
 struct host *
 host_lookup(const char *hostname)
@@ -262,6 +276,10 @@ static gfarm_error_t host_remove_internal(const char *, int);
 /*
  * Same as host_lookup() but it adds a host entry to the host table
  * and returns it when an entry for the host is missing.
+ *
+ * PREREQUISITE: nothing (giant_lock must not be held, boot time only)
+ * LOCKS: giant_lock -> abstract_host::mutex
+ * SLEEPS: yes (giant_lock)
  */
 struct host *
 host_lookup_at_loading(const char *hostname)
@@ -301,6 +319,11 @@ host_lookup_at_loading(const char *hostname)
 	return (h);
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: no
+ */
 struct host *
 host_addr_lookup(const char *hostname, struct sockaddr *addr)
 {
@@ -343,6 +366,11 @@ host_addr_lookup(const char *hostname, struct sockaddr *addr)
 	return (NULL);
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: no
+ */
 struct host *
 host_namealiases_lookup(const char *hostname)
 {
@@ -357,6 +385,11 @@ host_namealiases_lookup(const char *hostname)
 static void all_host_hostset_cache_purge(void);
 static void hostset_of_fsngroup_cache_purge(const char *);
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: no
+ */
 /* XXX FIXME missing hostaliases */
 gfarm_error_t
 host_enter(struct gfarm_host_info *hi, struct host **hpp)
@@ -469,6 +502,13 @@ host_enter(struct gfarm_host_info *hi, struct host **hpp)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: abstract_host::mutex,
+ *	and the locks of dead_file_copy_host_removed()
+ *	if update_deadfilecopy
+ * SLEEPS: yes (dbq.mutex) if update_deadfilecopy, otherwise no
+ */
 /* XXX FIXME missing hostaliases */
 static gfarm_error_t
 host_remove_internal(const char *hostname, int update_deadfilecopy)
@@ -515,6 +555,13 @@ host_remove_internal(const char *hostname, int update_deadfilecopy)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: abstract_host::mutex,
+ *	the locks of dead_file_copy_host_removed(),
+ *	file_copy_by_host_mutex
+ * SLEEPS: yes (dbq.mutex)
+ */
 static gfarm_error_t
 host_remove(const char *hostname)
 {
@@ -524,6 +571,11 @@ host_remove(const char *hostname)
 	return (e);
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: abstract_host::mutex, file_copy_by_host_mutex
+ * SLEEPS: no
+ */
 gfarm_error_t
 host_remove_in_cache(const char *hostname)
 {
@@ -612,6 +664,11 @@ host_fsngroup(struct host *h)
 	return ((h->fsngroupname != NULL) ? h->fsngroupname : "");
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: no
+ */
 int
 host_supports_async_protocols(struct host *h)
 {
@@ -619,6 +676,11 @@ host_supports_async_protocols(struct host *h)
 		>= GFS_PROTOCOL_VERSION_V2_4);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: no
+ */
 int
 host_supports_cksum_protocols(struct host *h)
 {
@@ -627,6 +689,11 @@ host_supports_cksum_protocols(struct host *h)
 }
 
 /* support GFS_PROTO_STATUS2 */
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: no
+ */
 int
 host_supports_status2_protocols(struct host *h)
 {
@@ -636,6 +703,11 @@ host_supports_status2_protocols(struct host *h)
 
 #ifdef COMPAT_GFARM_2_3
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: no
+ */
 void
 host_set_callback(struct abstract_host *ah, struct peer *peer,
 	result_callback_t result_callback,
@@ -654,6 +726,11 @@ host_set_callback(struct abstract_host *ah, struct peer *peer,
 	abstract_host_mutex_unlock(ah, diag);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: no
+ */
 int
 host_get_result_callback(struct host *h, struct peer *peer,
 	result_callback_t *callbackp, void **closurep)
@@ -680,6 +757,11 @@ host_get_result_callback(struct host *h, struct peer *peer,
 	return (ok);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: no
+ */
 int
 host_get_disconnect_callback(struct host *h,
 	disconnect_callback_t *callbackp,
@@ -742,6 +824,11 @@ host_is_up(struct host *h)
 	return (abstract_host_is_up(&h->ah));
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: no
+ */
 int
 host_is_up_with_grace(struct host *h, gfarm_time_t grace)
 {
@@ -761,6 +848,11 @@ host_is_up_with_grace(struct host *h, gfarm_time_t grace)
 
 static void host_status_get_unlocked(struct host *, struct host_status *, int);
 
+/*
+ * PREREQUISITE: abstract_host::mutex
+ * LOCKS: nothing
+ * SLEEPS: no
+ */
 static int
 host_is_busy_unlocked(struct host *h)
 {
@@ -775,6 +867,11 @@ host_is_busy_unlocked(struct host *h)
 	return (load >= busy);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: no
+ */
 static int
 host_is_busy(struct host *h)
 {
@@ -910,6 +1007,13 @@ host_is_disk_available_or_unknown(struct host *h, gfarm_off_t size)
 	    "host_is_disk_available_or_unknown"));
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex,
+ *	and the locks of host_disconnect_request()
+ *	(after abstract_host::mutex is released)
+ * SLEEPS: no
+ */
 int
 host_check_busy(struct host *host, gfarm_int64_t now)
 {
@@ -926,6 +1030,10 @@ host_status_callout(struct host *h)
 /*
  * if host_get_peer() is called,
  * same number of host_put_peer() calls should be made.
+ *
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex -> peer_closing_queue.mutex
+ * SLEEPS: no
  */
 struct peer *
 host_get_peer(struct host *h)
@@ -935,12 +1043,23 @@ host_get_peer(struct host *h)
 	return (abstract_host_get_peer(&h->ah, diag));
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: peer_closing_queue.mutex
+ * SLEEPS: no
+ */
 void
 host_put_peer(struct host *h, struct peer *peer)
 {
 	abstract_host_put_peer(&h->ah, peer);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex -> peer_closing_queue.mutex,
+ *	peer_closing_queue.mutex
+ * SLEEPS: no
+ */
 static struct peer *
 host_get_peer_for_replication(struct host *h)
 {
@@ -953,12 +1072,22 @@ host_get_peer_for_replication(struct host *h)
 	return (peer);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: peer_closing_queue.mutex
+ * SLEEPS: no
+ */
 void
 host_put_peer_for_replication(struct host *h, struct peer *peer)
 {
 	peer_del_ref_for_replication(peer);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: no
+ */
 void
 host_status_reply_waiting_set(struct host *host)
 {
@@ -969,6 +1098,11 @@ host_status_reply_waiting_set(struct host *host)
 	abstract_host_mutex_unlock(&host->ah, diag);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: no
+ */
 void
 host_status_reply_waiting_reset(struct host *host)
 {
@@ -979,6 +1113,11 @@ host_status_reply_waiting_reset(struct host *host)
 	abstract_host_mutex_unlock(&host->ah, diag);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: no
+ */
 int
 host_status_reply_is_waiting(struct host *host)
 {
@@ -1109,6 +1248,11 @@ host_status_update(struct host *host, struct host_status *status)
 		    busy ? "busy" : "not busy");
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: no
+ */
 static void
 host_status_get_disk_usage(struct host *host,
 	gfarm_uint64_t *used, gfarm_uint64_t *avail)
@@ -1139,6 +1283,11 @@ host_status_get_disk_usage_percent(struct host *host)
 	return (100 * (float)used / (float)(used + avail));
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex, total_disk_mutex
+ * SLEEPS: no
+ */
 void
 host_status_update_disk_usage(struct host *host, gfarm_off_t filesize)
 {
@@ -1172,6 +1321,11 @@ host_set_peer_locked(struct abstract_host *ah, struct peer *p)
 	h->status_reply_waiting = 0;
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: dead_file_copy_scan.mutex, replica_check_mutex
+ * SLEEPS: no
+ */
 static void
 host_set_peer_unlocked(struct abstract_host *ah, struct peer *p)
 {
@@ -1192,6 +1346,8 @@ host_unset_peer(struct abstract_host *ah, struct peer *peer)
 
 /*
  * PREREQUISITE: abstract_host::mutex
+ * LOCKS: total_disk_mutex
+ * SLEEPS: no
  */
 static void
 host_disable(struct abstract_host *ah)
@@ -1218,6 +1374,13 @@ host_disable(struct abstract_host *ah)
 	    saved_used_change_in_byte, 0, 0);
 }
 
+/*
+ * PREREQUISITE: nothing
+ *	(called after abstract_host::mutex is released)
+ * LOCKS: config_var_mutex, replica_check_mutex,
+ *	removal_pendingq.mutex -> dfc->mutex
+ * SLEEPS: no
+ */
 static void
 host_disabled(struct abstract_host *ah, struct peer *peer)
 {
@@ -1237,9 +1400,23 @@ host_disabled(struct abstract_host *ah, struct peer *peer)
  *  - abstract_host::mutex -> total_disk_mutex
  *    in abstract_host::ops::disable() == host_disable()
  *    which is called from abstract_host_disconnect_request()
+ *  - abstract_host::mutex -> peer::protocol_error_mutex
+ *    in peer_record_protocol_error()
+ *    which is called from abstract_host_disconnect_request()
+ *  - abstract_host::mutex -> peer_closing_queue.mutex
+ *    in peer_free_request()
+ *    which is called from abstract_host_disconnect_request()
+ *  - config_var_mutex, replica_check_mutex (not nested)
+ *    in replica_check_start_host_down()
+ *    which is called from abstract_host::ops::disabled() == host_disabled()
+ *  - removal_pendingq.mutex -> dfc->mutex
+ *    in dead_file_copy_host_becomes_down()
+ *    which is called from abstract_host::ops::disabled() == host_disabled()
  *  - peer_closing_queue.mutex
  *    in peer_del_ref()
  *    which is called from abstract_host_disconnect_request()
+ *  the last three entries are acquired after abstract_host::mutex
+ *  is released.
  *
  * NOTE: peer may be NULL.
  */
@@ -1305,7 +1482,14 @@ host_free(struct host *h)
 	free(h);
 }
 
-/* only file_replicating_new() is allowed to call this routine */
+/*
+ * only file_replicating_new() is allowed to call this routine
+ *
+ * PREREQUISITE: giant_lock
+ * LOCKS: abstract_host::mutex -> peer_closing_queue.mutex,
+ *	peer_closing_queue.mutex, peer::replication_mutex
+ * SLEEPS: no
+ */
 gfarm_error_t
 host_replicating_new(struct host *dst, struct file_replicating **frp)
 {
@@ -1317,6 +1501,11 @@ host_replicating_new(struct host *dst, struct file_replicating **frp)
 	return (peer_replicating_new(peer, dst, frp));
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: no
+ */
 static int
 host_order_by_disk_avail(const void *a, const void *b)
 {
@@ -1334,6 +1523,11 @@ host_order_by_disk_avail(const void *a, const void *b)
 		return (0);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: no
+ */
 void
 host_sort_to_remove_replicas(int nhosts, struct host **hosts)
 {
@@ -1344,6 +1538,11 @@ host_sort_to_remove_replicas(int nhosts, struct host **hosts)
 }
 
 
+/*
+ * PREREQUISITE: giant_lock (for gfarm_get_minimum_free_disk_space())
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: no
+ */
 gfarm_error_t
 host_is_disk_available_filter(struct host *host, void *closure)
 {
@@ -1357,6 +1556,7 @@ host_is_disk_available_filter(struct host *host, void *closure)
  * LOCKS:
  *  - abstract_host::mutex
  *    in host_is_busy() and host_is_disk_available()
+ * SLEEPS: no
  */
 gfarm_error_t
 host_is_not_busy_and_disk_available_filter(struct host *host, void *closure)
@@ -1365,6 +1565,11 @@ host_is_not_busy_and_disk_available_filter(struct host *host, void *closure)
 		&& host_is_disk_available_filter(host, closure));
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: no
+ */
 gfarm_error_t
 host_array_alloc(int *nhostsp, struct host ***hostsp)
 {
@@ -1396,6 +1601,11 @@ host_array_alloc(int *nhostsp, struct host ***hostsp)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: abstract_host::mutex, and the locks of (*filter)()
+ * SLEEPS: no, unless (*filter)() sleeps
+ */
 gfarm_error_t
 host_from_all(int (*filter)(struct host *, void *), void *closure,
 	gfarm_int32_t *nhostsp, struct host ***hostsp)
@@ -1418,6 +1628,11 @@ host_from_all(int (*filter)(struct host *, void *), void *closure,
 	return (e);
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: abstract_host::mutex, and the locks of (*filter)()
+ * SLEEPS: no, unless (*filter)() sleeps
+ */
 gfarm_error_t
 host_from_all_except(int (*filter)(struct host *, void *), void *closure,
 	struct hostset *exceptions,
@@ -1677,6 +1892,11 @@ gfm_server_host_generic_get(struct peer *peer,
 }
 
 /* this interface is exported for a use from a private extension */
+/*
+ * PREREQUISITE: giant_lock (for h->hi)
+ * LOCKS: nothing
+ * SLEEPS: maybe (network I/O)
+ */
 gfarm_error_t
 host_info_send(struct gfp_xdr *client, struct host *h)
 {
@@ -1688,12 +1908,22 @@ host_info_send(struct gfp_xdr *client, struct host *h)
 	    hi->ncpu, hi->port, hi->flags, hi->nhostaliases));
 }
 
+/*
+ * PREREQUISITE: giant_lock (for h->hi)
+ * LOCKS: nothing
+ * SLEEPS: maybe (network I/O)
+ */
 static gfarm_error_t
 host_info_reply(struct host *h, struct peer *peer, const char *diag)
 {
 	return (host_info_send(peer_get_conn(peer), h));
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: giant_lock -> (abstract_host::mutex, and the locks of (*filter)())
+ * SLEEPS: yes (giant_lock, network I/O while holding giant_lock)
+ */
 gfarm_error_t
 gfm_server_host_info_get_common(struct peer *peer,
 	int (*filter)(struct host *, void *), void *closure, const char *diag)
@@ -1757,6 +1987,11 @@ gfm_server_host_info_get_by_architecture(struct peer *peer,
 	return (e);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: giant_lock -> abstract_host::mutex
+ * SLEEPS: yes (giant_lock, network I/O while holding giant_lock)
+ */
 gfarm_error_t
 gfm_server_host_info_get_by_names_common(struct peer *peer,
 	int from_client, int skip,
@@ -1893,6 +2128,12 @@ host_info_verify(struct gfarm_host_info *hi, const char *diag)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: giant_lock -> (abstract_host::mutex, config_var_mutex, dbq.mutex,
+ *	and the locks of host_remove())
+ * SLEEPS: yes (giant_lock, dbq.mutex, network I/O)
+ */
 gfarm_error_t
 gfm_server_host_info_set(struct peer *peer, int from_client, int skip)
 {
@@ -1959,6 +2200,11 @@ gfm_server_host_info_set(struct peer *peer, int from_client, int skip)
 	return (gfm_server_put_reply(peer, diag, e, ""));
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: no
+ */
 void
 host_modify(struct host *h, struct gfarm_host_info *hi)
 {
@@ -2000,6 +2246,12 @@ host_fsngroup_modify(struct host *h, const char *fsngroupname,
 	return (GFARM_ERR_NO_ERROR);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: giant_lock -> (abstract_host::mutex, config_var_mutex, dbq.mutex,
+ *	dead_file_copy_scan.mutex, removal_pendingq.mutex -> dfc->mutex)
+ * SLEEPS: yes (giant_lock, dbq.mutex, network I/O)
+ */
 gfarm_error_t
 gfm_server_host_info_modify(struct peer *peer, int from_client, int skip)
 {
@@ -2085,6 +2337,12 @@ gfm_server_host_info_modify(struct peer *peer, int from_client, int skip)
 	return (gfm_server_put_reply(peer, diag, e, ""));
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: abstract_host::mutex, the locks of host_disconnect_request(),
+ *	dbq.mutex, and the locks of host_remove()
+ * SLEEPS: yes (dbq.mutex)
+ */
 /* this interface is exported for a use from a private extension */
 gfarm_error_t
 host_info_remove_default(const char *hostname, const char *diag)
@@ -2120,6 +2378,12 @@ host_info_remove_default(const char *hostname, const char *diag)
 gfarm_error_t (*host_info_remove)(const char *, const char *) =
 	host_info_remove_default;
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: giant_lock -> (config_var_mutex,
+ *	and the locks of host_info_remove_default())
+ * SLEEPS: yes (giant_lock, dbq.mutex, network I/O)
+ */
 gfarm_error_t
 gfm_server_host_info_remove(struct peer *peer, int from_client, int skip)
 {
@@ -2161,6 +2425,12 @@ gfm_server_host_info_remove(struct peer *peer, int from_client, int skip)
 }
 
 
+/*
+ * PREREQUISITE: giant_lock (for h->hi)
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: maybe (network I/O),
+ *	but abstract_host::mutex won't be blocked while sleeping.
+ */
 static gfarm_error_t
 host_schedule_reply_common(struct host *h, struct peer *peer,
 	int host_status_flags, const char *diag)
@@ -2189,6 +2459,12 @@ host_schedule_reply_common(struct host *h, struct peer *peer,
 	    report_flags));
 }
 
+/*
+ * PREREQUISITE: giant_lock (for h->hi)
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: maybe (network I/O),
+ *	but abstract_host::mutex won't be blocked while sleeping.
+ */
 /* called from fs.c:gfm_server_schedule_file() as well */
 gfarm_error_t
 host_schedule_reply(struct host *h, struct peer *peer, const char *diag)
@@ -2196,6 +2472,12 @@ host_schedule_reply(struct host *h, struct peer *peer, const char *diag)
 	return (host_schedule_reply_common(h, peer, 0, diag));
 }
 
+/*
+ * PREREQUISITE: giant_lock (for h->hi)
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: maybe (network I/O),
+ *	but abstract_host::mutex won't be blocked while sleeping.
+ */
 static gfarm_error_t
 host_schedule_reply_use_real_disk_space(struct host *h, struct peer *peer,
 	const char *diag)
@@ -2204,6 +2486,12 @@ host_schedule_reply_use_real_disk_space(struct host *h, struct peer *peer,
 	    HOST_STATUS_FLAG_USE_REAL_DISK_SPACE, diag));
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: abstract_host::mutex, and the locks of (*filter)()
+ * SLEEPS: maybe (network I/O),
+ *	but abstract_host::mutex won't be blocked while sleeping.
+ */
 gfarm_error_t
 host_schedule_reply_all(struct peer *peer,
 	int (*filter)(struct host *, void *), void *closure,
@@ -2247,6 +2535,11 @@ gfm_server_hostname_set(struct peer *peer, int from_client, int skip)
 	return (gfm_server_put_reply(peer, diag, e, ""));
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: no
+ */
 static int
 up_and_domain_filter(struct host *h, void *d)
 {
@@ -2256,6 +2549,11 @@ up_and_domain_filter(struct host *h, void *d)
 	    gfarm_host_is_in_domain(host_name(h), domain));
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: giant_lock -> abstract_host::mutex
+ * SLEEPS: yes (giant_lock, network I/O while holding giant_lock)
+ */
 static gfarm_error_t
 gfm_server_schedule_host_domain_common(struct peer *peer, int from_client,
 	int skip, int use_real_disk_space, const char *diag)
@@ -2305,6 +2603,11 @@ gfm_server_schedule_host_domain_use_real_disk_space(struct peer *peer,
 	    1, diag));
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: total_num_inodes_mutex, total_disk_mutex
+ * SLEEPS: maybe (network I/O), but no lock is held while sleeping.
+ */
 gfarm_error_t
 gfm_server_statfs(struct peer *peer, int from_client, int skip)
 {
@@ -2480,6 +2783,11 @@ hostset_empty_alloc(void)
 }
 
 /* should be used only when (*filter)() is true for nearly half of the hosts */
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: the locks of (*filter)()
+ * SLEEPS: no, unless (*filter)() sleeps
+ */
 static struct hostset *
 hostset_alloc_by(int (*filter)(struct host *, void *), void *closure,
 	int *n_hostsp)
@@ -2510,12 +2818,22 @@ hostset_alloc_by(int (*filter)(struct host *, void *), void *closure,
 	return (hs);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: no
+ */
 static int
 host_valid_filter(struct host *h, void *closure)
 {
 	return (!host_is_invalid(h));
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: no
+ */
 struct hostset *
 hostset_of_all_hosts_alloc_internal(int *n_all_hostsp)
 {
@@ -2525,6 +2843,11 @@ hostset_of_all_hosts_alloc_internal(int *n_all_hostsp)
 static struct hostset *all_host_hostset_cache = NULL;
 static int all_host_nhosts = 0;
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: no
+ */
 struct hostset *
 hostset_of_all_hosts_alloc(int *n_all_hostsp)
 {
@@ -2555,6 +2878,11 @@ all_host_hostset_cache_purge(void)
 	all_host_nhosts = 0;
 }
 
+/*
+ * PREREQUISITE: giant_lock (for h->fsngroupname)
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: no
+ */
 static int
 host_fsngroup_filter(struct host *h, void *closure)
 {
@@ -2564,6 +2892,11 @@ host_fsngroup_filter(struct host *h, void *closure)
 		strcmp(host_fsngroup(h), fsngroup) == 0);
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: no
+ */
 static struct hostset *
 hostset_of_fsngroup_alloc_internal(const char *fsngroup, int *n_hostsp)
 {
@@ -2773,6 +3106,11 @@ hostset_filter_apply(struct host *h, void *closure)
 		hostset_delete_host(c->hs, h);
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: the locks of (*filter)()
+ * SLEEPS: no, unless (*filter)() sleeps
+ */
 static void
 hostset_filter(struct hostset *hs,
 	int (*filter)(struct host *, void *), void *closure)
@@ -2825,6 +3163,11 @@ struct host_count_up_closure {
 	int n_up;
 };
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: no
+ */
 static void
 host_count_up(struct host *h, void *closure)
 {
@@ -2834,6 +3177,11 @@ host_count_up(struct host *h, void *closure)
 		c->n_up++;
 }
 
+/*
+ * PREREQUISITE: giant_lock (for host_id_to_host[])
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: no
+ */
 int
 hostset_count_hosts_up(struct hostset *hs, gfarm_time_t grace)
 {
@@ -2984,6 +3332,11 @@ hostset_count_valid(struct hostset *scope,
  * this function does not modify `existing' and `being_removed',
  * and they may be able to be used later.
  */
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: the locks of (*filter)()
+ * SLEEPS: no, unless (*filter)() sleeps
+ */
 static gfarm_error_t
 hostset_select_n_except(struct hostset *scope,
 	struct hostset *existing, struct hostset *being_removed,
@@ -3121,6 +3474,11 @@ host_select_by_network(
 	return (hosts[host_select_one(n_hosts, hosts, diag)]);
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: abstract_host::mutex, and the locks of (*filter)()
+ * SLEEPS: no, unless (*filter)() sleeps
+ */
 gfarm_error_t
 hostset_schedule_n_except_by_network(
 	struct hostset *scope,
@@ -3236,7 +3594,11 @@ struct hostset_cache_entry {
 	int nhosts;
 };
 
-/* PREREQUISITE: giant_lock */
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: abstract_host::mutex
+ * SLEEPS: no
+ */
 struct hostset *
 hostset_of_fsngroup_alloc(const char *fsngroup, int *n_hostsp)
 {
@@ -3278,7 +3640,11 @@ hostset_of_fsngroup_alloc(const char *fsngroup, int *n_hostsp)
 	return (hostset_dup(hce->hs));
 }
 
-/* PREREQUISITE: giant_lock */
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: nothing
+ * SLEEPS: no
+ */
 static void
 hostset_of_fsngroup_cache_purge(const char *fsngroup)
 {
