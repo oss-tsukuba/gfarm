@@ -940,6 +940,8 @@ resuming_thread(void *arg)
 	}
 
 	if (gfp_xdr_recv_is_ready(peer_get_conn(peer))) { /* inside COMPOUND */
+		/* protocol_main() calls peer_invoked(), which releases this */
+		peer_add_ref(peer);
 		protocol_main(peer);
 	} else { /* maybe inside COMPOUND, maybe not */
 		e = gfp_xdr_flush(peer_get_conn(peer));
