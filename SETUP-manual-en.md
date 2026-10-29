@@ -431,17 +431,7 @@ mds1% gfmdhost -l
 + slave  async c west         mds3.example.com 601
 ```
 
-Note 1:  
 The master metadata server will remain on mds2, and continuing operations as is will not cause any issues. Alternatively, reverting the master to mds1 is also an option. Updating asynchronous slave metadata servers requires stopping the server and performing an overwriting installation.
-
-Note 2:  
-In systems that use the service start/stop scripts,
-instead of the above `systemctl start gfmd-slave`,
-run the following command as root:
-```console
-$RC_DIR/gfmd slavestart
-```
-
 
 ```console
 mds3% sudo systemctl stop gfmd

@@ -431,17 +431,7 @@ mds1% gfmdhost -l
 + slave  async c west         mds3.example.com 601
 ```
 
-注1:  
 マスターメタデータサーバがmds2に移ったままですがこのまま運用を続けても問題ありませんし、mds1にマスターを戻しても問題ありません。非同期スレーブメタデータサーバの更新はメタデータサーバを停止させ、上書きインストールでバージョンアップを行います。
-
-注2:  
-サービス起動・停止スクリプトを用いるシステムでは、
-上記 `systemctl start gfmd-slave` の代わりに、
-root で以下を実行します。
-```console
-$RC_DIR/gfmd slavestart
-```
-
 
 ```console
 mds3% sudo systemctl stop gfmd
