@@ -4,6 +4,26 @@
 
 本マニュアルはGfarmが導入されていることを前提として、Gfarmの構築を行うためのものです。Gfarmを構築するために、まずファイルシステムメタデータを管理するメタデータサーバの構築を行います。その後、ファイルシステムノード、クライアントの構築を行います。
 
+### サービス操作コマンドの読み替え
+
+本マニュアルは systemd を用いる Linux を前提としています。
+それ以外のシステム（FreeBSD、NetBSD、macOS、SysVinit を用いる Linux など）や、
+config-gfarm で `--prefix` オプションを指定した場合は、
+`sudo systemctl 操作 サービス名` を、
+root で実行する `$RC_DIR/サービス名 操作` に読み替えてください。
+ただし `systemctl start gfmd-slave` は `$RC_DIR/gfmd slavestart` となります。  
+`systemctl enable` に相当する設定は `config-gfarm` が行います
+（`--prefix` 指定時および自動 enable が未実装の macOS は除く）。
+
+| OS             | $RC_DIR               |
+| -------------- | --------------------- |
+| FreeBSD, macOS | `/usr/local/etc/rc.d` |
+| NetBSD         | `/etc/rc.d`           |
+| その他         | `/etc/init.d`         |
+
+`--prefix` を指定した場合は `<prefix>/etc/rc.d`（FreeBSD、NetBSD、macOS）
+または `<prefix>/etc/init.d`（その他）となります。
+
 ## メタデータサーバ設定
 
 メタデータサーバは複数のサーバでマスタースレーブ型の冗長構成をとることができます。以下、ローカルサーバの特権ユーザで実行する必要のあるコマンドはsudoで実行しています。
