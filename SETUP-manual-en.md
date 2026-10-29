@@ -4,62 +4,25 @@
 
 This manual assumes that Gfarm has already been installed and is intended for setting up Gfarm.  First, set up the metadata servers that manage the filesystem metadata.  Then, set up the filesystem nodes and clients.
 
-### Regarding Notation
+### Service Control Commands
 
-This manual targets Linux distributions that use `systemd`.
+This manual assumes Linux with systemd.
+On other systems (FreeBSD, NetBSD, macOS, Linux with SysVinit, etc.),
+or when the `--prefix` option of `config-gfarm` is specified, 
+replace `sudo systemctl OPERATION SERVICE`
+with `$RC_DIR/SERVICE OPERATION` run as root,
+except that `systemctl start gfmd-slave` becomes `$RC_DIR/gfmd slavestart`.  
+The equivalent of `systemctl enable` is done by `config-gfarm`
+(except when `--prefix` is specified or on macOS, where it is not implemented).
 
-On Linux distributions that use SysVinit and
-on non-Linux operating systems such as FreeBSD and NetBSD
-that manage services using shell scripts,
-use the following commands instead of the `systemctl` commands shown later.
+| OS             | $RC_DIR               |
+| -------------- | --------------------- |
+| FreeBSD, macOS | `/usr/local/etc/rc.d` |
+| NetBSD         | `/etc/rc.d`           |
+| Others         | `/etc/init.d`         |
 
-For example, to start `gfmd` on a Linux system using `systemd`:
-
-```console
-$ sudo systemctl start gfmd
-```
-
-On NetBSD, run as root:
-
-```console
-# /etc/rc.d/gfmd start
-```
-
-More generally, replace commands of the form:
-
-```console
-sudo systemctl <OPERATION_NAME> <SERVICE_NAME>
-```
-
-with the corresponding commands, run as root:
-
-```console
-$RC_DIR/<SERVICE_NAME> <OPERATION_NAME>
-```
-
-Here, `$RC_DIR` is the directory containing the service start/stop scripts.
-Its value depends on the operating system:
-
-| Operating System        | Value of $RC_DIR             |
-| ----------------------- | ---------------------------- |
-| macOS                   | `$CONFIG_PREFIX/etc/rc.d`, or<br>`/usr/local/etc/rc.d` if `$CONFIG_PREFIX` is an empty string |
-| FreeBSD                 | `$CONFIG_PREFIX/etc/rc.d`    |
-| NetBSD                  | `$CONFIG_PREFIX/etc/rc.d`    |
-| AIX                     | `$CONFIG_PREFIX/sbin/init.d` |
-| HP-UX                   | `$CONFIG_PREFIX/sbin/init.d` |
-| OSF/1                   | `$CONFIG_PREFIX/sbin/init.d` |
-| Solaris                 | `$CONFIG_PREFIX/etc/init.d`  |
-| Linux using SysVinit    | `$CONFIG_PREFIX/etc/init.d`  |
-| Other systems (default) | `$CONFIG_PREFIX/etc/init.d`  |
-
-`$CONFIG_PREFIX` is the value specified by the `--prefix` option
-of the `config-gfarm` command, described later in this manual.
-If omitted, it defaults to an empty string.
-
-Even on Linux distributions that use `systemd`,
-if `$CONFIG_PREFIX` is non-empty, systemd unit files are not generated.
-Instead, service start/stop scripts are generated in `$RC_DIR`,
-as on Linux distributions that use SysVinit.
+With `--prefix`, it is `<prefix>/etc/rc.d` (FreeBSD, NetBSD, macOS)
+or `<prefix>/etc/init.d` (others).
 
 ## Setting up Metadata Servers
 

@@ -4,63 +4,25 @@
 
 本マニュアルはGfarmが導入されていることを前提として、Gfarmの構築を行うためのものです。Gfarmを構築するために、まずファイルシステムメタデータを管理するメタデータサーバの構築を行います。その後、ファイルシステムノード、クライアントの構築を行います。
 
-### 表記について
+### サービス操作コマンドの読み替え
 
-本マニュアルの記述は `systemd` を利用する Linux distribution 向けです。
+本マニュアルは systemd を用いる Linux を前提としています。
+それ以外のシステム（FreeBSD、NetBSD、macOS、SysVinit を用いる Linux など）や、
+config-gfarm で `--prefix` オプションを指定した場合は、
+`sudo systemctl 操作 サービス名` を、
+root で実行する `$RC_DIR/サービス名 操作` に読み替えてください。
+ただし `systemctl start gfmd-slave` は `$RC_DIR/gfmd slavestart` となります。  
+`systemctl enable` に相当する設定は `config-gfarm` が行います
+（`--prefix` 指定時および自動 enable が未実装の macOS は除く）。
 
-SysVinit を利用する Linux distribution や、
-Linux 以外の FreeBSD、NetBSD のような
-シェルスクリプトによるサービス管理を行なう OS については、
-後で説明する `systemctl` コマンドではなく、次の説明で読み替えてください。
+| OS             | $RC_DIR               |
+| -------------- | --------------------- |
+| FreeBSD, macOS | `/usr/local/etc/rc.d` |
+| NetBSD         | `/etc/rc.d`           |
+| その他         | `/etc/init.d`         |
 
-例えば、`systemd` を利用する Linux において  gfmd を起動するには
-以下のコマンドを用います。
-
-```console
-$ sudo systemctl start gfmd
-```
-
-NetBSD では root で以下を実行します:
-
-```console
-# /etc/rc.d/gfmd start
-```
-
-もっと一般的に、下記のような形式のコマンドについて:
-
-```console
-sudo systemctl 操作名 サービス名
-```
-
-サービス起動・停止スクリプトを用いるOSでは  root で以下を実行します:
-
-```console
-$RC_DIR/<SERVICE_NAME> <OPERATION_NAME>
-```
-
-ここで `$RC_DIR` は、サービス起動・停止スクリプト配置ディレクトリであり、
-OS別に以下の値となります。
-
-| Operating System        | $RC_DIR の値                 |
-| ----------------------- | ---------------------------- |
-| macOS                   | `$CONFIG_PREFIX/etc/rc.d` あるいは <br>`$CONFIG_PREFIX` が空文字列なら `/usr/local/etc/rc.d` |
-| FreeBSD                 | `$CONFIG_PREFIX/etc/rc.d`    |
-| NetBSD                  | `$CONFIG_PREFIX/etc/rc.d`    |
-| AIX                     | `$CONFIG_PREFIX/sbin/init.d` |
-| HP-UX                   | `$CONFIG_PREFIX/sbin/init.d` |
-| OSF/1                   | `$CONFIG_PREFIX/sbin/init.d` |
-| Solaris                 | `$CONFIG_PREFIX/etc/init.d`  |
-| Linux (SysVinit利用)    | `$CONFIG_PREFIX/etc/init.d`  |
-| その他 (default)        | `$CONFIG_PREFIX/etc/init.d`  |
-
-`$CONFIG_PREFIX` は後で示す config-gfarm コマンドの
---prefix オプションで指定した値であり、オプション省略時は空文字列です。
-
-なお、 `systemd` を用いる Linux distribution においても
-`$CONFIG_PREFIX` を空文字列以外に指定した場合には、
-systemd unit file は生成されず、
-SysVinit を利用する Linux と同じく
-$RC_DIR にサービス起動・停止スクリプトが生成されます。
+`--prefix` を指定した場合は `<prefix>/etc/rc.d`（FreeBSD、NetBSD、macOS）
+または `<prefix>/etc/init.d`（その他）となります。
 
 ## メタデータサーバ設定
 
