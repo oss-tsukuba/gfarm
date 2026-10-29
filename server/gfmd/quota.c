@@ -1704,7 +1704,7 @@ dirquota_check_run(void)
  * LOCKS: giant_lock -> (config_var_mutex,
  *	and the locks of dirquota_check_run())
  * SLEEPS: yes (giant_lock, see dirquota_check_run(), and sleep(3) for
- *	gfarm_directory_quota_check_retry_interval WITH holding giant_lock)
+ *	gfarm_directory_quota_check_retry_interval without giant_lock)
  */
 static void
 dirquota_check_main(struct quota_check_control *ctl)
@@ -1737,7 +1737,10 @@ dirquota_check_main(struct quota_check_control *ctl)
 				gflog_info(GFARM_MSG_1005106,
 				    "dirquota_check: "
 				    "delay retry for %d seconds", interval);
+				/* don't block other threads while sleeping */
+				giant_unlock();
 				gfarm_sleep(interval);
+				giant_lock();
 			}
 			gflog_info(GFARM_MSG_1005107, "dirquota_check: retry");
 		}
