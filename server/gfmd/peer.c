@@ -620,7 +620,7 @@ peer_del_ref_for_replication(struct peer *peer)
 
 /*
  * PREREQUISITE: nothing
- * LOCKS: peer_closing_queue.mutex -> watcher_event::mutex,
+ * LOCKS: peer_closing_queue.mutex,
  *	and after peer_closing_queue.mutex is unlocked,
  *	giant_lock -> locks in (*peer_async_free)() and
  *	peer_replicating_free_all_waiting_result(),
@@ -646,8 +646,12 @@ peer_closer(void *arg)
 		do_async_free = 0;
 		for (prev = &peer_closing_queue.head;
 		    (peer = *prev) != NULL; prev = &peer->next_close) {
-			if (peer->refcount == 0 &&
-			    !watcher_event_is_active(peer->readable_event)) {
+			/*
+			 * a peer which is watched or whose readable handler
+			 * is running holds a reference,
+			 * so refcount == 0 means that it's neither of them.
+			 */
+			if (peer->refcount == 0) {
 				if (peer->async != NULL &&
 				    peer_async_free != NULL) {
 					do_async_free = 1;
@@ -961,7 +965,8 @@ peer_get_service_name(struct peer *peer)
  * PREREQUISITE: giant_lock
  * LOCKS: abstract_host::mutex in host_addr_lookup(),
  *	mdhost_table_rwlock, abstract_host::mutex in mdhost_lookup(),
- *	and thread_pool::mutex, thread_jobq::mutex in thrpool_add_job(),
+ *	and peer_closing_queue.mutex in peer_add_ref(),
+ *	thread_pool::mutex, thread_jobq::mutex in thrpool_add_job(),
  *	or see peer_watch_access()
  * SLEEPS: maybe (thrpool_add_job() waits for thread_jobq::nonfull)
  */
@@ -1036,10 +1041,12 @@ peer_authorized(struct peer *peer,
 
 	peer->watcher = watcher;
 
-	if (gfp_xdr_recv_is_ready(peer_get_conn(peer)))
+	if (gfp_xdr_recv_is_ready(peer_get_conn(peer))) {
+		/* the handler calls peer_invoked(), which releases this */
+		peer_add_ref(peer);
 		thrpool_add_job(watcher->thrpool,
 		    watcher->readable_handler, peer);
-	else
+	} else
 		peer_watch_access(peer);
 }
 
@@ -1249,6 +1256,11 @@ peer_shutdown_all(void)
 /*
  * XXX FIXME - rename this to peer_readable_invoked()
  *
+ * this releases the reference which was taken when the readable handler
+ * was invoked, i.e. by peer_watch_access(), or by the caller which calls
+ * the handler directly.  peer_del_ref() wakes up peer_closer() if the
+ * reference count becomes 0.
+ *
  * PREREQUISITE: nothing
  * LOCKS: watcher_event::mutex, peer_closing_queue.mutex
  * SLEEPS: no
@@ -1258,9 +1270,6 @@ peer_invoked(struct peer *peer)
 {
 	watcher_event_ack(peer->readable_event);
 	peer_del_ref(peer);
-
-	gfarm_cond_signal(&peer_closing_queue.ready_to_close,
-	    "peer_invoked", "connection can be freed");
 }
 
 /*
