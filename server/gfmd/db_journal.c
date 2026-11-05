@@ -241,19 +241,31 @@ db_journal_lock_dir(void)
 	if (journal_dir == NULL)
 		return; /* db_journal_init() reports this */
 	snprintf(path, sizeof(path), "%s/%s", journal_dir, JOURNAL_LOCK_FILE);
+	/*
+	 * if the lock is not available for other reasons, continue
+	 * without it as before.  e.g. if the journal directory does not
+	 * exist, db_journal_init() reports it, or disables replication
+	 * when the backend is "none".
+	 */
 	if ((fd = open(path, O_RDWR|O_CREAT, 0600)) == -1) {
 		save_errno = errno;
-		gflog_fatal(GFARM_MSG_UNFIXED, "%s: %s",
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "%s: %s, cannot detect another gfmd running",
 		    path, strerror(save_errno));
+		return;
 	}
 	fcntl(fd, F_SETFD, FD_CLOEXEC);
 	while (flock(fd, LOCK_EX|LOCK_NB) == -1) {
 		save_errno = errno;
 		if (save_errno == EINTR)
 			continue;
-		if (save_errno != EWOULDBLOCK)
-			gflog_fatal(GFARM_MSG_UNFIXED, "flock(%s): %s",
-			    path, strerror(save_errno));
+		if (save_errno != EWOULDBLOCK) {
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "flock(%s): %s, cannot detect another gfmd "
+			    "running", path, strerror(save_errno));
+			close(fd);
+			return;
+		}
 		if (waited >= JOURNAL_LOCK_WAIT) {
 			gflog_error(GFARM_MSG_UNFIXED,
 			    "%s: another gfmd is running with the journal "
