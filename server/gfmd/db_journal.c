@@ -218,12 +218,15 @@ db_journal_init_seqnum(void)
 static void (*master_disconnect_request)(struct peer *);
 
 #define JOURNAL_LOCK_FILE	"gfmd.lock"
+/* a gfmd built with sanitizers may take tens of seconds to exit */
+#define JOURNAL_LOCK_WAIT	60 /* seconds */
 
 /*
  * prevent two gfmd processes from sharing the same journal directory
  * and backend DB.  a slave gfmd does not bind the listening port,
  * so nothing else prevents such a double start.
  * the lock is held until the process exits.
+ * wait for a while, since the previous gfmd may be still shutting down.
  * this must be called before write_pid() and gfarm_daemon(), so that
  * a rejected gfmd does not overwrite the pid file, and the lock is
  * inherited by the daemon process.
@@ -231,7 +234,7 @@ static void (*master_disconnect_request)(struct peer *);
 void
 db_journal_lock_dir(void)
 {
-	int fd, save_errno;
+	int fd, save_errno, waited = 0;
 	char path[MAXPATHLEN + 1];
 	const char *journal_dir = gfarm_get_journal_dir();
 
@@ -244,17 +247,30 @@ db_journal_lock_dir(void)
 		    path, strerror(save_errno));
 	}
 	fcntl(fd, F_SETFD, FD_CLOEXEC);
-	if (flock(fd, LOCK_EX|LOCK_NB) == -1) {
+	while (flock(fd, LOCK_EX|LOCK_NB) == -1) {
 		save_errno = errno;
-		if (save_errno == EWOULDBLOCK) {
+		if (save_errno == EINTR)
+			continue;
+		if (save_errno != EWOULDBLOCK)
+			gflog_fatal(GFARM_MSG_UNFIXED, "flock(%s): %s",
+			    path, strerror(save_errno));
+		if (waited >= JOURNAL_LOCK_WAIT) {
 			gflog_error(GFARM_MSG_UNFIXED,
 			    "%s: another gfmd is running with the journal "
 			    "directory %s", path, journal_dir);
 			exit(1);
 		}
-		gflog_fatal(GFARM_MSG_UNFIXED, "flock(%s): %s",
-		    path, strerror(save_errno));
+		if (waited == 0)
+			gflog_notice(GFARM_MSG_UNFIXED,
+			    "%s: another gfmd is running with the journal "
+			    "directory %s, waiting up to %d seconds",
+			    path, journal_dir, JOURNAL_LOCK_WAIT);
+		sleep(1);
+		waited++;
 	}
+	if (waited > 0)
+		gflog_notice(GFARM_MSG_UNFIXED,
+		    "%s: locked after %d seconds", path, waited);
 	/* intentionally leave fd open */
 }
 
