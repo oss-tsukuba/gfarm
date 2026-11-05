@@ -1957,6 +1957,8 @@ main(int argc, char **argv)
 	 * We do this before calling gfarm_daemon()
 	 * to print the error message to stderr.
 	 */
+	if (gfarm_get_metadb_replication_enabled())
+		db_journal_lock_dir();
 	write_pid();
 
 	giant_init();

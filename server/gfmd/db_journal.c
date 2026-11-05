@@ -13,6 +13,8 @@
 #include <errno.h>
 #include <sys/param.h>
 #include <sys/time.h>
+#include <sys/file.h>
+#include <fcntl.h>
 
 #if (defined(__hurd__) || defined(__gnu_hurd__)) && !defined(MAXPATHLEN)
 #define MAXPATHLEN	2048 /* XXX FIXME */
@@ -214,6 +216,47 @@ db_journal_init_seqnum(void)
  * and we want to keep such programs independent from mdhost.c
  */
 static void (*master_disconnect_request)(struct peer *);
+
+#define JOURNAL_LOCK_FILE	"gfmd.lock"
+
+/*
+ * prevent two gfmd processes from sharing the same journal directory
+ * and backend DB.  a slave gfmd does not bind the listening port,
+ * so nothing else prevents such a double start.
+ * the lock is held until the process exits.
+ * this must be called before write_pid() and gfarm_daemon(), so that
+ * a rejected gfmd does not overwrite the pid file, and the lock is
+ * inherited by the daemon process.
+ */
+void
+db_journal_lock_dir(void)
+{
+	int fd, save_errno;
+	char path[MAXPATHLEN + 1];
+	const char *journal_dir = gfarm_get_journal_dir();
+
+	if (journal_dir == NULL)
+		return; /* db_journal_init() reports this */
+	snprintf(path, sizeof(path), "%s/%s", journal_dir, JOURNAL_LOCK_FILE);
+	if ((fd = open(path, O_RDWR|O_CREAT, 0600)) == -1) {
+		save_errno = errno;
+		gflog_fatal(GFARM_MSG_UNFIXED, "%s: %s",
+		    path, strerror(save_errno));
+	}
+	fcntl(fd, F_SETFD, FD_CLOEXEC);
+	if (flock(fd, LOCK_EX|LOCK_NB) == -1) {
+		save_errno = errno;
+		if (save_errno == EWOULDBLOCK) {
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "%s: another gfmd is running with the journal "
+			    "directory %s", path, journal_dir);
+			exit(1);
+		}
+		gflog_fatal(GFARM_MSG_UNFIXED, "flock(%s): %s",
+		    path, strerror(save_errno));
+	}
+	/* intentionally leave fd open */
+}
 
 gfarm_error_t
 db_journal_init(void (*disconnect_request)(struct peer *))
