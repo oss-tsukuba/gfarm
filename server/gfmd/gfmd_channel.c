@@ -951,7 +951,8 @@ gfmdc_client_journal_ready_to_recv_disconnect(void *p, void *arg)
 
 /*
  * PREREQUISITE: nothing
- * LOCKS: journal_seqnum_mutex, see gfmdc_client_send_request(),
+ * LOCKS: journal_seqnum_mutex, journal_recvq_mutex,
+ *	see gfmdc_client_send_request(),
  *	journal_ready_to_recv_info.mutex, mdhost::mutex
  * SLEEPS: yes (network I/O, and cond_wait on
  *	journal_ready_to_recv_info.wait_cond until the reply arrives)
@@ -970,7 +971,8 @@ gfmdc_client_journal_ready_to_recv(struct mdhost *mh, struct peer *peer)
 	ji.error = GFARM_ERR_NO_ERROR;
 	ji.end = 0;
 
-	seqnum = db_journal_get_current_seqnum();
+	/* including the records in the recvq, received before reconnection */
+	seqnum = db_journal_get_recv_seqnum();
 
 	if ((e = gfmdc_client_send_request(mh, peer, diag,
 	    gfmdc_client_journal_ready_to_recv_result,

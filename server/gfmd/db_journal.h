@@ -11,6 +11,7 @@ enum journal_operation;
 
 gfarm_uint64_t db_journal_next_seqnum(void);
 gfarm_uint64_t db_journal_get_current_seqnum(void);
+gfarm_uint64_t db_journal_get_recv_seqnum(void);
 void db_journal_set_apply_ops(const struct db_ops *);
 void db_journal_set_fail_store_op(void (*)(void));
 gfarm_error_t db_journal_read(struct journal_file_reader *, void *,

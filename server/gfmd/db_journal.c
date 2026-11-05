@@ -70,6 +70,13 @@ static GFARM_STAILQ_HEAD(journal_recvq, db_journal_recv_info) journal_recvq
 	= GFARM_STAILQ_HEAD_INITIALIZER(journal_recvq);
 static int journal_recvq_nelems = 0;
 static int journal_recvq_cancel;
+/*
+ * the last seqnum of the records received successively from the master,
+ * including the records which are still in the recvq.
+ * protected by journal_recvq_mutex.
+ */
+static gfarm_uint64_t journal_recv_seqnum;
+static int journal_recv_seqnum_is_valid = 0;
 static pthread_mutex_t journal_recvq_mutex;
 static pthread_mutex_t journal_seqnum_mutex;
 static pthread_cond_t journal_recvq_nonempty_cond;
@@ -4664,7 +4671,7 @@ error:
 
 /*
  * PREREQUISITE: nothing
- * LOCKS: journal_recvq_mutex
+ * LOCKS: journal_seqnum_mutex, journal_recvq_mutex
  * SLEEPS: maybe (cond_wait on journal_recvq_nonfull_cond while the
  *	recvq is full)
  */
@@ -4674,6 +4681,7 @@ db_journal_recvq_enter(gfarm_uint64_t from_sn, gfarm_uint64_t to_sn,
 {
 	gfarm_error_t e;
 	struct db_journal_recv_info *ri;
+	gfarm_uint64_t cur_seqnum;
 	static const char diag[] = "db_journal_recvq_enter";
 
 	GFARM_MALLOC(ri);
@@ -4687,10 +4695,22 @@ db_journal_recvq_enter(gfarm_uint64_t from_sn, gfarm_uint64_t to_sn,
 	ri->to_sn = to_sn;
 	ri->recs_len = recs_len;
 	ri->recs = recs;
+	cur_seqnum = db_journal_get_current_seqnum();
 	gfarm_mutex_lock(&journal_recvq_mutex, diag, RECVQ_MUTEX_DIAG);
 	while (journal_recvq_nelems >= gfarm_get_journal_recvq_size())
 		gfarm_cond_wait(&journal_recvq_nonfull_cond,
 		    &journal_recvq_mutex, diag, RECVQ_NONFULL_COND_DIAG);
+	if (!journal_recv_seqnum_is_valid) {
+		/* the first record since gfmd started, the recvq is empty */
+		journal_recv_seqnum = cur_seqnum;
+		journal_recv_seqnum_is_valid = 1;
+	}
+	/*
+	 * records which are not successive will be abandoned by
+	 * db_journal_recvq_delete()
+	 */
+	if (from_sn == journal_recv_seqnum + 1)
+		journal_recv_seqnum = to_sn;
 	GFARM_STAILQ_INSERT_TAIL(&journal_recvq, ri, next);
 	gfarm_cond_signal(&journal_recvq_nonempty_cond, diag,
 	    RECVQ_NONEMPTY_COND_DIAG);
@@ -4698,6 +4718,34 @@ db_journal_recvq_enter(gfarm_uint64_t from_sn, gfarm_uint64_t to_sn,
 	gfarm_mutex_unlock(&journal_recvq_mutex, diag, RECVQ_MUTEX_DIAG);
 
 	return (GFARM_ERR_NO_ERROR);
+}
+
+/*
+ * returns the last seqnum which the slave has received, including
+ * the records which are still in the recvq and not written to the
+ * journal file yet.
+ * a slave reports this to the master when it connects to the master,
+ * because the recvq may still have the records received through the
+ * previous connection.
+ *
+ * PREREQUISITE: nothing
+ * LOCKS: journal_seqnum_mutex, journal_recvq_mutex
+ * SLEEPS: no
+ */
+gfarm_uint64_t
+db_journal_get_recv_seqnum(void)
+{
+	gfarm_uint64_t sn, cur_seqnum;
+	static const char diag[] = "db_journal_get_recv_seqnum";
+
+	cur_seqnum = db_journal_get_current_seqnum();
+	gfarm_mutex_lock(&journal_recvq_mutex, diag, RECVQ_MUTEX_DIAG);
+	if (journal_recv_seqnum_is_valid && journal_recv_seqnum > cur_seqnum)
+		sn = journal_recv_seqnum;
+	else
+		sn = cur_seqnum;
+	gfarm_mutex_unlock(&journal_recvq_mutex, diag, RECVQ_MUTEX_DIAG);
+	return (sn);
 }
 
 /*

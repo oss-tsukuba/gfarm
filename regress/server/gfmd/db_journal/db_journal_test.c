@@ -794,9 +794,52 @@ t_write_blocked(void)
 	t_journal_file_close(self_jf);
 }
 
+static void
+t_recvq_enter(gfarm_uint64_t from_sn, gfarm_uint64_t to_sn)
+{
+	unsigned char *recs;
+
+	GFARM_MALLOC_ARRAY(recs, 1);
+	TEST_ASSERT_NOERR("db_journal_recvq_enter",
+	    db_journal_recvq_enter(from_sn, to_sn, 1, recs));
+}
+
+static void
+t_recvq_seqnum(void)
+{
+	struct db_journal_recv_info *ri;
+
+	db_journal_init_status(); /* for journal_recvq_mutex */
+	journal_seqnum = 10;
+	TEST_ASSERT_L("no record", 10, db_journal_get_recv_seqnum());
+	t_recvq_enter(11, 20);
+	t_recvq_enter(21, 30);
+	TEST_ASSERT_L("in recvq", 30, db_journal_get_recv_seqnum());
+	/* not successive, will be abandoned */
+	t_recvq_enter(25, 40);
+	t_recvq_enter(41, 50);
+	TEST_ASSERT_L("not successive", 30, db_journal_get_recv_seqnum());
+	t_recvq_enter(31, 35);
+	TEST_ASSERT_L("successive", 35, db_journal_get_recv_seqnum());
+	/* written to the journal file */
+	journal_seqnum = 20;
+	TEST_ASSERT_L("partially written", 35, db_journal_get_recv_seqnum());
+	journal_seqnum = 35;
+	TEST_ASSERT_L("all written", 35, db_journal_get_recv_seqnum());
+
+	while ((ri = GFARM_STAILQ_FIRST(&journal_recvq)) != NULL) {
+		GFARM_STAILQ_REMOVE_HEAD(&journal_recvq, next);
+		--journal_recvq_nelems;
+		free(ri->recs);
+		free(ri);
+	}
+	journal_recv_seqnum_is_valid = 0;
+}
+
 void
 t_write(void)
 {
+	t_recvq_seqnum();
 	t_write_sequential();
 	t_write_cyclic();
 	t_write_blocked();
