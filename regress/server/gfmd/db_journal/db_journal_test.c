@@ -794,6 +794,156 @@ t_write_blocked(void)
 	t_journal_file_close(self_jf);
 }
 
+#define TEST_RECV_FILE_MAX_SIZE	(4096 + 4096)
+#define TEST_RECV_NRECS		9
+
+static unsigned char *t_recv_recs[TEST_RECV_NRECS + 1]; /* by seqnum */
+static gfarm_uint32_t t_recv_rec_lens[TEST_RECV_NRECS + 1];
+static int t_disconnect_requested = 0;
+
+static void
+t_master_disconnect_request(struct peer *peer)
+{
+	++t_disconnect_requested;
+}
+
+/* a slave receives the records from 'from_sn' to 'to_sn' */
+static void
+t_recv_enter(gfarm_uint64_t from_sn, gfarm_uint64_t to_sn)
+{
+	gfarm_uint64_t sn;
+	unsigned char *recs, *p;
+	int len = 0;
+
+	for (sn = from_sn; sn <= to_sn; ++sn)
+		len += t_recv_rec_lens[sn];
+	GFARM_MALLOC_ARRAY(recs, len);
+	TEST_ASSERT0(recs != NULL);
+	for (p = recs, sn = from_sn; sn <= to_sn; ++sn) {
+		memcpy(p, t_recv_recs[sn], t_recv_rec_lens[sn]);
+		p += t_recv_rec_lens[sn];
+	}
+	TEST_ASSERT_NOERR("db_journal_recvq_enter",
+	    db_journal_recvq_enter(from_sn, to_sn, len, recs));
+}
+
+static void
+t_recv_proc(void)
+{
+	int canceled = 0;
+
+	TEST_ASSERT_NOERR("db_journal_recvq_proc",
+	    db_journal_recvq_proc(&canceled));
+	TEST_ASSERT0(!canceled);
+}
+
+/* a slave writes only complete transactions to the journal file */
+static void
+t_recv(void)
+{
+	struct journal_file_reader *reader;
+	struct gfarm_user_info *ui;
+	char *rec;
+	gfarm_uint32_t rec_len;
+	gfarm_uint64_t sn, seqnum;
+	int i, n = 1, eof;
+
+	/* make the records of 3 transactions as a master */
+	unlink_test_file(filepath);
+	TEST_ASSERT_NOERR("journal_file_open",
+	    journal_file_open(filepath, TEST_RECV_FILE_MAX_SIZE, 0,
+		&self_jf, GFARM_JOURNAL_RDWR));
+	setup_write();
+	for (i = 0; i < 3; ++i) {
+		ui = t_new_user_info("user", "USER");
+		TEST_ASSERT_NOERR("begin",
+		    db_journal_ops.begin(n++, NULL));
+		TEST_ASSERT_NOERR("user_add",
+		    db_journal_ops.user_add(n++, ui));
+		free(ui);
+		TEST_ASSERT_NOERR("end",
+		    db_journal_ops.end(n++, NULL));
+	}
+	/* |b[1]|user[2]|e[3]|b[4]|user[5]|e[6]|b[7]|user[8]|e[9]| */
+	reader = journal_file_main_reader(self_jf);
+	for (sn = 1; sn <= TEST_RECV_NRECS; ++sn) {
+		TEST_ASSERT_NOERR("journal_file_read_serialized",
+		    journal_file_read_serialized(reader, &rec, &rec_len,
+		    &seqnum, &eof));
+		TEST_ASSERT0(!eof);
+		TEST_ASSERT_L("seqnum", sn, seqnum);
+		t_recv_recs[sn] = (unsigned char *)rec;
+		t_recv_rec_lens[sn] = rec_len;
+	}
+	t_journal_file_close(self_jf);
+
+	/* receive them as a slave */
+	unlink_test_file(filepath);
+	TEST_ASSERT_NOERR("journal_file_open",
+	    journal_file_open(filepath, TEST_RECV_FILE_MAX_SIZE, 0,
+		&self_jf, GFARM_JOURNAL_RDWR));
+	journal_file_reader_disable_block_writer(
+	    journal_file_main_reader(self_jf));
+	db_journal_init_status();
+	master_disconnect_request = t_master_disconnect_request;
+	journal_seqnum = 0;
+	journal_recv_seqnum_is_valid = 0;
+
+	t_recv_enter(1, 4);
+	t_recv_proc();
+	TEST_ASSERT_L("complete transaction",
+	    3, db_journal_get_current_seqnum());
+	t_recv_enter(5, 5);
+	t_recv_proc();
+	TEST_ASSERT_L("incomplete transaction",
+	    3, db_journal_get_current_seqnum());
+
+	/* reconnect, b[4] and user[5] are discarded and resent */
+	TEST_ASSERT_L("reset in a transaction", 3, db_journal_recvq_reset());
+	t_recv_proc();
+	t_recv_enter(4, 7);
+	t_recv_proc();
+	TEST_ASSERT_L("resent", 6, db_journal_get_current_seqnum());
+
+	/* reconnect, the records in the recvq are not resent */
+	t_recv_enter(8, 9);
+	TEST_ASSERT_L("reset with recvq", 9, db_journal_recvq_reset());
+	t_recv_proc();
+	t_recv_proc();
+	TEST_ASSERT_L("recvq", 9, db_journal_get_current_seqnum());
+
+	/* not successive */
+	t_recv_enter(5, 5);
+	t_recv_proc();
+	TEST_ASSERT_I("disconnect", 1, t_disconnect_requested);
+	TEST_ASSERT_L("not successive", 9, db_journal_get_current_seqnum());
+	TEST_ASSERT_L("reset after abandoned", 9, db_journal_recvq_reset());
+	t_recv_proc();
+	t_journal_file_close(self_jf);
+
+	/* the journal file has each record exactly once */
+	TEST_ASSERT_NOERR("journal_file_open",
+	    journal_file_open(filepath, TEST_RECV_FILE_MAX_SIZE, 0,
+		&self_jf, GFARM_JOURNAL_RDWR));
+	reader = journal_file_main_reader(self_jf);
+	for (sn = 1; sn <= TEST_RECV_NRECS; ++sn) {
+		TEST_ASSERT_NOERR("journal_file_read_serialized",
+		    journal_file_read_serialized(reader, &rec, &rec_len,
+		    &seqnum, &eof));
+		TEST_ASSERT0(!eof);
+		TEST_ASSERT_L("written seqnum", sn, seqnum);
+		free(rec);
+	}
+	TEST_ASSERT_NOERR("journal_file_read_serialized",
+	    journal_file_read_serialized(reader, &rec, &rec_len,
+	    &seqnum, &eof));
+	TEST_ASSERT0(eof);
+	t_journal_file_close(self_jf);
+
+	for (sn = 1; sn <= TEST_RECV_NRECS; ++sn)
+		free(t_recv_recs[sn]);
+}
+
 void
 t_write(void)
 {
@@ -802,6 +952,7 @@ t_write(void)
 	t_write_blocked();
 	t_write_transaction_around1();
 	t_write_transaction_around2();
+	t_recv();
 }
 
 static char * *
