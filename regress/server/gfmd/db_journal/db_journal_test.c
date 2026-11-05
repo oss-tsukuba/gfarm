@@ -382,6 +382,34 @@ t_no_check_post_read(void *op_arg, gfarm_uint64_t seqnum,
 	return (GFARM_ERR_NO_ERROR);
 }
 
+/*
+ * reopen a reader at 'last_seqnum' as a master does for a slave,
+ * then fetch the records after it.
+ * 'last_seqnum' may be in the middle of a transaction.
+ */
+static void
+t_reopen_fetch(gfarm_uint64_t last_seqnum, gfarm_uint64_t to_seqnum)
+{
+	struct journal_file_reader *reader = NULL;
+	int inited = 0, len, no_rec;
+	char *data, msg[BUFSIZ];
+	gfarm_uint64_t from_sn, to_sn;
+
+	snprintf(msg, sizeof msg, "reopen at %llu",
+	    (unsigned long long)last_seqnum);
+	journal_seqnum = to_seqnum;
+	TEST_ASSERT_NOERR(msg, journal_file_reader_reopen_if_needed(
+	    self_jf, "test", &reader, last_seqnum, &inited));
+	TEST_ASSERT(msg, inited);
+	TEST_ASSERT_NOERR(msg, db_journal_fetch(reader, last_seqnum + 1,
+	    &data, &len, &from_sn, &to_sn, &no_rec, msg));
+	TEST_ASSERT(msg, !no_rec);
+	TEST_ASSERT_L(msg, last_seqnum + 1, from_sn);
+	TEST_ASSERT_L(msg, to_seqnum, to_sn);
+	free(data);
+	journal_file_reader_close(reader);
+}
+
 static void
 t_write_transaction_around1(void)
 {
@@ -472,6 +500,11 @@ t_write_transaction_around1(void)
 	 * |user3[8]|e[9]|xxxx|b[4]|user2[5]|e[6]|b[7]|
 	 *               w    r
 	 */
+
+	/* b[7] is at the tail, and the rest is at the head */
+	t_reopen_fetch(6, 9);
+	t_reopen_fetch(7, 9);
+	t_reopen_fetch(8, 9);
 
 	t_journal_file_close(self_jf);
 
@@ -569,6 +602,10 @@ t_write_transaction_around2(void)
 	 * |b[1]|user1[2]|e[3]|b[4]|user2[5]|e[6]|            |
 	 * r                                     w
 	 */
+	t_reopen_fetch(3, 6);
+	t_reopen_fetch(4, 6);
+	t_reopen_fetch(5, 6);
+
 	TEST_ASSERT_NOERR("db_journal_read(begin)",
 	    db_journal_read(reader, NULL,
 	        t_no_check_post_read, NULL, &eof));
@@ -614,6 +651,11 @@ t_write_transaction_around2(void)
 	 * |e[9]|user1[2]|e[3]|b[4]|user2[5]|e[6]|b[7]|user[8]|
 	 *      w             r
 	 */
+
+	/* b[7] and user[8] are at the tail, and e[9] is at the head */
+	t_reopen_fetch(6, 9);
+	t_reopen_fetch(7, 9);
+	t_reopen_fetch(8, 9);
 
 	t_journal_file_close(self_jf);
 
@@ -797,6 +839,7 @@ t_write_blocked(void)
 void
 t_write(void)
 {
+	db_journal_init_status(); /* for journal_seqnum_mutex */
 	t_write_sequential();
 	t_write_cyclic();
 	t_write_blocked();

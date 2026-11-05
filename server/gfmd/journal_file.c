@@ -1031,8 +1031,18 @@ journal_fread_file_header(FILE *file)
 	return (e);
 }
 
+/*
+ * 'db_seqnum' is the last seqnum stored in the database, or the last
+ * seqnum received by a slave gfmd.  The former is always the seqnum of
+ * a GFM_JOURNAL_END record, but the latter may be in the middle of
+ * a transaction, because db_journal_fetch() splits transactions.
+ * If 'mid_transaction_ok' is set, 'db_seqnum' in the middle of
+ * a transaction is allowed, and the read position is set to
+ * the GFM_JOURNAL_BEGIN record of the transaction.
+ */
 static gfarm_error_t
-journal_find_rw_pos0(FILE *file, int has_writer, size_t file_size,
+journal_find_rw_pos0(FILE *file, int has_writer, int mid_transaction_ok,
+	size_t file_size,
 	gfarm_uint64_t db_seqnum, off_t *rposp, gfarm_uint64_t *rlapp,
 	off_t *wposp, gfarm_uint64_t wlap, off_t *tailp,
 	gfarm_uint64_t *max_seqnump)
@@ -1100,7 +1110,14 @@ journal_find_rw_pos0(FILE *file, int has_writer, size_t file_size,
 				max_seqnum = seqnum;
 				max_seqnum_next_pos = next_pos;
 			}
-			if (db_seqnum < begin_seqnum &&
+			/*
+			 * begin_seqnum == 0 means that GFM_JOURNAL_BEGIN of
+			 * this transaction is at the tail of the file.
+			 * it's handled after this loop.
+			 */
+			if ((db_seqnum < begin_seqnum ||
+			    (mid_transaction_ok && begin_seqnum != 0 &&
+			    db_seqnum < seqnum)) &&
 			    min_seqnum > begin_seqnum) {
 				min_seqnum = begin_seqnum;
 				min_seqnum_pos = begin_pos;
@@ -1116,7 +1133,8 @@ journal_find_rw_pos0(FILE *file, int has_writer, size_t file_size,
 	 * respectively.
 	 */
 	if (first_seqnum == last_seqnum + 1 && /* circulated */
-	    db_seqnum < last_begin_seqnum && /* newer than current seqnum */
+	    (db_seqnum < last_begin_seqnum || /* newer than current seqnum */
+	    (mid_transaction_ok && db_seqnum < first_end_seqnum)) &&
 	    last_begin_seqnum < first_end_seqnum && /* valid BEGIN - END */
 	    last_begin_seqnum < min_seqnum && /* is min BEGIN seqnum */
 	    first_end_pos < first_begin_pos && /* END in head */
@@ -1145,6 +1163,9 @@ journal_find_rw_pos0(FILE *file, int has_writer, size_t file_size,
 	 * - 'db_seqnum + 1 < min_seqnum' means that sequece numbers
 	 *   around 'db_seqnum' are not succesive.  One or more records
 	 *   may have been lost.
+	 *   If 'mid_transaction_ok' is set and 'db_seqnum' is in the
+	 *   middle of a transaction, 'min_seqnum' is the seqnum of its
+	 *   GFM_JOURNAL_BEGIN record, which is not greater than 'db_seqnum'.
 	 *
 	 * - 'max_seqnum < db_seqnum' means that database, the journal
 	 *   file or both are corrupted.
@@ -1200,7 +1221,7 @@ journal_find_rw_pos0(FILE *file, int has_writer, size_t file_size,
 }
 
 static gfarm_error_t
-journal_find_rw_pos(int rfd, int wfd, size_t file_size,
+journal_find_rw_pos(int rfd, int wfd, int mid_transaction_ok, size_t file_size,
 	gfarm_uint64_t db_seqnum, off_t *rposp, gfarm_uint64_t *rlapp,
 	off_t *wposp, gfarm_uint64_t wlap, off_t *tailp,
 	gfarm_uint64_t *max_seqnump)
@@ -1219,7 +1240,8 @@ journal_find_rw_pos(int rfd, int wfd, size_t file_size,
 		return (e);
 	}
 
-	e = journal_find_rw_pos0(rf, wfd >= 0, file_size, db_seqnum, rposp,
+	e = journal_find_rw_pos0(rf, wfd >= 0, mid_transaction_ok,
+	    file_size, db_seqnum, rposp,
 	    rlapp,  wposp, wlap, tailp, max_seqnump);
 	fclose(rf);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -1573,7 +1595,7 @@ journal_file_open(const char *path, size_t max_size,
 		goto error;
 	}
 	if (cur_size > 0) {
-		if ((e = journal_find_rw_pos(rfd, wfd, cur_size,
+		if ((e = journal_find_rw_pos(rfd, wfd, 0, cur_size,
 		    cur_seqnum, &rpos, &rlap, &wpos, JOURNAL_INITIAL_WLAP,
 		    &tail, &jf->initial_max_seqnum)) != GFARM_ERR_NO_ERROR)
 			goto error;
@@ -1686,7 +1708,12 @@ journal_file_reader_reopen_if_needed(struct journal_file *jf,
 	}
 
 	assert(*readerp == NULL || (*readerp)->xdr == NULL);
-	if ((e2 = journal_find_rw_pos(fd, -1, jf->tail, seqnum, &rpos,
+	/*
+	 * 'seqnum' is the last seqnum sent to (or reported by) a slave,
+	 * and may be in the middle of a transaction.
+	 * db_journal_fetch() skips the records already sent.
+	 */
+	if ((e2 = journal_find_rw_pos(fd, -1, 1, jf->tail, seqnum, &rpos,
 	    &rlap, &wpos, writer->lap, &tail, &jf->initial_max_seqnum))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1003423,
