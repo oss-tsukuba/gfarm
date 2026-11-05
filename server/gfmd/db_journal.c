@@ -4410,7 +4410,8 @@ db_journal_free_rec_list(struct db_journal_rec_list *recs)
 /*
  * PREREQUISITE: nothing
  * LOCKS: journal_file_mutex -> journal_log_verbose_mutex,
- *	db_access_mutex -> the locks of store_ops, journal_file_mutex
+ *	db_access_mutex -> the locks of store_ops,
+ *	db_access_mutex -> journal_file_mutex, journal_file_mutex
  * SLEEPS: yes (cond_wait on nonempty_cond, file I/O, backend DB access)
  */
 void *
