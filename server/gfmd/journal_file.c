@@ -1781,10 +1781,31 @@ journal_file_close(struct journal_file *jf)
 	journal_file_mutex_unlock(jf, diag);
 }
 
+/* PREREQUISITE: journal_file_mutex */
+static int
+journal_file_is_closed_unlocked(struct journal_file *jf)
+{
+	return (jf->path == NULL);
+}
+
+/*
+ * jf->path is cleared by journal_file_close() with journal_file_mutex
+ * held, and is checked by other threads to know gfmd is shutting down.
+ *
+ * PREREQUISITE: nothing
+ * LOCKS: journal_file_mutex
+ * SLEEPS: no
+ */
 int
 journal_file_is_closed(struct journal_file *jf)
 {
-	return (jf->path == NULL);
+	int closed;
+	static const char diag[] = "journal_file_is_closed";
+
+	journal_file_mutex_lock(jf, diag);
+	closed = journal_file_is_closed_unlocked(jf);
+	journal_file_mutex_unlock(jf, diag);
+	return (closed);
 }
 
 /*
@@ -2089,7 +2110,7 @@ journal_file_read(struct journal_file_reader *reader, void *op_arg,
 	    GFLOG_REDUCED_STATE_INITIALIZER(3, 3, 60, 60);
 
 	journal_file_mutex_lock(jf, diag);
-	if (journal_file_is_closed(jf)) {
+	if (journal_file_is_closed_unlocked(jf)) {
 		e = GFARM_ERR_NO_ERROR;
 		goto unlock;
 	}
