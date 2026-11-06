@@ -2,6 +2,7 @@
 gftool/gfcksum/gfcksum-c.mismatch.sh
 
 lib/libgfarm/gfutil/utf8/utf8_test.sh
+lib/libgfarm/gfarm/conn_cache/conn_cache_stress.sh
 lib/libgfarm/gfarm/gfarm_error_range_alloc/errmsg.sh
 lib/libgfarm/gfarm/gfarm_error_to_errno/all_mapped.sh
 lib/libgfarm/gfarm/gfs_acl/empty_access_dir.sh
