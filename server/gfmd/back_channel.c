@@ -1014,6 +1014,8 @@ gfm_server_switch_back_channel_common(struct peer *peer, int from_client,
 		struct sockaddr_storage addr;
 		socklen_t addrlen = sizeof(addr);
 
+		/* do not keep the network of the previous connection */
+		host_set_network(host, NULL);
 		if (getpeername(peer_get_fd(peer), (struct sockaddr *)&addr,
 						&addrlen) == 0) {
 			struct gfarm_hostspec *network = NULL;

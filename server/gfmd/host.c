@@ -791,12 +791,22 @@ host_get_disconnect_callback(struct host *h,
 
 #endif /* COMPAT_GFARM_2_3 */
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: nothing
+ * SLEEPS: no
+ */
 struct gfarm_hostspec *
 host_get_network(struct host *host)
 {
 	return (host->network);
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: nothing
+ * SLEEPS: no
+ */
 void host_set_network(struct host *host, struct gfarm_hostspec *network)
 {
 	host->network = network;
@@ -1368,7 +1378,12 @@ host_disable(struct abstract_host *ah)
 	h->report_flags = 0;
 	h->disconnect_time = time(NULL);
 	h->disk_used_change_in_byte = 0;
-	h->network = NULL;
+	/*
+	 * do not clear h->network here.  it's protected by giant_lock,
+	 * but this function may be called without giant_lock.
+	 * it's overwritten when the back channel is connected again,
+	 * and it's not used for a host which is down.
+	 */
 
 	host_total_disk_update(saved_used, saved_avail,
 	    saved_used_change_in_byte, 0, 0);
@@ -1453,6 +1468,7 @@ host_new(struct gfarm_host_info *hi, struct callout *callout)
 	h->hi = *hi;
 	h->host_id = -1; /* initialized by host_enter(). see comment there */
 	h->fsngroupname = NULL;
+	h->network = NULL;
 #ifdef COMPAT_GFARM_2_3
 	h->back_channel_result = NULL;
 	h->back_channel_disconnect = NULL;
