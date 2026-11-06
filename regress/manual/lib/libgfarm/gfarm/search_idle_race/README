@@ -1,0 +1,39 @@
+search_idle_race - test of a race between search_idle() and another thread
+
+Thread A schedules hosts by gfarm_schedule_select_host(), which connects
+to each gfsd and sends statfs on the connection without conn_lock.
+After the delay (-d, default 2 seconds), the main thread acquires
+a connection to the specified gfsd and calls statfs on it.
+
+To make the window wide, stop the gfsd process which handles the statfs
+of thread A for a while.  The period must be shorter than
+schedule_rpc_timeout (35 seconds by default).  For example, on the gfsd
+host (c2), as root:
+
+	gdb -p $(pgrep -o -f 'sbin/gfsd -P') -batch \
+	    -ex 'set follow-fork-mode child' -ex 'set detach-on-fork on' \
+	    -ex 'break gfs_server_statfs' -ex continue \
+	    -ex 'shell sleep 10' -ex detach &
+
+and then, on a client host which is not a filesystem node:
+
+	./search_idle_race -d 2 c2
+
+Expected result:
+	the main thread finishes statfs immediately with another connection,
+	and thread A finishes after the gfsd resumes.
+
+	  2.00: rpc: acquiring c2:600
+	  2.01: rpc: acquired, pid 8101
+	  2.01: rpc: statfs: blocks 263940717 bavail 227034531
+	 10.02: schedule: c4:600
+
+Result if the connection of search_idle() is reachable from other threads:
+	the main thread uses the same connection, waits until the gfsd
+	resumes, and gets a mixed-up reply.  ThreadSanitizer also reports
+	data races in iobuffer.c.
+
+	  2.00: rpc: acquiring c2:600
+	 10.03: rpc: acquired, pid 8100
+	 10.03: rpc: statfs: inconsistent metadata fixed, try again
+	 10.07: schedule: c2:600

@@ -1309,6 +1309,20 @@ search_idle_record(struct search_idle_callback_closure *c)
 }
 
 #ifndef __KERNEL__
+/*
+ * enter the connection into the cache, after the multiplexed RPCs
+ * on it are completed successfully.
+ * the multiplexed RPCs are called without conn_lock, thus,
+ * if the connection is cached before that, another thread may acquire it
+ * from the cache and call an RPC on it concurrently.
+ */
+static void
+search_idle_enter_cache(struct search_idle_callback_closure *c)
+{
+	/* The following may fail, if it's already in the cache */
+	gfs_client_connection_enter_cache(c->gfs_server);
+}
+
 static void
 search_idle_rdma_callback(void *closure)
 {
@@ -1321,6 +1335,8 @@ search_idle_rdma_callback(void *closure)
 		    "gfs_ib_rdma_result_multiplexed: %s",
 		    gfarm_error_string(e));
 
+	if (e == GFARM_ERR_NO_ERROR)
+		search_idle_enter_cache(c);
 	search_idle_record(c); /* completed */
 	/* apply gfarm_schedule_host_cache_purge() called by the RPC above */
 	search_idle_host_cache_purge_apply();
@@ -1369,6 +1385,7 @@ search_idle_statfs_callback(void *closure)
 			/* don't care about rdma error */
 		}
 #endif /* __KERNEL__ */
+		search_idle_enter_cache(c);
 		search_idle_record(c); /* completed */
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -1398,9 +1415,10 @@ search_idle_connect_callback(void *closure)
 	e = gfs_client_connect_result_multiplexed(c->protocol_state,
 	    &c->gfs_server);
 	if (e == GFARM_ERR_NO_ERROR) {
-		/* The following may fail, if it's already in the cache */
-		gfs_client_connection_enter_cache(c->gfs_server);
-
+		/*
+		 * do not enter this connection into the cache here,
+		 * see search_idle_enter_cache()
+		 */
 		c->h->flags |= HOST_STATE_FLAG_AUTH_SUCCEED;
 #if 0 /* We always see disk free space */
 		if (s->mode == GFARM_SCHEDULE_SEARCH_BY_LOADAVG_AND_AUTH) {
