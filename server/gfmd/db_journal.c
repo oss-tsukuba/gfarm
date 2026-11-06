@@ -11,6 +11,7 @@
 #include <netinet/in.h>
 #include <stdarg.h>
 #include <errno.h>
+#include <limits.h>
 #include <sys/param.h>
 #include <sys/time.h>
 #include <sys/file.h>
@@ -63,8 +64,11 @@ static gfarm_error_t		(*db_journal_sync_op)(gfarm_uint64_t);
 
 struct db_journal_recv_info {
 	gfarm_uint64_t from_sn, to_sn;
-	unsigned char *recs;
+	unsigned char *recs; /* NULL means a reset request */
 	int recs_len;
+	/* the last END record, end_len == 0: no END, -1: invalid records */
+	gfarm_uint64_t end_sn;
+	int end_len;
 	GFARM_STAILQ_ENTRY(db_journal_recv_info) next;
 };
 
@@ -72,6 +76,25 @@ static GFARM_STAILQ_HEAD(journal_recvq, db_journal_recv_info) journal_recvq
 	= GFARM_STAILQ_HEAD_INITIALIZER(journal_recvq);
 static int journal_recvq_nelems = 0;
 static int journal_recvq_cancel;
+/*
+ * the last seqnum of the records received successively from the master,
+ * and the last seqnum of GFM_JOURNAL_END among them, including the
+ * records which are still in the recvq.
+ * protected by journal_recvq_mutex.
+ */
+static gfarm_uint64_t journal_recv_seqnum, journal_recv_end_seqnum;
+static int journal_recv_seqnum_is_valid = 0;
+/*
+ * the records of an incomplete transaction, which are received but
+ * not written to the journal file yet.
+ * a slave writes only complete transactions to the journal file,
+ * so that the seqnum of the journal file is always at the end of
+ * a transaction.
+ * accessed only by db_journal_recvq_thread().
+ */
+static unsigned char *journal_recv_partial = NULL;
+static int journal_recv_partial_len = 0;
+static gfarm_uint64_t journal_recv_partial_last_seqnum;
 static pthread_mutex_t journal_recvq_mutex;
 static pthread_mutex_t journal_seqnum_mutex;
 static pthread_cond_t journal_recvq_nonempty_cond;
@@ -4734,8 +4757,24 @@ error:
 }
 
 /*
+ * PREREQUISITE: journal_recvq_mutex
+ * LOCKS: nothing
+ * SLEEPS: no
+ */
+static void
+db_journal_recv_seqnum_init(gfarm_uint64_t cur_seqnum)
+{
+	if (!journal_recv_seqnum_is_valid) {
+		/* the journal file is at the end of a transaction */
+		journal_recv_seqnum = cur_seqnum;
+		journal_recv_end_seqnum = cur_seqnum;
+		journal_recv_seqnum_is_valid = 1;
+	}
+}
+
+/*
  * PREREQUISITE: nothing
- * LOCKS: journal_recvq_mutex
+ * LOCKS: journal_seqnum_mutex, journal_recvq_mutex
  * SLEEPS: maybe (cond_wait on journal_recvq_nonfull_cond while the
  *	recvq is full)
  */
@@ -4745,6 +4784,7 @@ db_journal_recvq_enter(gfarm_uint64_t from_sn, gfarm_uint64_t to_sn,
 {
 	gfarm_error_t e;
 	struct db_journal_recv_info *ri;
+	gfarm_uint64_t cur_seqnum;
 	static const char diag[] = "db_journal_recvq_enter";
 
 	GFARM_MALLOC(ri);
@@ -4758,10 +4798,30 @@ db_journal_recvq_enter(gfarm_uint64_t from_sn, gfarm_uint64_t to_sn,
 	ri->to_sn = to_sn;
 	ri->recs_len = recs_len;
 	ri->recs = recs;
+	if ((e = journal_records_find_last_end(recs, recs_len,
+	    &ri->end_sn, &ri->end_len)) != GFARM_ERR_NO_ERROR) {
+		/* will be abandoned by db_journal_recvq_proc() */
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: invalid journal records: seqnum %llu-%llu: %s",
+		    diag, (unsigned long long)from_sn,
+		    (unsigned long long)to_sn, gfarm_error_string(e));
+		ri->end_len = -1;
+	}
+	cur_seqnum = db_journal_get_current_seqnum();
 	gfarm_mutex_lock(&journal_recvq_mutex, diag, RECVQ_MUTEX_DIAG);
 	while (journal_recvq_nelems >= gfarm_get_journal_recvq_size())
 		gfarm_cond_wait(&journal_recvq_nonfull_cond,
 		    &journal_recvq_mutex, diag, RECVQ_NONFULL_COND_DIAG);
+	db_journal_recv_seqnum_init(cur_seqnum);
+	/*
+	 * the records which are not successive will be abandoned by
+	 * db_journal_recvq_proc()
+	 */
+	if (from_sn == journal_recv_seqnum + 1 && ri->end_len >= 0) {
+		journal_recv_seqnum = to_sn;
+		if (ri->end_len > 0)
+			journal_recv_end_seqnum = ri->end_sn;
+	}
 	GFARM_STAILQ_INSERT_TAIL(&journal_recvq, ri, next);
 	gfarm_cond_signal(&journal_recvq_nonempty_cond, diag,
 	    RECVQ_NONEMPTY_COND_DIAG);
@@ -4772,11 +4832,58 @@ db_journal_recvq_enter(gfarm_uint64_t from_sn, gfarm_uint64_t to_sn,
 }
 
 /*
+ * called when a slave (re)connects to the master.
+ * returns the seqnum to report to the master, which is the last END
+ * record received successively, including the records still in the
+ * recvq, because the recvq may still have the records received
+ * through the previous connection.
+ * also requests db_journal_recvq_thread() to discard the records of
+ * an incomplete transaction after it, because the master will resend
+ * the transaction.  the records of the incomplete transaction may
+ * differ from the master's, e.g. if the master crashed while writing
+ * the transaction, and reuses the seqnums after restart.
+ *
  * PREREQUISITE: nothing
- * LOCKS: journal_seqnum_mutex, journal_recvq_mutex,
- *	and the locks of master_disconnect_request()
- *	(mdhost_master_disconnect_request()) after unlocking
- *	journal_recvq_mutex
+ * LOCKS: journal_seqnum_mutex, journal_recvq_mutex
+ * SLEEPS: no
+ */
+gfarm_uint64_t
+db_journal_recvq_reset(void)
+{
+	struct db_journal_recv_info *ri;
+	gfarm_uint64_t sn, cur_seqnum;
+	static const char diag[] = "db_journal_recvq_reset";
+
+	GFARM_MALLOC(ri);
+	if (ri == NULL)
+		gflog_error(GFARM_MSG_UNFIXED, "%s: no memory", diag);
+	else {
+		ri->from_sn = ri->to_sn = 0;
+		ri->recs = NULL;
+		ri->recs_len = 0;
+		ri->end_sn = 0;
+		ri->end_len = 0;
+	}
+	cur_seqnum = db_journal_get_current_seqnum();
+	gfarm_mutex_lock(&journal_recvq_mutex, diag, RECVQ_MUTEX_DIAG);
+	db_journal_recv_seqnum_init(cur_seqnum);
+	sn = journal_recv_end_seqnum;
+	if (ri != NULL) {
+		/* the master will send the records after sn */
+		journal_recv_seqnum = sn;
+		/* do not wait for nonfull_cond, not to block the caller */
+		GFARM_STAILQ_INSERT_TAIL(&journal_recvq, ri, next);
+		gfarm_cond_signal(&journal_recvq_nonempty_cond, diag,
+		    RECVQ_NONEMPTY_COND_DIAG);
+		++journal_recvq_nelems;
+	}
+	gfarm_mutex_unlock(&journal_recvq_mutex, diag, RECVQ_MUTEX_DIAG);
+	return (sn);
+}
+
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: journal_recvq_mutex
  * SLEEPS: yes (cond_wait on journal_recvq_nonempty_cond until a record
  *	is queued or canceled)
  */
@@ -4784,12 +4891,8 @@ static gfarm_error_t
 db_journal_recvq_delete(struct db_journal_recv_info **rip)
 {
 	struct db_journal_recv_info *ri;
-	gfarm_uint64_t next_sn;
 	static const char diag[] = "db_journal_recvq_delete";
 
-	next_sn = db_journal_get_current_seqnum() + 1;
-
-retry_from_locking:
 	gfarm_mutex_lock(&journal_recvq_mutex, diag, RECVQ_MUTEX_DIAG);
 	while (journal_recvq_nelems <= 0 && journal_recvq_cancel == 0)
 		gfarm_cond_wait(&journal_recvq_nonempty_cond,
@@ -4802,26 +4905,38 @@ retry_from_locking:
 		--journal_recvq_nelems;
 		gfarm_cond_signal(&journal_recvq_nonfull_cond, diag,
 		    RECVQ_NONFULL_COND_DIAG);
-		if (ri->from_sn != next_sn) {
-			/* something is going wrong, disconnect & restart */
-
-			gflog_error(GFARM_MSG_1004280,
-			    "abandon invalid journal: seqnum %llu "
-			    "should be %llu, disconnect/reconnecting master",
-			    (unsigned long long)ri->from_sn,
-			    (unsigned long long)next_sn);
-			free(ri->recs);
-			free(ri);
-
-			gfarm_mutex_unlock(
-			    &journal_recvq_mutex, diag, RECVQ_MUTEX_DIAG);
-
-			(*master_disconnect_request)(NULL);
-			goto retry_from_locking;
-		}
 	}
 	gfarm_mutex_unlock(&journal_recvq_mutex, diag, RECVQ_MUTEX_DIAG);
 	*rip = ri;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+/* accessed only by db_journal_recvq_thread() */
+static void
+db_journal_recv_partial_free(void)
+{
+	free(journal_recv_partial);
+	journal_recv_partial = NULL;
+	journal_recv_partial_len = 0;
+}
+
+/* accessed only by db_journal_recvq_thread() */
+static gfarm_error_t
+db_journal_recv_partial_add(unsigned char *recs, int recs_len,
+	gfarm_uint64_t last_seqnum)
+{
+	unsigned char *p;
+
+	if (recs_len > INT_MAX - journal_recv_partial_len)
+		return (GFARM_ERR_NO_MEMORY);
+	GFARM_REALLOC_ARRAY(p, journal_recv_partial,
+	    journal_recv_partial_len + recs_len);
+	if (p == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	memcpy(p + journal_recv_partial_len, recs, recs_len);
+	journal_recv_partial = p;
+	journal_recv_partial_len += recs_len;
+	journal_recv_partial_last_seqnum = last_seqnum;
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -4849,7 +4964,9 @@ db_journal_cancel_recvq()
 /*
  * PREREQUISITE: nothing
  * LOCKS: see db_journal_recvq_delete(), journal_recvq_mutex,
- *	journal_log_verbose_mutex, journal_seqnum_mutex, journal_file_mutex
+ *	journal_log_verbose_mutex, journal_seqnum_mutex, journal_file_mutex,
+ *	and the locks of master_disconnect_request()
+ *	(mdhost_master_disconnect_request())
  * SLEEPS: yes (cond_wait on journal_recvq_nonempty_cond, file I/O,
  *	cond_wait on nonfull_cond in journal_file_write_raw(), and fdatasync
  *	if journal_sync_file)
@@ -4858,7 +4975,7 @@ static gfarm_error_t
 db_journal_recvq_proc(int *canceledp)
 {
 	gfarm_error_t e, e2;
-	gfarm_uint64_t last_seqnum;
+	gfarm_uint64_t last_seqnum, next_sn;
 	struct db_journal_recv_info *ri;
 	static struct gflog_reduced_state verbose_log_state =
 	    GFLOG_REDUCED_STATE_INITIALIZER(3, 3, 60, 60);
@@ -4868,6 +4985,7 @@ db_journal_recvq_proc(int *canceledp)
 		return (e);
 	if (ri == NULL) {
 		/* canceled */
+		db_journal_recv_partial_free();
 		gfarm_mutex_lock(&journal_recvq_mutex, diag,
 		    RECVQ_MUTEX_DIAG);
 		journal_recvq_cancel = 0;
@@ -4878,14 +4996,59 @@ db_journal_recvq_proc(int *canceledp)
 		*canceledp = 1;
 		return (GFARM_ERR_NO_ERROR);
 	}
+	if (ri->recs == NULL) {
+		/* reset request by db_journal_recvq_reset() */
+		db_journal_recv_partial_free();
+		free(ri);
+		return (GFARM_ERR_NO_ERROR);
+	}
+	next_sn = (journal_recv_partial_len > 0 ?
+	    journal_recv_partial_last_seqnum :
+	    db_journal_get_current_seqnum()) + 1;
+	if (ri->from_sn != next_sn || ri->end_len < 0) {
+		/* something is going wrong, disconnect & restart */
+		gflog_error(GFARM_MSG_1004280,
+		    "abandon invalid journal: seqnum %llu "
+		    "should be %llu, disconnect/reconnecting master",
+		    (unsigned long long)ri->from_sn,
+		    (unsigned long long)next_sn);
+		free(ri->recs);
+		free(ri);
+		(*master_disconnect_request)(NULL);
+		return (GFARM_ERR_NO_ERROR);
+	}
+	if (ri->end_len == 0) {
+		/* the transaction is not complete yet */
+		e = db_journal_recv_partial_add(ri->recs, ri->recs_len,
+		    ri->to_sn);
+		free(ri->recs);
+		free(ri);
+		return (e);
+	}
+
 	if (journal_log_verbose_get())
 		gflog_reduced_info(GFARM_MSG_1005751, &verbose_log_state,
 		    "db_journal_recvq_proc: writing seqnum %llu",
 		    (unsigned long long)db_journal_get_current_seqnum());
-	if ((e = journal_file_write_raw(self_jf, ri->recs_len, ri->recs,
+	/* write the records up to the last END */
+	e = GFARM_ERR_NO_ERROR;
+	if (journal_recv_partial_len > 0) {
+		e = journal_file_write_raw(self_jf,
+		    journal_recv_partial_len, journal_recv_partial,
+		    &last_seqnum, &journal_slave_transaction_nesting);
+		db_journal_recv_partial_free();
+	}
+	if (e == GFARM_ERR_NO_ERROR &&
+	    (e = journal_file_write_raw(self_jf, ri->end_len, ri->recs,
 	    &last_seqnum, &journal_slave_transaction_nesting))
-	    == GFARM_ERR_NO_ERROR)
-		db_journal_set_current_seqnum(last_seqnum);
+	    == GFARM_ERR_NO_ERROR) {
+		db_journal_set_current_seqnum(ri->end_sn);
+		/* keep the records of the next incomplete transaction */
+		if (ri->end_len < ri->recs_len)
+			e = db_journal_recv_partial_add(
+			    ri->recs + ri->end_len,
+			    ri->recs_len - ri->end_len, ri->to_sn);
+	}
 	free(ri->recs);
 	free(ri);
 	if (gfarm_get_journal_sync_file()) {

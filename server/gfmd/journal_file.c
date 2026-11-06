@@ -2332,6 +2332,51 @@ journal_file_wait_until_readable(struct journal_file *jf)
  * SLEEPS: yes (file I/O, and cond_wait on nonfull_cond in
  *	journal_file_reader_writer_wait() until blocking readers catch up)
  */
+/*
+ * find the last GFM_JOURNAL_END record in the serialized records.
+ * *end_lenp is set to the length of the records up to and including
+ * the END record, or 0 if there is no END record.
+ *
+ * PREREQUISITE: nothing
+ * LOCKS: nothing
+ * SLEEPS: no
+ */
+gfarm_error_t
+journal_records_find_last_end(unsigned char *recs, int recs_len,
+	gfarm_uint64_t *end_seqnump, int *end_lenp)
+{
+	unsigned char *rec = recs;
+	gfarm_uint64_t seqnum, end_seqnum = 0;
+	enum journal_operation ope;
+	gfarm_uint32_t data_len;
+	size_t rec_len;
+	int end_len = 0;
+
+	while (rec - recs < recs_len) {
+		if (recs + recs_len - rec < JOURNAL_RECORD_HEADER_SIZE)
+			return (GFARM_ERR_PROTOCOL);
+		seqnum = journal_deserialize_uint64(rec +
+		    GFARM_JOURNAL_MAGIC_SIZE);
+		ope = journal_deserialize_uint32(rec +
+		    GFARM_JOURNAL_MAGIC_SIZE + sizeof(gfarm_uint64_t));
+		data_len = journal_deserialize_uint32(rec +
+		    JOURNAL_RECORD_HEADER_SIZE - sizeof(data_len));
+		if (data_len > JOURNAL_RECORD_SIZE_MAX)
+			return (GFARM_ERR_PROTOCOL);
+		rec_len = JOURNAL_RECORD_SIZE(data_len);
+		if (rec_len > recs + recs_len - rec)
+			return (GFARM_ERR_PROTOCOL);
+		rec += rec_len;
+		if (ope == GFM_JOURNAL_END) {
+			end_seqnum = seqnum;
+			end_len = rec - recs;
+		}
+	}
+	*end_seqnump = end_seqnum;
+	*end_lenp = end_len;
+	return (GFARM_ERR_NO_ERROR);
+}
+
 gfarm_error_t
 journal_file_write_raw(struct journal_file *jf, int recs_len,
 	unsigned char *recs, gfarm_uint64_t *last_seqnump, int *trans_nestp)

@@ -120,6 +120,8 @@ gfarm_uint64_t journal_file_get_inital_max_seqnum(struct journal_file *jf);
 gfarm_error_t journal_file_write(struct journal_file *,
 	gfarm_uint64_t, enum journal_operation, void *,
 	journal_size_add_op_t, journal_send_op_t);
+gfarm_error_t journal_records_find_last_end(unsigned char *, int,
+	gfarm_uint64_t *, int *);
 gfarm_error_t journal_file_write_raw(struct journal_file *, int,
 	unsigned char *, gfarm_uint64_t *, int *);
 gfarm_error_t journal_file_read(struct journal_file_reader *, void *,
