@@ -8,3 +8,11 @@ leak:globus_i_thread_pre_activate
 # curl_global_init() at its initialization, and OpenSSL initialized by
 # it is never freed.
 leak:curl_global_init
+
+# Globus GSI disables TLS compression by
+# sk_SSL_COMP_zero(SSL_COMP_get_compression_methods()) in
+# globus_i_gsi_gssapi_init_ssl_context(), which drops the SSL_COMP entry
+# (zlib compression) allocated by OPENSSL_init_ssl() without freeing it.
+# Calling OPENSSL_cleanup() does not help, since the entry is no longer
+# in the list.
+leak:OPENSSL_init_ssl
