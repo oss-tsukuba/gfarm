@@ -243,7 +243,8 @@ gfs_client_connection_set_failover_count(
 }
 
 #define gfs_client_connection_is_cached(gfs_server) \
-	gfp_is_cached_connection((gfs_server)->cache_entry)
+	gfp_is_cached_connection(&staticp->server_cache, \
+	    (gfs_server)->cache_entry)
 
 #define gfs_client_connection_used(gfs_server) \
 	gfp_cached_connection_used(&staticp->server_cache, \

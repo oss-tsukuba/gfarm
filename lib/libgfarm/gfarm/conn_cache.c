@@ -108,9 +108,16 @@ gfp_conn_cache_term(struct gfp_conn_cache *c)
 static const char diag_what[] =	"connection cache";
 
 int
-gfp_is_cached_connection(struct gfp_cached_connection *connection)
+gfp_is_cached_connection(struct gfp_conn_cache *cache,
+	struct gfp_cached_connection *connection)
 {
-	return (GFP_IS_CACHED_CONNECTION(connection));
+	int cached;
+	static const char diag[] = "gfp_is_cached_connection";
+
+	gfarm_mutex_lock(&cache->mutex, diag, diag_what);
+	cached = GFP_IS_CACHED_CONNECTION(connection);
+	gfarm_mutex_unlock(&cache->mutex, diag, diag_what);
+	return (cached);
 }
 
 void *
@@ -318,16 +325,26 @@ gfp_cached_connection_purge_from_cache(struct gfp_conn_cache *cache,
 {
 	static const char diag[] = "gfp_cached_connection_purge_from_cache";
 
-	if (!GFP_IS_CACHED_CONNECTION(connection))
-		return;
-
+	/*
+	 * the check must be done with cache->mutex held,
+	 * because this may be called concurrently for the same connection
+	 * without its conn_lock (e.g. from multiplexed requests)
+	 */
 	gfarm_mutex_lock(&cache->mutex, diag, diag_what);
+	if (!GFP_IS_CACHED_CONNECTION(connection)) {
+		gfarm_mutex_unlock(&cache->mutex, diag, diag_what);
+		return;
+	}
+	/*
+	 * the caller must hold a reference,
+	 * otherwise free_cached_entries becomes inconsistent
+	 */
+	assert(connection->lru_entry.acquired > 0);
 	gfarm_lru_cache_purge_entry(&connection->lru_entry);
 
 	gfp_conn_hash_purge(cache->hashtab, connection->hash_entry);
-	gfarm_mutex_unlock(&cache->mutex, diag, diag_what);
-
 	connection->hash_entry = NULL; /* this is an uncached connection now */
+	gfarm_mutex_unlock(&cache->mutex, diag, diag_what);
 }
 
 /* convert from uncached connection to cached */
@@ -403,11 +420,11 @@ gfp_cached_connection_used(struct gfp_conn_cache *cache,
 {
 	static const char diag[] = "gfp_cached_connection_used";
 
-	if (!GFP_IS_CACHED_CONNECTION(connection))
-		return;
-
 	gfarm_mutex_lock(&cache->mutex, diag, diag_what);
-	gfarm_lru_cache_access_entry(&cache->lru_list, &connection->lru_entry);
+	/* may be purged from the cache concurrently */
+	if (GFP_IS_CACHED_CONNECTION(connection))
+		gfarm_lru_cache_access_entry(&cache->lru_list,
+		    &connection->lru_entry);
 	gfarm_mutex_unlock(&cache->mutex, diag, diag_what);
 }
 
@@ -597,20 +614,23 @@ gfp_cached_or_uncached_connection_free(struct gfp_conn_cache *cache,
 	removable = gfarm_lru_cache_delref_entry(&cache->lru_list,
 	    &connection->lru_entry);
 	state = connection->initialization_state;
+	cached = GFP_IS_CACHED_CONNECTION(connection);
 	gfarm_mutex_unlock(&cache->mutex, diag, diag_what);
 
 	if (!removable)
 		return; /* shouln't be disposed */
 
 	/*
-	 * in this case, only this thread is refering this connection,
-	 * thus, this connection lock may not be strictly necessary,
-	 * but to be sure.
+	 * if cached, this connection must not be accessed here anymore,
+	 * because another thread may acquire, purge and dispose it,
+	 * after cache->mutex is unlocked.
+	 * if not cached, only this thread is refering this connection.
+	 *
+	 * conn_lock must not be acquired here, because this may be called
+	 * with the mutex of the scheduler held, and the mutex may be
+	 * acquired with conn_lock held via
+	 * gfs_client_execute_hook_for_connection_error()
 	 */
-	gfp_connection_lock(connection);
-	cached = GFP_IS_CACHED_CONNECTION(connection);
-	gfp_connection_unlock(connection);
-
 	if (cached)
 		gfp_cached_connection_gc_internal(cache, *cache->num_cachep);
 	else if (state == GFP_CONN_INITIALIZED)

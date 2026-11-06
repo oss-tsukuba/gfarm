@@ -37,7 +37,8 @@ void gfp_conn_cache_init(struct gfp_conn_cache *,
 	gfarm_error_t (*)(void *), const char *, int, int *);
 void gfp_conn_cache_term(struct gfp_conn_cache *);
 
-int gfp_is_cached_connection(struct gfp_cached_connection *);
+int gfp_is_cached_connection(struct gfp_conn_cache *,
+	struct gfp_cached_connection *);
 void *gfp_cached_connection_get_data(struct gfp_cached_connection *);
 void gfp_cached_connection_set_data(struct gfp_cached_connection *, void *);
 void gfp_cached_connection_set_dispose_data(struct gfp_cached_connection *,

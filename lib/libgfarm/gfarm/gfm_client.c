@@ -186,7 +186,8 @@ gfm_client_connection_auth_method(struct gfm_connection *gfm_server)
 int
 gfm_client_is_connection_valid(struct gfm_connection *gfm_server)
 {
-	return (gfp_is_cached_connection(gfm_server->cache_entry));
+	return (gfp_is_cached_connection(&staticp->server_cache,
+	    gfm_server->cache_entry));
 }
 
 const char *
@@ -332,7 +333,8 @@ int
 gfm_cached_connection_had_connection_error(struct gfm_connection *gfm_server)
 {
 	/* i.e. gfm_client_purge_from_cache() was called due to an error */
-	return (!gfp_is_cached_connection(gfm_server->cache_entry));
+	return (!gfp_is_cached_connection(&staticp->server_cache,
+	    gfm_server->cache_entry));
 }
 
 void
