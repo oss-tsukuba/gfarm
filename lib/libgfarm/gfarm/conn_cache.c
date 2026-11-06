@@ -49,7 +49,7 @@
 struct gfp_cached_connection {
 	/*
 	 * lru_entry must be the first member of struct gfp_cached_connection.
-	 * Because gfp_cached_connection_gc_entry() does DOWNCAST
+	 * Because gfp_cached_connection_gc_{purge,dispose}() do DOWNCAST
 	 * from "lru_entry" to "struct gfp_cached_connection".
 	 */
 	struct gfarm_lru_entry lru_entry;
@@ -428,17 +428,29 @@ gfp_cached_connection_used(struct gfp_conn_cache *cache,
 	gfarm_mutex_unlock(&cache->mutex, diag, diag_what);
 }
 
+/*
+ * PREREQUISITE: cache->mutex
+ *
+ * this must be done before cache->mutex is unlocked,
+ * otherwise the connection which is being disposed can be acquired by others.
+ */
 static void
-gfp_cached_connection_gc_entry(struct gfarm_lru_entry *entry, void *closure)
+gfp_cached_connection_gc_purge(struct gfarm_lru_entry *entry, void *closure)
 {
 	struct gfp_conn_cache *cache = closure;
 	struct gfp_cached_connection *connection =
 	    (struct gfp_cached_connection *)entry; /* DOWNCAST */
-	static const char diag[] = "gfp_cached_connection_gc_entry";
 
-	gfarm_mutex_lock(&cache->mutex, diag, diag_what);
 	gfp_conn_hash_purge(cache->hashtab, connection->hash_entry);
-	gfarm_mutex_unlock(&cache->mutex, diag, diag_what);
+	connection->hash_entry = NULL; /* this is an uncached connection now */
+}
+
+static void
+gfp_cached_connection_gc_dispose(struct gfarm_lru_entry *entry, void *closure)
+{
+	struct gfp_conn_cache *cache = closure;
+	struct gfp_cached_connection *connection =
+	    (struct gfp_cached_connection *)entry; /* DOWNCAST */
 
 	/*
 	 * `cache' itself will be disposed by gfp_uncached_connection_dispose()
@@ -455,7 +467,8 @@ gfp_cached_connection_gc_internal(struct gfp_conn_cache *cache,
 
 	gfarm_mutex_lock(&cache->mutex, diag, diag_what);
 	gfarm_lru_cache_gc(&cache->lru_list, free_target,
-	    gfp_cached_connection_gc_entry, cache, cache->type_name,
+	    gfp_cached_connection_gc_purge, gfp_cached_connection_gc_dispose,
+	    cache, cache->type_name,
 	    &cache->mutex, diag_what);
 	gfarm_mutex_unlock(&cache->mutex, diag, diag_what);
 }
