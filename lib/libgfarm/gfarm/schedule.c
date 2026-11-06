@@ -65,12 +65,30 @@
 #define SCHED_MUTEX_UNLOCK(s)	do { \
 	gfarm_mutex_unlock(&(s)->sched_mutex, __func__, "sched_mutex"); \
 } while (/*CONSTCOND*/0);
+#define PURGE_MUTEX_DCL		pthread_mutex_t purge_mutex;
+#define PURGE_MUTEX_INIT(s)	do { \
+	gfarm_mutex_init(&(s)->purge_mutex, __func__, "purge_mutex"); \
+} while (/*CONSTCOND*/0);
+#define PURGE_MUTEX_DESTROY(s)	do { \
+	gfarm_mutex_destroy(&(s)->purge_mutex, __func__, "purge_mutex"); \
+} while (/*CONSTCOND*/0);
+#define PURGE_MUTEX_LOCK(s)	do { \
+	gfarm_mutex_lock(&(s)->purge_mutex, __func__, "purge_mutex"); \
+} while (/*CONSTCOND*/0);
+#define PURGE_MUTEX_UNLOCK(s)	do { \
+	gfarm_mutex_unlock(&(s)->purge_mutex, __func__, "purge_mutex"); \
+} while (/*CONSTCOND*/0);
 #else /* __KERNEL__ */
 #define SCHED_MUTEX_DCL	pthread_mutex_t sched_mutex;
 #define SCHED_MUTEX_INIT(s)	pthread_mutex_init(&(s)->sched_mutex, NULL);
 #define SCHED_MUTEX_DESTROY(s)	pthread_mutex_destroy(&(s)->sched_mutex);
 #define SCHED_MUTEX_LOCK(s)	pthread_mutex_lock(&(s)->sched_mutex);
 #define SCHED_MUTEX_UNLOCK(s)	pthread_mutex_unlock(&(s)->sched_mutex);
+#define PURGE_MUTEX_DCL	pthread_mutex_t purge_mutex;
+#define PURGE_MUTEX_INIT(s)	pthread_mutex_init(&(s)->purge_mutex, NULL);
+#define PURGE_MUTEX_DESTROY(s)	pthread_mutex_destroy(&(s)->purge_mutex);
+#define PURGE_MUTEX_LOCK(s)	pthread_mutex_lock(&(s)->purge_mutex);
+#define PURGE_MUTEX_UNLOCK(s)	pthread_mutex_unlock(&(s)->purge_mutex);
 #endif /* __KERNEL__ */
 /*
  * The outline of current scheduling algorithm is as follows:
@@ -221,9 +239,40 @@ struct gfarm_schedule_static {
 	enum gfarm_schedule_search_mode default_search_method;
 
 	SCHED_MUTEX_DCL
+
+	/*
+	 * hosts which had connection errors, and
+	 * whose HOST_STATE_FLAG_AUTH_SUCCEED should be cleared.
+	 *
+	 * these are protected by purge_mutex instead of sched_mutex,
+	 * because gfarm_schedule_host_cache_purge() is called with
+	 * conn_lock held, and is also called from search_idle()
+	 * with sched_mutex held.
+	 * these are applied by search_idle_host_cache_purge_apply()
+	 * with sched_mutex held.
+	 * nothing must be locked while purge_mutex is held.
+	 */
+	struct search_idle_purge_request *purge_requests;
+	int purge_request_number;
+	int purge_all; /* purge_requests are unavailable due to no memory */
+
+	PURGE_MUTEX_DCL
 };
 
+struct search_idle_purge_request {
+	struct search_idle_purge_request *next;
+
+	char *hostname;
+	int port;
+	char *username;
+};
+
+/* if exceeded, purge all hosts instead of remembering each host */
+#define PURGE_REQUESTS_MAX	1024
+
 static void search_idle_network_list_free(void);
+static void search_idle_purge_requests_free(
+	struct search_idle_purge_request *);
 
 gfarm_error_t
 gfarm_schedule_static_init(struct gfarm_context *ctxp)
@@ -246,8 +295,12 @@ gfarm_schedule_static_init(struct gfarm_context *ctxp)
 	s->search_idle_local_host_count = 0;
 	memset(&s->search_idle_now, 0, sizeof(s->search_idle_now));
 	s->default_search_method = GFARM_SCHEDULE_SEARCH_BY_LOADAVG_AND_AUTH;
+	s->purge_requests = NULL;
+	s->purge_request_number = 0;
+	s->purge_all = 0;
 
 	SCHED_MUTEX_INIT(s)
+	PURGE_MUTEX_INIT(s)
 
 	ctxp->schedule_static = s;
 	return (GFARM_ERR_NO_ERROR);
@@ -261,6 +314,8 @@ gfarm_schedule_static_term(struct gfarm_context *ctxp)
 	if (s == NULL)
 		return;
 
+	search_idle_purge_requests_free(s->purge_requests);
+	PURGE_MUTEX_DESTROY(s)
 	SCHED_MUTEX_DESTROY(s)
 	if (s->search_idle_hosts_state != NULL)
 		gfp_conn_hash_table_dispose(s->search_idle_hosts_state);
@@ -722,39 +777,115 @@ search_idle_host_state_add_host_sched_info(struct gfm_connection *gfm_server,
 	return (GFARM_ERR_NO_ERROR);
 }
 
-/* forget that this user was authenticated by the specified host */
+static void
+search_idle_purge_requests_free(struct search_idle_purge_request *r)
+{
+	struct search_idle_purge_request *next;
+
+	for (; r != NULL; r = next) {
+		next = r->next;
+		free(r->hostname);
+		free(r->username);
+		free(r);
+	}
+}
+
+/*
+ * forget that this user was authenticated by the specified host.
+ *
+ * this only records the host, and search_idle_host_cache_purge_apply()
+ * actually forgets it, because this is called as the hook for connection
+ * errors with conn_lock held, and is also called from search_idle()
+ * with sched_mutex held.  thus, acquiring sched_mutex here causes
+ * a self deadlock or a lock order inversion.
+ */
 gfarm_error_t
 gfarm_schedule_host_cache_purge(struct gfs_connection *gfs_server)
 {
+	struct search_idle_purge_request *r;
+
+	GFARM_MALLOC(r);
+	if (r != NULL) {
+		r->hostname = strdup(gfs_client_hostname(gfs_server));
+		r->port = gfs_client_port(gfs_server);
+		r->username = strdup(gfs_client_username(gfs_server));
+		if (r->hostname == NULL || r->username == NULL) {
+			free(r->hostname);
+			free(r->username);
+			free(r);
+			r = NULL;
+		}
+	}
+	if (r == NULL)
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfarm_schedule_host_cache_purge(%s): no memory, "
+		    "purge all hosts", gfs_client_hostname(gfs_server));
+
+	PURGE_MUTEX_LOCK(staticp);
+	if (r != NULL && !staticp->purge_all &&
+	    staticp->purge_request_number < PURGE_REQUESTS_MAX) {
+		r->next = staticp->purge_requests;
+		staticp->purge_requests = r;
+		staticp->purge_request_number++;
+		r = NULL;
+	} else {
+		/* forget all hosts, instead of remembering this host */
+		staticp->purge_all = 1;
+	}
+	PURGE_MUTEX_UNLOCK(staticp);
+
+	search_idle_purge_requests_free(r);
+	return (GFARM_ERR_NO_ERROR);
+}
+
+/* PREREQUISITE: sched_mutex */
+static void
+search_idle_host_cache_purge_apply(void)
+{
 	gfarm_error_t e;
+	struct search_idle_purge_request *requests, *r;
+	int purge_all;
+	struct gfarm_hash_iterator it;
 	struct gfarm_hash_entry *entry;
 	struct search_idle_host_state *h;
 
-	SCHED_MUTEX_LOCK(staticp);
+	PURGE_MUTEX_LOCK(staticp);
+	requests = staticp->purge_requests;
+	purge_all = staticp->purge_all;
+	staticp->purge_requests = NULL;
+	staticp->purge_request_number = 0;
+	staticp->purge_all = 0;
+	PURGE_MUTEX_UNLOCK(staticp);
+
 	if (staticp->search_idle_hosts_state == NULL) {
-		SCHED_MUTEX_UNLOCK(staticp);
-		return (GFARM_ERR_NO_ERROR);
+		/* nothing is cached */
+	} else if (purge_all) {
+		for (gfarm_hash_iterator_begin(
+		    staticp->search_idle_hosts_state, &it);
+		    !gfarm_hash_iterator_is_end(&it);
+		    gfarm_hash_iterator_next(&it)) {
+			entry = gfarm_hash_iterator_access(&it);
+			h = gfarm_hash_entry_data(entry);
+			h->flags &= ~HOST_STATE_FLAG_AUTH_SUCCEED;
+		}
+	} else {
+		for (r = requests; r != NULL; r = r->next) {
+			e = gfp_conn_hash_lookup(
+			    &staticp->search_idle_hosts_state,
+			    HOSTS_HASHTAB_SIZE,
+			    r->hostname, r->port, r->username, &entry);
+			if (e != GFARM_ERR_NO_ERROR) {
+				gflog_debug(GFARM_MSG_1001434,
+				    "gfarm_schedule_host_cache_purge(%s): "
+				    "connection is not cached: %s",
+				    r->hostname, gfarm_error_string(e));
+				continue;
+			}
+			h = gfarm_hash_entry_data(entry);
+			h->flags &= ~HOST_STATE_FLAG_AUTH_SUCCEED;
+		}
 	}
-
-	e = gfp_conn_hash_lookup(&staticp->search_idle_hosts_state,
-	    HOSTS_HASHTAB_SIZE,
-	    gfs_client_hostname(gfs_server),
-	    gfs_client_port(gfs_server),
-	    gfs_client_username(gfs_server),
-	    &entry);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001434,
-		    "gfarm_schedule_host_cache_purge: "
-		    "connection is not cached: %s",
-		    gfarm_error_string(e));
-		SCHED_MUTEX_UNLOCK(staticp);
-		return (e);
-	}
-
-	h = gfarm_hash_entry_data(entry);
-	h->flags &= ~HOST_STATE_FLAG_AUTH_SUCCEED;
-	SCHED_MUTEX_UNLOCK(staticp);
-	return (GFARM_ERR_NO_ERROR);
+	search_idle_purge_requests_free(requests);
 }
 
 void
@@ -1191,6 +1322,8 @@ search_idle_rdma_callback(void *closure)
 		    gfarm_error_string(e));
 
 	search_idle_record(c); /* completed */
+	/* apply gfarm_schedule_host_cache_purge() called by the RPC above */
+	search_idle_host_cache_purge_apply();
 	gfs_client_connection_free(c->gfs_server);
 	c->state->concurrency--;
 	h->net->ongoing--;
@@ -1244,6 +1377,8 @@ search_idle_statfs_callback(void *closure)
 		    "gfs_client_statfs_result_multiplexed: %s",
 		    gfarm_error_string(e));
 	}
+	/* apply gfarm_schedule_host_cache_purge() called by the RPC above */
+	search_idle_host_cache_purge_apply();
 	gfs_client_connection_free(c->gfs_server);
 	c->state->concurrency--;
 	h->net->ongoing--;
@@ -1949,6 +2084,8 @@ select_hosts(struct gfm_connection *gfm_server,
 		return (GFARM_ERR_STALE_FILE_HANDLE);
 	}
 
+	search_idle_host_cache_purge_apply();
+
 	gfs_profile(gfarm_gettimerval(&t1));
 	e = search_idle_candidate_list_init(gfm_server);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -2067,6 +2204,12 @@ select_hosts_by_path_rpc(struct gfm_connection **gfm_serverp, void *closure)
 		    si->path, gfarm_error_string(e));
 		return (e);
 	}
+	/*
+	 * sched_mutex must be acquired before gfm_server's conn_lock,
+	 * because gfarm_schedule_select_host() may call an RPC to gfmd
+	 * with sched_mutex held, via gfm_host_address_get()
+	 */
+	SCHED_MUTEX_LOCK(staticp);
 	gfm_client_connection_lock(*gfm_serverp);
 	if ((e = select_hosts(*gfm_serverp, si->acyclic, si->write_mode,
 	    si->target_domain, si->ninfos, si->infos, si->nohostsp, si->ohosts,
@@ -2080,6 +2223,7 @@ select_hosts_by_path_rpc(struct gfm_connection **gfm_serverp, void *closure)
 			NULL, si->ninfos, si->infos, si->nohostsp, si->ohosts,
 			si->oports);
 	gfm_client_connection_unlock(*gfm_serverp);
+	SCHED_MUTEX_UNLOCK(staticp);
 	return (e);
 }
 
