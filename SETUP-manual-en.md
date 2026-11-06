@@ -4,6 +4,26 @@
 
 This manual assumes that Gfarm has already been installed and is intended for setting up Gfarm.  First, set up the metadata servers that manage the filesystem metadata.  Then, set up the filesystem nodes and clients.
 
+### Service Control Commands
+
+This manual assumes Linux with systemd.
+On other systems (FreeBSD, NetBSD, macOS, Linux with SysVinit, etc.),
+or when the `--prefix` option of `config-gfarm` is specified, 
+replace `sudo systemctl OPERATION SERVICE`
+with `$RC_DIR/SERVICE OPERATION` run as root,
+except that `systemctl start gfmd-slave` becomes `$RC_DIR/gfmd slavestart`.  
+The equivalent of `systemctl enable` is done by `config-gfarm`
+(except when `--prefix` is specified or on macOS, where it is not implemented).
+
+| OS             | $RC_DIR               |
+| -------------- | --------------------- |
+| FreeBSD, macOS | `/usr/local/etc/rc.d` |
+| NetBSD         | `/etc/rc.d`           |
+| Others         | `/etc/init.d`         |
+
+With `--prefix`, it is `<prefix>/etc/rc.d` (FreeBSD, NetBSD, macOS)
+or `<prefix>/etc/init.d` (others).
+
 ## Setting up Metadata Servers
 
 The metadata server can be configured in a master-slave redundant setup across multiple servers.  Commands requiring execution as a privileged user on the local server are executed using sudo.
