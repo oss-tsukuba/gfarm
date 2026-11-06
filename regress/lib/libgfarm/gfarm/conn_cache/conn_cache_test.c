@@ -250,6 +250,7 @@ main(int argc, char **argv)
 	for (i = 0; i < nthreads; i++)
 		pthread_join(threads[i], NULL);
 	alarm(0);
+	free(threads);
 
 	gfp_cached_connection_gc_all(&cache);
 	if (created != disposed) {
