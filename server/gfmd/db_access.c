@@ -66,6 +66,8 @@ const struct db_ops *store_ops;
 static db_enter_func_t db_enter_op = dbq_enter1;
 
 static int transaction_nesting = 0;
+/* db_begin() did not start a transaction, because this is a slave */
+static int transaction_skipped = 0;
 
 gfarm_error_t
 dbq_init(struct dbq *q)
@@ -500,6 +502,19 @@ db_begin(const char *diag)
 
 	if (transaction_nesting == 0) {
 		++transaction_nesting;
+		/*
+		 * a slave does not write its own journal records.
+		 * do not allocate seqnums for BEGIN and END on a slave,
+		 * because db_journal_write_end() subtracts them for an empty
+		 * transaction, and it races with db_journal_recvq_thread(),
+		 * which sets the current seqnum to the last received record.
+		 * e.g. peer_free() calls db_begin()/db_end() on a slave.
+		 */
+		if (gfarm_get_metadb_replication_enabled() &&
+		    !mdhost_self_is_master()) {
+			transaction_skipped = 1;
+			return (GFARM_ERR_NO_ERROR);
+		}
 		e = db_enter_sn((dbq_entry_func_t)ops->begin, NULL);
 	} else
 		e = db_enter_nosn((dbq_entry_func_t)ops->begin, NULL);
@@ -521,7 +536,12 @@ db_end(const char *diag)
 
 	assert(transaction_nesting == 1);
 
-	if (transaction_nesting > 0) {
+	if (transaction_nesting > 0 && transaction_skipped) {
+		/* see db_begin() */
+		transaction_skipped = 0;
+		--transaction_nesting;
+		return (GFARM_ERR_NO_ERROR);
+	} else if (transaction_nesting > 0) {
 		e = db_enter_sn((dbq_entry_func_t)ops->end, NULL);
 		--transaction_nesting;
 	} else
