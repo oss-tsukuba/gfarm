@@ -5,10 +5,11 @@
  * concurrently, with a small cache size to make the garbage collection
  * of free cached connections happen frequently.
  *
- * some threads free connections with the "scheduler" mutex held,
- * and some threads acquire the scheduler mutex with conn_lock held,
- * as gfarm_schedule_select_host() and
- * gfs_client_execute_hook_for_connection_error() do.
+ * some threads free connections with an outer "scheduler" mutex held,
+ * as gfarm_schedule_select_host() does via search_idle(), and some threads
+ * acquire the outer mutex with conn_lock held, so that acquiring conn_lock
+ * in the connection cache with the outer mutex held is detected as
+ * a deadlock or a lock-order-inversion.
  *
  * this should be run with ThreadSanitizer or AddressSanitizer enabled
  * to detect data races and use-after-free.
@@ -133,7 +134,8 @@ fake_rpc(unsigned int *seedp, struct fake_connection *fc)
 	(void)gfp_is_cached_connection(&cache, fc->cache_entry);
 	if (rand_r(seedp) % 8 == 0) {
 		/* simulate a connection error */
-		pthread_mutex_lock(&sched_mutex); /* the hook */
+		/* acquire the outer mutex with conn_lock held */
+		pthread_mutex_lock(&sched_mutex);
 		pthread_mutex_unlock(&sched_mutex);
 		gfp_cached_connection_purge_from_cache(&cache,
 		    fc->cache_entry);

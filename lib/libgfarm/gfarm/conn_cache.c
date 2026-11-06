@@ -639,10 +639,10 @@ gfp_cached_or_uncached_connection_free(struct gfp_conn_cache *cache,
 	 * after cache->mutex is unlocked.
 	 * if not cached, only this thread is refering this connection.
 	 *
-	 * conn_lock must not be acquired here, because this may be called
-	 * with the mutex of the scheduler held, and the mutex may be
-	 * acquired with conn_lock held via
-	 * gfs_client_execute_hook_for_connection_error()
+	 * conn_lock is not necessary here, and must not be acquired,
+	 * because this may be called with the mutex of the scheduler held
+	 * (from search_idle()), and acquiring conn_lock there makes
+	 * the scheduler mutex depend on conn_lock of each connection.
 	 */
 	if (cached)
 		gfp_cached_connection_gc_internal(cache, *cache->num_cachep);
