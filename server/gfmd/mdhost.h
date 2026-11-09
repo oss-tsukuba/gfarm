@@ -14,6 +14,10 @@ typedef gfarm_error_t (*mdhost_modify_hook_t)(struct mdhost *);
 /* for gfmd_channel.c */
 void mdhost_set_update_hook_for_journal_send(void (*)(void));
 
+/*
+ * the hooks are called with giant_lock held, but without mdhost::mutex.
+ * see mdhost.c
+ */
 void mdhost_set_switch_to_sync_hook(mdhost_modify_hook_t closure);
 void mdhost_set_switch_to_async_hook(mdhost_modify_hook_t closure);
 

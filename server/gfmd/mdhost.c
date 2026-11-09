@@ -97,6 +97,18 @@ mdhost_set_update_hook_for_journal_send(void (*hook)(void))
 	mdhost_update_hook_for_journal_send = hook;
 }
 
+/*
+ * the hooks registered by mdhost_set_switch_to_sync_hook() and
+ * mdhost_set_switch_to_async_hook() are called from
+ * mdhost_update_replication_type() with giant_lock held, but without
+ * mdhost::mutex of the mdhost.
+ *
+ * NOTE: they used to be called with mdhost::mutex held, but no longer,
+ * since mdhost_switch_to_sync_hook() may wait for a thread which locks
+ * mdhost::mutex (see #1259).  a hook registered by a private extension
+ * must not assume that mdhost::mutex is held, and may lock it if
+ * necessary.
+ */
 void
 mdhost_set_switch_to_sync_hook(mdhost_modify_hook_t hook)
 {
