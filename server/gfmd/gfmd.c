@@ -1435,7 +1435,14 @@ transform_to_master(void)
 
 	giant_unlock();
 
+	/*
+	 * signal with transform_mutex held.  otherwise, the signal may be
+	 * lost if it is sent after wait_transform_to_master() checks
+	 * mdhost_self_is_master() and before it waits.
+	 */
+	gfarm_mutex_lock(&transform_mutex, diag, TRANSFORM_MUTEX_DIAG);
 	gfarm_cond_signal(&transform_cond, diag, TRANSFORM_COND_DIAG);
+	gfarm_mutex_unlock(&transform_mutex, diag, TRANSFORM_MUTEX_DIAG);
 
 	start_db_journal_threads();
 	start_gfmdc_threads();
