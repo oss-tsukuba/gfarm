@@ -1919,13 +1919,20 @@ gfmdc_journal_first_sync_thread(void *closure)
 	while (exist_recs) {
 		/*
 		 * gfmdc_journal_asyncsend() sends nothing and does not
-		 * update exist_recs in these cases, e.g. if the slave is
-		 * disconnected, or if another first sync thread for this
-		 * peer has completed.  do not loop forever.
+		 * update exist_recs in these cases.  do not loop forever.
 		 */
-		if (!gfmdc_journal_mdhost_can_sync(mh, gfmdc_peer) ||
-		    gfmdc_peer_is_first_sync_completed(gfmdc_peer))
+		if (!gfmdc_journal_mdhost_can_sync(mh, gfmdc_peer))
+			break; /* e.g. disconnected, logged as aborted */
+		if (gfmdc_peer_is_first_sync_completed(gfmdc_peer)) {
+			/*
+			 * another first sync thread for this peer has
+			 * completed, i.e. it has sent the records, since
+			 * the records are sent in order of seqnum under
+			 * journal_send_mutex.  logged as completed.
+			 */
+			exist_recs = 0;
 			break;
+		}
 		if ((e = gfmdc_journal_asyncsend(mh, peer, &exist_recs))
 		    != GFARM_ERR_NO_ERROR) {
 			gflog_error(GFARM_MSG_1003007,
