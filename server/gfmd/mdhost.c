@@ -1227,13 +1227,17 @@ mdhost_add_one(void *closure, struct gfarm_metadb_server *ms)
  * LOCKS: mdhost::mutex,
  *	mdhost_table_rwlock -> abstract_host::mutex,
  *	mdhost_table_rwlock -> mdhost::mutex -> abstract_host::mutex,
- *	mdhost_master_mutex, mdhost::mutex -> abstract_host::mutex,
+ *	mdhost_master_mutex, mdhost::mutex, abstract_host::mutex,
  *	and locks in mdhost_switch_to_sync_hook() ==
- *	gfmdc_peer_switch_to_sync() while holding mdhost::mutex:
- *	mdhost::mutex -> abstract_host::mutex -> peer_closing_queue.mutex,
- *	mdhost::mutex -> thread_pool::mutex, thread_jobq::mutex
+ *	gfmdc_peer_switch_to_sync():
+ *	abstract_host::mutex -> peer_closing_queue.mutex,
+ *	thread_pool::mutex, thread_jobq::mutex
  * SLEEPS: maybe (thrpool_add_job() in mdhost_switch_to_sync_hook()
- *	waits for thread_jobq::nonfull while holding mdhost::mutex)
+ *	waits for thread_jobq::nonfull)
+ *
+ * the hooks must be called without mdhost::mutex, because
+ * mdhost_switch_to_sync_hook() may wait for a thread of
+ * journal_sync_thread_pool, which locks mdhost::mutex.  see #1259
  */
 static gfarm_error_t
 mdhost_update_replication_type(struct mdhost *mh,
@@ -1301,27 +1305,23 @@ mdhost_update_replication_type(struct mdhost *mh,
 		if (mdhost_switch_to_sync_hook != NULL) {
 			for (i = 0; i < to_sync_len; i++) {
 				m = to_sync_array[i];
-				mdhost_mutex_lock(m, diag);
 				if (mdhost_is_valid(m)) {
 					e2 = mdhost_switch_to_sync_hook(m);
 					if (e == GFARM_ERR_NO_ERROR &&
 					    e2 != GFARM_ERR_NO_ERROR)
 						e = e2;
 				}
-				mdhost_mutex_unlock(m, diag);
 			}
 		}
 		if (mdhost_switch_to_async_hook != NULL) {
 			for (i = 0; i < to_async_len; i++) {
 				m = to_async_array[i];
-				mdhost_mutex_lock(m, diag);
 				if (mdhost_is_valid(m)) {
 					e2 = mdhost_switch_to_async_hook(m);
 					if (e == GFARM_ERR_NO_ERROR &&
 					    e2 != GFARM_ERR_NO_ERROR)
 						e = e2;
 				}
-				mdhost_mutex_unlock(m, diag);
 			}
 		}
 
@@ -1340,7 +1340,6 @@ mdhost_update_replication_type(struct mdhost *mh,
 		is_sync  = (strcmp(m->ms.clustername, new_clustername) == 0);
 		mdhost_mutex_unlock(m, diag);
 
-		mdhost_mutex_lock(mh, diag);
 		if (!was_sync && is_sync &&
 		    mdhost_switch_to_sync_hook != NULL) {
 			if (mdhost_is_valid(mh))
@@ -1350,7 +1349,6 @@ mdhost_update_replication_type(struct mdhost *mh,
 			if (mdhost_is_valid(mh))
 				e = mdhost_switch_to_async_hook(mh);
 		}
-		mdhost_mutex_unlock(mh, diag);
 	}
 
 	return (e);
