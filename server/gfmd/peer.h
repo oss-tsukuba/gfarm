@@ -32,6 +32,7 @@ gfarm_error_t peer_alloc_with_connection(struct peer **, struct gfp_xdr *,
 void peer_authorized(struct peer *,
 	enum gfarm_auth_id_role, char *, char *, struct sockaddr *,
 	enum gfarm_auth_method, struct peer_watcher *);
+void peer_watch_authorized(struct peer *);
 void peer_free(struct peer *);
 void peer_shutdown_all(void);
 void peer_invoked(struct peer *);
