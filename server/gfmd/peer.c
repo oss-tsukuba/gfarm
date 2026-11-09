@@ -961,14 +961,20 @@ peer_get_service_name(struct peer *peer)
 
 /*
  * caller should allocate the storage for username and hostname
+ * caller should call peer_watch_authorized() after giant_unlock()
+ *
+ * NOTE: this function used to start watching the peer, i.e. call
+ * thrpool_add_job() or peer_watch_access(), by itself.  it no longer
+ * does, since thrpool_add_job() must not be called with giant_lock held
+ * (see #1259).  a private extension which calls this function directly
+ * must call peer_watch_authorized() after giant_unlock(), otherwise
+ * requests from the peer are never processed.
  *
  * PREREQUISITE: giant_lock
  * LOCKS: abstract_host::mutex in host_addr_lookup(),
  *	mdhost_table_rwlock, abstract_host::mutex in mdhost_lookup(),
- *	and peer_closing_queue.mutex in peer_add_ref(),
- *	thread_pool::mutex, thread_jobq::mutex in thrpool_add_job(),
- *	or see peer_watch_access()
- * SLEEPS: maybe (thrpool_add_job() waits for thread_jobq::nonfull)
+ *	and peer_closing_queue.mutex in peer_add_ref()
+ * SLEEPS: no
  */
 void
 peer_authorized(struct peer *peer,
@@ -1041,13 +1047,38 @@ peer_authorized(struct peer *peer,
 
 	peer->watcher = watcher;
 
-	if (gfp_xdr_recv_is_ready(peer_get_conn(peer))) {
-		/* the handler calls peer_invoked(), which releases this */
-		peer_add_ref(peer);
+	/*
+	 * the handler calls peer_invoked(), which releases this.
+	 * this must be done with giant_lock held, to prevent peer_closer()
+	 * from freeing the peer before peer_watch_authorized() is called.
+	 */
+	peer_add_ref(peer);
+}
+
+/*
+ * this must be called after peer_authorized(), without giant_lock.
+ * the reference of the peer is already added by peer_authorized().
+ *
+ * PREREQUISITE: nothing
+ * LOCKS: thread_pool::mutex, thread_jobq::mutex in thrpool_add_job(),
+ *	or watcher_request_queue::mutex -> watcher_event::mutex
+ * SLEEPS: maybe (thrpool_add_job() waits for thread_jobq::nonfull)
+ *
+ * thrpool_add_job() must not be called with giant_lock held,
+ * because all threads of the thread pool may be waiting for giant_lock,
+ * and the job queue may be full, which causes a deadlock.
+ */
+void
+peer_watch_authorized(struct peer *peer)
+{
+	struct peer_watcher *watcher = peer->watcher;
+
+	if (gfp_xdr_recv_is_ready(peer_get_conn(peer)))
 		thrpool_add_job(watcher->thrpool,
 		    watcher->readable_handler, peer);
-	} else
-		peer_watch_access(peer);
+	else
+		watcher_add_event(watcher->w, peer->readable_event,
+		    watcher->thrpool, watcher->readable_handler, peer);
 }
 
 static int

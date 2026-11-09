@@ -853,7 +853,7 @@ protocol_main(void *arg)
 	/*
 	 * NOTE:
 	 * We should use do...while loop for the above gfp_xdr_recv_is_ready()
-	 * case, instead of thrpool_add_job() like peer_authorized().
+	 * case, instead of thrpool_add_job() like peer_watch_authorized().
 	 * Because this thread is executed under thrpool_worker(),
 	 * and such thread should not use thrpool_add_job().
 	 * Think about the following scenario:
@@ -1037,6 +1037,8 @@ peer_authorize(struct peer *peer)
 		    id_role, username, hostname, &addr, auth_method,
 		    sync_protocol_watcher);
 		giant_unlock();
+		/* this may sleep, thus, must be called without giant_lock */
+		peer_watch_authorized(peer);
 	} else {
 		gflog_notice(GFARM_MSG_1002474,
 		    "host %s: authorize: %s", hostname, gfarm_error_string(e));
