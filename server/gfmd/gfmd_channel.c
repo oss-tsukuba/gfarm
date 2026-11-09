@@ -1554,7 +1554,9 @@ gfmdc_journal_asyncsend_thread_wakeup(void)
 }
 
 /*
- * PREREQUISITE: mdhost::mutex (called as mdhost_switch_to_sync_hook)
+ * PREREQUISITE: giant_lock (called as mdhost_switch_to_sync_hook),
+ *	must not hold mdhost::mutex, since the thread which this adds to
+ *	journal_sync_thread_pool locks it
  * LOCKS: abstract_host::mutex -> peer_closing_queue.mutex,
  *	thrpool mutex, thrjobq mutex
  * SLEEPS: maybe (thrpool_add_job() waiting until the job queue becomes
