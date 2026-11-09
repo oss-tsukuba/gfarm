@@ -29,6 +29,10 @@ gfarm_error_t peer_alloc(int, struct peer **);
 struct gfp_xdr;
 gfarm_error_t peer_alloc_with_connection(struct peer **, struct gfp_xdr *,
 	struct abstract_host *, int);
+/*
+ * peer_authorized() must be followed by peer_watch_authorized(),
+ * which must be called without giant_lock.  see peer.c
+ */
 void peer_authorized(struct peer *,
 	enum gfarm_auth_id_role, char *, char *, struct sockaddr *,
 	enum gfarm_auth_method, struct peer_watcher *);

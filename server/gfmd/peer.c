@@ -963,6 +963,13 @@ peer_get_service_name(struct peer *peer)
  * caller should allocate the storage for username and hostname
  * caller should call peer_watch_authorized() after giant_unlock()
  *
+ * NOTE: this function used to start watching the peer, i.e. call
+ * thrpool_add_job() or peer_watch_access(), by itself.  it no longer
+ * does, since thrpool_add_job() must not be called with giant_lock held
+ * (see #1259).  a private extension which calls this function directly
+ * must call peer_watch_authorized() after giant_unlock(), otherwise
+ * requests from the peer are never processed.
+ *
  * PREREQUISITE: giant_lock
  * LOCKS: abstract_host::mutex in host_addr_lookup(),
  *	mdhost_table_rwlock, abstract_host::mutex in mdhost_lookup(),
