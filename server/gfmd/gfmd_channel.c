@@ -1508,6 +1508,18 @@ gfmdc_peer_switch_to_sync(struct mdhost *mh)
 {
 	struct peer *peer = mdhost_get_peer(mh); /* increment refcount */
 	if (peer != NULL) {
+		/*
+		 * the first sync may have been completed while this mdhost
+		 * was a synchronous slave before.  reset the flag, otherwise
+		 * gfmdc_journal_asyncsend() sends nothing to this mdhost,
+		 * and gfmdc_journal_first_sync_thread() loops forever.
+		 * this mdhost becomes a target of the synchronous replication
+		 * after the first sync completes.
+		 * giant_lock prevents gfmdc_journal_sync_multiple() from
+		 * running concurrently.
+		 */
+		gfmdc_peer_set_first_sync_completed(
+		    peer_get_gfmdc_record(peer), 0);
 		thrpool_add_job(journal_sync_thread_pool,
 		    gfmdc_journal_first_sync_thread, peer);
 	}
@@ -1848,6 +1860,15 @@ gfmdc_journal_first_sync_thread(void *closure)
 	}
 
 	while (exist_recs) {
+		/*
+		 * gfmdc_journal_asyncsend() sends nothing and does not
+		 * update exist_recs in these cases, e.g. if the slave is
+		 * disconnected, or if another first sync thread for this
+		 * peer has completed.  do not loop forever.
+		 */
+		if (!gfmdc_journal_mdhost_can_sync(mh, gfmdc_peer) ||
+		    gfmdc_peer_is_first_sync_completed(gfmdc_peer))
+			break;
 		if ((e = gfmdc_journal_asyncsend(mh, peer, &exist_recs))
 		    != GFARM_ERR_NO_ERROR) {
 			gflog_error(GFARM_MSG_1003007,
