@@ -94,8 +94,13 @@ if [ $install_option = all ] && [ $PKG = gfarm ]; then
 	sudo rm -rf $STAGE $ARCHIVE
 	sudo make DESTDIR=$STAGE install > /dev/null
 	sudo tar -C $STAGE -cf $ARCHIVE .
-	# --no-overwrite-dir: keep the metadata of existing directories
-	gfarm-prun -a -p "sudo tar -C / --no-overwrite-dir -xf $ARCHIVE"
+	# --no-overwrite-dir: keep the metadata of existing directories.
+	# ldconfig: libtool does not update the cache of the shared libraries
+	# when DESTDIR is specified.
+	# extract it on this host first, since gfarm-prun is installed by it
+	EXTRACT="sudo tar -C / --no-overwrite-dir -xf $ARCHIVE && sudo ldconfig"
+	sh -c "$EXTRACT"
+	gfarm-prun -p "$EXTRACT"
 	sudo rm -rf $STAGE $ARCHIVE
 else
 	sudo make install > /dev/null
