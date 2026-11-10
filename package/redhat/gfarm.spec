@@ -387,6 +387,8 @@ fi
 %{man_prefix}/man1/gfarm_agent.1*
 %{man_prefix}/man1/gfcd.1*
 %endif
+%{man_prefix}/man1/gfarm-pcp.1*
+%{man_prefix}/man1/gfarm-prun.1*
 %{man_prefix}/man1/gfarmbb.1*
 %{man_prefix}/man1/gfchgrp.1*
 %{man_prefix}/man1/gfchmod.1*
@@ -578,6 +580,8 @@ fi
 %{man_prefix}/ja/man1/gfarm_agent.1*
 %{man_prefix}/ja/man1/gfcd.1*
 %endif
+%{man_prefix}/ja/man1/gfarm-pcp.1*
+%{man_prefix}/ja/man1/gfarm-prun.1*
 %{man_prefix}/ja/man1/gfarmbb.1*
 %{man_prefix}/ja/man1/gfchgrp.1*
 %{man_prefix}/ja/man1/gfchmod.1*
@@ -748,6 +752,8 @@ fi
 %{html_prefix}/en/ref/man1/gfarm_agent.1.html
 %{html_prefix}/en/ref/man1/gfcd.1.html
 %endif
+%{html_prefix}/en/ref/man1/gfarm-pcp.1.html
+%{html_prefix}/en/ref/man1/gfarm-prun.1.html
 %{html_prefix}/en/ref/man1/gfarmbb.1.html
 %{html_prefix}/en/ref/man1/gfchgrp.1.html
 %{html_prefix}/en/ref/man1/gfchmod.1.html
@@ -951,6 +957,8 @@ fi
 %{html_prefix}/ja/ref/man1/gfarm_agent.1.html
 %{html_prefix}/ja/ref/man1/gfcd.1.html
 %endif
+%{html_prefix}/ja/ref/man1/gfarm-pcp.1.html
+%{html_prefix}/ja/ref/man1/gfarm-prun.1.html
 %{html_prefix}/ja/ref/man1/gfarmbb.1.html
 %{html_prefix}/ja/ref/man1/gfchgrp.1.html
 %{html_prefix}/ja/ref/man1/gfchmod.1.html
@@ -1130,6 +1138,8 @@ fi
 %{html_prefix}/ja/user/nfs-gfarmfs.html
 %endif
 %{html_prefix}/pic/Gfarm_logo_tate_color.svg
+%{doc_prefix}/INSTALL-manual-en.md
+%{doc_prefix}/INSTALL-manual-ja.md
 %{doc_prefix}/INSTALL.en
 %{doc_prefix}/INSTALL.ja
 %{doc_prefix}/INSTALL.RPM.en
@@ -1142,6 +1152,8 @@ fi
 %{doc_prefix}/RELNOTES
 %{doc_prefix}/OVERVIEW.en
 %{doc_prefix}/OVERVIEW.ja
+%{doc_prefix}/SETUP-manual-en.md
+%{doc_prefix}/SETUP-manual-ja.md
 %{doc_prefix}/SETUP.en
 %{doc_prefix}/SETUP.ja
 %{doc_prefix}/SETUP.private.en

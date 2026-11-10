@@ -1,0 +1,162 @@
+'\" t
+.\"     Title: gfarm-pcp
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 10 Nov 2026
+.\"    Manual: Gfarm
+.\"    Source: Gfarm
+.\"  Language: English
+.\"
+.TH "GFARM\-PCP" "1" "10 Nov 2026" "Gfarm" "Gfarm"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+gfarm-pcp \- copy files to multiple hosts
+.SH "SYNOPSIS"
+.HP \w'\fBgfarm\-pcp\fR\ 'u
+\fBgfarm\-pcp\fR [\fIoptions\fR] \fIsource\fR \fIdestination\fR
+.HP \w'\fBgfarm\-pcp\fR\ 'u
+\fBgfarm\-pcp\fR [\fIoptions\fR] \fIsource\fR... \fIdirectory\fR
+.SH "DESCRIPTION"
+.PP
+\fBgfarm\-pcp\fR
+copies local files
+\fIsource\fR
+to
+\fIdestination\fR
+or
+\fIdirectory\fR
+on each host listed in a hostfile, by using a remote copy command,
+\fBscp \-pr\fR
+by default\&. A relative path of the destination is relative to the home directory on the remote host\&. It is useful, for example, to distribute configuration files to filesystem nodes of Gfarm\&.
+.PP
+By default, files are copied to one host after another\&. When the \-p option is specified, files are copied to multiple hosts in parallel\&.
+.PP
+The format of the hostfile, and how the local host is skipped, are the same as
+\fBgfarm\-prun\fR\&. See
+\fBgfarm-prun\fR(1)\&.
+.PP
+When the PRUN_RCP environment variable is set to
+no, files are copied by the remote shell command specified by the PRUN_RSH environment variable, without a remote copy command\&. In this case, the last argument must be a directory on the remote host, and only regular files can be copied\&. The permission of the files is not preserved\&.
+.SH "OPTIONS"
+.PP
+\fB\-a\fR
+.RS 4
+Copies files also to the local host, if it is listed in the hostfile\&.
+.RE
+.PP
+\fB\-h\fR \fIhostfile\fR
+.RS 4
+Specifies a hostfile\&. If `\-\*(Aq is specified, the list of hosts is read from the standard input\&.
+.RE
+.PP
+\fB\-m\fR \fImax_jobs\fR
+.RS 4
+Specifies the maximum number of hosts to which files are copied in parallel with the \-p option\&. The default is 16\&.
+.RE
+.PP
+\fB\-n\fR
+.RS 4
+Displays the commands that would be executed, but does not execute them\&.
+.RE
+.PP
+\fB\-p\fR
+.RS 4
+Copies files to multiple hosts in parallel in the background\&.
+.RE
+.PP
+\fB\-rcp\fR \fIrcp_command\fR
+.RS 4
+Specifies a remote copy command\&. The default is
+\fBscp \-pr\fR\&. If
+no
+is specified, files are copied by the remote shell command as described above\&.
+.RE
+.PP
+\fB\-v\fR
+.RS 4
+Displays the host name before copying files to the host\&. This option has no effect with the \-p option\&.
+.RE
+.SH "ENVIRONMENT VARIABLES"
+.PP
+\fBPRUN_RCP\fR
+.RS 4
+Specifies a remote copy command\&. The default is
+\fBscp \-pr\fR\&.
+.RE
+.PP
+\fBPRUN_RSH\fR
+.RS 4
+Specifies a remote shell command that is used when PRUN_RCP is
+no\&. The default is
+\fBssh\fR\&.
+.RE
+.PP
+\fBPRUN_HOSTFILE\fR, \fBPRUN_HOSTNAME\fR, \fBPRUN_MAX_JOBS\fR, \fBPRUN_PARALLEL\fR, \fBPRUN_ALL_INCLUDE_MYSELF\fR, \fBPRUN_VERBOSE\fR
+.RS 4
+The same as
+\fBgfarm\-prun\fR\&. See
+\fBgfarm-prun\fR(1)\&.
+.RE
+.SH "EXIT STATUS"
+.PP
+\fBgfarm\-pcp\fR
+exits with 0 when files are copied to all hosts successfully\&. Otherwise, it exits with the exit status of the copy command for a host to which the copy fails\&. When it fails for two or more hosts, the exit status for one of them is returned\&.
+.SH "EXAMPLES"
+.PP
+Copies
+gfarm2\&.conf
+to
+/tmp
+on all hosts listed in
+$HOME/\&.nodelist, except the local host\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	$ gfarm\-pcp gfarm2\&.conf /tmp
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+Copies the shared secret key of the user to the home directory on all hosts listed in
+hosts, in parallel\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	$ gfarm\-pcp \-p \-h hosts \&.gfarm_shared_key \&.
+.fi
+.if n \{\
+.RE
+.\}
+.SH "FILES"
+.PP
+$HOME/\&.nodelist
+.RS 4
+the default hostfile
+.RE
+.SH "SEE ALSO"
+.PP
+\fBgfarm-prun\fR(1),
+\fBscp\fR(1)

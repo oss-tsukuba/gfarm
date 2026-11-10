@@ -43,7 +43,8 @@ Options for configure:
   Specifies an installation directory for the Globus Toolkit to utilize the
   GSI authentication method.  When a directory is not specified,
   pkg-config is tried at first, and then the environment variable
-  GLOBUS_LOCATION is tried.
+  GLOBUS_LOCATION is tried.  The GSSAPI library of the Globus Toolkit
+  is required.
   This is optional.
 
   --with-infiniband=directory
@@ -86,6 +87,7 @@ Options for configure:
   --enable-linuxkernel
 
   Enables building the Gfarm kernel driver for Linux kernel 2.6.
+  For details, see linux/doc/manual.{pdf,doc}.
 
 When you need to specify a compiler program explicitly, use the
 environment variable, CC.  This is an example using gcc.

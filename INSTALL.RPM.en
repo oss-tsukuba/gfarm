@@ -12,18 +12,19 @@ Overview
 To introduce a Gfarm filesystem, RPM packages for a metadata server,
 filesystem nodes, and client nodes have to be installed.
 
-Note that it is possible to install all RPM packages on the same host.
+Although the following sections assume that they are different hosts,
+it is possible to install all RPM packages on the same host.
 
-Instruction to build RPM binary packages
-========================================
+Instructions to build RPM binary packages
+=========================================
 
 RPM binary packages are built from the RPM source package (SRPM).  To
-build the binary packages, at least development packages of OpenSSL
-and PostgreSQL are required.  For SASL XOAUTH2 and other
-authentications, other development packages are required.  For
-details, see INSTALL.en document.
+build the binary packages, at least development packages of OpenSSL,
+PostgreSQL, and Cyrus SASL are required.  For SASL XOAUTH2 and other
+authentication methods, other development packages are required.  For
+details, see the INSTALL.en document.
 
-	# dnf install openssl-devel postgresql-devel
+	# dnf install openssl-devel postgresql-devel cyrus-sasl-devel
 	# rpmbuild --rebuild gfarm-X.X.X-X.src.rpm
 
 Binary packages are located at ~/rpmbuild/RPMS/ARCH/.
@@ -63,9 +64,8 @@ Install the RPM packages for a Gfarm filesystem node.
 Since each filesystem node is usually a client node, it is necessary
 to install a client package, too.  A document package is optional.
 
-Moreover, if you want to use the GfarmFS-FUSE (gfarm2fs) to mount
-the Gfarm filesystem as a client node, the gfarm2fs package is
-necessary.
+Moreover, if you want to use gfarm2fs to mount the Gfarm filesystem
+on a client node, the gfarm2fs package is necessary.
 
 	# rpm -Uvh gfarm2fs-X.X.X-X.ARCH.rpm
 
@@ -80,7 +80,7 @@ Install RPM packages for a Gfarm client node.
 
 A document package is optional.
 
-If you want to use the GfarmFS-FUSE to mount the Gfarm file system,
+If you want to use gfarm2fs to mount the Gfarm filesystem,
 install the gfarm2fs package as well.
 
 	# rpm -Uvh gfarm2fs-X.X.X-X.ARCH.rpm

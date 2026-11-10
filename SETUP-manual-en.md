@@ -128,7 +128,7 @@ Perform the Gfarm setup in the same manner as for the master metadata server.
 mds[23]% sudo config-gfarm -N -A $USER -r -X -d md5
 ```
 
-Specify the same options for config-gfarm as when configuring the metadata server.
+Specify the same options for config-gfarm as when configuring the master metadata server.
 The -N option prevents server startup when executing config-gfarm.
 <!-- >
 Next, add the authentication methods to enable, similar to the master, to gfmd.conf.
@@ -200,7 +200,7 @@ For TLS communication, place the service certificate and private key for the fil
 
 When using the shared key method, copy the shared key `$HOME/.gfarm_shared_key` for `_gfarmfs` from the metadata server.  Verify that the owner is `_gfarmfs` and the permissions are 0600.
 
-Copy the configuration file `gfarm2.conf` from the metadata server, then configure the filesystem node using `config-gfsd`. The following example shows incorporating the directory `/var/spool/gfarm` and its subdirectories into the Gfarm filesystem on the filesystem node fs1.example.com.
+Copy the configuration file `gfarm2.conf` from the metadata server, then configure the filesystem node using `config-gfsd`. The following example shows incorporating the directory `/var/spool/gfarm` and its subdirectories into the Gfarm file system on the filesystem node fs1.example.com.
 
 ```console
 fs% sudo config-gfsd /var/spool/gfarm
@@ -352,7 +352,7 @@ You can set the number of file replicas using the `gfncopy` command. The followi
 % gfsudo gfncopy -s 2 /
 ```
 
-You can determine the file system nodes where files are stored using the `gfwhere` command.
+You can determine the filesystem nodes where files are stored using the `gfwhere` command.
 
 ```console
 % gfwhere test
@@ -371,7 +371,7 @@ This command is used to quickly store large numbers of (small) files on Gfarm. F
 
 ## Upgrade Procedure
 
-When updating Gfarm, perform the upgrade in the following order: metadata servers, file system nodes, and clients.
+When updating Gfarm, perform the upgrade in the following order: metadata servers, filesystem nodes, and clients.
 
 ### Updating metadata servers
 
@@ -422,9 +422,9 @@ mds3% sudo systemctl start gfmd
 
 Verify that the slave metadata server has synchronized using `gfmdhost`.
 
-### Updating file system nodes
+### Updating filesystem nodes
 
-For file system nodes, if file replicas have been created, it is possible to update them one by one while continuing operations. Shut down the file system node server and perform an overwrite installation to upgrade.
+For filesystem nodes, if file replicas have been created, it is possible to update them one by one while continuing operations. Shut down the filesystem node server and perform an overwrite installation to upgrade.
 
 ```console
 fs% sudo systemctl stop gfsd

@@ -2,7 +2,10 @@ This document only describes some important problems.
 
 *** General problems with Gfarm
 
-- gfs_pio_sync() doesn't really update the metadata now.
+- gfs_pio_sync() flushes the file data to the disk of the filesystem
+  node, but doesn't update the metadata in gfmd, such as the file size
+  and the modification time.  The metadata is updated when the file is
+  closed.
 
   Plans for fixes:
 	Not determined yet.
@@ -13,16 +16,14 @@ This document only describes some important problems.
 	No plan to support.
 
 - If a program, which has already begun to use the gfarm library, makes a
-  fork(2) system call, either the parent process or child process is allowed
-  to
-call
-  gfarm APIs.  If both of them call a gfarm API, it's possible that the call
-  won't work correctly, because requests to a gfsd server from the
-  parent process and the child process may be mixed.  This problem may
-  occur even if the parent and the child process access different files,
-  because the connection to the gfsd server will be shared if the
-  connection was established before fork(2), and both files belong
-  to the same gfsd server.
+  fork(2) system call, only one of the parent process and the child process
+  is allowed to call gfarm APIs.  If both of them call a gfarm API, it's
+  possible that the call won't work correctly, because requests to a gfsd
+  server from the parent process and the child process may be mixed.
+  This problem may occur even if the parent and the child process access
+  different files, because the connection to the gfsd server will be
+  shared if the connection was established before fork(2), and both
+  files belong to the same gfsd server.
 
   Also, the child process must complete the file access before the
   parent process calls exit(3), if the child process accesses a file
@@ -35,14 +36,14 @@ call
   Furthermore, no close request will be sent to the gfsd, when the
   child process performs a close operation on a file which was opened
   by the parent process before fork(2). Thus, it's possible that step 3
-  of the following scenario will fail:
-  1. The parent process performs fork(2) while opening many files which belong
-    to the same gfsd.
+  of the following scenario will fail due to a shortage of file descriptors:
+  1. The parent process performs fork(2) while having many files open which
+    belong to the same gfsd.
   2. The child process closes all such files.
   3. The child process tries to open many files that belong to the same
     gfsd.
   This is because the close request in step 2 won't be sent to the gfsd,
-  and the gfsd is still opening the descriptors of the files in step 1.
+  and the gfsd still holds the descriptors of the files opened in step 1.
 
   Plans for fixes:
 	Not determined yet.
@@ -62,21 +63,27 @@ call
 	Not determined yet.
 
 - It's known that some combinations of NFS server and NFS client sometimes
-  make sharedsecret authentication fail.
+  make sharedsecret and tls_sharedsecret authentication fail.
+
+  Since Gfarm 2.8.13, the key file is replaced by rename(2) instead of
+  being overwritten when the key is regenerated, which is expected to
+  avoid this problem.  If it still occurs, please report it.
 
   You can see whether you have this problem or not by trying the following
-  command to see if the second field of gfhost output is "x" instead of "s".
+  command to see if the second field of gfhost output is "x" instead of "s"
+  (or "S" for tls_sharedsecret).
 	sh -c 'seq 60 | while read n; do gfkey -f; gfhost -l OTHER-HOST; done'
   The "OTHER-HOST" here is a remote host that shares your home directory
-  (via NFS) with the machine from which ???on which you are invoking this
-command.
+  (via NFS) with the machine on which you are invoking this command.
 
   You can work around this problem in one of the following ways:
   - You can use a longer expiration period of the key by using
     the "gfkey -f -p <EXPIRATION_PERIOD_BY_SECOND>" command.
     If you specify a long enough period, key regeneration won't happen
     while you are running a job. The default period is 1 day.
-  - You can use "gsi_auth" or "gsi" authentication instead of "sharedsecret".
+  - You can use an authentication method that does not use the shared
+    secret key file, such as "tls_client_certificate", "sasl", or
+    "kerberos", instead of "sharedsecret" and "tls_sharedsecret".
   - Or, maybe you can change your NFS server to another OS.
 
   Combinations with which this symptom has been observed:
@@ -90,29 +97,35 @@ command.
 	Solaris 2.6			Linux 2.4.18 (RedHat 8)
 	NetBSD 3.0			Linux 2.4.18 (RedHat 8)
 
-- There is small window that gfs_getxattr()/gfs_setxmlattr()/etc return
-  old data just after an update by gfs_setxattr()/gfs_setxmlattr()/etc,
-  if gfmd is recording metadata in a journaling file.
+  Plans for fixes:
+	Not determined yet.
+
+- There is a small window in which gfs_getxattr()/gfs_getxmlattr()/etc.
+  return old data just after an update by gfs_setxattr()/gfs_setxmlattr()/etc.,
+  if gfmd is recording metadata in a journal file.
 
   Plans for fixes:
 	Not determined yet.
 
   Countermeasure:
-	For the extended attribute case, you can workaround this symptom
+	For the extended attribute case, you can work around this symptom
 	by caching the extended attribute in the memory of gfmd, by
 	using "xattr_cache" directive in gfmd.conf.
 
-- gfs_findxmlattr() does not search attributes for files which are referred
-  by symbolic link.
+- gfs_findxmlattr() does not search attributes of files which are referred
+  to by symbolic links.
 
-  When the symbolic link is specified for the argument oof gfs_findxmlattr(),
+  When a symbolic link is specified as the argument of gfs_findxmlattr(),
   the file or directory referred by the symbolic link is retrieved.
-  However, if the symbolic links exist under the specified directory, their
-  referring files are not retrieved.  Instead, the attributes of the symbolic
-  links are retrieved.
-  As for the reason why this problem occurs, the path resolution is executed
-  at client side but gfs_findxmlattr() executes the process at gfmd that
-  traverses files under a directory.
+  However, if symbolic links exist under the specified directory, the
+  attributes of the files they refer to are not retrieved.  Instead, the
+  attributes of the symbolic links themselves are retrieved.
+  This problem occurs because path resolution of symbolic links is executed
+  at the client side, but gfs_findxmlattr() traverses files under a
+  directory in gfmd.
+
+  Plans for fixes:
+	Not determined yet.
 
 
 *** Problems with gfarm commands
@@ -126,7 +139,7 @@ command.
 
 - There is no reference manual for the following commands:
 
-  gfarm.arch.guess, gfarm-pcp, gfarm-prun, gfvoms-sync
+  gfarm.arch.guess, gfvoms-sync
 
   Plans for fixes:
 	Not determined yet.
@@ -134,4 +147,4 @@ command.
 
 *** Problems with gfarm2fs commands
 
-No known problem
+No known problems.
