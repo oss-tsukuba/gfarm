@@ -34,6 +34,9 @@ The default hostfile is <code class="filename">$HOME/.nodelist</code>.</p>
 A host is regarded as the local host when its name matches the
 output of <span class="command"><strong>hostname</strong></span> or one of the
 IP addresses displayed by <span class="command"><strong>hostname -I</strong></span>.
+A host name also matches when only one of them has the domain part,
+for example, <code class="literal">node1</code> and <code class="literal">node1.example.com</code>,
+but <code class="literal">node1</code> does not match <code class="literal">node10</code>.
 These names can be changed by the PRUN_HOSTNAME environment
 variable.</p>
 <p>The command line is passed to the remote shell command, thus it

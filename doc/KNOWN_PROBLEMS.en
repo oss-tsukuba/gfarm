@@ -65,6 +65,10 @@ This document only describes some important problems.
 - It's known that some combinations of NFS server and NFS client sometimes
   make sharedsecret and tls_sharedsecret authentication fail.
 
+  Since Gfarm 2.8.13, the key file is replaced by rename(2) instead of
+  being overwritten when the key is regenerated, which is expected to
+  avoid this problem.  If it still occurs, please report it.
+
   You can see whether you have this problem or not by trying the following
   command to see if the second field of gfhost output is "x" instead of "s"
   (or "S" for tls_sharedsecret).

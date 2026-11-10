@@ -50,7 +50,13 @@ $HOME/\&.nodelist\&.
 The local host is skipped unless the \-a option is specified\&. A host is regarded as the local host when its name matches the output of
 \fBhostname\fR
 or one of the IP addresses displayed by
-\fBhostname \-I\fR\&. These names can be changed by the PRUN_HOSTNAME environment variable\&.
+\fBhostname \-I\fR\&. A host name also matches when only one of them has the domain part, for example,
+node1
+and
+node1\&.example\&.com, but
+node1
+does not match
+node10\&. These names can be changed by the PRUN_HOSTNAME environment variable\&.
 .PP
 The command line is passed to the remote shell command, thus it is interpreted by a shell on the remote host\&. Wildcards in the command line are expanded on the remote host, not on the local host\&.
 .PP

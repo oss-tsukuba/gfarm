@@ -35,6 +35,9 @@
 <span class="command"><strong>hostname</strong></span> の出力、あるいは
 <span class="command"><strong>hostname -I</strong></span> で表示される IP
 アドレスのいずれかに一致するホストを、ローカルホストとみなします。
+<code class="literal">node1</code> と <code class="literal">node1.example.com</code>
+のように、一方だけにドメイン部がある場合も一致しますが、
+<code class="literal">node1</code> と <code class="literal">node10</code> は一致しません。
 これらの名前は環境変数 PRUN_HOSTNAME で変更できます。</p>
 <p>コマンドラインはリモートシェルコマンドに渡され、
 リモートホスト上のシェルで解釈されます。コマンドライン中のワイルドカードは、
