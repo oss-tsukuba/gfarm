@@ -138,7 +138,7 @@ gfs_pio_failover_check_retry(GFS_File gf, gfarm_error_t *ep)
 		 * report the reason instead of the bad file descriptor.
 		 */
 		*ep = gfs_pio_not_reopened_error(gf);
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005882,
 		    "%s is not reopened: %s",
 		    gf->url != NULL ? gf->url : "(fhopen)",
 		    gfarm_error_string(*ep));
@@ -684,7 +684,7 @@ gfs_pio_failover(GFS_File gf)
 			 * the invalid descriptor.
 			 */
 			e = gfs_pio_not_reopened_error(gf);
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1005883,
 			    "gfs_pio_failover: %s (fd=%d) is not reopened: %s",
 			    gf->url != NULL ? gf->url : "(fhopen)", gf->fd,
 			    gfarm_error_string(e));

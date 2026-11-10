@@ -272,7 +272,7 @@ db_journal_lock_dir(void)
 	 */
 	if ((fd = open(path, O_RDWR|O_CREAT, 0600)) == -1) {
 		save_errno = errno;
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1005885,
 		    "%s: %s, cannot detect another gfmd running",
 		    path, strerror(save_errno));
 		return;
@@ -283,20 +283,20 @@ db_journal_lock_dir(void)
 		if (save_errno == EINTR)
 			continue;
 		if (save_errno != EWOULDBLOCK) {
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1005886,
 			    "flock(%s): %s, cannot detect another gfmd "
 			    "running", path, strerror(save_errno));
 			close(fd);
 			return;
 		}
 		if (waited >= JOURNAL_LOCK_WAIT) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1005887,
 			    "%s: another gfmd is running with the journal "
 			    "directory %s", path, journal_dir);
 			exit(1);
 		}
 		if (waited == 0)
-			gflog_notice(GFARM_MSG_UNFIXED,
+			gflog_notice(GFARM_MSG_1005888,
 			    "%s: another gfmd is running with the journal "
 			    "directory %s, waiting up to %d seconds",
 			    path, journal_dir, JOURNAL_LOCK_WAIT);
@@ -304,7 +304,7 @@ db_journal_lock_dir(void)
 		waited++;
 	}
 	if (waited > 0)
-		gflog_notice(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_1005889,
 		    "%s: locked after %d seconds", path, waited);
 	/* intentionally leave fd open */
 }
@@ -4802,7 +4802,7 @@ db_journal_recvq_enter(gfarm_uint64_t from_sn, gfarm_uint64_t to_sn,
 	if ((e = journal_records_find_last_end(recs, recs_len,
 	    &ri->end_sn, &ri->end_len)) != GFARM_ERR_NO_ERROR) {
 		/* will be abandoned by db_journal_recvq_proc() */
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005890,
 		    "%s: invalid journal records: seqnum %llu-%llu: %s",
 		    diag, (unsigned long long)from_sn,
 		    (unsigned long long)to_sn, gfarm_error_string(e));
@@ -4857,7 +4857,7 @@ db_journal_recvq_reset(void)
 
 	GFARM_MALLOC(ri);
 	if (ri == NULL)
-		gflog_error(GFARM_MSG_UNFIXED, "%s: no memory", diag);
+		gflog_error(GFARM_MSG_1005891, "%s: no memory", diag);
 	else {
 		ri->from_sn = ri->to_sn = 0;
 		ri->recs = NULL;

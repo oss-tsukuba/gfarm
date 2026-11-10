@@ -1,3 +1,66 @@
+Release note for Gfarm 2.8.12
+=============================
+
+[2026.11.10]
+
+Updated feature
+* gfmd - prevent two gfmd processes from running with the same journal
+  directory, e.g. when "restart" of the init script is run twice in
+  parallel
+* gfmd - speed up the lookup of dead file copies by inode number.  For
+  example, the "directory check" phase of the spool check of gfsd is
+  much faster when there are many replicas to be removed [#1065]
+* libgfarm - file open and close are no longer blocked while another
+  thread is searching for a file system node [#1277]
+
+Bug fix
+* slave gfmd - writes its own journal records at startup, then cannot
+  connect to the master gfmd and exits, if the admin user has been
+  removed from the gfarmadm group [#1036]
+* slave gfmd - may be regarded as expired by the master gfmd and exit,
+  when it reconnects in the middle of a transaction, and may log many
+  "abandon invalid journal" messages after reconnection
+* slave gfmd - may abandon journal records, then be regarded as expired
+  and exit, when a transaction is empty
+* gfmd - the first sync thread spins forever when a slave is switched
+  from asynchronous back to synchronous replication [#1284]
+* gfmd - two threads may send journal records to the same slave
+  concurrently when the replication type of the slave is changed
+  [#1286]
+* gfmd - journal records may not be sent to an asynchronous slave until
+  the metadata servers are updated again, due to a lost wakeup
+* gfmd - a slave promoted to the master may not accept connections
+  from clients, due to a lost wakeup
+* gfmd - all metadata operations are blocked for
+  directory_quota_check_retry_interval (60 seconds by default) when the
+  directory quota check is retried [#1258]
+* gfmd - possible deadlocks at gfmd failover, at authentication, and
+  at the change of the replication type, when the thread pool queue is
+  full
+* gfmd - fix data races that may cause a crash, e.g. when a connection
+  is switched to a gfmd channel or a back channel [#1280], at
+  shutdown, and at the disconnection of gfsd
+* gfmd - a connection switched to a back channel or a gfmd channel may
+  not be freed, due to an unbalanced reference count
+* gfmd - may crash due to NULL pointer access when gfsd reports a lost
+  replica which is being removed, if the state is inconsistent
+* gfmd.service - stopping gfmd-slave.service and starting gfmd.service
+  run in parallel, and the new gfmd may be killed 5 minutes later,
+  introduced in the version 2.8.11
+* libgfarm - a connection error to gfsd, e.g. a timeout from a hung
+  gfsd, causes an unnecessary gfmd failover and the reopen of all
+  opened files [#1291]
+* libgfarm - report the reason instead of "bad file descriptor" for a
+  file which a gfmd failover failed to reopen, and do not write to such
+  a file
+* libgfarm - fix a deadlock and races in the connection cache, and a
+  self deadlock of the scheduler on a gfsd error [#1088]
+* libgfarm - a gfsd connection being used by the scheduler may be used
+  by another thread at the same time
+* gfarm2.conf(5) - the default of metadb_server_slave_max_size is 16,
+  not 32
+* build with --enable-linuxkernel fails [#1068]
+
 Release note for Gfarm 2.8.11
 =============================
 
