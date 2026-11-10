@@ -1852,9 +1852,17 @@ gfmd_modules_init_default(int table_size)
 	}
 	/* initial entry */
 	mdhost_initial_entry();
-	user_initial_entry();
-	group_initial_entry();
-	inode_initial_entry();
+	/*
+	 * these may write DB, thus, must not be called on a slave gfmd,
+	 * otherwise the journal of the slave becomes inconsistent with
+	 * the master's one.  the master sends these entries to slaves.
+	 */
+	if (!gfarm_get_metadb_replication_enabled() ||
+	    mdhost_self_is_master()) {
+		user_initial_entry();
+		group_initial_entry();
+		inode_initial_entry();
+	}
 	dir_entry_initial_entry();
 
 	/* must be after hosts, filesystem and mdhost_initial_entry */
