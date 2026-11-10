@@ -173,7 +173,7 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 		 * a channel switch is not allowed inside of a COMPOUND block,
 		 * since protocol_service() cannot handle the peer correctly.
 		 */
-		gflog_notice(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_1005892,
 		    "request %d is not allowed inside of a COMPOUND block",
 		    (int)request);
 		peer_record_protocol_error(peer); /* mark this peer finished */

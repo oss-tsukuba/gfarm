@@ -392,7 +392,7 @@ mdhost_foreach(int (*func)(struct mdhost *, void *), void *closure)
 	}
 	GFARM_MALLOC_ARRAY(ms, n);
 	if (ms == NULL) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1005879,
 		    "%s: no memory for %d mdhosts, call func with lock",
 		    diag, n);
 		FOREACH_MDHOST(it) {
@@ -1768,7 +1768,7 @@ mdhost_fix_default_master(struct mdhost *new_mmh, const char *diag)
 	if (mhs == NULL) {
 		mdhost_table_rwlock_unlock(diag);
 		e = GFARM_ERR_NO_MEMORY;
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005880,
 		    "%s: %s", diag, gfarm_error_string(e));
 		return (e);
 	}

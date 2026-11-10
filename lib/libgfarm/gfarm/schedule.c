@@ -883,7 +883,7 @@ gfarm_schedule_host_cache_purge(struct gfs_connection *gfs_server)
 		}
 	}
 	if (r == NULL)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005884,
 		    "gfarm_schedule_host_cache_purge(%s): no memory, "
 		    "purge all hosts", gfs_client_hostname(gfs_server));
 

@@ -245,7 +245,7 @@ gfmdc_peer_record_alloc(const char *diag,
 	}
 	if ((err = pthread_mutex_init(&gfmdc_peer->journal_send_mutex, NULL))
 	    != 0) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005881,
 		    "%s: pthread_mutex_init(%s): %s",
 		    diag, PEER_RECORD_JOURNAL_SEND_MUTEX_DIAG, strerror(err));
 		gfarm_mutex_destroy(&gfmdc_peer->mutex,
