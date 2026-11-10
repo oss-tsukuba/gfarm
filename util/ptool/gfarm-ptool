@@ -134,12 +134,25 @@ wait_jobs() {
     pids=
 }
 
+# whether $1 is one of the names of the local host.  a host name also
+# matches when only one of them has a domain part, e.g. "node1" and
+# "node1.example.com", but "node1" does not match "node10".
+is_local_host() {
+    for h in $PRUN_HOSTNAME; do
+	[ "X$h" = "X$1" ] && return 0
+	# do not strip the domain part of an IPv4 address
+	case $h in *[!0-9.]*) ;; *) continue ;; esac
+	case $1 in *[!0-9.]*) ;; *) continue ;; esac
+	[ "X${h%%.*}" = "X$1" -o "X$h" = "X${1%%.*}" ] && return 0
+    done
+    return 1
+}
+
 status=0
 pids=
 p=0
 for host in `sed -e 's/#.*//' -e '/^[ 	]*$/d' $hostfile | awk '{ print $1 }'`; do
-    [ "X$PRUN_ALL_INCLUDE_MYSELF" != Xyes ] &&
-	echo $PRUN_HOSTNAME | grep $host > /dev/null && continue
+    [ "X$PRUN_ALL_INCLUDE_MYSELF" != Xyes ] && is_local_host $host && continue
     $MESSAGE $host
     case $PRUN_PARALLEL$PRUN_STDIN in
 	no) $CMD $host$HOSTSUF $ARG || status=$? ;;
