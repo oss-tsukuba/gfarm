@@ -747,17 +747,23 @@ gfs_client_connection_acquire(const char *canonical_hostname, const char *user,
 	return (e);
 }
 
-/* NOTE: the caller should check gfmd failover */
-gfarm_error_t
-gfs_client_connection_acquire_by_host(struct gfm_connection *gfm_server,
+/*
+ * *gfm_errorp is set to true, if the error is returned from gfmd.
+ * otherwise, e.g. if the error is caused by gfsd, it is set to false.
+ */
+static gfarm_error_t
+gfs_client_connection_acquire_by_host0(struct gfm_connection *gfm_server,
 	const char *canonical_hostname, int port,
-	struct gfs_connection **gfs_serverp, const char *source_ip)
+	struct gfs_connection **gfs_serverp, const char *source_ip,
+	int *gfm_errorp)
 {
 	gfarm_error_t e;
 	struct gfp_cached_connection *cache_entry;
 	int created;
 	struct sockaddr peer_addr;
 	const char *user = gfm_client_username(gfm_server);
+
+	*gfm_errorp = 0;
 
 	/*
 	 * lookup gfs_server_cache first,
@@ -778,7 +784,9 @@ gfs_client_connection_acquire_by_host(struct gfm_connection *gfm_server,
 	}
 	e = gfm_host_address_get(gfm_server, canonical_hostname, port,
 	    &peer_addr, NULL);
-	if (e == GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR)
+		*gfm_errorp = 1;
+	else
 		e = gfs_client_connection_alloc_and_auth(canonical_hostname,
 		    user, &peer_addr, cache_entry, gfs_serverp, source_ip,
 		    gfarm_filesystem_failover_count(
@@ -796,6 +804,18 @@ gfs_client_connection_acquire_by_host(struct gfm_connection *gfm_server,
 			gfarm_error_string(e));
 	}
 	return (e);
+}
+
+/* NOTE: the caller should check gfmd failover */
+gfarm_error_t
+gfs_client_connection_acquire_by_host(struct gfm_connection *gfm_server,
+	const char *canonical_hostname, int port,
+	struct gfs_connection **gfs_serverp, const char *source_ip)
+{
+	int gfm_error;
+
+	return (gfs_client_connection_acquire_by_host0(gfm_server,
+	    canonical_hostname, port, gfs_serverp, source_ip, &gfm_error));
 }
 
 /*
@@ -906,15 +926,22 @@ gfs_client_connection_and_process_acquire(
 	struct gfs_connection *gfs_server;
 	int gfsd_nretries = GFS_CONN_RETRY_COUNT;
 	int failover_nretries = GFS_FAILOVER_RETRY_COUNT;
+	int gfm_error;
 
 	for (;;) {
 		for (;;) {
-			e = gfs_client_connection_acquire_by_host(
+			e = gfs_client_connection_acquire_by_host0(
 			    *gfm_serverp, canonical_hostname, port,
-			    &gfs_server, source_ip);
+			    &gfs_server, source_ip, &gfm_error);
 			if (e == GFARM_ERR_NO_ERROR)
 				break;
-			if (!gfm_client_connection_should_failover(
+			/*
+			 * a connection error to gfsd does not mean
+			 * a gfmd failover.  return it to the caller,
+			 * which may schedule another host.
+			 */
+			if (!gfm_error ||
+			    !gfm_client_connection_should_failover(
 			    *gfm_serverp, e) || --failover_nretries < 0) {
 				gflog_debug(GFARM_MSG_1003902,
 				    "gfs_client_connection_acquire_by_host: "
