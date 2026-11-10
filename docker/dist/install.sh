@@ -44,7 +44,20 @@ ARCH_GUESS=gftool/config-gfarm/gfarm.arch.guess
 [ -f $ARCH_GUESS ] || ARCH_GUESS=gfarm.arch.guess
 BUILDDIR=build-$($ARCH_GUESS)
 
-if $MAKE_CLEAN; then rm -rf $BUILDDIR; fi
+if $MAKE_CLEAN; then
+	rm -rf $BUILDDIR
+	# configure for the VPATH build below fails with "source directory
+	# already configured" when the source directory has been configured
+	# by an in-tree build
+	if [ -f config.status ]; then
+		make distclean > /dev/null
+	fi
+fi
+# a build directory without Makefile is left when configure failed.
+# remove it to run configure again, otherwise make fails
+if [ -d $BUILDDIR ] && [ ! -f $BUILDDIR/Makefile ]; then
+	rm -rf $BUILDDIR
+fi
 if [ -d $BUILDDIR ]; then
 	cd $BUILDDIR
 else
