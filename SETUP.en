@@ -53,8 +53,8 @@ without the root privilege.
 Overview
 ========
 
-To introduce the Gfarm file system, configure a metadata server at first,
-then configure file system nodes, and clients.
+To introduce the Gfarm file system, configure a metadata server first,
+then configure file system nodes and clients.
 
 After that, register Gfarm global users including not only regular
 users but also global users with administrative privilege or
@@ -136,7 +136,8 @@ To begin with, the following information is required:
   global username by default.  This mapping from the account name of
   the operating system to the Gfarm global username can be customized
   by a user mapfile that is specified by 'local_user_map' directive in
-  gfarm2.conf file.
+  gfarm2.conf file.  Each line of the user mapfile consists of a Gfarm
+  global username and a local account name, separated by spaces.
 
   In case of GSI and TLS client certificate authentications, a user
   having the specified subject DN is an administrator for a Gfarm file
@@ -148,8 +149,8 @@ To begin with, the following information is required:
   Thus, these two users cannot be used for either usual Gfarm access or
   administrative access.
 
-Run 'config-gfarm' to configure a Gfarm file system.  First, make
-sure the default setting with the -t option.  With the -t option,
+Run 'config-gfarm' to configure a Gfarm file system.  First, check
+the default settings with the -t option.  With the -t option,
 nothing is really executed except for the display of the settings for
 configuration.
 
@@ -162,11 +163,13 @@ configuration.
 	# config-gfarm -t -A <global_admin_name> -a gsi_auth -D <Subject DN>
 
 The -a option specifies the authentication method in Gfarm file
-system.  The default is shared secret authentication (sharedsecret).
+system.  It can be specified multiple times.  If it is not specified,
+all available authentication methods, including shared secret
+authentication (sharedsecret), are enabled.
 Available authentication methods are 'sharedsecret',
 'tls_sharedsecret', 'tls_client_certificate', 'gsi_auth', 'gsi',
-'kerberos_auth', 'kerberos', 'sasl_auth', and 'sasl'.  For details, refer to
-html/en/user/index.html, a manual page of gfarm2.conf(5) and
+'kerberos_auth', 'kerberos', 'sasl_auth', and 'sasl'.  For details,
+refer to html/en/user/index.html, a manual page of gfarm2.conf(5) and
 Gfarm-FAQ.en.  The -D option is only required for GSI and TLS client
 certificate authentications.
 
@@ -177,7 +180,7 @@ enables failover of gfmd.  For details, see tutorial of master-slave
 metadata servers. (html/en/user/redundancy-tutorial.html)
 
 You can modify any default parameter with the option shown in [ ].
-When you have confirmed the parameter, run 'config-gfarm' by the root
+When you have confirmed the parameters, run 'config-gfarm' by the root
 user without the -t option.
 
    In case of sharedsecret:
@@ -188,7 +191,7 @@ user without the -t option.
 
 	# config-gfarm -A <global_admin_name> -a gsi_auth -D <Subject DN>
 
-the config-gfarm command performs the following processes, in that order:
+The config-gfarm command performs the following steps, in this order:
 
   1. creates directories for the backend database, automatically generates
      configuration files for it, and builds the backend database.
@@ -206,7 +209,7 @@ the config-gfarm command performs the following processes, in that order:
        as an option of the config-gfarm command.  In this case, etc
        directory is created under the specified directory, and it is
        the <sysconfdir>.
-       <sysconfdir> is assumed as /etc in the following command line
+       <sysconfdir> is assumed to be /etc in the following command line
        examples.
 
   3. automatically generates scripts (or configuration files) to
@@ -255,11 +258,12 @@ the CPU load of gfmd by using the following directive in gfmd.conf:
 Do not use this option, if any home directory is shared by NFS
 which does not have the no_root_squash option.
 
-In case of the GSI or TLS, you should prepare a host certificate
-and/or client certificates.  For details, see html/en/user/index.html.
+In case of GSI or TLS authentication, you should prepare a host
+certificate and/or client certificates.  For details, see
+html/en/user/index.html.
 
 You can check whether the metadata server gfmd is running or not by
-the following command execution;
+executing the following command:
 
   Linux with systemd:
 	# systemctl status gfmd.service
@@ -272,7 +276,7 @@ please use <sysconfdir>/unconfig-gfarm.sh.
 
 	# /etc/unconfig-gfarm.sh
 
-This command asks confirmation as follows:
+This command asks for confirmation as follows:
 
 	Do you unconfigure gfarm? [y/n]:
 
@@ -280,16 +284,17 @@ If you answer "y", the gfmd daemon will be stopped, and generated
 configuration files will be removed.  Also, all metadata of this
 Gfarm file system will be removed.
 
-What the unconfig-gfarm.sh command does can be seen by specifying -t option
-to the unconfig-gfarm.sh command before actually removing the files.
+What the unconfig-gfarm.sh command does can be seen by specifying the
+-t option to the unconfig-gfarm.sh command before actually removing
+the files.
 
 Configuration of a Gfarm file system node
 =========================================
 
 To set up a Gfarm file system node, the root privilege is required.
 
-Create a '_gfarmfs' user if it does not exist.  This user is a system account
-for a gfsd I/O daemon.
+Create a '_gfarmfs' user if it does not exist.  This user is a system
+account for the gfsd I/O daemon.
 
 	# useradd -c "Gfarm gfsd" -m _gfarmfs
 
@@ -300,16 +305,20 @@ metadata server if the home directory is not shared by NFS.
   Note that the permission of ".gfarm_shared_key" file should be '0600'
   and the owner should be '_gfarmfs'.
 
-  The ".gfarm_shared_key" file will be void after the expiration period
+  The ".gfarm_shared_key" file will be invalid after the expiration period
   specified by the -p option of the gfkey command.  Thus, you have to
   redistribute the key file to all file system nodes before the period.
 
 In case of the GSI and TLS authentications, obtain a service
-certificate for the gfsd.
+certificate for the gfsd.  Note that the common name (CN) of the
+distinguished name of the service certificate must be
+"gfsd/<hostname of the file system node>".  For example, the CN for
+the file system node "linux-1.example.com" is
+"CN=gfsd/linux-1.example.com".
 
   Copy the certificate to /etc/grid-security/gfsd/gfsdcert.pem,
   and the private key to /etc/grid-security/gfsd/gfsdkey.pem,
-  and change the owner to '_gfarmfs'.
+  and change the owner of the directory and the files to '_gfarmfs'.
   The permission of gfsdkey.pem should be 0600.
 
   If you would like to execute two or more gfsd servers on the same host
@@ -320,8 +329,8 @@ certificate for the gfsd.
   and the location of gfsd private key should be
   /etc/grid-security/gfsd-<hostname or IP address>/gfsdkey.pem
 
-Copy <sysconfdir>/gfarm2.conf from the metadata server that is created
-by 'config-gfarm'.
+Copy <sysconfdir>/gfarm2.conf, which was created by 'config-gfarm',
+from the metadata server.
 
   '<sysconfdir>' represents a directory for configuration files,
   specified by --sysconfdir option of 'configure' at the compilation
@@ -329,12 +338,12 @@ by 'config-gfarm'.
   Gfarm from the RPM binary packages, <sysconfdir> is '/etc'.
   If --prefix <directory> option is specified as an option of config-gfsd
   command, <sysconfdir> will be "etc" directory under the directory.
-  <sysconfdir> is assumed as /etc in the following command line
+  <sysconfdir> is assumed to be /etc in the following command line
   examples.
 
 Run 'config-gfsd' to set up a spool directory in a local file system
 on the file system node, and register it in the metadata server.
-First, make sure of the default setting with the -t option.  With the -t
+First, check the default settings with the -t option.  With the -t
 option, nothing is really executed except for display of the settings for
 configuration.
 
@@ -346,7 +355,7 @@ configuration.
   physical files in Gfarm file system.  Note that the spool directory
   should be a non-shared area among file system nodes.
 
-When you have confirmed the parameter, run 'config-gfsd' by the root
+When you have confirmed the parameters, run 'config-gfsd' by the root
 user without the -t option.
 
 	# config-gfsd /var/gfarm
@@ -356,8 +365,8 @@ user without the -t option.
 with systemd, it creates the unit configuration file
 /etc/systemd/system/gfsd.service instead.
 
-Finally, 'config-gfsd' displays a command line of 'gfhost' that would
-be executed by an administrator in Gfarm file system.
+Finally, 'config-gfsd' displays a command line of 'gfhost' that should
+be executed by an administrator of the Gfarm file system.
 
 Ask the administrator to execute the displayed text.
 
@@ -383,8 +392,8 @@ Start gfsd by the root user.
   Others:
 	# /etc/init.d/gfsd start
 
-You can check whether the gfsd is running or not by the following
-command execution;
+You can check whether gfsd is running or not by executing the
+following command:
 
   Linux with systemd:
 	# systemctl status gfsd.service
@@ -402,7 +411,7 @@ please use <sysconfdir>/unconfig-gfsd.sh.
 
 	# /etc/unconfig-gfsd.sh
 
-This command asks confirmation as follows:
+This command asks for confirmation as follows:
 
 	Do you run unconfiguration? [y/n]:
 
@@ -411,14 +420,15 @@ startup scripts will be removed.  Also, all Gfarm file system data
 on this file system node will be removed.
 
 Finally, 'unconfig-gfsd.sh' displays a command line of 'gfhost'
-that would be executed by an administrator in Gfarm file system.
+that should be executed by an administrator of the Gfarm file system.
 Execute the displayed text by the user who executed the "gfhost -c"
 command above.  An example of the command is the following:
 
 	$ /usr/bin/gfhost -d node1.example.org
 
-What the unconfig-gfsd.sh command does can be seen by specifying -t option
-to the unconfig-gfsd.sh command before actually removing the files.
+What the unconfig-gfsd.sh command does can be seen by specifying the
+-t option to the unconfig-gfsd.sh command before actually removing
+the files.
 
 Configuration of a Gfarm client node
 ====================================
@@ -435,14 +445,14 @@ In case of the shared secret authentication:
 
    If not:
       run the "gfkey -f -p <expiration_time_by_second>" command as
-      each user corresponding to a Gfarm global user.  The command creates ".gfarm_shared_key" file in
-      each user's home directory.  Then copy the file to each user's
-      home directory on all metadata servers, all file system nodes,
-      and all client nodes.
+      each user corresponding to a Gfarm global user.  The command
+      creates ".gfarm_shared_key" file in each user's home directory.
+      Then copy the file to each user's home directory on all metadata
+      servers, all file system nodes, and all client nodes.
       Make sure that the mode of the ".gfarm_shared_key" file is '0600',
       and the owner of the file is each user.
-      Because the key will be void after the <expiration_time_by_second>
-      have passed, you must redo the key generation and the copy before
+      Because the key will be invalid after <expiration_time_by_second>
+      seconds have passed, you must redo the key generation and the copy before
       the expiration.
 
    If account names of Gfarm users on the operating system are different
@@ -503,7 +513,7 @@ down.
 
 o gfdf - storage capacity
 
-'gfdf' displays capacity of each file system node and the total
+'gfdf' displays the capacity of each file system node and the total
 capacity.
 
 	$ gfdf
@@ -540,8 +550,8 @@ a Gfarm global user.
   the Gfarm administrative privilege.
   Thus, it is not necessary to register the user by the gfuser command.
 
-For user registration, execute gfuser command.
-This requires the Gfarm administrative privilege;
+For user registration, execute the gfuser command.
+This requires the Gfarm administrative privilege:
 
 	$ gfuser -c global_username realname homedir gsi_dn
 
@@ -552,8 +562,8 @@ used in GSI or TLS client certificate authentication.
 
   'homedir' is not used for now.
 
-When 'realname' includes a space, it is necessary to quote.  The
-following example registers a global user 'foo';
+When 'realname' includes a space, it is necessary to quote it.  The
+following example registers a global user 'foo':
 
 	$ gfuser -c foo "foo bar" /home/foo ""
 
@@ -576,8 +586,8 @@ Also, you have to create a shared secret key for all global users
 including users with administrative privilege and gfarmroot privilege,
 and copy the key to the home directory on all metadata servers,
 all file system nodes and all client nodes.
-Please read "Configuration of a Gfarm client node" section above
-about the detail of the key creation and distribution.
+Please read the "Configuration of a Gfarm client node" section above
+for details of the key creation and distribution.
 
 Gfarm administrative privilege and gfarmroot privilege
 ======================================================
@@ -595,7 +605,7 @@ The following displays the members.
 
 	$ gfgroup -l gfarmadm
 
-To add the members, use 'gfgroup -ma' command.
+To add members, use the 'gfgroup -ma' command.
 
 	$ gfgroup -ma gfarmadm user1 user2 ...
 
@@ -653,7 +663,8 @@ can be stored on two or more file system nodes.
 
 Multiple file copies of a file enable access to the file even when one
 of the file system nodes is down.  Moreover, it prevents access
-performance deterioration by accessing different file copies.
+performance deterioration by distributing access among different file
+copies.
 
 The 'gfwhere' command displays the location of file copies, or a replica
 catalog, of the specified files.
@@ -678,7 +689,7 @@ the number at the root directory by the gfncopy command.
 	$ gfncopy -s 2 /
 
 File replicas will be created after the close operation when the file
-is created, or updated.  When a file system node is down, required
-number of file replicas are automatically created after an interval
+is created or updated.  When a file system node is down, the required
+number of file replicas is automatically created after an interval
 specified by replica_check_host_down_thresh.  Default interval is 3
 hours.
