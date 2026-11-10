@@ -8,9 +8,11 @@ SUBDIRS = html
 
 DOC =	../LICENSE ../RELNOTES \
 	../README.en ../README.ja ../OVERVIEW.en ../OVERVIEW.ja \
+	../INSTALL-manual-en.md ../INSTALL-manual-ja.md \
 	../INSTALL.en ../INSTALL.ja  \
 	../INSTALL.RPM.en ../INSTALL.RPM.ja \
 	../INSTALL.Debian.en ../INSTALL.Debian.ja \
+	../SETUP-manual-en.md ../SETUP-manual-ja.md \
 	../SETUP.en ../SETUP.ja SETUP.private.en SETUP.private.ja \
 	DEVELOPER \
 	Gfarm-FAQ.en Gfarm-FAQ.ja \

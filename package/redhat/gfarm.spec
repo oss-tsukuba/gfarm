@@ -1130,6 +1130,8 @@ fi
 %{html_prefix}/ja/user/nfs-gfarmfs.html
 %endif
 %{html_prefix}/pic/Gfarm_logo_tate_color.svg
+%{doc_prefix}/INSTALL-manual-en.md
+%{doc_prefix}/INSTALL-manual-ja.md
 %{doc_prefix}/INSTALL.en
 %{doc_prefix}/INSTALL.ja
 %{doc_prefix}/INSTALL.RPM.en
@@ -1142,6 +1144,8 @@ fi
 %{doc_prefix}/RELNOTES
 %{doc_prefix}/OVERVIEW.en
 %{doc_prefix}/OVERVIEW.ja
+%{doc_prefix}/SETUP-manual-en.md
+%{doc_prefix}/SETUP-manual-ja.md
 %{doc_prefix}/SETUP.en
 %{doc_prefix}/SETUP.ja
 %{doc_prefix}/SETUP.private.en
