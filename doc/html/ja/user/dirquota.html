@@ -37,7 +37,7 @@ pre { background:#e0ffff; margin-left: 2em; margin-right: 2em }
 
 <UL>
 <LI>ある dirsetに属するディレクトリの下位ディレクトリを、それとは異なる dirset に属させることはできません。
-<LI>異なる dirset間では、ハードリンクがでません。
+<LI>異なる dirset間では、ハードリンクを作成できません。
 <LI>異なる dirset間では、ファイルの移動はできますが、ディレクトリの移動はできません。<BR>
 ただし gfarmroot グループ権限があればディレクトリの移動も可能です。しかし移動するディレクトリが含むファイル数が多大な場合、移動後しばらくの間、ディレクトリ利用量の再計算のためメタデータサーバの負荷が上昇します。また再計算が完了するまで正しい利用制限ができず、ディレクトリ移動前の利用量で制限が行なわれます。このため、管理者による dirset をまたいだディレクトリの移動は、メンテナンス期間に行なうことを想定しています。
 <LI>ディレクトリを dirset に追加するためには、以下の条件を満足する必要があります。
@@ -76,7 +76,7 @@ $ gfdirquota -a dirset-b /home/john-smith/dir-b1 /home/john-smith/dir-b2
 $ gfdirquota
 dirset-a
 dirset-b
-% gfdirquota -l
+$ gfdirquota -l
 john-smith:dirset-a:
 /home/john-smith/dir-a
 

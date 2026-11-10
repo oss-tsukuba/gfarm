@@ -27,7 +27,7 @@ Gfarm の TLS 認証ではプロトコルとして TLS 1.3 を利用しますの
 OpenSSL version 1.1.1 以降が必要です。
 <P>
 TLS認証には、
-サーバーとクライアントで秘密鍵を共有する tls_sharedsecret 認証と、
+サーバーとクライアントで共有鍵を用いる tls_sharedsecret 認証と、
 クライアント証明書を用いる tls_client_certificate 認証の
 2種類があります。
 
@@ -57,9 +57,12 @@ tls_ca_certificate_path ディレクティブで設定でき、デフォルト�
 <LI>認証局が提供する CRL ファイルを置くディレクトリ
 <BR>
 
-クライアント、gfmd、gfsd すべてで必要です。
+クライアント、gfmd、gfsd すべてで用いられます。
+なお、デフォルトでは CRL ファイルが存在しなくても動作します
+(gfarm2.conf(5) の tls_allow_no_crl ディレクティブを参照)。
 <BR>
-デフォルトは /etc/pki/tls/certs/gfarm であり tls_ca_certificate_path と共通です。
+tls_ca_revocation_path ディレクティブで設定でき、デフォルトは
+tls_ca_certificate_path と同じ /etc/pki/tls/certs/gfarm です。
 <BR>
 このディレクトリの形式も GSI 認証における /etc/grid-security/certificates と共通ですので、
 既に GSI 認証の設定を完了しているサイトでは、上述のシンボリックリンク作成で設定が完了しています。
@@ -109,6 +112,9 @@ gfsd を初期設定した場合には、gfsd 起動スクリプトでこれら�
 <TR><TH>サービス証明書</TH><TD>X509_USER_CERT</TD><TD>/etc/grid-security/gfsd*/gfsdcert.pem</TD></TR>
 <TR><TH>秘密鍵</TH>	<TD>X509_USER_KEY</TD>	<TD>/etc/grid-security/gfsd*/gfsdkey.pem</TD></TR>
 </TABLE>
+「gfsd*」は、config-gfsd で -l オプションを指定しない場合は gfsd、
+指定した場合は gfsd-<I>リッスンアドレス</I> となります。
+<BR>
 
 起動スクリプトに設定されているパス名は GSI 認証と同一ですので、
 既に GSI 認証の設定を完了しているサイトでは追加設定は不要です。
@@ -116,6 +122,7 @@ gfsd を初期設定した場合には、gfsd 起動スクリプトでこれら�
 また、gfsd でサービス証明書を用いるためには以下の設定の追加が、
 クライアントの gfarm2.conf、gfsd の gfarm2.conf、gfmd の gfmd.conf
 すべてについて必要です。
+config-gfarm はデフォルトでこれらの設定を追加します。
 <PRE>
 spool_server_cred_type host
 spool_server_cred_service gfsd
@@ -128,19 +135,19 @@ spool_server_cred_service gfsd
 <H2>tls_sharedsecret 認証に特有の設定</H2>
 
 クライアント、gfmd、gfsd すべてのホストについて、
-各ユーザのホームディレクトリ直下の .gfarm_shared_key ファイルに
-共通鍵を置く必要があります。
+各ユーザーのホームディレクトリ直下の .gfarm_shared_key ファイルに
+共有鍵を置く必要があります。
 <BR>
 このファイルの設定については sharedsecret 認証と同一ですので、
-sharedsecret 認証に関する記述を参照してください。
+<A HREF="auth-sharedsecret.html">sharedsecret 認証</A>に関する記述を参照してください。
 
 <HR>
 <H2>tls_client_certificate 認証に特有の設定</H2>
 
 <H3>管理者の行なう設定</H3>
 
-各ユーザー毎に、
-gfuser コマンドで設定する第4欄に「/O=Company/OU=Division/CN=UserName」
+各ユーザーごとに、
+gfuser -c コマンドの第4引数に「/O=Company/OU=Division/CN=UserName」
 のような形式で、クライアント証明書の Subject DN を設定しておきます。
 <BR>
 この設定についても GSI と共通ですので、

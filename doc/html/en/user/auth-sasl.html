@@ -21,7 +21,6 @@ SASL over TLS Authentication
 <H1>SASL over TLS Authentication</H1>
 English | <A href="../../ja/user/auth-sasl.html">Japanese</A>
 <P>
-<P>
 This document describes the settings required for SASL over TLS authentication in Gfarm.
 
 <P>
@@ -37,19 +36,21 @@ There are two types of SASL authentication in Gfarm.
 </DL>
 
 <HR>
-<H2>TLS configuiration</H2>
+<H2>TLS configuration</H2>
 
 Since SASL authentication uses TLS-encrypted communication,
 the settings described in
 <A HREF="auth-tls.html#TLS-common-setting">
-"Common settings for tls_sharedsecret authentication,
-    tls_client_certificate authentication,
-    sasl authentication and sasl_auth authentication"
+"Common settings for tls_sharedsecret,
+    tls_client_certificate,
+    sasl_auth and sasl authentication"
 in "TLS Authentication"</A>
 must be configured in advance.
 
 <HR>
-<H2>Settings to server</H2>
+<H2>Server-side configuration</H2>
+
+<H3>Cyrus SASL configuration</H3>
 
 Place the following configuration file named gfarm.conf
 in the Cyrus SASL configuration directory
@@ -63,8 +64,8 @@ mech_list: the SASL authentication mechanisms to be used
 ...If other mechanism-specific settings are required, describe them.
 </PRE>
 
-Multiple mechanisms can be described in mech_list,
-separated by spaces as follows.
+Multiple mechanisms can be specified in mech_list,
+separated by spaces.
 <P>
 For example,
 <PRE>
@@ -74,26 +75,26 @@ If this file is not present, all SASL mechanisms installed on the system
 are candidates for use.
 <BR>
 However, this can lead to problems,
-so only specify the mechanisms that you actually use.
+so specify only the mechanisms that you actually use.
 
 <P>
 Please refer to the Cyrus SASL documentation for configuration settings
 related to all mechanisms except XOAUTH2.
 For the XOAUTH2 mechanism, please refer to the following.
 
-<H3>Configuration for XOAUTH2 mechanism</H3>
+<H3>Cyrus SASL XOAUTH2 mechanism configuration</H3>
 
 <P>
 To use the XOAUTH2 mechanism, install the <A HREF="https://github.com/oss-tsukuba/cyrus-sasl-xoauth2-idp">cyrus-sasl-xoauth2-idp package</A>
-and place the following settings in the Cyrus SASL server configuration file
-under the name gfarm.conf.
+and put the following settings in the Cyrus SASL server configuration file
+(gfarm.conf).
 <PRE>
 mech_list: XOAUTH2
 xoauth2_scope: scope required in JWT, used for server-side validation
 xoauth2_aud: audience required in JWT, used for server-side validation
 xoauth2_user_claim: key name of claim to be used as user ID in JWT
 xoauth2_group_user: a list of the user ID, the scope, and the issuer
-xoauth2_issuers: a list of trusted issures of JWT
+xoauth2_issuers: a list of trusted JWT issuers
 </PRE>
 The specific configuration depends on the OAuth IdP, but here is an example.
 <PRE>
@@ -106,25 +107,25 @@ xoauth2_issuers: https://keycloak.example.com/auth/realms/hpci https://keycloak.
 </PRE>
 
 <P>
-Multiple scopes can be specified in `xoauth2_scope`.
+Multiple scopes can be specified in xoauth2_scope.
 In that case, any one of them must be satisfied.
-The same applies to `xoauth2_aud`.
-xoauth_user_claim specifies the claim used as the username.
-This claim can be set per issuer.
-xoauth_group_user specifies a group username by defining the issuer and scope.
+The same applies to xoauth2_aud.
+xoauth2_user_claim specifies the key name of the claim used as the user ID.
+This key name can be set per issuer.
+xoauth2_group_user specifies a group user ID for a given issuer and scope.
 Wildcards can be used for both issuer and scope.
 xoauth2_issuers specifies a list of trusted issuers.
 Failing to configure xoauth2_issuers will result in trusting all issuers, creating a security risk.
 </P>
 
 <P>
-For more details, refer to <A HREF="https://github.com/oss-tsukuba/cyrus-sasl-xoauth2-idp/blob/feature/keycloak/doc/configuration.md">here</A>.
+For more details, refer to the <A HREF="https://github.com/oss-tsukuba/cyrus-sasl-xoauth2-idp/blob/feature/keycloak/doc/configuration.md">configuration document of cyrus-sasl-xoauth2-idp</A>.
 </P>
 
 <P>
-The server side accesses the IdP,
-but if you need to use a web proxy server for this,
-add the following setting:
+The server accesses the OAuth IdP.
+If a web proxy server is required for this access,
+add the following setting as well:
 <PRE>
 proxy: http://PROXY-SERVER-NAME:PROXY-PORT-NUMBER/
 </PRE>
@@ -132,8 +133,8 @@ Modify "PROXY-SERVER-NAME" and "PROXY-PORT-NUMBER" as appropriate.
 
 <H3>Gfarm configuration</H3>
 
-Add the following settings to gfmd.conf for gfmd,
-and gfarm2.conf which is read by gfsd
+Add the following setting to gfmd.conf for gfmd
+and to gfarm2.conf read by gfsd:
 <PRE>
 auth enable sasl *
 </PRE>
@@ -142,24 +143,24 @@ or
 auth enable sasl_auth *
 </PRE>
 
-Also, please add the following settings to limit the mechanisms used.
+Also, add a setting like the following to limit the mechanisms to be used.
 <PRE>
 sasl_mechanisms "PLAIN XOAUTH2"
 </PRE>
 
-For security purposes, specify only the mechanism actually used.
+For security, specify only the mechanisms actually used.
 <BR>
 For other settings, follow the Cyrus SASL documentation.
 
 <P>
-When the user name in SASL (SASL-username) and Gfarm (Gfarm-username)
-is different, register SASL user name as follows.
+When the SASL user name (SASL-username) differs from
+the Gfarm user name (Gfarm-username), register the SASL user name as follows.
 <PRE>
 % gfuser -A Gfarm-username SASL SASL-username
 </PRE>
 
 <P>
-To use ANONYMOUS mechanism, create an anonymous user in Gfarm as
+To use the ANONYMOUS mechanism, create an anonymous user in Gfarm as
 follows.
 <PRE>
 % gfuser -c anonymous anon / ""
@@ -168,25 +169,25 @@ follows.
 <HR>
 <H2>Client-side configuration</H2>
 
-Set the file specified by the GFARM_CONFIG_FILE environment variable,
+Add the following settings, depending on the SASL mechanism you use,
+to the file specified by the GFARM_CONFIG_FILE environment variable,
 or, if the environment variable is not set,
-in .gfarm2rc in your home directory, as follows,
-depending on the SASL mechanism you are using.
+to .gfarm2rc in your home directory.
 
 Please modify "USER-NAME" and "PASSWORD" as appropriate.
 
 
-<H3>For ANONYMOUS mechanism</H3>
+<H3>For the ANONYMOUS mechanism</H3>
 
 <PRE>
 sasl_mechanisms "ANONYMOUS"
 sasl_user "dummy-user-name"
 </PRE>
 
-Since the anonymous mechanism configuration does not contain
+Since the ANONYMOUS mechanism configuration does not contain
 any user-specific information, it can also be set in gfarm2.conf.
 
-<H3>For PLAIN mechanism</H3>
+<H3>For the PLAIN mechanism</H3>
 
 <PRE>
 sasl_mechanisms "PLAIN"
@@ -197,7 +198,7 @@ sasl_password "PASSWORD"
 To prevent other users from reading this file,
 set the mode of the file to 0600 or 0400 using the chmod(1) command.
 
-<H3>For XOAUTH2 mechanism</H3>
+<H3>For the XOAUTH2 mechanism</H3>
 
 <PRE>
 sasl_mechanisms "XOAUTH2"
@@ -208,9 +209,9 @@ sasl_user "USER-NAME"
 By placing the following configuration file named gfarm-client.conf
 in the Cyrus SASL configuration directory
 ($(pkg-config --variable=libdir libsasl2)/sasl2),
-the value in the JWT is used as the user ID.
-In this case, the sasl_user setting must be deleted.
-Additionally, you can specify the user ID via the environment variable (GFARM_SASL_USER).
+a value in the JWT is used as the user ID.
+In this case, the sasl_user setting must be removed.
+You can also specify the user ID by the GFARM_SASL_USER environment variable.
 The priority order is GFARM_SASL_USER > sasl_user > xoauth2_user_claim.
 
 <PRE>
@@ -219,7 +220,7 @@ xoauth2_user_claim: key name of claim to be used as user ID in JWT
 
 When specifying the user ID via the xoauth2_user_claim,
 user-specific configuration is unnecessary,
-so it is possible to configure only the sasl_mechanism setting system-wide in gfarm2.conf.
+so only the sasl_mechanisms setting needs to be configured system-wide in gfarm2.conf.
 
 <P>
 In addition, place the access token used by XOAUTH2
@@ -230,7 +231,7 @@ To prevent other users from reading this file,
 set the mode of the JWT file to 0600 or 0400 using the chmod(1) command.
 <P>
 The <A HREF="https://github.com/oss-tsukuba/jwt-logon">jwt-logon</A> and <A HREF="https://github.com/oss-tsukuba/jwt-agent">jwt-agent</A> commands can be used
-to obtain a token and set JWT in the appropriate mode for this file.
+to obtain a token and store the JWT in this file with the appropriate mode.
 <P>
 If the first character of the value
 set in the JWT_USER_PATH environment variable is '!',
