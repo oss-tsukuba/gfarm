@@ -6,13 +6,21 @@ About this document
 This document describes the installation of a Gfarm filesystem
 using Debian binary packages.
 
+The Debian packages of Gfarm are maintained by the Debian project, not
+by the Gfarm developers.  The version of Gfarm depends on the release
+of the distribution.  For example, Debian 13 and Ubuntu 26.04 provide
+Gfarm 2.7.20.  Check the version by "apt-cache policy gfarm-client".
+To use the latest version of Gfarm, install it from the source code
+by referring to INSTALL-manual-en.md.
+
 Overview
 ========
 
 To introduce a Gfarm filesystem, Debian packages for a metadata server,
 filesystem nodes, and client nodes have to be installed.
 
-Note that it is possible to install all Debian packages on the same host.
+Although the following sections assume that they are different hosts,
+it is possible to install all Debian packages on the same host.
 
 Installation of a Gfarm metadata server
 =======================================
@@ -40,7 +48,7 @@ Install the Debian packages for a Gfarm client node.
 
 A document package is optional.
 
-If you want to use gfarm2fs to mount the Gfarm file system,
+If you want to use gfarm2fs to mount the Gfarm filesystem,
 install the gfarm2fs package as well.
 
 	# apt-get install gfarm2fs
