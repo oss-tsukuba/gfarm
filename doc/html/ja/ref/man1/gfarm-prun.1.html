@@ -1,0 +1,148 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfarm-prun</title>
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
+<a name="gfarm-prun.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfarm-prun — 複数のホストでコマンドを実行する</p>
+</div>
+<div class="refsynopsisdiv">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gfarm-prun</code>  [<em class="replaceable"><code>オプション</code></em>]  <em class="replaceable"><code>コマンド</code></em>  [<em class="replaceable"><code>引数</code></em>...]</p></div>
+</div>
+<div class="refsect1">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p><span class="command"><strong>gfarm-prun</strong></span> は、
+ホストファイルに記述された各ホストで、
+<em class="parameter"><code>コマンド</code></em>
+を<em class="parameter"><code>引数</code></em>とともに、
+リモートシェルコマンド (デフォルトは <span class="command"><strong>ssh</strong></span>)
+を用いて実行します。Gfarm
+のファイルシステムノードの設定や管理などに利用できます。</p>
+<p>デフォルトでは、一つのホストずつ順番にコマンドを実行します。
+-p オプションを指定すると、複数のホストで並列にコマンドを実行します。</p>
+<p>ホストファイルには、一行に一つのホスト名を記述します。
+各行の最初のフィールドだけが利用されます。
+`#' から行末まではコメントとみなされ、空行は無視されます。
+デフォルトのホストファイルは
+<code class="filename">$HOME/.nodelist</code> です。</p>
+<p>-a オプションを指定しない場合、
+ローカルホストではコマンドを実行しません。
+<span class="command"><strong>hostname</strong></span> の出力、あるいは
+<span class="command"><strong>hostname -I</strong></span> で表示される IP
+アドレスのいずれかに一致するホストを、ローカルホストとみなします。
+これらの名前は環境変数 PRUN_HOSTNAME で変更できます。</p>
+<p>コマンドラインはリモートシェルコマンドに渡され、
+リモートホスト上のシェルで解釈されます。コマンドライン中のワイルドカードは、
+ローカルホストではなくリモートホストで展開されます。</p>
+<p>-stdin オプションを指定しない場合、
+リモートで実行するコマンドの標準入力は
+<code class="filename">/dev/null</code> となります。</p>
+</div>
+<div class="refsect1">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><code class="option">-a</code></span></dt>
+<dd><p>ホストファイルにローカルホストが含まれている場合、
+ローカルホストでもコマンドを実行します。</p></dd>
+<dt><span class="term"><code class="option">-h</code> <em class="parameter"><code>ホストファイル</code></em></span></dt>
+<dd><p>ホストファイルを指定します。`-' を指定すると、
+ホストの一覧を標準入力から読み込みます。</p></dd>
+<dt><span class="term"><code class="option">-m</code> <em class="parameter"><code>最大ジョブ数</code></em></span></dt>
+<dd><p>-p オプションを指定したときに、
+並列にコマンドを実行するホストの最大数を指定します。デフォルトは 16 です。
+</p></dd>
+<dt><span class="term"><code class="option">-n</code></span></dt>
+<dd><p>実行するコマンドを表示しますが、実行はしません。</p></dd>
+<dt><span class="term"><code class="option">-p</code></span></dt>
+<dd><p>バックグラウンドで、複数のホストで並列にコマンドを実行します。</p></dd>
+<dt><span class="term"><code class="option">-rsh</code> <em class="parameter"><code>リモートシェルコマンド</code></em></span></dt>
+<dd><p>リモートシェルコマンドを指定します。デフォルトは
+<span class="command"><strong>ssh</strong></span> です。</p></dd>
+<dt><span class="term"><code class="option">-stdin</code> <em class="parameter"><code>ファイル</code></em></span></dt>
+<dd><p>各ホストで実行するコマンドの標準入力に与えるファイルを指定します。
+このオプションは複数回指定でき、
+その場合はファイルを連結したものが標準入力となります。`-' を指定すると、
+<span class="command"><strong>gfarm-prun</strong></span>
+の標準入力を一度読み込み、各ホストのコマンドに与えます。-h オプションと
+-stdin オプションの両方に `-' を指定することはできません。</p></dd>
+<dt><span class="term"><code class="option">-v</code></span></dt>
+<dd><p>各ホストでコマンドを実行する前に、ホスト名を表示します。
+-p オプションを指定した場合は、このオプションは効果がありません。</p></dd>
+</dl></div>
+</div>
+<div class="refsect1">
+<a name="environment-variables"></a><h2>ENVIRONMENT VARIABLES</h2>
+<div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><code class="envar">PRUN_RSH</code></span></dt>
+<dd><p>リモートシェルコマンドを指定します。デフォルトは
+<span class="command"><strong>ssh</strong></span> です。</p></dd>
+<dt><span class="term"><code class="envar">PRUN_HOSTFILE</code></span></dt>
+<dd><p>ホストファイルを指定します。デフォルトは
+<code class="filename">$HOME/.nodelist</code> です。</p></dd>
+<dt><span class="term"><code class="envar">PRUN_HOSTNAME</code></span></dt>
+<dd><p>ローカルホストの名前を空白区切りで指定します。デフォルトは
+<span class="command"><strong>hostname</strong></span> と
+<span class="command"><strong>hostname -I</strong></span> の出力です。</p></dd>
+<dt><span class="term"><code class="envar">PRUN_MAX_JOBS</code></span></dt>
+<dd><p>並列に実行するジョブの最大数を指定します。デフォルトは 16 です。
+</p></dd>
+<dt><span class="term"><code class="envar">PRUN_PARALLEL</code></span></dt>
+<dd><p><code class="literal">yes</code> を設定すると、
+-p オプションと同様に並列にコマンドを実行します。</p></dd>
+<dt><span class="term"><code class="envar">PRUN_ALL_INCLUDE_MYSELF</code></span></dt>
+<dd><p><code class="literal">yes</code> を設定すると、
+-a オプションと同様にローカルホストでもコマンドを実行します。</p></dd>
+<dt><span class="term"><code class="envar">PRUN_VERBOSE</code></span></dt>
+<dd><p><code class="literal">yes</code> を設定すると、
+-v オプションと同様にホスト名を表示します。</p></dd>
+</dl></div>
+</div>
+<div class="refsect1">
+<a name="exit-status"></a><h2>EXIT STATUS</h2>
+<p>全てのホストでコマンドが成功した場合、
+<span class="command"><strong>gfarm-prun</strong></span> は 0 で終了します。
+そうでない場合、コマンドが失敗したホストについて、
+リモートシェルコマンドの終了ステータスで終了します。
+複数のホストで失敗した場合は、
+そのうちの一つのホストに対する終了ステータスを返します。</p>
+</div>
+<div class="refsect1">
+<a name="examples"></a><h2>EXAMPLES</h2>
+<p><code class="filename">$HOME/.nodelist</code> に記述された、
+ローカルホスト以外の全てのホストの稼働時間を表示します。</p>
+<div class="literallayout"><p><br>
+	$ gfarm-prun -v uptime<br>
+</p></div>
+<p><code class="filename">hosts</code>
+に記述された全てのホストで、並列に gfsd を再起動します。</p>
+<div class="literallayout"><p><br>
+	$ gfarm-prun -p -h hosts sudo systemctl restart gfsd<br>
+</p></div>
+<p>ローカルのシェルスクリプト
+<code class="filename">setup.sh</code> を各ホストで実行します。
+</p>
+<div class="literallayout"><p><br>
+	$ gfarm-prun -h hosts -stdin setup.sh sh<br>
+</p></div>
+</div>
+<div class="refsect1">
+<a name="files"></a><h2>FILES</h2>
+<div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><code class="filename">$HOME/.nodelist</code></span></dt>
+<dd><p>デフォルトのホストファイル</p></dd>
+</dl></div>
+</div>
+<div class="refsect1">
+<a name="see-also"></a><h2>SEE ALSO</h2>
+<p>
+  <span class="citerefentry"><span class="refentrytitle">gfarm-pcp</span>(1)</span>,
+  <span class="citerefentry"><span class="refentrytitle">ssh</span>(1)</span>
+</p>
+</div>
+</div></body>
+</html>

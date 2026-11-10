@@ -1,0 +1,255 @@
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
+<!-- $Id$ -->
+
+<refentry id="gfarm-prun.1">
+
+<refentryinfo><date>10 Nov 2026</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfarm-prun</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id="name">
+<refname>gfarm-prun</refname>
+<refpurpose>複数のホストでコマンドを実行する</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfarm-prun</command>
+    <arg choice="opt" rep="norepeat"><replaceable>オプション</replaceable></arg>
+    <arg choice="plain" rep="norepeat"><replaceable>コマンド</replaceable></arg>
+    <arg choice="opt" rep="repeat"><replaceable>引数</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para><command moreinfo="none">gfarm-prun</command> は、
+ホストファイルに記述された各ホストで、
+<parameter moreinfo="none">コマンド</parameter>
+を<parameter moreinfo="none">引数</parameter>とともに、
+リモートシェルコマンド (デフォルトは <command moreinfo="none">ssh</command>)
+を用いて実行します。Gfarm
+のファイルシステムノードの設定や管理などに利用できます。</para>
+
+<para>デフォルトでは、一つのホストずつ順番にコマンドを実行します。
+-p オプションを指定すると、複数のホストで並列にコマンドを実行します。</para>
+
+<para>ホストファイルには、一行に一つのホスト名を記述します。
+各行の最初のフィールドだけが利用されます。
+`#' から行末まではコメントとみなされ、空行は無視されます。
+デフォルトのホストファイルは
+<filename moreinfo="none">$HOME/.nodelist</filename> です。</para>
+
+<para>-a オプションを指定しない場合、
+ローカルホストではコマンドを実行しません。
+<command moreinfo="none">hostname</command> の出力、あるいは
+<command moreinfo="none">hostname -I</command> で表示される IP
+アドレスのいずれかに一致するホストを、ローカルホストとみなします。
+これらの名前は環境変数 PRUN_HOSTNAME で変更できます。</para>
+
+<para>コマンドラインはリモートシェルコマンドに渡され、
+リモートホスト上のシェルで解釈されます。コマンドライン中のワイルドカードは、
+ローカルホストではなくリモートホストで展開されます。</para>
+
+<para>-stdin オプションを指定しない場合、
+リモートで実行するコマンドの標準入力は
+<filename moreinfo="none">/dev/null</filename> となります。</para>
+</refsect1>
+
+<refsect1 id="options"><title>OPTIONS</title>
+<variablelist>
+
+<varlistentry>
+<term><option>-a</option></term>
+<listitem>
+<para>ホストファイルにローカルホストが含まれている場合、
+ローカルホストでもコマンドを実行します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-h</option> <parameter moreinfo="none">ホストファイル</parameter></term>
+<listitem>
+<para>ホストファイルを指定します。`-' を指定すると、
+ホストの一覧を標準入力から読み込みます。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-m</option> <parameter moreinfo="none">最大ジョブ数</parameter></term>
+<listitem>
+<para>-p オプションを指定したときに、
+並列にコマンドを実行するホストの最大数を指定します。デフォルトは 16 です。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-n</option></term>
+<listitem>
+<para>実行するコマンドを表示しますが、実行はしません。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-p</option></term>
+<listitem>
+<para>バックグラウンドで、複数のホストで並列にコマンドを実行します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-rsh</option> <parameter moreinfo="none">リモートシェルコマンド</parameter></term>
+<listitem>
+<para>リモートシェルコマンドを指定します。デフォルトは
+<command moreinfo="none">ssh</command> です。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-stdin</option> <parameter moreinfo="none">ファイル</parameter></term>
+<listitem>
+<para>各ホストで実行するコマンドの標準入力に与えるファイルを指定します。
+このオプションは複数回指定でき、
+その場合はファイルを連結したものが標準入力となります。`-' を指定すると、
+<command moreinfo="none">gfarm-prun</command>
+の標準入力を一度読み込み、各ホストのコマンドに与えます。-h オプションと
+-stdin オプションの両方に `-' を指定することはできません。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-v</option></term>
+<listitem>
+<para>各ホストでコマンドを実行する前に、ホスト名を表示します。
+-p オプションを指定した場合は、このオプションは効果がありません。</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id="environment-variables"><title>ENVIRONMENT VARIABLES</title>
+<variablelist>
+
+<varlistentry>
+<term><envar>PRUN_RSH</envar></term>
+<listitem>
+<para>リモートシェルコマンドを指定します。デフォルトは
+<command moreinfo="none">ssh</command> です。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><envar>PRUN_HOSTFILE</envar></term>
+<listitem>
+<para>ホストファイルを指定します。デフォルトは
+<filename moreinfo="none">$HOME/.nodelist</filename> です。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><envar>PRUN_HOSTNAME</envar></term>
+<listitem>
+<para>ローカルホストの名前を空白区切りで指定します。デフォルトは
+<command moreinfo="none">hostname</command> と
+<command moreinfo="none">hostname -I</command> の出力です。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><envar>PRUN_MAX_JOBS</envar></term>
+<listitem>
+<para>並列に実行するジョブの最大数を指定します。デフォルトは 16 です。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><envar>PRUN_PARALLEL</envar></term>
+<listitem>
+<para><literal>yes</literal> を設定すると、
+-p オプションと同様に並列にコマンドを実行します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><envar>PRUN_ALL_INCLUDE_MYSELF</envar></term>
+<listitem>
+<para><literal>yes</literal> を設定すると、
+-a オプションと同様にローカルホストでもコマンドを実行します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><envar>PRUN_VERBOSE</envar></term>
+<listitem>
+<para><literal>yes</literal> を設定すると、
+-v オプションと同様にホスト名を表示します。</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id="exit-status"><title>EXIT STATUS</title>
+<para>全てのホストでコマンドが成功した場合、
+<command moreinfo="none">gfarm-prun</command> は 0 で終了します。
+そうでない場合、コマンドが失敗したホストについて、
+リモートシェルコマンドの終了ステータスで終了します。
+複数のホストで失敗した場合は、
+そのうちの一つのホストに対する終了ステータスを返します。</para>
+</refsect1>
+
+<refsect1 id="examples"><title>EXAMPLES</title>
+<para><filename moreinfo="none">$HOME/.nodelist</filename> に記述された、
+ローカルホスト以外の全てのホストの稼働時間を表示します。</para>
+<literallayout format="linespecific" class="normal">
+	$ gfarm-prun -v uptime
+</literallayout>
+
+<para><filename moreinfo="none">hosts</filename>
+に記述された全てのホストで、並列に gfsd を再起動します。</para>
+<literallayout format="linespecific" class="normal">
+	$ gfarm-prun -p -h hosts sudo systemctl restart gfsd
+</literallayout>
+
+<para>ローカルのシェルスクリプト
+<filename moreinfo="none">setup.sh</filename> を各ホストで実行します。
+</para>
+<literallayout format="linespecific" class="normal">
+	$ gfarm-prun -h hosts -stdin setup.sh sh
+</literallayout>
+</refsect1>
+
+<refsect1 id="files"><title>FILES</title>
+<variablelist>
+<varlistentry>
+<term><filename moreinfo="none">$HOME/.nodelist</filename></term>
+<listitem>
+<para>デフォルトのホストファイル</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+
+<refsect1 id="see-also"><title>SEE ALSO</title>
+<para>
+  <citerefentry>
+  <refentrytitle>gfarm-pcp</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>,
+  <citerefentry>
+  <refentrytitle>ssh</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>
+</para>
+</refsect1>
+
+</refentry>

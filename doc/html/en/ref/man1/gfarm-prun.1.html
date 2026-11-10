@@ -1,0 +1,148 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfarm-prun</title>
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
+<a name="gfarm-prun.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfarm-prun — execute a command on multiple hosts</p>
+</div>
+<div class="refsynopsisdiv">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gfarm-prun</code>  [<em class="replaceable"><code>options</code></em>]  <em class="replaceable"><code>command</code></em>  [<em class="replaceable"><code>arg</code></em>...]</p></div>
+</div>
+<div class="refsect1">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p><span class="command"><strong>gfarm-prun</strong></span> executes
+<em class="parameter"><code>command</code></em> with
+<em class="parameter"><code>arg</code></em>s on each host listed in
+a hostfile, by using a remote shell command,
+<span class="command"><strong>ssh</strong></span> by default.
+It is useful, for example, to set up or manage filesystem nodes of
+Gfarm.</p>
+<p>By default, the command is executed on one host after another.
+When the -p option is specified, the command is executed on multiple
+hosts in parallel.</p>
+<p>The hostfile has one host name in each line.  Only the first
+field of each line is used.  Characters from `#' to the end of the
+line are regarded as a comment, and empty lines are ignored.
+The default hostfile is <code class="filename">$HOME/.nodelist</code>.</p>
+<p>The local host is skipped unless the -a option is specified.
+A host is regarded as the local host when its name matches the
+output of <span class="command"><strong>hostname</strong></span> or one of the
+IP addresses displayed by <span class="command"><strong>hostname -I</strong></span>.
+These names can be changed by the PRUN_HOSTNAME environment
+variable.</p>
+<p>The command line is passed to the remote shell command, thus it
+is interpreted by a shell on the remote host.  Wildcards in the command
+line are expanded on the remote host, not on the local host.</p>
+<p>Unless the -stdin option is specified, the standard input of the
+remote command is
+<code class="filename">/dev/null</code>.</p>
+</div>
+<div class="refsect1">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><code class="option">-a</code></span></dt>
+<dd><p>Executes the command also on the local host, if it is listed in
+the hostfile.</p></dd>
+<dt><span class="term"><code class="option">-h</code> <em class="parameter"><code>hostfile</code></em></span></dt>
+<dd><p>Specifies a hostfile.  If `-' is specified, the list of hosts is
+read from the standard input.</p></dd>
+<dt><span class="term"><code class="option">-m</code> <em class="parameter"><code>max_jobs</code></em></span></dt>
+<dd><p>Specifies the maximum number of hosts on which the command is
+executed in parallel with the -p option.  The default is 16.</p></dd>
+<dt><span class="term"><code class="option">-n</code></span></dt>
+<dd><p>Displays the commands that would be executed, but does not
+execute them.</p></dd>
+<dt><span class="term"><code class="option">-p</code></span></dt>
+<dd><p>Executes the command on multiple hosts in parallel in the
+background.</p></dd>
+<dt><span class="term"><code class="option">-rsh</code> <em class="parameter"><code>rsh_command</code></em></span></dt>
+<dd><p>Specifies a remote shell command.  The default is
+<span class="command"><strong>ssh</strong></span>.</p></dd>
+<dt><span class="term"><code class="option">-stdin</code> <em class="parameter"><code>file</code></em></span></dt>
+<dd><p>Specifies a file that is given to the standard input of the
+command on each host.  This option can be specified multiple times.
+In this case, the files are concatenated.  If `-' is specified, the
+standard input of <span class="command"><strong>gfarm-prun</strong></span> is
+read once, and it is given to the command on each host.  `-' cannot be
+specified for both the -h option and the -stdin option.</p></dd>
+<dt><span class="term"><code class="option">-v</code></span></dt>
+<dd><p>Displays the host name before executing the command on the host.
+This option has no effect with the -p option.</p></dd>
+</dl></div>
+</div>
+<div class="refsect1">
+<a name="environment-variables"></a><h2>ENVIRONMENT VARIABLES</h2>
+<div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><code class="envar">PRUN_RSH</code></span></dt>
+<dd><p>Specifies a remote shell command.  The default is
+<span class="command"><strong>ssh</strong></span>.</p></dd>
+<dt><span class="term"><code class="envar">PRUN_HOSTFILE</code></span></dt>
+<dd><p>Specifies a hostfile.  The default is
+<code class="filename">$HOME/.nodelist</code>.</p></dd>
+<dt><span class="term"><code class="envar">PRUN_HOSTNAME</code></span></dt>
+<dd><p>Specifies the names of the local host, separated by spaces.
+The default is the output of <span class="command"><strong>hostname</strong></span>
+and <span class="command"><strong>hostname -I</strong></span>.</p></dd>
+<dt><span class="term"><code class="envar">PRUN_MAX_JOBS</code></span></dt>
+<dd><p>Specifies the maximum number of parallel jobs.  The default is
+16.</p></dd>
+<dt><span class="term"><code class="envar">PRUN_PARALLEL</code></span></dt>
+<dd><p>If it is set to <code class="literal">yes</code>, the command is executed
+in parallel as with the -p option.</p></dd>
+<dt><span class="term"><code class="envar">PRUN_ALL_INCLUDE_MYSELF</code></span></dt>
+<dd><p>If it is set to <code class="literal">yes</code>, the command is executed
+also on the local host as with the -a option.</p></dd>
+<dt><span class="term"><code class="envar">PRUN_VERBOSE</code></span></dt>
+<dd><p>If it is set to <code class="literal">yes</code>, the host name is
+displayed as with the -v option.</p></dd>
+</dl></div>
+</div>
+<div class="refsect1">
+<a name="exit-status"></a><h2>EXIT STATUS</h2>
+<p><span class="command"><strong>gfarm-prun</strong></span> exits with 0 when
+the command succeeds on all hosts.  Otherwise, it exits with the exit
+status of the remote shell command for a host on which the command
+fails.  When it fails on two or more hosts, the exit status for one of
+them is returned.</p>
+</div>
+<div class="refsect1">
+<a name="examples"></a><h2>EXAMPLES</h2>
+<p>Displays the uptime of all hosts listed in
+<code class="filename">$HOME/.nodelist</code>,
+except the local host.</p>
+<div class="literallayout"><p><br>
+	$ gfarm-prun -v uptime<br>
+</p></div>
+<p>Restarts gfsd on all hosts listed in
+<code class="filename">hosts</code>, in parallel.</p>
+<div class="literallayout"><p><br>
+	$ gfarm-prun -p -h hosts sudo systemctl restart gfsd<br>
+</p></div>
+<p>Executes a local shell script
+<code class="filename">setup.sh</code> on each host.</p>
+<div class="literallayout"><p><br>
+	$ gfarm-prun -h hosts -stdin setup.sh sh<br>
+</p></div>
+</div>
+<div class="refsect1">
+<a name="files"></a><h2>FILES</h2>
+<div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><code class="filename">$HOME/.nodelist</code></span></dt>
+<dd><p>the default hostfile</p></dd>
+</dl></div>
+</div>
+<div class="refsect1">
+<a name="see-also"></a><h2>SEE ALSO</h2>
+<p>
+  <span class="citerefentry"><span class="refentrytitle">gfarm-pcp</span>(1)</span>,
+  <span class="citerefentry"><span class="refentrytitle">ssh</span>(1)</span>
+</p>
+</div>
+</div></body>
+</html>

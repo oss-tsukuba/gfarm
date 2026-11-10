@@ -1,0 +1,132 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfarm-pcp</title>
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
+<a name="gfarm-pcp.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfarm-pcp — 複数のホストにファイルをコピーする</p>
+</div>
+<div class="refsynopsisdiv">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gfarm-pcp</code>  [<em class="replaceable"><code>オプション</code></em>]  <em class="replaceable"><code>コピー元</code></em>   <em class="replaceable"><code>コピー先</code></em> </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfarm-pcp</code>  [<em class="replaceable"><code>オプション</code></em>]  <em class="replaceable"><code>コピー元</code></em>...   <em class="replaceable"><code>ディレクトリ</code></em> </p></div>
+</div>
+<div class="refsect1">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p><span class="command"><strong>gfarm-pcp</strong></span> は、ローカルの
+<em class="parameter"><code>コピー元</code></em>のファイルを、
+ホストファイルに記述された各ホストの<em class="parameter"><code>コピー先</code></em>
+あるいは<em class="parameter"><code>ディレクトリ</code></em>に、
+リモートコピーコマンド (デフォルトは <span class="command"><strong>scp
+-pr</strong></span>)
+を用いてコピーします。コピー先の相対パスは、
+リモートホストのホームディレクトリからの相対パスとなります。
+Gfarm のファイルシステムノードへの設定ファイルの配布などに利用できます。
+</p>
+<p>デフォルトでは、一つのホストずつ順番にファイルをコピーします。
+-p オプションを指定すると、複数のホストに並列にファイルをコピーします。
+</p>
+<p>ホストファイルの形式と、ローカルホストを除外する方法は
+<span class="command"><strong>gfarm-prun</strong></span> と同じです。
+<span class="citerefentry"><span class="refentrytitle">gfarm-prun</span>(1)</span>
+を参照してください。</p>
+<p>環境変数 PRUN_RCP に <code class="literal">no</code> を設定すると、
+リモートコピーコマンドを用いず、
+環境変数 PRUN_RSH
+で指定するリモートシェルコマンドを用いてファイルをコピーします。この場合、
+最後の引数はリモートホスト上のディレクトリである必要があり、
+コピーできるのは通常ファイルだけです。また、
+ファイルのパーミッションは保存されません。</p>
+</div>
+<div class="refsect1">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><code class="option">-a</code></span></dt>
+<dd><p>ホストファイルにローカルホストが含まれている場合、
+ローカルホストにもファイルをコピーします。</p></dd>
+<dt><span class="term"><code class="option">-h</code> <em class="parameter"><code>ホストファイル</code></em></span></dt>
+<dd><p>ホストファイルを指定します。`-' を指定すると、
+ホストの一覧を標準入力から読み込みます。</p></dd>
+<dt><span class="term"><code class="option">-m</code> <em class="parameter"><code>最大ジョブ数</code></em></span></dt>
+<dd><p>-p オプションを指定したときに、
+並列にファイルをコピーするホストの最大数を指定します。デフォルトは 16 です。
+</p></dd>
+<dt><span class="term"><code class="option">-n</code></span></dt>
+<dd><p>実行するコマンドを表示しますが、実行はしません。</p></dd>
+<dt><span class="term"><code class="option">-p</code></span></dt>
+<dd><p>バックグラウンドで、複数のホストに並列にファイルをコピーします。
+</p></dd>
+<dt><span class="term"><code class="option">-rcp</code> <em class="parameter"><code>リモートコピーコマンド</code></em></span></dt>
+<dd><p>リモートコピーコマンドを指定します。デフォルトは
+<span class="command"><strong>scp -pr</strong></span> です。<code class="literal">no</code>
+を指定すると、
+上記のようにリモートシェルコマンドを用いてファイルをコピーします。</p></dd>
+<dt><span class="term"><code class="option">-v</code></span></dt>
+<dd><p>各ホストにファイルをコピーする前に、ホスト名を表示します。
+-p オプションを指定した場合は、このオプションは効果がありません。</p></dd>
+</dl></div>
+</div>
+<div class="refsect1">
+<a name="environment-variables"></a><h2>ENVIRONMENT VARIABLES</h2>
+<div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><code class="envar">PRUN_RCP</code></span></dt>
+<dd><p>リモートコピーコマンドを指定します。デフォルトは
+<span class="command"><strong>scp -pr</strong></span> です。</p></dd>
+<dt><span class="term"><code class="envar">PRUN_RSH</code></span></dt>
+<dd><p>PRUN_RCP が <code class="literal">no</code>
+の場合に利用するリモートシェルコマンドを指定します。デフォルトは
+<span class="command"><strong>ssh</strong></span>
+です。</p></dd>
+<dt><span class="term"><code class="envar">PRUN_HOSTFILE</code>, <code class="envar">PRUN_HOSTNAME</code>,
+<code class="envar">PRUN_MAX_JOBS</code>, <code class="envar">PRUN_PARALLEL</code>,
+<code class="envar">PRUN_ALL_INCLUDE_MYSELF</code>, <code class="envar">PRUN_VERBOSE</code></span></dt>
+<dd><p><span class="command"><strong>gfarm-prun</strong></span> と同じです。
+<span class="citerefentry"><span class="refentrytitle">gfarm-prun</span>(1)</span>
+を参照してください。</p></dd>
+</dl></div>
+</div>
+<div class="refsect1">
+<a name="exit-status"></a><h2>EXIT STATUS</h2>
+<p>全てのホストへのコピーが成功した場合、
+<span class="command"><strong>gfarm-pcp</strong></span> は 0 で終了します。
+そうでない場合、コピーが失敗したホストについて、
+コピーコマンドの終了ステータスで終了します。
+複数のホストで失敗した場合は、
+そのうちの一つのホストに対する終了ステータスを返します。</p>
+</div>
+<div class="refsect1">
+<a name="examples"></a><h2>EXAMPLES</h2>
+<p><code class="filename">gfarm2.conf</code> を、
+<code class="filename">$HOME/.nodelist</code> に記述された、
+ローカルホスト以外の全てのホストの <code class="filename">/tmp</code>
+にコピーします。</p>
+<div class="literallayout"><p><br>
+	$ gfarm-pcp gfarm2.conf /tmp<br>
+</p></div>
+<p>ユーザの共有鍵を、
+<code class="filename">hosts</code>
+に記述された全てのホストのホームディレクトリに、並列にコピーします。</p>
+<div class="literallayout"><p><br>
+	$ gfarm-pcp -p -h hosts .gfarm_shared_key .<br>
+</p></div>
+</div>
+<div class="refsect1">
+<a name="files"></a><h2>FILES</h2>
+<div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><code class="filename">$HOME/.nodelist</code></span></dt>
+<dd><p>デフォルトのホストファイル</p></dd>
+</dl></div>
+</div>
+<div class="refsect1">
+<a name="see-also"></a><h2>SEE ALSO</h2>
+<p>
+  <span class="citerefentry"><span class="refentrytitle">gfarm-prun</span>(1)</span>,
+  <span class="citerefentry"><span class="refentrytitle">scp</span>(1)</span>
+</p>
+</div>
+</div></body>
+</html>

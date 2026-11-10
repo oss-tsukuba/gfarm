@@ -1,4 +1,6 @@
 DOCBOOK = \
+	gfarm-pcp.1 \
+	gfarm-prun.1 \
 	gfarmbb.1 \
 	gfchgrp.1 \
 	gfchmod.1 \
