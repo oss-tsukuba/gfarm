@@ -127,6 +127,91 @@ write_hex(FILE *fp, void *buffer, size_t length)
 		fprintf(fp, "%02x", p[i]);
 }
 
+/* returns 0 on success, otherwise errno */
+static int
+shared_key_print(FILE *fp, unsigned int expire, char *shared_key)
+{
+	int save_errno;
+
+	expire = htonl(expire);
+	write_hex(fp, &expire, sizeof(expire));
+	fputc(' ', fp);
+	write_hex(fp, shared_key, GFARM_AUTH_SHARED_KEY_LEN);
+	fputc('\n', fp);
+	if (fflush(fp) == EOF || ferror(fp)) {
+		save_errno = errno;
+		fclose(fp);
+		return (save_errno != 0 ? save_errno : EIO);
+	}
+	if (fsync(fileno(fp)) == -1) {
+		save_errno = errno;
+		fclose(fp);
+		return (save_errno);
+	}
+	return (fclose(fp) == EOF ? errno : 0);
+}
+
+/*
+ * Write the key to a temporary file, and rename(2) it to the key file,
+ * instead of overwriting the key file.  Otherwise, another host which
+ * shares the key file by NFS may read the old contents from its cache,
+ * or may read the key file being written.
+ */
+static gfarm_error_t
+shared_key_write(const char *keyfilename, unsigned int expire,
+	char *shared_key)
+{
+	char *resolved, *tmpfile = NULL;
+	const char *target;
+	int fd, save_errno = 0;
+	FILE *fp;
+
+	/* replace the target of a symbolic link, not the link itself */
+	resolved = realpath(keyfilename, NULL);
+	target = resolved != NULL ? resolved : keyfilename;
+
+	GFARM_MALLOC_ARRAY(tmpfile, strlen(target) + sizeof(".XXXXXX"));
+	if (tmpfile == NULL) {
+		free(resolved);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	sprintf(tmpfile, "%s.XXXXXX", target);
+
+	if ((fd = mkstemp(tmpfile)) == -1) { /* mode is 0600 */
+		save_errno = errno;
+		if (save_errno == EACCES || save_errno == EPERM ||
+		    save_errno == EROFS) {
+			/*
+			 * the directory is not writable.
+			 * overwrite the key file, as before
+			 */
+			save_errno = 0;
+			if ((fp = fopen(target, "w")) == NULL ||
+			    chmod(target, 0600) == -1) {
+				save_errno = errno;
+				if (fp != NULL)
+					fclose(fp);
+			} else
+				save_errno =
+				    shared_key_print(fp, expire, shared_key);
+		}
+	} else if ((fp = fdopen(fd, "w")) == NULL) {
+		save_errno = errno;
+		close(fd);
+		unlink(tmpfile);
+	} else if ((save_errno = shared_key_print(fp, expire, shared_key))
+	    != 0) {
+		unlink(tmpfile);
+	} else if (rename(tmpfile, target) == -1) {
+		save_errno = errno;
+		unlink(tmpfile);
+	}
+	free(tmpfile);
+	free(resolved);
+	return (save_errno == 0 ?
+	    GFARM_ERR_NO_ERROR : gfarm_errno_to_error(save_errno));
+}
+
 void
 gfarm_auth_random(void *buffer, size_t length)
 {
@@ -191,7 +276,7 @@ gfarm_auth_shared_key_get(unsigned int *expirep, char *shared_key,
 	FILE *fp = NULL;
 	static char keyfile_basename[] = "/" GFARM_AUTH_SHARED_KEY_BASENAME;
 	char *keyfilename, *allocbuf = NULL;
-	unsigned int expire;
+	unsigned int expire = 0;
 
 	uid_t o_uid;
 	gid_t o_gid;
@@ -229,81 +314,46 @@ gfarm_auth_shared_key_get(unsigned int *expirep, char *shared_key,
 			    "seteuid(%d)", (int)pwd->pw_uid);
 	}
 
-	if ((fp = fopen(keyfilename, "r+")) == NULL) {
+	if ((fp = fopen(keyfilename, "r")) == NULL) {
 		gflog_message(GFARM_MSG_1005671,
 		    errno == ENOENT ? LOG_DEBUG : LOG_WARNING,
 		    __FILE__, __LINE__, __func__,
 		     "%s: %s", keyfilename, strerror(errno));
 		e = GFARM_ERRMSG_SHAREDSECRET_KEY_FILE_NOT_EXIST;
-		goto create;
-	}
-	if (skip_space(fp) || read_hex(fp, &expire, sizeof(expire))) {
+	} else {
+		if (skip_space(fp) || read_hex(fp, &expire, sizeof(expire)))
+			e = GFARM_ERRMSG_SHAREDSECRET_INVALID_EXPIRE_FIELD;
+		else if (skip_space(fp) ||
+		    read_hex(fp, shared_key, GFARM_AUTH_SHARED_KEY_LEN))
+			e = GFARM_ERRMSG_SHAREDSECRET_INVALID_KEY_FIELD;
 		fclose(fp);
-		fp = NULL;
-		e = GFARM_ERRMSG_SHAREDSECRET_INVALID_EXPIRE_FIELD;
-		goto create;
-	}
-	expire = ntohl(expire);
-	if (skip_space(fp) ||
-	    read_hex(fp, shared_key, GFARM_AUTH_SHARED_KEY_LEN)) {
-		fclose(fp);
-		fp = NULL;
-		e = GFARM_ERRMSG_SHAREDSECRET_INVALID_KEY_FIELD;
-		goto create;
+		expire = ntohl(expire);
 	}
 
-create:
-	if (e != GFARM_ERR_NO_ERROR && create == GFARM_AUTH_SHARED_KEY_GET)
-		goto finish;
-	if (fp == NULL) {
-		if (e != GFARM_ERR_NO_ERROR &&
-		    e != GFARM_ERRMSG_SHAREDSECRET_KEY_FILE_NOT_EXIST) {
+	if (e != GFARM_ERR_NO_ERROR) {
+		if (create == GFARM_AUTH_SHARED_KEY_GET)
+			goto finish;
+		if (e != GFARM_ERRMSG_SHAREDSECRET_KEY_FILE_NOT_EXIST)
 			gflog_warning(GFARM_MSG_1003703,
 			    "%s, create the key again: %s",
 			    gfarm_error_string(e), keyfilename);
-			e = GFARM_ERR_NO_ERROR;
-		}
-		fp = fopen(keyfilename, "w+");
-		if (fp == NULL) {
-			e = gfarm_errno_to_error(errno);
-			goto finish;
-		}
-		if (chmod(keyfilename, 0600) == -1) {
-			e = gfarm_errno_to_error(errno);
-			fclose(fp);
-			goto finish;
-		}
-		expire = 0; /* force to regenerate key */
-	}
-	if (create == GFARM_AUTH_SHARED_KEY_CREATE_FORCE ||
-	    time(NULL) >= expire) {
-		if (create == GFARM_AUTH_SHARED_KEY_GET) {
-			fclose(fp);
-			e = GFARM_ERR_EXPIRED;
-			goto finish;
-		}
-		if (fseek(fp, 0L, SEEK_SET) == -1) {
-			e = gfarm_errno_to_error(errno);
-			fclose(fp);
-			goto finish;
-		}
-		gfarm_auth_random(shared_key, GFARM_AUTH_SHARED_KEY_LEN);
-		if (period <= 0)
-			period = GFARM_AUTH_EXPIRE_DEFAULT;
-		expire = time(NULL) + period;
-		expire = htonl(expire);
-		write_hex(fp, &expire, sizeof(expire));
-		expire = ntohl(expire);
-		fputc(' ', fp);
-		write_hex(fp, shared_key, GFARM_AUTH_SHARED_KEY_LEN);
-		fputc('\n', fp);
-	}
-	if (fclose(fp) != 0) {
-		e = gfarm_errno_to_error(errno);
-	} else {
 		e = GFARM_ERR_NO_ERROR;
+	} else if (create != GFARM_AUTH_SHARED_KEY_CREATE_FORCE &&
+	    time(NULL) < expire) {
 		*expirep = expire;
+		goto finish;
+	} else if (create == GFARM_AUTH_SHARED_KEY_GET) {
+		e = GFARM_ERR_EXPIRED;
+		goto finish;
 	}
+
+	gfarm_auth_random(shared_key, GFARM_AUTH_SHARED_KEY_LEN);
+	if (period <= 0)
+		period = GFARM_AUTH_EXPIRE_DEFAULT;
+	expire = time(NULL) + period;
+	if ((e = shared_key_write(keyfilename, expire, shared_key))
+	    == GFARM_ERR_NO_ERROR)
+		*expirep = expire;
 finish:
 	free(allocbuf);
 	if (pwd != NULL && gfarm_auth_root_squash_support) {
