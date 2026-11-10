@@ -6,7 +6,6 @@ trap '[ $status = 1 ] && echo NG; exit $status' 0 1 2 15
 : ${PKG:=gfarm}
 
 CONF_OPT=
-PRUN_ARG=-p
 case $PKG in
 gfarm)
 	CONF_OPT="--enable-xmlattr --with-globus" #--with-infiniband
@@ -14,7 +13,6 @@ gfarm)
 	then
 		CONF_OPT="$CONF_OPT --with-openssl=openssl11"
 	fi
-	PRUN_ARG=
 	;;
 gfarm2fs)
 	CONF_OPT=--with-gfarm=/usr/local
@@ -85,14 +83,30 @@ if $BUILD_ONLY; then
 	exit 0
 fi
 
-sudo make install > /dev/null
-
-if [ $install_option = all ]; then
-	OPT=-p
-	# -p cannot be used because the following error happens
-	# mv: cannot stat 'libgfsl_gsi.so.1.0.0': No such file or directory
-	[ $PKG = gfarm ] && OPT=
-	gfarm-prun $OPT $PRUN_ARG "(cd $PWD; sudo make install > /dev/null)"
+if [ $install_option = all ] && [ $PKG = gfarm ]; then
+	# "make install" of gfarm cannot be executed on hosts in parallel,
+	# since libtool relinks libraries in the shared build directory
+	# (mv: cannot stat 'libgfsl_gsi.so.1.0.0': No such file or directory).
+	# install it once to a staging directory, and extract the archive
+	# on all hosts in parallel via the volume shared by all hosts.
+	STAGE=$HOME/local/install-stage
+	ARCHIVE=$HOME/local/install-stage.tar
+	sudo rm -rf $STAGE $ARCHIVE
+	sudo make DESTDIR=$STAGE install > /dev/null
+	sudo tar -C $STAGE -cf $ARCHIVE .
+	# --no-overwrite-dir: keep the metadata of existing directories.
+	# ldconfig: libtool does not update the cache of the shared libraries
+	# when DESTDIR is specified.
+	# extract it on this host first, since gfarm-prun is installed by it
+	EXTRACT="sudo tar -C / --no-overwrite-dir -xf $ARCHIVE && sudo ldconfig"
+	sh -c "$EXTRACT"
+	gfarm-prun -p "$EXTRACT"
+	sudo rm -rf $STAGE $ARCHIVE
+else
+	sudo make install > /dev/null
+	if [ $install_option = all ]; then
+		gfarm-prun -p "(cd $PWD; sudo make install > /dev/null)"
+	fi
 fi
 
 status=0
