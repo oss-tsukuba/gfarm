@@ -212,7 +212,8 @@ doc/internal/chart/gfmd-thread-dependency.png
 ・矢印で箱(スレッドプール)を辿った時、プール間がループになっていてはいけない。
 ・同一の箱(同一のスレッドプール)の中にあるスレッド間に、
   thrpool_add_job()の矢印関係があってはいけない。
-back_channel_main から giant_lock への破線は、後述の既知の違反 (XXX) を表す。
+back_channel_main および gfs_client_replication_request_request から
+giant_lock への破線は、後述の既知の違反 (XXX) を表す。
 
 スレッドプールとスレッドの一覧は、server/gfmd/subr.c の
 NUM_THREAD_POOLS, NUM_THREADS のコメントにもある。
@@ -407,6 +408,13 @@ thrpool_set_jobq_low_priority_limit() で設定した値以上の場合に休眠
         async_back_channel_replication_cksum_request() が、
         thrpool_add_job() する。
 
+      XXX DEADLOCK
+      送信に失敗した場合、giant_lock() を獲得して peer_replicated() を
+      呼び出す。一方、inode_replication_request() は giant_lock を保持
+      したまま、このプールに thrpool_add_job() する。このため、ジョブ
+      キューが満杯の時に、このプールの全スレッドが giant_lock 待ちに
+      なると、デッドロックする。
+
 　− proto_status_send_thread_pool
 
     このプールを用いて起動されるのは、以下のスレッド。
@@ -448,7 +456,9 @@ thrpool_set_jobq_low_priority_limit() で設定した値以上の場合に休眠
 	  peer_replicated() (→ inode_replicated()) を直接呼び出し、
 	  さらに gfm_async_server_put_reply() で返答を送信する。
 	  返答の送信は abstract_host_sender_lock() で送信側を待つことがある。
-	・gfs_client_replication_request_result() も giant_lock() を獲得する。
+	・gfs_client_replication_request_result() および
+	  gfs_client_replication_cksum_request_result() も giant_lock() を
+	  獲得する。
 
  − metadata-replicationが有効な場合
 

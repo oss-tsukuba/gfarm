@@ -166,6 +166,9 @@ digraph threads {
   back_channel_main -> protocol_main
 	[label = "giant_lock (XXX)", fontcolor = red, color = red,
 	lhead = cluster1, dir = none, style = dashed];
+  gfs_client_replication_request_request -> protocol_main
+	[label = "giant_lock (XXX)", fontcolor = red, color = red,
+	lhead = cluster1, dir = none, style = dashed];
   gfmdc_main -> db_journal_recvq_thread
 	[label = "journal_recvq_mutex", fontcolor = red, color = red,
 	dir = none];
