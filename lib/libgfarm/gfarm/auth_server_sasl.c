@@ -229,9 +229,10 @@ gfarm_authorize_sasl_common(struct gfp_xdr *conn,
 	}
 
 	if (gfarm_ctxp->sasl_mechanisms != NULL &&
-	    strcasecmp(chosen_mechanism, gfarm_ctxp->sasl_mechanisms) != 0) {
+	    !gfarm_sasl_mechanism_list_match(chosen_mechanism,
+	    gfarm_ctxp->sasl_mechanisms)) {
 		gflog_info(GFARM_MSG_1005358,
-		    "%s: SASL mechanism does not match. \"%s\" vs \"%s\""
+		    "%s: SASL mechanism does not match. \"%s\" vs \"%s\", "
 		    "skip SASL authentication",
 		    hostname, gfarm_ctxp->sasl_mechanisms, chosen_mechanism);
 		/* XXX FIXME is this graceful? */
