@@ -940,6 +940,7 @@ fi
 %{html_prefix}/en/ref/man8/config-gfarm.8.html
 %{html_prefix}/en/ref/man8/config-gfsd.8.html
 %{html_prefix}/en/user/index.html
+%{html_prefix}/en/user/auth.html
 %{html_prefix}/en/user/auth-sharedsecret.html
 %{html_prefix}/en/user/auth-gsi.html
 %{html_prefix}/en/user/auth-tls.html
@@ -949,7 +950,9 @@ fi
 %{html_prefix}/en/user/multitenancy.html
 %{html_prefix}/en/user/redundancy-tutorial.html
 %{html_prefix}/en/user/samba-gfarmfs.html
+%{html_prefix}/en/user/smboverssh.html
 %if %{gfarm_v2_not_yet}
+%{html_prefix}/en/user/export-gfarm.html
 %{html_prefix}/en/user/nfs-gfarmfs.html
 %endif
 %{html_prefix}/ja/ref/index.html

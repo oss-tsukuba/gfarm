@@ -23,32 +23,32 @@ English | <A href="../../ja/user/auth-tls.html">Japanese</A>
 <P>
 This document describes the settings required for TLS authentication in Gfarm.
 <p>
-Gfarm requires TLS 1.3.  OpenSSL 1.1.1 or later is required.
+TLS authentication in Gfarm uses TLS 1.3, so OpenSSL 1.1.1 or later is required.
 <P>
 There are two types of TLS authentication:
 tls_sharedsecret authentication,
-in which the server and client share a private key,
+in which the server and client share a secret key,
 and tls_client_certificate authentication, which uses a client certificate.
 
 <HR>
 <H2><A NAME="TLS-common-setting">
     Common settings for tls_sharedsecret,
     tls_client_certificate,
-    sasl_auth and sasl authentications</A></H2>
+    sasl_auth and sasl authentication</A></H2>
 
-The following settings are common to the two TLS authentication methods,
-sasl authentication method and sasl_auth authentication method.
+The following settings are common to the two TLS authentication methods
+and the sasl and sasl_auth authentication methods.
 
 <UL>
 <LI>directory containing the Certificate Authority's certificate files
 <BR>
-Required by all of clients, gfmd, and gfsd.
+Required by all clients, gfmd, and gfsd.
 <BR>
 This can be set with the tls_ca_certificate_path directive
 and defaults to /etc/pki/tls/certs/gfarm.
 <BR>
 This directory format is the same as /etc/grid-security/certificates
-for GSI authentication methods,
+for GSI authentication,
 so if your site has already been configured for GSI authentication, simply create a symbolic link with the following command to complete the configuration.
 <PRE>
 # mkdir -p /etc/pki/tls/certs
@@ -57,12 +57,15 @@ so if your site has already been configured for GSI authentication, simply creat
 <BR>
 <LI>directory where CRL files provided by the CA are located
 <BR>
-Required by all of clients, gfmd, and gfsd.
+Used by all clients, gfmd, and gfsd.
+By default, a CRL file is not mandatory;
+see the tls_allow_no_crl directive in gfarm2.conf(5).
 <BR>
-The default directory is /etc/pki/tls/certs/gfarm,
-which is same with tls_ca_certificate_path.
+This can be set with the tls_ca_revocation_path directive
+and defaults to /etc/pki/tls/certs/gfarm,
+the same as tls_ca_certificate_path.
 <BR>
-This directory format is also common with /etc/grid-security/certificates
+This directory format is also the same as /etc/grid-security/certificates
 for GSI authentication,
 so sites that have already completed the GSI authentication settings
 can complete the settings by creating the symbolic link described above.
@@ -72,8 +75,8 @@ can complete the settings by creating the symbolic link described above.
 <BR>
 These files are required only on the hosts running gfmd.
 <BR>
-These can be set by tls_certificate_file and tls_key_file in gfmd.conf,
-and the default file name is as follows:
+These can be set by the tls_certificate_file and tls_key_file directives in gfmd.conf,
+and the default file names are as follows:
 <TABLE>
 <TR><TH>host certificate</TH>	<TD>/etc/pki/tls/certs/gfmd.crt</TD></TR>
 <TR><TH>private key</TH>	<TD>/etc/pki/tls/private/gfmd.key</TD></TR>
@@ -91,9 +94,9 @@ to complete the configuration.
 <BR>
 <LI>the service certificate and the private key for gfsd
 <BR>
-The following file names can be set by
-tls_certificate_file and tls_key_file directives in gfarm2.conf,
-which is referred to by gfsd, and is the default setting.
+These can be set by the tls_certificate_file and tls_key_file directives
+in gfarm2.conf read by gfsd,
+and the default file names are as follows:
 <TABLE>
 <TR><TH>service certificate</TH><TD>/etc/pki/tls/certs/gfsd.crt</TD></TR>
 <TR><TH>private key</TH>	<TD>/etc/pki/tls/private/gfsd.key</TD></TR>
@@ -102,35 +105,41 @@ which is referred to by gfsd, and is the default setting.
 However, the X509_USER_CERT and X509_USER_KEY environment variables
 take precedence over the tls_certificate_file and tls_key_file settings,
 respectively.
-When gfsd is initially configured using the config-gfsd command,
-the tls_certificate_file and tls_key_file directives have no effect
-because the following locations are set via these environment variables:
+When gfsd is configured using the config-gfsd command,
+the tls_certificate_file and tls_key_file directives have no effect,
+because the gfsd startup script sets these environment variables
+as follows.  Modify the startup script if necessary.
 <TABLE>
 <TR><TH>service certificate</TH><TD>/etc/grid-security/gfsd/gfsdcert.pem</TD></TR>
 <TR><TH>private key</TH>	<TD>/etc/grid-security/gfsd/gfsdkey.pem</TD></TR>
 </TABLE>
+When the -l option of config-gfsd is specified,
+the directory is /etc/grid-security/gfsd-LISTEN_ADDRESS instead of
+/etc/grid-security/gfsd.
+<BR>
 
 Since these path names are the same as those for GSI authentication,
 additional settings are not necessary
 for sites that have already completed GSI authentication settings.
 <BR>
-In order to use a service certificate in gfsd,
-the following additional settings are required
-for gfarm2.conf of the client, gfarm2.conf of gfsd, and gfmd.conf of gfmd.
+To use a service certificate for gfsd,
+the following settings are required
+in gfarm2.conf for clients and gfsd, and in gfmd.conf for gfmd.
+config-gfarm adds these settings by default.
 <PRE>
 spool_server_cred_type host
 spool_server_cred_service gfsd
 </PRE>
-These setting are also common to GSI,
-so sites that have already completed GSI certification
+These settings are also common to GSI,
+so sites that have already completed GSI authentication settings
 do not need to make any additional settings.
 </UL>
 
 <HR>
-<H2>settings specific to tls_sharedsecret authentication</H2>
+<H2>Settings specific to tls_sharedsecret authentication</H2>
 
-For all client, gfmd, and gfsd hosts,
-a common key must be placed in the .gfarm_shared_key file
+On all client, gfmd, and gfsd hosts,
+a shared secret key must be placed in the .gfarm_shared_key file
 directly under each user's home directory.
 <BR>
 The configuration of this file is the same
@@ -138,42 +147,43 @@ as that of sharedsecret authentication,
 so please refer to the description of <A HREF="auth-sharedsecret.html">sharedsecret authentication</A>.
 
 <HR>
-<H2>settings specific to tls_client_certificate</H2>
+<H2>Settings specific to tls_client_certificate authentication</H2>
 
-<H3>settings by the administrator</H3>
+<H3>Settings by the administrator</H3>
 
 For each user,
-set the Subject DN of the client certificate
-in the fourth field of the gfuser command
+register the Subject DN of the client certificate
+as the fourth argument of the gfuser -c command
 in the format "/O=Company/OU=Division/CN=UserName".
 <BR>
 This setting is also common to GSI, so additional settings are not required
 for sites that have already been configured for GSI authentication.
 
 
-<H3>settings by each user</H3>
+<H3>Settings by each user</H3>
 
 <UL>
 <LI>When proxy certificates are used
 <BR>
-Proxy certificates created by GSI's grid-proxy-init and myproxy-logon commands
+Proxy certificates created by GSI's grid-proxy-init command or the myproxy-logon command
 can be used without modification.
 Use these commands to create proxy certificates.
 
 <BR>
 <LI>When proxy certificates are not used
 <BR>
-They can be set in tls_certificate_file and tls_key_file in gfarm2.conf
-of the client,
-and the default file name is as follows in each user's home directory.
+The user certificate and private key can be set by
+the tls_certificate_file and tls_key_file directives
+in the client's gfarm2.conf.
+The default file names, relative to each user's home directory, are as follows.
 
 <TABLE>
 <TR><TH>user certificate</TH>	<TD>.gfarm/usercert.pem</TD></TR>
 <TR><TH>private key</TH>	<TD>.gfarm/userkey.pem</TD></TR>
 </TABLE>
 
-These files are same to GSI,
-so for sites that have already completed GSI certification settings,
+These files are the same as those for GSI,
+so for sites that have already completed GSI authentication settings,
 simply create a symbolic link with the following command to complete the setup.
 <PRE>
 $ ln -s .globus $HOME/.gfarm

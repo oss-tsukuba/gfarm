@@ -11,6 +11,7 @@
 SSH のポート転送で Samba にアクセス
 
 <H1>SSH のポート転送を用いて Samba にアクセスする</H1>
+<A href="../../en/user/smboverssh.html">English</A> | 日本語
 
 <H2>1. 概要</H2>
 
@@ -29,7 +30,7 @@ SSH サーバから見えるネットワーク上に Samba サーバが存在し
 これを応用した例として，外部からはアクセスできない Gfarm の環境に，Samba と SSH サーバを置くことで，外部からアクセスすることもできます．<BR>
 Samba を経由して Gfarm にアクセスする方法は，
 <UL>
-<LI> <A HREF="samba-hook.html">システムコールフックを用いて</A> (まずはこちら)
+<LI> <A HREF="https://github.com/oss-tsukuba/gfarm-samba/releases/">Gfarm Samba plugin を用いて</A>
 <LI> <A HREF="samba-gfarmfs.html">gfarm2fs を用いて</A>
 </UL>
 をご覧ください．
@@ -62,9 +63,9 @@ Samba を経由して Gfarm にアクセスする方法は，
 <LI>Windows マシン (2000, XP, Vista で動作確認) Administrator 権限が必要
 <LI>Windows 用 SSH クライアント (ポート転送用) 以下のどれかを使用 (なるべく最新版)
   <UL>
-  <LI>PuTTY: <A HREF="http://www.chiark.greenend.org.uk/~sgtatham/putty/">http://www.chiark.greenend.org.uk/~sgtatham/putty/</A>
+  <LI>PuTTY: <A HREF="https://www.chiark.greenend.org.uk/~sgtatham/putty/">https://www.chiark.greenend.org.uk/~sgtatham/putty/</A>
   <LI>PuTTY 日本語対応: <A HREF="http://hp.vector.co.jp/authors/VA024651/">http://hp.vector.co.jp/authors/VA024651/</A>
-  <LI>Cygwin OpenSSH: <A HREF="http://sourceware.org/cygwin/">http://sourceware.org/cygwin/</A>
+  <LI>Cygwin OpenSSH: <A HREF="https://www.cygwin.com/">https://www.cygwin.com/</A>
   <LI>PortForwarder: <A HREF="http://www.fuji-climb.org/pf/">http://www.fuji-climb.org/pf/</A>
   </UL>
 </UL>
@@ -181,7 +182,7 @@ LocalForward 169.254.0.1:139 192.168.1.234:139
 
 Linux の場合は，以下の手段で，手元のクライアントから直接アクセスできない Gfarm のディレクトリ以下のファイルに直接アクセスできます．さらに簡単です．
 <UL>
-<LI>手元では <A HREF="http://fuse.sourceforge.net/sshfs.html">SSHFS-FUSE</A> か <A HREF="http://shfs.sourceforge.net/">SHFS</A> を用いて，SSH 越しで以下のサーバのディレクトリをマウント
+<LI>手元では <A HREF="https://github.com/libfuse/sshfs">SSHFS</A> を用いて，SSH 越しで以下のサーバのディレクトリをマウント
 <LI>Gfarm にアクセスできる SSH サーバマシン上で <A HREF="https://github.com/oss-tsukuba/gfarm2fs/releases/">gfarm2fs</A> を用いて Gfarm をマウント
 </UL>
 

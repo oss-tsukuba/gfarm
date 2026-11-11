@@ -1,0 +1,324 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD>
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<META http-equiv="Content-Style-Type" content="text/css">
+<TITLE>Authentication Settings</TITLE>
+
+<STYLE type="text/css">
+<!-- /* BEGIN ... hide style from old browser */
+
+pre { background:#e0ffff; margin-left: 2em; margin-right: 2em }
+
+table { border-collapse: collapse; }
+thead { background:#e0e0e0; }
+th { border: solid 1px; padding: 0.5em; }
+td { border: solid 1px; padding: 0.5em; }
+td.speed { text-align: right; }
+
+     /* END ... hide style from old browser */ -->
+</STYLE>
+
+</HEAD>
+<BODY><A href="http://oss-tsukuba.org/en/software/gfarm">
+<IMG alt="[GFARM LOGO]" width=120 src="../../pic/Gfarm_logo_tate_color.svg" align=right border=0></A>
+<A href="../../index.html">documents</A> &gt;
+<A href="index.html">User's Manual</A> &gt;
+Authentication Settings
+
+<HR>
+<H1>Authentication Settings</H1>
+English | <A href="../../ja/user/auth.html">Japanese</A>
+<P>
+This document gives an overview of authentication in Gfarm.
+<P>
+
+<HR>
+<H2>Authentication methods</H2>
+The following authentication methods are available.
+
+<DL>
+<DT>sharedsecret
+  <DD>Shared secret authentication.  Communication is not encrypted.
+<DT>tls_sharedsecret
+  <DD>Shared secret authentication over a TLS-encrypted channel.
+<DT>tls_client_certificate
+  <DD>Client certificate authentication over a TLS-encrypted channel.
+<DT>sasl
+  <DD>SASL authentication over a TLS-encrypted channel.<BR>
+      With SASL authentication, servers such as gfmd and gfsd cannot be
+      the initiator of a connection.  Thus, an authentication method
+      other than sasl and sasl_auth must be configured for
+      authentication between servers.
+<DT>sasl_auth
+  <DD>SASL authentication over a TLS-encrypted channel.
+      After the authentication is completed,
+      communication is not encrypted.
+<DT>kerberos
+  <DD>Kerberos authentication with encrypted communication.
+<DT>kerberos_auth
+  <DD>Kerberos authentication.  After the authentication is completed,
+      communication is not encrypted.
+<DT>gsi
+  <DD>Client certificate authentication over a channel encrypted
+      by GSI (Grid Security Infrastructure).
+<DT>gsi_auth
+  <DD>GSI authentication.  After the authentication is completed,
+      communication is not encrypted.
+</DL>
+
+<P>
+The following table summarizes the authentication methods.
+
+<TABLE>
+<THEAD>
+  <TR>
+    <TH>Name</TH>
+    <TH>Mnemonic</TH>
+    <TH>Encryption</TH>
+    <TH>Mutual authentication</TH>
+    <TH>Authentication between servers</TH>
+    <TH>Document</TH>
+  </TR>
+</THEAD>
+<TBODY>
+  <TR>
+    <TD>sharedsecret</TD>
+    <TD>s</TD>
+    <TD>no</TD>
+    <TD>no</TD>
+    <TD>yes</TD>
+    <TD><A HREF="auth-sharedsecret.html">auth-sharedsecret.html</A></TD>
+  </TR>
+  <TR>
+    <TD>tls_sharedsecret</TD>
+    <TD>S</TD>
+    <TD>yes</TD>
+    <TD>yes (*1)</TD>
+    <TD>yes</TD>
+    <TD><A HREF="auth-tls.html">auth-tls.html</A></TD>
+  </TR>
+  <TR>
+    <TD>tls_client_certificate</TD>
+    <TD>T</TD>
+    <TD>yes</TD>
+    <TD>yes</TD>
+    <TD>yes</TD>
+    <TD><A HREF="auth-tls.html">auth-tls.html</A></TD>
+  </TR>
+  <TR>
+    <TD>sasl_auth</TD>
+    <TD>a</TD>
+    <TD>no</TD>
+    <TD>yes (*1)</TD>
+    <TD>no</TD>
+    <TD><A HREF="auth-sasl.html">auth-sasl.html</A></TD>
+  </TR>
+  <TR>
+    <TD>sasl</TD>
+    <TD>A</TD>
+    <TD>yes</TD>
+    <TD>yes (*1)</TD>
+    <TD>no</TD>
+    <TD><A HREF="auth-sasl.html">auth-sasl.html</A></TD>
+  </TR>
+  <TR>
+    <TD>kerberos_auth</TD>
+    <TD>k</TD>
+    <TD>no</TD>
+    <TD>yes</TD>
+    <TD>yes</TD>
+    <TD>-</TD>
+  </TR>
+  <TR>
+    <TD>kerberos</TD>
+    <TD>K</TD>
+    <TD>yes</TD>
+    <TD>yes</TD>
+    <TD>yes</TD>
+    <TD>-</TD>
+  </TR>
+  <TR>
+    <TD>gsi_auth</TD>
+    <TD>g</TD>
+    <TD>no</TD>
+    <TD>yes</TD>
+    <TD>partially (*2)</TD>
+    <TD><A HREF="auth-gsi.html">auth-gsi.html</A></TD>
+  </TR>
+  <TR>
+    <TD>gsi</TD>
+    <TD>G</TD>
+    <TD>yes</TD>
+    <TD>yes</TD>
+    <TD>partially (*2)</TD>
+    <TD><A HREF="auth-gsi.html">auth-gsi.html</A></TD>
+  </TR>
+</TBODY>
+</TABLE>
+
+<P>
+The mnemonic is the character that indicates the authentication method
+in the second column of the output of the "gfhost -l" command.
+Uppercase letters are assigned to encrypted communication,
+and lowercase letters to unencrypted communication.
+
+<P>
+Unencrypted communication is vulnerable to attacks such as
+eavesdropping and TCP connection hijacking.
+Thus, authentication methods with encrypted communication are
+recommended for use over a wide area network.
+Unencrypted communication is provided for higher performance
+within a site.  However, since recent CPUs have instruction sets for
+encryption, encrypted communication does not necessarily degrade
+the performance significantly.
+
+<P>
+Gfarm servers accept connections only from authenticated clients
+(except the UDP communication that obtains the load average of gfsd
+for health checks, which works without authentication).
+Whether the client also authenticates the server, that is,
+authentication in the reverse direction,
+depends on the authentication method.
+This is shown in the "Mutual authentication" column of the table.
+Without mutual authentication, the client is vulnerable to attacks
+that impersonate the server, such as DNS spoofing,
+BGP route hijacking, and ARP spoofing.
+Thus, authentication methods with mutual authentication are
+recommended, especially over a wide area network.
+<P>
+The "Authentication between servers" column shows whether
+the authentication method can be used for authentication between
+servers such as gfmd and gfsd.
+<P>
+(*1) With these authentication methods, the method indicated by the name
+     is used for authentication of the client by the server.
+     The server is authenticated by the client with
+     the TLS certificate of the server.
+<P>
+(*2) It is known that GSI authentication between servers does not work
+     at least on Ubuntu 22.04.  It works on CentOS 8 variants.
+
+<HR>
+<H2>Configuring authentication methods</H2>
+
+<H3>Initial setting</H3>
+
+The -a option of config-gfarm at the initial setup
+adds authentication settings such as the following
+to gfmd.conf and gfarm2.conf.
+<PRE>
+auth enable sharedsecret *
+</PRE>
+This is an example of "-a sharedsecret", which uses sharedsecret
+as the authentication method for all hosts.
+The -a option can be specified multiple times.
+If the -a option is not specified, all available authentication methods
+are enabled.
+
+<P>
+The first parameter of the auth directive is either
+enable or disable.
+<P>
+The second parameter of the auth directive is an authentication method
+or "*".  "*" means all authentication methods.
+<P>
+The third parameter of the auth directive is the host name or
+the IP address of the target hosts in one of the following forms.
+
+<TABLE>
+<THEAD>
+  <TR>
+    <TH>Host specification</TH>
+    <TH>Example</TH>
+    <TH>Meaning</TH>
+  </TR>
+</THEAD>
+<TBODY>
+  <TR>
+    <TD>*</TD>
+    <TD>*</TD>
+    <TD>all hosts</TD>
+  </TR>
+  <TR>
+    <TD>host name</TD>
+    <TD>host1.example.net</TD>
+    <TD>the specified host</TD>
+  </TR>
+  <TR>
+    <TD>.domain name</TD>
+    <TD>.example.net</TD>
+    <TD>hosts in the specified domain</TD>
+  </TR>
+  <TR>
+    <TD>IPv4 address</TD>
+    <TD>192.168.0.1</TD>
+    <TD>the host with the specified IP address</TD>
+  </TR>
+  <TR>
+    <TD>IPv4 address/netmask</TD>
+    <TD>192.168.0.0/24</TD>
+    <TD>hosts in the specified IP address range</TD>
+  </TR>
+</TBODY>
+</TABLE>
+
+<P>
+For the same authentication method, the order of auth directives
+is significant, and they are applied from the top.
+Thus, the following example
+<PRE>
+auth enable * 192.168.0.0/24
+auth disable * .blacklist.example.net
+auth enable tls_client_certificate *
+</PRE>
+means
+<UL>
+<LI>all authentication methods are allowed for 192.168.0.0/24
+<LI>no authentication is allowed for hosts in the blacklist.example.net domain
+<LI>tls_client_certificate is used for all other hosts
+</UL>
+whereas the following example
+<PRE>
+auth enable tls_client_certificate *
+auth disable * .blacklist.example.net
+auth enable * 192.168.0.0/24
+</PRE>
+means
+<UL>
+<LI>only tls_client_certificate is allowed for all hosts
+</UL>
+
+<P>
+The order between different authentication methods is not significant.
+The client tries the enabled authentication methods in the following order.
+<OL>
+<LI>sharedsecret
+<LI>sasl_auth
+<LI>sasl
+<LI>tls_sharedsecret
+<LI>tls_client_certificate
+<LI>kerberos_auth
+<LI>kerberos
+<LI>gsi_auth
+<LI>gsi
+</OL>
+
+This order can be changed by the auth_trial_order directive.<BR>
+For example, with the following setting,
+only tls_client_certificate and sasl are tried in this order,
+and the other authentication methods are not used.
+<PRE>
+auth_trial_order tls_client_certificate sasl
+</PRE>
+
+
+<HR>
+<H2>SEE ALSO</H2>
+<A HREF="../ref/man5/gfarm2.conf.5.html">gfarm2.conf(5)</A>
+
+<HR>
+
+<ADDRESS><A href="http://oss-tsukuba.org/en/software/gfarm">Gfarm File System</A> &lt;<TT>gfarmfs at gmail.com</TT>&gt;</ADDRESS>
+
+</BODY>
+</HTML>

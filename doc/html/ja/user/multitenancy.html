@@ -29,7 +29,7 @@ td.speed { text-align: right; }
 <H1>マルチテナント機能</H1>
 <A href="../../en/user/multitenancy.html">English</A> | 日本語
 <P>
-この文書は、Gfarm の マルチテナント機能を説明します。
+この文書は、Gfarm のマルチテナント機能を説明します。
 <P>
 マルチテナント機能とは、単一の Gfarm ファイルシステムを
 仮想的に複数のテナントに分割してユーザーに提供する機能です。
@@ -45,12 +45,12 @@ Gfarm の認証処理の段階では user1+tenantA のように + の後に
 またテナント内のユーザーから見ると、自身のユーザー名は
 あたかも user1 のように見えます。
 <P>
-同様に、テナントA に属するグループ group1 は内部的には
+同様に、テナント tenantA に属するグループ group1 は内部的には
 group1+tenantA というグループ名を持ちます。
 <P>
 例:
 <pre>
-$ gfwhomai
+$ gfwhoami
 user1
 $ gfls -ld /tmp
 drwxrwxrwt 2 user1     group1            0 Mar 22 20:41 /tmp
@@ -69,9 +69,11 @@ $ gfgroup -c gfarmadm+tenantA user1+tenantA
 $ gfgroup -c gfarmroot+tenantA
 $ gfsudo gfmkdir -p /.tenants/tenantA
 $ gfsudo gfchmod 000 /.tenants
-$ gfsudo gfchmod 755 /.tenants
 $ gfsudo gfchown user1+tenantA:gfarmadm+tenantA /.tenants/tenantA
 </PRE>
+/.tenants のモードを 000 にするのは、デフォルト・テナントの一般ユーザーが
+他のテナントのディレクトリにアクセスできないようにするためです。
+この設定は /.tenants の作成時に一度だけ行なえば十分です。
 
 <HR>
 <H2>デフォルト・テナント</H2>
@@ -80,7 +82,7 @@ $ gfsudo gfchown user1+tenantA:gfarmadm+tenantA /.tenants/tenantA
 テナントのことをデフォルト・テナントと呼びます。
 <P>
 デフォルト・テナントで gfarmadm グループ権限を持つユーザは、
-全テナントのユーザー、グループにアクセスできる権限権限を持ちます。
+全テナントのユーザー、グループを管理する権限を持ちます。
 またデフォルト・テナントで gfarmroot グループ権限を持つユーザは、
 全テナントのファイルシステムにアクセスできる権限を持ちます。
 

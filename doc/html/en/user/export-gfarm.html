@@ -1,0 +1,91 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD>
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<TITLE>Grid Datafarm: Servers which export Gfarm [English]</TITLE>
+<META content=document name=resource-type>
+</HEAD>
+<BODY><A href="http://oss-tsukuba.org/en/software/gfarm">
+<IMG alt="[GFARM LOGO]" width=120 src="../../pic/Gfarm_logo_tate_color.svg" align=right border=0></A>
+<A href="../../index.html">documents</A> &gt;
+<A href="index.html">User's Manual</A> &gt;
+Accessing Gfarm by using other protocols
+
+<H1>Accessing the Gfarm File System by Using Other Protocols</H1>
+English | <A href="../../ja/user/export-gfarm.html">Japanese</A>
+
+<H2>1. Overview</H2>
+
+We investigated whether the Gfarm file system can be exported
+via file sharing and publishing server applications.
+It can be achieved by combining each server with gfarm2fs.
+
+<H2>2. Results</H2>
+
+<TABLE BORDER=1 CELLSPACING=0 CELLPADDING=5>
+<THEAD ALIGN="center">
+<TR>
+<TH>Servers</TH>
+<TH>syscall-hooking library</TH>
+<TH>gfarm2fs</TH>
+</TR>
+</THEAD>
+<TBODY ALIGN="center">
+<TR>
+<TD><A HREF="http://www.samba.org/">Samba</A></TD>
+<TD><A HREF="samba-hook.html">A</A></TD>
+<TD><A HREF="samba-gfarmfs.html">A<BR>allow_root required</A></TD>
+</TR>
+<TR>
+<TD>NFS</TD>
+<TD>N</TD>
+<TD><A HREF="nfs-gfarmfs.html">B<BR>allow_root required</A></TD>
+</TR>
+<TR>
+<TD><A HREF="http://vsftpd.beasts.org/">vsftpd</A></TD>
+<TD>B</TD>
+<TD>B</TD>
+</TR>
+<TR>
+<TD><A HREF="http://www.proftpd.org/">ProFTPD</A></TD>
+<TD>B</TD>
+<TD>B<BR>allow_root required</TD>
+</TR>
+<TR>
+<TD><A HREF="http://www.globus.org/toolkit/docs/4.0/data/gridftp/">globus-gridftp-server</A><BR>(GT4) (started with root privilege)</TD>
+<TD>B<BR>grid-proxy-init is also required on the server side</TD>
+<TD>B<BR>grid-proxy-init is also required on the server side</TD>
+</TR>
+<TR>
+<TD><A HREF="http://httpd.apache.org/">Apache HTTP Server</A><BR>
+(started with the privilege of<BR>a user who can access Gfarm)</TD>
+<TD>B<BR>httpd.conf requires<BR>
+EnableMMAP Off<BR>
+EnableSendfile Off</TD>
+<TD>B<BR></TD>
+</TR>
+</TBODY>
+</TABLE>
+<P>
+Linked entries have detailed descriptions.  Please apply these to
+other servers as well.
+
+<UL>
+<LI>A: tested
+<LI>B: only a simple operation check
+<LI>N: impossible
+<LI>"allow_root required" means that the file system needs to be mounted
+with the -o allow_root option of FUSE.  For details, see the README
+of the FUSE package.
+</UL>
+
+
+<H2>3. Comments</H2>If you have any questions or comments, feel free to
+send email to &lt;gfarmfs at gmail.com&gt;.
+<P>
+<HR>
+
+<ADDRESS>
+<A href="http://oss-tsukuba.org/en/software/gfarm">Grid Datafarm</A>
+&lt;gfarmfs at gmail.com&gt;
+</ADDRESS>
+</BODY></HTML>

@@ -15,11 +15,12 @@
 
 <BR><BR>
 この文書では、メタデータサーバを1:1構成で冗長化する方法を説明します。
+TLS 認証を含む設定手順については<A HREF="https://github.com/oss-tsukuba/gfarm/blob/2.8/SETUP-manual-ja.md">設定マニュアル</A>も参照してください。
 <BR>
 <H2>1. インストール</H2>
 ここではマスターgfmdを起動するホストをhost-a、スレーブgfmdを起動するホストをhost-bとします。
 host-a / host-bのそれぞれにおいて、Gfarmのインストールを行います。
-インストールはINSTALLドキュメントを参照してください。
+インストールは導入マニュアルを参照してください。
 
 <H2>2. セットアップ</H2>
 <H3>2.1 マスターメタデータサーバの設定</H3>
@@ -31,7 +32,7 @@ host-a / host-bのそれぞれにおいて、Gfarmのインストールを行い
 </PRE></TD></TR></TBODY></TABLE>
 
 メタデータサーバのセットアップをrootユーザで行います。
-メタデータ冗長化を有効にするため，SETUP.ja で解説されている
+メタデータ冗長化を有効にするため、<A HREF="https://github.com/oss-tsukuba/gfarm/blob/2.8/SETUP-manual-ja.md">設定マニュアル</A>で解説されている
 config-gfarm実行の手順において、オプションに-rを追加してください。
 <p>
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
@@ -40,13 +41,13 @@ config-gfarm実行の手順において、オプションに-rを追加してく
 <UL><LI>補足1<BR>
 メタデータ冗長化に使用するジャーナルファイルは、デフォルトでは/var/gfarm-metadata/journalディレクトリに保存されます。変更する場合は、config-gfarmに-jオプションを指定します。</LI>
 <LI>補足2<BR>
-既存のメタデータサーバに対しメタデータ冗長化を有効にするためには、gfmdを停止しPostgreSQLを起動したままの状態で、-rオプションをつけてconfig-gfarm-updateを実行します。</LI>
+既存のメタデータサーバに対しメタデータ冗長化を有効にするためには、gfmdを停止しPostgreSQLを起動したままの状態で、-rオプションをつけてconfig-gfarm-updateを実行します。
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
-Gfarmの新しいバージョンをインストール
-# /etc/init.d/gfmd stop
+# systemctl stop gfmd
 # config-gfarm-update -r --update
-# /etc/init.d/gfmd start
+# systemctl start gfmd
 </PRE></TD></TR></TBODY></TABLE>
+</LI>
 <LI>補足3<BR>
 メタデータ冗長化を有効にするためには、バックエンド・データベースとしてPostgreSQLを利用する必要があります。</LI>
 </UL>
@@ -86,7 +87,10 @@ gfdump.postgresql に対しても同じオプションを与えてください�
 $ gfkey -f -p 31536000
 </PRE></TD></TR></TBODY></TABLE>
 <UL><LI>補足1<BR>
-メタデータサーバ間の認証は、共有鍵認証のみサポートしています。
+メタデータサーバ間の通信は _gfarmmd ユーザーとして、gfmd.conf で有効にした認証方式で認証されます。
+共有鍵は sharedsecret 認証および tls_sharedsecret 認証で必要です。
+試行する認証方式を指定する場合は、すべてのメタデータサーバの gfmd.conf に
+auth_trial_order ディレクティブを追加してください。
 </UL>
 
 <H3>2.2 スレーブメタデータサーバの設定</H3>
@@ -131,14 +135,14 @@ Gfarm クライアントを利用することがあるためです。
 マスターメタデータサーバでmetadb_server_listを追加した
 gfarm2.confを、ファイルシステムノードやクライアントノードにコピーします。
 <p>
-以降の設定はSETUPドキュメントを参照してください。
+以降の設定は<A HREF="https://github.com/oss-tsukuba/gfarm/blob/2.8/SETUP-manual-ja.md">設定マニュアル</A>を参照してください。
 <p>
 既に設定されている場合は、gfsdを再起動します。
 再起動のためにはrootユーザで、次のコマンドを実行します。
 <BR><BR>
 各gfsdホスト:
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
-# /etc/init.d/gfsd restart
+# systemctl restart gfsd
 </PRE></TD></TR></TBODY></TABLE>
 <p>
 ここまでの手順でマスタースレーブで冗長化されたメタデータサーバの構成が完了しました。
@@ -175,10 +179,10 @@ seqnumのmaxが等しければ更新が伝達されています。
 <BR><BR>
 host-a:
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
-# /etc/init.d/gfmd stop
+# systemctl stop gfmd
 </PRE></TD></TR></TBODY></TABLE>
 <UL><LI><FONT COLOR="red">注意</FONT><BR>
-スレーブgfmdをマスターgfmdへ昇格するときは、以下のいずれかの条件を満たす必要あります。
+スレーブgfmdをマスターgfmdへ昇格するときは、以下のいずれかの条件を満たす必要があります。
   <UL>
   <LI>現在のマスターgfmdが停止している。</LI>
   <LI>現在のマスターgfmdが、スレーブgfmd / gfsd / クライアントと通信できない。
@@ -208,8 +212,9 @@ host-aにおいてrootユーザで、次のコマンドを実行します。
 <BR><BR>
 host-a:
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
-# /etc/init.d/gfmd slavestart
+# systemctl start gfmd-slave
 </PRE></TD></TR></TBODY></TABLE>
+systemd を用いないシステムでは「/etc/init.d/gfmd slavestart」を実行します。
 
 <H3>4.2 動作確認</H3>
 

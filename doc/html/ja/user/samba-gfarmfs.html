@@ -23,7 +23,7 @@ gfarm2fs を使って Gfarm ファイルシステムをマウントし，その�
   <UL>
   <LI>Gfarm のクライアントが利用できる．利用しようと思っている Gfarm の環境にアクセスできる．
   <LI>認証方法は，sharedsecret 認証を使用し，Gfarm のファイルシステムノードのホームディレクトリが共有されていることを推奨する．そうでない場合は，使用する前に ~/.gfarm_shared_key を各ノードに配布するか，grid-proxy-init を実行しておかなければならない．
-  <LI>FUSE がインストールされている．(= Linux カーネル 2.4 or 2.6 環境)
+  <LI>FUSE がインストールされている．
   <LI>一般ユーザが FUSE でマウントしたマウントポイントに，他のユーザがアクセスすることを許可されている．(user_allow_other 設定)
   <LI>gfarm2fs がインストールされていて，実行できる．
   <LI>一般ユーザが FUSE でマウントした(する予定の)マウントポイントに Samba 経由でアクセスできるような Samba の設定にして動かすことができる．
@@ -38,8 +38,8 @@ gfarm2fs を使って Gfarm ファイルシステムをマウントし，その�
 関連ソフトウエア一覧
 <UL>
 <LI>Gfarm and gfarm2fs: <A HREF="http://oss-tsukuba.org/software/gfarm">http://oss-tsukuba.org/software/gfarm</A>
-<LI>FUSE: <A HREF="http://fuse.sourceforge.net/">http://fuse.sourceforge.net/</A>
-<LI>Samba: <A HREF="http://www.samba.gr.jp/">http://www.samba.gr.jp/</A>
+<LI>FUSE: <A HREF="https://github.com/libfuse/libfuse">https://github.com/libfuse/libfuse</A>
+<LI>Samba: <A HREF="https://www.samba.org/">https://www.samba.org/</A>
 </UL>
 
 <H2>2. 日本語ファイル名を扱う場合</H2>
@@ -48,21 +48,11 @@ Samba で UTF-8 のファイル名を扱えるようにします．
 smb.conf にファイル名に関する設定をします．
 Linux 側ではファイル名の文字コードとして UTF-8 を使うようにし，それを Windows から見えるように設定します．
 <P>
-[global] の部分に記述します．
-Samba の設定は SWAT を使うと簡単にできます．<BR>
-
-<P>
-Samba 2系の場合
-<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
-client code page =  932
-coding system = utf8
-</PRE></TD></TR></TBODY></TABLE>
-<P>
-Samba 3系の場合
+[global] の部分に以下のように記述します．
+なお，unix charset のデフォルトは UTF-8 です．
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 dos charset = CP932
 unix charset = UTF-8
-display charset = UTF-8
 </PRE></TD></TR></TBODY></TABLE>
 <P>
 
@@ -71,7 +61,6 @@ display charset = UTF-8
 まず，公開するディレクトリを設定をします．
 そのために，[homes] や [セクション名] を smb.conf に設定します． 
 gfarm2fs を使ってマウントする予定のパス，またはそれより上のディレクトリのパスを指定します．
-これらは SWAT を使うと簡単に設定できます．
 <BR>
 そして gfarm2fs にアクセスするセクションには，ファイルを書き込めるようにし，ファイル新規作成時に，実行ビットが付かないようにします．
 <P>
@@ -85,7 +74,7 @@ read only = no
 これで， /tmp/gfarm の下に各ユーザがユーザ名のディレクトリを作って gfarm2fs でマウントしておけば，Gfarm という共有名でアクセスできます．
 <P>
 次に，Gfarm を実行する UNIX ユーザ名と対応する Samba でのユーザを作成します．<BR>
-たとえば，SWAT で行う場合は，「PASSWORD→ローカルマシンのパスワード管理→新規ユーザ追加」でユーザを追加できます．
+たとえば，pdbedit -a ユーザ名 (または smbpasswd -a ユーザ名) でユーザを追加できます．
 <P>
 その他 Samba の設定に関する詳細は，Samba のドキュメントをご覧ください．
 
@@ -130,13 +119,13 @@ FUSE 2.2.1 以前と FUSE 2.3.0 とでは，ファイルシステムにアクセ
 そのため，FUSE のバージョンと，Samba や ftpd などの各種サーバ類との組み合わせによって，
 user_allow_other の設定が必要であったり，必要でなかったりします．
 たとえば，vsftpd は user_allow_other の設定が必要ありません．
-smbd も完全に一般ユーザの権限(uid, gid) になって動く方法があれば user_allow_other の設定は要らないはずです．(ご存知の方いらっしゃいませんか？)
+smbd も完全に一般ユーザの権限(uid, gid) になって動く方法があれば user_allow_other の設定は要らないはずです．
 <P>
 <H3>参考</H3>
-上記の設定をせずに FUSE を使ったファイルシステムを -o allow_root をつけてマウントすると，以下のエラーメッセージが出ます。
+上記の設定をせずに FUSE を使ったファイルシステムを -o allow_root をつけてマウントすると，以下のエラーメッセージが出ます (FUSE 2 では fusermount)．
 <P>
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
-fusermount: option allow_other only allowed if 'user_allow_other' is set in /etc/fuse.conf
+fusermount3: option allow_other only allowed if 'user_allow_other' is set in /etc/fuse.conf
 </PRE></TD></TR></TBODY></TABLE>
 
 
@@ -194,7 +183,7 @@ Gfarm という共有名にアクセスするだけで，自動で gfarm2fs で�
 [Gfarm]
   path = %H/samba-fuse
   create mask = 0644
-  exec = /usr/local/bin/gfarmfsmount.sh %P
+  preexec = /usr/local/bin/gfarmfsmount.sh %P
   preexec close = Yes
   postexec = /usr/local/bin/gfarmfsumount.sh %P
   read only = no
@@ -202,8 +191,8 @@ Gfarm という共有名にアクセスするだけで，自動で gfarm2fs で�
 <P>
 %H は各ユーザのホームディレクトリになります．<BR>
 %P は path の内容になります．<BR>
-exec は接続時に実行するコマンドです．<BR>
-preexec close は exec に失敗した場合に接続できないようにします．<BR>
+preexec は接続時に実行するコマンドです．<BR>
+preexec close は preexec に失敗した場合に接続できないようにします．<BR>
 postexec は切断時に実行するコマンドです．<BR>
 詳しくは smb.conf のマニュアルをご覧ください．
 
@@ -219,7 +208,6 @@ GFARMFS=/usr/local/bin/gfarm2fs
 USERNAME=`/usr/bin/whoami`
 LOGFILE=/tmp/gfarm2fs-$USERNAME.log
 
-#ARCH="-a i686-FC3-linux"
 ALLOWROOT="-o allow_root"
 
 GREP=/bin/grep
@@ -244,9 +232,9 @@ fi
 DATE=`$DATE '+%Y%m%d-%H%M%S'`
 MOUNTP=$1
 
-($DF -t fuse $MOUNTP | $TAIL +2 | $GREP gfarm2fs &gt; /dev/null &amp;&amp; \
+($DF -t fuse.gfarm2fs $MOUNTP | $TAIL -n +2 | $GREP gfarm2fs &gt; /dev/null &amp;&amp; \
     (echo $DATE MOUNT:ALREADY $MOUNTP) || \
-    ($GFARMFS $ARCH $MOUNTP $ALLOWROOT &amp;&amp; \
+    ($GFARMFS $MOUNTP $ALLOWROOT &amp;&amp; \
     echo $DATE MOUNT:SUCCESS $MOUNTP || ! echo $DATE MOUNT:FAIL $MOUNTP)
 ) &gt;&gt; $LOGFILE 2&gt;&amp;1
 
@@ -258,7 +246,8 @@ gfarmfsumount.sh
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 #! /bin/sh
 
-FUSERMOUNT=/usr/local/bin/fusermount
+# use fusermount instead of fusermount3 for FUSE 2
+FUSERMOUNT=/usr/bin/fusermount3
 
 USERNAME=`/usr/bin/whoami`
 LOGFILE=/tmp/gfarm2fs-$USERNAME.log
