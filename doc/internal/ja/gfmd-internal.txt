@@ -958,7 +958,9 @@ host_busyq		back_channel の送信が busy だったため、再試行待ち
   - その他の送信エラーは、removal_finishedq に入れる。
 ・removal_finalizer() が removal_finishedq から取り出し (→ finalizing)、
   giant_lock を獲得して handle_removal_result() で処理する。
-  - read only モードの場合は、removal_finishedq に戻す。
+  - read only モードの場合は、removal_finishedq に戻す (→ finished)。
+    removal_finalizer() は read only モードが解除されるまで待つので、
+    解除後に処理される。
   - 成功 (ないし GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY) の場合は、
     dead_file_copy_free() で解放する。
     dead_file_copy_free() は DB からも削除し、
