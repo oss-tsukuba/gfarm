@@ -3984,10 +3984,20 @@ generation_updated_common(struct peer *peer, int from_client,
 	struct host *spool_host;
 	struct process *process;
 	struct inode *inode;
+	int transaction = 0;
 
 	giant_lock();
 
 	/* callees of process_new_generation_done() handle read_only */
+
+	/*
+	 * process_new_generation_done() updates the database several times.
+	 * do them in one transaction, otherwise each of them is synchronized
+	 * to the journal file and the synchronous slaves
+	 * while holding giant_lock.
+	 */
+	if (!gfarm_read_only_mode() && db_begin(diag) == GFARM_ERR_NO_ERROR)
+		transaction = 1;
 
 	if (from_client) { /* from gfsd only */
 		gflog_debug(GFARM_MSG_1002266, "%s: from client", diag);
@@ -4027,6 +4037,10 @@ generation_updated_common(struct peer *peer, int from_client,
 		    host_name(spool_host), fd,
 		    gfarm_error_string(result));
 	}
+
+	if (transaction)
+		db_end(diag);
+
 	return (e);
 }
 

@@ -282,6 +282,40 @@ dfc_workq_dequeue(struct dfc_workq *q, enum dead_file_copy_state new_state,
 }
 
 /*
+ * same as dfc_workq_dequeue(), but returns NULL instead of sleeping,
+ * if the queue is empty.
+ *
+ * PREREQUISITE: nothing
+ * LOCKS: dfc_workq::mutex -> dfc->mutex
+ * SLEEPS: no
+ */
+static struct dead_file_copy *
+dfc_workq_trydequeue(struct dfc_workq *q, enum dead_file_copy_state new_state,
+	const char *diag)
+{
+	struct dead_file_copy *dfc = NULL;
+
+	gfarm_mutex_lock(&q->mutex, diag, "lock");
+
+	if (q->q.workq_next != &q->q) {
+		dfc = q->q.workq_next;
+
+		/* i.e. dfc_workq_remove(q->q.workq_next) */
+		q->q.workq_next = dfc->workq_next;
+		dfc->workq_next->workq_prev = &q->q;
+
+		dfc->workq_next = dfc->workq_prev = NULL; /* to be sure */
+
+		gfarm_mutex_lock(&dfc->mutex, diag, "dfc state");
+		dfc->state = new_state;
+		gfarm_mutex_unlock(&dfc->mutex, diag, "dfc state");
+	}
+
+	gfarm_mutex_unlock(&q->mutex, diag, "unlock");
+	return (dfc);
+}
+
+/*
  * PREREQUISITE: dfc_workq::mutex
  * LOCKS: nothing
  * SLEEPS: no
@@ -413,16 +447,39 @@ removal_finishedq_dequeue(void)
 	    diag));
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: removal_finishedq.mutex -> dfc->mutex
+ * SLEEPS: no
+ */
+static struct dead_file_copy *
+removal_finishedq_trydequeue(void)
+{
+	static const char diag[] = "removal_finishedq_trydequeue";
+
+	return (dfc_workq_trydequeue(&removal_finishedq, dfcstate_finalizing,
+	    diag));
+}
+
 static void dead_file_copy_free(struct dead_file_copy *);
 void host_busyq_enqueue(struct dead_file_copy *);
 
 /*
- * PREREQUISITE: nothing
- * LOCKS: giant_lock
- *  -> (config_var_mutex, removal_finishedq.mutex -> dfc->mutex,
- *	dfc_allq.mutex -> dfc->mutex, dbq.mutex, abstract_host::mutex,
- *	host_busyq.mutex -> dfc->mutex, dfc->mutex)
- * SLEEPS: yes (giant_lock, dbq.mutex)
+ * the maximum number of removal results handled in one transaction,
+ * i.e. while holding giant_lock once.
+ *
+ * a transaction is synchronized to the journal file and the synchronous
+ * slaves at its end while holding giant_lock, thus, handling the results
+ * one by one is slow, and keeps other requests waiting.
+ * on the other hand, do not hold giant_lock too long.
+ */
+#define REMOVAL_RESULT_BATCH_MAX	32
+
+/*
+ * PREREQUISITE: giant_lock, and not in read_only mode
+ * LOCKS: dfc_allq.mutex -> dfc->mutex, dbq.mutex, abstract_host::mutex,
+ *	host_busyq.mutex -> dfc->mutex, dfc->mutex
+ * SLEEPS: yes (dbq.mutex)
  *	but dfc_allq.mutex, host_busyq.mutex and abstract_host::mutex
  *	won't be blocked while sleeping.
  */
@@ -431,17 +488,7 @@ handle_removal_result(struct dead_file_copy *dfc)
 {
 	static const char diag[] = "handle_removal_result";
 
-	/* giant_lock is necessary before calling dead_file_copy_free() */
-	giant_lock();
-
-	/*
-	 * because there is race condition between
-	 * the gfarm_read_only check in removal_finalizer() and here,
-	 * we must re-check gfarm_read_only here
-	 */
-	if (gfarm_read_only_mode()) {
-		removal_finishedq_enqueue(dfc, dfc->result);
-	} else if (dfc->result == GFARM_ERR_NO_ERROR ||
+	if (dfc->result == GFARM_ERR_NO_ERROR ||
 	    dfc->result == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY) {
 		dead_file_copy_free(dfc); /* sleeps to wait for dbq.mutex */
 	} else if (host_is_file_removable(dfc->host)) {
@@ -458,6 +505,46 @@ handle_removal_result(struct dead_file_copy *dfc)
 		dfc->state = dfcstate_deferred;
 		gfarm_mutex_unlock(&dfc->mutex, diag, "dfc state");
 	}
+}
+
+/*
+ * handle `dfc' and the results which are already in removal_finishedq
+ * in one transaction.
+ *
+ * PREREQUISITE: nothing
+ * LOCKS: giant_lock
+ *  -> (config_var_mutex, removal_finishedq.mutex -> dfc->mutex,
+ *	and the locks of handle_removal_result())
+ * SLEEPS: yes (giant_lock, dbq.mutex)
+ */
+static void
+handle_removal_results(struct dead_file_copy *dfc)
+{
+	int n = 0, transaction = 0;
+	static const char diag[] = "handle_removal_results";
+
+	/* giant_lock is necessary before calling dead_file_copy_free() */
+	giant_lock();
+
+	/*
+	 * because there is race condition between
+	 * the gfarm_read_only check in removal_finalizer() and here,
+	 * we must re-check gfarm_read_only here
+	 */
+	if (gfarm_read_only_mode()) {
+		removal_finishedq_enqueue(dfc, dfc->result);
+		giant_unlock();
+		return;
+	}
+
+	if (db_begin(diag) == GFARM_ERR_NO_ERROR)
+		transaction = 1;
+	do {
+		handle_removal_result(dfc);
+	} while (++n < REMOVAL_RESULT_BATCH_MAX &&
+	    (dfc = removal_finishedq_trydequeue()) != NULL);
+	if (transaction)
+		db_end(diag);
 
 	giant_unlock();
 }
@@ -484,7 +571,7 @@ removal_finalizer(void *arg)
 	for (;;) {
 		gfarm_read_only_disabled_wait(diag);
 
-		handle_removal_result(removal_finishedq_dequeue());
+		handle_removal_results(removal_finishedq_dequeue());
 	}
 
 	/*NOTREACHED*/
