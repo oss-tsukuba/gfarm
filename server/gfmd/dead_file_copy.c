@@ -565,7 +565,7 @@ handle_removal_results(struct dead_file_copy *dfc)
 /*
  * PREREQUISITE: nothing (thread main)
  * LOCKS: config_var_mutex, removal_finishedq.mutex -> dfc->mutex,
- *	and the locks of handle_removal_result()
+ *	and the locks of handle_removal_results()
  * SLEEPS: yes (gfarm_read_only_disabled_wait(),
  *	removal_finishedq.not_empty, giant_lock, dbq.mutex)
  */
