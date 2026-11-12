@@ -688,7 +688,7 @@ gfp_xdr_vrecv_sized_x(struct gfp_xdr *conn, int just, int do_timeout,
 			if (minus)
 				*op = -*op;
 #else
-				*op = ((gfarm_int64_t)lv[0] << 32) | lv[1];
+				*op = ((gfarm_uint64_t)lv[0] << 32) | lv[1];
 #endif
 			format_parsed++;
 			continue;
