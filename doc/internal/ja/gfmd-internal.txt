@@ -19,6 +19,22 @@
     gfmdc_wait_journal_recv_threads() で同期スレーブからの返答を待つ。
     待ち時間の上限は synchronous_replication_timeout で、タイムアウトの度に
     倍にして、最大 120秒まで待つ。（これは、あまり望ましくない…）
+  上記の fdatasync と同期スレーブへの転送は、トランザクションの終了ごとに
+  行なわれる。ただし以下の 2箇所では、db_journal_set_nosync() で
+  トランザクション終了時の同期を省略し、giant_lock を一旦解放して
+  再獲得してから、db_journal_sync() で同期する。同期は、それ以前の
+  レコードも全て対象とするので、giant_lock の再獲得を待つ間に
+  他のスレッドのトランザクションが同期していれば、db_journal_sync() は
+  何もしない。
+  - removal_finalizer() による、dead_file_copy の削除結果の処理
+  - gfm_async_server_replication_result() による、複製結果の処理
+    (gfsd への返答は、同期の後で行なう)
+  同期を省略したまま放置してはいけない。非同期スレーブへは別のスレッドが
+  転送するため、次の更新があるまで、同期スレーブが非同期スレーブより
+  遅れた状態になってしまう。
+  fdatasync も同期スレーブもなく、同期が待ちを伴わない場合
+  (db_journal_sync_may_block() が偽の場合) は、giant_lock を解放せず、
+  その場で同期する。
 
 当初の実装では、db_access.h のインターフェースは決して失敗しないものと
 していた。現在は gfarm_error_t を返すが、journal file への書き込みや
@@ -953,6 +969,8 @@ host_busyq		back_channel の送信が busy だったため、再試行待ち
   まとめて処理する。トランザクションの終了ごとに、giant_lock を保持したまま
   journal file の fdatasync と同期スレーブへの転送を行うため、1個ずつ
   処理すると、レプリカ1個の削除ごとにそれらの待ちが生じるからである。
+  さらに、このトランザクションの終了時には同期せず、giant_lock を解放
+  した後で同期する (設計指針の db_journal_sync() の説明を参照)。
   - read only モードの場合は、removal_finishedq に戻す。
   - 成功 (ないし GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY) の場合は、
     dead_file_copy_free() で解放する。

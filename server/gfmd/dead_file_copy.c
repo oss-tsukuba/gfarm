@@ -521,7 +521,7 @@ handle_removal_result(struct dead_file_copy *dfc)
 static void
 handle_removal_results(struct dead_file_copy *dfc)
 {
-	int n = 0, transaction = 0;
+	int n = 0, transaction = 0, sync_later = 0;
 	static const char diag[] = "handle_removal_results";
 
 	/* giant_lock is necessary before calling dead_file_copy_free() */
@@ -546,20 +546,33 @@ handle_removal_results(struct dead_file_copy *dfc)
 	    (dfc = removal_finishedq_trydequeue()) != NULL);
 	if (transaction) {
 		/*
-		 * do not wait until this transaction is synchronized to
-		 * the journal file and the synchronous slaves.
-		 * even if it is lost by a crash, the dead_file_copy remains,
-		 * and its removal will be requested again, and that results in
-		 * GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY, which is OK.
-		 * a transaction synchronized later covers this one too,
-		 * thus, a later update never survives without this one.
+		 * do not synchronize this transaction to the journal file
+		 * and the synchronous slaves here, to let a transaction of
+		 * another thread synchronize it.  nobody waits for this one.
 		 */
 		db_journal_set_nosync(1);
 		db_end(diag);
 		db_journal_set_nosync(0);
+		/* if the synchronization does not wait, do it here */
+		sync_later = db_journal_sync_may_block();
+		if (!sync_later)
+			db_journal_sync();
 	}
 
 	giant_unlock();
+
+	if (sync_later) {
+		/*
+		 * this is necessary, otherwise the synchronous slaves stay
+		 * behind the asynchronous slaves until the next update.
+		 * while this thread is waiting for giant_lock again,
+		 * a transaction of another thread may have synchronized it,
+		 * and then db_journal_sync() does nothing.
+		 */
+		giant_lock();
+		db_journal_sync();
+		giant_unlock();
+	}
 }
 
 /*
