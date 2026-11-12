@@ -17,6 +17,7 @@
 #include "subr.h"
 #include "callout.h"
 #include "db_access.h"
+#include "db_journal.h"
 #include "host.h"
 #include "inode.h"
 #include "gfmd.h"	/* sync_protocol_get_thrpool() */
@@ -543,8 +544,20 @@ handle_removal_results(struct dead_file_copy *dfc)
 		handle_removal_result(dfc);
 	} while (++n < REMOVAL_RESULT_BATCH_MAX &&
 	    (dfc = removal_finishedq_trydequeue()) != NULL);
-	if (transaction)
+	if (transaction) {
+		/*
+		 * do not wait until this transaction is synchronized to
+		 * the journal file and the synchronous slaves.
+		 * even if it is lost by a crash, the dead_file_copy remains,
+		 * and its removal will be requested again, and that results in
+		 * GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY, which is OK.
+		 * a transaction synchronized later covers this one too,
+		 * thus, a later update never survives without this one.
+		 */
+		db_journal_set_nosync(1);
 		db_end(diag);
+		db_journal_set_nosync(0);
+	}
 
 	giant_unlock();
 }

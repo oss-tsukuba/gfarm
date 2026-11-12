@@ -1824,6 +1824,23 @@ gfmdc_journal_sync_mdhost_add_job(struct mdhost *mh, void *closure)
 	return (1);
 }
 
+/*
+ * returns whether gfmdc_journal_sync_multiple() waits for the journal file
+ * or a synchronous slave, or not.
+ *
+ * PREREQUISITE: giant_lock
+ */
+static int
+gfmdc_journal_sync_may_block(void)
+{
+	int nhosts = 0;
+
+	if (gfarm_get_journal_sync_file())
+		return (1);
+	mdhost_foreach(gfmdc_journal_sync_count_host, &nhosts);
+	return (nhosts > 0);
+}
+
 /* PREREQUISITE: giant_lock */
 static gfarm_error_t
 gfmdc_journal_sync_multiple(gfarm_uint64_t seqnum)
@@ -2142,6 +2159,7 @@ gfmdc_sync_init(void)
 
 	si->nrecv_threads = 0;
 	db_journal_set_sync_op(gfmdc_journal_sync_multiple);
+	db_journal_set_sync_may_block_op(gfmdc_journal_sync_may_block);
 }
 
 

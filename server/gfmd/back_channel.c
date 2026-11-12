@@ -38,6 +38,7 @@
 #include "host.h"
 #include "inode.h"
 #include "dead_file_copy.h"
+#include "db_journal.h"
 
 #include "back_channel.h"
 #include "known_network.h"
@@ -774,6 +775,7 @@ gfm_async_server_replication_result(struct host *host,
 	size_t cksum_len = 0;
 	char cksum[GFM_PROTO_CKSUM_MAXLEN];
 	gfarm_int32_t cksum_result_flags = 0;
+	int sync_later;
 	const char *diag = cksum_protocol ?
 	    "GFM_PROTO_REPLICATION_CKSUM_RESULT" :
 	    "GFM_PROTO_REPLICATION_RESULT";
@@ -799,12 +801,35 @@ gfm_async_server_replication_result(struct host *host,
 		return (e);
 
 	giant_lock(); /* XXX FIXME: deadlock */
+	/*
+	 * do not synchronize the transaction of inode_replicated() to
+	 * the journal file and the synchronous slaves here,
+	 * to let the results of other replicas share one synchronization.
+	 */
+	db_journal_set_nosync(1);
 	e = peer_replicated(peer, host, ino, gen, handle,
 	    src_errcode, dst_errcode, filesize,
 	    cksum_protocol, cksum_type, cksum_len, cksum, cksum_result_flags);
+	db_journal_set_nosync(0);
+	/* if the synchronization does not wait, do it here as before */
+	sync_later = db_journal_sync_may_block();
+	if (!sync_later)
+		db_journal_sync();
 	free(cksum_type);
 	trace_seq_num = trace_log_get_sequence_number(),
 	giant_unlock();
+
+	if (sync_later) {
+		/*
+		 * synchronize it before the reply.
+		 * while this thread is waiting for giant_lock again,
+		 * a transaction of another thread may have synchronized it,
+		 * and then db_journal_sync() does nothing.
+		 */
+		giant_lock(); /* XXX FIXME: deadlock */
+		db_journal_sync();
+		giant_unlock();
+	}
 
 	/*
 	 * XXX FIXME

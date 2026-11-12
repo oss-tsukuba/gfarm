@@ -27,6 +27,10 @@ gfarm_error_t db_journal_recvq_enter(gfarm_uint64_t, gfarm_uint64_t, int,
 	unsigned char *);
 void db_journal_cancel_recvq();
 void db_journal_set_sync_op(gfarm_error_t (*func)(gfarm_uint64_t));
+void db_journal_set_sync_may_block_op(int (*)(void));
+int db_journal_sync_may_block(void);
+void db_journal_set_nosync(int);
+gfarm_error_t db_journal_sync(void);
 gfarm_error_t db_journal_file_writer_sync(void);
 void db_journal_wait_until_readable(void);
 

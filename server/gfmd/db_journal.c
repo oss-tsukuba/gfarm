@@ -61,6 +61,10 @@ static struct journal_file	*self_jf;
 static const struct db_ops	*journal_apply_ops;
 static void			(*db_journal_fail_store_op)(void);
 static gfarm_error_t		(*db_journal_sync_op)(gfarm_uint64_t);
+static int			(*db_journal_sync_may_block_op)(void);
+/* the followings are protected by giant_lock */
+static int			journal_nosync;
+static gfarm_uint64_t		journal_seqnum_synced;
 
 struct db_journal_recv_info {
 	gfarm_uint64_t from_sn, to_sn;
@@ -380,6 +384,61 @@ void
 db_journal_set_sync_op(gfarm_error_t (*func)(gfarm_uint64_t))
 {
 	db_journal_sync_op = func;
+}
+
+void
+db_journal_set_sync_may_block_op(int (*func)(void))
+{
+	db_journal_sync_may_block_op = func;
+}
+
+/*
+ * returns whether db_journal_sync_op may wait for I/O or not.
+ * if it does not, there is no reason to postpone the synchronization.
+ *
+ * PREREQUISITE: giant_lock
+ */
+int
+db_journal_sync_may_block(void)
+{
+	if (db_journal_sync_op == NULL)
+		return (0);
+	if (db_journal_sync_may_block_op == NULL)
+		return (1);
+	return (db_journal_sync_may_block_op());
+}
+
+/*
+ * while `nosync' is set, the end of a transaction is not synchronized
+ * to the journal file and the synchronous slaves.
+ * the records are synchronized at the end of the next transaction which is
+ * synchronized, or by db_journal_sync().
+ *
+ * PREREQUISITE: giant_lock
+ */
+void
+db_journal_set_nosync(int nosync)
+{
+	journal_nosync = nosync;
+}
+
+/*
+ * synchronize the records which have been written without synchronization.
+ *
+ * PREREQUISITE: giant_lock, and not in a transaction
+ * SLEEPS: yes (see db_journal_sync_op)
+ */
+gfarm_error_t
+db_journal_sync(void)
+{
+	gfarm_uint64_t seqnum = journal_seqnum_pre;
+
+	if (db_journal_sync_op == NULL ||
+	    seqnum == GFARM_METADB_SERVER_SEQNUM_INVALID ||
+	    seqnum <= journal_seqnum_synced)
+		return (GFARM_ERR_NO_ERROR);
+	journal_seqnum_synced = seqnum;
+	return (db_journal_sync_op(seqnum));
 }
 
 /*
@@ -738,7 +797,8 @@ db_journal_write(gfarm_uint64_t seqnum, enum journal_operation ope,
 		db_journal_fail_store_op();
 		return (e);
 	}
-	if (ope == GFM_JOURNAL_END && db_journal_sync_op) {
+	if (ope == GFM_JOURNAL_END && db_journal_sync_op && !journal_nosync) {
+		journal_seqnum_synced = seqnum;
 		if ((e = db_journal_sync_op(seqnum)) != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_1003053,
 			    "%s", gfarm_error_string(e));
