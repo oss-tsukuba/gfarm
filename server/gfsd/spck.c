@@ -46,21 +46,46 @@ static pid_t *gfs_spool_check_parallel_pids;
 
 static gfarm_ino_t inum_step_per_process, inum_step;
 
+/*
+ * gfmd may be restarted or failed over during the spool check.
+ * the requests to gfmd in this file are sent again after a reconnection,
+ * if a connection error happens.
+ */
+static void
+reconnect_gfm_server(const char *diag, gfarm_error_t e)
+{
+	gflog_notice(GFARM_MSG_UNFIXED,
+	    "spool_check: %s: %s, reconnecting to gfmd",
+	    diag, gfarm_error_string(e));
+	free_gfm_server();
+	if ((e = connect_gfm_server(diag)) != GFARM_ERR_NO_ERROR)
+		fatal(GFARM_MSG_UNFIXED,
+		    "spool_check: %s: cannot reconnect to gfmd: %s",
+		    diag, gfarm_error_string(e));
+}
+
 static gfarm_error_t
 gfm_client_replica_add(gfarm_ino_t inum, gfarm_uint64_t gen, gfarm_off_t size)
 {
 	gfarm_error_t e;
 	static const char diag[] = "replica_add";
 
-	if ((e = gfm_client_replica_add_request(gfm_server, inum, gen, size))
-	    != GFARM_ERR_NO_ERROR)
-		fatal_metadb_proto(GFARM_MSG_1000601, "replica_add request",
-		    diag, e);
-	else if ((e = gfm_client_replica_add_result(gfm_server))
-	    != GFARM_ERR_NO_ERROR) {
-		if (debug_mode && e != GFARM_ERR_ALREADY_EXISTS)
-			gflog_info(GFARM_MSG_1000602, "replica_add result: %s",
-			    gfarm_error_string(e));
+	for (;;) {
+		if ((e = gfm_client_replica_add_request(gfm_server,
+		    inum, gen, size)) != GFARM_ERR_NO_ERROR) {
+			if (!IS_CONNECTION_ERROR(e))
+				fatal_metadb_proto(GFARM_MSG_1000601,
+				    "replica_add request", diag, e);
+		} else if ((e = gfm_client_replica_add_result(gfm_server))
+		    != GFARM_ERR_NO_ERROR) {
+			if (debug_mode && e != GFARM_ERR_ALREADY_EXISTS)
+				gflog_info(GFARM_MSG_1000602,
+				    "replica_add result: %s",
+				    gfarm_error_string(e));
+		}
+		if (!IS_CONNECTION_ERROR(e))
+			break;
+		reconnect_gfm_server(diag, e);
 	}
 	return (e);
 }
@@ -74,15 +99,27 @@ gfm_client_replica_get_my_entries_range(
 	gfarm_error_t e;
 	static const char diag[] = "replica_get_my_entries2";
 
-	if ((e = gfm_client_replica_get_my_entries_range_request(
-	    gfm_server, start_inum, n_inum, *np)) != GFARM_ERR_NO_ERROR)
-		fatal_metadb_proto(GFARM_MSG_1003516, "request", diag, e);
-	else if ((e = gfm_client_replica_get_my_entries_range_result(
-	    gfm_server, np, flagsp, inumsp, gensp, sizesp))
-	    != GFARM_ERR_NO_ERROR) {
-		if (debug_mode)
-			gflog_info(GFARM_MSG_1003517, "%s result: %s", diag,
-			    gfarm_error_string(e));
+	int n = *np;
+
+	for (;;) {
+		*np = n;
+		if ((e = gfm_client_replica_get_my_entries_range_request(
+		    gfm_server, start_inum, n_inum, *np))
+		    != GFARM_ERR_NO_ERROR) {
+			if (!IS_CONNECTION_ERROR(e))
+				fatal_metadb_proto(GFARM_MSG_1003516,
+				    "request", diag, e);
+		} else if ((e = gfm_client_replica_get_my_entries_range_result(
+		    gfm_server, np, flagsp, inumsp, gensp, sizesp))
+		    != GFARM_ERR_NO_ERROR) {
+			if (debug_mode)
+				gflog_info(GFARM_MSG_1003517,
+				    "%s result: %s", diag,
+				    gfarm_error_string(e));
+		}
+		if (!IS_CONNECTION_ERROR(e))
+			break;
+		reconnect_gfm_server(diag, e);
 	}
 	return (e);
 }
@@ -96,15 +133,39 @@ gfm_client_replica_create_file_in_lost_found(
 	gfarm_error_t e;
 	static const char diag[] = "replica_create_file_in_lost_found";
 
-	if ((e = gfm_client_replica_create_file_in_lost_found_request(
-	    gfm_server, inum_old, gen_old, size, mtime))
-	    != GFARM_ERR_NO_ERROR)
-		fatal_metadb_proto(GFARM_MSG_1003518, "request", diag, e);
-	else if ((e = gfm_client_replica_create_file_in_lost_found_result(
-	    gfm_server, inum_newp, gen_newp)) != GFARM_ERR_NO_ERROR) {
-		if (debug_mode)
-			gflog_info(GFARM_MSG_1003519, "%s result: %s", diag,
-			    gfarm_error_string(e));
+	for (;;) {
+		if ((e = gfm_client_replica_create_file_in_lost_found_request(
+		    gfm_server, inum_old, gen_old, size, mtime))
+		    != GFARM_ERR_NO_ERROR) {
+			if (!IS_CONNECTION_ERROR(e))
+				fatal_metadb_proto(GFARM_MSG_1003518,
+				    "request", diag, e);
+		} else if ((e =
+		    gfm_client_replica_create_file_in_lost_found_result(
+		    gfm_server, inum_newp, gen_newp)) != GFARM_ERR_NO_ERROR) {
+			if (debug_mode)
+				gflog_info(GFARM_MSG_1003519,
+				    "%s result: %s", diag,
+				    gfarm_error_string(e));
+		}
+		if (!IS_CONNECTION_ERROR(e))
+			break;
+		reconnect_gfm_server(diag, e);
+	}
+	return (e);
+}
+
+static gfarm_error_t
+spool_check_replica_lost(gfarm_ino_t inum, gfarm_uint64_t gen)
+{
+	gfarm_error_t e;
+	static const char diag[] = "replica_lost";
+
+	for (;;) {
+		e = gfm_client_replica_lost(inum, gen);
+		if (!IS_CONNECTION_ERROR(e))
+			break;
+		reconnect_gfm_server(diag, e);
 	}
 	return (e);
 }
@@ -128,16 +189,9 @@ move_or_copy_to_lost_found(int op, const char *file, int fd, struct stat *stp,
 
 	mtime.tv_sec = stp->st_mtime;
 	mtime.tv_nsec = gfarm_stat_mtime_nsec(stp);
-	for (;;) {
-		e = gfm_client_replica_create_file_in_lost_found(
-		    inum, gen, (gfarm_off_t)stp->st_size,
-		    &mtime, &inum_new, &gen_new);
-		if (!IS_CONNECTION_ERROR(e))
-			break;
-		free_gfm_server();
-		if ((e = connect_gfm_server(diag)) != GFARM_ERR_NO_ERROR)
-			fatal(GFARM_MSG_1004392, "die");
-	}
+	e = gfm_client_replica_create_file_in_lost_found(
+	    inum, gen, (gfarm_off_t)stp->st_size,
+	    &mtime, &inum_new, &gen_new);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1003520,
 		    "%s (%lld:%lld): %s: %s",
@@ -214,16 +268,8 @@ move_or_copy_to_lost_found(int op, const char *file, int fd, struct stat *stp,
 		break;
 	}
 	if (e == GFARM_ERR_NO_ERROR) {
-		for (;;) {
-			e = gfm_client_replica_add(inum_new, gen_new,
-			    (gfarm_off_t)stp->st_size);
-			if (!IS_CONNECTION_ERROR(e))
-				break;
-			free_gfm_server();
-			if ((e = connect_gfm_server(diag))
-			    != GFARM_ERR_NO_ERROR)
-				fatal(GFARM_MSG_1004393, "die");
-		}
+		e = gfm_client_replica_add(inum_new, gen_new,
+		    (gfarm_off_t)stp->st_size);
 		if (e != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_1003523,
 			    "%s: replica_add failed: %s", newpath,
@@ -236,7 +282,7 @@ move_or_copy_to_lost_found(int op, const char *file, int fd, struct stat *stp,
 static void
 replica_lost(gfarm_ino_t inum, gfarm_uint64_t gen)
 {
-	gfarm_error_t e = gfm_client_replica_lost(inum, gen);
+	gfarm_error_t e = spool_check_replica_lost(inum, gen);
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1003527,
@@ -600,7 +646,7 @@ check_existing(
 	/* else: This file will be checked by gfm_client_replica_add(). */
 
 	if (lost) { /* delete the replica-reference from metadata */
-		e = gfm_client_replica_lost(inum, gen);
+		e = spool_check_replica_lost(inum, gen);
 		if (e != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_1003537,
 			    "replica_lost(%llu, %llu): %s",
