@@ -262,6 +262,11 @@ file_copy_is_being_removed(struct file_copy *file_copy)
 	return (FILE_COPY_IS_BEING_REMOVED(file_copy));
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: total_num_inodes_mutex
+ * SLEEPS: no
+ */
 gfarm_uint64_t
 inode_total_num(void)
 {
@@ -812,6 +817,11 @@ inode_free_list_init(void)
 	inode_free_list_initialized = 1;
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: total_num_inodes_mutex
+ * SLEEPS: no
+ */
 struct inode *
 inode_alloc_num(gfarm_ino_t inum)
 {
@@ -899,6 +909,11 @@ inode_alloc(void)
 		return (inode_alloc_num(inode_free_index));
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: total_num_inodes_mutex
+ * SLEEPS: no
+ */
 static void
 inode_clear(struct inode *inode)
 {
@@ -1046,7 +1061,14 @@ rep_fail_set(int *rep_failp, int reason)
 		*rep_failp |= reason;
 }
 
-/* rep_failp may be NULL, otherwise INODE_REP_FAIL_* are OR-ed into it */
+/*
+ * rep_failp may be NULL, otherwise INODE_REP_FAIL_* are OR-ed into it
+ *
+ * PREREQUISITE: giant_lock
+ * LOCKS: abstract_host::mutex,
+ *	the locks of file_replicating_new() and inode_replication_request()
+ * SLEEPS: yes (see inode_replication_request())
+ */
 gfarm_error_t
 inode_schedule_replication_within_scope(
 	struct inode *inode, struct dirset *tdirset, int n_desired,
@@ -1234,6 +1256,11 @@ inode_schedule_replication_within_scope(
  * and being_removed[] but they may be abled to be used later.
  *
  * srcs[] must be different from existing[].
+ *
+ * PREREQUISITE: giant_lock
+ * LOCKS: abstract_host::mutex,
+ *	the locks of file_replicating_new() and inode_replication_request()
+ * SLEEPS: yes (see inode_replication_request())
  */
 static gfarm_error_t
 inode_schedule_replication_from_all(
@@ -1271,6 +1298,11 @@ inode_schedule_replication_from_all(
  * and being_removed[] but they may be abled to be used later.
  *
  * srcs[] must be different from existing[].
+ *
+ * PREREQUISITE: giant_lock
+ * LOCKS: abstract_host::mutex,
+ *	the locks of file_replicating_new() and inode_replication_request()
+ * SLEEPS: yes (see inode_replication_request())
  */
 gfarm_error_t
 inode_schedule_replication(
@@ -1330,6 +1362,10 @@ inode_schedule_replication(
  * NOTE: excluding_list may or may not include spool_host.
  *	it doesn't if this is called from update_replicas(), but
  *	it does if this this is called from inode_check_pending_replication().
+ *
+ * PREREQUISITE: giant_lock
+ * LOCKS: the locks of inode_schedule_replication()
+ * SLEEPS: yes (see inode_replication_request())
  */
 static gfarm_error_t
 make_replicas_except(struct inode *inode, struct dirset *tdirset,
@@ -1414,7 +1450,17 @@ static gfarm_error_t
 remove_replica_entity(struct inode *, gfarm_int64_t, struct host *,
 	int, struct dirset *, struct dead_file_copy **);
 
-/* spool_host may be NULL, if GFARM_FILE_TRUNC_PENDING */
+/*
+ * spool_host may be NULL, if GFARM_FILE_TRUNC_PENDING
+ *
+ * PREREQUISITE: giant_lock
+ * LOCKS: abstract_host::mutex, dfc->mutex,
+ *	removal_pendingq.mutex -> dfc->mutex,
+ *	the locks of remove_replica_entity(), make_replicas_except(),
+ *	file_replicating_new() and inode_replication_request(),
+ *	rep_prioq.mutex, replica_check_mutex
+ * SLEEPS: yes (dbq.mutex, see also inode_replication_request())
+ */
 static void
 update_replicas(struct inode *inode, struct host *spool_host,
 	gfarm_int64_t old_gen, int start_replication,
@@ -1574,6 +1620,13 @@ update_replicas(struct inode *inode, struct host *spool_host,
 	}
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: config_var_mutex, dbq.mutex,
+ *	the locks of remove_replica_entity(),
+ *	total_num_inodes_mutex, dead_file_copy_scan.mutex
+ * SLEEPS: yes (dbq.mutex)
+ */
 static void
 inode_remove(struct inode *inode, struct dirset *tdirset)
 {
@@ -1627,6 +1680,11 @@ inode_remove(struct inode *inode, struct dirset *tdirset)
 		dead_file_copy_inode_status_changed(inode->i_number);
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: the locks of inode_remove()
+ * SLEEPS: yes (dbq.mutex), if the inode is removed
+ */
 static int
 inode_remove_try(struct inode *inode, struct dirset *tdirset)
 {
@@ -4395,7 +4453,15 @@ completed:
 }
 #endif /* non-recursive version */
 
-/* returns 1, if stopped, or tree is modified during giant_lock release */
+/*
+ * returns 1, if stopped, or tree is modified during giant_lock release
+ *
+ * PREREQUISITE: giant_lock
+ * LOCKS: giant_lock (re-acquired after (*interval)()),
+ *	and the locks of (*callback)() and (*interval)()
+ * SLEEPS: yes (giant_lock, if (*callback)() returns
+ *	INODE_SCAN_RELEASE_GIANT_LOCK)
+ */
 int
 inode_foreach_in_subtree_interruptible(struct inode *inode, void *closure,
 	enum inode_scan_choice (*callback)(void *, struct inode *),
@@ -5310,6 +5376,13 @@ inode_fhclose_read(struct inode *inode, struct gfarm_timespec *atime)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: abstract_host::mutex, config_var_mutex,
+ *	the locks of make_replicas_except(),
+ *	rep_prioq.mutex, replica_check_mutex
+ * SLEEPS: yes (see make_replicas_except())
+ */
 void
 inode_check_pending_replication(struct file_opening *fo)
 {
@@ -6081,7 +6154,13 @@ inode_schedule_file_default(struct file_opening *opening,
 gfarm_error_t (*inode_schedule_file)(struct file_opening *, struct peer *,
 	gfarm_int32_t *, struct host ***) = inode_schedule_file_default;
 
-/* remove file_copy metadata on an already removed filesystem node */
+/*
+ * remove file_copy metadata on an already removed filesystem node
+ *
+ * PREREQUISITE: giant_lock
+ * LOCKS: abstract_host::mutex, dirquota_check_ctl.mutex
+ * SLEEPS: no
+ */
 void
 inode_remove_file_copy_for_invalid_host(gfarm_ino_t inum)
 {
@@ -6163,6 +6242,11 @@ inode_remove_replica_in_cache(struct inode *inode, struct host *spool_host)
 
 static unsigned long long file_replicating_count = 0;
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: giant_lock
+ * SLEEPS: yes (giant_lock)
+ */
 void
 replication_info(void)
 {
@@ -6187,6 +6271,10 @@ replication_info(void)
 
 /*
  * PREREQUISITE: giant_lock
+ * LOCKS: abstract_host::mutex, dirquota_check_ctl.mutex,
+ *	and the locks of host_replicating_new(),
+ *	and peer::replication_mutex, peer_closing_queue.mutex in error case
+ * SLEEPS: no
  */
 static gfarm_error_t
 file_replicating_new(struct inode *inode, struct host *dst, struct host *src,
@@ -6265,6 +6353,9 @@ file_replicating_new(struct inode *inode, struct host *dst, struct host *src,
 
 /*
  * PREREQUISITE: giant_lock
+ * LOCKS: peer::replication_mutex, peer_closing_queue.mutex,
+ *	and the locks of inode_remove() via inode_remove_try()
+ * SLEEPS: yes (dbq.mutex), if the inode is removed
  */
 static void
 file_replicating_free(struct file_replicating *fr)
@@ -6303,6 +6394,10 @@ file_replicating_free(struct file_replicating *fr)
 /*
  * this does not generate dead_file_copy, thus, only can be used
  * for an error at async_back_channel_replication_request().
+ *
+ * PREREQUISITE: giant_lock
+ * LOCKS: the locks of file_replicating_free()
+ * SLEEPS: yes (dbq.mutex, see file_replicating_free())
  */
 static void
 file_replicating_free_by_error_before_request(struct file_replicating *fr)
@@ -6328,6 +6423,14 @@ file_replicating_get_gen(struct file_replicating *fr)
  * NOTE:
  * - caller of this function should acquire giant_lock as well
  * - caller of this function should NOT call db_begin()/db_end() around this
+ *
+ * PREREQUISITE: giant_lock
+ * LOCKS: dbq.mutex, dirquota_check_ctl.mutex, abstract_host::mutex,
+ *	total_disk_mutex, dfc->mutex, removal_pendingq.mutex -> dfc->mutex,
+ *	dead_file_copy_scan.mutex, config_var_mutex, replica_check_mutex,
+ *	and the locks of inode_remove_replica_incomplete() and
+ *	file_replicating_free()
+ * SLEEPS: yes (dbq.mutex)
  */
 gfarm_error_t
 inode_replicated(struct file_replicating *fr,
@@ -6639,6 +6742,11 @@ inode_dead_file_copy_added(gfarm_ino_t inum, gfarm_int64_t igen,
 /*
  * 'valid == 0' means that the replica is not ready right now, and
  * going to be created or removed.
+ *
+ * PREREQUISITE: giant_lock
+ * LOCKS: dirquota_check_ctl.mutex,
+ *	and abstract_host::mutex, total_disk_mutex, dbq.mutex if valid
+ * SLEEPS: yes (dbq.mutex) if valid, otherwise no
  */
 gfarm_error_t
 inode_add_replica(struct inode *inode, struct host *spool_host, int valid)
@@ -6672,6 +6780,12 @@ inode_add_file_copy_in_cache(struct inode *inode, struct host *host)
 	    inode_add_replica_internal(inode, host, FILE_COPY_VALID, 1, 1));
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: dirquota_check_ctl.mutex, abstract_host::mutex, total_disk_mutex,
+ *	dbq.mutex
+ * SLEEPS: yes (dbq.mutex)
+ */
 static gfarm_error_t
 remove_replica_metadata(struct inode *inode, struct host *spool_host,
 	struct dirset *tdirset)
@@ -6692,6 +6806,13 @@ remove_replica_metadata(struct inode *inode, struct host *spool_host,
 	return (e);
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: dfc_allq.mutex, dbq.mutex, dfc->mutex,
+ *	removal_pendingq.mutex -> dfc->mutex,
+ *	and the locks of remove_replica_metadata() if valid
+ * SLEEPS: yes (dbq.mutex)
+ */
 static gfarm_error_t
 remove_replica_entity(struct inode *inode, gfarm_int64_t gen,
 	struct host *spool_host, int valid, struct dirset *tdirset,
@@ -6719,6 +6840,11 @@ remove_replica_entity(struct inode *inode, gfarm_int64_t gen,
 	return (dfc == NULL ? GFARM_ERR_NO_MEMORY : GFARM_ERR_NO_ERROR);
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: nothing
+ * SLEEPS: no
+ */
 void
 inode_remove_replica_completed(gfarm_ino_t inum, gfarm_int64_t igen,
 	struct host *host)
@@ -6761,6 +6887,13 @@ inode_replica_is_removable(struct inode *inode, struct file_copy *copy,
 	return (GFARM_ERR_NO_ERROR); /* removable */
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: abstract_host::mutex, config_var_mutex,
+ *	dfc_allq.mutex, dfc->mutex,
+ *	and the locks of remove_replica_entity() and remove_replica_metadata()
+ * SLEEPS: yes (dbq.mutex)
+ */
 static gfarm_error_t
 inode_remove_replica_internal(struct inode *inode, struct host *spool_host,
 	gfarm_int64_t gen, struct replica_spec *replica_spec,
@@ -6928,6 +7061,12 @@ inode_remove_replica_internal(struct inode *inode, struct host *spool_host,
 	return (e);
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: abstract_host::mutex, config_var_mutex, dfc_allq.mutex, dfc->mutex,
+ *	and the locks of remove_replica_metadata()
+ * SLEEPS: yes (dbq.mutex)
+ */
 gfarm_error_t
 inode_remove_replica_lost(
 	struct inode *inode, struct host *spool_host, gfarm_int64_t gen)
@@ -6940,6 +7079,11 @@ inode_remove_replica_lost(
 	    NULL, NULL, 0, 1, 1, NULL));
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: the locks of inode_remove_replica_internal()
+ * SLEEPS: yes (dbq.mutex)
+ */
 gfarm_error_t
 inode_remove_replica_protected(struct inode *inode, struct host *spool_host,
 	struct replica_spec *replica_spec, struct dirset *tdirset)
@@ -6961,7 +7105,13 @@ inode_remove_replica_orphan(struct inode *inode, struct host *spool_host)
 	    inode_get_gen(inode), NULL, NULL, 1, 0, 1, NULL));
 }
 
-/* remove an incomplete replica, when a replication fails */
+/*
+ * remove an incomplete replica, when a replication fails
+ *
+ * PREREQUISITE: giant_lock
+ * LOCKS: the locks of inode_remove_replica_internal()
+ * SLEEPS: yes (dbq.mutex)
+ */
 void
 inode_remove_replica_incomplete(struct inode *inode, struct host *spool_host,
 	gfarm_int64_t gen)
@@ -7106,6 +7256,13 @@ inode_replication_get_cksum_mode(struct inode *inode, struct host *src,
  *			src-gfsd calculates cksum, and gfmd stores the cksum
  *
  * NOTE: the memory owner of `fr' is changed to this callee function.
+ *
+ * PREREQUISITE: giant_lock
+ * LOCKS: abstract_host::mutex, thread_pool::mutex, thrjobq::mutex,
+ *	and the locks of file_replicating_free_by_error_before_request()
+ *	in error case
+ * SLEEPS: yes (thrjobq::nonfull if back_channel_send_thread_pool is full,
+ *	and dbq.mutex in error case)
  */
 gfarm_error_t
 inode_replication_request(
@@ -7260,6 +7417,11 @@ inode_replica_list_by_name_with_dead_host(struct inode *inode,
 	return (inode_replica_list_by_name_common(inode, 0, np, hostsp));
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: abstract_host::mutex, dfc_allq.mutex -> abstract_host::mutex
+ * SLEEPS: no
+ */
 gfarm_error_t
 inode_replica_info_get(struct inode *inode, gfarm_int32_t iflags,
 	gfarm_int32_t *np,

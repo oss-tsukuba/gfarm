@@ -2604,7 +2604,7 @@ This parameter is only available in gfmd.conf.
 <term><token>metadb_server_slave_max_size</token> <parameter moreinfo="none">number</parameter></term>
 <listitem>
 <para>This parameter specifies the maximum number of slave gfmds.
-The default is "32".
+The default is "16".
 </para>
 <para>
 This parameter is only available in gfmd.conf.

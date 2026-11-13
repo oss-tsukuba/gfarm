@@ -129,21 +129,31 @@ gfarm_lru_cache_delref_entry(struct gfarm_lru_cache *cache,
 
 /*
  * PREREQUISITE: mutex in the argument is already held.
+ *
+ * purge_entry() is called with the mutex held,
+ * to make the entry unreachable from others before the mutex is unlocked.
+ * dispose_entry() is called without the mutex.
  */
 void
 gfarm_lru_cache_gc(struct gfarm_lru_cache *cache, int free_target,
+	void (*purge_entry)(struct gfarm_lru_entry *, void *),
 	void (*dispose_entry)(struct gfarm_lru_entry *, void *),
 	void *closure, const char *entry_name,
 	pthread_mutex_t *mutex, const char *diag_what)
 {
-	struct gfarm_lru_entry *entry, *prev;
+	struct gfarm_lru_entry *entry;
 	static const char diag[] = "gfarm_lru_cache_gc";
 
-	/* search least recently used connection */
-	for (entry = cache->list_head.prev;
-	    cache->free_cached_entries > free_target; entry = prev) {
-		prev = entry->prev;
-
+	while (cache->free_cached_entries > free_target) {
+		/*
+		 * search least recently used free entry from the tail
+		 * every time, because the list may be changed by others
+		 * while the mutex is unlocked
+		 */
+		for (entry = cache->list_head.prev;
+		    entry != &cache->list_head && entry->acquired > 0;
+		    entry = entry->prev)
+			;
 		if (entry == &cache->list_head) {
 			gflog_error(GFARM_MSG_1000004,
 			    "free %s/target = %d/%d", entry_name,
@@ -154,14 +164,13 @@ gfarm_lru_cache_gc(struct gfarm_lru_cache *cache, int free_target,
 			    "This shouldn't happen");
 		}
 
-		if (entry->acquired <= 0) {
-			gfarm_lru_cache_purge_entry(entry);
-			--cache->free_cached_entries;
+		gfarm_lru_cache_purge_entry(entry);
+		--cache->free_cached_entries;
+		(*purge_entry)(entry, closure);
 
-			gfarm_mutex_unlock(mutex, diag, diag_what);
-			/* abandon this free entry */
-			(*dispose_entry)(entry, closure);
-			gfarm_mutex_lock(mutex, diag, diag_what);
-		}
+		gfarm_mutex_unlock(mutex, diag, diag_what);
+		/* abandon this free entry */
+		(*dispose_entry)(entry, closure);
+		gfarm_mutex_lock(mutex, diag, diag_what);
 	}
 }

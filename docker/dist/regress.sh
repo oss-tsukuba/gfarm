@@ -26,6 +26,19 @@ export $ENV
 
 DISTDIR=$PWD
 
+# usage: regress.sh [ root | user ]
+#	root: run the regression test with the root privilege on c1
+#	user: run the regression test as a user on c2
+#	both of them are run when no argument is specified
+REGRESS_ROOT=true
+REGRESS_USER=true
+case ${1:-} in
+'')	;;
+root)	REGRESS_USER=false ;;
+user)	REGRESS_ROOT=false ;;
+*)	echo >&2 "usage: $PROG [ root | user ]"; exit 2 ;;
+esac
+
 is_asan_enabled()
 {
 	ASAN_OPTIONS=help=true:halt_on_error=false gfstatus -V 2>&1 | sed q |
@@ -131,19 +144,26 @@ DATE=$(date +%F.%H_%M_%S)
 LOG1=log.rm-root.$AUTH.$DIST.$DATE
 LOG2=log.lc-user.$AUTH.$DIST.$DATE
 
-create_mismatch_file
-gfsudo $MAKE REGRESS_ARGS="-l $LOG1" check
-restart_gfsd_all
+LOGS=
+if $REGRESS_ROOT; then
+	create_mismatch_file
+	gfsudo $MAKE REGRESS_ARGS="-l $LOG1" check
+	restart_gfsd_all
+	LOGS="$LOGS $LOG1"
+fi
 
-create_mismatch_file
-C2DIST=$(ssh c2 gfarm.arch.guess)
-C2DIR=~/gfarm/build-$C2DIST/regress
-ssh c2 "(grid-proxy-init -q; cd $C2DIR &&
-	$ENV $MAKE REGRESS_ARGS='-l $LOG2' check)"
-restart_gfsd_all
+if $REGRESS_USER; then
+	create_mismatch_file
+	C2DIST=$(ssh c2 gfarm.arch.guess)
+	C2DIR=~/gfarm/build-$C2DIST/regress
+	ssh c2 "(grid-proxy-init -q; cd $C2DIR &&
+		$ENV $MAKE REGRESS_ARGS='-l $LOG2' check)"
+	restart_gfsd_all
+	LOGS="$LOGS $C2DIR/$LOG2"
+fi
 
 # Print "UNSUPPORTED / XFAIL / FAIL"
-$TOP/regress/addup.sh $LOG1 $C2DIR/$LOG2 | \
+$TOP/regress/addup.sh $LOGS | \
     grep -F -e UNSUPPORTED -e XFAIL -e FAIL || :
 
 status=0

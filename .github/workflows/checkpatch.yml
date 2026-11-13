@@ -18,7 +18,23 @@ jobs:
 
       - name: invoke checkpatch
         id: checkpatch
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+          PUSH_AFTER: ${{ github.sha }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
           set -x
-          git diff ${{ github.event.before }} ${{ github.sha }} | \
-            ./util/checkpatch/checkpatch.pl -
+          if [ "$EVENT_NAME" = pull_request ]; then
+            # changes of the pull request since it diverged from the base
+            range="$PR_BASE...$PR_HEAD"
+          elif git cat-file -e "$PUSH_BEFORE^{commit}" 2>/dev/null; then
+            range="$PUSH_BEFORE..$PUSH_AFTER"
+          else
+            # new branch or force push: no usable previous commit
+            range="origin/$DEFAULT_BRANCH...$PUSH_AFTER"
+          fi
+          git diff "$range" | ./util/checkpatch/checkpatch.pl -

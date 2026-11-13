@@ -1,0 +1,207 @@
+'\" t
+.\"     Title: gfarm-prun
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 10 Nov 2026
+.\"    Manual: Gfarm
+.\"    Source: Gfarm
+.\"  Language: English
+.\"
+.TH "GFARM\-PRUN" "1" "10 Nov 2026" "Gfarm" "Gfarm"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+gfarm-prun \- execute a command on multiple hosts
+.SH "SYNOPSIS"
+.HP \w'\fBgfarm\-prun\fR\ 'u
+\fBgfarm\-prun\fR [\fIoptions\fR] \fIcommand\fR [\fIarg\fR...]
+.SH "DESCRIPTION"
+.PP
+\fBgfarm\-prun\fR
+executes
+\fIcommand\fR
+with
+\fIarg\fRs on each host listed in a hostfile, by using a remote shell command,
+\fBssh\fR
+by default\&. It is useful, for example, to set up or manage filesystem nodes of Gfarm\&.
+.PP
+By default, the command is executed on one host after another\&. When the \-p option is specified, the command is executed on multiple hosts in parallel\&.
+.PP
+The hostfile has one host name in each line\&. Only the first field of each line is used\&. Characters from `#\*(Aq to the end of the line are regarded as a comment, and empty lines are ignored\&. The default hostfile is
+$HOME/\&.nodelist\&.
+.PP
+The local host is skipped unless the \-a option is specified\&. A host is regarded as the local host when its name matches the output of
+\fBhostname\fR
+or one of the IP addresses displayed by
+\fBhostname \-I\fR\&. A host name also matches when only one of them has the domain part, for example,
+node1
+and
+node1\&.example\&.com, but
+node1
+does not match
+node10\&. These names can be changed by the PRUN_HOSTNAME environment variable\&.
+.PP
+The command line is passed to the remote shell command, thus it is interpreted by a shell on the remote host\&. Wildcards in the command line are expanded on the remote host, not on the local host\&.
+.PP
+Unless the \-stdin option is specified, the standard input of the remote command is
+/dev/null\&.
+.SH "OPTIONS"
+.PP
+\fB\-a\fR
+.RS 4
+Executes the command also on the local host, if it is listed in the hostfile\&.
+.RE
+.PP
+\fB\-h\fR \fIhostfile\fR
+.RS 4
+Specifies a hostfile\&. If `\-\*(Aq is specified, the list of hosts is read from the standard input\&.
+.RE
+.PP
+\fB\-m\fR \fImax_jobs\fR
+.RS 4
+Specifies the maximum number of hosts on which the command is executed in parallel with the \-p option\&. The default is 16\&.
+.RE
+.PP
+\fB\-n\fR
+.RS 4
+Displays the commands that would be executed, but does not execute them\&.
+.RE
+.PP
+\fB\-p\fR
+.RS 4
+Executes the command on multiple hosts in parallel in the background\&.
+.RE
+.PP
+\fB\-rsh\fR \fIrsh_command\fR
+.RS 4
+Specifies a remote shell command\&. The default is
+\fBssh\fR\&.
+.RE
+.PP
+\fB\-stdin\fR \fIfile\fR
+.RS 4
+Specifies a file that is given to the standard input of the command on each host\&. This option can be specified multiple times\&. In this case, the files are concatenated\&. If `\-\*(Aq is specified, the standard input of
+\fBgfarm\-prun\fR
+is read once, and it is given to the command on each host\&. `\-\*(Aq cannot be specified for both the \-h option and the \-stdin option\&.
+.RE
+.PP
+\fB\-v\fR
+.RS 4
+Displays the host name before executing the command on the host\&. This option has no effect with the \-p option\&.
+.RE
+.SH "ENVIRONMENT VARIABLES"
+.PP
+\fBPRUN_RSH\fR
+.RS 4
+Specifies a remote shell command\&. The default is
+\fBssh\fR\&.
+.RE
+.PP
+\fBPRUN_HOSTFILE\fR
+.RS 4
+Specifies a hostfile\&. The default is
+$HOME/\&.nodelist\&.
+.RE
+.PP
+\fBPRUN_HOSTNAME\fR
+.RS 4
+Specifies the names of the local host, separated by spaces\&. The default is the output of
+\fBhostname\fR
+and
+\fBhostname \-I\fR\&.
+.RE
+.PP
+\fBPRUN_MAX_JOBS\fR
+.RS 4
+Specifies the maximum number of parallel jobs\&. The default is 16\&.
+.RE
+.PP
+\fBPRUN_PARALLEL\fR
+.RS 4
+If it is set to
+yes, the command is executed in parallel as with the \-p option\&.
+.RE
+.PP
+\fBPRUN_ALL_INCLUDE_MYSELF\fR
+.RS 4
+If it is set to
+yes, the command is executed also on the local host as with the \-a option\&.
+.RE
+.PP
+\fBPRUN_VERBOSE\fR
+.RS 4
+If it is set to
+yes, the host name is displayed as with the \-v option\&.
+.RE
+.SH "EXIT STATUS"
+.PP
+\fBgfarm\-prun\fR
+exits with 0 when the command succeeds on all hosts\&. Otherwise, it exits with the exit status of the remote shell command for a host on which the command fails\&. When it fails on two or more hosts, the exit status for one of them is returned\&.
+.SH "EXAMPLES"
+.PP
+Displays the uptime of all hosts listed in
+$HOME/\&.nodelist, except the local host\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	$ gfarm\-prun \-v uptime
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+Restarts gfsd on all hosts listed in
+hosts, in parallel\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	$ gfarm\-prun \-p \-h hosts sudo systemctl restart gfsd
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+Executes a local shell script
+setup\&.sh
+on each host\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	$ gfarm\-prun \-h hosts \-stdin setup\&.sh sh
+.fi
+.if n \{\
+.RE
+.\}
+.SH "FILES"
+.PP
+$HOME/\&.nodelist
+.RS 4
+the default hostfile
+.RE
+.SH "SEE ALSO"
+.PP
+\fBgfarm-pcp\fR(1),
+\fBssh\fR(1)

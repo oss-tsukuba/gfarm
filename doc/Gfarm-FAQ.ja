@@ -3,7 +3,7 @@ Gfarm FAQ - Gfarm に関するよくある質問
 Copyright (c) 2003-2008 National Institute of Advanced Industrial
 Science and Technology (AIST).  All Rights Reserved.
 
-Copyright (c) 2006-2017 Osamu Tatebe.  All Rights Reserved.
+Copyright (c) 2006-2026 Osamu Tatebe.  All Rights Reserved.
 
 目次:
 *****
@@ -11,7 +11,7 @@ Copyright (c) 2006-2017 Osamu Tatebe.  All Rights Reserved.
   1.1 Gfarm とは何ですか？
   1.2 Gfarm はどこからダウンロードできますか？
   1.3 gfmd は，どの程度のメモリを消費しますか？
-  1.4 gfmd を実行するマシンは，どの程度のディスク消費しますか？
+  1.4 gfmd を実行するマシンは，どの程度のディスクを消費しますか？
   1.5 gfmd が利用するディスクリプタ数はどの程度を想定すべきですか？
 
 2. トラブル・シューティング
@@ -30,14 +30,12 @@ Copyright (c) 2006-2017 Osamu Tatebe.  All Rights Reserved.
 
 3. セキュリティ
   3.1 Gfarm は firewall に守られていない環境で安全に運用できますか？
-  3.2 sharedsecret 認証，gsi_auth 手法，gsi 認証の違いは？
+  3.2 認証方式の違いは？
 
 4. 制限事項
-  4.1 以下の機能はまだ部分的にしかサポートされていません．
-  4.2 Gfarm-1.xでサポートされていた以下の機能はまだサポートされていま
-     せん．
-  4.3 Gfarm-1.xでサポートされていた以下の機能はサポートされる予定はあ
-    りません．
+  4.1 Gfarm-1.xでサポートされていた以下の機能はサポートされていません．
+  4.2 Gfarm-1.xでサポートされていた以下の機能はサポートされる予定はあ
+     りません．
 
 
 1. 一般
@@ -62,23 +60,23 @@ Copyright (c) 2006-2017 Osamu Tatebe.  All Rights Reserved.
 
   1.3 gfmd は，どの程度のメモリを消費しますか？
 
-	64bit Linux マシン上で Gfarm-2.5.1 を利用する場合，おおよその
+	64bit Linux マシン上で Gfarm 2.8 を利用する場合，おおよその
 	見積りは以下の通りとなります．ただし，
 		OH (オーバーヘッド) = 8 バイト
 		align() = 16の倍数に切り上げ．結果が32未満なら32に切り上げ．
 	とします．
 
 	(a) 拡張属性 (xattr) 1つあたりに必要なバイト数:
-		  align(64 + OH) ＋ align(拡張属性の名称の長さ + 1 + OH)
-		= 80 + align(拡張属性の名称の長さ + 1 + OH)
+		  align(40 + OH) + align(拡張属性の名称の長さ + 1 + OH)
+		= 48 + align(拡張属性の名称の長さ + 1 + OH)
 
 	(i) i-node 1つあたりに必要なバイト数:
 		  align(168 + OH)
 		= 176
 
 	(e) ディレクトリ・エントリ1つあたりに必要なバイト数:
-		  align(56 + OH) + align(strlen(basename(パス名)) + OH)
-		= 64 + align(strlen(basename(パス名)) + OH)
+		  align(64 + OH) + align(strlen(basename(パス名)) + OH)
+		= 80 + align(strlen(basename(パス名)) + OH)
 
 	(r) ファイル複製 1つあたりに必要なバイト数:
 		  align(24 + OH)
@@ -88,35 +86,40 @@ Copyright (c) 2006-2017 Osamu Tatebe.  All Rights Reserved.
 	リンクそれぞれに必要なバイト数は，以下の通りとなります．
 
 	(d) ディレクトリ 1つあたりに必要なバイト数:
-		  (i) + (e) 
-		  + align(56 + OH) + align(strlen(".") + OH)
-		  + align(56 + OH) + align(strlen("..") + OH)
-		= 176 + 64 + align(strlen(basename(パス名)) + OH)
-		  + 64 + 32 + 64 + 32
-		= 432 + align(strlen(basename(パス名)) + OH)
+		  (i) + (e) + align(8 + OH)
+		  + align(64 + OH) + align(strlen(".") + OH)
+		  + align(64 + OH) + align(strlen("..") + OH)
+		= 176 + 80 + align(strlen(basename(パス名)) + OH)
+		  + 32 + 80 + 32 + 80 + 32
+		= 512 + align(strlen(basename(パス名)) + OH)
 
 	(s) シンボリックリンク 1つあたりに必要なバイト数:
 		  (i) + (e) + align(strlen(シンボリックリンクの指す先)+1 + OH)
-		= 176 + 64 + align(strlen(basename(パス名)) + OH)
+		= 176 + 80 + align(strlen(basename(パス名)) + OH)
 		  + align(strlen(シンボリックリンクの指す先)+1 + OH)
-		= 240 + align(strlen(basename(パス名)) + OH)
+		= 256 + align(strlen(basename(パス名)) + OH)
 		  + align(strlen(シンボリックリンクの指す先)+1 + OH)
 
-	(f) ファイル 1つあたりのバイト数に必要なバイト数:
-		(i) + (e) + (r) × 複製数
-		= 176 + 64 + align(strlen(basename(パス名)) + OH)
+	(f) ファイル 1つあたりに必要なバイト数:
+		  (i) + (e) + (r) × 複製数
+		= 176 + 80 + align(strlen(basename(パス名)) + OH)
 		  + 32 × 複製数
-		= 240 + align(strlen(basename(パス名)) + OH) + 32 × 複製数
+		= 256 + align(strlen(basename(パス名)) + OH) + 32 × 複製数
+
+	gfmd.conf の digest 設定によりチェックサムを有効にしている場合は，
+	ファイル 1つあたりさらに
+		  align(23 + strlen(ダイジェスト種別)+1 + ダイジェスト長 + OH)
+	バイト (例えば md5 の場合は 64バイト) が必要です．
 
 	さらに，仮に，パス名の最後のコンポーネント部の長さが 14文字程度，
 	ファイルの複製数が3，シンボリックリンクの指す先が55文字と仮定して，
 	上記を計算すると，以下のようになります．
 
-	(d) ディレクトリ1つあたり: 432バイト
-	(s) シンボリック・リンク1つあたり: 336バイト
-	(f) ファイル1つあたり: 368バイト
+	(d) ディレクトリ1つあたり: 544バイト
+	(s) シンボリック・リンク1つあたり: 352バイト
+	(f) ファイル1つあたり: 384バイト
 
-  1.4 gfmd を実行するマシンは，どの程度のディスク消費しますか？
+  1.4 gfmd を実行するマシンは，どの程度のディスクを消費しますか？
 
 	gfmd の必要メモリ量の数倍程度です．
 
@@ -142,8 +145,12 @@ Copyright (c) 2006-2017 Osamu Tatebe.  All Rights Reserved.
 	    sysctl fs.file-max 設定の 75% 未満となるよう制限しています．
 	    このため gfmd.conf の「metadb_server_max_descriptors 131072」
 	    という設定を実際に有効にするには，ファイル /etc/sysctl.conf に
-	    「fs.file-max=180224」といった設定入れた後，リブートするか，
+	    「fs.file-max=180224」といった設定を入れた後，リブートするか，
 	    あるいはコマンド「/sbin/sysctl -p」を実行します．
+	    最近の Linux ディストリビューションでは，通常 fs.file-max は
+	    十分大きな値 (例えば 9223372036854775807) となっているため，
+	    この設定は必要ありません．「/sbin/sysctl fs.file-max」で確認
+	    できます．
 	NetBSD の場合:
 	    ファイル /etc/sysctl.conf に「kern.maxfiles=180224」といった
 	    設定を行ない，リブートするか，あるいはコマンド
@@ -157,7 +164,7 @@ Copyright (c) 2006-2017 Osamu Tatebe.  All Rights Reserved.
 	Solaris の場合:
 	    ファイル /etc/system に「set rlim_fd_max = 131072」といった
 	    設定を行ない，リブートします．
-	
+
 	なお，Linux 上では，パラメータ net.netfilter.nf_conntrack_max の
 	設定状況にも注意してください．
 	このパラメータは通常は存在しませんが，iptables 等の機能を利用して
@@ -173,7 +180,7 @@ Copyright (c) 2006-2017 Osamu Tatebe.  All Rights Reserved.
 	なお，このように負荷のかかる状況で，メタデータサーバ自身で
 	iptables を動かすことは推奨できません．別途ファイアウォールを
 	用意することをお勧めします．
-	
+
 	参考:
 
 	計算式の各項の意味は，以下の通りです．
@@ -193,7 +200,7 @@ Copyright (c) 2006-2017 Osamu Tatebe.  All Rights Reserved.
 		      クライアント対応用gfsdとgfmdの間の接続:Nf )
 
 	   若干 = backend データベース接続や，
-		ジャーナルファイルアクセス用のファイルディスクリプタ 
+		ジャーナルファイルアクセス用のファイルディスクリプタ
 
 	このうち，「クライアント対応用gfsdとgfmdの間の接続」の分は，
 	実際にはもっと小さくなる可能性もあります．しかし同時に多数の
@@ -219,11 +226,11 @@ Copyright (c) 2006-2017 Osamu Tatebe.  All Rights Reserved.
 	ションで変更することができます．詳細はインストールガイドを参照
 	してください．
 
-	ホスト名を逆引きした結果が、サーバー証明書のホスト名や
+	ホスト名を逆引きした結果が，サーバー証明書のホスト名や
 	gfarm2.conf の auth 行の名前と一致しているかどうか確認して
-        ください。/etc/hosts で、ドメイン名のサフィックス部のない
-	ホスト名が、サフィックス部のあるホスト名より先に登録されて
-	いるのが原因で、この問題が発生することがあります。
+	ください．/etc/hosts で，ドメイン名のサフィックス部のない
+	ホスト名が，サフィックス部のあるホスト名より先に登録されて
+	いるのが原因で，この問題が発生することがあります．
 
   2.2 ファイルアクセス時，ファイル複製作成時などに認証エラーが
      起きてしまいます．あるいは，no filesystem node というエラーが発生
@@ -236,19 +243,20 @@ Copyright (c) 2006-2017 Osamu Tatebe.  All Rights Reserved.
 	gfsd がフォアグラウンドで起動し，詳細なメッセージを出力します．
 	メッセージに従いエラーの原因を解決してください．
 
-	共有鍵認証の場合は，各ファイルシステムノードのホームディレクト
-	リに同一の共有鍵ファイル(~/.gfarm_shared_key) が置かれているか
-	確認してください．
+	共有鍵認証 (sharedsecret および tls_sharedsecret) の場合は，各
+	ファイルシステムノードのホームディレクトリに同一の共有鍵ファイル
+	(~/.gfarm_shared_key) が置かれているか確認してください．
+
+	TLS 認証および SASL 認証については，ユーザマニュアルの
+	auth-tls.html と auth-sasl.html を参照してください．
 
 	GSI認証の場合は，表示される認証エラーメッセージに従い対応して
 	ください．エラーの詳細は gfmd.conf および gfarm2.conf に，設定
 	「log_auth_verbose enable」を書き加えることにより
 	/var/log/messages (ないし/var/adm/messages) に記録させることが
 	できます．
-	認証エラーに関する詳細な情報は http://www.globus.org より得ら
-	れます．
-	現在のところ，メタデータ冗長構成のためのgfmd間接続においては，
-	GSI認証はサポートされていない点にもご注意ください．
+	認証エラーに関する詳細な情報は Grid Community Toolkit のウェブ
+	サイト (https://gridcf.org/) より得られます．
 
 	それでも認証エラーが生じる場合は，Gfarm ファイルシステムの管理
 	者に連絡してください．この場合，_gfarmfs ユーザの共有鍵，GSIの
@@ -260,20 +268,16 @@ Copyright (c) 2006-2017 Osamu Tatebe.  All Rights Reserved.
 	リッドマップファイル(/etc/grid-security/grid-mapfile)
 	に正しいエントリが登録されていますか？
 
-	特に，Globus Toolkit version 2 (GT2) と version 3 (GT3) 以降では，
-	サブジェクト名に違いがあるので必要です．GT2 の Email フィールド
-	は，GT3 以降では emailAddress となります．また GT2 の USERID
-	フィールドは GT3 以降では UID となります．両方のライブラリを利用
-	する場合は，互換性のために，両方のエントリを grid-mapfile に登録
-	する必要があります．
-
 	gfmd−gfsd間の通信にGSI認証を使う場合，第2欄を「@host@」とした
 	gfsdの証明書もgrid-mapfileに登録されていますか？
 
 	(2) ユーザ証明書(~/.globus/usercert.pem)，ホスト証明書
 	(/etc/grid-security/hostcert.pem)のパーミッションが 0644 になって
-	いますか？ またgfsdのサービス証明書を利用している場合，証明書
-	および秘密鍵のオーナーは「_gfarmfs」とする必要があります．
+	いますか？ 秘密鍵 (~/.globus/userkey.pem，
+	/etc/grid-security/hostkey.pem) のパーミッションは 0600 あるいは
+	0400 である必要があります．またgfsdのサービス証明書を利用して
+	いる場合，証明書および秘密鍵のオーナーは「_gfarmfs」とする必要
+	があります．
 
 	(3) ユーザ証明書，ホスト証明書，サービス証明書の有効期限は
 	切れていませんか？
@@ -282,20 +286,17 @@ Copyright (c) 2006-2017 Osamu Tatebe.  All Rights Reserved.
 	CA の証明書は有効なものが正しく /etc/grid-security/certificates
 	に登録されていますか？ 有効期限が切れていませんか？
 
-	signing_policy ファイルにおける CA のサブジェクト名も (1) と同
-	様に変化するので注意が必要です．
-
 	(5) /etc/grid-security/certificates に登録されている CRL の
 	有効期限が切れていませんか？
 
-	(6) gfarm.conf の metadb_serverhost の項で指定しているメタデータ
+	(6) gfarm2.conf の metadb_serverhost の項で指定しているメタデータ
 	サーバのホスト名は，ホスト証明書に書かれているホスト名と一致して
 	いますか？
 
 	(7) gfhost コマンドで登録するホストの固有識別子は，ホスト証明書
-	ないしサービス証明書に書かれているホスト名と一致していますか？ 
+	ないしサービス証明書に書かれているホスト名と一致していますか？
 
-	(8) 全てのホストで時刻が正しく設定されていますか？ Globus の 
+	(8) 全てのホストで時刻が正しく設定されていますか？ Globus の
 	GSI ライブラリの場合，ホスト間で 5分以上時刻が狂っていると認証
 	に失敗してしまいます．
 
@@ -330,23 +331,14 @@ Copyright (c) 2006-2017 Osamu Tatebe.  All Rights Reserved.
      あるのですが？
 
 	ネットワークインターフェースカードの問題や，ネットワーク自体の
-	トラブルで，数分間によって通信が途絶した場合，このようなことが
+	トラブルで，数分間にわたって通信が途絶した場合，このようなことが
 	起きる可能性があります．特に広域ネットワークを通して通信して
 	いる場合はこのような可能性が増えます．そのような場合，
-	gfarm.conf に「sockopt keepalive」という設定を加えることで，
+	gfarm2.conf に「sockopt keepalive」という設定を加えることで，
 	停止したプログラムを自動的にエラーで終了させることができるよう
-	になります．Gfarm 1.3.1 以降の config-gfarm で生成した
-	gfarm.conf は，デフォルトでこの設定を含んでいます．
+	になります．config-gfarm で生成した gfarm2.conf は，デフォルト
+	でこの設定を含んでいます．
 
-	あるいは，もし /etc/nsswitch.conf で「ldap」を指定している場合，
-	いくつかの Linux ディストリビューションで，このような問題が
-	生じています．具体的には Fedora Core 3，Fedora Core 5，CentOS 4.4
-	などです．Red Hat 8 では，この問題は生じていません．
-	これはシステム附属のライブラリのバグが原因で生じる問題であり，
-	その具体的な条件は，ファイル KNOWN_PROBLEMS.ja に記載してあります．
-	この問題の場合，「ldap」の指定を取り除くことの他には，現在の
-	ところ回避策が知られていません．
-	
   2.5 ファイルの更新時刻がおかしいようです．
 
 	ファイルの更新時刻は実際のファイルを作成したファイルシステムノー
@@ -355,57 +347,60 @@ Copyright (c) 2006-2017 Osamu Tatebe.  All Rights Reserved.
 	イルの更新時刻などがおかしくなってしまいます．NTPなどを利用し
 	てファイルシステムノードの時刻を正しく設定してください．
 
-  2.6 gfmd や gfsd が異常終了した際，どうすればコアファイルを回収できますか？
+  2.6 gfmd や gfsd が異常終了した際，どうすればコアファイルを回収
+      できますか？
 
 	gfmd や gfsd を Linux 上で動かしている場合，異常終了してもコア
 	ファイルはデフォルトでは作成されません．コアファイルを回収する
-	には，root 権限で以下の作業を行ってください．
+	には，root 権限で以下の作業を行ってください．INSTALL-manual-ja.md
+	の「コアダンプファイルを出力する設定」も参照してください．
 
-	(1) カーネルのパラメタを変更します．以下の行を sysctl の設定
-	ファイル (/etc/sysctl.conf) の末尾に加えます．
+	(1) カーネルのパラメタを変更します．以下の行を含むファイル
+	/etc/sysctl.d/gfarm.conf を作成します．
 
 		fs.suid_dumpable = 1
 		kernel.core_pattern = /var/tmp/core.%e.%p
 
 	"kernel.core_pattern" 行では，コアファイルのパスを指定します．
 	"%e", "%p" はそれぞれ，プログラム名およびプロセス ID に展開
-	されます．加えたら，設定を読み込み直します．
+	されます．作成したら，設定を読み込みます．
 
-		/sbin/sysctl -p
+		/sbin/sysctl -p /etc/sysctl.d/gfarm.conf
 
-	(2) コアファイルの最大サイズを設定します．
+	(2) コアファイルの最大サイズを設定します．コマンドについては，
 	"/etc/security/limits.conf" ファイルに，以下の行を追加します．
 
 		*	soft	core	unlimited
 
-	この設定は，OS 再起動後に有効になります．
+	gfmd や gfsd など systemd から起動されるデーモンについては，
+	"/etc/systemd/system.conf" の DefaultLimitCORE の設定を以下の
+	ように変更します．
 
+		DefaultLimitCORE=infinity
+
+	これらの設定は，OS 再起動後に有効になります．
 	現在も gfmd や gfsd が動作中で，直ちに設定を適用したい場合は，
-	以下のように ulimit コマンド実行後，gfmd または gfsd を再起動
-	してください．
+	以下のように systemd の設定を読み込み直した後，gfmd または
+	gfsd を再起動してください．
 
-		ulimit -c unlimited
-		/etc/init.d/gfmd restart
-		/etc/init.d/gfsd restart
+		systemctl daemon-reload
+		systemctl restart gfmd
+		systemctl restart gfsd
 
-	(3) gfmd や gfsd を Red Hat もしくはそれから派生した OS で動作
-	させ，RPM パッケージで導入，あるいは prefix を /usr として導入
-	している場合は "prelink" という日時ジョブに関する設定を行う必要
-	があります．"/etc/prelink.conf.d/gfarm.conf" というファイルを
-	作成し，以下のような行を足して，prelink の対象外とします．
+	(3) systemd-coredump，abrt，apport などコアファイルを収集する
+	サービスが動作している場合，kernel.core_pattern で指定したパス
+	にコアファイルが作成されません．サービスの設定を適切に行うか，
+	停止してください．例えば Red Hat Enterprise Linux とその派生
+	ディストリビューションでは
 
-		-b /usr/sbin/gfmd
-		-b /usr/sbin/gfsd
-		-b /usr/lib/libgfarm.*
+		systemctl mask systemd-coredump.socket
 
-	/usr/local などに導入している場合はこの設定は必要ありませ
-	ん．prelink の対象となるディレクトリについては
-	/etc/prelink.conf を参照してください．また prelink については
-	man ページを参照してください．
+	Ubuntu では
 
-	(4) abrt が導入されている場合はコアファイルの出力に失敗するこ
-	とがあります．abrt の設定を適切に行うか，abrt の起動を停止して
-	ください．
+		systemctl stop apport
+		systemctl disable apport
+
+	を実行します．
 
   2.7 InfiniBand があるのにRDMAができません．
 
@@ -423,7 +418,8 @@ Copyright (c) 2006-2017 Osamu Tatebe.  All Rights Reserved.
 	・"ibv_.... failed, no memory" のエラーメッセージは出ていませんか．
 	出ていれば資源制限がかかっているか，実際にメモリーロックサイズが
 	大きすぎるためで，有効なRDMA利用はできません．
-	当該プロセスのメモリロックサイズを確認してみてください。
+	当該プロセスのメモリロックサイズを確認してみてください．
+		% ulimit -l
 		% grep VmLck /proc/<pid>/status
 
 3. セキュリティ
@@ -438,7 +434,7 @@ Copyright (c) 2006-2017 Osamu Tatebe.  All Rights Reserved.
 	認証の利用を推奨します．これについては，次の項目を参照してくだ
 	さい．
 
-  3.2 sharedsecret 認証，gsi_auth 手法，gsi 認証の違いは？
+  3.2 認証方式の違いは？
 
 	「sharedsecret」認証は，共有鍵を用いた認証です．
 	Gfarm の sharedsecret 認証の場合，提供しているサービスが認証だ
@@ -452,10 +448,7 @@ Copyright (c) 2006-2017 Osamu Tatebe.  All Rights Reserved.
 	「gsi」(Grid Security Infrastructure) 認証は，公開鍵に基づいた認
 	証方法です．Gfarm は Globus の提供する GSI ライブラリを用いて
 	います．Globus がデータの暗号化をサポートしているため，
-	sharedsecret 認証よりも安全であると考えられます．ただし，輸出
-	版の Globus の場合，バージョンによっては暗号化をサポートしてい
-	ないことがあります．お使いの Globus が，暗号化をサポートしてい
-	るバージョンであるか確認しておくことをお勧めします．
+	sharedsecret 認証よりも安全であると考えられます．
 
 	「gsi_auth」手法の場合，認証処理のみに GSI ライブラリを用い，
 	その後の通信にはデータに対する署名や暗号化処理による保護のない，
@@ -467,13 +460,13 @@ Copyright (c) 2006-2017 Osamu Tatebe.  All Rights Reserved.
 
 	gsi 認証や gsi_auth 手法は，ソースコードの configure 時に
 	--with-globus オプションを指定しないと，有効になりません．
-	GSI に関する詳しい情報は，http://www.globus.org/ を参照し
+	GSI に関する詳しい情報は，https://gridcf.org/ を参照し
 	てください．
 
 	「tls_sharedsecret」認証は，共有鍵を用いた認証ですがTLSで暗号
 	化された通信路を利用します．
 
-	「tls_client_certificate」認証は，X.509証明書を共有鍵を用いた
+	「tls_client_certificate」認証は，X.509 クライアント証明書を用いた
 	認証です．TLSで暗号化された通信路を利用します．GSI の代理証明
 	書も利用可能です．
 
@@ -496,6 +489,6 @@ Copyright (c) 2006-2017 Osamu Tatebe.  All Rights Reserved.
 	ファイルビュー，ファイルの分割格納
 
   4.2 Gfarm-1.xでサポートされていた以下の機能はサポートされる予定はあ
-    りません．
+     りません．
 
 	リモートプログラムの起動

@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stddef.h>
 #include <string.h>
+#include <strings.h>
 #include <syslog.h>
 #include <netdb.h>
 #include <sys/socket.h>
@@ -11,6 +12,82 @@
 #include "gfnetdb.h"
 
 #include <sasl/sasl.h>
+
+#include "auth.h"
+
+#define SASL_MECH_DELIMITER " \t"
+
+static int
+sasl_mechanism_is_in_list(const char *word, size_t len, const char *list)
+{
+	const char *q;
+	size_t qlen;
+
+	for (q = list; *q != '\0'; q += qlen) {
+		q += strspn(q, SASL_MECH_DELIMITER);
+		if (*q == '\0')
+			break;
+		qlen = strcspn(q, SASL_MECH_DELIMITER);
+		if (len == qlen && strncasecmp(word, q, len) == 0)
+			return (1);
+	}
+	return (0);
+}
+
+/*
+ * returns 1, if the space-separated lists list1 and list2
+ * have a common SASL mechanism name, otherwise returns 0.
+ * mechanism names are compared case-insensitively.
+ */
+int
+gfarm_sasl_mechanism_list_match(const char *list1, const char *list2)
+{
+	const char *p;
+	size_t len;
+
+	if (list1 == NULL || list2 == NULL)
+		return (0);
+
+	for (p = list1; *p != '\0'; p += len) {
+		p += strspn(p, SASL_MECH_DELIMITER);
+		if (*p == '\0')
+			break;
+		len = strcspn(p, SASL_MECH_DELIMITER);
+		if (sasl_mechanism_is_in_list(p, len, list2))
+			return (1);
+	}
+	return (0);
+}
+
+/*
+ * remove SASL mechanism names which are not included in the list `allowed'
+ * from the space-separated list `list', in place.
+ * the order of the mechanism names in `list' is preserved.
+ */
+void
+gfarm_sasl_mechanism_list_filter(char *list, const char *allowed)
+{
+	const char *p;
+	char *q = list;
+	size_t len;
+
+	if (list == NULL || allowed == NULL)
+		return;
+
+	for (p = list; *p != '\0'; p += len) {
+		p += strspn(p, SASL_MECH_DELIMITER);
+		if (*p == '\0')
+			break;
+		len = strcspn(p, SASL_MECH_DELIMITER);
+		if (!sasl_mechanism_is_in_list(p, len, allowed))
+			continue;
+		if (q != list)
+			*q++ = ' ';
+		memmove(q, p, len);
+		q += len;
+	}
+	*q = '\0';
+}
 
 int
 gfarm_sasl_log(void *context, int sasl_priority, const char *message)

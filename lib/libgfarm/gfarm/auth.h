@@ -324,6 +324,8 @@ gfarm_error_t gfarm_auth_request_sasl_auth_multiplexed(
 gfarm_error_t gfarm_auth_result_sasl_auth_multiplexed(void *);
 
 int gfarm_sasl_log(void *, int, const char *);
+int gfarm_sasl_mechanism_list_match(const char *, const char *);
+void gfarm_sasl_mechanism_list_filter(char *, const char *);
 int gfarm_sasl_addr_string(int, char *, size_t, char *, size_t, const char *);
 int gfarm_auth_client_method_is_sasl_available(enum gfarm_auth_id_role);
 

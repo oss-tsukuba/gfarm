@@ -22,11 +22,12 @@ Gfarm ファイルシステムの導入にあたり，メタデータサーバ�
 =================================
 
 RPM バイナリパッケージは，RPM ソースパッケージ(SRPM)から作成します．バ
-イナリパッケージの構築には少なくとも OpenSSL，PostgreSQL の開発用ライ
-ブラリが必要となります．SASL XOAUTH2認証等を有効にするためには他の開発
-用ライブラリも必要となります．詳細は INSTALL.ja を参照してください．
+イナリパッケージの構築には少なくとも OpenSSL，PostgreSQL，Cyrus SASL
+の開発用ライブラリが必要となります．SASL XOAUTH2 認証等を有効にするため
+には他の開発用ライブラリも必要となります．詳細は INSTALL.ja を参照して
+ください．
 
-	# dnf install openssl-devel postgresql-devel
+	# dnf install openssl-devel postgresql-devel cyrus-sasl-devel
 	# rpmbuild --rebuild gfarm-X.X.X-X.src.rpm
 
 なお，バイナリパッケージは ~/rpmbuild/RPMS/ARCH/ に作成されます．
@@ -66,9 +67,8 @@ GSI認証を有効にしたい場合は，Globus GSSAPI 開発用ライブラリ
 Gfarm では，ファイルシステムノードは通常クライアントにもなりますので，
 client パッケージもインストールします．doc パッケージは任意です．
 
-さらに，クライアントとして，GfarmFS-FUSE (gfarm2fs)を利用し，Gfarm ファ
-イルシステムを mount する場合，gfarm2fs パッケージのインストールも必要
-です．
+さらに，クライアントとして，gfarm2fs を利用し，Gfarm ファイルシステムを
+mount する場合，gfarm2fs パッケージのインストールも必要です．
 
 	# rpm -Uvh gfarm2fs-X.X.X-X.ARCH.rpm
 
@@ -83,7 +83,7 @@ client パッケージもインストールします．doc パッケージは任
 
 doc パッケージは任意です．
 
-GfarmFS-FUSEを利用し，Gfarm ファイルシステムを mount する場合，
+gfarm2fs を利用し，Gfarm ファイルシステムを mount する場合，
 gfarm2fs パッケージのインストールも必要です．
 
 	# rpm -Uvh gfarm2fs-X.X.X-X.ARCH.rpm

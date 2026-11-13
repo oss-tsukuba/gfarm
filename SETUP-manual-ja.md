@@ -148,7 +148,7 @@ Gfarmの構築をマスターメタデータサーバと同様に行います。
 mds[23]% sudo config-gfarm -N -A $USER -r -X -d md5
 ```
 
-`config-gfarm`のオプションはメタデータサーバを構築したときと同じオプションを指定します。
+`config-gfarm`のオプションはマスターメタデータサーバを構築したときと同じオプションを指定します。
 -Nオプションはconfig-gfarm実行時にサーバ起動を行わないオプションです。
 <!-- >
 次に、マスターと同様に有効にする認証方式を`gfmd.conf`に追加します。
@@ -220,7 +220,7 @@ TLS通信を利用する場合ファイルシステムノードのサービス�
 
 共有鍵方式を用いる場合は`_gfarmfs`の共有鍵`$HOME/.gfarm_shared_key`をメタデータサーバからコピーします。所有者が`_gfarmfs`となっていること、パーミッションが0600であることを確認してください。
 
-メタデータサーバから設定ファイル`gfarm2.conf`をコピーし、その後`config-gfsd`でファイルシステムノードの設定を行います。以下はファイルシステムノードfs1.example.comにおいて`/var/spool/gfarm`以下のディレクトリをGfarmファイルシステムに組込む例です。
+メタデータサーバから設定ファイル`gfarm2.conf`をコピーし、その後`config-gfsd`でファイルシステムノードの設定を行います。以下はファイルシステムノードfs1.example.comにおいて`/var/spool/gfarm`以下のディレクトリをGfarmファイルシステムに組み込む例です。
 
 ```console
 fs% sudo config-gfsd /var/spool/gfarm
@@ -349,7 +349,7 @@ mds1% gfuser -A taro SASL $ID
 
 ### マウント
 
-Gfarm ファイルシステムは`gfarm2fs`でマウントすることができます。
+Gfarmファイルシステムは`gfarm2fs`でマウントすることができます。
 
 ```console
 % mkdir /tmp/foo

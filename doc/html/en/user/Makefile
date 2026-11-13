@@ -10,6 +10,7 @@ htmldir=$(default_htmldir)/en/user
 
 HTML =	\
 	index.html \
+	auth.html \
 	auth-sharedsecret.html \
 	auth-gsi.html \
 	auth-tls.html \
@@ -18,12 +19,11 @@ HTML =	\
 	dirquota.html \
 	multitenancy.html \
 	redundancy-tutorial.html \
-	samba-gfarmfs.html
-#	auth.html
+	samba-gfarmfs.html \
+	smboverssh.html
 #	auth-kerberos.html
 #	export-gfarm.html
 #	nfs-gfarmfs.html
 #	samba-hook.html
-#	smboverssh.html
 
 include $(top_srcdir)/makes/html.mk

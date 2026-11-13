@@ -60,8 +60,8 @@ static struct thread_pool *gfmdc_send_thread_pool;
 static struct thread_pool *journal_sync_thread_pool;
 static struct gfmdc_journal_sync_info journal_sync_info;
 
-static const char SYNC_MUTEX_DIAG[]	= "jorunal_sync_info.sync_mutex";
-static const char SYNC_END_COND_DIAG[]	= "jorunal_sync_info.sync_end_cond";
+static const char SYNC_MUTEX_DIAG[]	= "journal_sync_info.sync_mutex";
+static const char SYNC_END_COND_DIAG[]	= "journal_sync_info.sync_end_cond";
 static const char SEND_MUTEX_DIAG[]	= "send_closure.mutex";
 static const char SEND_END_COND_DIAG[]	= "send_closure.end_cond";
 static const char ASYNC_MUTEX_DIAG[]	= "journal_sync_info.async_mutex";
@@ -72,6 +72,8 @@ static const char JOURNAL_READY_TO_RECV_MUTEX_DIAG[] =
 static const char JOURNAL_READY_TO_RECV_WAIT_COND_DIAG[] =
 					"journal_ready_to_recv_info.wait_cond";
 static const char PEER_RECORD_MUTEX_DIAG[] = "gfmdc_peer_record.mutex";
+static const char PEER_RECORD_JOURNAL_SEND_MUTEX_DIAG[] =
+	"gfmdc_peer_record.journal_send_mutex";
 
 #define GFMDC_CONNECT_INTERVAL	30
 #define GFMDC_SEND_DEFAULT_TIMEOUT	1000000 /* 1 sec. */
@@ -150,6 +152,11 @@ gfmdc_journal_send_closure_reset(struct gfmdc_journal_send_closure *c,
 	c->to_sn = 0;
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: send_closure.mutex, journal_transfer_mutex
+ * SLEEPS: no
+ */
 static void
 gfmdc_journal_syncsend_completed(struct gfmdc_journal_send_closure *c)
 {
@@ -176,6 +183,11 @@ gfmdc_journal_asyncsend_alloc(struct mdhost *mh)
 	return (c);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: journal_transfer_mutex
+ * SLEEPS: no
+ */
 static void
 gfmdc_journal_asyncsend_free(struct gfmdc_journal_send_closure *c)
 {
@@ -192,6 +204,16 @@ gfmdc_journal_asyncsend_free(struct gfmdc_journal_send_closure *c)
 /* per peer record for gfmd channel */
 struct gfmdc_peer_record {
 	pthread_mutex_t mutex;
+
+	/*
+	 * serializes gfmdc_client_journal_send(), which fetches records
+	 * by jreader, updates last_fetch_seqnum, and sends the records,
+	 * because the async send thread, the first sync thread and
+	 * the sync send thread may send to the same slave concurrently
+	 * when the replication type of the slave is changed.
+	 */
+	pthread_mutex_t journal_send_mutex;
+
 	struct journal_file_reader *jreader;
 	gfarm_uint64_t last_fetch_seqnum;
 	int is_received_seqnum, first_sync_completed;
@@ -221,6 +243,16 @@ gfmdc_peer_record_alloc(const char *diag,
 		free(gfmdc_peer);
 		return (gfarm_errno_to_error(err));
 	}
+	if ((err = pthread_mutex_init(&gfmdc_peer->journal_send_mutex, NULL))
+	    != 0) {
+		gflog_error(GFARM_MSG_1005881,
+		    "%s: pthread_mutex_init(%s): %s",
+		    diag, PEER_RECORD_JOURNAL_SEND_MUTEX_DIAG, strerror(err));
+		gfarm_mutex_destroy(&gfmdc_peer->mutex,
+		    diag, PEER_RECORD_MUTEX_DIAG);
+		free(gfmdc_peer);
+		return (gfarm_errno_to_error(err));
+	}
 
 	/*
 	 * although gfmdc_peer->journal_send_closure is only used
@@ -229,6 +261,8 @@ gfmdc_peer_record_alloc(const char *diag,
 	 */
 	if ((e = gfmdc_journal_syncsend_alloc(diag,
 	    &gfmdc_peer->journal_send_closure)) != GFARM_ERR_NO_ERROR) {
+		gfarm_mutex_destroy(&gfmdc_peer->journal_send_mutex,
+		    diag, PEER_RECORD_JOURNAL_SEND_MUTEX_DIAG);
 		gfarm_mutex_destroy(&gfmdc_peer->mutex,
 		    diag, PEER_RECORD_MUTEX_DIAG);
 		free(gfmdc_peer);
@@ -244,13 +278,21 @@ gfmdc_peer_record_alloc(const char *diag,
 	return (GFARM_ERR_NO_ERROR);
 }
 
-/* called from peer_free() */
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: journal_file_mutex
+ * SLEEPS: no
+ *
+ * called from peer_free()
+ */
 void
 gfmdc_peer_record_free(struct gfmdc_peer_record *gfmdc_peer, const char *diag)
 {
 	if (gfmdc_peer->jreader != NULL)
 		journal_file_reader_close(gfmdc_peer->jreader);
 	gfmdc_journal_syncsend_free(gfmdc_peer->journal_send_closure);
+	gfarm_mutex_destroy(&gfmdc_peer->journal_send_mutex,
+	    diag, PEER_RECORD_JOURNAL_SEND_MUTEX_DIAG);
 	gfarm_mutex_destroy(&gfmdc_peer->mutex, diag, PEER_RECORD_MUTEX_DIAG);
 	free(gfmdc_peer);
 }
@@ -267,6 +309,11 @@ gfmdc_peer_mutex_unlock(struct gfmdc_peer_record *gfmdc_peer, const char *diag)
 	gfarm_mutex_unlock(&gfmdc_peer->mutex, diag, PEER_RECORD_MUTEX_DIAG);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: gfmdc_peer_record.mutex
+ * SLEEPS: no
+ */
 struct journal_file_reader *
 gfmdc_peer_get_journal_file_reader(struct gfmdc_peer_record *gfmdc_peer)
 {
@@ -279,6 +326,11 @@ gfmdc_peer_get_journal_file_reader(struct gfmdc_peer_record *gfmdc_peer)
 	return (reader);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: gfmdc_peer_record.mutex
+ * SLEEPS: no
+ */
 void
 gfmdc_peer_set_journal_file_reader(struct gfmdc_peer_record *gfmdc_peer,
 	struct journal_file_reader *reader)
@@ -290,6 +342,11 @@ gfmdc_peer_set_journal_file_reader(struct gfmdc_peer_record *gfmdc_peer,
 	gfmdc_peer_mutex_unlock(gfmdc_peer, diag);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: journal_file_mutex
+ * SLEEPS: no
+ */
 int
 gfmdc_peer_journal_file_reader_is_expired(struct gfmdc_peer_record *gfmdc_peer)
 {
@@ -297,6 +354,11 @@ gfmdc_peer_journal_file_reader_is_expired(struct gfmdc_peer_record *gfmdc_peer)
 	    journal_file_reader_is_expired(gfmdc_peer->jreader) : 0);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: gfmdc_peer_record.mutex
+ * SLEEPS: no
+ */
 gfarm_uint64_t
 gfmdc_peer_get_last_fetch_seqnum(struct gfmdc_peer_record *gfmdc_peer)
 {
@@ -309,6 +371,11 @@ gfmdc_peer_get_last_fetch_seqnum(struct gfmdc_peer_record *gfmdc_peer)
 	return (r);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: gfmdc_peer_record.mutex
+ * SLEEPS: no
+ */
 void
 gfmdc_peer_set_last_fetch_seqnum(struct gfmdc_peer_record *gfmdc_peer,
 	gfarm_uint64_t seqnum)
@@ -320,6 +387,11 @@ gfmdc_peer_set_last_fetch_seqnum(struct gfmdc_peer_record *gfmdc_peer,
 	gfmdc_peer_mutex_unlock(gfmdc_peer, diag);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: gfmdc_peer_record.mutex
+ * SLEEPS: no
+ */
 int
 gfmdc_peer_is_received_seqnum(struct gfmdc_peer_record *gfmdc_peer)
 {
@@ -332,6 +404,11 @@ gfmdc_peer_is_received_seqnum(struct gfmdc_peer_record *gfmdc_peer)
 	return (r);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: gfmdc_peer_record.mutex
+ * SLEEPS: no
+ */
 void
 gfmdc_peer_set_is_received_seqnum(struct gfmdc_peer_record *gfmdc_peer,
 	int flag)
@@ -343,6 +420,11 @@ gfmdc_peer_set_is_received_seqnum(struct gfmdc_peer_record *gfmdc_peer,
 	gfmdc_peer_mutex_unlock(gfmdc_peer, diag);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: gfmdc_peer_record.mutex
+ * SLEEPS: no
+ */
 int
 gfmdc_peer_is_first_sync_completed(struct gfmdc_peer_record *gfmdc_peer)
 {
@@ -355,6 +437,11 @@ gfmdc_peer_is_first_sync_completed(struct gfmdc_peer_record *gfmdc_peer)
 	return (r);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: gfmdc_peer_record.mutex
+ * SLEEPS: no
+ */
 void
 gfmdc_peer_set_first_sync_completed(struct gfmdc_peer_record *gfmdc_peer,
 	int flag)
@@ -377,6 +464,11 @@ gfmdc_peer_get_journal_send_closure(struct gfmdc_peer_record *gfmdc_peer)
  * gfmd channel
  */
 
+/*
+ * PREREQUISITE: abstract_host_receiver_lock()
+ * LOCKS: nothing
+ * SLEEPS: maybe (network I/O)
+ */
 static gfarm_error_t
 gfmdc_server_get_request(struct peer *peer, size_t size,
 	const char *diag, const char *format, ...)
@@ -391,6 +483,11 @@ gfmdc_server_get_request(struct peer *peer, size_t size,
 	return (e);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex -> peer_closing_queue.mutex
+ * SLEEPS: yes (abstract_host_sender_lock() and network I/O)
+ */
 static gfarm_error_t
 gfmdc_server_put_reply_notimeout(struct mdhost *mh,
 	struct peer *peer, gfp_xdr_xid_t xid,
@@ -408,6 +505,11 @@ gfmdc_server_put_reply_notimeout(struct mdhost *mh,
 	return (e);
 }
 
+/*
+ * PREREQUISITE: abstract_host_receiver_lock()
+ * LOCKS: see gfm_client_channel_vrecv_result()
+ * SLEEPS: maybe (network I/O)
+ */
 static gfarm_error_t
 gfmdc_client_recv_result(struct peer *peer, struct mdhost *mh,
 	size_t size, const char *diag, const char *format, ...)
@@ -430,6 +532,11 @@ gfmdc_client_recv_result(struct peer *peer, struct mdhost *mh,
 	return (errcode);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: see gfm_client_channel_vsend_request_notimeout()
+ * SLEEPS: yes (abstract_host_sender_trylock() and network I/O)
+ */
 static gfarm_error_t
 gfmdc_client_send_request(struct mdhost *mh,
 	struct peer *peer0, const char *diag,
@@ -454,6 +561,11 @@ gfmdc_client_send_request(struct mdhost *mh,
 	return (e);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: journal_sync_info.sync_mutex
+ * SLEEPS: no
+ */
 static void
 gfmdc_journal_recv_end_signal(const char *diag)
 {
@@ -466,18 +578,33 @@ gfmdc_journal_recv_end_signal(const char *diag)
 	    SYNC_MUTEX_DIAG);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: see gfmdc_journal_syncsend_completed()
+ * SLEEPS: no
+ */
 static void
 gfmdc_client_journal_syncsend_free(void *p, void *arg)
 {
 	gfmdc_journal_syncsend_completed(arg);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: see gfmdc_journal_asyncsend_free()
+ * SLEEPS: no
+ */
 static void
 gfmdc_client_journal_asyncsend_free(void *p, void *arg)
 {
 	gfmdc_journal_asyncsend_free(arg);
 }
 
+/*
+ * PREREQUISITE: abstract_host_receiver_lock()
+ * LOCKS: mdhost::mutex, journal_seqnum_mutex
+ * SLEEPS: maybe (network I/O)
+ */
 static gfarm_error_t
 gfmdc_client_journal_send_result_common(void *p, void *arg, size_t size)
 {
@@ -496,6 +623,12 @@ gfmdc_client_journal_send_result_common(void *p, void *arg, size_t size)
 	return (e);
 }
 
+/*
+ * PREREQUISITE: abstract_host_receiver_lock()
+ * LOCKS: see gfmdc_client_journal_send_result_common(),
+ *	send_closure.mutex, journal_transfer_mutex
+ * SLEEPS: maybe (network I/O)
+ */
 static gfarm_error_t
 gfmdc_client_journal_syncsend_result(void *p, void *arg, size_t size)
 {
@@ -506,6 +639,12 @@ gfmdc_client_journal_syncsend_result(void *p, void *arg, size_t size)
 	return (e);
 }
 
+/*
+ * PREREQUISITE: abstract_host_receiver_lock()
+ * LOCKS: see gfmdc_client_journal_send_result_common(),
+ *	journal_transfer_mutex
+ * SLEEPS: maybe (network I/O)
+ */
 static gfarm_error_t
 gfmdc_client_journal_asyncsend_result(void *p, void *arg, size_t size)
 {
@@ -516,6 +655,12 @@ gfmdc_client_journal_asyncsend_result(void *p, void *arg, size_t size)
 	return (e);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: send_closure.mutex, mdhost::mutex
+ * SLEEPS: yes (cond_timedwait on send_closure.end_cond up to
+ *	synchronous_journal_timeout)
+ */
 static int
 gfmdc_wait_journal_syncsend(struct gfmdc_journal_send_closure *c)
 {
@@ -542,8 +687,14 @@ gfmdc_wait_journal_syncsend(struct gfmdc_journal_send_closure *c)
 	return (r);
 }
 
+/*
+ * PREREQUISITE: gfmdc_peer_record.journal_send_mutex
+ * LOCKS: gfmdc_peer_record.mutex, journal_seqnum_mutex, journal_file_mutex,
+ *	mdhost::mutex, see gfmdc_client_send_request()
+ * SLEEPS: yes (journal file I/O and network I/O)
+ */
 static gfarm_error_t
-gfmdc_client_journal_send(struct peer *peer,
+gfmdc_client_journal_send_unlocked(struct peer *peer,
 	gfarm_error_t (*result_op)(void *, void *, size_t),
 	void (*disconnect_op)(void *, void *),
 	struct gfmdc_journal_send_closure *c,
@@ -595,6 +746,43 @@ gfmdc_client_journal_send(struct peer *peer,
 	return (e);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: gfmdc_peer_record.journal_send_mutex ->
+ *	see gfmdc_client_journal_send_unlocked()
+ * SLEEPS: yes (journal file I/O and network I/O)
+ *
+ * the records are fetched and sent in the order of seqnum,
+ * even if multiple threads send to the same slave concurrently.
+ * otherwise, the fetch may be regarded as expired, or the slave may
+ * receive the records out of order, then the slave is disconnected.
+ */
+static gfarm_error_t
+gfmdc_client_journal_send(struct peer *peer,
+	gfarm_error_t (*result_op)(void *, void *, size_t),
+	void (*disconnect_op)(void *, void *),
+	struct gfmdc_journal_send_closure *c,
+	gfarm_uint64_t *to_snp)
+{
+	gfarm_error_t e;
+	struct gfmdc_peer_record *gfmdc_peer = peer_get_gfmdc_record(peer);
+	static const char diag[] = "gfmdc_client_journal_send";
+
+	gfarm_mutex_lock(&gfmdc_peer->journal_send_mutex, diag,
+	    PEER_RECORD_JOURNAL_SEND_MUTEX_DIAG);
+	e = gfmdc_client_journal_send_unlocked(peer, result_op, disconnect_op,
+	    c, to_snp);
+	gfarm_mutex_unlock(&gfmdc_peer->journal_send_mutex, diag,
+	    PEER_RECORD_JOURNAL_SEND_MUTEX_DIAG);
+	return (e);
+}
+
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: see gfmdc_client_journal_send(), see gfmdc_wait_journal_syncsend()
+ * SLEEPS: yes (journal file I/O, network I/O, and cond_timedwait on
+ *	send_closure.end_cond)
+ */
 static gfarm_error_t
 gfmdc_client_journal_syncsend(struct peer *peer,
 	struct gfmdc_journal_send_closure *c, gfarm_uint64_t *to_snp)
@@ -612,6 +800,11 @@ gfmdc_client_journal_syncsend(struct peer *peer,
 	return (e);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: see gfmdc_client_journal_send()
+ * SLEEPS: yes (journal file I/O and network I/O)
+ */
 static gfarm_error_t
 gfmdc_client_journal_asyncsend(struct peer *peer,
 	struct gfmdc_journal_send_closure *c, gfarm_uint64_t *to_snp)
@@ -621,6 +814,13 @@ gfmdc_client_journal_asyncsend(struct peer *peer,
 	    gfmdc_client_journal_asyncsend_free, c, to_snp));
 }
 
+/*
+ * PREREQUISITE: abstract_host_receiver_lock()
+ * LOCKS: journal_recvq_mutex, mdhost::mutex,
+ *	abstract_host::mutex -> peer_closing_queue.mutex
+ * SLEEPS: yes (cond_wait on journal_recvq_nonfull_cond while the recvq
+ *	is full, and network I/O)
+ */
 static gfarm_error_t
 gfmdc_server_journal_send(struct mdhost *mh, struct peer *peer,
 	gfp_xdr_xid_t xid, size_t size)
@@ -659,6 +859,15 @@ gfmdc_server_journal_send(struct mdhost *mh, struct peer *peer,
 
 static void* gfmdc_journal_first_sync_thread(void *);
 
+/*
+ * PREREQUISITE: abstract_host_receiver_lock()
+ * LOCKS: gfmdc_peer_record.mutex, journal_file_mutex -> gfarm_privilege_lock(),
+ *	journal_seqnum_mutex, mdhost::mutex, mdhost_master_mutex,
+ *	abstract_host::mutex -> peer_closing_queue.mutex,
+ *	thrpool mutex, thrjobq mutex
+ * SLEEPS: yes (journal file I/O, network I/O, and thrpool_add_job()
+ *	waiting until the job queue becomes nonfull)
+ */
 static gfarm_error_t
 gfmdc_server_journal_ready_to_recv(struct mdhost *mh, struct peer *peer,
 	gfp_xdr_xid_t xid, size_t size)
@@ -742,6 +951,11 @@ struct journal_ready_to_recv_info {
 	gfarm_error_t error;
 };
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: journal_ready_to_recv_info.mutex
+ * SLEEPS: no
+ */
 static void
 gfmdc_client_journal_ready_to_recv_notify(void *arg, gfarm_error_t e,
 	const char *diag)
@@ -756,6 +970,11 @@ gfmdc_client_journal_ready_to_recv_notify(void *arg, gfarm_error_t e,
 	gfarm_mutex_unlock(&ji->mutex, diag, JOURNAL_READY_TO_RECV_MUTEX_DIAG);
 }
 
+/*
+ * PREREQUISITE: abstract_host_receiver_lock()
+ * LOCKS: mdhost::mutex, journal_ready_to_recv_info.mutex
+ * SLEEPS: maybe (network I/O)
+ */
 static gfarm_int32_t
 gfmdc_client_journal_ready_to_recv_result(void *p, void *arg, size_t size)
 {
@@ -772,6 +991,11 @@ gfmdc_client_journal_ready_to_recv_result(void *p, void *arg, size_t size)
 	return (e);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: journal_ready_to_recv_info.mutex
+ * SLEEPS: no
+ */
 static void
 gfmdc_client_journal_ready_to_recv_disconnect(void *p, void *arg)
 {
@@ -782,6 +1006,14 @@ gfmdc_client_journal_ready_to_recv_disconnect(void *p, void *arg)
 	    GFARM_ERR_CONNECTION_ABORTED, diag);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: journal_seqnum_mutex, journal_recvq_mutex,
+ *	see gfmdc_client_send_request(),
+ *	journal_ready_to_recv_info.mutex, mdhost::mutex
+ * SLEEPS: yes (network I/O, and cond_wait on
+ *	journal_ready_to_recv_info.wait_cond until the reply arrives)
+ */
 gfarm_error_t
 gfmdc_client_journal_ready_to_recv(struct mdhost *mh, struct peer *peer)
 {
@@ -796,7 +1028,12 @@ gfmdc_client_journal_ready_to_recv(struct mdhost *mh, struct peer *peer)
 	ji.error = GFARM_ERR_NO_ERROR;
 	ji.end = 0;
 
-	seqnum = db_journal_get_current_seqnum();
+	/*
+	 * the last END record received, including the records in the recvq.
+	 * the records of an incomplete transaction after it are discarded,
+	 * and the master resends them.
+	 */
+	seqnum = db_journal_recvq_reset();
 
 	if ((e = gfmdc_client_send_request(mh, peer, diag,
 	    gfmdc_client_journal_ready_to_recv_result,
@@ -830,6 +1067,12 @@ end:
 	return (e);
 }
 
+/*
+ * PREREQUISITE: abstract_host_receiver_lock()
+ * LOCKS: see gfmdc_server_journal_ready_to_recv() and
+ *	gfmdc_server_journal_send()
+ * SLEEPS: yes (see the functions above)
+ */
 static gfarm_error_t
 gfmdc_protocol_switch(struct abstract_host *h,
 	struct peer *peer, int request, gfp_xdr_xid_t xid, size_t size,
@@ -874,6 +1117,14 @@ gfmdc_main(void *arg)
 		));
 }
 
+/*
+ * PREREQUISITE: nothing (must not hold giant_lock)
+ * LOCKS: giant_lock (-> journal_file_mutex in error case),
+ *	abstract_host::mutex (mdhost_is_up()), mdhost::mutex,
+ *	the locks of mdhost_disconnect_request(),
+ *	giant_lock -> the locks of mdhost_set_peer() and peer_watch_access()
+ * SLEEPS: yes (giant_lock)
+ */
 static gfarm_error_t
 switch_gfmd_channel(struct peer *peer, int from_client,
 	int version, const char *diag)
@@ -924,6 +1175,11 @@ switch_gfmd_channel(struct peer *peer, int from_client,
 	return (e);
 }
 
+/*
+ * PREREQUISITE: nothing (must not hold giant_lock)
+ * LOCKS: see switch_gfmd_channel()
+ * SLEEPS: yes (network I/O, giant_lock)
+ */
 gfarm_error_t
 gfm_server_switch_gfmd_channel(struct peer *peer, int from_client,
 	int skip)
@@ -960,6 +1216,13 @@ gfm_server_switch_gfmd_channel(struct peer *peer, int from_client,
 	return (switch_gfmd_channel(peer, from_client, version, diag));
 }
 
+/*
+ * PREREQUISITE: nothing (must not hold giant_lock)
+ * LOCKS: mdhost_master_mutex, mdhost::mutex, see switch_gfmd_channel(),
+ *	see gfmdc_client_journal_ready_to_recv()
+ * SLEEPS: yes (network I/O, sleep() between connection retries, and
+ *	waiting for the GFM_PROTO_JOURNAL_READY_TO_RECV reply)
+ */
 static gfarm_error_t
 gfmdc_connect(void)
 {
@@ -1097,6 +1360,10 @@ gfmdc_connect(void)
 /*
  * This function is similar to gfmdc_connect(), but it only examines
  * whether another gfmd is running.
+ *
+ * PREREQUISITE: nothing
+ * LOCKS: mdhost_master_mutex, mdhost::mutex
+ * SLEEPS: yes (network I/O)
  */
 int
 gfmdc_is_master_gfmd_running(void)
@@ -1146,6 +1413,11 @@ gfmdc_is_master_gfmd_running(void)
 	return (0);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex, gfmdc_peer_record.mutex
+ * SLEEPS: no
+ */
 static int
 gfmdc_journal_mdhost_can_sync(struct mdhost *mh,
 	struct gfmdc_peer_record *gfmdc_peer)
@@ -1154,6 +1426,14 @@ gfmdc_journal_mdhost_can_sync(struct mdhost *mh,
 	    gfmdc_peer_get_journal_file_reader(gfmdc_peer) != NULL);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: mdhost_master_mutex, mdhost::mutex, gfmdc_peer_record.mutex,
+ *	abstract_host::mutex, see gfmdc_client_journal_asyncsend(),
+ *	journal_transfer_mutex, the locks of mdhost_disconnect_request(),
+ *	journal_seqnum_mutex
+ * SLEEPS: yes (journal file I/O and network I/O)
+ */
 static gfarm_error_t
 gfmdc_journal_asyncsend(struct mdhost *mh, struct peer *peer, int *exist_recsp)
 {
@@ -1187,6 +1467,13 @@ gfmdc_journal_asyncsend(struct mdhost *mh, struct peer *peer, int *exist_recsp)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: mdhost_master_mutex, mdhost::mutex,
+ *	abstract_host::mutex -> peer_closing_queue.mutex,
+ *	see gfmdc_journal_asyncsend()
+ * SLEEPS: yes (journal file I/O and network I/O)
+ */
 static int
 gfmdc_journal_asyncsend_each_mdhost(struct mdhost *mh, void *closure)
 {
@@ -1204,6 +1491,16 @@ gfmdc_journal_asyncsend_each_mdhost(struct mdhost *mh, void *closure)
 	return (1);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: journal_sync_info.async_mutex -> (mdhost_master_mutex,
+ *	mdhost_table_rwlock -> mdhost::mutex),
+ *	mdhost_table_rwlock, see gfmdc_journal_asyncsend_each_mdhost(),
+ *	journal_file_mutex
+ * SLEEPS: yes (cond_wait on journal_sync_info.async_wait_cond,
+ *	journal file I/O, network I/O, and cond_wait on nonempty_cond in
+ *	db_journal_wait_until_readable())
+ */
 void *
 gfmdc_journal_asyncsend_thread(void *arg)
 {
@@ -1230,6 +1527,12 @@ gfmdc_journal_asyncsend_thread(void *arg)
 	return (NULL);
 }
 
+/*
+ * PREREQUISITE: nothing (called with giant_lock held via mdhost_updated())
+ * LOCKS: mdhost_master_mutex, mdhost_table_rwlock -> mdhost::mutex,
+ *	journal_sync_info.async_mutex
+ * SLEEPS: no
+ */
 static void
 gfmdc_journal_asyncsend_thread_wakeup(void)
 {
@@ -1250,17 +1553,44 @@ gfmdc_journal_asyncsend_thread_wakeup(void)
 	    ASYNC_MUTEX_DIAG);
 }
 
+/*
+ * PREREQUISITE: giant_lock (called as mdhost_switch_to_sync_hook),
+ *	must not hold mdhost::mutex, since the thread which this adds to
+ *	journal_sync_thread_pool locks it
+ * LOCKS: abstract_host::mutex -> peer_closing_queue.mutex,
+ *	thrpool mutex, thrjobq mutex
+ * SLEEPS: maybe (thrpool_add_job() waiting until the job queue becomes
+ *	nonfull)
+ */
 static gfarm_error_t
 gfmdc_peer_switch_to_sync(struct mdhost *mh)
 {
 	struct peer *peer = mdhost_get_peer(mh); /* increment refcount */
 	if (peer != NULL) {
+		/*
+		 * the first sync may have been completed while this mdhost
+		 * was a synchronous slave before.  reset the flag, otherwise
+		 * gfmdc_journal_asyncsend() sends nothing to this mdhost,
+		 * and gfmdc_journal_first_sync_thread() loops forever.
+		 * this mdhost becomes a target of the synchronous replication
+		 * after the first sync completes.
+		 * giant_lock prevents gfmdc_journal_sync_multiple() from
+		 * running concurrently.
+		 */
+		gfmdc_peer_set_first_sync_completed(
+		    peer_get_gfmdc_record(peer), 0);
 		thrpool_add_job(journal_sync_thread_pool,
 		    gfmdc_journal_first_sync_thread, peer);
 	}
 	return (GFARM_ERR_NO_ERROR);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: mdhost_master_mutex, abstract_host::mutex ->
+ *	peer_closing_queue.mutex, see gfmdc_connect()
+ * SLEEPS: yes (sleep(GFMDC_CONNECT_INTERVAL), see gfmdc_connect())
+ */
 void *
 gfmdc_connect_thread(void *arg)
 {
@@ -1297,6 +1627,11 @@ gfmdc_connect_thread(void *arg)
 	return (NULL);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: journal_sync_info.sync_mutex
+ * SLEEPS: yes (fdatasync or fsync)
+ */
 static void *
 gfmdc_journal_file_sync_thread(void *arg)
 {
@@ -1315,7 +1650,16 @@ gfmdc_journal_file_sync_thread(void *arg)
 	return (NULL);
 }
 
-/* caller should do mdhost_get_peer(c->peer) before calling this function */
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: see gfmdc_client_journal_syncsend(), mdhost::mutex,
+ *	gfmdc_peer_record.mutex, the locks of mdhost_disconnect_request(),
+ *	peer_closing_queue.mutex, journal_sync_info.sync_mutex
+ * SLEEPS: yes (journal file I/O, network I/O, and cond_timedwait on
+ *	send_closure.end_cond)
+ *
+ * caller should do mdhost_get_peer(c->peer) before calling this function
+ */
 static void *
 gfmdc_journal_syncsend_thread(void *closure)
 {
@@ -1375,6 +1719,12 @@ gfmdc_journal_syncsend_thread(void *closure)
 	return (NULL);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: journal_sync_info.sync_mutex
+ * SLEEPS: yes (cond_timedwait on journal_sync_info.sync_end_cond until all
+ *	recv threads finish; the timeout is logged and doubled up to 120s)
+ */
 static void
 gfmdc_wait_journal_recv_threads(const char *diag)
 {
@@ -1406,6 +1756,12 @@ gfmdc_wait_journal_recv_threads(const char *diag)
 	    SYNC_MUTEX_DIAG);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: mdhost_master_mutex, mdhost::mutex, abstract_host::mutex,
+ *	gfmdc_peer_record.mutex
+ * SLEEPS: no
+ */
 static int
 gfmdc_is_sync_replication_target(struct mdhost *mh, struct peer *peer)
 {
@@ -1418,6 +1774,12 @@ gfmdc_is_sync_replication_target(struct mdhost *mh, struct peer *peer)
 	    gfmdc_peer_is_first_sync_completed(gfmdc_peer));
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex -> peer_closing_queue.mutex,
+ *	see gfmdc_is_sync_replication_target()
+ * SLEEPS: no
+ */
 static int
 gfmdc_journal_sync_count_host(struct mdhost *mh, void *closure)
 {
@@ -1431,6 +1793,14 @@ gfmdc_journal_sync_count_host(struct mdhost *mh, void *closure)
 	return (1);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex -> peer_closing_queue.mutex,
+ *	see gfmdc_is_sync_replication_target(),
+ *	journal_sync_info.sync_mutex, thrpool mutex, thrjobq mutex
+ * SLEEPS: maybe (thrpool_add_job() waiting until the job queue becomes
+ *	nonfull)
+ */
 static int
 gfmdc_journal_sync_mdhost_add_job(struct mdhost *mh, void *closure)
 {
@@ -1497,7 +1867,15 @@ gfmdc_journal_sync_multiple(gfarm_uint64_t seqnum)
 	return (journal_sync_info.file_sync_error);
 }
 
-/* caller should do peer_add_ref(peer) before calling this function */
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: gfmdc_peer_record.mutex, journal_seqnum_mutex, journal_file_mutex,
+ *	mdhost::mutex, see gfmdc_journal_asyncsend(),
+ *	peer_closing_queue.mutex
+ * SLEEPS: yes (journal file I/O and network I/O)
+ *
+ * caller should do peer_add_ref(peer) before calling this function
+ */
 static void*
 gfmdc_journal_first_sync_thread(void *closure)
 {
@@ -1541,6 +1919,22 @@ gfmdc_journal_first_sync_thread(void *closure)
 	}
 
 	while (exist_recs) {
+		/*
+		 * gfmdc_journal_asyncsend() sends nothing and does not
+		 * update exist_recs in these cases.  do not loop forever.
+		 */
+		if (!gfmdc_journal_mdhost_can_sync(mh, gfmdc_peer))
+			break; /* e.g. disconnected, logged as aborted */
+		if (gfmdc_peer_is_first_sync_completed(gfmdc_peer)) {
+			/*
+			 * another first sync thread for this peer has
+			 * completed, i.e. it has sent the records, since
+			 * the records are sent in order of seqnum under
+			 * journal_send_mutex.  logged as completed.
+			 */
+			exist_recs = 0;
+			break;
+		}
 		if ((e = gfmdc_journal_asyncsend(mh, peer, &exist_recs))
 		    != GFARM_ERR_NO_ERROR) {
 			gflog_error(GFARM_MSG_1003007,
@@ -1581,6 +1975,11 @@ static pthread_cond_t journal_transfer_event = PTHREAD_COND_INITIALIZER;
 static const char JOURNAL_TRANSFER_MUTEX_DIAG[] = "journal_transfer_mutex";
 static const char JOURNAL_TRANSFER_EVENT_DIAG[] = "journal_transfer_event";
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: journal_transfer_mutex
+ * SLEEPS: no
+ */
 static void
 gfmdc_journal_transfer_event(void)
 {
@@ -1595,6 +1994,12 @@ gfmdc_journal_transfer_event(void)
 	    diag, JOURNAL_TRANSFER_MUTEX_DIAG);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: abstract_host::mutex -> peer_closing_queue.mutex,
+ *	mdhost::mutex, gfmdc_peer_record.mutex, journal_seqnum_mutex
+ * SLEEPS: no
+ */
 static int
 gfmdc_journal_transferring_each_mdhost(struct mdhost *mh, void *closure)
 {
@@ -1644,6 +2049,11 @@ gfmdc_journal_transferring_each_mdhost(struct mdhost *mh, void *closure)
 
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: mdhost_table_rwlock, see gfmdc_journal_transferring_each_mdhost()
+ * SLEEPS: no
+ */
 static int
 gfmdc_journal_transferring(void)
 {
@@ -1653,7 +2063,14 @@ gfmdc_journal_transferring(void)
 	return (transferring);
 }
 
-/* NOTE: caller of this function should acquire giant_lock as well */
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: see gfmdc_journal_transferring(), journal_transfer_mutex
+ * SLEEPS: yes (cond_timedwait on journal_transfer_event up to
+ *	metadb_server_slave_replication_timeout)
+ *
+ * NOTE: caller of this function should acquire giant_lock as well
+ */
 void
 gfmdc_journal_transfer_wait(void)
 {

@@ -1,0 +1,166 @@
+'\" t
+.\"     Title: gfarm-pcp
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 10 Nov 2026
+.\"    Manual: Gfarm
+.\"    Source: Gfarm
+.\"  Language: English
+.\"
+.TH "GFARM\-PCP" "1" "10 Nov 2026" "Gfarm" "Gfarm"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+gfarm-pcp \- 複数のホストにファイルをコピーする
+.SH "SYNOPSIS"
+.HP \w'\fBgfarm\-pcp\fR\ 'u
+\fBgfarm\-pcp\fR [\fIオプション\fR] \fIコピー元\fR \fIコピー先\fR
+.HP \w'\fBgfarm\-pcp\fR\ 'u
+\fBgfarm\-pcp\fR [\fIオプション\fR] \fIコピー元\fR... \fIディレクトリ\fR
+.SH "DESCRIPTION"
+.PP
+\fBgfarm\-pcp\fR
+は、ローカルの
+\fIコピー元\fRのファイルを、 ホストファイルに記述された各ホストの\fIコピー先\fR
+あるいは\fIディレクトリ\fRに、 リモートコピーコマンド (デフォルトは
+\fBscp \-pr\fR) を用いてコピーします。コピー先の相対パスは、 リモートホストのホームディレクトリからの相対パスとなります。 Gfarm のファイルシステムノードへの設定ファイルの配布などに利用できます。
+.PP
+デフォルトでは、一つのホストずつ順番にファイルをコピーします。 \-p オプションを指定すると、複数のホストに並列にファイルをコピーします。
+.PP
+ホストファイルの形式と、ローカルホストを除外する方法は
+\fBgfarm\-prun\fR
+と同じです。
+\fBgfarm-prun\fR(1)
+を参照してください。
+.PP
+環境変数 PRUN_RCP に
+no
+を設定すると、 リモートコピーコマンドを用いず、 環境変数 PRUN_RSH で指定するリモートシェルコマンドを用いてファイルをコピーします。この場合、 最後の引数はリモートホスト上のディレクトリである必要があり、 コピーできるのは通常ファイルだけです。また、 ファイルのパーミッションは保存されません。
+.SH "OPTIONS"
+.PP
+\fB\-a\fR
+.RS 4
+ホストファイルにローカルホストが含まれている場合、 ローカルホストにもファイルをコピーします。
+.RE
+.PP
+\fB\-h\fR \fIホストファイル\fR
+.RS 4
+ホストファイルを指定します。`\-\*(Aq を指定すると、 ホストの一覧を標準入力から読み込みます。
+.RE
+.PP
+\fB\-m\fR \fI最大ジョブ数\fR
+.RS 4
+\-p オプションを指定したときに、 並列にファイルをコピーするホストの最大数を指定します。デフォルトは 16 です。
+.RE
+.PP
+\fB\-n\fR
+.RS 4
+実行するコマンドを表示しますが、実行はしません。
+.RE
+.PP
+\fB\-p\fR
+.RS 4
+バックグラウンドで、複数のホストに並列にファイルをコピーします。
+.RE
+.PP
+\fB\-rcp\fR \fIリモートコピーコマンド\fR
+.RS 4
+リモートコピーコマンドを指定します。デフォルトは
+\fBscp \-pr\fR
+です。no
+を指定すると、 上記のようにリモートシェルコマンドを用いてファイルをコピーします。
+.RE
+.PP
+\fB\-v\fR
+.RS 4
+各ホストにファイルをコピーする前に、ホスト名を表示します。 \-p オプションを指定した場合は、このオプションは効果がありません。
+.RE
+.SH "ENVIRONMENT VARIABLES"
+.PP
+\fBPRUN_RCP\fR
+.RS 4
+リモートコピーコマンドを指定します。デフォルトは
+\fBscp \-pr\fR
+です。
+.RE
+.PP
+\fBPRUN_RSH\fR
+.RS 4
+PRUN_RCP が
+no
+の場合に利用するリモートシェルコマンドを指定します。デフォルトは
+\fBssh\fR
+です。
+.RE
+.PP
+\fBPRUN_HOSTFILE\fR, \fBPRUN_HOSTNAME\fR, \fBPRUN_MAX_JOBS\fR, \fBPRUN_PARALLEL\fR, \fBPRUN_ALL_INCLUDE_MYSELF\fR, \fBPRUN_VERBOSE\fR
+.RS 4
+\fBgfarm\-prun\fR
+と同じです。
+\fBgfarm-prun\fR(1)
+を参照してください。
+.RE
+.SH "EXIT STATUS"
+.PP
+全てのホストへのコピーが成功した場合、
+\fBgfarm\-pcp\fR
+は 0 で終了します。 そうでない場合、コピーが失敗したホストについて、 コピーコマンドの終了ステータスで終了します。 複数のホストで失敗した場合は、 そのうちの一つのホストに対する終了ステータスを返します。
+.SH "EXAMPLES"
+.PP
+gfarm2\&.conf
+を、
+$HOME/\&.nodelist
+に記述された、 ローカルホスト以外の全てのホストの
+/tmp
+にコピーします。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	$ gfarm\-pcp gfarm2\&.conf /tmp
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+ユーザの共有鍵を、
+hosts
+に記述された全てのホストのホームディレクトリに、並列にコピーします。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	$ gfarm\-pcp \-p \-h hosts \&.gfarm_shared_key \&.
+.fi
+.if n \{\
+.RE
+.\}
+.SH "FILES"
+.PP
+$HOME/\&.nodelist
+.RS 4
+デフォルトのホストファイル
+.RE
+.SH "SEE ALSO"
+.PP
+\fBgfarm-prun\fR(1),
+\fBscp\fR(1)

@@ -6,10 +6,10 @@ program=gfarm-pcp
 MIN_ARGS=2
 
 usage() {
-	echo "usage: $program [ -h hostfile ] [ -rcp rcp_command ] [ -a ] [ -v ] [ -n ]"
-	echo "           filename1 filename2"
-	echo "       $program [ -h hostfile ] [ -rcp rcp_command ] [ -a ] [ -v ] [ -n ]"
-	echo "           filename ... directory"
+	echo "usage: $program [ -h hostfile ] [ -rcp rcp_command ] [ -m max_jobs ]"
+	echo "           [ -p ] [ -a ] [ -v ] [ -n ] filename1 filename2"
+	echo "       $program [ -h hostfile ] [ -rcp rcp_command ] [ -m max_jobs ]"
+	echo "           [ -p ] [ -a ] [ -v ] [ -n ] filename ... directory"
 	echo ""
 	echo "options:"
 	echo "        -a  execute on all nodes listed in the hostfile including myself."

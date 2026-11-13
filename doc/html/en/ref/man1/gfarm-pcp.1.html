@@ -1,0 +1,127 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfarm-pcp</title>
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
+<a name="gfarm-pcp.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfarm-pcp — copy files to multiple hosts</p>
+</div>
+<div class="refsynopsisdiv">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gfarm-pcp</code>  [<em class="replaceable"><code>options</code></em>]  <em class="replaceable"><code>source</code></em>   <em class="replaceable"><code>destination</code></em> </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfarm-pcp</code>  [<em class="replaceable"><code>options</code></em>]  <em class="replaceable"><code>source</code></em>...   <em class="replaceable"><code>directory</code></em> </p></div>
+</div>
+<div class="refsect1">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p><span class="command"><strong>gfarm-pcp</strong></span> copies local files
+<em class="parameter"><code>source</code></em> to
+<em class="parameter"><code>destination</code></em> or
+<em class="parameter"><code>directory</code></em> on each host listed in
+a hostfile, by using a remote copy command,
+<span class="command"><strong>scp -pr</strong></span> by default.
+A relative path of the destination is relative to the home directory
+on the remote host.
+It is useful, for example, to distribute configuration files to
+filesystem nodes of Gfarm.</p>
+<p>By default, files are copied to one host after another.
+When the -p option is specified, files are copied to multiple hosts in
+parallel.</p>
+<p>The format of the hostfile, and how the local host is skipped,
+are the same as <span class="command"><strong>gfarm-prun</strong></span>.
+See <span class="citerefentry"><span class="refentrytitle">gfarm-prun</span>(1)</span>.</p>
+<p>When the PRUN_RCP environment variable is set to
+<code class="literal">no</code>, files are copied by the remote shell command
+specified by the PRUN_RSH environment variable, without a remote copy
+command.  In this case, the last argument must be a directory on the
+remote host, and only regular files can be copied.
+The permission of the files is not preserved.</p>
+</div>
+<div class="refsect1">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><code class="option">-a</code></span></dt>
+<dd><p>Copies files also to the local host, if it is listed in the
+hostfile.</p></dd>
+<dt><span class="term"><code class="option">-h</code> <em class="parameter"><code>hostfile</code></em></span></dt>
+<dd><p>Specifies a hostfile.  If `-' is specified, the list of hosts is
+read from the standard input.</p></dd>
+<dt><span class="term"><code class="option">-m</code> <em class="parameter"><code>max_jobs</code></em></span></dt>
+<dd><p>Specifies the maximum number of hosts to which files are copied
+in parallel with the -p option.  The default is 16.</p></dd>
+<dt><span class="term"><code class="option">-n</code></span></dt>
+<dd><p>Displays the commands that would be executed, but does not
+execute them.</p></dd>
+<dt><span class="term"><code class="option">-p</code></span></dt>
+<dd><p>Copies files to multiple hosts in parallel in the
+background.</p></dd>
+<dt><span class="term"><code class="option">-rcp</code> <em class="parameter"><code>rcp_command</code></em></span></dt>
+<dd><p>Specifies a remote copy command.  The default is
+<span class="command"><strong>scp -pr</strong></span>.  If <code class="literal">no</code>
+is specified, files are copied by the remote shell command as
+described above.</p></dd>
+<dt><span class="term"><code class="option">-v</code></span></dt>
+<dd><p>Displays the host name before copying files to the host.
+This option has no effect with the -p option.</p></dd>
+</dl></div>
+</div>
+<div class="refsect1">
+<a name="environment-variables"></a><h2>ENVIRONMENT VARIABLES</h2>
+<div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><code class="envar">PRUN_RCP</code></span></dt>
+<dd><p>Specifies a remote copy command.  The default is
+<span class="command"><strong>scp -pr</strong></span>.</p></dd>
+<dt><span class="term"><code class="envar">PRUN_RSH</code></span></dt>
+<dd><p>Specifies a remote shell command that is used when PRUN_RCP is
+<code class="literal">no</code>.  The default is
+<span class="command"><strong>ssh</strong></span>.</p></dd>
+<dt><span class="term"><code class="envar">PRUN_HOSTFILE</code>, <code class="envar">PRUN_HOSTNAME</code>,
+<code class="envar">PRUN_MAX_JOBS</code>, <code class="envar">PRUN_PARALLEL</code>,
+<code class="envar">PRUN_ALL_INCLUDE_MYSELF</code>, <code class="envar">PRUN_VERBOSE</code></span></dt>
+<dd><p>The same as <span class="command"><strong>gfarm-prun</strong></span>.
+See <span class="citerefentry"><span class="refentrytitle">gfarm-prun</span>(1)</span>.</p></dd>
+</dl></div>
+</div>
+<div class="refsect1">
+<a name="exit-status"></a><h2>EXIT STATUS</h2>
+<p><span class="command"><strong>gfarm-pcp</strong></span> exits with 0 when
+files are copied to all hosts successfully.  Otherwise, it exits with
+the exit status of the copy command for a host to which the copy
+fails.  When it fails for two or more hosts, the exit status for one
+of them is returned.</p>
+</div>
+<div class="refsect1">
+<a name="examples"></a><h2>EXAMPLES</h2>
+<p>Copies <code class="filename">gfarm2.conf</code> to
+<code class="filename">/tmp</code> on all hosts listed in
+<code class="filename">$HOME/.nodelist</code>,
+except the local host.</p>
+<div class="literallayout"><p><br>
+	$ gfarm-pcp gfarm2.conf /tmp<br>
+</p></div>
+<p>Copies the shared secret key of the user to the home directory
+on all hosts listed in <code class="filename">hosts</code>, in
+parallel.</p>
+<div class="literallayout"><p><br>
+	$ gfarm-pcp -p -h hosts .gfarm_shared_key .<br>
+</p></div>
+</div>
+<div class="refsect1">
+<a name="files"></a><h2>FILES</h2>
+<div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><code class="filename">$HOME/.nodelist</code></span></dt>
+<dd><p>the default hostfile</p></dd>
+</dl></div>
+</div>
+<div class="refsect1">
+<a name="see-also"></a><h2>SEE ALSO</h2>
+<p>
+  <span class="citerefentry"><span class="refentrytitle">gfarm-prun</span>(1)</span>,
+  <span class="citerefentry"><span class="refentrytitle">scp</span>(1)</span>
+</p>
+</div>
+</div></body>
+</html>

@@ -21,7 +21,6 @@ SASL 認証
 <H1>SASL 認証</H1>
 <A href="../../en/user/auth-sasl.html">English</A> | 日本語
 <P>
-<P>
 この文書は、Gfarm の SASL 認証で必要な設定について説明します。
 
 <P>
@@ -41,8 +40,8 @@ Gfarm における SASL認証には以下の2種類があります。
 SASL 認証では TLS で暗号化された通信路を利用するため、あらかじめ
 <A HREF="auth-tls.html#TLS-common-setting">
 「TLS 認証」の
-「tls_sharedsecret 認証、tls_client_certificate 認証、sasl_auth 認証
-  および sasl 認証に共通の設定」の項にある設定</A>を
+「tls_sharedsecret 認証、tls_client_certificate 認証、
+  sasl 認証および sasl_auth 認証に共通の設定」の項にある設定</A>を
 実施しておく必要があります。
 
 <HR>
@@ -86,15 +85,15 @@ XOAUTH2 メカニズムについては以下を参照してください。
 <P>
 XOAUTH2 メカニズムを利用する場合、
 <A HREF="https://github.com/oss-tsukuba/cyrus-sasl-xoauth2-idp">cyrus-sasl-xoauth2-idp パッケージ</A>をインストールし、
-Cyrus SASL のサーバー設定ファイルに
-以下の内容の設定を gfarm.conf という名称で置きます。
+Cyrus SASL のサーバー設定ファイル (gfarm.conf) に
+以下の内容を設定します。
 <PRE>
 mech_list: XOAUTH2
 xoauth2_scope: JWTのサーバー側検証時にJWTへ要求する scope
 xoauth2_aud: JWTのサーバー側検証時にJWTへ要求する audience
 xoauth2_user_claim: JWT中でユーザーIDとして用いるclaimのkey名
-xoauth2_group_user: ユーザIDとscopeとissuerのリスト
-xoauth2_issuers: 信頼できるJWT発行サーバのURL(issuer)のリスト
+xoauth2_group_user: ユーザーIDとscopeとissuerのリスト
+xoauth2_issuers: 信頼できるJWT発行サーバーのURL(issuer)のリスト
 </PRE>
 具体的な設定は OAuth IdP の構成に依存しますが、たとえば以下のようになります。
 <PRE>
@@ -110,16 +109,16 @@ xoauth2_issuers: https://keycloak.example.com/auth/realms/hpci https://keycloak.
 xoauth2_scopeでは複数のscopeを指定することが可能です。
 その場合、そのどれかを満たしていることが必要となります。
 xoauth2_audについても同様です。
-xoauth_user_claimはユーザIDとして使われるclaimのkey名を指定します。
+xoauth2_user_claimはユーザーIDとして使われるclaimのkey名を指定します。
 key名はissuer毎に設定することが可能です。
-xoauth_group_userはissuerとscopeを指定してグループユーザIDを指定します。
+xoauth2_group_userはissuerとscopeを指定してグループユーザーIDを指定します。
 issuerとscopeにはワイルドカードも利用可能です。
 xoauth2_issuersには信頼できるissuerのリストを指定します。
 xoauth2_issuersの設定をしないと全てのissuerを信頼してしまうためセキュリティ的な問題が生じます。
 </P>
 
 <P>
-設定方法の詳細は<A HREF="https://github.com/oss-tsukuba/cyrus-sasl-xoauth2-idp/blob/feature/keycloak/doc/configuration.md">こちら</A>
+設定方法の詳細は<A HREF="https://github.com/oss-tsukuba/cyrus-sasl-xoauth2-idp/blob/feature/keycloak/doc/configuration.md">cyrus-sasl-xoauth2-idp の設定文書</A>
 を参照してください。
 </P>
 
@@ -152,14 +151,14 @@ sasl_mechanisms "PLAIN XOAUTH2"
 その他の設定については、Cyrus SASL のドキュメントに従ってください。
 
 <P>
-SASLユーザ名とGfarmのユーザ名が異る場合は、SASLユーザ名を以下のように
+SASLユーザー名とGfarmのユーザー名が異なる場合は、SASLユーザー名を以下のように
 登録します。
 <PRE>
-% gfuser -A Gfarmユーザ名 SASL SASLユーザ名
+% gfuser -A Gfarmユーザー名 SASL SASLユーザー名
 </PRE>
 
 <P>
-ANONYMOUS メカニズムを利用する場合は anonymous ユーザを作成します。
+ANONYMOUS メカニズムを利用する場合は anonymous ユーザーを作成します。
 <PRE>
 % gfuser -c anonymous anon / ""
 </PRE>
@@ -181,7 +180,7 @@ sasl_mechanisms "ANONYMOUS"
 sasl_user "dummy-user-name"
 </PRE>
 
-anonymous メカニズムの設定にはユーザ特有の情報は含まれていませんから、
+ANONYMOUS メカニズムの設定にはユーザー固有の情報は含まれていませんから、
 gfarm2.conf に設定することも可能です。
 
 <H3>PLAIN メカニズムの場合</H3>
@@ -207,18 +206,18 @@ sasl_user "ユーザー名"
 Cyrus SASL の設定を置くディレクトリ
 ($(pkg-config --variable=libdir libsasl2)/sasl2) に
 以下の内容の設定を gfarm-client.conf という名称で置くと、
-JWT中の値をユーザIDとして利用することもできます。
+JWT中の値をユーザーIDとして利用することもできます。
 この場合、sasl_userの設定は削除する必要があります。
-また、環境変数（GFARM_SASL_USER）でユーザIDを指定することもできます。
+また、環境変数 GFARM_SASL_USER でユーザーIDを指定することもできます。
 優先度は環境変数GFARM_SASL_USER > sasl_user設定 > xoauth2_user_claimになります。
 
 <PRE>
 xoauth2_user_claim: JWT中でユーザーIDとして用いるclaimのkey名
 </PRE>
 
-xoauth2_user_claimによりユーザIDを指定する場合、
-ユーザ固有の設定は不要となるため、
-sasl_mechanismの設定だけをgfarm2.confでシステムワイドに設定することも可能となります。
+xoauth2_user_claimによりユーザーIDを指定する場合、
+ユーザー固有の設定は不要となるため、
+sasl_mechanismsの設定だけをgfarm2.confでシステムワイドに設定することも可能となります。
 
 <P>
 さらに環境変数 JWT_USER_PATH で指定されたファイル、
@@ -232,7 +231,7 @@ chmod(1) コマンドを用いて JWT ファイルのモードを 0600 ないし
 <A HREF="https://github.com/oss-tsukuba/jwt-logon">jwt-logon</A> コマンドや <A HREF="https://github.com/oss-tsukuba/jwt-agent">jwt-agent</A> コマンドを用いると、
 トークンを取得してこのファイルに適切なモードで JWT を設定することができます。
 <P>
-環境変数 JWT_USER_PATH に設定されいている値の最初の文字が「!」である場合、
+環境変数 JWT_USER_PATH に設定されている値の最初の文字が「!」である場合、
 それ以降の文字列をコマンドと見なして実行し、そのコマンドの出力を
 XOAUTH2 で用いるアクセストークンと見なします。
 

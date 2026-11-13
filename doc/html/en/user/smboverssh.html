@@ -1,0 +1,207 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML><HEAD>
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<TITLE>Grid Datafarm:  Gfarm over SMB over SSH [English]</TITLE>
+<META content="document" name="resource-type">
+</HEAD>
+<BODY><A href="http://oss-tsukuba.org/en/software/gfarm">
+<IMG alt="[GFARM LOGO]" width=120 src="../../pic/Gfarm_logo_tate_color.svg" align=right border=0></A>
+<A href="../../index.html">documents</A> &gt;
+<A href="index.html">User's Manual</A> &gt;
+Accessing Samba by SSH port forwarding
+
+<H1>Accessing Samba by Using SSH Port Forwarding</H1>
+English | <A href="../../ja/user/smboverssh.html">Japanese</A>
+
+<H2>1. Overview</H2>
+
+If a Samba server is on a network reachable from an SSH server,
+and you can log in to the SSH server by SSH,
+you can access the Samba server.
+That is, from a Windows machine in an environment that normally cannot
+reach it, you can access Windows file sharing services and Samba
+across firewalls and the Internet by SSH, without VPN.
+This is done with the port forwarding feature of SSH.
+The procedure is simple.
+<H3>Configuration example 1</H3>
+<UL>
+<li>Windows client: at the office, mobile, etc.
+<li>SSH server: at home, via port forwarding of a broadband router (or in a DMZ)
+<li>Windows file sharing: private network at home
+</UL>
+<P>
+With the above configuration, for example, you can access files
+on the Windows machine at home from outside.
+<P>
+As an application, by placing Samba and an SSH server in a Gfarm
+environment that is not accessible from outside,
+you can access Gfarm from outside.<BR>
+For how to access Gfarm via Samba, see
+<UL>
+<LI> <A HREF="https://github.com/oss-tsukuba/gfarm-samba/releases/">by using Gfarm Samba plugin</A>
+<LI> <A HREF="samba-gfarmfs.html">by using gfarm2fs</A>
+</UL>
+
+<H3>Configuration example 2</H3>
+<UL>
+<li>Windows client: over the Internet, behind a broadband router at home, mobile, etc.
+<li>SSH server: gateway of the company (inside or outside)
+<li>Samba server: private network in the company
+<li>Gfarm: private network in the company
+</UL>
+
+<H3>Configuration example 3</H3>
+<UL>
+<li>Windows client: behind the company firewall; a proxy server is required to access the Internet
+<li>Proxy in the company: SOCKS/HTTP proxy (SSH to outside via the proxy)
+<li>SSH server: gateway of another company
+<li>Samba server: private network in the other company
+<li>Gfarm: private network in the other company
+</UL>
+
+
+Even in the above cases, you can access Samba and Gfarm across the Internet.<BR>
+This can also be applied to other configurations,
+as long as there is a path reachable by SSH.
+<P>
+The following describes how to forward ports to Samba or Windows
+machines by SSH (independently of Gfarm).
+
+<H2>2. Software</H2>
+<UL>
+<LI>Windows machine (tested on 2000, XP, and Vista); the Administrator privilege is required
+<LI>SSH client for Windows (for port forwarding); use one of the following (the latest version if possible)
+  <UL>
+  <LI>PuTTY: <A HREF="https://www.chiark.greenend.org.uk/~sgtatham/putty/">https://www.chiark.greenend.org.uk/~sgtatham/putty/</A>
+  <LI>Cygwin OpenSSH: <A HREF="https://www.cygwin.com/">https://www.cygwin.com/</A>
+  <LI>PortForwarder: <A HREF="http://www.fuji-climb.org/pf/">http://www.fuji-climb.org/pf/</A>
+  </UL>
+</UL>
+
+<H2>3. Installing a virtual network interface</H2>
+
+Prepare a network interface used as the forwarding source,
+in addition to the network interface currently in use.
+It does not need to be a physical interface;
+a virtual interface can be used as follows.
+
+<OL>
+<LI>Open the Control Panel.
+<LI>Open "Add Hardware".
+<LI>Click "Next".
+<LI>Select "Yes, I have already connected the hardware", and click "Next".
+<LI>Select "Add a new hardware device" at the bottom, and click "Next".
+<LI>Select "Install the hardware that I manually select from a list (Advanced)", and click "Next".
+<LI>Select "Network adapters", and click "Next".
+<LI>Select "Microsoft" and "Microsoft Loopback Adapter", and click "Next".
+<LI>Continue until the installation is completed.
+<LI>After the installation, open "Network Connections" from the Control Panel.
+<LI>Find the icon whose device name is "Microsoft Loopback Adapter".
+<LI># It is convenient to rename the icon to an easily recognizable name such as "for SMB over SSH".
+<LI>Open its properties, and on the "General" tab, uncheck "File and Printer Sharing for Microsoft Networks".
+<LI>Keep "Internet Protocol (TCP/IP)" checked, select it, and click "Properties".
+<LI>Enter an IP address and subnet mask that do not conflict with other machines.
+You will probably use a private address range or the link-local address range (169.254.*.*).
+The following describes an example using 169.254.0.1/255.255.0.0.
+You do not need to enter the gateway and DNS fields.
+<LI>Open "Advanced".  On the "WINS" tab, select "Disable NetBIOS over TCP/IP".
+<LI>Click OK to close each dialog.
+</OL>
+
+<SMALL>
+<UL>
+<LI>Port 139/TCP (445/TCP on Vista) of the network interface normally in use is already used, so this method is used to obtain port 139 (445).
+<LI>You can add more IP addresses on "Advanced" -&gt; "IP Settings" tab -&gt; "IP addresses", and use them as additional forwarding sources to use Samba at multiple sites at the same time.
+<LI>It is convenient to map the IP addresses to names of your choice in the %windir%\system32\drivers\etc\hosts file.
+</UL>
+</SMALL>
+
+
+<H2>4. Port forwarding settings</H2>
+
+Using the local forwarding feature of SSH, forward port 139 (445 on Vista)
+of the virtual network interface to port 139 (445 on Vista) of a machine
+reachable from the SSH server.
+The following uses port 139; on Vista, read it as 445.
+<P>
+<SMALL>
+<UL>
+<LI>When forwarding ports through multi-hop SSH connections, intermediate ports can be other than 139, but both the entrance and the final exit must be port 139.
+<LI>By changing the port number when forwarding, you can also run Samba on a port other than 139.
+</UL>
+</SMALL>
+<P>
+The following assumes this configuration.
+<UL>
+<LI>Virtual network interface on the client configured above: "169.254.0.1"
+<LI>Host name of the SSH server: sshserver.example.com
+<LI>IP address of the Samba machine as seen from the SSH server: "192.168.1.234"
+  <UL>
+  <LI>If the SSH server and the Samba machine are the same, "127.0.0.1" can also be used.
+  <LI>A name such as sambaserv.example.com can also be specified.
+  </UL>
+</UL>
+
+<H3>PuTTY</H3>
+
+<OL>
+<LI>Create and save an SSH session to sshserver.example.com, and make sure that you can connect.
+<LI>Restart PuTTY, and load the session again.
+<LI>Select "Tunnels" ("Connection" -&gt; "SSH" -&gt;).
+<LI>Enter "169.254.0.1:139" as "Source port" (the field is narrow) and "192.168.1.234:139" as "Destination", make sure that "Local" is checked, and click "Add".
+<LI>Save the session.
+</OL>
+
+<H3>Cygwin OpenSSH or PortForwarder</H3>
+
+Add a setting like the following to .ssh/config for Cygwin,
+or to the configuration file (.txt) for PortForwarder.
+<P>
+Example
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+Host sshServerForSamba
+HostName sshserver.example.com
+User takuya
+Port 22
+LocalForward 169.254.0.1:139 192.168.1.234:139
+</PRE></TD></TR></TBODY></TABLE>
+
+
+<H2>5. Connecting</H2>
+<OL>
+<LI>Connect to the SSH server by the SSH client configured above.
+<LI>Open Explorer.
+<LI>Enter "\\169.254.0.1" in the address bar.
+<LI># If you cannot connect, try the latest version of the SSH client.
+<LI>If a password is requested, enter the user name and password for the forwarded Windows or Samba machine.
+<LI>You can also map the shared folder to a network drive.
+</OL>
+
+<H2>6. Disconnecting</H2>
+
+<OL>
+<LI>Right-click "My Computer", and open "Disconnect Network Drive".
+<LI>If the corresponding drive exists, select it and click OK to disconnect.
+<LI>After disconnecting, or if there is no corresponding drive, exit the SSH client.
+</OL>
+
+<H2>7. Miscellaneous</H2>
+
+<UL>
+<LI>Since only TCP is forwarded by SSH, this is easier and safer than VPN.
+<LI>The communication performance depends on that of SSH.  The cipher and compression modes also affect it.
+</UL>
+
+<H2>8. For Linux (reference/comparison)</H2>
+
+On Linux, you can directly access files under a Gfarm directory
+that is not directly accessible from your client, as follows.
+This is even easier.
+<UL>
+<LI>On your client, mount the directory of the following server over SSH by using <A HREF="https://github.com/libfuse/sshfs">SSHFS</A>.
+<LI>On the SSH server machine that can access Gfarm, mount Gfarm by using <A HREF="https://github.com/oss-tsukuba/gfarm2fs/releases/">gfarm2fs</A>.
+</UL>
+
+<HR>
+
+<ADDRESS><A href="http://oss-tsukuba.org/en/software/gfarm">Gfarm File System</A></ADDRESS></BODY></HTML>

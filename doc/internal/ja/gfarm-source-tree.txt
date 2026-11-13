@@ -284,5 +284,3 @@ package/
 	redhat/
 
 	solaris/
-
-debian/

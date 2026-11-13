@@ -1,0 +1,215 @@
+'\" t
+.\"     Title: gfarm-prun
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 10 Nov 2026
+.\"    Manual: Gfarm
+.\"    Source: Gfarm
+.\"  Language: English
+.\"
+.TH "GFARM\-PRUN" "1" "10 Nov 2026" "Gfarm" "Gfarm"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+gfarm-prun \- 複数のホストでコマンドを実行する
+.SH "SYNOPSIS"
+.HP \w'\fBgfarm\-prun\fR\ 'u
+\fBgfarm\-prun\fR [\fIオプション\fR] \fIコマンド\fR [\fI引数\fR...]
+.SH "DESCRIPTION"
+.PP
+\fBgfarm\-prun\fR
+は、 ホストファイルに記述された各ホストで、
+\fIコマンド\fR
+を\fI引数\fRとともに、 リモートシェルコマンド (デフォルトは
+\fBssh\fR) を用いて実行します。Gfarm のファイルシステムノードの設定や管理などに利用できます。
+.PP
+デフォルトでは、一つのホストずつ順番にコマンドを実行します。 \-p オプションを指定すると、複数のホストで並列にコマンドを実行します。
+.PP
+ホストファイルには、一行に一つのホスト名を記述します。 各行の最初のフィールドだけが利用されます。 `#\*(Aq から行末まではコメントとみなされ、空行は無視されます。 デフォルトのホストファイルは
+$HOME/\&.nodelist
+です。
+.PP
+\-a オプションを指定しない場合、 ローカルホストではコマンドを実行しません。
+\fBhostname\fR
+の出力、あるいは
+\fBhostname \-I\fR
+で表示される IP アドレスのいずれかに一致するホストを、ローカルホストとみなします。
+node1
+と
+node1\&.example\&.com
+のように、一方だけにドメイン部がある場合も一致しますが、
+node1
+と
+node10
+は一致しません。 これらの名前は環境変数 PRUN_HOSTNAME で変更できます。
+.PP
+コマンドラインはリモートシェルコマンドに渡され、 リモートホスト上のシェルで解釈されます。コマンドライン中のワイルドカードは、 ローカルホストではなくリモートホストで展開されます。
+.PP
+\-stdin オプションを指定しない場合、 リモートで実行するコマンドの標準入力は
+/dev/null
+となります。
+.SH "OPTIONS"
+.PP
+\fB\-a\fR
+.RS 4
+ホストファイルにローカルホストが含まれている場合、 ローカルホストでもコマンドを実行します。
+.RE
+.PP
+\fB\-h\fR \fIホストファイル\fR
+.RS 4
+ホストファイルを指定します。`\-\*(Aq を指定すると、 ホストの一覧を標準入力から読み込みます。
+.RE
+.PP
+\fB\-m\fR \fI最大ジョブ数\fR
+.RS 4
+\-p オプションを指定したときに、 並列にコマンドを実行するホストの最大数を指定します。デフォルトは 16 です。
+.RE
+.PP
+\fB\-n\fR
+.RS 4
+実行するコマンドを表示しますが、実行はしません。
+.RE
+.PP
+\fB\-p\fR
+.RS 4
+バックグラウンドで、複数のホストで並列にコマンドを実行します。
+.RE
+.PP
+\fB\-rsh\fR \fIリモートシェルコマンド\fR
+.RS 4
+リモートシェルコマンドを指定します。デフォルトは
+\fBssh\fR
+です。
+.RE
+.PP
+\fB\-stdin\fR \fIファイル\fR
+.RS 4
+各ホストで実行するコマンドの標準入力に与えるファイルを指定します。 このオプションは複数回指定でき、 その場合はファイルを連結したものが標準入力となります。`\-\*(Aq を指定すると、
+\fBgfarm\-prun\fR
+の標準入力を一度読み込み、各ホストのコマンドに与えます。\-h オプションと \-stdin オプションの両方に `\-\*(Aq を指定することはできません。
+.RE
+.PP
+\fB\-v\fR
+.RS 4
+各ホストでコマンドを実行する前に、ホスト名を表示します。 \-p オプションを指定した場合は、このオプションは効果がありません。
+.RE
+.SH "ENVIRONMENT VARIABLES"
+.PP
+\fBPRUN_RSH\fR
+.RS 4
+リモートシェルコマンドを指定します。デフォルトは
+\fBssh\fR
+です。
+.RE
+.PP
+\fBPRUN_HOSTFILE\fR
+.RS 4
+ホストファイルを指定します。デフォルトは
+$HOME/\&.nodelist
+です。
+.RE
+.PP
+\fBPRUN_HOSTNAME\fR
+.RS 4
+ローカルホストの名前を空白区切りで指定します。デフォルトは
+\fBhostname\fR
+と
+\fBhostname \-I\fR
+の出力です。
+.RE
+.PP
+\fBPRUN_MAX_JOBS\fR
+.RS 4
+並列に実行するジョブの最大数を指定します。デフォルトは 16 です。
+.RE
+.PP
+\fBPRUN_PARALLEL\fR
+.RS 4
+yes
+を設定すると、 \-p オプションと同様に並列にコマンドを実行します。
+.RE
+.PP
+\fBPRUN_ALL_INCLUDE_MYSELF\fR
+.RS 4
+yes
+を設定すると、 \-a オプションと同様にローカルホストでもコマンドを実行します。
+.RE
+.PP
+\fBPRUN_VERBOSE\fR
+.RS 4
+yes
+を設定すると、 \-v オプションと同様にホスト名を表示します。
+.RE
+.SH "EXIT STATUS"
+.PP
+全てのホストでコマンドが成功した場合、
+\fBgfarm\-prun\fR
+は 0 で終了します。 そうでない場合、コマンドが失敗したホストについて、 リモートシェルコマンドの終了ステータスで終了します。 複数のホストで失敗した場合は、 そのうちの一つのホストに対する終了ステータスを返します。
+.SH "EXAMPLES"
+.PP
+$HOME/\&.nodelist
+に記述された、 ローカルホスト以外の全てのホストの稼働時間を表示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	$ gfarm\-prun \-v uptime
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+hosts
+に記述された全てのホストで、並列に gfsd を再起動します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	$ gfarm\-prun \-p \-h hosts sudo systemctl restart gfsd
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+ローカルのシェルスクリプト
+setup\&.sh
+を各ホストで実行します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	$ gfarm\-prun \-h hosts \-stdin setup\&.sh sh
+.fi
+.if n \{\
+.RE
+.\}
+.SH "FILES"
+.PP
+$HOME/\&.nodelist
+.RS 4
+デフォルトのホストファイル
+.RE
+.SH "SEE ALSO"
+.PP
+\fBgfarm-pcp\fR(1),
+\fBssh\fR(1)

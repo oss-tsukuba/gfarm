@@ -34,24 +34,23 @@ This document describes the multi-tenancy feature of Gfarm.
 The multi-tenancy feature is a function that virtually divides
 a single Gfarm file system into multiple tenants and provides them to users.
 <P>
-When using multi-tenant functionality,
-
-In the Gfarm authentication process,
-a user name user1+tenantA is treated as a user1 who belongs to tenantA.
-In other words, a “+” followed by a tenant name is treated as a user
-belonging to that tenant.
-After the authentication is completed, the file system access by this
-user will be handled as if /.tenants/tenantA were the root directory.
+When the multi-tenancy feature is used,
+user user1 who belongs to tenant tenantA is treated as
+user name user1+tenantA in the Gfarm authentication process.
+In other words, a user name followed by “+” and a tenant name
+represents a user belonging to that tenant.
+After authentication is completed, file system access by this
+user is handled as if /.tenants/tenantA were the root directory.
 <P>
-Also, from the perspective of a user in the tenant, his or her user name
-will appear as if it were user1.
+Also, from the perspective of a user in the tenant, the user name
+appears as user1.
 <P>
 Similarly, group group1 which belongs to tenantA has the group name
 group1+tenantA internally.
 <P>
 Example:
 <pre>
-$ gfwhomai
+$ gfwhoami
 user1
 $ gfls -ld /tmp
 drwxrwxrwt 2 user1     group1            0 Mar 22 20:41 /tmp
@@ -70,21 +69,23 @@ $ gfgroup -c gfarmadm+tenantA user1+tenantA
 $ gfgroup -c gfarmroot+tenantA
 $ gfsudo gfmkdir -p /.tenants/tenantA
 $ gfsudo gfchmod 000 /.tenants
-$ gfsudo gfchmod 755 /.tenants
 $ gfsudo gfchown user1+tenantA:gfarmadm+tenantA /.tenants/tenantA
 </PRE>
+The mode of /.tenants is set to 000 so that ordinary users
+in the default tenant cannot access the directories of other tenants.
+It only needs to be set once, when /.tenants is created.
 
 <HR>
-<H2>default tenant</H2>
+<H2>Default tenant</H2>
 
 A tenant that exists from the beginning and is accessed with a user
-name that is not appended with “+tenant name” is called
+name without “+tenant name” is called
 the default tenant.
 <P>
-Users with the gfarmadm group privileges in the default tenant can
-access to all users and groups in all tenants.
+Users with the gfarmadm group privilege in the default tenant can
+manage users and groups in all tenants.
 Users with the gfarmroot group privilege in the default tenant can
-access to the all filesystems in all tenants.
+access the file systems of all tenants.
 
 <HR>
 

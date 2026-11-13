@@ -1,7 +1,7 @@
 # Part 1 data definition
 %define pkg	gfarm
 %if %{undefined ver}
-%define ver	2.8.11
+%define ver	2.8.12
 %endif
 %if %{undefined rel}
 %define rel	1
@@ -387,6 +387,8 @@ fi
 %{man_prefix}/man1/gfarm_agent.1*
 %{man_prefix}/man1/gfcd.1*
 %endif
+%{man_prefix}/man1/gfarm-pcp.1*
+%{man_prefix}/man1/gfarm-prun.1*
 %{man_prefix}/man1/gfarmbb.1*
 %{man_prefix}/man1/gfchgrp.1*
 %{man_prefix}/man1/gfchmod.1*
@@ -578,6 +580,8 @@ fi
 %{man_prefix}/ja/man1/gfarm_agent.1*
 %{man_prefix}/ja/man1/gfcd.1*
 %endif
+%{man_prefix}/ja/man1/gfarm-pcp.1*
+%{man_prefix}/ja/man1/gfarm-prun.1*
 %{man_prefix}/ja/man1/gfarmbb.1*
 %{man_prefix}/ja/man1/gfchgrp.1*
 %{man_prefix}/ja/man1/gfchmod.1*
@@ -748,6 +752,8 @@ fi
 %{html_prefix}/en/ref/man1/gfarm_agent.1.html
 %{html_prefix}/en/ref/man1/gfcd.1.html
 %endif
+%{html_prefix}/en/ref/man1/gfarm-pcp.1.html
+%{html_prefix}/en/ref/man1/gfarm-prun.1.html
 %{html_prefix}/en/ref/man1/gfarmbb.1.html
 %{html_prefix}/en/ref/man1/gfchgrp.1.html
 %{html_prefix}/en/ref/man1/gfchmod.1.html
@@ -934,6 +940,7 @@ fi
 %{html_prefix}/en/ref/man8/config-gfarm.8.html
 %{html_prefix}/en/ref/man8/config-gfsd.8.html
 %{html_prefix}/en/user/index.html
+%{html_prefix}/en/user/auth.html
 %{html_prefix}/en/user/auth-sharedsecret.html
 %{html_prefix}/en/user/auth-gsi.html
 %{html_prefix}/en/user/auth-tls.html
@@ -943,7 +950,9 @@ fi
 %{html_prefix}/en/user/multitenancy.html
 %{html_prefix}/en/user/redundancy-tutorial.html
 %{html_prefix}/en/user/samba-gfarmfs.html
+%{html_prefix}/en/user/smboverssh.html
 %if %{gfarm_v2_not_yet}
+%{html_prefix}/en/user/export-gfarm.html
 %{html_prefix}/en/user/nfs-gfarmfs.html
 %endif
 %{html_prefix}/ja/ref/index.html
@@ -951,6 +960,8 @@ fi
 %{html_prefix}/ja/ref/man1/gfarm_agent.1.html
 %{html_prefix}/ja/ref/man1/gfcd.1.html
 %endif
+%{html_prefix}/ja/ref/man1/gfarm-pcp.1.html
+%{html_prefix}/ja/ref/man1/gfarm-prun.1.html
 %{html_prefix}/ja/ref/man1/gfarmbb.1.html
 %{html_prefix}/ja/ref/man1/gfchgrp.1.html
 %{html_prefix}/ja/ref/man1/gfchmod.1.html
@@ -1130,6 +1141,8 @@ fi
 %{html_prefix}/ja/user/nfs-gfarmfs.html
 %endif
 %{html_prefix}/pic/Gfarm_logo_tate_color.svg
+%{doc_prefix}/INSTALL-manual-en.md
+%{doc_prefix}/INSTALL-manual-ja.md
 %{doc_prefix}/INSTALL.en
 %{doc_prefix}/INSTALL.ja
 %{doc_prefix}/INSTALL.RPM.en
@@ -1142,6 +1155,8 @@ fi
 %{doc_prefix}/RELNOTES
 %{doc_prefix}/OVERVIEW.en
 %{doc_prefix}/OVERVIEW.ja
+%{doc_prefix}/SETUP-manual-en.md
+%{doc_prefix}/SETUP-manual-ja.md
 %{doc_prefix}/SETUP.en
 %{doc_prefix}/SETUP.ja
 %{doc_prefix}/SETUP.private.en

@@ -125,6 +125,7 @@ When you would like to execute `all.sh` (or `all-rpm.sh`) again, execute `unconf
 When you change the source code, execute `docker/dist/install.sh` in the top source directory and `restart.sh`.
 
 When you install Gfarm by `all.sh`, `regress.sh` and `failover.sh` are available for tests.
+`regress.sh` runs the regression test with the root privilege on c1 and the one as a user on c2.  To run only one of them, specify `root` or `user` as an argument.
 
 ## For OAuth authentication
 

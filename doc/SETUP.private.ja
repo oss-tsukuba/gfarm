@@ -6,7 +6,7 @@
 ● 本ドキュメントについて
 =========================
 
-本ドキュメントはユーザ権限で構築可能な特定ユーザ専用のプライベート 
+本ドキュメントはユーザ権限で構築可能な特定ユーザ専用のプライベート
 Gfarm ファイルシステムの構築方法を記述したものです．
 
 なにか問題が生じた場合には，Gfarm-FAQ.ja のトラブル・シューティングの
@@ -49,38 +49,39 @@ Gfarm ファイルシステムをソースから構築し，その後，メタ�
 
 	% config-gfarm --prefix $PREFIX -S -m <gfmd_port> -p <db_port>
 
-  ここで，<gfmd_port> は gfmd が listen するポート番号で，db_port はバッ
+  ここで，<gfmd_port> は gfmd が listen するポート番号で，<db_port> はバッ
   クエンドのデータベースが listen するポート番号です．ユーザ権限で利用
   するため，1024 以上のポート番号を利用する必要があります．
   <gfmd_port> は TCP で外からアクセスできる必要があります．
   -S は，プライベートな Gfarm を構成するためのオプションです．
 
-config-gfarm コマンドによって、$PREFIX/etc/gfarm2.conf や 
-$PREFIX/etc/gfmd.conf などが作成された筈です。
+config-gfarm コマンドによって，$PREFIX/etc/gfarm2.conf，
+$PREFIX/etc/gfmd.conf，$PREFIX/etc/gfsd.conf，$PREFIX/etc/usermap など
+が作成されます．
 
-ホームディレクトリに認証鍵ファイル「.gfarm_shared_key」を作成します。
+ホームディレクトリに認証鍵ファイル「.gfarm_shared_key」を作成します．
 
 	% cd
 	% gfkey -f -p 31536000
 
-  ここでは、認証鍵の期限を、ほぼ1年(31536000秒) に設定しています。
+  ここでは，認証鍵の期限を，ほぼ1年(31536000秒) に設定しています．
 
-以上で、メタデータサーバー上での設定は完了です。
-下記を実行して、gfmd が動作していることを確認してください。
+以上で，メタデータサーバ上での設定は完了です．
+下記を実行して，gfmd が動作していることを確認してください．
 
-	% etc/init.d/gfmd status
+	% $PREFIX/etc/init.d/gfmd status
 
 上記作業によって作成されたファイルを消去したい場合には，消去用
-スクリプトが etc/unconfig-gfarm.sh として生成されていますので，
+スクリプトが $PREFIX/etc/unconfig-gfarm.sh として生成されていますので，
 これを実行してください．
 
-	% etc/unconfig-gfarm.sh   
+	% $PREFIX/etc/unconfig-gfarm.sh
 
-すると、以下のように尋ねてきますので「y」と答えます．
+すると，以下のように尋ねてきますので「y」と答えます．
 
 	Do you unconfigure gfarm? [y/n]: 
 
-これで，gfmd が停止し，設定ファイルが消去されます。また，この
+これで，gfmd が停止し，設定ファイルが消去されます．また，この
 Gfarm ファイルシステムのメタデータも消去されます．
 
 unconfig-gfarm.sh が実行する内容は，unconfig-gfarm.sh に -t オプションを
@@ -104,9 +105,9 @@ unconfig-gfarm.sh が実行する内容は，unconfig-gfarm.sh に -t オプシ�
 	$PREFIX/etc/gfsd.conf
 	$PREFIX/etc/usermap
 
-をファイルシステムノードの $PREFIX/etc にコピーします。
+をファイルシステムノードの $PREFIX/etc にコピーします．
 
-ファイルシステムノード上で以下のコマンドを実行して、ファイルシステムノー
+ファイルシステムノード上で以下のコマンドを実行して，ファイルシステムノー
 ドの設定を行います．
 
 	% config-gfsd --prefix $PREFIX -S -p <gfsd_port> <spool_directory>
@@ -121,19 +122,19 @@ unconfig-gfarm.sh が実行する内容は，unconfig-gfarm.sh に -t オプシ�
   他のファイルシステムノードと共有されない領域をフルパスで指定してくだ
   さい．省略すると，$PREFIX/var/gfarm-spool になります．
 
-以上で設定は完了です。
+以上で設定は完了です．
 
-上記作業によって作成されたファイルを消去したい場合には、消去用
-スクリプトが etc/unconfig-gfsd.sh として生成されていますので，
+上記作業によって作成されたファイルを消去したい場合には，消去用
+スクリプトが $PREFIX/etc/unconfig-gfsd.sh として生成されていますので，
 これを実行してください．
 
 	% $PREFIX/etc/unconfig-gfsd.sh
 
-すると、以下のように尋ねてきますので「y」と答えます．
+すると，以下のように尋ねてきますので「y」と答えます．
 
 	Do you run unconfiguration? [y/n]: 
 
-これで，gfsd が停止し，設定ファイルが消去されます。また，この
+これで，gfsd が停止し，設定ファイルが消去されます．また，この
 ノード上に存在する Gfarm ファイルシステムのデータも消去され，
 メタデータから，このファイルシステムノードの登録も削除されます．
 
@@ -146,7 +147,7 @@ unconfig-gfsd.sh が実行する内容は，unconfig-gfsd.sh に -t オプショ
 ポートについて，TCP のコネクションの受け付けと，UDP パケットの着信と
 送信ができる必要があります．
 
-さらに，クライアントノードと同様な設定も必要です。
+さらに，クライアントノードと同様な設定も必要です．
 
 ● クライアントノードの設定
 ===========================
@@ -156,14 +157,14 @@ unconfig-gfsd.sh が実行する内容は，unconfig-gfsd.sh に -t オプショ
 
 ▽ クライアントノードの設定
 
-メタデータサーバで生成された $PREFIX/etc/gfarm2.conf ファイルを 
-$PREFIX/etc あるいは ~/.gfarm2rc にコピーします。
+メタデータサーバで生成された $PREFIX/etc/gfarm2.conf ファイルを，
+クライアントノードの $PREFIX/etc あるいは ~/.gfarm2rc にコピーします．
 
-メタデータサーバやファイルシステムノードとの間で、ユーザのホームディレ
-クトリが NFS で共有されている場合には、以上で設定は完了です。
+メタデータサーバやファイルシステムノードとの間で，ユーザのホームディレ
+クトリが NFS で共有されている場合には，以上で設定は完了です．
 
-共有されてない場合には、認証鍵ファイル「.gfarm_shared_key」をユーザ
-のホームディレクトリへコピーします。
+共有されていない場合には，メタデータサーバから認証鍵ファイル
+「.gfarm_shared_key」をユーザのホームディレクトリへコピーします．
 
 ▽ ファイアウォールの設定
 
@@ -182,6 +183,8 @@ Gfarm ファイルシステムは，クライアントの設定をしている�
 
 ◇ gfls - ディレクトリ・リスティング
 
+gfls コマンドでディレクトリの内容を表示します．
+
 	% gfls -la
 	drwxrwxr-x gfarmadm gfarmadm          4 Aug 23 06:33 .
 	drwxrwxr-x gfarmadm gfarmadm          4 Aug 23 06:33 ..
@@ -193,27 +196,29 @@ Gfarm ファイルシステムは，クライアントの設定をしている�
 確認します．
 
 	% gfhost -M
-	i386-fedora3-linux 2 linux-1.example.com 600 0
-	i386-fedora3-linux 2 linux-2.example.com 600 0
-	i386-fedora3-linux 2 linux-3.example.com 600 0
-	i386-redhat8.0-linux 1 linux-4.example.com 600 0
-	sparc-sun-solaris8 1 solaris-1.example.com 600 0
-	sparc-sun-solaris8 1 solaris-2.example.com 600 0
+	x86_64-rocky9.6-linux 8 linux-1.example.com 10600 0
+	x86_64-rocky9.6-linux 8 linux-2.example.com 10600 0
+	x86_64-rocky9.6-linux 8 linux-3.example.com 10600 0
+	x86_64-rocky9.6-linux 8 linux-4.example.com 10600 0
+	x86_64-ubuntu24.04-linux 16 linux-5.example.com 10600 0
+	x86_64-ubuntu24.04-linux 16 linux-6.example.com 10600 0
 	...
 
 次に，利用可能かどうか確認します．
 
-	% gfhost -lv
-	0.01/0.03/0.03 s i386-fedora3-linux 2 linux-1.example.com 600 0(10.0.0.1)
-	0.00/0.00/0.00 s i386-fedora3-linux 2 linux-2.example.com 600 0(10.0.0.2)
-	-.--/-.--/-.-- - i386-fedora3-linux 2 linux-3.example.com 600 0(10.0.0.3)
-	0.00/0.02/0.00 x i386-redhat8.0-linux 1 linux-4.example.com 600 0(10.0.0.4)
-	0.10/0.00/0.00 G sparc-sun-solaris8 1 solaris-1.example.com 600 0(10.0.1.1)
-	x.xx/x.xx/x.xx - sparc-sun-solaris8 1 solaris-2.example.com 600 0(10.0.1.2)
+	% gfhost -l
+	0.01/0.03/0.03 s x86_64-rocky9.6-linux 8 linux-1.example.com 10600 0(10.0.0.1)
+	0.00/0.00/0.00 S x86_64-rocky9.6-linux 8 linux-2.example.com 10600 0(10.0.0.2)
+	-.--/-.--/-.-- - x86_64-rocky9.6-linux 8 linux-3.example.com 10600 0(10.0.0.3)
+	0.00/0.02/0.00 x x86_64-rocky9.6-linux 8 linux-4.example.com 10600 0(10.0.0.4)
+	0.10/0.00/0.00 s x86_64-ubuntu24.04-linux 16 linux-5.example.com 10600 0(10.0.1.1)
+	x.xx/x.xx/x.xx - x86_64-ubuntu24.04-linux 16 linux-6.example.com 10600 0(10.0.1.2)
 	...
 
-左から二番目の文字が 's', 'g', 'G' であれば，そのファイルシステムノード
-が利用可能です．'x' の場合は認証に失敗しています．
+左から二番目の文字が，sharedsecret 認証の 's' や tls_sharedsecret 認証
+の 'S' など認証方式を示す文字であれば，そのファイルシステムノードが利用
+可能です．'x' の場合は認証に失敗しています．その他の認証方式を示す文字
+については gfhost(1) を参照してください．
 
 また，一番左が '-.--/-.--/-.--' と表示される場合は，gfsd が正しく起動し
 ていないことを示しており，'x.xx/x.xx/x.xx' と表示される場合は，そのノー

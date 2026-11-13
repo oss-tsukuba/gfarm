@@ -94,7 +94,7 @@ Download the cyrus-sasl-xoauth2-idp source code from the following URL:
 
 This document describes version 1.1.0, but if a newer version is available, use the latest version.
 
-Compile as any user (does not need to be root), then install with the root privilege.
+Compile as any user (does not need to be root), then install with root privileges.
 
 ```console
 $ OSSURL=https://github.com/oss-tsukuba
@@ -148,14 +148,14 @@ Set an appropriate value for `xxxx`.
 Download the Gfarm source code from the following URL:  
 <https://github.com/oss-tsukuba/gfarm/releases>
 
-This document describes version 2.8.11, but if a newer version is available, use the latest version.
+This document describes version 2.8.12, but if a newer version is available, use the latest version.
 
-Compile as any user (does not need to be root), then install with the root privilege.
+Compile as any user (does not need to be root), then install with root privileges.
 
 ```console
 $ OSSURL=https://github.com/oss-tsukuba
 $ PKG=gfarm
-$ VER=2.8.11
+$ VER=2.8.12
 $ wget --content-disposition $OSSURL/$PKG/archive/$VER.tar.gz
 $ tar pxf $PKG-$VER.tar.gz
 $ cd $PKG-$VER
@@ -186,7 +186,7 @@ gfarm2fs is required on the client.  Download the gfarm2fs source code from the 
 
 This document describes version 3.0.0, but if a newer version is available, use the latest version.
 
-Compile as any user (does not need to be root), then install with the root privilege.
+Compile as any user (does not need to be root), then install with root privileges.
 
 ```console
 $ OSSURL=https://github.com/oss-tsukuba
@@ -215,7 +215,7 @@ jwt-agent is required on the client.  Download the jwt-agent source code from th
 
 This document describes version 1.1.2, but if a newer version is available, use the latest version.
 
-Compile as any user (does not need to be root), then install with the root privilege.
+Compile as any user (does not need to be root), then install with root privileges.
 
 ```console
 $ OSSURL=https://github.com/oss-tsukuba

@@ -53,6 +53,13 @@ timespec_cmp(const struct timespec *t1, const struct timespec *t2)
 	return (0);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: callout_module.mutex, thread_pool::mutex, thread_jobq::mutex
+ * SLEEPS: yes (waits for have_things_to_run, but callout_module.mutex
+ *	won't be blocked while sleeping, and thrpool_add_job() waits
+ *	while the job queue is full)
+ */
 void *
 callout_main(void *arg)
 {
@@ -160,6 +167,11 @@ callout_free(struct callout *c)
 	free(c);
 }
 
+/*
+ * PREREQUISITE: callout_module.mutex
+ * LOCKS: nothing
+ * SLEEPS: no
+ */
 static void
 callout_schedule_common(struct callout *n, int microseconds)
 {
@@ -204,6 +216,11 @@ callout_schedule_common(struct callout *n, int microseconds)
 		    "scheduling singal");
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: callout_module.mutex
+ * SLEEPS: no
+ */
 void
 callout_schedule(struct callout *c, int microseconds)
 {
@@ -214,6 +231,11 @@ callout_schedule(struct callout *c, int microseconds)
 	gfarm_mutex_unlock(&cm->mutex, module_name, "schedule unlock");
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: callout_module.mutex
+ * SLEEPS: no
+ */
 void
 callout_reset(struct callout *c, int microseconds,
 	struct thread_pool *thrpool, void *(*func)(void *), void *closure)
@@ -228,6 +250,11 @@ callout_reset(struct callout *c, int microseconds,
 	gfarm_mutex_unlock(&cm->mutex, module_name, "reset unlock");
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: callout_module.mutex
+ * SLEEPS: no
+ */
 void
 callout_setfunc(struct callout *c,
 	struct thread_pool *thrpool, void *(*func)(void *), void *closure)
@@ -241,6 +268,11 @@ callout_setfunc(struct callout *c,
 	gfarm_mutex_unlock(&cm->mutex, module_name, "reset unlock");
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: callout_module.mutex
+ * SLEEPS: no
+ */
 int
 callout_stop(struct callout *c)
 {

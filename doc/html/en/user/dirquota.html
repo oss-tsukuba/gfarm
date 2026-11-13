@@ -25,19 +25,19 @@ This document describes the directory quota of the Gfarm file system.
 <H2>Overview</H2>
 
 <UL>
-<LI>The directory quota limits file usage including number of inodes
-  and total file size, under a set of directories called a dirset.
-<LI>The same type of limitations can be enforced as the user and group
-  quota.
-<LI>It can work with the user and group quota.
+<LI>The directory quota limits usage, such as the number of inodes
+  and the total file size, under a set of directories called a dirset.
+<LI>The same types of limits as the user and group quotas
+  can be enforced.
+<LI>It works together with the user and group quotas.
   The strictest limit among them is applied.
-<LI>Both creating a dirset and changing quota setting can be done
-  by normal user privilege.
-<LI>In the directory quota, gfarmroot group privilege is
-used for administration.
+<LI>Both creating a dirset and changing its quota settings can be done
+  with normal user privileges.
+<LI>For the directory quota, the gfarmroot group privilege
+  (instead of gfarmadm) is used for administration.
 </UL>
 
-<H2>Limitation</H2>
+<H2>Limitations</H2>
 
 <UL>
 <LI>If an ancestor directory already belongs to a dirset,
@@ -48,9 +48,9 @@ used for administration.
   but you cannot move a directory between different dirsets,
   unless you have the gfarmroot group privilege.<BR>
   Although gfarmroot group members can move a directory
-  between different dirsets, it may make Gfarm metadata server's load high
-  during its capacity recalculation
-  if the number of files under the directory is a lot.
+  between different dirsets, it may increase the load of the Gfarm metadata server
+  during capacity recalculation
+  if there are many files under the directory.
   Moreover, quota limit check cannot work precisely during the recalculation.
   The capacity before the movement is used instead of the real capacity
   until the recalculation is completed.
@@ -66,18 +66,18 @@ used for administration.
   </UL>
   However, if the user has the gfarmroot group privilege, these conditions
   don't have to be satisfied.
-  But the addition may make Gfarm metadata server's load high
-  during capacity recalculation if the number of files under the directory is a lot.
+  However, the addition may increase the load of the Gfarm metadata server
+  during capacity recalculation if there are many files under the directory.
   Moreover, quota limit check cannot work precisely during the recalculation.
   The capacity before the addition is used instead of the real capacity
   until the recalculation is completed.
   Thus, such directory addition is only expected to be done
   during a maintenance period.
-<LI>There is no such feature to subdivide a directory quota
-  further by using each user or each group.
-  And there is no such feature to calculate amount of use
-  of each user or group under the directory easily.
-  You have to traverse entire directory to calculate such amount.
+<LI>There is no feature to subdivide a directory quota
+  further by user or group,
+  nor to easily calculate the usage
+  of each user or group under the directory.
+  You have to traverse the entire directory to calculate such usage.
 <LI>The only way to delete a directory from a dirset is to remove the directory
   by using gfrmdir (or rmdir under gfarm2fs).
 <LI>To remove a dirset, you have to remove all directories in the
@@ -94,9 +94,9 @@ $ gfedquota -D dirset-a -h 1073741824
 $ gfedquota -D dirset-b -h 2147483648
 </pre>
 
-Add a directory /home/john-smith/dir-a to the dirset-a,
+Add a directory /home/john-smith/dir-a to dirset-a,
 and two directories named /home/john-smith/dir-b1 and /home/john-smith/dir-b2
-to the dirset-b.
+to dirset-b.
 <pre>
 $ gfdirquota -a dirset-a /home/john-smith/dir-a
 $ gfdirquota -a dirset-b /home/john-smith/dir-b1 /home/john-smith/dir-b2
@@ -107,7 +107,7 @@ Confirm the settings above.
 $ gfdirquota
 dirset-a
 dirset-b
-% gfdirquota -l
+$ gfdirquota -l
 john-smith:dirset-a:
 /home/john-smith/dir-a
 
@@ -157,9 +157,9 @@ PhysicalNumHardLimit     :               disabled
 </pre>
 
 You can use a directory name instead of a dirset name
-by using the -d option to see the quota limits and current amounts of use.<br>
-With -D option, only the owner of the dirset can see the quota limits.<br>
-With -d option, users who can write the directory can see them.
+by using the -d option to see the quota limits and current usage.<br>
+With the -D option, only the owner of the dirset can see the quota limits.<br>
+With the -d option, any user who can write to the directory can see them.
 <pre>
 $ gfquota -d /home/john-smith/dir-b1
 Pathname                 : gfarm://metadata-server:601/home/john-smith/dir-b1
@@ -184,14 +184,14 @@ PhysicalNumSoftLimit     :               disabled
 PhysicalNumHardLimit     :               disabled
 </pre>
 
-If capacity recalculation is currently ongoing,
-and the current amounts of use is not accurate,
+If capacity recalculation is in progress
+and the current usage is not accurate,
 the gfquota(1) command shows the following warning.
 <pre>
 warning: quota usage is inaccurate
 </pre>
 
-To remove a directory /home/john-smith/dir-b2 from the dirset-b,
+To remove a directory /home/john-smith/dir-b2 from dirset-b,
 you have to remove the directory.
 <pre>
 $ gfdirquota -l dirset-b
@@ -211,7 +211,7 @@ mv: cannot move `dir-a/dir' to `dir-b1/dir': Operation not supported
 </pre>
 
 If you do not have the gfarmroot group privilege,
-adding non-empty directory to a dirset fails as follows.
+adding a non-empty directory to a dirset fails as follows.
 <pre>
 $ gfmkdir -p /home/john-smith/dir-b3/dir
 $ gfdirquota -a dirset-b /home/john-smith/dir-b3
@@ -222,13 +222,13 @@ gfarm://metadata-server:601/home/john-smith/dir-b3: directory not empty
 
 <p>
 If -o directory_quota_rename_error_exdev is specified as an option
-of the gfarm2fs(1) command, even normal user can move a directory
-between different dirsets by using the mv(1) command,
+of the gfarm2fs(1) command, even a normal user can move a directory
+between different dirsets by using the mv(1) command.
 </p>
 <p>
 But the movement may be extremely slow, because the mv(1) command uses
 recursive file copy and recursive removal of the source directory tree
-to do this, and that means every file contents under the directory is copied
+to do this, and that means the contents of every file under the directory are copied
 from file system nodes to the client, and copied back from the client
 to file system nodes.
 And because of the behavior, some files and directories may not be
@@ -237,11 +237,10 @@ Also, if there are files or directories which are not owned by you,
 the owner information will be lost.
 </p>
 <p>
-Thus, it's not recommended to use the directory_quota_rename_error_exdev option
-in general.
-Rather, it's recommended to create same directory structure to the
-destination side, and use mv(1) command against files instead of the directory.
-Using mv(1) command against files is faster, because it only changes
+Thus, the directory_quota_rename_error_exdev option is generally not recommended.
+Instead, create the same directory structure on the
+destination side, and use the mv(1) command on files instead of the directory.
+Moving files with the mv(1) command is faster, because it only changes
 metadata, and no data copy happens.
 </p>
 

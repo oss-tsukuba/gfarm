@@ -5,8 +5,8 @@ About the Gfarm filesystem
 
 The Gfarm filesystem is a distributed filesystem consisting of the local
 storage of commodity PCs.  Many PCs in a local area network, compute
-nodes in a single cluster, multiple clusters in wide area, comprise a
-large-scale, high-performance shared network filesystem.
+nodes in a single cluster, or multiple clusters in a wide area network
+comprise a large-scale, high-performance shared network filesystem.
 
 The Gfarm filesystem solves performance and reliability problems in
 NFS and AFS by means of multiple file replicas. It not only prevents
@@ -49,26 +49,26 @@ There are several methods that can be used to access the Gfarm filesystem:
    You can use Gfarm specific features like file replication,
    filesystem node management, etc., via this method.
 
- - Using GfarmFS-FUSE (gfarm2fs)
+ - Using gfarm2fs
    You can actually mount the Gfarm filesystem from Linux clients
-   by using FUSE (http://fuse.sourceforge.net/).
+   by using FUSE (https://github.com/libfuse/libfuse).
    Unlike the other methods, this one is completely transparent from your
    application.
 
  - Gfarm Samba plugin
-   This is a plugin for a Samba server to access Gfarm file system.
-   Using the plugin, Windows clients can access Gfarm file system via
-   Windows file sharing service.
+   This is a plugin for a Samba server to access the Gfarm file system.
+   Using the plugin, Windows clients can access the Gfarm file system
+   via the Windows file sharing service.
 
  - Gfarm Hadoop plugin
-   This is a plugin for Hadoop to access Gfarm file system.  Using
-   the plugin module, Hadoop MapReduce applications can access Gfarm
-   file system by Gfarm URL.
+   This is a plugin for Hadoop to access the Gfarm file system.  Using
+   the plugin module, Hadoop MapReduce applications can access the
+   Gfarm file system by Gfarm URLs.
 
  - Gfarm GridFTP DSI
-   This is a plugin for Globus GridFTP server to access Gfarm file
-   system.  Using the plugin, GridFTP clients can access Gfarm file
-   system.
+   This is a plugin for the Globus GridFTP server to access the Gfarm
+   file system.  Using the plugin, GridFTP clients can access the Gfarm
+   file system.
 
 Host types that make up the Gfarm system
 ========================================
@@ -91,13 +91,12 @@ A Gfarm system consists of the following kinds of nodes:
 
   A metadata server node manages Gfarm filesystem metadata.  On the
   metadata server node, a Gfarm filesystem metaserver (gfmd), and a
-  backend database server such as a PostgreSQL server (postmaster) are
+  backend database server such as a PostgreSQL server (postgres) are
   running.
 
 The three types of nodes just introduced are not necessarily different
-hosts,
-i.e., you can use the same host for the above purposes, if the number of
-available hosts are limited.
+hosts, i.e., you can use the same host for the above purposes if the
+number of available hosts is limited.
 
 Physically, each file is replicated and dispersed across the disks of the
 filesystem nodes, and they will be accessed in parallel.
@@ -107,7 +106,7 @@ Structure of the Gfarm software
 
 The Gfarm filesystem consists of the following software:
 
- - The libgfarm.a library
+ - The libgfarm library
 
   A library that implements Gfarm APIs, including Gfarm file access,
   file replication, and file-affinity process scheduling.
@@ -117,8 +116,8 @@ The Gfarm filesystem consists of the following software:
   A metadata server for the Gfarm file system that runs on a metadata
   server node.  It manages directory structure, file information,
   replica catalog, user/group information, and host information.  Gfmd
-  keeps the metadata in memory, but it stored in a backend databse
-  such as PostgreSQL server.
+  keeps the metadata in memory, but also stores it in a backend
+  database such as a PostgreSQL server.
 
  - gfsd - the Gfarm filesystem daemon
 
@@ -131,12 +130,13 @@ The Gfarm filesystem consists of the following software:
 
   Gfarm command tools consist of filesystem commands such as gfls,
   gfrm, gfwhere and gfrep; a filesystem node management tool,
-  gfhost; file management tools such as gfreg and gfexport; session
-  key management tools, such as gfkey.
+  gfhost; file management tools such as gfreg and gfexport; and a
+  session key management tool, gfkey.
 
 About authentication
 ====================
 
-Please refer to the "Security" section in Gfarm-FAQ.en and the "Authentication settings" in the following document.
+Please refer to the "Security" section in Gfarm-FAQ.en and the
+"Authentication setting" section in the following document.
 
 https://oss-tsukuba.org/share/doc/gfarm/html/en/user/index.html

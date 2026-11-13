@@ -7,8 +7,14 @@ on:
 jobs:
 
   regress:
-    name: Run regress with sharedsecret authentication
+    name: Run regress with sharedsecret authentication (${{ matrix.target }})
     runs-on: ubuntu-latest
+    # run the regression test with the root privilege and the one as
+    # a user in parallel, on separate clusters
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [ root, user ]
 
     steps:
       - name: checkout
@@ -69,7 +75,22 @@ jobs:
         run: |
           cd docker/dist
           docker exec -u ${USER} -w /home/${USER}/gfarm/docker/dist gfarm-c1 \
-             sh ./regress.sh
+             sh ./regress.sh ${{ matrix.target }}
+
+      # gfarm2fs is cloned and installed by all.sh.
+      # fuse3, libfuse3-dev and valgrind are included in the image.
+      # run it only in one of the jobs.
+      - name: regress_gfarm2fs
+        id: regress_gfarm2fs
+        if: ${{ !cancelled() && steps.build_all.outcome == 'success' && matrix.target == 'user' }}
+        run: |
+          set -o pipefail
+          mkdir -p regress-log
+          docker exec -u ${USER} gfarm-c1 gfmkdir -p -m 1777 /tmp
+          docker exec \
+             -e REGRESS_MODES="default --asan --tsan" \
+             -u ${USER} -w /home/${USER}/gfarm/gfarm2fs/regress gfarm-c1 \
+             bash ./regress-matrix.sh 2>&1 | tee regress-log/log.regress-gfarm2fs
 
       - name: extract log files from the container
         if: always()
@@ -83,5 +104,5 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: regress-log
+          name: regress-log-${{ matrix.target }}
           path: regress-log/*

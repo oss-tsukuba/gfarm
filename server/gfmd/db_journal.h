@@ -11,6 +11,7 @@ enum journal_operation;
 
 gfarm_uint64_t db_journal_next_seqnum(void);
 gfarm_uint64_t db_journal_get_current_seqnum(void);
+gfarm_uint64_t db_journal_recvq_reset(void);
 void db_journal_set_apply_ops(const struct db_ops *);
 void db_journal_set_fail_store_op(void (*)(void));
 gfarm_error_t db_journal_read(struct journal_file_reader *, void *,
@@ -35,5 +36,6 @@ void *db_journal_apply_thread(void *);
 void db_journal_reset_slave_transaction_nesting(void);
 void db_journal_init_seqnum(void);
 struct peer;
+void db_journal_lock_dir(void);
 gfarm_error_t db_journal_init(void (*)(struct peer *));
 gfarm_error_t db_journal_init_status(void); /* currently only for regress */
