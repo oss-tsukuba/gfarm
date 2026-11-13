@@ -1265,8 +1265,11 @@ peer_shutdown_all(void)
 	/*
 	 * We do db_begin()/db_end() here instead of the caller of
 	 * this function, to avoid SF.net #736
+	 *
+	 * db_begin() must not be called in read_only mode,
+	 * in the same way as peer_free().
 	 */
-	if (db_begin(diag) == GFARM_ERR_NO_ERROR)
+	if (!gfarm_read_only_mode() && db_begin(diag) == GFARM_ERR_NO_ERROR)
 		transaction = 1;
 	for (i = 0; i < peer_table_size; i++) {
 		peer = &peer_table[i];
