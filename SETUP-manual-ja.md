@@ -11,7 +11,7 @@
 config-gfarm で `--prefix` オプションを指定した場合は、
 `sudo systemctl 操作 サービス名` を、
 root で実行する `$RC_DIR/サービス名 操作` に読み替えてください。
-ただし `systemctl start gfmd-slave` は `$RC_DIR/gfmd slavestart` となります。  
+ただし `systemctl start gfmd-slave` は `$RC_DIR/gfmd slavestart` となります。
 `systemctl enable` に相当する設定は `config-gfarm` が行います
 （`--prefix` 指定時および自動 enable が未実装の macOS は除く）。
 
@@ -235,7 +235,7 @@ Please ask admin_user to register your host by the following command:
 
 After that, start gfsd by the following command as a root:
 
-systemctl start gfsd.service
+systemctl start gfsd
 ```
 
 指定するディレクトリは存在しないディレクトリか空ディレクトリとしてください。このディレクトリ以下は`_gfarmfs`ユーザとローカルシステムの特権ユーザしかアクセスできなくなります。`config-gfsd`の詳細はマニュアルページを参照してください。
@@ -252,8 +252,8 @@ Environment=X509_USER_KEY=/etc/grid-security/gfsd/gfsdkey.pem
 ファイルシステムノードに戻り、ファイルシステムサーバgfsdを起動します。
 
 ```console
-fs% sudo systemctl start gfsd.service
-fs% sudo systemctl enable gfsd.service
+fs% sudo systemctl start gfsd
+fs% sudo systemctl enable gfsd
 ```
 
 ### 動作確認
