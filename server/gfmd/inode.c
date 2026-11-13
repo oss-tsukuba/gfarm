@@ -4239,6 +4239,32 @@ inode_create_file_in_lost_found(
 	if (admin == NULL)
 		return (GFARM_ERR_NO_SUCH_USER);
 
+	snprintf(fname, (int)sizeof(fname), "%016llX%016llX-%s",
+	    (unsigned long long)inum_old,
+	    (unsigned long long)gen_old, host_name(host));
+
+	/*
+	 * if the reply of the previous request was lost, or gfsd stopped
+	 * before moving the file, the entry is already there without
+	 * any replica.  let gfsd use the entry.
+	 */
+	if (inode_lookup_relative_internal(lf, fname, GFS_DT_REG,
+	    INODE_LOOKUP, tenant_default(), admin, 0, NULL, &n, NULL)
+	    == GFARM_ERR_NO_ERROR &&
+	    n->u.c.s.f.copies == NULL &&
+	    !inode_is_opened_for_writing(n) &&
+	    inode_get_size(n) == size &&
+	    gfarm_timespec_cmp(inode_get_mtime(n), mtime) == 0) {
+		gflog_notice(GFARM_MSG_UNFIXED,
+		    "inode %lld:%lld on %s -> %lld:%lld: "
+		    "/%s/%s exists without a replica, reused",
+		    (long long)inum_old, (long long)gen_old, host_name(host),
+		    (long long)inode_get_number(n),
+		    (long long)inode_get_gen(n), lost_found, fname);
+		*inodep = n;
+		return (GFARM_ERR_NO_ERROR);
+	}
+
 	n = inode_alloc();
 	if (n == NULL)
 		return (GFARM_ERR_NO_MEMORY);
@@ -4251,11 +4277,6 @@ inode_create_file_in_lost_found(
 	inode_created(n);
 	inode_set_mtime_in_cache(n, mtime);
 	inode_db_init(n);
-
-	snprintf(fname, (int)sizeof(fname), "%016llX%016llX-%s",
-	    (unsigned long long)inum_old,
-	    (unsigned long long)gen_old, host_name(host));
-
 
 	/*
 	 * protect `n' from being incorrectly removed by inode_remove_try() in
