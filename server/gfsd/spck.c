@@ -64,10 +64,17 @@ reconnect_gfm_server(const char *diag, gfarm_error_t e)
 		    diag, gfarm_error_string(e));
 }
 
+/*
+ * if resentp is not NULL, *resentp is set to 1 when the request was sent
+ * again after a reconnection.  in that case, the request sent first may
+ * have been executed by gfmd.
+ */
 static gfarm_error_t
-gfm_client_replica_add(gfarm_ino_t inum, gfarm_uint64_t gen, gfarm_off_t size)
+gfm_client_replica_add(gfarm_ino_t inum, gfarm_uint64_t gen, gfarm_off_t size,
+	int *resentp)
 {
 	gfarm_error_t e;
+	int resent = 0;
 	static const char diag[] = "replica_add";
 
 	for (;;) {
@@ -86,7 +93,10 @@ gfm_client_replica_add(gfarm_ino_t inum, gfarm_uint64_t gen, gfarm_off_t size)
 		if (!IS_CONNECTION_ERROR(e))
 			break;
 		reconnect_gfm_server(diag, e);
+		resent = 1;
 	}
+	if (resentp != NULL)
+		*resentp = resent;
 	return (e);
 }
 
@@ -159,6 +169,7 @@ static gfarm_error_t
 spool_check_replica_lost(gfarm_ino_t inum, gfarm_uint64_t gen)
 {
 	gfarm_error_t e;
+	int resent = 0;
 	static const char diag[] = "replica_lost";
 
 	for (;;) {
@@ -166,7 +177,11 @@ spool_check_replica_lost(gfarm_ino_t inum, gfarm_uint64_t gen)
 		if (!IS_CONNECTION_ERROR(e))
 			break;
 		reconnect_gfm_server(diag, e);
+		resent = 1;
 	}
+	/* the request sent first was executed by gfmd */
+	if (resent && e == GFARM_ERR_NO_SUCH_OBJECT)
+		e = GFARM_ERR_NO_ERROR;
 	return (e);
 }
 
@@ -180,7 +195,7 @@ move_or_copy_to_lost_found(int op, const char *file, int fd, struct stat *stp,
 	gfarm_ino_t inum, gfarm_uint64_t gen, const char *diag)
 {
 	gfarm_error_t e;
-	int save_errno;
+	int save_errno, resent;
 	struct gfarm_timespec mtime;
 	char *newpath, *newfile, *path = NULL;
 	gfarm_ino_t inum_new;
@@ -269,7 +284,10 @@ move_or_copy_to_lost_found(int op, const char *file, int fd, struct stat *stp,
 	}
 	if (e == GFARM_ERR_NO_ERROR) {
 		e = gfm_client_replica_add(inum_new, gen_new,
-		    (gfarm_off_t)stp->st_size);
+		    (gfarm_off_t)stp->st_size, &resent);
+		/* the request sent first was executed by gfmd */
+		if (resent && e == GFARM_ERR_ALREADY_EXISTS)
+			e = GFARM_ERR_NO_ERROR;
 		if (e != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_1003523,
 			    "%s: replica_add failed: %s", newpath,
@@ -550,7 +568,7 @@ check_file(char *file, struct stat *stp, void *arg)
 	}
 
 	size = stp->st_size;
-	e = gfm_client_replica_add(inum, gen, size);
+	e = gfm_client_replica_add(inum, gen, size, NULL);
 	switch (e) {
 	case GFARM_ERR_ALREADY_EXISTS:
 		/* correct entry */
