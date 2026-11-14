@@ -631,6 +631,19 @@ gflog_reduced_message(int msg_no, int priority, const char *file, int line_no,
 	if (priority > log_level) /* not worth reporting */
 		return;
 
+	/*
+	 * buf_mutex protects *state as well as buf,
+	 * because this function may be called from multiple threads
+	 * with the same state.
+	 */
+	rv = pthread_mutex_lock(&buf_mutex);
+	if (rv != 0) {
+		gflog_out(LOG_ERR,
+		    "gflog_reduced_message: pthread_mutex_lock: ",
+		    strerror(rv));
+		return;
+	}
+
 	++state->log_count;
 	++state->stat_count;
 	current_time = time(NULL);
@@ -642,17 +655,9 @@ gflog_reduced_message(int msg_no, int priority, const char *file, int line_no,
 	if (state->reduced_mode) {
 		if (state->log_time != 0 &&
 		    current_time - state->log_time < state->log_interval)
-			return;
+			goto unlock;
 		if (gflog_reduced_rate_is_low(state, current_time))
 			state->reduced_mode = 0;
-	}
-
-	rv = pthread_mutex_lock(&buf_mutex);
-	if (rv != 0) {
-		gflog_out(LOG_ERR,
-		    "gflog_reduced_message: pthread_mutex_lock: ",
-		    strerror(rv));
-		return;
 	}
 
 	va_start(ap, format);
@@ -669,12 +674,6 @@ gflog_reduced_message(int msg_no, int priority, const char *file, int line_no,
 		    state->log_count, (long)(current_time - state->log_time));
 	}
 
-	rv = pthread_mutex_unlock(&buf_mutex);
-	if (rv != 0)
-		gflog_out(LOG_ERR,
-		    "gflog_reduced_message: pthread_mutex_unlock: ",
-		    strerror(rv));
-
 	state->log_count = 0;
 	state->log_time = current_time;
 
@@ -684,6 +683,12 @@ gflog_reduced_message(int msg_no, int priority, const char *file, int line_no,
 		state->stat_count = 0;
 		state->stat_start = current_time;
 	}
+unlock:
+	rv = pthread_mutex_unlock(&buf_mutex);
+	if (rv != 0)
+		gflog_out(LOG_ERR,
+		    "gflog_reduced_message: pthread_mutex_unlock: ",
+		    strerror(rv));
 }
 
 /* utilit for logging */
