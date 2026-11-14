@@ -81,7 +81,9 @@ struct dead_file_copy {
  *		-> dfcstate_finalizing
  *
  *	dfcstate_finalizing
+ *		-> dfcstate_deferred
  *		-> dfcstate_busy
+ *		-> dfcstate_finished ... put back in read_only mode
  *		-> (freed) ... needs giant_lock()
  *
  *	dfcstate_busy
@@ -384,7 +386,9 @@ removal_finishedq_enqueue(struct dead_file_copy *dfc, gfarm_int32_t result)
 	gfarm_mutex_lock(&dfc->mutex, diag, "dfc state");
 	if (dfc->state != dfcstate_deferred &&
 	    dfc->state != dfcstate_lost &&
-	    dfc->state != dfcstate_in_flight) {
+	    dfc->state != dfcstate_in_flight &&
+	    /* handle_removal_result() puts it back in read_only mode */
+	    dfc->state != dfcstate_finalizing) {
 		gfarm_mutex_unlock(&dfc->mutex, diag, "dfc state");
 		gflog_fatal(GFARM_MSG_1002222, "%s(%lld, %lld, %s): "
 		    "insane state %d", diag,
