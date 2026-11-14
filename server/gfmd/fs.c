@@ -3084,7 +3084,9 @@ reopen_resume(struct peer *peer, void *closure, int *suspendedp)
 		    (long long)inum, (long long)gen, flags);
 		e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
 	} else {
-		if (db_begin(diag) == GFARM_ERR_NO_ERROR)
+		/* db_begin() must not be called in read_only mode */
+		if (!gfarm_read_only_mode() &&
+		    db_begin(diag) == GFARM_ERR_NO_ERROR)
 			transaction = 1;
 		e = process_reopen_file(process, peer, spool_host, arg->fd,
 		    &inum, &gen, &mode, &flags, &to_create, diag);
@@ -4110,13 +4112,11 @@ generation_updated_by_cookie_common(struct peer *peer, int from_client,
 		    peer_get_pending_new_generation_by_cookie(peer, cookie);
 
 		if (inode == NULL) {
+			/* `inode' is NULL, it must not be referred here */
 			gflog_info(GFARM_MSG_1005198, "%s (%s@%s) "
-			    "cookie %llu for inode %llu:%llu during read_only:"
-			    " obsolete cookie",
+			    "cookie %llu during read_only: obsolete cookie",
 			    diag,
 			    peer_get_username(peer), peer_get_hostname(peer),
-			    (long long)inode_get_number(inode),
-			    (long long)inode_get_gen(inode),
 			    (long long)cookie);
 			e = GFARM_ERR_BAD_COOKIE;
 		} else {
