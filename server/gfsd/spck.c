@@ -121,7 +121,7 @@ move_or_copy_to_lost_found(int op, const char *file, int fd, struct stat *stp,
 	gfarm_error_t e;
 	int save_errno;
 	struct gfarm_timespec mtime;
-	char *newpath, *newfile, *path = NULL;
+	char *newpath = NULL, *newfile, *path = NULL;
 	gfarm_ino_t inum_new;
 	gfarm_uint64_t gen_new;
 	struct stat sb1;
