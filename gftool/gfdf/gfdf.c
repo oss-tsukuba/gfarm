@@ -11,6 +11,8 @@
 #include <limits.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 
 #include <gfarm/gfarm.h>
 
@@ -315,6 +317,29 @@ statfs_wait(struct statfs_state *state, int limit)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+/*
+ * Each request uses a file descriptor.  If the concurrency exceeds
+ * the limit of the number of file descriptors, not only the connections
+ * but also the name resolution and the authentication fail, and no host
+ * may be displayed.
+ */
+#define STATFS_RESERVED_FDS	32 /* for gfmd, stdio, name resolution, etc. */
+
+static void
+statfs_concurrency_adjust(void)
+{
+	struct rlimit limit;
+	long max;
+
+	if (getrlimit(RLIMIT_NOFILE, &limit) == -1 ||
+	    limit.rlim_cur == RLIM_INFINITY)
+		return;
+	max = limit.rlim_cur > STATFS_RESERVED_FDS ?
+	    limit.rlim_cur - STATFS_RESERVED_FDS : 1;
+	if (option_concurrency > max)
+		option_concurrency = max;
+}
+
 static gfarm_error_t
 statfs_request(struct statfs_state *state, struct gfm_connection *gfm_server,
 	struct gfarm_host_info *hi, struct statfs_request *r)
@@ -430,6 +455,7 @@ statfsnode(const char *path, const char *domain,
 		gfm_client_connection_free(gfm_server);
 		return (GFARM_ERR_NO_MEMORY);
 	}
+	statfs_concurrency_adjust();
 	rv = gfarm_eventqueue_alloc(option_concurrency, &state.q);
 	if (rv != 0) {
 		free(hosts);
