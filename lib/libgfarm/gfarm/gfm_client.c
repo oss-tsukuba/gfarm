@@ -575,8 +575,6 @@ gfm_client_connection0(struct gfp_cached_connection *cache_entry,
 	    const char *, struct gfm_client_connect_info **,
 	    struct pollfd **, int *))
 {
-	/* FIXME timeout must be configurable */
-#define GFM_CLIENT_CONNECT_TIMEOUT (1000 * 10)
 	gfarm_error_t e;
 	struct gfm_connection *gfm_server;
 	int port, sock;
@@ -590,7 +588,7 @@ gfm_client_connection0(struct gfp_cached_connection *cache_entry,
 	int i, nfd, r, nerr = 0;
 	struct pollfd *pfd;
 	struct gfm_client_connect_info *ci;
-	struct timeval timeout;
+	struct timeval timeout, now, rest;
 #endif /* __KERNEL__ */
 
 	hostname = gfp_cached_connection_hostname(cache_entry);
@@ -606,13 +604,20 @@ gfm_client_connection0(struct gfp_cached_connection *cache_entry,
 		return (e);
 
 	gettimeofday(&timeout, NULL);
-	timeout.tv_sec += GFM_CLIENT_CONNECT_TIMEOUT;
+	timeout.tv_sec += gfarm_ctxp->gfmd_authentication_timeout;
 	sock = -1;
 	e = GFARM_ERR_NO_ERROR;
 	do {
+		/*
+		 * wait until `timeout' in total, even if this loop is
+		 * repeated due to errors of some of the connections
+		 */
+		rest = timeout;
+		gettimeofday(&now, NULL);
+		gfarm_timeval_sub(&rest, &now);
 		errno = 0;
-		r = poll(pfds, nfd,
-		    gfarm_ctxp->gfmd_authentication_timeout * 1000);
+		r = rest.tv_sec < 0 ? 0 : poll(pfds, nfd,
+		    rest.tv_sec * 1000 + rest.tv_usec / 1000);
 		if (r == -1) {
 			e = gfarm_errno_to_error(errno);
 			gflog_debug(GFARM_MSG_1003877,
@@ -660,8 +665,7 @@ gfm_client_connection0(struct gfp_cached_connection *cache_entry,
 				break;
 			}
 		}
-	} while (sock == -1 && e == GFARM_ERR_NO_ERROR &&
-	    !gfarm_timeval_is_expired(&timeout));
+	} while (sock == -1 && e == GFARM_ERR_NO_ERROR);
 
 	for (i = 0; i < nfd; ++i) {
 		ci = &cis[i];
