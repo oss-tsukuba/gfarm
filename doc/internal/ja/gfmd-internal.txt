@@ -286,6 +286,9 @@ NUM_THREAD_POOLS, NUM_THREADS のコメントにもある。
   ・removal_finalizer() (dead_file_copy.c)
 
     removal_finishedq から dead_file_copy を取り出し、削除結果を処理する。
+    read only モードの間は、取り出さずに解除を待つ。
+    取り出した後で read only モードになっていた場合は、removal_finishedq
+    に戻し (finalizing → finished)、解除されてから処理する。
 
   ・dead_file_copy_scanner() (dead_file_copy.c)
 
