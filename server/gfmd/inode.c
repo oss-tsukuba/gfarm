@@ -6441,6 +6441,9 @@ inode_replicated(struct file_replicating *fr,
 {
 	struct inode *inode = fr->inode;
 	int transaction = 0;
+	/* gfarm_read_only is not changed while giant_lock is held */
+	int read_only = gfarm_read_only_mode();
+	int completed;
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	static const char diag[] = "inode_replicated";
 
@@ -6494,14 +6497,31 @@ inode_replicated(struct file_replicating *fr,
 		}
 	}
 
-	if (db_begin(diag) == GFARM_ERR_NO_ERROR)
+	/*
+	 * the metadata must not be modified in read_only mode,
+	 * and db_begin() aborts gfmd in that case.
+	 * the callees do not modify the metadata in read_only mode.
+	 */
+	if (!read_only && db_begin(diag) == GFARM_ERR_NO_ERROR)
 		transaction = 1;
 
-	if (src_errcode == GFARM_ERR_NO_ERROR &&
+	completed =
+	    src_errcode == GFARM_ERR_NO_ERROR &&
 	    dst_errcode == GFARM_ERR_NO_ERROR &&
 	    inode_is_file(inode) &&
 	    size == inode_get_size(inode) &&
-	    fr->igen == inode_get_gen(inode)) {
+	    fr->igen == inode_get_gen(inode);
+
+	if (completed && read_only) {
+		/* neither the cksum nor the replica can be recorded */
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "inode %lld:%lld: replication to %s completed, "
+		    "but gfmd became read_only during the replication, "
+		    "the replica is lost",
+		    (long long)inode_get_number(inode), (long long)fr->igen,
+		    host_name(fr->dst));
+		e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
+	} else if (completed) {
 		if (cksum_enabled &&
 		    (cksum_request_flags &
 		    GFS_PROTO_REPLICATION_CKSUM_REQFLAG_INTERNAL_SUM_AVAIL
@@ -6590,7 +6610,8 @@ inode_replicated(struct file_replicating *fr,
 		inode_remove_replica_incomplete(inode, fr->dst, fr->igen);
 
 	if (fr->cleanup != NULL) {
-		if (dead_file_copy_is_removable(fr->cleanup))
+		/* do not start a removal in read_only mode */
+		if (!read_only && dead_file_copy_is_removable(fr->cleanup))
 			removal_pendingq_enqueue(fr->cleanup);
 		else {
 			/*
@@ -6610,7 +6631,13 @@ inode_replicated(struct file_replicating *fr,
 	if (transaction)
 		db_end(diag);
 
-	if (e == GFARM_ERR_INVALID_FILE_REPLICA &&
+	if (completed && read_only) {
+		/*
+		 * make the replica again.
+		 * replica_check waits until read_only mode is disabled.
+		 */
+		replica_check_start_rep_result_failed();
+	} else if (e == GFARM_ERR_INVALID_FILE_REPLICA &&
 	    src_errcode != GFARM_ERR_INVALID_FILE_REPLICA &&
 	    src_errcode != GFARM_ERR_CHECKSUM_MISMATCH) {
 		/*
@@ -6967,6 +6994,20 @@ inode_remove_replica_internal(struct inode *inode, struct host *spool_host,
 				    (unsigned long long)gen,
 				    host_name(spool_host));
 				e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
+				if (!FILE_COPY_IS_VALID(copy)) {
+					/*
+					 * an incomplete replica is not
+					 * recorded in the backend DB.
+					 * forget it, otherwise replication
+					 * to this host is refused forever as
+					 * "already in progress".
+					 * its entity is left on the host,
+					 * because a dead_file_copy cannot be
+					 * made in read_only mode.
+					 */
+					*foundp = copy->host_next;
+					free(copy);
+				}
 			} else {
 				/*
 				 * XXX FIXME invalid_is_removable case is wrong
