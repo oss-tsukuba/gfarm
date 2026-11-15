@@ -59,6 +59,7 @@ gfcp_getopt(int argc, char **argv, struct gfpconcat_option *opt)
 			break;
 		case 'm':
 			opt->minimum_size = strtoll(optarg, NULL, 0);
+			break;
 		case 'p':
 			opt->performance = 1;
 			break;

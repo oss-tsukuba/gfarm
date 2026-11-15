@@ -40,6 +40,16 @@ test_write_to_gfarm()
     $GFCP $lfile2 $gfile_out
 }
 
+test_minimum_size()
+{
+    gfrm -f $gfile_out
+    # -m should not print the performance (-p)
+    out=`$GFCP -m 1024 $lfile1 $gfile_out`
+    if [ X"$out" != X ]; then
+        exit $exit_fail
+    fi
+}
+
 test_write_to_local_readonly()
 {
     rm -f $lfile_out
@@ -105,6 +115,7 @@ test_same_gfarm_file()
 test_write_to_gfarm_j1
 test_write_to_local
 test_write_to_gfarm
+test_minimum_size
 test_write_to_local_readonly
 test_write_to_gfarm_readonly
 test_write_to_local_0byte
