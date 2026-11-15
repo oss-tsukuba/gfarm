@@ -536,8 +536,18 @@ gfarm_iobuffer_put_write(struct gfarm_iobuffer *b, const void *data, int len,
 		gfarm_iobuffer_flush_write(b, do_timeout);
 		if (gfarm_iobuffer_get_error(b))
 			return (0);
-		rv = gfarm_iobuffer_write_direct(b, d, len, do_timeout);
-		return (rv < 0 ? 0 : rv);
+		/*
+		 * the write function may return a short count,
+		 * e.g. when a signal is caught while it is blocked.
+		 */
+		for (p = d, residual = len; residual > 0;
+		    residual -= rv, p += rv) {
+			rv = gfarm_iobuffer_write_direct(b, (void *)p,
+			    residual, do_timeout);
+			if (rv <= 0 || gfarm_iobuffer_get_error(b))
+				break;
+		}
+		return (len - residual);
 	}
 	for (p = data, residual = len; residual > 0; residual -= rv, p += rv) {
 		if (!b->pindown && IOBUFFER_IS_FULL(b))
