@@ -1860,7 +1860,9 @@ gfm_server_process_free(struct peer *peer, int from_client, int skip)
 			"peer_get_process() failed");
 		e = GFARM_ERR_NO_SUCH_PROCESS;
 	} else {
-		if (db_begin(diag) == GFARM_ERR_NO_ERROR)
+		/* db_begin() must not be called in read_only mode */
+		if (!gfarm_read_only_mode() &&
+		    db_begin(diag) == GFARM_ERR_NO_ERROR)
 			transaction = 1;
 		/*
 		 * the following internally calls inode_close*() and
