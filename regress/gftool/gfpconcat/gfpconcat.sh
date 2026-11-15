@@ -28,6 +28,23 @@ test_write_to_gfarm()
     $GFPCONCAT -o $gfile_out $gfile2 $gfile1 $lfile2 file:$lfile1
 }
 
+test_minimum_size()
+{
+    gfrm -f $gfile_out
+    # -m after -o should not change the output file
+    $GFPCONCAT -o $gfile_out -m 1024 $gfile1 $lfile1
+    if gfls $gfile_out > /dev/null; then
+        :
+    else
+        exit $exit_fail
+    fi
+    rm -f $lfile_out
+    $GFPCONCAT -m 1024 -o $lfile_out $lfile1 $gfile1
+    if [ ! -f $lfile_out ]; then
+        exit $exit_fail
+    fi
+}
+
 test_write_to_local_0byte()
 {
     rm -f $lfile_out
@@ -99,6 +116,7 @@ EOF
 test_write_to_gfarm_j1
 test_write_to_local
 test_write_to_gfarm
+test_minimum_size
 test_write_to_local_0byte
 test_write_to_gfarm_0byte
 test_overwrite_to_local

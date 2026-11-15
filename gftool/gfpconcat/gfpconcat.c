@@ -64,6 +64,7 @@ gfpconcat_getopt(int argc, char **argv, struct gfpconcat_option *opt)
 			break;
 		case 'm':
 			opt->minimum_size = strtoll(optarg, NULL, 0);
+			break;
 		case 'o':
 			opt->out_file = optarg;
 			break;
