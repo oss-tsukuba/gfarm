@@ -157,6 +157,17 @@ these read-only filesystem nodes have no available capacity.  With the
 usage.  The -a option is not affected by this behavior, which shows
 the real disk usage always.
 </para>
+<para>
+With the -i or -u option, the 1K-blocks column shows the total size of
+the file system of each filesystem node, including the space reserved
+for the super-user, as <command moreinfo="none">df</command> does.
+Without these options, it shows the sum of the Used and Avail columns,
+which does not include the reserved space, because the metadata server
+keeps only these two values.  That is why the 1K-blocks column with
+the -i or -u option may be larger than that without these options.
+The Use% column is the ratio to the sum of the Used and Avail columns
+in both cases.
+</para>
 </refsect1>
 
 <refsect1 id="see-also"><title>SEE ALSO</title>
