@@ -403,6 +403,19 @@ statfsnode(const char *path, const char *domain,
 		free(errors);
 	}
 
+	/* choose the hosts in the domain, as schedule_host_domain() does */
+	nhosts = 0;
+	for (i = 0; i < n_host_info; i++) {
+		if (!gfarm_host_is_in_domain(host_info[i].hostname, domain)) {
+			gfarm_host_info_free(&host_info[i]);
+			continue;
+		}
+		if (nhosts < i)
+			host_info[nhosts] = host_info[i];
+		++nhosts;
+	}
+	n_host_info = nhosts;
+
 	if (n_host_info == 0) {
 		gfarm_host_info_free_all(n_host_info, host_info);
 		gfm_client_connection_free(gfm_server);
