@@ -5,6 +5,8 @@
 #include <assert.h>
 #include <sys/wait.h>
 #include <sys/socket.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
@@ -1149,6 +1151,28 @@ list_without_metadb(int nhosts, char **hosts, int port,
 	return (e_save);
 }
 
+/*
+ * Each access uses a file descriptor.  If the concurrency exceeds
+ * the limit of the number of file descriptors, not only the connections
+ * but also the name resolution and the authentication fail, and running
+ * hosts are displayed as if they were down.
+ */
+#define PARACCESS_RESERVED_FDS	32 /* for gfmd, stdio, name resolution, etc. */
+
+static int
+paraccess_concurrency_adjust(int concurrency)
+{
+	struct rlimit limit;
+	long max;
+
+	if (getrlimit(RLIMIT_NOFILE, &limit) == -1 ||
+	    limit.rlim_cur == RLIM_INFINITY)
+		return (concurrency);
+	max = limit.rlim_cur > PARACCESS_RESERVED_FDS ?
+	    limit.rlim_cur - PARACCESS_RESERVED_FDS : 1;
+	return (concurrency > max ? max : concurrency);
+}
+
 gfarm_error_t
 paraccess_list(int opt_concurrency, int opt_udp_only,
 	char *opt_architecture, char *opt_domainname, int opt_port,
@@ -1168,7 +1192,8 @@ paraccess_list(int opt_concurrency, int opt_udp_only,
 
 	output_callback = callback_op;
 
-	e = gfarm_paraccess_alloc(opt_concurrency, !opt_udp_only, &pa);
+	e = gfarm_paraccess_alloc(
+	    paraccess_concurrency_adjust(opt_concurrency), !opt_udp_only, &pa);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: %s\n",
 		    program_name, gfarm_error_string(e));
