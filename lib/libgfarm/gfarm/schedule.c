@@ -1714,21 +1714,6 @@ loadavg_compare(const void *a, const void *b)
 }
 
 static int
-search_idle_cache_should_be_used(struct search_idle_host_state *h)
-{
-	/*
-	 * the expiration of HOST_STATE_FLAG_ADDR_AVAIL is already coped
-	 * by search_idle_candidate_list_add()
-	 */
-	if ((h->flags & HOST_STATE_FLAG_ADDR_AVAIL) == 0)
-		return (1); /* IP address isn't resolvable, even */
-
-	return ((h->flags & HOST_STATE_FLAG_RTT_TRIED) != 0 &&
-	    !is_expired(&h->loadavg_cache_time, LOADAVG_EXPIRATION));
-
-}
-
-static int
 search_idle_cache_is_available(struct search_idle_state *s,
 	struct search_idle_host_state *h)
 {
@@ -1761,6 +1746,39 @@ search_idle_cache_is_available(struct search_idle_state *s,
 	}
 }
 
+/*
+ * do not try this host, and use the cache instead?
+ */
+static int
+search_idle_cache_should_be_used(struct search_idle_state *s,
+	struct search_idle_host_state *h)
+{
+	/*
+	 * the expiration of HOST_STATE_FLAG_ADDR_AVAIL is already coped
+	 * by search_idle_candidate_list_add()
+	 */
+	if ((h->flags & HOST_STATE_FLAG_ADDR_AVAIL) == 0)
+		return (1); /* IP address isn't resolvable, even */
+
+	if ((h->flags & HOST_STATE_FLAG_RTT_TRIED) == 0)
+		return (0);
+
+	if (search_idle_cache_is_available(s, h))
+		return (1);
+
+	/*
+	 * The last try failed, or did not get what this search mode needs.
+	 *
+	 * We must not see loadavg_cache_time here, because it is not
+	 * the time of the last try in this case, but the time when gfmd
+	 * got the load average.  search_idle_candidate_list_add() updates
+	 * it by the information from gfmd, and gfmd updates the information
+	 * periodically.  Thus it would never expire, and this host would
+	 * never be tried again even after it recovers.
+	 */
+	return (!is_expired(&h->rtt_cache_time, LOADAVG_EXPIRATION));
+}
+
 static gfarm_error_t
 search_idle_try_host(struct search_idle_state *s,
 	struct search_idle_host_state *h, int do_record)
@@ -1775,7 +1793,7 @@ search_idle_try_host(struct search_idle_state *s,
 		return (GFARM_ERR_NO_ERROR);
 
 	/* if we know the availability of this host, don't try */
-	if (search_idle_cache_should_be_used(h))
+	if (search_idle_cache_should_be_used(s, h))
 		return (GFARM_ERR_NO_ERROR);
 
 	/* We limit concurrency here */
