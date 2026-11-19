@@ -235,7 +235,7 @@ Please ask admin_user to register your host by the following command:
 
 After that, start gfsd by the following command as a root:
 
-systemctl start gfsd
+systemctl start gfsd.service
 ```
 
 指定するディレクトリは存在しないディレクトリか空ディレクトリとしてください。このディレクトリ以下は`_gfarmfs`ユーザとローカルシステムの特権ユーザしかアクセスできなくなります。`config-gfsd`の詳細はマニュアルページを参照してください。

@@ -235,7 +235,7 @@ Please ask admin_user to register your host by the following command:
 
 After that, start gfsd by the following command as a root:
 
-systemctl start gfsd
+systemctl start gfsd.service
 ```
 
 The specified directory must either not exist or be empty.  Only the `_gfarmfs` user and privileged users on the local system will be able to access this directory and its contents.  For details on `config-gfsd`, refer to the manual page.
