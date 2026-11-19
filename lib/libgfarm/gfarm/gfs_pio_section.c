@@ -537,6 +537,22 @@ retry:
 	return (e);
 }
 
+/*
+ * Is it worth trying the same host again?
+ *
+ * A connection error on a cached connection may be because the connection
+ * was closed by gfsd (e.g. gfsd was restarted), and a new connection may
+ * work.  But if gfsd did not respond until the timeout, it is unlikely
+ * to respond to a new connection, and waiting for the timeout again and
+ * again prevents the caller from trying another host.
+ */
+static int
+should_retry_same_host(gfarm_error_t e)
+{
+	return (gfs_client_is_connection_error(e) &&
+	    e != GFARM_ERR_OPERATION_TIMED_OUT);
+}
+
 static gfarm_error_t
 connect_and_open(GFS_File gf, const char *hostname, int port)
 {
@@ -583,7 +599,7 @@ retry:
 		    "gfs_pio_open_section: %s",
 		    gfarm_error_string(e));
 		gfs_client_connection_free(gfs_server);
-		if (gfs_client_is_connection_error(e) && nretry-- > 0)
+		if (should_retry_same_host(e) && nretry-- > 0)
 			goto retry;
 	} else {
 		gf->scheduled_age = gfarm_schedule_host_used(hostname, port,
@@ -737,7 +753,7 @@ connect_and_open_with_reconnection(GFS_File gf, char *host, gfarm_int32_t port)
 	gfarm_error_t e;
 
 	e = connect_and_open(gf, host, port);
-	if (gfs_client_is_connection_error(e))
+	if (should_retry_same_host(e))
 		e = connect_and_open(gf, host, port);
 
 	return (e);
@@ -750,7 +766,7 @@ schedule_file_loop(GFS_File gf, char *host, gfarm_int32_t port)
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	int host_assigned = 0;
 	int sleep_interval = 1, sleep_max_interval = 512;
-	int nc = 0;
+	int nc = 0, ntries = 0;
 
 	gettimeofday(&expiration_time, NULL);
 	expiration_time.tv_sec += gfarm_ctxp->no_file_system_node_timeout;
@@ -773,8 +789,10 @@ schedule_file_loop(GFS_File gf, char *host, gfarm_int32_t port)
 			if (e == GFARM_ERR_NO_ERROR)
 				host_assigned = 1;
 		}
-		if (e == GFARM_ERR_NO_ERROR)
+		if (e == GFARM_ERR_NO_ERROR) {
 			e = connect_and_open_with_reconnection(gf, host, port);
+			++ntries;
+		}
 
 		if (nc > 0) {
 			gfs_client_connection_cache_change(-nc);
@@ -787,13 +805,21 @@ schedule_file_loop(GFS_File gf, char *host, gfarm_int32_t port)
 			host_assigned = 0;
 			/*
 			 * reschedule another host unless host is
-			 * explicitly specified
+			 * explicitly specified.
+			 *
+			 * reschedule at least once even if the time is
+			 * expired, because the first host may consume
+			 * the time by its timeout (network_receive_timeout
+			 * is longer than no_file_system_node_timeout
+			 * by default), and another host would never be
+			 * tried in that case.
 			 */
 			if ((e == GFARM_ERR_NO_FILESYSTEM_NODE ||
 			     e == GFARM_ERR_FILE_MIGRATED ||
 			     e == GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE ||
 			    gfs_client_is_connection_error(e)) &&
-			    !gfarm_timeval_is_expired(&expiration_time)) {
+			    (ntries <= 1 ||
+			    !gfarm_timeval_is_expired(&expiration_time))) {
 				if (e == GFARM_ERR_FILE_MIGRATED) {
 					/* don't have to sleep in this case */
 					gflog_debug(GFARM_MSG_1002472,
