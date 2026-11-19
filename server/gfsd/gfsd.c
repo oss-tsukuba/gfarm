@@ -2314,7 +2314,7 @@ gfsd_copy_file(int fd, gfarm_ino_t inum, gfarm_uint64_t gen, const char *diag,
 	if (sz == -1 && e == GFARM_ERR_NO_ERROR)
 		e = gfarm_errno_to_error(errno);
 	close(dst);
-	if (*pathp != NULL)
+	if (pathp != NULL)
 		*pathp = path;
 	else
 		free(path);

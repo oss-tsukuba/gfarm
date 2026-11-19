@@ -619,7 +619,12 @@ gfm_server_setxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 		e = dbq_waitret(waitctx);
 		if (e == GFARM_ERR_NO_ERROR) {
 			giant_lock();
-			inode_status_changed(inode);
+			/*
+			 * gfmd may be changed to read_only mode
+			 * while giant_lock is released above
+			 */
+			if (!gfarm_read_only_mode())
+				inode_status_changed(inode);
 			giant_unlock();
 		} else if (addattr) {
 			giant_lock();

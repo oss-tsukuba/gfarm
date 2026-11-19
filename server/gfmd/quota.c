@@ -128,6 +128,15 @@ quota_metadata_softlimit_exceed(struct quota_metadata *q, int *need_db_update)
 }
 
 /*
+ * NOTE about read_only mode:
+ * the time when a soft limit was exceeded is updated in memory,
+ * but it is not recorded in the backend DB in read_only mode,
+ * because these functions are called from places which cannot refuse
+ * the update, e.g. loading the inodes at startup and quota_check.
+ * it is recorded when it is updated next time.
+ */
+
+/*
  * PREREQUISITE: giant_lock
  * LOCKS: config_var_mutex, dbq.mutex (only if the DB needs to be updated)
  * SLEEPS: yes (dbq.mutex)
@@ -139,7 +148,7 @@ quota_softlimit_exceed_user(struct quota *q, struct user *u)
 	int need_db_update = 0;
 
 	quota_softlimit_exceed(q, &need_db_update);
-	if (need_db_update && user_is_valid(u)) {
+	if (need_db_update && user_is_valid(u) && !gfarm_read_only_mode()) {
 		e = db_quota_user_set(q, user_tenant_name(u));
 		if (e != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_1004505,
@@ -160,7 +169,7 @@ quota_softlimit_exceed_group(struct quota *q, struct group *g)
 	int need_db_update = 0;
 
 	quota_softlimit_exceed(q, &need_db_update);
-	if (need_db_update && group_is_valid(g)) {
+	if (need_db_update && group_is_valid(g) && !gfarm_read_only_mode()) {
 		e = db_quota_group_set(q, group_tenant_name(g));
 		if (e != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_1004506,
@@ -181,7 +190,7 @@ dirquota_softlimit_exceed(struct quota_metadata *q, struct dirset *ds)
 	int need_db_update = 0;
 
 	quota_metadata_softlimit_exceed(q, &need_db_update);
-	if (need_db_update && dirset_is_valid(ds)) {
+	if (need_db_update && dirset_is_valid(ds) && !gfarm_read_only_mode()) {
 		e = db_quota_dirset_modify(
 		    dirset_get_username(ds), dirset_get_dirsetname(ds), q);
 		if (e != GFARM_ERR_NO_ERROR)

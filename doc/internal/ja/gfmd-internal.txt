@@ -286,6 +286,9 @@ NUM_THREAD_POOLS, NUM_THREADS のコメントにもある。
   ・removal_finalizer() (dead_file_copy.c)
 
     removal_finishedq から dead_file_copy を取り出し、削除結果を処理する。
+    read only モードの間は、取り出さずに解除を待つ。
+    取り出した後で read only モードになっていた場合は、removal_finishedq
+    に戻し (finalizing → finished)、解除されてから処理する。
 
   ・dead_file_copy_scanner() (dead_file_copy.c)
 
@@ -957,7 +960,12 @@ host_busyq		back_channel の送信が busy だったため、再試行待ち
     host_busyq に入れる (→ busy)。
   - その他の送信エラーは、removal_finishedq に入れる。
 ・removal_finalizer() が removal_finishedq から取り出し (→ finalizing)、
-  giant_lock を獲得して handle_removal_result() で処理する。
+  giant_lock を獲得して handle_removal_results() で処理する。
+  この時、既に removal_finishedq に溜まっているものも、最大
+  REMOVAL_RESULT_BATCH_MAX (32) 個まで取り出し、1つのトランザクションで
+  まとめて処理する。トランザクションの終了ごとに、giant_lock を保持したまま
+  journal file の fdatasync と同期スレーブへの転送を行うため、1個ずつ
+  処理すると、レプリカ1個の削除ごとにそれらの待ちが生じるからである。
   - read only モードの場合は、removal_finishedq に戻す。
   - 成功 (ないし GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY) の場合は、
     dead_file_copy_free() で解放する。
