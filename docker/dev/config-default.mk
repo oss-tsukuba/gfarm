@@ -96,6 +96,14 @@ GFDOCKER_SASL_XOAUTH2_ISSUER=https://jwt-keycloak:8443/auth/realms/hpci
 GFDOCKER_SASL_XOAUTH2_ISSUERS=${GFDOCKER_SASL_XOAUTH2_ISSUER}
 GFDOCKER_SASL_XOAUTH2_GROUP_USER=user1|${GFDOCKER_SASL_XOAUTH2_SCOPE}|${GFDOCKER_SASL_XOAUTH2_ISSUER} user5|${GFDOCKER_SASL_XOAUTH2_SCOPE}|${GFDOCKER_SASL_XOAUTH2_ISSUER}
 
+# address of host OS to publish the ports of containers
+# (S3, squid, chrome and Nextcloud).
+# The default is 127.0.0.1, i.e. they are accessible from host OS only,
+# because ports published by Docker bypass the firewall of host OS.
+# To access them from other hosts, use ssh port forwarding to host OS,
+# or specify 0.0.0.0 (all addresses) or an address of host OS here.
+GFDOCKER_HOSTPORT_ADDR = 127.0.0.1
+
 # using port numbers of host OS
 GFDOCKER_HOSTPORT_S3_HTTP = 18080
 GFDOCKER_HOSTPORT_S3_HTTPS = 18443

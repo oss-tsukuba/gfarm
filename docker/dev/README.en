@@ -296,6 +296,15 @@ Gfarm-S3-MinIO
 
 3. to access
 
+  NOTE: the ports are published on 127.0.0.1 of host OS by default
+  (GFDOCKER_HOSTPORT_ADDR = 127.0.0.1), because ports published by
+  Docker bypass the firewall of host OS.  To access them from another
+  host, use ssh port forwarding, e.g.
+    $ ssh -L 18080:127.0.0.1:18080 -L 18443:127.0.0.1:18443 {host OS}
+  and specify localhost instead of the IP address of host OS, or add
+  "GFDOCKER_HOSTPORT_ADDR = 0.0.0.0" to config.mk and recreate the
+  containers.
+
   (WebUI from Web Browser)
     http://{IP address of host OS}:18080/
       (GFDOCKER_HOSTPORT_S3_HTTP = 18080)
@@ -384,6 +393,15 @@ Nextcloud using Gfarm as primary storage
   $ make down-with-nextcloud
 
 6. to access Nextcloud WebUI
+
+  NOTE: the ports are published on 127.0.0.1 of host OS by default
+  (GFDOCKER_HOSTPORT_ADDR = 127.0.0.1), because ports published by
+  Docker bypass the firewall of host OS.  To access them from another
+  host, use ssh port forwarding, e.g.
+    $ ssh -L 28080:127.0.0.1:28080 {host OS}
+  and specify localhost instead of the IP address of host OS, or add
+  "GFDOCKER_HOSTPORT_ADDR = 0.0.0.0" to config.mk and recreate the
+  containers.
 
   (from Web Browser)
     http://{IP address of host OS}:28080/
