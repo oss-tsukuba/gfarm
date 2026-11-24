@@ -9,14 +9,23 @@
 #include <libgen.h>
 #include <string.h>
 #include <limits.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 
 #include <gfarm/gfarm.h>
 
 #include "hash.h"
+#include "gfevent.h"
 
+#include "context.h"
 #include "liberror.h"
+#include "host.h" /* gfm_host_info_address_get() */
 #include "gfm_client.h"
+#include "gfs_client.h"
 #include "lookup.h"
+#include "filesystem.h"
 #include "gfarm_path.h"
 
 char *program_name = "gfdf";
@@ -30,9 +39,8 @@ enum sort_order {
 } option_sort_order = SO_NAME;
 static int option_reverse_sort = 0;
 static int option_formatting_flags = 0;
-#if 0
-static int option_concurrency;
-#endif
+#define DEFAULT_CONCURRENCY 10 /* reflect this value to gfdf.1.docbook */
+static int option_concurrency = DEFAULT_CONCURRENCY;
 static int option_use_real_disk_space = 0;
 
 struct formatter {
@@ -108,11 +116,7 @@ static void
 usage(void)
 {
 	fprintf(stderr,
-#if 0
 	    "Usage: %s [-ahiHnruRSUV] [-P path] [-D domain] [-j concurrency] "
-#else
-	    "Usage: %s [-ahiHnruRSUV] [-P path] [-D domain] "
-#endif
 	    "[<host>...]\n",
 	    program_name);
 	exit(1);
@@ -230,6 +234,143 @@ df_info_free(int nhosts, struct df_info *hosts)
 	free(hosts);
 }
 
+/*
+ * parallel access to gfsd
+ *
+ * NOTE: the multiplexed version of the gfs_client functions are used
+ * to ask many gfsd at once, because the time to ask them one by one is
+ * proportional to the number of gfsd, and because it takes very long
+ * if there are gfsd which do not respond.
+ */
+
+struct statfs_state {
+	struct gfarm_eventqueue *q;
+	int nrunning;
+};
+
+struct statfs_request {
+	struct statfs_state *state;
+	void *protocol_state;
+	struct gfs_connection *gfs_server;
+
+	gfarm_error_t error;
+	gfarm_int32_t bsize;
+	gfarm_off_t blocks, bfree, bavail, files, ffree, favail;
+};
+
+static void
+statfs_request_finish(struct statfs_request *r, gfarm_error_t e)
+{
+	r->error = e;
+	--r->state->nrunning;
+}
+
+static void
+statfs_result(void *closure)
+{
+	struct statfs_request *r = closure;
+	gfarm_error_t e;
+
+	e = gfs_client_statfs_result_multiplexed(r->protocol_state,
+	    &r->bsize, &r->blocks, &r->bfree, &r->bavail,
+	    &r->files, &r->ffree, &r->favail);
+	gfs_client_connection_free(r->gfs_server);
+	statfs_request_finish(r, e);
+}
+
+static void
+statfs_connect_result(void *closure)
+{
+	struct statfs_request *r = closure;
+	gfarm_error_t e;
+	struct gfs_client_statfs_state *ss;
+
+	e = gfs_client_connect_result_multiplexed(r->protocol_state,
+	    &r->gfs_server);
+	if (e != GFARM_ERR_NO_ERROR) {
+		statfs_request_finish(r, e);
+		return;
+	}
+	/* "/" is actually not used */
+	e = gfs_client_statfs_request_multiplexed(r->state->q,
+	    r->gfs_server, "/", gfarm_ctxp->schedule_rpc_timeout,
+	    statfs_result, r, &ss);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gfs_client_connection_free(r->gfs_server);
+		statfs_request_finish(r, e);
+		return;
+	}
+	r->protocol_state = ss;
+}
+
+/* wait until the number of the running requests becomes `limit' or less */
+static gfarm_error_t
+statfs_wait(struct statfs_state *state, int limit)
+{
+	int rv;
+
+	while (state->nrunning > limit) {
+		rv = gfarm_eventqueue_turn(state->q, NULL);
+		if (rv != 0 && rv != EAGAIN && rv != EINTR)
+			return (gfarm_errno_to_error(rv));
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
+/*
+ * Each request uses a file descriptor.  If the concurrency exceeds
+ * the limit of the number of file descriptors, not only the connections
+ * but also the name resolution and the authentication fail, and no host
+ * may be displayed.
+ */
+#define STATFS_RESERVED_FDS	32 /* for gfmd, stdio, name resolution, etc. */
+
+static void
+statfs_concurrency_adjust(void)
+{
+	struct rlimit limit;
+	long max;
+
+	if (getrlimit(RLIMIT_NOFILE, &limit) == -1 ||
+	    limit.rlim_cur == RLIM_INFINITY)
+		return;
+	max = limit.rlim_cur > STATFS_RESERVED_FDS ?
+	    limit.rlim_cur - STATFS_RESERVED_FDS : 1;
+	if (option_concurrency > max)
+		option_concurrency = max;
+}
+
+static gfarm_error_t
+statfs_request(struct statfs_state *state, struct gfm_connection *gfm_server,
+	struct gfarm_host_info *hi, struct statfs_request *r)
+{
+	gfarm_error_t e;
+	struct sockaddr addr;
+	struct gfs_client_connect_state *cs;
+
+	r->state = state;
+	r->error = gfm_host_info_address_get(gfm_server,
+	    hi->hostname, hi->port, hi, &addr, NULL);
+	if (r->error != GFARM_ERR_NO_ERROR)
+		return (GFARM_ERR_NO_ERROR);
+
+	/* limit the concurrency */
+	e = statfs_wait(state, option_concurrency - 1);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	r->error = gfs_client_connect_request_multiplexed(state->q,
+	    hi->hostname, hi->port, gfm_client_username(gfm_server),
+	    &addr, gfarm_filesystem_get_by_connection(gfm_server),
+	    gfarm_ctxp->schedule_rpc_timeout,
+	    statfs_connect_result, r, &cs);
+	if (r->error == GFARM_ERR_NO_ERROR) {
+		r->protocol_state = cs;
+		++state->nrunning;
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
 gfarm_error_t
 statfsnode(const char *path, const char *domain,
 	int argc, char **argv, int *nhostsp, struct df_info **hostsp)
@@ -239,6 +380,9 @@ statfsnode(const char *path, const char *domain,
 	struct gfarm_host_info *host_info, *hi;
 	struct df_info *hosts, *h;
 	struct gfm_connection *gfm_server;
+	struct statfs_state state;
+	struct statfs_request *requests, *r;
+	int rv;
 
 	if ((e = gfm_client_connection_and_process_acquire_by_path(path,
 	    &gfm_server)) != GFARM_ERR_NO_ERROR)
@@ -283,49 +427,92 @@ statfsnode(const char *path, const char *domain,
 		}
 		free(errors);
 	}
-	gfm_client_connection_free(gfm_server);
+
+	/* choose the hosts in the domain, as schedule_host_domain() does */
+	nhosts = 0;
+	for (i = 0; i < n_host_info; i++) {
+		if (!gfarm_host_is_in_domain(host_info[i].hostname, domain)) {
+			gfarm_host_info_free(&host_info[i]);
+			continue;
+		}
+		if (nhosts < i)
+			host_info[nhosts] = host_info[i];
+		++nhosts;
+	}
+	n_host_info = nhosts;
 
 	if (n_host_info == 0) {
 		gfarm_host_info_free_all(n_host_info, host_info);
+		gfm_client_connection_free(gfm_server);
 		return (GFARM_ERR_NO_SUCH_OBJECT);
 	}
 	GFARM_MALLOC_ARRAY(hosts, n_host_info);
-	if (hosts == NULL) {
+	GFARM_MALLOC_ARRAY(requests, n_host_info);
+	if (hosts == NULL || requests == NULL) {
+		free(hosts);
+		free(requests);
 		gfarm_host_info_free_all(n_host_info, host_info);
+		gfm_client_connection_free(gfm_server);
 		return (GFARM_ERR_NO_MEMORY);
+	}
+	statfs_concurrency_adjust();
+	rv = gfarm_eventqueue_alloc(option_concurrency, &state.q);
+	if (rv != 0) {
+		free(hosts);
+		free(requests);
+		gfarm_host_info_free_all(n_host_info, host_info);
+		gfm_client_connection_free(gfm_server);
+		return (gfarm_errno_to_error(rv));
+	}
+	state.nrunning = 0;
+
+	for (i = 0; i < n_host_info; i++) {
+		e = statfs_request(&state, gfm_server,
+		    &host_info[i], &requests[i]);
+		if (e != GFARM_ERR_NO_ERROR)
+			break;
+	}
+	if (e == GFARM_ERR_NO_ERROR)
+		e = statfs_wait(&state, 0);
+	gfarm_eventqueue_free(state.q);
+	gfm_client_connection_free(gfm_server);
+	if (e != GFARM_ERR_NO_ERROR) {
+		free(hosts);
+		free(requests);
+		gfarm_host_info_free_all(n_host_info, host_info);
+		return (e);
 	}
 
 	nhosts = 0;
 	for (i = 0; i < n_host_info; i++) {
-		gfarm_int32_t bsize;
-		gfarm_off_t blocks, bfree, bavail, files, ffree, favail;
-
 		hi = &host_info[i];
-		e = gfs_statfsnode_by_path(path, hi->hostname, hi->port,
-		    &bsize, &blocks, &bfree, &bavail, &files, &ffree, &favail);
-		if (e != GFARM_ERR_NO_ERROR) {
-			fprintf(stderr, "%s:%d: %s\n",
-			    hi->hostname, hi->port, gfarm_error_string(e));
+		r = &requests[i];
+		if (r->error != GFARM_ERR_NO_ERROR) {
+			fprintf(stderr, "%s:%d: %s\n", hi->hostname, hi->port,
+			    gfarm_error_string(r->error));
 			continue;
 		}
 		h = &hosts[nhosts++];
-		h->block_root = (double)blocks * bsize / 1024.0;
-		h->block_non_root =
-		    (double)(blocks - (bfree - bavail)) * bsize / 1024.0;
-		h->block_used = (double)(blocks - bfree) * bsize / 1024.0;
-		h->block_avail = (double)bavail * bsize / 1024.0;
-		h->inode_root = files;
-		h->inode_non_root = files - (ffree - favail);
-		h->inode_used = files - ffree;
-		h->inode_avail = favail;
+		h->block_root = (double)r->blocks * r->bsize / 1024.0;
+		h->block_non_root = (double)(r->blocks -
+		    (r->bfree - r->bavail)) * r->bsize / 1024.0;
+		h->block_used =
+		    (double)(r->blocks - r->bfree) * r->bsize / 1024.0;
+		h->block_avail = (double)r->bavail * r->bsize / 1024.0;
+		h->inode_root = r->files;
+		h->inode_non_root = r->files - (r->ffree - r->favail);
+		h->inode_used = r->files - r->ffree;
+		h->inode_avail = r->favail;
 		h->host = strdup(hi->hostname);
 		if (h->host == NULL) {
 			df_info_free(nhosts, hosts);
+			free(requests);
 			gfarm_host_info_free_all(n_host_info, host_info);
 			return (GFARM_ERR_NO_MEMORY);
 		}
 
 	}
+	free(requests);
 	gfarm_host_info_free_all(n_host_info, host_info);
 
 	df_info_sort(nhosts, hosts);
@@ -690,7 +877,7 @@ main(int argc, char *argv[])
 		exit(1);
 	}
 
-	while ((c = getopt(argc, argv, "ahiHnruD:P:RSUV?")) != -1) {
+	while ((c = getopt(argc, argv, "ahiHj:nruD:P:RSUV?")) != -1) {
 		switch (c) {
 		case 'a':
 			statfs_sw = display_statfs_total;
@@ -708,12 +895,15 @@ main(int argc, char *argv[])
 			/* schedule_host_domain() cannot provide inode info */
 			df_info_get = statfsnode;
 			break;
-#if 0
 		case 'j':
 			option_concurrency = parse_opt_long(optarg,
 			    c, "<concurrency>");
+			if (option_concurrency <= 0) {
+				fprintf(stderr, "%s: invalid value: -%c %d\n",
+				    program_name, c, option_concurrency);
+				usage();
+			}
 			break;
-#endif
 		case 'n':
 			statfs_sw = display_nodes;
 			break;

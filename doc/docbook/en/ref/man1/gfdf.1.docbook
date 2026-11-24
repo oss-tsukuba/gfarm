@@ -5,7 +5,7 @@
 
 <refentry id="gfdf.1">
 
-<refentryinfo><date>14 Mar 2019</date></refentryinfo>
+<refentryinfo><date>15 Nov 2026</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfdf</refentrytitle>
@@ -60,6 +60,24 @@ symbol like "M" (mega).  Since this option uses powers of 1000,
 </varlistentry>
 
 <varlistentry>
+<term><option>-i</option></term>
+<listitem>
+<para>Displays the number of inodes as well.
+Since the metadata server does not have this information,
+<command moreinfo="none">gfdf</command> asks each filesystem node.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-j</option> <parameter moreinfo="none">concurrency</parameter></term>
+<listitem>
+<para>Specifies the number of filesystem nodes to ask at once,
+when the -i or -u option is specified.
+The default is 10.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-n</option></term>
 <listitem>
 <para>Displays hostnames of available Gfarm file system nodes.</para>
@@ -77,6 +95,14 @@ symbol like "M" (mega).  Since this option uses powers of 1000,
 <term><option>-S</option></term>
 <listitem>
 <para>Sort output in the increasing order of the available disk capacity.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-u</option></term>
+<listitem>
+<para>Displays the current information by asking each filesystem node,
+instead of the information that the metadata server keeps.</para>
 </listitem>
 </varlistentry>
 
@@ -130,6 +156,17 @@ these read-only filesystem nodes have no available capacity.  With the
 -R option, <command moreinfo="none">gfdf</command> shows the real disk
 usage.  The -a option is not affected by this behavior, which shows
 the real disk usage always.
+</para>
+<para>
+With the -i or -u option, the 1K-blocks column shows the total size of
+the file system of each filesystem node, including the space reserved
+for the super-user, as <command moreinfo="none">df</command> does.
+Without these options, it shows the sum of the Used and Avail columns,
+which does not include the reserved space, because the metadata server
+keeps only these two values.  That is why the 1K-blocks column with
+the -i or -u option may be larger than that without these options.
+The Use% column is the ratio to the sum of the Used and Avail columns
+in both cases.
 </para>
 </refsect1>
 

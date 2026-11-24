@@ -1119,8 +1119,17 @@ gfs_client_connect_start_auth(int events, int fd, void *closure,
 	struct gfs_client_connect_state *state = closure;
 	int error;
 	socklen_t error_size = sizeof(error);
-	int rv = getsockopt(fd, SOL_SOCKET, SO_ERROR, &error, &error_size);
+	int rv;
 
+	if ((events & GFARM_EVENT_TIMEOUT) != 0) {
+		assert(events == GFARM_EVENT_TIMEOUT);
+		/* the connection is disposed by the result function */
+		state->error = GFARM_ERR_OPERATION_TIMED_OUT;
+		if (state->continuation != NULL)
+			(*state->continuation)(state->closure);
+		return;
+	}
+	rv = getsockopt(fd, SOL_SOCKET, SO_ERROR, &error, &error_size);
 	if (rv == -1) { /* Solaris, see UNP by rstevens */
 		state->error = gfarm_errno_to_error(errno);
 	} else if (error != 0) {
@@ -1245,13 +1254,22 @@ gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
 	state->error = GFARM_ERR_NO_ERROR;
 #ifndef __KERNEL__
 	if (connection_in_progress) {
-		state->writable = gfarm_fd_event_alloc(GFARM_EVENT_WRITE,
+		struct timeval timeout;
+
+		/*
+		 * Without the timeout, this waits until TCP gives up
+		 * (more than 2 minutes), if the host is unreachable.
+		 */
+		timeout.tv_sec = connect_timeout;
+		timeout.tv_usec = 0;
+		state->writable = gfarm_fd_event_alloc(
+		    GFARM_EVENT_WRITE|GFARM_EVENT_TIMEOUT,
 		    gfp_xdr_fd(gfs_server->conn), NULL, NULL,
 		    gfs_client_connect_start_auth, state);
 		if (state->writable == NULL) {
 			e = GFARM_ERR_NO_MEMORY;
 		} else if ((rv = gfarm_eventqueue_add_event(q, state->writable,
-		    NULL)) == 0) {
+		    &timeout)) == 0) {
 			*statepp = state;
 			/* go to gfs_client_connect_start_auth() */
 			return (GFARM_ERR_NO_ERROR);

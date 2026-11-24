@@ -5,7 +5,7 @@
 
 <refentry id="gfdf.1">
 
-<refentryinfo><date>14 Mar 2019</date></refentryinfo>
+<refentryinfo><date>15 Nov 2026</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfdf</refentrytitle>
@@ -57,6 +57,25 @@
 </varlistentry>
 
 <varlistentry>
+<term><option>-i</option></term>
+<listitem>
+<para>inode 数も表示します。
+メタデータサーバはこの情報を保持していないため、
+<command moreinfo="none">gfdf</command> は各ファイルシステムノードに
+問い合わせます。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-j</option> <parameter moreinfo="none">並列度</parameter></term>
+<listitem>
+<para>-i または -u オプションを指定した場合に、
+同時に問い合わせるファイルシステムノードの数を指定します。
+デフォールトは 10 です。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-n</option></term>
 <listitem>
 <para>利用可能なファイルシステムノードのホスト名を表示します。</para>
@@ -74,6 +93,14 @@
 <term><option>-S</option></term>
 <listitem>
 <para>空き容量の順に整列して出力します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-u</option></term>
+<listitem>
+<para>メタデータサーバが保持している情報ではなく、
+各ファイルシステムノードに問い合わせた現在の情報を表示します。</para>
 </listitem>
 </varlistentry>
 
@@ -124,6 +151,18 @@ Gfarmファイルシステム内部ではそれらのノードはディスクフ
 -R オプションを用いることにより、実際の空き容量を表示することができます。
 また、-a オプションによるファイルシステム全体の空き容量は、
 -R オプションをつけたときと同様に実際の空き容量が表示されます。
+</para>
+<para>
+-i または -u オプションを指定した場合、1K-blocks の欄には
+<command moreinfo="none">df</command> と同様に、
+スーパーユーザ用の予約領域を含む、
+各ファイルシステムノードのファイルシステム全体の大きさが表示されます。
+これらのオプションを指定しない場合は、
+メタデータサーバが Used と Avail の値だけを保持しているため、
+予約領域を含まない Used と Avail の合計が表示されます。
+このため、-i または -u オプションを指定したときの 1K-blocks の値は、
+指定しないときの値より大きくなることがあります。
+Use% の欄は、どちらの場合も Used と Avail の合計に対する割合です。
 </para>
 </refsect1>
 
