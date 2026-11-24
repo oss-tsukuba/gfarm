@@ -15,7 +15,7 @@ services:
       - ./mnt/user1/gfarm2.conf:/gfarm2.conf:ro
       - ./mnt/user1/gfarm2rc:/gfarm2rc:ro
     ports:
-      - 28080:80
+      - "${GFDOCKER_HOSTPORT_ADDR:-127.0.0.1}:28080:80"
 
 secrets:
   admin_password:

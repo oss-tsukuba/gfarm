@@ -18,6 +18,9 @@ hostname_suffix = environ['GFDOCKER_HOSTNAME_SUFFIX']
 hostport_s3_http = environ['GFDOCKER_HOSTPORT_S3_HTTP']
 hostport_s3_https = environ['GFDOCKER_HOSTPORT_S3_HTTPS']
 hostport_s3_direct = environ['GFDOCKER_HOSTPORT_S3_DIRECT']
+# address of host OS to publish ports.  127.0.0.1 by default, because
+# ports published by Docker bypass the firewall of host OS.
+hostport_addr = environ.get('GFDOCKER_HOSTPORT_ADDR') or '127.0.0.1'
 
 def tobool(s):
     return s.lower() == 'true'
@@ -109,12 +112,13 @@ services:
 if hostport_s3_http and hostport_s3_https:
     client1_ports = '''
     ports:
-      - {}:80
-      - {}:443
-      - {}:51000'''.format(
+      - "{addr}:{}:80"
+      - "{addr}:{}:443"
+      - "{addr}:{}:51000"'''.format(
           int(hostport_s3_http),
           int(hostport_s3_https),
-          int(hostport_s3_direct))
+          int(hostport_s3_direct),
+          addr=hostport_addr)
 else:
     client1_ports = ''
 
@@ -140,7 +144,7 @@ if use_keycloak:
     networks:
       gfarm_dev:
     ports:
-      - "0.0.0.0:13128:3128"
+      - "{addr}:13128:3128"
     volumes:
       - ./common/oauth2/allow-ssl-ports.conf:/etc/squid/conf.d/allow-ssl-ports.conf:ro
   # desktop:
@@ -150,7 +154,7 @@ if use_keycloak:
   #   networks:
   #     gfarm_dev:
   #   ports:
-  #     - "0.0.0.0:23389:3389"
+  #     - "{addr}:23389:3389"
   #   <<: *common
   jwt-server:
     hostname: jwt-server{}
@@ -194,11 +198,11 @@ if use_keycloak:
       DB_VENDOR: h2
       KEYCLOAK_USER: admin
       KEYCLOAK_PASSWORD: admin
-'''.format(hostname_suffix), end='')
+'''.format(hostname_suffix, addr=hostport_addr), end='')
 
 if use_chrome_container:
     print('''\
-  # http://<host IP address>:6901
+  # http://localhost:6901 (see GFDOCKER_HOSTPORT_ADDR)
   # login: kasm_user/password
   chrome:
     image: kasmweb/chrome:1.15.0-rolling
@@ -208,11 +212,11 @@ if use_chrome_container:
     networks:
       gfarm_dev:
     ports:
-      - "0.0.0.0:6901:6901"
+      - "{addr}:6901:6901"
     environment:
       - VNC_PW=password
     <<: *common
-''', end='')
+'''.format(addr=hostport_addr), end='')
 
 print('''\
 

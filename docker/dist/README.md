@@ -135,6 +135,10 @@ When you install Gfarm by `all.sh`, `regress.sh` and `failover.sh` are available
     % make setup
     % cd ..
 
+The ports of the remote desktop (13389) and the http proxy (13128) are published on 127.0.0.1 of the host where Docker containers for Gfarm is running, because ports published by Docker bypass the firewall of the host.  To use them from another host, forward the ports by ssh, and specify localhost as follows.
+
+    % ssh -L 13389:127.0.0.1:13389 -L 13128:127.0.0.1:13128 (the host where Docker containers for Gfarm is running)
+
 - connect remote desktop to localhost:13389
 - login ubuntu/ubuntu
 - launch Firefox (or Chromium (/rdesktop/chromium-start.sh))
@@ -162,7 +166,7 @@ Passphrase: (paste the passphrase displayed)
 
 - proxy server settings for any web browser on your desktop
   - protocol: HTTP
-  - server: (IP address of the host where Docker containers for Gfarm is running)
+  - server: localhost
   - port: 13128
 - connect to https://jwt-server/ by web browser
 - ignore the certificate warning on https://jwt-server/

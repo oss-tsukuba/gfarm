@@ -8,6 +8,6 @@ services:
     image: nextcloud
     #restart: always
     ports:
-      - 28080:80
+      - "${GFDOCKER_HOSTPORT_ADDR:-127.0.0.1}:28080:80"
     volumes:
       - nextcloud:/var/www/html
