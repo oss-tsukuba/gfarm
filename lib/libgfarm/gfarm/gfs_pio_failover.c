@@ -275,8 +275,27 @@ reset_and_reopen(GFS_File gf, void *closure)
 		return (0);
 	}
 
+	if (gf->gfm_server == gfm_server && gf->fd != -1) {
+		/*
+		 * this file has already been reopened by a previous try of
+		 * this failover, i.e. reset_and_reopen_all() is retried
+		 * because reopening another file failed.
+		 * do not reopen it again.  otherwise the descriptor which
+		 * gfsd opened at the previous try remains opened, because
+		 * gfarm_client_process_reset() is not called again for
+		 * the gfs_connection, and gfsd keeps the replica opened
+		 * even after this file is closed and removed.
+		 */
+		gfm_client_connection_free(gfm_server1);
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: fd %d is already reopened",
+		    gf->url != NULL ? gf->url : "(fhopen)", gf->fd);
+		return (1);
+	}
+
 	/* if old gfm_connection is alive, fd must be closed */
-	(void)gfm_close_fd(gf->gfm_server, gf->fd, NULL, NULL);
+	if (gf->fd != -1)
+		(void)gfm_close_fd(gf->gfm_server, gf->fd, NULL, NULL);
 	gf->fd = -1;
 	gfm_client_connection_free(gf->gfm_server);
 	/* ref count of gfm_server is incremented above */
@@ -339,6 +358,16 @@ reset_and_reopen(GFS_File gf, void *closure)
 			    gfs_client_connection_failover_count(sc) >= fc)
 				gfs_client_connection_set_failover_count(
 				    sc, fc - 1);
+			/*
+			 * gfmd may have opened the descriptor, but gfsd has
+			 * not.  close it to tell the next retry that this
+			 * file is not reopened yet.
+			 */
+			if (gf->fd != -1) {
+				(void)gfm_close_fd(gf->gfm_server, gf->fd,
+				    NULL, NULL);
+				gf->fd = -1;
+			}
 			ri->must_retry = 1;
 			return (0);
 		}
