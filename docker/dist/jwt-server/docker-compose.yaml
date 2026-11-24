@@ -90,7 +90,7 @@ services:
     networks:
       - gfarm_net
     ports:
-      - 13389:3389
+      - 127.0.0.1:13389:3389
   squid:
     init: true
     image: ubuntu/squid
@@ -98,7 +98,7 @@ services:
     networks:
       gfarm_net:
     ports:
-      - 13128:3128
+      - 127.0.0.1:13128:3128
     volumes:
       - ../../dev/common/oauth2/allow-ssl-ports.conf:/etc/squid/conf.d/allow-ssl-ports.conf:ro
 
