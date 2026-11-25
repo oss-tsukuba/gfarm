@@ -298,6 +298,8 @@ gfarm_error_t gfarm_client_process_set(struct gfs_connection *,
 	struct gfm_connection *);
 gfarm_error_t gfarm_client_process_reset(struct gfs_connection *,
 	struct gfm_connection *);
+int gfarm_client_process_is_set(struct gfs_connection *,
+	struct gfm_connection *);
 
 /* for server */
 gfarm_error_t gfarm_server_initialize_for_gfmd(char *, int *, char ***);

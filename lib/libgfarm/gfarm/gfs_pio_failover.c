@@ -173,7 +173,13 @@ gfs_pio_reopen(struct gfarm_filesystem *fs, GFS_File gf)
 		 * descriptor, see gfs_pio_not_reopened_error().
 		 * GFARM_ERR_GFMD_FAILED_OVER is not kept, since the file
 		 * will be reopened by the retry.
+		 *
+		 * a connection error means that the connection to gfmd
+		 * which this failover made is lost again.  do not give up
+		 * this file, but ask the caller to retry the failover.
 		 */
+		if (gfm_client_is_connection_error(e))
+			e = GFARM_ERR_GFMD_FAILED_OVER;
 		if (e != GFARM_ERR_GFMD_FAILED_OVER)
 			gf->error = e;
 		return (e);
@@ -275,7 +281,11 @@ reset_and_reopen(GFS_File gf, void *closure)
 		return (0);
 	}
 
-	if (gf->gfm_server == gfm_server && gf->fd != -1) {
+	sc = get_storage_context(gf->view_context);
+	if (gf->gfm_server == gfm_server && gf->fd != -1 &&
+	    (sc == NULL ||
+	    (fc <= gfs_client_connection_failover_count(sc) &&
+	    gfarm_client_process_is_set(sc, gfm_server)))) {
 		/*
 		 * this file has already been reopened by a previous try of
 		 * this failover, i.e. reset_and_reopen_all() is retried
@@ -285,6 +295,11 @@ reset_and_reopen(GFS_File gf, void *closure)
 		 * gfarm_client_process_reset() is not called again for
 		 * the gfs_connection, and gfsd keeps the replica opened
 		 * even after this file is closed and removed.
+		 *
+		 * but if the gfsd is going to be reset, e.g. because
+		 * reopening another file on the same gfsd failed, this file
+		 * must be reopened again, since the reset closes all the
+		 * descriptors of the gfsd.
 		 */
 		gfm_client_connection_free(gfm_server1);
 		gflog_debug(GFARM_MSG_UNFIXED,
@@ -315,8 +330,18 @@ reset_and_reopen(GFS_File gf, void *closure)
 			return (1);
 		}
 
-		/* reset pid */
-		if (fc > gfs_client_connection_failover_count(sc)) {
+		/*
+		 * reset pid
+		 *
+		 * the failover count is not enough to tell whether
+		 * the reset is necessary.  if the connection to gfmd is
+		 * replaced at a retry of this failover, the count is
+		 * the same, but the gfsd is still set to the process of
+		 * the previous connection, and it rejects the descriptors
+		 * of the new process.
+		 */
+		if (fc > gfs_client_connection_failover_count(sc) ||
+		    !gfarm_client_process_is_set(sc, gfm_server)) {
 			gfs_client_connection_set_failover_count(sc, fc);
 			/*
 			 * gfs_file just in scheduling is not related to
