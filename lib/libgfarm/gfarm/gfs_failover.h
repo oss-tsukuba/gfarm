@@ -2,7 +2,13 @@
  * $Id$
  */
 
-#define GFS_FAILOVER_RETRY_COUNT	1
+/*
+ * how many times an operation is retried with a gfmd connection failover.
+ * once is not enough, because the retried operation may fail again
+ * for the same reason, e.g. gfsd is told the failover (again) or
+ * the connection to gfmd is lost again, just after the failover.
+ */
+#define GFS_FAILOVER_RETRY_COUNT	2
 
 struct gfs_failover_file;
 

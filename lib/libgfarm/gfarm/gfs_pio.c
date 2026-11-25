@@ -1036,6 +1036,21 @@ gfs_pio_purge(GFS_File gf)
 	} \
 }
 
+/*
+ * keep the error of an I/O operation in gf->error.
+ *
+ * GFARM_ERR_GFMD_FAILED_OVER is not kept.  it is returned when the retries
+ * with the failover are used up, but the file is still usable after
+ * another failover, which the next operation will try.  if it were kept,
+ * every operation after that would fail without trying the failover.
+ */
+static void
+gfs_pio_keep_io_error(GFS_File gf, gfarm_error_t e)
+{
+	if (e != GFARM_ERR_GFMD_FAILED_OVER)
+		gf->error = e;
+}
+
 static gfarm_error_t
 gfs_pio_fillbuf(GFS_File gf, size_t size)
 {
@@ -1086,7 +1101,7 @@ gfs_pio_fillbuf(GFS_File gf, size_t size)
 	} while (e != GFARM_ERR_NO_ERROR && --nretries >= 0 &&
 	    gfs_pio_failover_check_retry(gf, &e));
 	if (e != GFARM_ERR_NO_ERROR) {
-		gf->error = e;
+		gfs_pio_keep_io_error(gf, e);
 		gflog_debug(GFARM_MSG_1005795,
 		    "view_pread(fd=%d) failed: %s",
 		    gf->fd, gfarm_error_string(e));
@@ -1130,7 +1145,7 @@ do_write(GFS_File gf, const char *buffer, size_t length,
 		} while (e != GFARM_ERR_NO_ERROR && --nretries >= 0 &&
 		    gfs_pio_failover_check_retry(gf, &e));
 		if (e != GFARM_ERR_NO_ERROR) {
-			gf->error = e;
+			gfs_pio_keep_io_error(gf, e);
 			gflog_debug(GFARM_MSG_1005797,
 			    "view_pwrite(fd=%d) failed: %s",
 			    gf->fd, gfarm_error_string(e));
@@ -1256,7 +1271,7 @@ seek_internal(GFS_File gf, gfarm_off_t offset, int whence,
 	if (gf->mode & GFS_FILE_MODE_BUFFER_DIRTY) {
 		e = flush_internal(gf);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gf->error = e;
+			gfs_pio_keep_io_error(gf, e);
 			gflog_debug(GFARM_MSG_1001310,
 				"gfs_pio_flush() failed: %s",
 				gfarm_error_string(e));
@@ -1333,7 +1348,7 @@ gfs_pio_truncate(GFS_File gf, gfarm_off_t length)
 	} while (e != GFARM_ERR_NO_ERROR && --nretries >= 0 &&
 	    gfs_pio_failover_check_retry(gf, &e));
 	if (e != GFARM_ERR_NO_ERROR) {
-		gf->error = e;
+		gfs_pio_keep_io_error(gf, e);
 		gflog_debug(GFARM_MSG_1005800,
 		    "view_ftruncate(fd=%d) failed: %s",
 		    gf->fd, gfarm_error_string(e));
@@ -1847,7 +1862,7 @@ sync_internal(GFS_File gf, int operation, double *time, unsigned long long *ct)
 	} while (e != GFARM_ERR_NO_ERROR && --nretries >= 0 &&
 	    gfs_pio_failover_check_retry(gf, &e));
 	if (e != GFARM_ERR_NO_ERROR) {
-		gf->error = e;
+		gfs_pio_keep_io_error(gf, e);
 		gflog_debug(GFARM_MSG_1005808,
 		    "view_fsync(fd=%d) failed: %s",
 		    gf->fd, gfarm_error_string(e));
