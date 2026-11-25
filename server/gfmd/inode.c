@@ -472,12 +472,20 @@ inode_cksum_set(struct inode *inode,
 			 * about remote access, and in that case,
 			 * cksum should be set by gfsd already,
 			 * but it's not really set.
+			 * this happens e.g. if the file is reopened by
+			 * a gfmd failover during sequential writing,
+			 * because gfsd cannot continue to calculate
+			 * the cksum, although the client can.
+			 * the cksum will be set by replication or
+			 * by reading the whole file.
 			 */
-			gflog_notice(GFARM_MSG_1004207,
-			   "%s: (%llu:%llu): "
-			   "cksum is incorrectly set by client", diag,
+			gflog_notice(GFARM_MSG_UNFIXED,
+			   "%s: (%llu:%llu): checksum is not set by gfsd, "
+			   "the report <%s>:<%.*s> from the client is ignored",
+			   diag,
 			   (unsigned long long)inode_get_number(inode),
-			   (unsigned long long)inode_get_gen(inode));
+			   (unsigned long long)inode_get_gen(inode),
+			   cksum_type, (int)cksum_len, cksum);
 		}
 		/*
 		 * don't report error (SF.net #813),
