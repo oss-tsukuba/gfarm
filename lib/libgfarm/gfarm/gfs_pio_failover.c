@@ -281,7 +281,11 @@ reset_and_reopen(GFS_File gf, void *closure)
 		return (0);
 	}
 
-	if (gf->gfm_server == gfm_server && gf->fd != -1) {
+	sc = get_storage_context(gf->view_context);
+	if (gf->gfm_server == gfm_server && gf->fd != -1 &&
+	    (sc == NULL ||
+	    (fc <= gfs_client_connection_failover_count(sc) &&
+	    gfarm_client_process_is_set(sc, gfm_server)))) {
 		/*
 		 * this file has already been reopened by a previous try of
 		 * this failover, i.e. reset_and_reopen_all() is retried
@@ -291,6 +295,11 @@ reset_and_reopen(GFS_File gf, void *closure)
 		 * gfarm_client_process_reset() is not called again for
 		 * the gfs_connection, and gfsd keeps the replica opened
 		 * even after this file is closed and removed.
+		 *
+		 * but if the gfsd is going to be reset, e.g. because
+		 * reopening another file on the same gfsd failed, this file
+		 * must be reopened again, since the reset closes all the
+		 * descriptors of the gfsd.
 		 */
 		gfm_client_connection_free(gfm_server1);
 		gflog_debug(GFARM_MSG_UNFIXED,
