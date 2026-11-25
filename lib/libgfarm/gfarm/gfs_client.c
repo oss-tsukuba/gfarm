@@ -69,6 +69,8 @@
 
 #define XAUTH_NEXTRACT_MAXLEN	512
 
+#define GFS_CLIENT_PID_KEY_MAX	64 /* >= the length of the process key */
+
 struct gfs_connection {
 	struct gfp_cached_connection *cache_entry;
 
@@ -79,6 +81,9 @@ struct gfs_connection {
 
 	int is_local;
 	gfarm_pid_t pid; /* parallel process ID */
+	/* the key of the process, to identify the process with pid */
+	char pid_key[GFS_CLIENT_PID_KEY_MAX];
+	size_t pid_key_len;
 
 	int opened; /* reference counter */
 
@@ -227,6 +232,35 @@ gfarm_pid_t
 gfs_client_pid(struct gfs_connection *gfs_server)
 {
 	return (gfs_server->pid);
+}
+
+static void
+gfs_client_pid_set(struct gfs_connection *gfs_server, gfarm_pid_t pid,
+	const char *key, size_t size)
+{
+	gfs_server->pid = pid;
+	if (size <= sizeof(gfs_server->pid_key)) {
+		memcpy(gfs_server->pid_key, key, size);
+		gfs_server->pid_key_len = size;
+	} else { /* never matches in gfs_client_process_is_set_to() */
+		gfs_server->pid_key_len = 0;
+	}
+}
+
+/*
+ * is this gfsd set to the specified process?
+ *
+ * the pid alone cannot tell it, because a process of another gfmd,
+ * e.g. the new master gfmd after a failover, may have the same pid.
+ */
+int
+gfs_client_process_is_set_to(struct gfs_connection *gfs_server,
+	const char *key, size_t size, gfarm_pid_t pid)
+{
+	return (gfs_server->pid != 0 && gfs_server->pid == pid &&
+	    gfs_server->pid_key_len != 0 &&
+	    gfs_server->pid_key_len == size &&
+	    memcmp(gfs_server->pid_key, key, size) == 0);
 }
 
 int
@@ -1676,7 +1710,7 @@ gfs_client_process_set(struct gfs_connection *gfs_server,
 	e = gfs_client_rpc_wo_lock(gfs_server, 0,
 	    GFS_PROTO_PROCESS_SET, "ibl/", type, size, key, pid);
 	if (e == GFARM_ERR_NO_ERROR)
-		gfs_server->pid = pid;
+		gfs_client_pid_set(gfs_server, pid, key, size);
 	else
 		gflog_debug(GFARM_MSG_1001202,
 			"gfs_client_rpc() failed: %s",
@@ -1695,7 +1729,7 @@ gfs_client_process_reset(struct gfs_connection *gfs_server,
 	e = gfs_client_rpc_wo_lock(gfs_server, 0, GFS_PROTO_PROCESS_RESET,
 		"ibli/", type, size, key, pid, gfs_server->failover_count);
 	if (e == GFARM_ERR_NO_ERROR)
-		gfs_server->pid = pid;
+		gfs_client_pid_set(gfs_server, pid, key, size);
 	else {
 		gfs_server->pid = 0;
 		gflog_debug(GFARM_MSG_1003377,

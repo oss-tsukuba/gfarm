@@ -292,6 +292,23 @@ gfarm_client_process_reset(struct gfs_connection *gfs_server,
 }
 
 /*
+ * is the gfsd set to the process of this connection to gfmd?
+ */
+int
+gfarm_client_process_is_set(struct gfs_connection *gfs_server,
+	struct gfm_connection *gfm_server)
+{
+	gfarm_int32_t key_type;
+	const char *key;
+	size_t key_size;
+	gfarm_pid_t pid;
+
+	return (gfm_client_process_get(gfm_server,
+	    &key_type, &key, &key_size, &pid) == GFARM_ERR_NO_ERROR &&
+	    gfs_client_process_is_set_to(gfs_server, key, key_size, pid));
+}
+
+/*
  * the following function is for client,
  * server/daemon process shouldn't call it.
  * Because this function may read incorrect setting from user specified
