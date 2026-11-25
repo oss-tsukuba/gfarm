@@ -53,6 +53,7 @@
 #include "config.h"
 #include "conn_cache.h"
 #include "gfs_proto.h"
+#include "gfm_proto.h" /* GFM_PROTO_PROCESS_KEY_LEN_SHAREDSECRET */
 #define GFARM_USE_OPENSSL
 #include "gfs_client.h"
 #include "gfm_client.h"
@@ -69,8 +70,6 @@
 
 #define XAUTH_NEXTRACT_MAXLEN	512
 
-#define GFS_CLIENT_PID_KEY_MAX	64 /* >= the length of the process key */
-
 struct gfs_connection {
 	struct gfp_cached_connection *cache_entry;
 
@@ -82,7 +81,7 @@ struct gfs_connection {
 	int is_local;
 	gfarm_pid_t pid; /* parallel process ID */
 	/* the key of the process, to identify the process with pid */
-	char pid_key[GFS_CLIENT_PID_KEY_MAX];
+	char pid_key[GFM_PROTO_PROCESS_KEY_LEN_SHAREDSECRET];
 	size_t pid_key_len;
 
 	int opened; /* reference counter */
