@@ -2539,6 +2539,19 @@ gfs_server_open_common(struct gfp_xdr *client, const char *diag,
 
 	if (!fd_usable_to_gfmd) {
 		e = GFARM_ERR_GFMD_FAILED_OVER;
+	} else if (net_fd >= file_table_size) {
+		/*
+		 * the descriptor is valid in gfmd, but this gfsd cannot
+		 * handle it, e.g. max_open_files of gfmd is larger than
+		 * the size of the file table of gfsd.
+		 * do not return GFARM_ERR_BAD_FILE_DESCRIPTOR, because
+		 * it makes the client fail over the connection to gfmd.
+		 */
+		e = GFARM_ERR_TOO_MANY_OPEN_FILES;
+		gflog_notice(GFARM_MSG_UNFIXED,
+		    "%s: fd %d exceeds the limit of gfsd (%d): %s",
+		    diag, (int)net_fd, file_table_size,
+		    gfarm_error_string(e));
 	} else if (!file_table_is_available(net_fd)) {
 		e = GFARM_ERR_BAD_FILE_DESCRIPTOR;
 		gflog_debug(GFARM_MSG_1002171,

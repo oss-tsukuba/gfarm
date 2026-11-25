@@ -2408,8 +2408,20 @@ This parameter is only available in gfmd.conf.
 <term><token>max_open_files</token> <parameter moreinfo="none">num-of-files</parameter></term>
 <listitem>
 <para>
-This directive specifies the maximum number of open files.  The
-default is 1024.
+This directive specifies the maximum number of files which a client
+process can open at the same time.  The default is 1024.
+</para>
+<para>
+Note that gfsd has its own limit, which cannot be changed by
+this directive.  A gfsd can handle a file only if the descriptor
+number assigned by gfmd is less than 2048, and the number is assigned
+per client process regardless of the gfsd which stores the file.
+Thus, even if a value larger than 2048 is specified, a client process
+cannot access the files beyond the 2048th, and the access fails with
+"too many open files".
+A gfsd also uses two local descriptors for a file opened for writing,
+thus a client process can open about 1020 files for writing on one
+gfsd at most.
 </para>
 <para>
 This parameter is only available in gfmd.conf.
