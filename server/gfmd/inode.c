@@ -3369,6 +3369,17 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 		return (GFARM_ERR_NO_ERROR);
 	}
 
+	if (parent->i_nlink == 0) {
+		/*
+		 * the parent directory was already removed, but is still
+		 * opened.  an entry created here would be unreachable.
+		 */
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "inode_lookup_basename: parent %lld:%lld is removed",
+		    (long long)parent->i_number, (long long)parent->i_gen);
+		return (GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY);
+	}
+
 	if (op == INODE_LINK) {
 		struct dirset *target_tdirset;
 
