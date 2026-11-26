@@ -76,6 +76,7 @@ static GFARM_STAILQ_HEAD(journal_recvq, db_journal_recv_info) journal_recvq
 	= GFARM_STAILQ_HEAD_INITIALIZER(journal_recvq);
 static int journal_recvq_nelems = 0;
 static int journal_recvq_cancel;
+static int journal_recvq_cancel_drain;
 /*
  * the last seqnum of the records received successively from the master,
  * and the last seqnum of GFM_JOURNAL_END among them, including the
@@ -4887,6 +4888,8 @@ db_journal_recvq_reset(void)
  * LOCKS: journal_recvq_mutex
  * SLEEPS: yes (cond_wait on journal_recvq_nonempty_cond until a record
  *	is queued or canceled)
+ *
+ * *rip is NULL, if canceled.
  */
 static gfarm_error_t
 db_journal_recvq_delete(struct db_journal_recv_info **rip)
@@ -4898,8 +4901,15 @@ db_journal_recvq_delete(struct db_journal_recv_info **rip)
 	while (journal_recvq_nelems <= 0 && journal_recvq_cancel == 0)
 		gfarm_cond_wait(&journal_recvq_nonempty_cond,
 		    &journal_recvq_mutex, diag, RECVQ_NONEMPTY_COND_DIAG);
-	if (journal_recvq_cancel)
-		ri = NULL;
+	/*
+	 * if canceled to become the master, the records remaining in
+	 * the queue have to be written, because they were already
+	 * acknowledged to the master, i.e. the master may have replied
+	 * to clients about them.
+	 */
+	if (journal_recvq_nelems <= 0 ||
+	    (journal_recvq_cancel && !journal_recvq_cancel_drain))
+		ri = NULL; /* canceled */
 	else {
 		ri = GFARM_STAILQ_FIRST(&journal_recvq);
 		GFARM_STAILQ_REMOVE_HEAD(&journal_recvq, next);
@@ -4946,13 +4956,19 @@ db_journal_recv_partial_add(unsigned char *recs, int recs_len,
  * LOCKS: journal_recvq_mutex
  * SLEEPS: yes (cond_wait on journal_recvq_cancel_cond until the recvq
  *	thread acknowledges the cancel)
+ *
+ * if `drain' is true, the recvq thread writes all the records in the queue
+ * before it acknowledges the cancel.  otherwise they are discarded,
+ * which is OK if this gfmd remains a slave, because the master will send
+ * them again.
  */
 void
-db_journal_cancel_recvq()
+db_journal_cancel_recvq(int drain)
 {
 	static const char diag[] = "db_journal_recvq_cancel";
 
 	gfarm_mutex_lock(&journal_recvq_mutex, diag, RECVQ_MUTEX_DIAG);
+	journal_recvq_cancel_drain = drain;
 	journal_recvq_cancel = 1;
 	gfarm_cond_signal(&journal_recvq_nonempty_cond, diag,
 	    RECVQ_NONEMPTY_COND_DIAG);

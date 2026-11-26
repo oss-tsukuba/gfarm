@@ -1429,7 +1429,8 @@ transform_to_master(void)
 
 	journal_log_verbose_set(1); /* begin debugging slow transformation */
 
-	db_journal_cancel_recvq();
+	/* the records which were already received must not be discarded */
+	db_journal_cancel_recvq(1);
 
 	/*
 	 * wait for data transfer from the journal to the backend DB.
@@ -1694,7 +1695,7 @@ gfmd_terminate(const char *diag)
 	if (gfarm_get_metadb_replication_enabled() &&
 	    gfmd_startup_state_is_ready()) {
 		if (!mdhost_self_is_master())
-			db_journal_cancel_recvq();
+			db_journal_cancel_recvq(0);
 		gfmdc_journal_transfer_wait();
 	}
 
