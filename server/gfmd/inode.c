@@ -5524,6 +5524,20 @@ inode_file_update_common(struct inode *inode, enum inode_close_mode close_mode,
 		 * if the RPC is V2_4 or later,
 		 * the following will be done at generation_updated RPC
 		 */
+		if (spool_host == NULL && inode->u.c.s.f.copies != NULL) {
+			/*
+			 * GFARM_FILE_TRUNC_PENDING:
+			 * all the replicas are going to be removed by
+			 * update_replicas(), but the removal is done
+			 * asynchronously.  increment the generation,
+			 * otherwise a replica which is created on the same
+			 * host before the removal is done has the same
+			 * name as the replica being removed, i.e.
+			 * gfsd opens the old file, and the removal request
+			 * removes the new replica.
+			 */
+			inode_increment_gen(inode);
+		}
 		update_replicas(inode, spool_host, old_gen,
 		    0, desired_replica_number, repattr, diag);
 	} else {
