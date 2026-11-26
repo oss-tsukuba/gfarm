@@ -5524,7 +5524,8 @@ inode_file_update_common(struct inode *inode, enum inode_close_mode close_mode,
 		 * if the RPC is V2_4 or later,
 		 * the following will be done at generation_updated RPC
 		 */
-		if (spool_host == NULL && inode->u.c.s.f.copies != NULL) {
+		if (close_mode == INODE_CLOSE_CLIENT_ONLY &&
+		    spool_host == NULL && inode->u.c.s.f.copies != NULL) {
 			/*
 			 * GFARM_FILE_TRUNC_PENDING:
 			 * all the replicas are going to be removed by
