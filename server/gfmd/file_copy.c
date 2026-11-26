@@ -160,7 +160,16 @@ file_copy_db_remove_one_orphan(void *closure,
 	struct host *spool_host;
 
 	inode = inode_lookup(inum);
-	assert(inode != NULL);
+	if (inode == NULL || !inode_is_file(inode)) {
+		/* see file_copy_add_one() */
+		e = db_filecopy_remove(inum, hostname);
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "cannot remove a replica (%s, %lld) "
+			    "from the backend DB: %s",
+			    hostname, (long long)inum, gfarm_error_string(e));
+		return;
+	}
 	gen = inode_get_gen(inode);
 	spool_host = host_lookup_including_invalid(hostname);
 	assert(spool_host != NULL);
