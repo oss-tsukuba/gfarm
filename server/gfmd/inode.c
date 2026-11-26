@@ -1497,6 +1497,17 @@ update_replicas(struct inode *inode, struct host *spool_host,
 			copyp = &copy->host_next;
 			continue;
 		}
+		if (FILE_COPY_IS_BEING_REMOVED(copy) &&
+		    dead_file_copy_existing(inode->i_number, inode->i_gen,
+		    copy->host)) {
+			/*
+			 * a replica of the current generation is being
+			 * removed from the host, keep the host as that.
+			 * see inode_generation_update_revert()
+			 */
+			copyp = &copy->host_next;
+			continue;
+		}
 		*copyp = copy->host_next;
 
 		if (start_replication && spool_host != NULL) {
@@ -2893,9 +2904,11 @@ static gfarm_error_t inode_remove_replica_internal(struct inode *,
  * go back to the previous generation and abandon the replica on
  * `spool_host', instead of abandoning the other replicas and keeping
  * the replica on `spool_host' which may not exist as the new generation.
- * A replica of the new generation may be left on `spool_host'.
- * It does no harm, because it will be overwritten when the replica of
- * that generation is really created on the host.
+ * The replica on `spool_host' is removed as both generations, because
+ * the generation number which is abandoned here will be used again, and
+ * a replica left as that generation would be taken as a valid one,
+ * if a replica of that generation is created on the host without
+ * truncation (see `to_create' of inode_schedule_confirm_for_write()).
  *
  * This is not possible, if the metadata was already updated at the close
  * (i.e. before GFM_PROTO_CLOSE_WRITE_V2_8), or another process is
@@ -2917,6 +2930,7 @@ inode_generation_update_revert(struct inode *inode, struct host *spool_host,
 	struct dirset *tdirset = inode_get_tdirset(inode);
 	struct file_copy *copy;
 	int spool_host_is_valid = 0, other_is_valid = 0;
+	gfarm_int64_t failed_gen = inode->i_gen;
 
 	if (spool_host == NULL || gfarm_read_only_mode())
 		return (0);
@@ -2947,10 +2961,13 @@ inode_generation_update_revert(struct inode *inode, struct host *spool_host,
 		    gfarm_error_string(e));
 	e = inode_remove_replica_internal(inode, spool_host, inode->i_gen,
 	    NULL, tdirset, 0, 0, 0, NULL);
+	/* the replica may have been renamed to the new generation */
+	(void)remove_replica_entity(inode, failed_gen, spool_host, 0,
+	    tdirset, NULL);
 	gflog_notice(GFARM_MSG_UNFIXED,
 	    "%s: inode %lld: generation update to %lld on %s failed, "
 	    "reverted to %lld, the replica on the host is abandoned: %s",
-	    diag, (long long)inode->i_number, (long long)inode->i_gen + 1,
+	    diag, (long long)inode->i_number, (long long)failed_gen,
 	    host_name(spool_host), (long long)inode->i_gen,
 	    gfarm_error_string(e));
 
@@ -6911,11 +6928,19 @@ inode_dead_file_copy_added(gfarm_ino_t inum, gfarm_int64_t igen,
 	struct host *host)
 {
 	struct inode *inode = inode_lookup(inum);
+	struct file_copy *copy;
 
 	if (inode == NULL || !inode_is_file(inode))
 		return;
-	if (igen != inode->i_gen)
+	/*
+	 * the next generation: see inode_generation_update_revert() and
+	 * inode_remove_replica_completed()
+	 */
+	if (igen != inode->i_gen && igen != inode->i_gen + 1)
 		return;
+	copy = inode_get_file_copy(inode, host);
+	if (copy != NULL && FILE_COPY_IS_BEING_REMOVED(copy))
+		return; /* both generations are being removed */
 
 	inode_add_replica_internal(inode, host, FILE_COPY_BEING_REMOVED, 0, 0);
 }
@@ -7031,11 +7056,30 @@ inode_remove_replica_completed(gfarm_ino_t inum, gfarm_int64_t igen,
 	struct host *host)
 {
 	struct inode *inode = inode_lookup(inum);
+	struct file_copy *copy;
 
 	if (inode == NULL || !inode_is_file(inode))
 		return;
-	if (igen != inode->i_gen)
+	/*
+	 * inode_generation_update_revert() removes a replica as both
+	 * the current generation and the next generation.
+	 * the host has to be kept as being removed until both are removed,
+	 * otherwise a replica of the next generation which is created on
+	 * the host after that may be removed.
+	 */
+	if (igen == inode->i_gen) {
+		copy = inode_get_file_copy(inode, host);
+		if (copy != NULL && FILE_COPY_IS_BEING_REMOVED(copy) &&
+		    dead_file_copy_existing(inum, igen + 1, host))
+			return;
+	} else if (igen == inode->i_gen + 1) {
+		copy = inode_get_file_copy(inode, host);
+		if (copy == NULL || !FILE_COPY_IS_BEING_REMOVED(copy) ||
+		    dead_file_copy_existing(inum, inode->i_gen, host))
+			return;
+	} else {
 		return;
+	}
 
 	(void)inode_remove_file_copy(inode, host);
 	/* abandon error */
