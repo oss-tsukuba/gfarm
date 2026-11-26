@@ -5298,7 +5298,7 @@ inode_open(struct file_opening *fo, struct dirset *tdirset)
 		 */
 		inode_add_ref_writers(inode);
 	}
-	if ((fo->flag & GFARM_FILE_TRUNC) != 0) {
+	if ((fo->flag & GFARM_FILE_TRUNC) != 0 && inode_is_file(inode)) {
 		/* do not change the metadata for close-to-open consistency */
 		fo->flag |= GFARM_FILE_TRUNC_PENDING;
 	}

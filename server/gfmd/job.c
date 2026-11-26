@@ -126,9 +126,11 @@ job_table_remove(int id, char *user, struct job_table_entry **listp)
 {
 	struct job_table_entry **pp = listp;
 
-	if (id >= job_table_size || job_table[id] == NULL)
+	if (id < 0 || id >= job_table_size || job_table[id] == NULL)
 		return (EBADF);
-	if (strcmp(job_table[id]->info->user, user) != 0)
+	/* `user' is NULL, if the process of the peer was already freed */
+	if (user != NULL && job_table[id]->info->user != NULL &&
+	    strcmp(job_table[id]->info->user, user) != 0)
 		return (EPERM);
 
 	for (; *pp != NULL; pp = &(*pp)->next)
@@ -271,7 +273,7 @@ gfj_server_register(struct peer *peer, int from_client, int skip)
 		info->nodes[i].state = GFJ_NODE_NONE;
 	}
 
-	if (skip || !from_client) {
+	if (skip || !from_client || user == NULL) {
 		for (i = 0; i < total_nodes; i++)
 			free(info->nodes[i].hostname);
 		for (i = 0; i < argc; i++)
