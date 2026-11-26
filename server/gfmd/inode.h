@@ -90,7 +90,8 @@ struct inode *inode_alloc_num(gfarm_ino_t);
 
 struct peer;
 int inode_new_generation_is_pending(struct inode *);
-void inode_new_generation_by_fd_start(struct inode *, struct peer *);
+void inode_new_generation_by_fd_start(struct inode *, struct peer *,
+	enum inode_close_mode);
 gfarm_error_t inode_new_generation_by_cookie_start(
 	struct inode *, struct peer *, gfarm_uint64_t);
 gfarm_error_t inode_new_generation_by_fd_finish(

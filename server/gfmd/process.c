@@ -1287,7 +1287,7 @@ process_close_file_write(struct process *process, struct peer *peer, int fd,
 
 	if ((flags & GFM_PROTO_CLOSE_WRITE_GENERATION_UPDATE_NEEDED) != 0) {
 		/* defer file close for GFM_PROTO_GENERATION_UPDATED */
-		inode_new_generation_by_fd_start(fo->inode, peer);
+		inode_new_generation_by_fd_start(fo->inode, peer, close_mode);
 		peer_set_pending_new_generation_by_fd(peer, fd);
 	} else if (fo->opener != peer && fo->opener != NULL) {
 		/* closing REOPENed file, but the client is still opening */

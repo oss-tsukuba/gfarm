@@ -3243,6 +3243,13 @@ close_fd(struct gfp_xdr *client, gfarm_int32_t fd, struct file_entry *fe,
 			e = e2;
 		if (gen_update_result == GFARM_ERR_CONFLICT_DETECTED)
 			copy_to_lost_found(fe);
+		else if (e == GFARM_ERR_NO_ERROR)
+			/*
+			 * the replica could not be renamed to the new
+			 * generation, i.e. what was written is lost.
+			 * let the client know that.
+			 */
+			e = gen_update_result;
 	} else if ((fe->flags & (FILE_FLAG_DIGEST_FINISH|FILE_FLAG_DIGEST_AVAIL
 	    |FILE_FLAG_WRITTEN)) == FILE_FLAG_DIGEST_FINISH) {
 		gflog_notice(GFARM_MSG_1004387,

@@ -166,6 +166,8 @@ struct inode_activity {
 			} event_type;
 			struct event_waiter *event_waiters;
 			struct peer *event_source;
+			/* only valid if EVENT_GEN_UPDATED */
+			enum inode_close_mode event_close_mode;
 
 			struct gfarm_timespec last_update;
 			int writers, spool_writers;
@@ -2812,13 +2814,15 @@ inode_new_generation_is_pending(struct inode *inode)
 }
 
 void
-inode_new_generation_by_fd_start(struct inode *inode, struct peer *peer)
+inode_new_generation_by_fd_start(struct inode *inode, struct peer *peer,
+	enum inode_close_mode close_mode)
 {
 	struct inode_activity *ia = inode->u.c.activity;
 
 	assert(ia != NULL);
 	ia->u.f.event_type = EVENT_GEN_UPDATED;
 	ia->u.f.event_source = peer;
+	ia->u.f.event_close_mode = close_mode;
 }
 
 gfarm_error_t
@@ -2876,6 +2880,86 @@ static void inode_metadata_update(struct inode *, gfarm_off_t,
 	struct gfarm_timespec *, struct gfarm_timespec *);
 static void inode_generation_updated(struct inode *,
 	struct host *, int, char *, const char *);
+static gfarm_error_t inode_remove_replica_internal(struct inode *,
+	struct host *, gfarm_int64_t, struct replica_spec *, struct dirset *,
+	int, int, int, struct dead_file_copy **);
+
+/*
+ * The generation update of the replica on `spool_host' failed, and
+ * the status of the replica is unknown, e.g. gfsd died after it was told
+ * the new generation, either before or after renaming the replica.
+ *
+ * If there is another valid replica, which is of the previous generation,
+ * go back to the previous generation and abandon the replica on
+ * `spool_host', instead of abandoning the other replicas and keeping
+ * the replica on `spool_host' which may not exist as the new generation.
+ * A replica of the new generation may be left on `spool_host'.
+ * It does no harm, because it will be overwritten when the replica of
+ * that generation is really created on the host.
+ *
+ * This is not possible, if the metadata was already updated at the close
+ * (i.e. before GFM_PROTO_CLOSE_WRITE_V2_8), or another process is
+ * writing the replica.
+ *
+ * returns TRUE, if the generation is reverted.
+ *
+ * PREREQUISITE: giant_lock
+ * LOCKS: the locks of inode_remove_replica_internal(), rep_prioq.mutex,
+ *	replica_check_mutex
+ * SLEEPS: yes (dbq.mutex)
+ */
+static int
+inode_generation_update_revert(struct inode *inode, struct host *spool_host,
+	int desired_replica_number, char *repattr, const char *diag)
+{
+	gfarm_error_t e;
+	struct inode_activity *ia = inode->u.c.activity;
+	struct dirset *tdirset = inode_get_tdirset(inode);
+	struct file_copy *copy;
+	int spool_host_is_valid = 0, other_is_valid = 0;
+
+	if (spool_host == NULL || gfarm_read_only_mode())
+		return (0);
+	if (ia->u.f.event_close_mode != INODE_CLOSE_V2_8 ||
+	    ia->u.f.spool_writers > 1)
+		return (0);
+	for (copy = inode->u.c.s.f.copies; copy != NULL;
+	    copy = copy->host_next) {
+		if (copy->host == spool_host) {
+			if (!FILE_COPY_IS_VALID(copy))
+				return (0);
+			spool_host_is_valid = 1;
+		} else if (FILE_COPY_IS_VALID(copy)) {
+			other_is_valid = 1;
+		} else if (!FILE_COPY_IS_BEING_REMOVED(copy)) {
+			return (0); /* being replicated */
+		}
+	}
+	if (!spool_host_is_valid || !other_is_valid)
+		return (0);
+
+	--inode->i_gen;
+	e = db_inode_gen_modify(inode->i_number, inode->i_gen);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: db_inode_gen_modify(%lld, %lld): %s", diag,
+		    (long long)inode->i_number, (long long)inode->i_gen,
+		    gfarm_error_string(e));
+	e = inode_remove_replica_internal(inode, spool_host, inode->i_gen,
+	    NULL, tdirset, 0, 0, 0, NULL);
+	gflog_notice(GFARM_MSG_UNFIXED,
+	    "%s: inode %lld: generation update to %lld on %s failed, "
+	    "reverted to %lld, the replica on the host is abandoned: %s",
+	    diag, (long long)inode->i_number, (long long)inode->i_gen + 1,
+	    host_name(spool_host), (long long)inode->i_gen,
+	    gfarm_error_string(e));
+
+	/* the number of the replicas decreased */
+	replica_check_enqueue(inode, tdirset,
+	    desired_replica_number, repattr, diag);
+	replica_check_start_rep_request_failed();
+	return (1);
+}
 
 gfarm_error_t
 inode_new_generation_by_fd_finish(struct inode *inode, struct peer *peer,
@@ -2887,6 +2971,7 @@ inode_new_generation_by_fd_finish(struct inode *inode, struct peer *peer,
 {
 	gfarm_error_t e;
 	struct inode_activity *ia;
+	int reverted;
 
 	if ((e = inode_new_generation_finish_precondition(inode, diag)) !=
 	    GFARM_ERR_NO_ERROR)
@@ -2907,7 +2992,18 @@ inode_new_generation_by_fd_finish(struct inode *inode, struct peer *peer,
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
 
-	if (close_mode == INODE_CLOSE_V2_8) {
+	/*
+	 * GFARM_ERR_CONFLICT_DETECTED means that the replica was renamed
+	 * to the new generation.
+	 */
+	reverted = result != GFARM_ERR_NO_ERROR &&
+	    result != GFARM_ERR_CONFLICT_DETECTED &&
+	    inode_generation_update_revert(inode, peer_get_host(peer),
+	    desired_replica_number, repattr, diag);
+
+	if (reverted) {
+		/* the metadata of the previous generation is kept */
+	} else if (close_mode == INODE_CLOSE_V2_8) {
 		if (gfarm_read_only_mode()) {
 			gflog_error(GFARM_MSG_1005469,
 			    "inode %llu:%llu host %s user %s "
@@ -2926,8 +3022,11 @@ inode_new_generation_by_fd_finish(struct inode *inode, struct peer *peer,
 	 * XXX
 	 * if result != GFARM_ERR_NO_ERROR,
 	 * maybe it's better to keep old replica in update_replicas()?
+	 * that is done by inode_generation_update_revert() if possible.
 	 */
-	if (gfarm_read_only_mode()) {
+	if (reverted) {
+		/* the replicas of the previous generation are kept */
+	} else if (gfarm_read_only_mode()) {
 		gflog_error(GFARM_MSG_1005470,
 		    "inode %llu:%llu host %s user %s "
 		    "gfmd became read_only during generation update, "
