@@ -3901,6 +3901,8 @@ gfm_server_fhclose_write(struct peer *peer, int from_client, int skip,
 	e = gfm_server_fhclose_write_common(
 	    peer, from_client, INODE_CLOSE_V2_4, inum, size, &atime, &mtime,
 	    &flags, &old_gen, &new_gen, &cookie, suspendedp, diag);
+	if (*suspendedp) /* fhclose_write_resume() will reply */
+		return (GFARM_ERR_NO_ERROR);
 
 	return (gfm_server_put_reply(peer, diag, e, "illl",
 	    flags, old_gen, new_gen, cookie));
@@ -3926,6 +3928,8 @@ gfm_server_fhclose_write_v2_8(struct peer *peer, int from_client, int skip,
 	e = gfm_server_fhclose_write_common(
 	    peer, from_client, INODE_CLOSE_V2_8, inum, 0, NULL, NULL,
 	    &flags, &old_gen, &new_gen, &cookie, suspendedp, diag);
+	if (*suspendedp) /* fhclose_write_resume() will reply */
+		return (GFARM_ERR_NO_ERROR);
 
 	return (gfm_server_put_reply(peer, diag, e, "illl",
 	    flags, old_gen, new_gen, cookie));
@@ -3969,6 +3973,8 @@ gfm_server_fhclose_write_cksum(struct peer *peer, int from_client, int skip,
 	e = gfm_server_fhclose_write_common(
 	    peer, from_client, INODE_CLOSE_V2_4, inum, size, &atime, &mtime,
 	    &flags, &old_gen, &new_gen, &cookie, suspendedp, diag);
+	if (*suspendedp) /* fhclose_write_resume() will reply */
+		return (GFARM_ERR_NO_ERROR);
 
 	return (gfm_server_put_reply(peer, diag, e, "illl",
 	    flags, old_gen, new_gen, cookie));

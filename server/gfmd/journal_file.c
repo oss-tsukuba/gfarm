@@ -1711,6 +1711,7 @@ journal_file_reader_reopen_if_needed(struct journal_file *jf,
 			journal_file_reader_invalidate_unlocked(*readerp);
 			(*readerp)->last_seqnum = seqnum;
 			e = e2;
+			fd = -1; /* closed by the invalidation above */
 		}
 		*initedp = 1;
 	}
