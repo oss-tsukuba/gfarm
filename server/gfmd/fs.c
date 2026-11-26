@@ -1903,7 +1903,8 @@ gfm_server_remove(struct peer *peer, int from_client, int skip)
 	giant_unlock();
 	e2 = gfm_server_put_reply(peer, diag, e, "");
 
-	if (gfarm_ctxp->file_trace && !GFARM_S_ISDIR(inodet.imode)) {
+	if (gfarm_ctxp->file_trace && e == GFARM_ERR_NO_ERROR &&
+	    !GFARM_S_ISDIR(inodet.imode)) {
 		if ((e = process_get_path_for_trace_log(process, peer, cfd,
 		    &path, diag)) != GFARM_ERR_NO_ERROR) {
 			gflog_error(GFARM_MSG_1003296,
@@ -4792,6 +4793,12 @@ gfm_server_replica_remove_by_file(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1001956,
 			"process_get_file_inode() failed: %s",
 			gfarm_error_string(e));
+	} else if (!inode_is_file(inode)) {
+		e = inode_is_dir(inode) ? GFARM_ERR_IS_A_DIRECTORY :
+		    GFARM_ERR_OPERATION_NOT_SUPPORTED;
+		gflog_debug(GFARM_MSG_UNFIXED, "%s: inode %llu: %s", diag,
+		    (long long)inode_get_number(inode),
+		    gfarm_error_string(e));
 	} else if ((host = host_lookup(hostname)) == NULL) {
 		gflog_debug(GFARM_MSG_1001957, "host_lookup() failed");
 		e = GFARM_ERR_NO_SUCH_OBJECT;
