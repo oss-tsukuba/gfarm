@@ -339,9 +339,9 @@ gfj_server_register_node(struct peer *peer, int from_client, int skip)
 	static const char diag[] = "GFJ_PROTO_REGISTER_NODE";
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_fatal(GFARM_MSG_1000295, "%s: not implemented", diag);
-
-	return (gfj_server_put_reply(peer, diag, GFARM_ERR_NO_ERROR, ""));
+	gflog_warning(GFARM_MSG_UNFIXED, "%s: not implemented", diag);
+	peer_record_protocol_error(peer);
+	return (GFARM_ERR_PROTOCOL);
 }
 
 gfarm_error_t
@@ -546,8 +546,7 @@ gfj_server_hostinfo(struct peer *peer, int from_client, int skip)
 	static const char diag[] = "GFJ_PROTO_HOSTINFO";
 
 	/* XXX - NOT IMPLEMENTED */
-
-	gflog_fatal(GFARM_MSG_1000296, "%s: not implemented", diag);
-
-	return (gfj_server_put_reply(peer, diag, GFARM_ERR_NO_ERROR, ""));
+	gflog_warning(GFARM_MSG_UNFIXED, "%s: not implemented", diag);
+	peer_record_protocol_error(peer);
+	return (GFARM_ERR_PROTOCOL);
 }
