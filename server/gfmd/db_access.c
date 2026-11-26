@@ -211,6 +211,9 @@ dbq_call_callback(gfarm_uint64_t seqnum, void *a)
 	struct dbq_callback_arg *arg = (struct dbq_callback_arg *)a;
 
 	e = (*arg->func)(seqnum, arg->data);
+	/* this function will be called again with the same argument */
+	if (e == GFARM_ERR_DB_ACCESS_SHOULD_BE_RETRIED)
+		return (e);
 	if (arg->cbfunc != NULL) {
 		(*arg->cbfunc)(e, arg->cbdata);
 	}
