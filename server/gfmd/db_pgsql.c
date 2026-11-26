@@ -709,9 +709,20 @@ gfarm_pgsql_start_with_retry(const char *diag)
 static gfarm_error_t
 gfarm_pgsql_commit_sn(gfarm_uint64_t seqnum, const char *diag)
 {
-	if (connection_recovered)
+	if (connection_recovered) {
 		connection_recovered = 0;
-	else if (--transaction_nesting > 0)
+	} else if (transaction_nesting == 0) {
+		/*
+		 * the transaction which this call ends was already
+		 * abandoned at the recovery of the connection, and
+		 * the operations retried after that were committed
+		 * by themselves.  see pgsql_should_retry().
+		 */
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "%s: no transaction to end, since the connection "
+		    "to PostgreSQL was recovered", diag);
+		return (GFARM_ERR_NO_ERROR);
+	} else if (--transaction_nesting > 0)
 		return (GFARM_ERR_NO_ERROR);
 
 	assert(transaction_nesting == 0);
