@@ -2123,6 +2123,11 @@ quota_set_common(struct peer *peer, int from_client, int skip, int is_group)
 		gflog_error(GFARM_MSG_1005465, "%s (%s@%s): no tenant: %s",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    gfarm_error_string(e));
+	} else if (!user_is_tenant_admin(peer_user, tenant)) {
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s): %s",
+		    diag, peer_get_username(peer), peer_get_hostname(peer),
+		    gfarm_error_string(e));
 	} else if (!(is_super_admin = user_is_super_admin(peer_user)) &&
 	    strchr(qi.name, GFARM_TENANT_DELIMITER) != NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;

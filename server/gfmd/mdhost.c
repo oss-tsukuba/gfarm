@@ -1656,6 +1656,7 @@ gfm_server_metadb_server_get(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1002938,
 		    "%s: get_request failure: %s",
 		    diag, gfarm_error_string(e));
+		return (e);
 	}
 	if (skip) {
 		e = GFARM_ERR_NO_ERROR;
@@ -2153,6 +2154,7 @@ gfm_server_metadb_server_remove(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1002965,
 		    "get_request failure: %s",
 		    gfarm_error_string(e));
+		return (e);
 	}
 	if (skip) {
 		free(name);

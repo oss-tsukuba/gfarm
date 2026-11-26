@@ -817,7 +817,7 @@ process_open_file(struct process *process, struct inode *file,
 		}
 		process->filetab = p;
 		process->nfiles = new_nfiles;
-		for (fd2 = fd + 1; fd2 < process->nfiles; fd2++)
+		for (fd2 = fd; fd2 < process->nfiles; fd2++)
 			process->filetab[fd2] = NULL;
 	}
 	fo = file_opening_alloc(file, peer, spool_host,

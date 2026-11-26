@@ -993,12 +993,15 @@ get_group(struct peer *peer, const char *diag, struct gfarm_group_info *gp)
 	for (i = 0; i < gp->nusers; ++i) {
 		e = gfp_xdr_recv(peer_get_conn(peer), 0, &eof, "s",
 			&gp->usernames[i]);
+		if (e == GFARM_ERR_NO_ERROR && eof)
+			e = GFARM_ERR_PROTOCOL;
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1001533,
 				"gfp_xdr_recv(usernames) failed: %s",
 				gfarm_error_string(e));
+			peer_record_protocol_error(peer);
 			for (--i; i >= 0; --i)
-				free(&gp->usernames[i]);
+				free(gp->usernames[i]);
 			free(gp->usernames);
 			free(gp->groupname);
 			return (e);
