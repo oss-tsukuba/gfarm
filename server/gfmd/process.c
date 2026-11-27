@@ -754,6 +754,7 @@ process_new_generation_by_fd_abort(struct process *process, struct peer *peer,
 	struct file_opening *fo;
 	gfarm_error_t e = process_get_file_opening(process, peer, fd,
 	    &fo, diag);
+	struct inode *inode;
 	gfarm_ino_t inum;
 	gfarm_uint64_t igen;
 	gfarm_off_t isz;
@@ -769,12 +770,20 @@ process_new_generation_by_fd_abort(struct process *process, struct peer *peer,
 	}
 
 	/* process_new_generation_done() frees `fo' */
-	inum = inode_get_number(fo->inode);
-	igen = inode_get_gen(fo->inode);
-	isz = inode_get_size(fo->inode);
+	inode = fo->inode;
+	inum = inode_get_number(inode);
+	igen = inode_get_gen(inode);
+	isz = inode_get_size(inode);
 
 	e = process_new_generation_done(process, peer, fd,
 	    INODE_CLOSE_V2_4, reason, 0, NULL, NULL, diag);
+
+	/*
+	 * the inode is not lost, if the generation was reverted.
+	 * inode_generation_update_revert() reports that.
+	 */
+	if (e == GFARM_ERR_NO_ERROR && inode_get_gen(inode) + 1 == igen)
+		return;
 
 	gflog_error(GFARM_MSG_1005486,
 	    "%s: gfsd connection to %s is lost (%s) "
@@ -1287,7 +1296,7 @@ process_close_file_write(struct process *process, struct peer *peer, int fd,
 
 	if ((flags & GFM_PROTO_CLOSE_WRITE_GENERATION_UPDATE_NEEDED) != 0) {
 		/* defer file close for GFM_PROTO_GENERATION_UPDATED */
-		inode_new_generation_by_fd_start(fo->inode, peer);
+		inode_new_generation_by_fd_start(fo->inode, peer, close_mode);
 		peer_set_pending_new_generation_by_fd(peer, fd);
 	} else if (fo->opener != peer && fo->opener != NULL) {
 		/* closing REOPENed file, but the client is still opening */

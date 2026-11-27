@@ -5471,6 +5471,18 @@ gfm_server_replica_add(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1001976,
 			"operation is not permitted: peer_get_host() failed");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED; /* error */
+	} else if (dead_file_copy_is_held(inum, gen, spool_host)) {
+		/*
+		 * this replica was abandoned, but is not removed yet.
+		 * let gfsd move this to /lost+found.
+		 * see inode_generation_update_revert() and
+		 * inode_generation_update_redo()
+		 */
+		gflog_notice(GFARM_MSG_UNFIXED,
+		    "%lld:%lld on %s: abandoned at a failure of "
+		    "a generation update, to be moved to /lost+found",
+		    (long long)inum, (long long)gen, host_name(spool_host));
+		e = GFARM_ERR_NO_SUCH_OBJECT; /* invalid file */
 	} else if ((inode = inode_lookup(inum)) == NULL) {
 		gflog_debug(GFARM_MSG_1001977, "inode_lookup() failed");
 		e = dead_file_copy_check(inum, gen, spool_host);
@@ -5611,7 +5623,7 @@ gfm_server_replica_get_my_entries_common(
 		    inum++) {
 			inode = inode_lookup(inum);
 			if (inode && inode_is_file(inode) &&
-			    inode_has_file_copy(inode, spool_host)) {
+			    inode_has_file_copy_to_check(inode, spool_host)) {
 				ents[n_ret].inum = inode_get_number(inode);
 				ents[n_ret].gen = inode_get_gen(inode);
 				ents[n_ret].size = inode_get_size(inode);

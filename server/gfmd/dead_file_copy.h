@@ -24,6 +24,11 @@ void dead_file_copy_inode_status_changed(gfarm_ino_t);
 
 void dead_file_copy_mark_kept(struct dead_file_copy *);
 void dead_file_copy_mark_deferred(struct dead_file_copy *);
+void dead_file_copy_mark_held(struct dead_file_copy *);
+void dead_file_copy_host_connected(struct host *);
+int dead_file_copy_is_held(gfarm_ino_t, gfarm_uint64_t, struct host *);
+void dead_file_copy_release_held(gfarm_ino_t, gfarm_uint64_t, struct host *,
+	int);
 gfarm_error_t dead_file_copy_mark_lost(
 	gfarm_ino_t, gfarm_uint64_t, struct host *);
 
@@ -31,6 +36,7 @@ int dead_file_copy_count_by_inode(gfarm_ino_t, gfarm_uint64_t, int);
 gfarm_error_t dead_file_copy_info_by_inode(gfarm_ino_t, gfarm_uint64_t, int,
 	int *, char **, gfarm_int64_t *, gfarm_int32_t *);
 int dead_file_copy_existing(gfarm_ino_t, gfarm_uint64_t, struct host *);
+int dead_file_copy_existing_on_any_host(gfarm_ino_t, gfarm_uint64_t);
 
 void dead_file_copy_init_load(void);
 void dead_file_copy_init(int);

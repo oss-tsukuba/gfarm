@@ -3079,6 +3079,33 @@ copy_to_lost_found(struct file_entry *fe)
 		    canonical_self_name);
 }
 
+/*
+ * the replica could not be renamed to the new generation,
+ * i.e. what was written is not reflected to the file.
+ * keep that in /lost+found.
+ */
+static void
+abandoned_to_lost_found(struct file_entry *fe)
+{
+	int fd = fe->local_fd_rdonly != -1 ? fe->local_fd_rdonly : fe->local_fd;
+
+	if (fe->size == 0)
+		return;
+	/*
+	 * fe->new_gen is the generation of the local file name.
+	 * the file may be already removed, copy it in that case.
+	 */
+	if (register_to_lost_found(0, fd, fe->ino, fe->new_gen)
+	    == GFARM_ERR_NO_ERROR ||
+	    register_to_lost_found(1, fd, fe->ino, fe->new_gen)
+	    == GFARM_ERR_NO_ERROR)
+		gflog_notice(GFARM_MSG_UNFIXED, "file which failed in "
+		    "the generation update is moved to "
+		    "/lost+found/%016llX%016llX-%s",
+		    (unsigned long long)fe->ino,
+		    (unsigned long long)fe->new_gen, canonical_self_name);
+}
+
 void
 replica_lost_move_to_lost_found(gfarm_ino_t ino, gfarm_uint64_t gen,
 	int local_fd, off_t size)
@@ -3243,6 +3270,17 @@ close_fd(struct gfp_xdr *client, gfarm_int32_t fd, struct file_entry *fe,
 			e = e2;
 		if (gen_update_result == GFARM_ERR_CONFLICT_DETECTED)
 			copy_to_lost_found(fe);
+		else if (gen_update_result != GFARM_ERR_NO_ERROR) {
+			/*
+			 * the replica could not be renamed to the new
+			 * generation, i.e. what was written is not reflected
+			 * to the file.
+			 * save that in /lost+found, and let the client know.
+			 */
+			abandoned_to_lost_found(fe);
+			if (e == GFARM_ERR_NO_ERROR)
+				e = gen_update_result;
+		}
 	} else if ((fe->flags & (FILE_FLAG_DIGEST_FINISH|FILE_FLAG_DIGEST_AVAIL
 	    |FILE_FLAG_WRITTEN)) == FILE_FLAG_DIGEST_FINISH) {
 		gflog_notice(GFARM_MSG_1004387,

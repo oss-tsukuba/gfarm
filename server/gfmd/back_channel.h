@@ -14,6 +14,9 @@ gfarm_error_t async_back_channel_replication_cksum_request(char *, int,
 gfarm_error_t async_back_channel_replication_request(char *, int,
 	struct host *, gfarm_ino_t, gfarm_int64_t, struct file_replicating *);
 
+void async_back_channel_fhstat_request(struct host *, gfarm_ino_t,
+	gfarm_int64_t);
+
 gfarm_error_t gfm_server_switch_back_channel(struct peer *, int, int);
 gfarm_error_t gfm_server_switch_async_back_channel(struct peer *, int, int);
 

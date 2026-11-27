@@ -1333,12 +1333,14 @@ host_set_peer_locked(struct abstract_host *ah, struct peer *p)
 
 /*
  * PREREQUISITE: nothing
- * LOCKS: dead_file_copy_scan.mutex, replica_check_mutex
+ * LOCKS: dead_file_copy_scan.mutex, replica_check_mutex,
+ *	removal_heldq.mutex -> dfc->mutex
  * SLEEPS: no
  */
 static void
 host_set_peer_unlocked(struct abstract_host *ah, struct peer *p)
 {
+	dead_file_copy_host_connected(abstract_host_to_host(ah));
 	dead_file_copy_host_becomes_up(abstract_host_to_host(ah));
 	replica_check_start_host_up();
 }

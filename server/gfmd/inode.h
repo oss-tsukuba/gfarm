@@ -90,7 +90,8 @@ struct inode *inode_alloc_num(gfarm_ino_t);
 
 struct peer;
 int inode_new_generation_is_pending(struct inode *);
-void inode_new_generation_by_fd_start(struct inode *, struct peer *);
+void inode_new_generation_by_fd_start(struct inode *, struct peer *,
+	enum inode_close_mode);
 gfarm_error_t inode_new_generation_by_cookie_start(
 	struct inode *, struct peer *, gfarm_uint64_t);
 gfarm_error_t inode_new_generation_by_fd_finish(
@@ -213,6 +214,9 @@ int inode_is_opened_on(struct inode *, struct host *);
 gfarm_uint64_t inode_get_open_status_by_host(struct inode *, struct host *);
 struct file_copy * inode_get_file_copy(struct inode *, struct host *);
 int inode_has_file_copy(struct inode *, struct host *);
+int inode_has_file_copy_to_check(struct inode *, struct host *);
+void inode_generation_update_redo(gfarm_ino_t, gfarm_int64_t, struct host *,
+	gfarm_off_t, struct gfarm_timespec *, struct gfarm_timespec *);
 int inode_has_replica(struct inode *, struct host *);
 int inode_has_writable_replica(struct inode *);
 gfarm_error_t inode_getdirpath(struct inode *, struct process *, char **);

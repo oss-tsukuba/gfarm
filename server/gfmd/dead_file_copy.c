@@ -39,7 +39,8 @@ struct dead_file_copy {
 		dfcstate_in_flight,	/* during protocol process */
 		dfcstate_finished,	/* on removal_finishedq */
 		dfcstate_finalizing,	/* during finalize */
-		dfcstate_busy		/* on host_busyq */
+		dfcstate_busy,		/* on host_busyq */
+		dfcstate_held		/* on removal_heldq */
 	} state;
 
 	gfarm_int32_t result;	/* available if state == dfsstate_finsihed */
@@ -55,6 +56,7 @@ struct dead_file_copy {
  *
  *	dfcstate_deferred
  *		-> dfcstate_kept
+ *		-> dfcstate_held
  *		-> dfcstate_lost
  *		-> dfcstate_pending
  *		-> dfcstate_finished
@@ -64,6 +66,7 @@ struct dead_file_copy {
  *		-> dfcstate_deferred
  *		-> dfcstate_lost
  *		-> dfcstate_pending
+ *		-> dfcstate_held
  *
  *	dfcstate_lost
  *		-> dfcstate_finished
@@ -89,6 +92,9 @@ struct dead_file_copy {
  *	dfcstate_busy
  *		-> dfcstate_deferred
  *		-> dfcstate_pending
+ *
+ *	dfcstate_held
+ *		-> dfcstate_deferred
  *
  */
 
@@ -224,6 +230,22 @@ static struct dfc_workq host_busyq = {
 	PTHREAD_MUTEX_INITIALIZER,
 	PTHREAD_COND_INITIALIZER,
 	{ NULL, NULL, &host_busyq.q, &host_busyq.q }
+};
+
+/*
+ * the entries which are not removed until the host is connected again,
+ * to let the spool check of gfsd move the files to /lost+found,
+ * if the spool check is enabled.
+ * this is not recorded in the backend DB, i.e. the entries are removed
+ * as usual after gfmd is restarted.
+ *
+ * IMPORTANT NOTE:
+ * functions should not sleep while holding removal_heldq.mutex
+ */
+static struct dfc_workq removal_heldq = {
+	PTHREAD_MUTEX_INITIALIZER,
+	PTHREAD_COND_INITIALIZER,
+	{ NULL, NULL, &removal_heldq.q, &removal_heldq.q }
 };
 
 /*
@@ -1064,6 +1086,8 @@ dead_file_copy_host_removed(struct host *host)
 
 	dfc_workq_host_remove(&removal_finishedq, host,
 	    "host removed: removal_finishedq");
+	dfc_workq_host_remove(&removal_heldq, host,
+	    "host removed: removal_heldq");
 
 	gfarm_mutex_lock(&dfc_allq.mutex, diag, "lock");
 
@@ -1454,10 +1478,101 @@ dead_file_copy_mark_deferred(struct dead_file_copy *dfc)
 }
 
 /*
- * used for kept/deferred -> lost: move dfc to removal_finishedq
+ * used for deferred/kept -> held: do not remove the replica until
+ * the host is connected again.  see the comment of removal_heldq.
+ *
+ * PREREQUISITE: giant_lock (to prevent the dfc from being freed)
+ * LOCKS: dfc->mutex, removal_heldq.mutex -> dfc->mutex
+ * SLEEPS: no
+ */
+void
+dead_file_copy_mark_held(struct dead_file_copy *dfc)
+{
+	enum dead_file_copy_state state;
+	static const char diag[] = "dead_file_copy_mark_held";
+
+	/* sanity check */
+	gfarm_mutex_lock(&dfc->mutex, diag, "dfc state");
+	state = dfc->state;
+	gfarm_mutex_unlock(&dfc->mutex, diag, "dfc state");
+	if (state != dfcstate_deferred && state != dfcstate_kept) {
+		gflog_fatal(GFARM_MSG_UNFIXED, "%s(%lld, %lld, %s): "
+		    "insane state %d", diag,
+		    (unsigned long long)dfc->inum,
+		    (unsigned long long)dfc->igen,
+		    host_name(dfc->host), state);
+		return;
+	}
+	dfc_workq_enqueue(&removal_heldq, dfc, dfcstate_held, diag);
+}
+
+/*
+ * used for held -> deferred
+ *
+ * PREREQUISITE: giant_lock (to prevent the dfc from being freed)
+ * LOCKS: removal_heldq.mutex -> dfc->mutex
+ * SLEEPS: no
+ */
+static void
+dead_file_copy_unhold(struct dead_file_copy *dfc, const char *diag)
+{
+	gfarm_mutex_lock(&removal_heldq.mutex, diag, "lock");
+	gfarm_mutex_lock(&dfc->mutex, diag, "dfc state");
+	if (dfc->state == dfcstate_held) {
+		dfc_workq_remove(dfc);
+		dfc->state = dfcstate_deferred;
+		dfc->workq_next = dfc->workq_prev = NULL; /* to be sure */
+	}
+	gfarm_mutex_unlock(&dfc->mutex, diag, "dfc state");
+	gfarm_mutex_unlock(&removal_heldq.mutex, diag, "unlock");
+}
+
+/*
+ * the host is connected (again), i.e. the spool check of the gfsd is done,
+ * if the gfsd was restarted and the spool check is enabled.
+ * held -> deferred for the entries of the host, i.e. the replicas which
+ * were not moved to /lost+found are removed.
+ * dead_file_copy_host_becomes_up() should be called after this.
+ *
+ * PREREQUISITE: nothing
+ * LOCKS: removal_heldq.mutex -> dfc->mutex
+ * SLEEPS: no
+ */
+void
+dead_file_copy_host_connected(struct host *host)
+{
+	dfc_workq_host_remove(&removal_heldq, host,
+	    "host connected: removal_heldq");
+}
+
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: dfc_allq.mutex, dfc->mutex
+ * SLEEPS: no
+ */
+int
+dead_file_copy_is_held(gfarm_ino_t inum, gfarm_uint64_t igen,
+	struct host *host)
+{
+	struct dead_file_copy *dfc;
+	int held;
+	static const char diag[] = "dead_file_copy_is_held";
+
+	dfc = dead_file_copy_lookup(inum, igen, host, diag);
+	if (dfc == NULL)
+		return (0);
+	gfarm_mutex_lock(&dfc->mutex, diag, "dfc state");
+	held = dfc->state == dfcstate_held;
+	gfarm_mutex_unlock(&dfc->mutex, diag, "dfc state");
+	return (held);
+}
+
+/*
+ * used for kept/deferred/held -> lost: move dfc to removal_finishedq
  *
  * PREREQUISITE: giant_lock
- * LOCKS: dfc_allq.mutex, dfc->mutex, dead_file_copy_scan.mutex
+ * LOCKS: dfc_allq.mutex, dfc->mutex, dead_file_copy_scan.mutex,
+ *	removal_heldq.mutex -> dfc->mutex
  * SLEEPS: no
  */
 gfarm_error_t
@@ -1476,6 +1591,8 @@ dead_file_copy_mark_lost(
 		    host_name(host));
 		return (GFARM_ERR_NO_SUCH_OBJECT);
 	}
+
+	dead_file_copy_unhold(dfc, diag);
 
 	/* sanity check */
 	gfarm_mutex_lock(&dfc->mutex, diag, "dfc state");
@@ -1602,6 +1719,30 @@ dead_file_copy_existing(gfarm_ino_t inum, gfarm_uint64_t igen,
 	static const char diag[] = "dead_file_copy_existing";
 
 	return (dead_file_copy_lookup(inum, igen, host, diag) != NULL);
+}
+
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: dfc_allq.mutex
+ * SLEEPS: no
+ */
+int
+dead_file_copy_existing_on_any_host(gfarm_ino_t inum, gfarm_uint64_t igen)
+{
+	struct dead_file_copy *dfc;
+	int found = 0;
+	static const char diag[] = "dead_file_copy_existing_on_any_host";
+
+	gfarm_mutex_lock(&dfc_allq.mutex, diag, "lock");
+	for (dfc = dfc_inumq_of(inum)->first; dfc != NULL;
+	     dfc = dfc->inumq_next) {
+		if (dfc->inum == inum && dfc->igen == igen) {
+			found = 1;
+			break;
+		}
+	}
+	gfarm_mutex_unlock(&dfc_allq.mutex, diag, "unlock");
+	return (found);
 }
 
 gfarm_ino_t
@@ -1755,6 +1896,39 @@ dead_file_copy_free(struct dead_file_copy *dfc)
 	inode_remove_replica_completed(dfc->inum, dfc->igen, dfc->host);
 
 	free(dfc);
+}
+
+/*
+ * release a held entry.
+ * if `cancel', the replica is not removed, since it is made valid again.
+ * otherwise the replica is removed as usual.
+ *
+ * PREREQUISITE: giant_lock
+ * LOCKS: the locks of dead_file_copy_free(),
+ *	removal_heldq.mutex -> dfc->mutex, dead_file_copy_scan.mutex
+ * SLEEPS: yes (dbq.mutex)
+ */
+void
+dead_file_copy_release_held(gfarm_ino_t inum, gfarm_uint64_t igen,
+	struct host *host, int cancel)
+{
+	struct dead_file_copy *dfc;
+	int held;
+	static const char diag[] = "dead_file_copy_release_held";
+
+	dfc = dead_file_copy_lookup(inum, igen, host, diag);
+	if (dfc == NULL)
+		return;
+	gfarm_mutex_lock(&dfc->mutex, diag, "dfc state");
+	held = dfc->state == dfcstate_held;
+	gfarm_mutex_unlock(&dfc->mutex, diag, "dfc state");
+	if (!held)
+		return;
+	dead_file_copy_unhold(dfc, diag);
+	if (cancel)
+		dead_file_copy_free(dfc);
+	else
+		dead_file_copy_inode_status_changed(inum);
 }
 
 /*
