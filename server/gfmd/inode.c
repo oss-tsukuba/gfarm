@@ -829,7 +829,7 @@ inode_free_list_init(void)
 
 /*
  * PREREQUISITE: giant_lock
- * LOCKS: total_num_inodes_mutex
+ * LOCKS: total_num_inodes_mutex, dfc_allq.mutex
  * SLEEPS: no
  */
 struct inode *
@@ -897,6 +897,13 @@ inode_alloc_num(gfarm_ino_t inum)
 		inode->u.l.next->u.l.prev = inode->u.l.prev;
 		inode->u.l.prev->u.l.next = inode->u.l.next;
 		inode->i_gen++; /* see inode_undo_alloc() */
+		/*
+		 * a replica of the next generation of the removed file may be
+		 * being removed.  do not reuse that generation.
+		 * see inode_generation_update_revert()
+		 */
+		while (dead_file_copy_existing_on_any_host(inum, inode->i_gen))
+			inode->i_gen++;
 	}
 	inode->i_nlink_ini = 0;
 	inode->u.c.activity = NULL;
@@ -2923,12 +2930,13 @@ static gfarm_error_t inode_remove_replica_internal(struct inode *,
  */
 static int
 inode_generation_update_revert(struct inode *inode, struct host *spool_host,
-	int desired_replica_number, char *repattr, const char *diag)
+	int hold, int desired_replica_number, char *repattr, const char *diag)
 {
 	gfarm_error_t e;
 	struct inode_activity *ia = inode->u.c.activity;
 	struct dirset *tdirset = inode_get_tdirset(inode);
 	struct file_copy *copy;
+	struct dead_file_copy *dfc = NULL, *dfc_failed = NULL;
 	int spool_host_is_valid = 0, other_is_valid = 0;
 	gfarm_int64_t failed_gen = inode->i_gen;
 
@@ -2960,15 +2968,34 @@ inode_generation_update_revert(struct inode *inode, struct host *spool_host,
 		    (long long)inode->i_number, (long long)inode->i_gen,
 		    gfarm_error_string(e));
 	e = inode_remove_replica_internal(inode, spool_host, inode->i_gen,
-	    NULL, tdirset, 0, 0, 0, NULL);
+	    NULL, tdirset, 0, 0, 0, &dfc);
 	/* the replica may have been renamed to the new generation */
 	(void)remove_replica_entity(inode, failed_gen, spool_host, 0,
-	    tdirset, NULL);
+	    tdirset, &dfc_failed);
+	/*
+	 * what was written is in one of them.
+	 * if gfsd is alive, it registers that to /lost+found by itself.
+	 * otherwise keep them until the gfsd is connected again
+	 * to let the spool check of the gfsd move that to /lost+found.
+	 */
+	if (dfc != NULL) {
+		if (hold)
+			dead_file_copy_mark_held(dfc);
+		else
+			removal_pendingq_enqueue(dfc);
+	}
+	if (dfc_failed != NULL) {
+		if (hold)
+			dead_file_copy_mark_held(dfc_failed);
+		else
+			removal_pendingq_enqueue(dfc_failed);
+	}
 	gflog_notice(GFARM_MSG_UNFIXED,
 	    "%s: inode %lld: generation update to %lld on %s failed, "
-	    "reverted to %lld, the replica on the host is abandoned: %s",
+	    "reverted to %lld, the replica on the host is abandoned%s: %s",
 	    diag, (long long)inode->i_number, (long long)failed_gen,
 	    host_name(spool_host), (long long)inode->i_gen,
+	    hold ? " and kept until the host is connected again" : "",
 	    gfarm_error_string(e));
 
 	/* the number of the replicas decreased */
@@ -3016,6 +3043,7 @@ inode_new_generation_by_fd_finish(struct inode *inode, struct peer *peer,
 	reverted = result != GFARM_ERR_NO_ERROR &&
 	    result != GFARM_ERR_CONFLICT_DETECTED &&
 	    inode_generation_update_revert(inode, peer_get_host(peer),
+	    close_mode != INODE_CLOSE_V2_8, /* gfsd is disconnected */
 	    desired_replica_number, repattr, diag);
 
 	if (reverted) {
@@ -5888,6 +5916,24 @@ int
 inode_has_file_copy(struct inode *inode, struct host *spool_host)
 {
 	if (inode_get_file_copy(inode, spool_host) == NULL)
+		return (0);
+	return (1); /* include !FILE_COPY_VALID and FILE_COPY_BEING_REMOVED */
+}
+
+/*
+ * for the spool check of gfsd.
+ * a replica which is held to be moved to /lost+found is not reported,
+ * otherwise gfsd regards that as a correct one if the size is same.
+ */
+int
+inode_has_file_copy_to_check(struct inode *inode, struct host *spool_host)
+{
+	struct file_copy *copy = inode_get_file_copy(inode, spool_host);
+
+	if (copy == NULL)
+		return (0);
+	if (FILE_COPY_IS_BEING_REMOVED(copy) &&
+	    dead_file_copy_is_held(inode->i_number, inode->i_gen, spool_host))
 		return (0);
 	return (1); /* include !FILE_COPY_VALID and FILE_COPY_BEING_REMOVED */
 }
