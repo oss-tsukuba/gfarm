@@ -37,6 +37,7 @@
 #include "abstract_host.h"
 #include "host.h"
 #include "inode.h"
+#include "db_access.h"
 #include "dead_file_copy.h"
 
 #include "back_channel.h"
@@ -389,6 +390,120 @@ gfs_client_fhremove_free(void *p, void *arg)
 	struct dead_file_copy *dfc = arg;
 
 	removal_finishedq_enqueue(dfc, GFARM_ERR_CONNECTION_ABORTED);
+}
+
+struct gfs_client_fhstat_arg {
+	struct host *host;
+	gfarm_ino_t ino;
+	gfarm_int64_t gen;
+};
+
+/*
+ * PREREQUISITE: abstract_host_receiver_lock()
+ * LOCKS: giant_lock -> the locks of inode_generation_update_redo()
+ * SLEEPS: yes (network I/O, giant_lock, and db access)
+ */
+static gfarm_int32_t
+gfs_client_fhstat_result(void *p, void *closure, size_t size)
+{
+	struct peer *peer = p;
+	struct gfs_client_fhstat_arg *arg = closure;
+	gfarm_error_t e;
+	gfarm_off_t filesize;
+	gfarm_int64_t atime_sec, mtime_sec;
+	gfarm_int32_t atime_nsec, mtime_nsec;
+	struct gfarm_timespec atime, mtime;
+	int transaction = 0;
+	static const char diag[] = "GFS_PROTO_FHSTAT";
+
+	e = gfs_client_recv_result(peer, arg->host, size, diag, "llili",
+	    &filesize, &atime_sec, &atime_nsec, &mtime_sec, &mtime_nsec);
+	if (e == GFARM_ERR_NO_ERROR) {
+		atime.tv_sec = atime_sec;
+		atime.tv_nsec = atime_nsec;
+		mtime.tv_sec = mtime_sec;
+		mtime.tv_nsec = mtime_nsec;
+		giant_lock();
+		if (db_begin(diag) == GFARM_ERR_NO_ERROR)
+			transaction = 1;
+		inode_generation_update_redo(arg->ino, arg->gen, arg->host,
+		    filesize, &atime, &mtime);
+		if (transaction)
+			db_end(diag);
+		giant_unlock();
+	} else {
+		gflog_info(GFARM_MSG_UNFIXED, "%s(%lld, %lld, %s): %s", diag,
+		    (long long)arg->ino, (long long)arg->gen,
+		    host_name(arg->host), gfarm_error_string(e));
+	}
+	free(arg);
+	return (e);
+}
+
+/*
+ * giant_lock is held before calling this function,
+ * via peer_closer() -> back_channel_async_peer_free()
+ * -> gfp_xdr_async_peer_free()
+ */
+static void
+gfs_client_fhstat_free(void *p, void *closure)
+{
+	free(closure);
+}
+
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: the locks of gfs_client_send_request_notimeout()
+ * SLEEPS: yes (abstract_host_sender_trylock() and network I/O)
+ */
+static void *
+gfs_client_fhstat_request(void *closure)
+{
+	struct gfs_client_fhstat_arg *arg = closure;
+	gfarm_error_t e;
+	static const char diag[] = "GFS_PROTO_FHSTAT";
+
+	e = gfs_client_send_request_notimeout(arg->host, NULL, diag,
+	    gfs_client_fhstat_result, gfs_client_fhstat_free, arg,
+	    GFS_PROTO_FHREMOVE_TIMEOUT, GFS_PROTO_FHSTAT, "ll",
+	    arg->ino, arg->gen);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_info(GFARM_MSG_UNFIXED, "%s(%lld, %lld, %s): %s", diag,
+		    (long long)arg->ino, (long long)arg->gen,
+		    host_name(arg->host), gfarm_error_string(e));
+		free(arg);
+	}
+
+	/* this return value won't be used, because this thread is detached */
+	return (NULL);
+}
+
+/*
+ * ask the gfsd whether the replica of the generation exists or not.
+ * inode_generation_update_redo() is called, if that exists.
+ *
+ * PREREQUISITE: nothing (but usually called with giant_lock held)
+ * LOCKS: thread_pool::mutex, thread_jobq::mutex
+ * SLEEPS: maybe (thrpool_add_job() waits while the job queue is full)
+ */
+void
+async_back_channel_fhstat_request(struct host *host,
+	gfarm_ino_t ino, gfarm_int64_t gen)
+{
+	struct gfs_client_fhstat_arg *arg;
+
+	GFARM_MALLOC(arg);
+	if (arg == NULL) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "GFS_PROTO_FHSTAT(%lld, %lld, %s): no memory",
+		    (long long)ino, (long long)gen, host_name(host));
+		return;
+	}
+	arg->host = host;
+	arg->ino = ino;
+	arg->gen = gen;
+	thrpool_add_job(back_channel_send_thread_pool,
+	    gfs_client_fhstat_request, arg);
 }
 
 #define SAME_WARNING_TRIGGER	10	/* check reduced mode */

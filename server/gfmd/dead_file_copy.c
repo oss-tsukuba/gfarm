@@ -1897,6 +1897,39 @@ dead_file_copy_free(struct dead_file_copy *dfc)
 }
 
 /*
+ * release a held entry.
+ * if `cancel', the replica is not removed, since it is made valid again.
+ * otherwise the replica is removed as usual.
+ *
+ * PREREQUISITE: giant_lock
+ * LOCKS: the locks of dead_file_copy_free(),
+ *	removal_heldq.mutex -> dfc->mutex, dead_file_copy_scan.mutex
+ * SLEEPS: yes (dbq.mutex)
+ */
+void
+dead_file_copy_release_held(gfarm_ino_t inum, gfarm_uint64_t igen,
+	struct host *host, int cancel)
+{
+	struct dead_file_copy *dfc;
+	int held;
+	static const char diag[] = "dead_file_copy_release_held";
+
+	dfc = dead_file_copy_lookup(inum, igen, host, diag);
+	if (dfc == NULL)
+		return;
+	gfarm_mutex_lock(&dfc->mutex, diag, "dfc state");
+	held = dfc->state == dfcstate_held;
+	gfarm_mutex_unlock(&dfc->mutex, diag, "dfc state");
+	if (!held)
+		return;
+	dead_file_copy_unhold(dfc, diag);
+	if (cancel)
+		dead_file_copy_free(dfc);
+	else
+		dead_file_copy_inode_status_changed(inum);
+}
+
+/*
  * The memory owner of `hostname' is changed to dead_file_copy.c
  *
  * PREREQUISITE: giant_lock (or boot time), db_access_mutex

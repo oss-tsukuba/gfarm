@@ -27,6 +27,8 @@ void dead_file_copy_mark_deferred(struct dead_file_copy *);
 void dead_file_copy_mark_held(struct dead_file_copy *);
 void dead_file_copy_host_connected(struct host *);
 int dead_file_copy_is_held(gfarm_ino_t, gfarm_uint64_t, struct host *);
+void dead_file_copy_release_held(gfarm_ino_t, gfarm_uint64_t, struct host *,
+	int);
 gfarm_error_t dead_file_copy_mark_lost(
 	gfarm_ino_t, gfarm_uint64_t, struct host *);
 
