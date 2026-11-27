@@ -3081,7 +3081,8 @@ copy_to_lost_found(struct file_entry *fe)
 
 /*
  * the replica could not be renamed to the new generation,
- * i.e. what was written is not referred from the metadata.
+ * i.e. what was written is not reflected to the file.
+ * keep that in /lost+found.
  */
 static void
 abandoned_to_lost_found(struct file_entry *fe)
@@ -3272,7 +3273,8 @@ close_fd(struct gfp_xdr *client, gfarm_int32_t fd, struct file_entry *fe,
 		else if (gen_update_result != GFARM_ERR_NO_ERROR) {
 			/*
 			 * the replica could not be renamed to the new
-			 * generation, i.e. what was written is lost.
+			 * generation, i.e. what was written is not reflected
+			 * to the file.
 			 * save that in /lost+found, and let the client know.
 			 */
 			abandoned_to_lost_found(fe);

@@ -5473,13 +5473,14 @@ gfm_server_replica_add(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED; /* error */
 	} else if (dead_file_copy_is_held(inum, gen, spool_host)) {
 		/*
-		 * what was written is in this file, but the generation update
-		 * failed.  let gfsd move this to /lost+found.
-		 * see inode_generation_update_revert()
+		 * this replica was abandoned, but is not removed yet.
+		 * let gfsd move this to /lost+found.
+		 * see inode_generation_update_revert() and
+		 * inode_generation_update_redo()
 		 */
 		gflog_notice(GFARM_MSG_UNFIXED,
-		    "%lld:%lld on %s: abandoned by the failure of "
-		    "the generation update, to be moved to /lost+found",
+		    "%lld:%lld on %s: abandoned at a failure of "
+		    "a generation update, to be moved to /lost+found",
 		    (long long)inum, (long long)gen, host_name(spool_host));
 		e = GFARM_ERR_NO_SUCH_OBJECT; /* invalid file */
 	} else if ((inode = inode_lookup(inum)) == NULL) {

@@ -2911,7 +2911,6 @@ static void inode_generation_updated(struct inode *,
 static gfarm_error_t inode_remove_replica_internal(struct inode *,
 	struct host *, gfarm_int64_t, struct replica_spec *, struct dirset *,
 	int, int, int, struct dead_file_copy **);
-static gfarm_error_t inode_remove_file_copy(struct inode *, struct host *);
 
 /*
  * The generation update of the replica on `spool_host' failed, and
@@ -2922,21 +2921,28 @@ static gfarm_error_t inode_remove_file_copy(struct inode *, struct host *);
  * go back to the previous generation and abandon the replica on
  * `spool_host', instead of abandoning the other replicas and keeping
  * the replica on `spool_host' which may not exist as the new generation.
- * The replica on `spool_host' is removed as both generations, because
- * the generation number which is abandoned here will be used again, and
- * a replica left as that generation would be taken as a valid one,
- * if a replica of that generation is created on the host without
- * truncation (see `to_create' of inode_schedule_confirm_for_write()).
+ * The replica on `spool_host' is treated as being removed as both
+ * generations, because the generation number which is abandoned here
+ * will be used again, and a replica left as that generation would be
+ * taken as a valid one, if a replica of that generation is created on
+ * the host without truncation (see `to_create' of
+ * inode_schedule_confirm_for_write()).
+ * If `hold' (gfsd is disconnected), the removals are held until the host
+ * is connected again, see removal_heldq in dead_file_copy.c.
+ * And if the host is still up, inode_generation_update_redo() makes
+ * the new generation valid later, if the replica turns out to be renamed.
  *
- * This is not possible, if the metadata was already updated at the close
- * (i.e. before GFM_PROTO_CLOSE_WRITE_V2_8), or another process is
- * writing the replica.
+ * This is not done, if the metadata was already updated at the close
+ * (i.e. before GFM_PROTO_CLOSE_WRITE_V2_8), another process is writing
+ * the replica, there is no other valid replica, a replica is being
+ * created, or gfmd is read-only.
  *
  * returns TRUE, if the generation is reverted.
  *
  * PREREQUISITE: giant_lock
- * LOCKS: the locks of inode_remove_replica_internal(), rep_prioq.mutex,
- *	replica_check_mutex
+ * LOCKS: the locks of inode_remove_replica_internal(),
+ *	remove_replica_entity(), dead_file_copy_mark_held(),
+ *	rep_prioq.mutex, replica_check_mutex
  * SLEEPS: yes (dbq.mutex)
  */
 static int
@@ -3023,7 +3029,8 @@ inode_generation_update_revert(struct inode *inode, struct host *spool_host,
 	 * the failed generation may be complete.  ask the gfsd about that
 	 * after the client closes the file, see inode_close_read().
 	 */
-	if (hold && dfc_failed != NULL && host_is_up(spool_host)) {
+	if (hold && dfc_failed != NULL && host_is_up(spool_host) &&
+	    host_supports_async_protocols(spool_host)) {
 		ia->u.f.redo_host = spool_host;
 		ia->u.f.redo_gen = failed_gen;
 	}
@@ -3046,7 +3053,8 @@ inode_generation_update_revert(struct inode *inode, struct host *spool_host,
  *
  * PREREQUISITE: giant_lock
  * LOCKS: the locks of dead_file_copy_release_held(),
- *	remove_replica_entity(), inode_add_replica()
+ *	remove_replica_entity(), quota_update_replica_add(),
+ *	abstract_host::mutex, total_disk_mutex
  * SLEEPS: yes (dbq.mutex)
  */
 void
@@ -3057,9 +3065,10 @@ inode_generation_update_redo(gfarm_ino_t inum, gfarm_int64_t gen,
 	struct inode *inode = inode_lookup(inum);
 	struct inode_activity *ia;
 	struct dirset *tdirset;
-	struct file_copy **copyp, *copy;
+	struct file_copy **copyp, *copy, *host_copy = NULL;
 	struct dead_file_copy *dfc;
-	int nleft = 0, found = 0;
+	gfarm_error_t e;
+	int nleft = 0;
 	static const char diag[] = "inode_generation_update_redo";
 
 	if (inode == NULL || !inode_is_file(inode) || gfarm_read_only_mode())
@@ -3078,16 +3087,33 @@ inode_generation_update_redo(gfarm_ino_t inum, gfarm_int64_t gen,
 		if (copy->host == host) {
 			if (!FILE_COPY_IS_BEING_REMOVED(copy))
 				return;
-			found = 1;
+			host_copy = copy;
 		} else if (!FILE_COPY_IS_VALID(copy) &&
 		    !FILE_COPY_IS_BEING_REMOVED(copy)) {
 			return; /* being replicated */
 		}
 	}
-	if (!found)
+	if (host_copy == NULL)
 		return;
 
 	tdirset = inode_get_tdirset(inode);
+
+	/*
+	 * the replica on the host: being removed -> valid.
+	 * do not use inode_add_replica(), because this must not fail
+	 * due to the quota limit: the replica was valid before the revert.
+	 * this has to be done before releasing the dead_file_copy,
+	 * see inode_remove_replica_completed().
+	 */
+	host_copy->flags = FILE_COPY_VALID;
+	quota_update_replica_add(inode, tdirset);
+	inode_tdirset_check(inode, tdirset, diag);
+	host_status_update_disk_usage(host, inode_get_size(inode));
+	e = db_filecopy_add(inum, host_name(host));
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: db_filecopy_add(%lld, %s): %s", diag,
+		    (long long)inum, host_name(host), gfarm_error_string(e));
 
 	/* the replica of `gen' on the host is not removed */
 	dead_file_copy_release_held(inum, gen, host, 1);
@@ -3097,7 +3123,10 @@ inode_generation_update_redo(gfarm_ino_t inum, gfarm_int64_t gen,
 	inode_cksum_remove(inode);
 
 	for (copyp = &inode->u.c.s.f.copies; (copy = *copyp) != NULL; ) {
-		if (copy->host == host) {
+		if (copy->host == host ||
+		    (FILE_COPY_IS_BEING_REMOVED(copy) &&
+		    dead_file_copy_existing(inum, inode->i_gen, copy->host))) {
+			/* the latter: see the same case in update_replicas() */
 			copyp = &copy->host_next;
 			continue;
 		}
@@ -3129,9 +3158,6 @@ inode_generation_update_redo(gfarm_ino_t inum, gfarm_int64_t gen,
 		free(copy);
 	}
 
-	/* the replica on the host: being removed -> valid */
-	(void)inode_remove_file_copy(inode, host);
-	(void)inode_add_replica(inode, host, 1);
 	/* the replica was not renamed, if this exists */
 	dead_file_copy_release_held(inum, gen - 1, host, 0);
 
@@ -3144,7 +3170,7 @@ inode_generation_update_redo(gfarm_ino_t inum, gfarm_int64_t gen,
 	    (long long)inum, (long long)gen, host_name(host),
 	    (long long)size, nleft);
 
-	/* the replicas were moved */
+	/* the number of the replicas decreased */
 	replica_check_start_rep_request_failed();
 }
 
@@ -7258,8 +7284,8 @@ inode_remove_replica_completed(gfarm_ino_t inum, gfarm_int64_t igen,
 	if (inode == NULL || !inode_is_file(inode))
 		return;
 	/*
-	 * inode_generation_update_revert() removes a replica as both
-	 * the current generation and the next generation.
+	 * inode_generation_update_revert() removes (or holds) a replica as
+	 * both the current generation and the next generation.
 	 * the host has to be kept as being removed until both are removed,
 	 * otherwise a replica of the next generation which is created on
 	 * the host after that may be removed.

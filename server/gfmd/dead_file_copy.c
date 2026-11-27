@@ -56,6 +56,7 @@ struct dead_file_copy {
  *
  *	dfcstate_deferred
  *		-> dfcstate_kept
+ *		-> dfcstate_held
  *		-> dfcstate_lost
  *		-> dfcstate_pending
  *		-> dfcstate_finished
@@ -233,15 +234,13 @@ static struct dfc_workq host_busyq = {
 
 /*
  * the entries which are not removed until the host is connected again,
- * to let the spool check of gfsd move the files to /lost+found.
+ * to let the spool check of gfsd move the files to /lost+found,
+ * if the spool check is enabled.
  * this is not recorded in the backend DB, i.e. the entries are removed
  * as usual after gfmd is restarted.
  *
  * IMPORTANT NOTE:
- * functions should not sleep while holding removal_heldq.mutex,
- * and should not acquire abstract_host::mutex while holding it,
- * because dead_file_copy_host_connected() may be called with
- * abstract_host::mutex.
+ * functions should not sleep while holding removal_heldq.mutex
  */
 static struct dfc_workq removal_heldq = {
 	PTHREAD_MUTEX_INITIALIZER,
@@ -1529,8 +1528,10 @@ dead_file_copy_unhold(struct dead_file_copy *dfc, const char *diag)
 }
 
 /*
- * the host is connected (again), i.e. the spool check of the gfsd is done
- * if the gfsd was restarted.  held -> deferred for the entries of the host.
+ * the host is connected (again), i.e. the spool check of the gfsd is done,
+ * if the gfsd was restarted and the spool check is enabled.
+ * held -> deferred for the entries of the host, i.e. the replicas which
+ * were not moved to /lost+found are removed.
  * dead_file_copy_host_becomes_up() should be called after this.
  *
  * PREREQUISITE: nothing
@@ -1570,7 +1571,8 @@ dead_file_copy_is_held(gfarm_ino_t inum, gfarm_uint64_t igen,
  * used for kept/deferred/held -> lost: move dfc to removal_finishedq
  *
  * PREREQUISITE: giant_lock
- * LOCKS: dfc_allq.mutex, dfc->mutex, dead_file_copy_scan.mutex
+ * LOCKS: dfc_allq.mutex, dfc->mutex, dead_file_copy_scan.mutex,
+ *	removal_heldq.mutex -> dfc->mutex
  * SLEEPS: no
  */
 gfarm_error_t
