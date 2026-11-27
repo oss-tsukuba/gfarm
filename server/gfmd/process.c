@@ -1126,7 +1126,16 @@ process_close_or_abort_file(struct process *process, struct peer *peer, int fd,
 				    GFARM_ERR_NO_SUCH_PROCESS);
 			} else {
 				inode_del_ref_spool_writers(fo->inode);
-				inode_check_pending_replication(fo);
+				/*
+				 * do not replicate the replica which may be
+				 * modified, if it is abandoned
+				 */
+				if (!aborted ||
+				    !inode_replica_abandon_modified(fo->inode,
+				    fo->u.f.spool_host,
+				    fo->u.f.replica_spec.desired_number,
+				    fo->u.f.replica_spec.repattr, diag))
+					inode_check_pending_replication(fo);
 			}
 		}
 		if (fo->opener != NULL) {
